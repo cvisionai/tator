@@ -185,6 +185,12 @@ spec:
             {{- if hasKey .Values "anonymousRegistration" }}
             {{- if .Values.anonymousRegistration.enabled }}
               value: "TRUE"
+            - name: EMAIL_CONFIRMATION
+            {{- if .Values.anonymousRegistration.emailConfirmation }}
+              value: "TRUE"
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
             {{- else }}
               value: "FALSE"
             {{- end }}

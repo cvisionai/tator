@@ -1,4 +1,7 @@
+from uuid import uuid1
+
 from django.db import transaction
+from django.conf import settings
 from rest_framework.exceptions import PermissionDenied
 
 from ..models import User
@@ -41,16 +44,23 @@ class UserListAPI(BaseListView):
         username = params['username']
         password = params['password']
         registration_token = params.get('registration_token')
-        
+
         if registration_token is None:
             # This is an anonymous registration, check to see if this is allowed.
-            if os.getenv('ANONYMOUS_REGISTRATION_ENABLED') and os.getenv('TATOR_EMAIL_ENABLED'):
-                # Create a user that is inactive until email is confirmed.
+            if settings.ANONYMOUS_REGISTRATION_ENABLED:
+                # Create a user.
                 user = User(first_name=first_name,
                             last_name=last_name,
                             email=email,
-                            username=username,
-                            is_active=False)
+                            username=username)
+                if settings.EMAIL_CONFIRMATION_REQUIRED:
+                    if settings.TATOR_EMAIL_ENABLED == 'true':
+                        user.is_active = False
+                        user.confirmation_token = uuid.uuid1()
+                        # TODO: SEND CONFIRMATION EMAIL
+                    else:
+                        raise ValueError(f"Cannot enable email confirmation without email service!")
+                    
                 user.set_password(password)
                 user.save()
             else:
