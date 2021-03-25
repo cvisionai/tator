@@ -11,33 +11,49 @@ class UserListSchema(AutoSchema):
         operation = super().get_operation(path, method)
         if method == 'GET':
             operation['operationId'] = 'GetUserList'
+        elif method == 'POST':
+            operation['operationId'] = 'CreateUser'
         operation['tags'] = ['Tator']
         return operation
 
     def get_description(self, path, method):
         if method == 'GET':
             return 'Get list of users.'
+        elif method == 'POST':
+            return 'Create user.'
 
     def _get_path_parameters(self, path, method):
         return []
 
     def _get_filter_parameters(self, path, method):
-        return [{
-            'name': 'username',
-            'in': 'query',
-            'required': False,
-            'description': 'Username associated with user. Either this or email must be supplied.',
-            'schema': {'type': 'string'},
-        }, {
-            'name': 'email',
-            'in': 'query',
-            'required': False,
-            'description': 'Email address associated with user. Either this or email must be '
-                           'supplied.',
-            'schema': {'type': 'string'},
-        }]
+        params = []
+        if method == 'GET':
+            params = [{
+                'name': 'username',
+                'in': 'query',
+                'required': False,
+                'description': 'Username associated with user. Either this or email must be supplied.',
+                'schema': {'type': 'string'},
+            }, {
+                'name': 'email',
+                'in': 'query',
+                'required': False,
+                'description': 'Email address associated with user. Either this or email must be '
+                               'supplied.',
+                'schema': {'type': 'string'},
+            }]
+        return params
 
     def _get_request_body(self, path, method):
+        body = {}
+        if method == 'POST':
+            body = {
+                'required': True,
+                'content': {'application/json': {'schema': {
+                    '$ref': '#/components/schemas/UserSpec',
+                },
+            }}}
+        return body
         return {}
 
     def _get_responses(self, path, method):

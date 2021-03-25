@@ -131,6 +131,7 @@ class CustomGenerator(SchemaGenerator):
                 'UploadCompletionSpec': upload_completion_spec,
                 'UploadInfo': upload_info,
                 'UploadPart': upload_part,
+                'UserSpec': user_spec,
                 'UserUpdate': user_update,
                 'User': user,
                 'VersionSpec': version_spec,

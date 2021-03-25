@@ -99,6 +99,7 @@ from .transcode import transcode
 from .upload_completion import upload_part
 from .upload_completion import upload_completion_spec
 from .upload_info import upload_info
+from .user import user_spec
 from .user import user_update
 from .user import user
 from .version import version_spec

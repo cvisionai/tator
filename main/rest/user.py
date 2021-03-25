@@ -1,6 +1,8 @@
 from django.db import transaction
+from rest_framework.exceptions import PermissionDenied
 
 from ..models import User
+from ..models import Invitation
 from ..serializers import UserSerializerBasic
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema
@@ -31,6 +33,47 @@ class UserListAPI(BaseListView):
         else:
             users = User.objects.filter(username=username, email=email)
         return UserSerializerBasic(users, many=True).data
+
+    def _post(self, params):
+        first_name = params['first_name']
+        last_name = params['last_name']
+        email = params['email']
+        username = params['username']
+        password = params['password']
+        registration_token = params.get('registration_token')
+        
+        if registration_token is None:
+            # This is an anonymous registration, check to see if this is allowed.
+            if os.getenv('ANONYMOUS_REGISTRATION_ENABLED') and os.getenv('TATOR_EMAIL_ENABLED'):
+                # Create a user that is inactive until email is confirmed.
+                user = User(first_name=first_name,
+                            last_name=last_name,
+                            email=email,
+                            username=username,
+                            is_active=False)
+                user.set_password(password)
+                user.save()
+            else:
+                raise PermissionDenied
+        else:
+            # A registration token has been supplied, use it to find Invitation objects.
+            invites = Invitation.objects.filter(registration_token=registration_token,
+                                                status='Pending')
+            if invites.count() == 0:
+                raise PermissionDenied
+            else:
+                user = User(first_name=first_name,
+                            last_name=last_name,
+                            email=email,
+                            username=username)
+                user.set_password(password)
+                user.save()
+                invite = invites[0]
+                Affiliation.objects.create(organization=invite.organization,
+                                           permission=invite.permission,
+                                           user=user)
+        return {'message': f"User {username} created!",
+                'id': user.id}
 
 class UserDetailAPI(BaseDetailView):
     """ Interact with an individual user.
