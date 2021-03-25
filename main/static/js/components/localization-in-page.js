@@ -12,26 +12,46 @@ class LocalizationInPage extends TatorElement {
     super();
 
     // Create canvas 1
-    this._mainCanvas = document.createElement("canvas");
-    //this._mainCanvas = document.createElement("entity-panel-canvas");
+    this._mainCanvas = document.createElement("image-canvas");
     this._shadow.appendChild( this._mainCanvas );
 
-    // // Create canvas 2
-    // this._previewCanvas = document.createElement("entity-panel-canvas");
-    // this._shadow.appendChild(this._previewCanvas);
+    // data
+    this.panelData = document.createElement("annotation-panel-data");
+
+    // Keep this inactive until we have data
+    this._mainCanvas.hidden = true;
 
     //
-    this.savedData = {};
+    this.savedMediaData = {};
   }
 
-  init({ pageModal }){
+  init({ pageModal, modelData }){
     this.pageModal = pageModal;
+    this.panelData.init(modelData);
   }
 
-  data(type, d) {
-    this.setAttribute("media-id", d.mediaId)
+  initAndShowData( {cardObj} ){
+    // Identitifier used to get the canvas' media data
+    let mediaId = cardObj.mediaId;
+
+    // @TODO optimize later - only init this the first time
+    // if(typeof this.savedMediaData[mediaId] !== "undefined" && this.savedMediaData[mediaId] !== null){
+    //  --> init the canvas from saved data   
+    // } else {
+    // --> Get mediaData and save it to this card object
+
+      //
+      this.panelData.getMediaData( mediaId ).then((data) => {
+
+        // Inits image-only canvas
+        this._mainCanvas.mediaInfo = data.mediaInfo;
+
+        // save this data in local memory until we need it again
+        this.savedMediaData[mediaId] = data;
+      });
+    // }  
   }
-  
+
   _popModalWithPlayer(e){
     e.preventDefault();
 
@@ -49,25 +69,6 @@ class LocalizationInPage extends TatorElement {
     this.pageModal.setAttribute("is-open", "true")      
   }
 
-  initAndShowData(){
-    // @TODO optimize later - only init this the first time
-    //if(typeof this.cardObj.mediaData !== "undefined" && this.cardObj.mediaData !== null){
-      // Get mediaData and save it to this card object
-      let mediaId = this.cardObj.mediaId;
-      
-      this.panelData.getMediaData( mediaId ).then((data) => {
-
-        // Inits image-only canvas
-        this._mainCanvas.mediaInfo = data.mediaInfo;
-
-        this.savedData[mediaId] = data;
-
-        // After init, or if this has already been defined return 
-        return this._mainCanvas;
-      });
-      
-  }
-
   _removePlayer(){
     // Clear this panel player and title from modal
     this.pageModal._titleDiv.innerHTML = "";
@@ -76,14 +77,3 @@ class LocalizationInPage extends TatorElement {
 
 }
 customElements.define("localization-in-page", LocalizationInPage);
-
-
-// @TODO do I need to make another canvas handler?
-// class EntityPanelCanvas extends AnnotationCanvas {
-
-//   constructor() {
-//     super();
-
-//   }
-// }
-// customElements.define("entity-panel-canvas", EntityPanelCanvas);

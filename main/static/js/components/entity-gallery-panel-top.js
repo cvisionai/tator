@@ -2,9 +2,6 @@ class EntityGalleryPanelTop extends TatorElement {
     constructor() {
       super();
 
-      //default state
-      this.open = true;
-
       // Panel top bar
       this._topBar = document.createElement("div");
       this._topBar.setAttribute("class", "entity-panel--container--top-bar");
@@ -33,14 +30,19 @@ class EntityGalleryPanelTop extends TatorElement {
       // Panel name
       this._topBarH3 = document.createElement("h3");
       this._topBarH3.setAttribute("class", "entity-panel--container--top-bar--h3 text-semibold h3 ");
-      this._topBarH3.appendChild( document.createTextNode("Annotation Viewer") );
+      this._topBarH3.appendChild( document.createTextNode("Annotation Information") );
       this._box.appendChild(this._topBarH3);
 
+      // Panel name
+      this._topBarID = document.createElement("h3");
+      this._topBarID.setAttribute("class", "entity-panel--container--top-bar--h3 text-semibold h3 ");
+      this._box.appendChild(this._topBarID);
+
       // Panel text
-      this._topBarP = document.createElement("p");
-      this._topBarP.setAttribute("class", "entity-panel--container--top-bar--p text-gray py-2 ");
-      this._topBarP.appendChild( document.createTextNode("Hover over localizations in gallery to preview annotations. Click to pin in the viewer.") );
-      this._box.appendChild(this._topBarP);
+      // this._topBarP = document.createElement("p");
+      // this._topBarP.setAttribute("class", "entity-panel--container--top-bar--p text-gray py-2 ");
+      // this._topBarP.appendChild( document.createTextNode("Hover over localizations in gallery to preview annotations. Click to pin in the viewer.") );
+      // this._box.appendChild(this._topBarP);
 
       // Panel Img Canvas
       this._locImage = document.createElement("localization-in-page");
@@ -63,49 +65,24 @@ class EntityGalleryPanelTop extends TatorElement {
       this._modalLink.addEventListener("click", this._locImage._popModalWithPlayer.bind(this))
     }
 
-    _locImageInit({pageModal}){
-      this._locImage.init( pageModal );
+    init({pageModal, modelData}){
+
+      this._locImage.init( {pageModal, modelData} );
     }
 
-    _toggleRightOnClick({lside, rside}){
-      this.lside = lside;
-      this.rside = rside;
-
-      // CLOSE
-      /* DEFAULT lside = col-9, and rside = col-2 */
-      this._topBarArrow.addEventListener("click", () => {
-        if(this.open){
-          lside.classList.add("col-12");
-          rside.classList.add("slide-close");
-          lside.classList.remove("col-9");
-          lside.style.marginRight = "2%";
-          this.open = false;
-          this._topBarArrow.style.transform ="scaleX(-1)";
-          return this.open;
-        } else {
-          rside.classList.remove("slide-close");
-          lside.classList.add("col-9");
-          lside.classList.remove("col-12");
-          lside.style.marginRight = "0";
-          this._topBarArrow.style.transform ="scaleX(1)";
-          this.open = true;
-          return this.open;
-        }
-
-      });
+    cardClicked(e){
+      this.locDataHandler(e.detail)
     }
 
-    cardClicked(){
-      console.log("cardClicked!");
-      if(!this.open){
-        this.rside.classList.remove("slide-close");
-        this.lside.classList.add("col-9");
-        this.lside.classList.remove("col-12");
-        this.lside.style.marginRight = "0";
-        this._topBarArrow.style.transform ="scaleX(1)";
-        this.open = true;
-        
-        return this.open;
+    locDataHandler(evtDetail){
+      console.log("evtDetail");
+      console.log(evtDetail);
+      if(evtDetail.openFlag){
+        // We're opening the panel with new card click
+        this._locImage.initAndShowData({ cardObj : evtDetail.cardObj });
+        this._locImage.classList.remove("hidden");
+      } else {
+        this._locImage.classList.add("hidden");
       }
     }
    

@@ -63,7 +63,7 @@ class AnalyticsAnnotations extends TatorPage {
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel-container col-3")
+    this.aside.setAttribute("class", "entity-panel--container col-3")
     this.mainWrapper.appendChild(this.aside);
 
     // Gallery navigation panel
@@ -120,7 +120,7 @@ class AnalyticsAnnotations extends TatorPage {
       });
 
       // Init panel side behavior
-      this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal });
+      this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal, modelData : this._modelData });
 
       // Pass panel and localization types to gallery
       this._filterResults._initPanel( {
