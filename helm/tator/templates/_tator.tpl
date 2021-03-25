@@ -181,6 +181,16 @@ spec:
             {{- else }}
               value: "FALSE"
             {{- end }}
+            - name: ANONYMOUS_REGISTRATION_ENABLED
+            {{- if hasKey .Values "anonymousRegistration" }}
+            {{- if .Values.anonymousRegistration.enabled }}
+              value: "TRUE"
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
           ports:
             - containerPort: 8000
               name: gunicorn
