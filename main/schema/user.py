@@ -20,7 +20,17 @@ class UserListSchema(AutoSchema):
         if method == 'GET':
             return 'Get list of users.'
         elif method == 'POST':
-            return 'Create user.'
+            return dedent("""\
+            Create user.
+
+            This method accepts a registration token that is provided by creating a
+            Invitation object. It is optional if anonymous registration is enabled, but
+            otherwise required. If anonymous registration is enabled and email confirmation
+            is also enabled, the method will create an inactive user with a confirmation
+            token. The user can be activated by visiting a link that is automatically sent
+            to the user. If anonymous registration without confirmation is enabled, any
+            user can be created with this method.
+            """)
 
     def _get_path_parameters(self, path, method):
         return []
