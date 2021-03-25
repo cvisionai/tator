@@ -33,14 +33,14 @@
 {{- $moveBackupSettings := dict "Values" .Values "name" "move-backup-cron" "app" "move-backup" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"movebackups\"]" "schedule" "40 18 * * *"  }}
 {{include "tatorCron.template" $moveBackupSettings }}
 ---
-{{- $finishSettings := dict "Values" .Values "name" "finish-restore-cron" "app" "finish-restore" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"finishrestoration\"]" "schedule" "40 0 * * *" }}
-{{include "tatorCron.template" $finishSettings }}
+{{- $archiveSettings := dict "Values" .Values "name" "archive-media-cron" "app" "archive-media" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"archivemedia\"]" "schedule" "40 0 * * *" }}
+{{include "tatorCron.template" $archiveSettings }}
 ---
-{{- $requestSettings := dict "Values" .Values "name" "request-restore-cron" "app" "request-restore" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"requestrestoration\"]" "schedule" "50 0 * * *" }}
+{{- $requestSettings := dict "Values" .Values "name" "request-restore-cron" "app" "request-restore" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"requestrestoration\"]" "schedule" "40 1 * * *" }}
 {{include "tatorCron.template" $requestSettings }}
 ---
-{{- $archiveSettings := dict "Values" .Values "name" "archive-media-cron" "app" "archive-media" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"archivemedia\"]" "schedule" "0 1 * * *" }}
-{{include "tatorCron.template" $archiveSettings }}
+{{- $finishSettings := dict "Values" .Values "name" "finish-restore-cron" "app" "finish-restore" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"finishrestoration\"]" "schedule" "50 1 * * *" }}
+{{include "tatorCron.template" $finishSettings }}
 ---
 {{- end }}
 {{ if .Values.requireHttps }}
