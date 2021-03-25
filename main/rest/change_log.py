@@ -44,7 +44,7 @@ class ChangeLogListAPI(BaseListView):
 
         if entity_id is not None:
             cto_qs = ChangeToObject.objects.filter(ref_id=entity_id)
-            cl_qs = cl_qs.filter(pk__in=[cto.change_id.id for cto in cto_qs])
+            cl_qs = cl_qs.filter(pk__in=[cto.change_id.id for cto in cto_qs if cto.change_id])
 
         response_data = list(cl_qs.values(*CHANGE_LOG_PROPERTIES))
         return response_data
