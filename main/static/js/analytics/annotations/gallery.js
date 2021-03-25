@@ -75,9 +75,7 @@ class AnnotationsGallery extends EntityCardGallery {
     modelData
   }){
     this.panelContainer = panelContainer;
-    this.panelContainerEl = this.panelContainer.panelWrapper;
     this.panelControls = this.panelContainer._panelTop;
-    this.panelData = this.panelContainer.data;
     this.pageModal = pageModal;
     this.modelData = modelData;
 
@@ -165,7 +163,7 @@ class AnnotationsGallery extends EntityCardGallery {
         // Inner div of side panel
         let annotationPanelDiv = document.createElement("div");
         annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
-        this.panelContainerEl.appendChild(annotationPanelDiv);
+        this.panelContainer._shadow.appendChild(annotationPanelDiv);
 
         // Init a side panel that can be triggered from card
         let annotationPanel = document.createElement("entity-gallery-panel");
@@ -186,10 +184,7 @@ class AnnotationsGallery extends EntityCardGallery {
         }, false);
 
         // Open panel if a card is clicked
-        card.addEventListener("click", () => {
-          // if the panel is closed and you click, open it...
-          this.panelControls.cardClicked();
-        });
+        card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
 
         // Update view
         card._li.classList.toggle("aspect-true");
@@ -238,6 +233,11 @@ class AnnotationsGallery extends EntityCardGallery {
         this._cardElements[idx].card.style.display = "none";
       }
     }
+  }
+
+  openClosedPanel(e){
+    if(!this.panelContainer.open) this.panelContainer._toggleOpen();
+    this.panelControls.locDataHandler( e.detail );
   }
 }
 

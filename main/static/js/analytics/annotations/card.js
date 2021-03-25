@@ -15,6 +15,9 @@ class AnnotationsCard extends EntityCard {
     this._li.classList.add("analysis__annotation");
     this.addEventListener("click", this.togglePanel.bind(this) );
     this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
+
+    // prep this var
+    this._tmpHidden = null;
   }
 
   init({obj, panelContainer, annotationPanelDiv}){
@@ -119,14 +122,12 @@ class AnnotationsCard extends EntityCard {
 
   _setImgSrc (e) {
     this.setAttribute("thumb", this.reader.result);
-    //return this._img.setAttribute("src", this.reader.result );
   }
 
   _mouseEnterHandler(e){
     const isHidden = this.annotationPanelDiv.classList.contains("hidden");
-    const isSelected = this.annotationPanelDiv.classList.contains("is-selected")
+    const isSelected = this.annotationPanelDiv.classList.contains("is-selected");
     if(isHidden && !isSelected) {
-      //console.log(`Previewing: ${this.annotationPanelDiv.dataset.locId}`);
       // If we do not already have this open or selected... show a preview
       this._showPreview();
 
@@ -137,12 +138,13 @@ class AnnotationsCard extends EntityCard {
   }
 
   _showPreview() {
-    // Tmp Hide open panels (if any)
-    this.tmpHidden = this.panelContainer.querySelector(".is-selected");
-    //console.log("temp hide?"+this.tmpHidden);
-    if(this.tmpHidden != null) {
-      this.tmpHidden.classList.add("hidden");
-      //console.log("temp hiding :"+this.tmpHidden.dataset.id);
+    // this._tmpHidden is null here prob bc of event scope
+    const isSelected = this.panelContainer._shadow.querySelector(".is-selected");
+
+    // Tmp Hide open panels (if it isn't the one we are on)
+    if(typeof isSelected !== "undefined" && isSelected !== null && isSelected !== this.annotationPanelDiv) {
+      this._tmpHidden = isSelected;
+      this._tmpHidden.classList.add("hidden");
     }
 
     // Annotation event is listened to by the top panel and changes canvas
@@ -160,7 +162,7 @@ class AnnotationsCard extends EntityCard {
     this.annotationEvent("preview-annotation-stop");
 
     // Restore the hidden panel
-    if(this.tmpHidden != null) this.tmpHidden.classList.remove("hidden");
+    if(typeof this._tmpHidden !== "undefined" && this._tmpHidden !== null) this._tmpHidden.classList.remove("hidden");
   }
 
   togglePanel(e){
@@ -176,32 +178,42 @@ class AnnotationsCard extends EntityCard {
     if(this._li.classList.contains("is-selected")) {
       // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
       // If we already have this open, toggle shut
-      this._deselectedCard();
+      this._deselectedCardAndPanel();
+     
 
     } else {
       // Hide open panels
       this._hideOpenPanel();
+      
 
       // Show this content
-      this._selectedCard();
+      this._selectedCardAndPanel();
     }
   }
 
   _hideOpenPanel(){
-    // Otherwise find and close open panel... 
-    let openPanel = this.panelContainer.querySelector(".is-selected");
-
-    if(openPanel != null){
+    // this._tmpHidden is null here prob bc of event scope
+    const openPanel = this.panelContainer._shadow.querySelector(".is-selected");
+    console.log(openPanel);
+    
+    // if it exists, close it!
+    if(openPanel !== null) {
+      openPanel.classList.add("hidden");
+      openPanel.classList.remove("is-selected");
+          
       let unselectedEvent = new CustomEvent("unselected");
-      openPanel.dispatchEvent( unselectedEvent );
+      openPanel.dispatchEvent( unselectedEvent ); // this even unselected related card
     }
   }
 
-  _deselectedCard(){
+  _deselectedCardAndPanel(){
+    this.cardClickEvent(false);
+    
     this._li.classList.remove("is-selected");
-    this.annotationPanelDiv.classList.remove("is-selected");
+    
     this.annotationPanelDiv.classList.add("hidden");
     this.annotationPanelDiv.classList.remove("preview");
+    this.annotationPanelDiv.classList.remove("is-selected");
     
     // Send event to panel to show this localization
     this.annotationEvent("hide-annotation");
@@ -211,9 +223,8 @@ class AnnotationsCard extends EntityCard {
 
   }
 
-  _selectedCard(){
-    // Set this up for previews
-    this.tmpHidden = this.annotationPanelDiv;
+  _selectedCardAndPanel(){
+    this.cardClickEvent(true);
 
     // Send event to panel to show this localization
     this.annotationEvent("open-annotation");
@@ -223,25 +234,22 @@ class AnnotationsCard extends EntityCard {
     this.annotationPanelDiv.classList.add("is-selected");
     this.annotationPanelDiv.classList.remove("hidden");
     this.annotationPanelDiv.classList.remove("preview");
-    //this.showPanelContainer();
-
-    // Loop through all the panels, they should be hidden and have no preview except for this one.
-    for (let idx = 0; idx < this.panelContainer.children.length; idx++) {
-      var childDiv = this.panelContainer.children[idx];
-      if (!childDiv.classList.contains("is-selected")) {
-        childDiv.classList.add("hidden");
-        childDiv.classList.remove("preview");
-      }
-    }
 
     //remove preview listener
     this.removeEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
   }
 
+  cardClickEvent(openFlag = false){
+    /* @ "card-click"*/
+    // Send event to panel to hide the localization canvas & title
+    let cardClickEvent = new CustomEvent("card-click", { detail : { openFlag, cardObj : this.cardObj } });
+    this.dispatchEvent( cardClickEvent );
+  }
+
   annotationEvent(evtName){
     // Send event to panel to hide the localization
-    let annotationEvent = new CustomEvent(evtName);
-    this.panelContainer.dispatchEvent( annotationEvent, {detail : { cardObj : this.cardObj } });
+    let annotationEvent = new CustomEvent(evtName, { detail : { cardObj : this.cardObj } });
+    this.panelContainer.dispatchEvent( annotationEvent );
   }
 
 }
