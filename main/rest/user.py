@@ -22,7 +22,7 @@ class UserListAPI(BaseListView):
     schema = UserListSchema()
     queryset = User.objects.all()
     permission_classes = [UserListPermission]
-    http_method_names = ['get']
+    http_method_names = ['get', 'post']
 
     def _get(self, params):
         email = params.get('email', None)
@@ -57,10 +57,21 @@ class UserListAPI(BaseListView):
                     if settings.TATOR_EMAIL_ENABLED == 'true':
                         user.is_active = False
                         user.confirmation_token = uuid.uuid1()
-                        # TODO: SEND CONFIRMATION EMAIL
+                        # Send email
+                        email_response = TatorSES().email(
+                            sender=settings.TATOR_EMAIL_SENDER,
+                            recipients=[email],
+                            title="Tator email confirmation",
+                            text="To confirm your email address and complete registration with "
+                                 "Tator, please visit or click the following link: "
+                                 "{os.getenv('MAIN_HOST')}/email-confirmation/{user.confirmation_token}",
+                            html=None,
+                            attachments=[])
+                        if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
+                            logger.error(email_response)
+                            raise ValueError(f"Unable to send email to {email}! User creation failed.")
                     else:
                         raise ValueError(f"Cannot enable email confirmation without email service!")
-                    
                 user.set_password(password)
                 user.save()
             else:
@@ -108,6 +119,9 @@ class UserDetailAPI(BaseDetailView):
         if 'last_name' in params:
             user.last_name = params['last_name']
         if 'email' in params:
+            existing = User.objects.filter(email=params['email'])
+            if existing.count() > 0:
+                raise RuntimeError(f"User with email {params['email']} already exists!")
             user.email = params['email']
         user.save()
         return {'message': f'Updated user {params["id"]} successfully!'}
