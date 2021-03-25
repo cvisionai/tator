@@ -167,7 +167,9 @@ media_bulk_update = {
         },
         'archive_state': {
             'type': 'string',
-            'description': 'Marks media for archival or retrieval.',
+            'description': 'Marks media for archival or retrieval. Media may not be set directly '
+                           'to `live` or `archived`, the system performs that transition for the '
+                           'user.',
             'enum': ['to_archive', 'to_live']
         },
         'ids': {
@@ -207,7 +209,9 @@ media_update = {
         'multi': {'$ref': '#/components/schemas/MultiDefinition'},
         'archive_state': {
             'type': 'string',
-            'description': 'Marks media for archival or retrieval.',
+            'description': 'Marks media for archival or retrieval. Media may not be set directly '
+                           'to `live` or `archived`, the system performs that transition for the '
+                           'user.',
             'enum': ['to_archive', 'to_live']
         },
     },

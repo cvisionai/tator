@@ -54,16 +54,20 @@ class TatorS3:
             # Client generator will not have env variables defined
             self.s3 = boto3.client("s3")
 
+        # Get the type of object store from bucket metadata
         response = self.s3.head_bucket(Bucket=self.bucket_name)
         self._server = ObjectStore(response["ResponseMetadata"]["HTTPHeaders"]["server"])
 
+        # Set the function that translates object paths stored in PSQL to object keys stored in S3
         if self._server in [ObjectStore.AWS]:
             self._path_to_key = self._aws_path_to_key
         elif self._server in [ObjectStore.MINIO]:
             self._path_to_key = lambda path: path
 
     def _aws_path_to_key(self, path):
-        if "upload" in path:
+        # Paths with the word `upload` in them do not need the bucket name prefixed; see
+        # upload_prefix_from_project in main/util.py for details
+        if "upload" == path.split("/")[2]:
             return path
         return f"{self.bucket_name}/{path}"
 
@@ -72,12 +76,18 @@ class TatorS3:
         return self._server
 
     def check_key(self, path):
+        """ Checks that at least one key matches the given path """
         return self.list_objects_v2(self._path_to_key(path))["KeyCount"] > 0
 
     def head_object(self, path):
+        """ Returns the object metadata for a given path """
         return self.s3.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def copy(self, source_path, dest_path, extra_args=None):
+        """
+        Copies an object from one path to another within the same bucket, applying `extra_args`, if
+        any
+        """
         return self.s3.copy(
             CopySource={"Bucket": self.bucket_name, "Key": self._path_to_key(source_path)},
             Bucket=self.bucket_name,
@@ -86,6 +96,10 @@ class TatorS3:
         )
 
     def restore_object(self, path, min_exp_days):
+        """
+        Requests object restoration from archive. Currently, only ObjectStore.AWS supports this
+        operation.
+        """
         if self.server is not ObjectStore.AWS:
             raise ValueError(f"Object store type '{self.server}' has no 'restore_object' method")
 
@@ -96,6 +110,7 @@ class TatorS3:
         )
 
     def delete_object(self, path):
+        """ Deletes the object at the given path """
         return self.s3.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def get_download_url(self, path, expiration):
@@ -117,6 +132,7 @@ class TatorS3:
         return url
 
     def get_upload_urls(self, path, expiration, num_parts):
+        """ Generates the pre-signed urls for uploading objects for a given path. """
         key = self._path_to_key(path)
         if num_parts == 1:
             upload_id = ""
@@ -147,6 +163,7 @@ class TatorS3:
         return urls, upload_id
 
     def get_size(self, path):
+        """ Returns the size of an object for the given path, if it exists. """
         size = 0
         try:
             response = self.head_object(path)
@@ -158,12 +175,18 @@ class TatorS3:
         return size
 
     def list_objects_v2(self, prefix=None, **kwargs):
+        """
+        Returns the response from boto3.client.list_objects_v2 for the given prefix. Note that no
+        attempts to modify the prefix are made; it is assumed that the given prefix starts with the
+        bucket name if that is relevant.
+        """
         if prefix is not None:
             kwargs["Prefix"] = prefix
 
         return self.s3.list_objects_v2(Bucket=self.bucket_name, **kwargs)
 
     def complete_multipart_upload(self, path, parts, upload_id):
+        """ Completes a previously started multipart upload. """
         return self.s3.complete_multipart_upload(
             Bucket=self.bucket_name,
             Key=self._path_to_(path),
@@ -172,14 +195,17 @@ class TatorS3:
         )
 
     def put_object(self, path, body):
+        """ Uploads the contents of `body` to s3 with the path as the basis for the key. """
         return self.s3.put_object(Bucket=self.bucket_name, Key=self._path_to_key(path), Body=body)
 
     def get_object(self, path, byte_range):
+        """ Gets the byte range of the object for the given path. """
         return self.s3.get_object(
             Bucket=self.bucket_name, Key=self._path_to_key(path), Range=byte_range
         )
 
     def download_fileobj(self, path, fp):
+        """ Downloads the object for the given path to a file. """
         self.s3.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
 
 

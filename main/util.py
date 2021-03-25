@@ -25,6 +25,13 @@ from elasticsearch.helpers import streaming_bulk
 
 logger = logging.getLogger(__name__)
 
+def upload_prefix_from_project(project):
+    """
+    TatorS3 depends on the keyword `upload` being the third token in the key path for uploaded
+    objects; see main/s3.py for details
+    """
+    return f"{project.organization.pk}/{project.pk}/upload"
+
 """ Utility scripts for data management in django-shell """
 
 def clearDataAboutMedia(id):
@@ -288,7 +295,8 @@ def cleanup_object_uploads(max_age_days=1):
 
         bucket = Bucket.objects.get(pk=item["bucket"]) if item["bucket"] else None
         tator_s3 = TatorS3(bucket)
-        prefix = f"{project.organization.pk}/{project.pk}/upload/"
+
+        prefix = upload_prefix_from_project(project)
         last_key = None
         num_deleted = 0
         while True:

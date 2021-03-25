@@ -9,6 +9,7 @@ from ..models import Project
 from ..models import Media
 from ..schema import UploadInfoSchema
 from ..s3 import TatorS3
+from ..util import upload_prefix_from_project
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
@@ -43,8 +44,8 @@ class UploadInfoAPI(BaseDetailView):
         # Check if media exists in this project (if media ID given).
         name = str(uuid1())
         if media_id is None:
-            # Generate an object name.
-            key = f"{organization}/{project}/upload/{name}"
+            # Generate an object name
+            key = f"{upload_prefix_from_project(project_obj)}/{name}"
         else:
             if filename:
                 name = filename
