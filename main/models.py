@@ -19,6 +19,7 @@ from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import FileField
 from django.contrib.gis.db.models import FilePathField
+from django.contrib.gis.db.models import EmailField
 from django.contrib.gis.db.models import PROTECT
 from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
@@ -257,6 +258,8 @@ class User(AbstractUser):
     last_login = DateTimeField(null=True, blank=True)
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
+    confirmation_token = UUIDField(primary_key=False, db_index=True, null=True, blank=True)
+    """ Used for email address confirmation for anonymous registrations. """
 
     def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
@@ -293,7 +296,7 @@ def user_save(sender, instance, created, **kwargs):
         else:
             TatorCognito().update_attributes(instance)
     if created:
-        invites = Invitation.objects.filter(email=instance.email)
+        invites = Invitation.objects.filter(email=instance.email, status='Pending')
         if invites.count() == 0:
             organization = organization.objects.create(name=f"{instance}'s Team")
             Affiliation.objects.create(organization=organization,
@@ -306,7 +309,8 @@ class Invitation(Model):
     permission = CharField(max_length=16,
                            choices=[('Member', 'Member'), ('Admin', 'Admin')],
                            default='Member')
-    signup_token = UUIDField(primary_key=False, db_index=True, editable=False, default=uuid.uuid1)
+    registration_token = UUIDField(primary_key=False, db_index=True, editable=False,
+                                   default=uuid.uuid1)
     status = CharField(max_length=16,
                        choices=[('Pending', 'Pending'), ('Expired', 'Expired'),
                                 ('Accepted', 'Accepted')],
