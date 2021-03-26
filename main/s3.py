@@ -189,7 +189,7 @@ class TatorS3:
         """ Completes a previously started multipart upload. """
         return self.s3.complete_multipart_upload(
             Bucket=self.bucket_name,
-            Key=self._path_to_(path),
+            Key=self._path_to_key(path),
             MultipartUpload={"Parts": parts},
             UploadId=upload_id,
         )
