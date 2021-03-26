@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class ObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
+    GCP = "UploadServer"
 
 
 class TatorS3:
@@ -61,7 +62,7 @@ class TatorS3:
         # Set the function that translates object paths stored in PSQL to object keys stored in S3
         if self._server in [ObjectStore.AWS]:
             self._path_to_key = self._aws_path_to_key
-        elif self._server in [ObjectStore.MINIO]:
+        elif self._server in [ObjectStore.MINIO, ObjectStore.GCP]:
             self._path_to_key = lambda path: path
 
     def _aws_path_to_key(self, path):
