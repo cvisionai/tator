@@ -19,7 +19,7 @@ class LocalizationInPage extends TatorElement {
     this.panelData = document.createElement("annotation-panel-data");
 
     // Keep this inactive until we have data
-    this._mainCanvas.hidden = true;
+    //this._mainCanvas.hidden = true;
 
     //
     this.savedMediaData = {};
@@ -52,8 +52,10 @@ class LocalizationInPage extends TatorElement {
     // }  
   }
 
-  _popModalWithPlayer(e){
+  _popModalWithPlayer(e, modal = this.pageModal){
     e.preventDefault();
+
+    if(typeof modal == "undefined") this.pageModal = document.createElement("modal-dialog");
 
     // Title
     let text = document.createTextNode( "test" );

@@ -11,6 +11,7 @@ class ImageCanvas extends AnnotationCanvas
   }
 
   set mediaInfo(val) {
+    console.log(val);
     super.mediaInfo = val;
     this._dims = [val.width, val.height];
     this.resetRoi();
@@ -119,6 +120,7 @@ class ImageCanvas extends AnnotationCanvas
                 Math.round(dims[1]*this._imageScale)];
     this._draw.resizeViewport(this._dims[0], this._dims[1]);
     this._imageElement.setAttribute("src", URL);
+    console.log(URL);
     this.setupResizeHandler(dims);
     return this._imageElement.decode();
   }

@@ -46,8 +46,7 @@ class EntityGalleryPanelTop extends TatorElement {
 
       // Panel Img Canvas
       this._locImage = document.createElement("localization-in-page");
-      //this._main.appendChild(this._locImage);
-      console.log(this._locImage);
+      this._box.appendChild(this._locImage);
 
       // Image modal link container @TODO styling
       const modalLinkDiv = document.createElement("div");

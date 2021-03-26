@@ -113,7 +113,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     // Hide all cards' panels and de-select
     for (let idx = 0; idx < this._cardElements.length; idx++) {
-      this._cardElements[idx].card._deselectedCard();
+      this._cardElements[idx].card._deselectedCardAndPanel();
     }
 
     // Append the cardList
