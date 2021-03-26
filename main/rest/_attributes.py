@@ -244,7 +244,8 @@ def _process_for_bulk_op(raw_value):
     if isinstance(raw_value, str):
         raw_value = raw_value.replace("\\","\\\\")
         raw_value = raw_value.replace("\n","\\n")
-        return f"\"{raw_value}\""
+        raw_value = raw_value.replace('\"','\\"')
+        return f'"{raw_value}"'
     if isinstance(raw_value, bool):
         return f"{str(raw_value).lower()}"
 
