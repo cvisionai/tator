@@ -288,7 +288,7 @@ class TatorData {
    * Returns a Media data
    */
   async getMedia( mediaId ){
-    const response = await fetch(`/rest/Media/${mediaId}`, {
+    const response = await fetch(`/rest/Media/${mediaId}?presigned=28800`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
