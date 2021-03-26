@@ -75,9 +75,9 @@ def _get_mapping_values(entity_type, attributes):
             elif mapping_type == 'double':
                 mapping_values[mapping_name] = float(value)
             elif mapping_type == 'text':
-                mapping_values[mapping_name] = value
+                mapping_values[mapping_name] = value.replace("\\", "\\\\")
             elif mapping_type == 'keyword':
-                mapping_values[mapping_name] = value
+                mapping_values[mapping_name] = value.replace("\\", "\\\\")
             elif mapping_type == 'date':
                 mapping_values[mapping_name] = value # TODO: reformat?
             elif mapping_type == 'geo_point':
@@ -723,8 +723,7 @@ class TatorSearch:
         """
         query['script'] = ''
         mapping_values = _get_mapping_values(entity_type, attrs)
-        for key in mapping_values:
-            val = mapping_values[key]
+        for key, val in mapping_values.items():
             if isinstance(val, bool):
                 if val:
                     val = 'true'
