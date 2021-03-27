@@ -76,7 +76,7 @@ class TatorS3:
 
     def check_key(self, path):
         """ Checks that at least one key matches the given path """
-        return self.list_objects_v2(self._path_to_key(path))["KeyCount"] > 0
+        return self.list_objects_v2(self._path_to_key(path)).get('Contents') is not None
 
     def head_object(self, path):
         """ Returns the object metadata for a given path """
