@@ -695,7 +695,16 @@ class AnnotationPlayer extends TatorElement {
     const seconds = Math.floor(totalSeconds % 60);
     const secFormatted = ("0" + seconds).slice(-2);
     const minutes = Math.floor(totalSeconds / 60);
-    return minutes + ":" + secFormatted;
+    if (minutes < 60)
+    {
+      return minutes + ":" + secFormatted;
+    }
+    else
+    {
+      let hours = Math.floor(minutes / 60)
+      const minFormatted = ("0" + Math.floor(minutes % 60)).slice(-2);
+      return hours + ":" + minFormatted + ":" + secFormatted;
+    }
   }
 
   _timeToFrame(minutes, seconds) {
