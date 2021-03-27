@@ -334,6 +334,7 @@ FILES = \
     annotation/frame-prev.js \
     annotation/frame-next.js \
     annotation/timeline-canvas.js \
+    annotation/timeline-d3.js \
     annotation/video-fullscreen.js \
     annotator/FrameBuffer.js \
     annotator/drawGL_colors.js \
