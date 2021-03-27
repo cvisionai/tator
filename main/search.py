@@ -685,7 +685,7 @@ class TatorSearch:
                 )
                 ids += drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in result['hits']['hits']])
             ids = ids[:count]
-            self.es.clear_scroll(scroll_id)
+            self.es.clear_scroll(scroll_id=scroll_id)
         else:
             # TODO: This will NOT return the requested number of results if there are
             # duplicates in the dataset.
