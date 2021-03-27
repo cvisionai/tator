@@ -67,8 +67,6 @@ class TatorS3:
     def _aws_path_to_key(self, path):
         # Paths with the word `upload` in them do not need the bucket name prefixed; see
         # upload_prefix_from_project in main/util.py for details
-        if "upload" == path.split("/")[2]:
-            return path
         return f"{self.bucket_name}/{path}"
 
     @property
