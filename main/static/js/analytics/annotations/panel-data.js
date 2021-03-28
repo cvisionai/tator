@@ -45,6 +45,8 @@ class AnnotationPanelData extends HTMLElement {
 
     */
 
+    
+
 }
 
 customElements.define("annotation-panel-data", AnnotationPanelData);
