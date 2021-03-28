@@ -854,7 +854,7 @@ class Media(Model, ModelDiffMixin):
                 if key in ["archival", "streaming", "image"] and download_size is None:
                     download_size = size
                 if key == "streaming":
-                    total_size += tator_s3.get_size(media_def['segment_info'])
+                    total_size += tator_s3.get_size(media_def.get('segment_info'))
         return (total_size, download_size)
 
 class Resource(Model):
