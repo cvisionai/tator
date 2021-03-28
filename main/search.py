@@ -75,9 +75,9 @@ def _get_mapping_values(entity_type, attributes):
             elif mapping_type == 'double':
                 mapping_values[mapping_name] = float(value)
             elif mapping_type == 'text':
-                mapping_values[mapping_name] = value.replace("\\", "\\\\")
+                mapping_values[mapping_name] = str(value).replace("\\", "\\\\")
             elif mapping_type == 'keyword':
-                mapping_values[mapping_name] = value.replace("\\", "\\\\")
+                mapping_values[mapping_name] = str(value).replace("\\", "\\\\")
             elif mapping_type == 'date':
                 mapping_values[mapping_name] = value # TODO: reformat?
             elif mapping_type == 'geo_point':
