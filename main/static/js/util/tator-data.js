@@ -381,7 +381,7 @@ class TatorData {
    * @returns {array}
    *   Results based on outputType and given filterData
    */
-  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds, sectionIds) {
+  async _getData(outputType, filterData, filterString, dataStart, dataStop, mediaIds, versionIds, sectionIds) {
 
     // #TODO In the future, this may turn into promises per meta/dtype
     var promises = [];
@@ -390,6 +390,8 @@ class TatorData {
     var mediaIds;
     var paramString = "";
     var paramSearch = "";
+
+    // Create the paramString
     for (const name in filterData) {
       entityType = filterData[name].entityType;
       for (let idx = 0; idx < filterData[name].filters.length; idx++) {
@@ -434,6 +436,14 @@ class TatorData {
       }
     }
 
+    // **********
+    // @TODO
+    // if(filterString !== "" && filterString !== null && typeof filterString !== "undefined"){
+    //   paramString = filterString;
+    // }
+    // *********
+    
+
     let url = "/rest";
 
     if (this._localizationTypes.indexOf(entityType) >= 0) {
@@ -452,7 +462,7 @@ class TatorData {
         url += "/Medias/";
       }
     }
-
+    
     if (!isNaN(dataStart) && !isNaN(dataStop)) {
       // Note: & into paramString is taken care of by paramString itself
       url += `${this._project}?start=${dataStart}&stop=${dataStop}${paramString}`;
@@ -461,6 +471,22 @@ class TatorData {
       url += `${this._project}?${paramString}`;
     }
     console.log("Getting data with URL: " + url);
+
+    // **********
+    // @TODO this doesn't belong here, will be lost if we decouple data?
+    // Only place where we have access to the param string, so pushed here
+    // Need to expose elsewhere for history management? or reconstruct?
+    // this._filterState = {};
+    // this._filterState.paramString = paramString;
+    // this._paginationState = {};
+    // this._paginationState.start = dataStart; // @TODO could go w/ NaN check but has error handler downstream
+    // this._paginationState.stop = dataStop;
+    // this.history = new FilterHistoryManagement();
+    // this.history._handlePushState({ 
+    //   fp : this._filterState, 
+    //   ps : this._paginationState
+    // });
+    // **********
 
     promises.push(fetchRetry(url, {
         method: "GET",
@@ -517,8 +543,9 @@ class TatorData {
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredLocalizations(outputType, filters, dataStart, dataStop) {
-
+  async getFilteredLocalizations(outputType, filters, filterString, dataStart, dataStop) {
+    console.log("Getting filtered localizations...");
+    
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
@@ -528,7 +555,9 @@ class TatorData {
         locGroups[locType.name] = {filters: [], entityType: locType};
       });
 
-    if (filters != undefined) {
+    if (filters != undefined && filters != null && filters != "") {
+      console.log("Filters: ");
+      console.log(filters);
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           mediaFilters.push(filter);
@@ -569,9 +598,11 @@ class TatorData {
           locGroups[filter.category].filters.push(filter);
         }
       });
+      filterString = "";
     }
 
-    var outData = await this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds);
+    var outData = await this._getData(outputType, locGroups, filterString, dataStart, dataStop, mediaIds, versionIds);
+
     return outData;
   }
 
@@ -606,7 +637,7 @@ class TatorData {
       mediaGroups[mediaType.name] = {entityType: mediaType, filters: []};
     });
 
-    if (filters != undefined) {
+    if (filters != undefined && filters != null && filters != "" ){
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
@@ -628,7 +659,7 @@ class TatorData {
       }
     }
 
-    var outData = await this._getData(outputType, mediaGroups, dataStart, dataStop, null, null, sectionIds);
+    var outData = await this._getData(outputType, mediaGroups, "", dataStart, dataStop, null, null, sectionIds);
     return outData;
   }
 }

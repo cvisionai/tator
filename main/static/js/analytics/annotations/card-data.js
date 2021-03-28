@@ -9,14 +9,16 @@ class AnnotationCardData extends HTMLElement {
         this.projectId = this._modelData.getProjectId();
     }
 
-    async makeCardList(filterParams, paginationState) {
+    async makeCardList({filterState, paginationState}) {
         this.cardList = {};
         this.cardList.cards = [];
-        this.cardList.filterParams = filterParams;
+        this.cardList.filterState = filterState;
         this.cardList.paginationState = paginationState;
 
-        this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterParams);
-        this.localizations = await this._modelData.getFilteredLocalizations("objects", filterParams, paginationState.start, paginationState.stop);
+        console.log(filterState);
+
+        this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterState.conditionsObject, filterState.paramString);
+        this.localizations = await this._modelData.getFilteredLocalizations("objects", filterState.conditionsObject, filterState.paramString, paginationState.start, paginationState.stop);
         await this.getCardList(this.localizations);
         return this.cardList;
     }
@@ -55,6 +57,7 @@ class AnnotationCardData extends HTMLElement {
 
                 let card = {
                     id,
+                    localization : l,
                     entityType,
                     mediaId,
                     mediaLink,

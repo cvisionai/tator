@@ -194,7 +194,6 @@ class AnnotationsCard extends EntityCard {
   _hideOpenPanel(){
     // this._tmpHidden is null here prob bc of event scope
     const openPanel = this.panelContainer._shadow.querySelector(".is-selected");
-    console.log(openPanel);
     
     // if it exists, close it!
     if(openPanel !== null) {

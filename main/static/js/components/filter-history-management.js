@@ -1,15 +1,16 @@
 // @TODO
-// This is a future feature to all a filtered page view query in URL
-// Needs more work and integration to allow pressing back & bookmark with accuracy
-// This could be made a component if filter string & pagination states are used in future galleries
+// This should allow a filtered page view to be triggered via URL params
+// Needs testings for accuracy
+// Integrated with entity-gallery-paginator and filter modules to show the correct data listed
 
 class FilterHistoryManagement {
-    constructor(){
-
-    }
-    // Handle push state, will not remake query param if no change in pagination or filter
+  constructor(){
+    this._paginationState = {};
+    this._filterState = {};
+  }
+  // Handle push state, will not remake query param if no change in pagination or filter
   // uses passed states instead of reading in case there are changes
-  _handlePushState({ fp = null, ps = null} = {}){
+  _handlePushState({ fs = null, ps = null} = {}){
     const state = { 'page_id': this.projectId }
     const title = ''
     const urlBase = window.location.pathname;
@@ -17,14 +18,19 @@ class FilterHistoryManagement {
     let fq = "";
 
     // Get pagination info for URL
-    if(ps != null) {
-      pq = `pst=${ps.start}&pstp=${ps.stop}&p=${ps.page}&psz=${ps.pageSize}`;
+    if(ps !== null && ps && typeof ps !== "undefined") {
+      let start = typeof ps.start != "undefined" ? ps.start : 0;
+      let stop = typeof ps.stop != "undefined" ? ps.stop : 10;
+      let page = typeof ps.page != "undefined" ? ps.page : 1;
+      let pageSize = typeof ps.pageSize != "undefined" ? ps.pageSize : 10;
+
+      pq = `start=${start}&stop=${stop}&page=${page}&pageSize=${pageSize}`;
     }
 
      // Get filter info for URL
-    if(fp != null) {
-      let fpEncoded = encodeURI();
-      fq =`fc=${fpEncoded}`;
+    if(fs != null && typeof fs !== "undefined") {
+      let searchString = typeof fs.paramString !== "undefined" ? fs.paramString : "";
+      fq =`search=${searchString}`;
     }
 
     const URL = `${urlBase}?${pq}${fq != null ? "&" : ""}${fq} `;
@@ -34,33 +40,31 @@ class FilterHistoryManagement {
 
   // @TODO start of integrating query params into pages
   _readQueryParams(){
+    // example query: ?&search=test_bool%5C%20gff%5C%20123%3Atrue
     let thereWereFixes = false;
     // Reads Query params and updates the default states before card gallery is drawn
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
 
     //Update filter with query params
-    if(urlParams.get("fc")) {
-      const decodedFc = decodeURI( urlParams.get("fc") );
-      this._filterParams = decodedFc;
-      console.log(fc);
-      console.log(decodedFc);
+    if(urlParams.get("search")) {
+      let paramVal = urlParams.get("search");
+      this._filterState.paramString = "search="+ encodeURI( paramVal );
     } 
 
     // Update pagination state from query params
     // Only if we minimally have either a page, or a start & stop
-    if(urlParams.get("p") || (urlParams.get("pst") && urlParams.get("pstp"))){
-      
+    if(urlParams.get("page") || (urlParams.get("start") && urlParams.get("stop"))){
       // Set start and stop
-      if(urlParams.get("pst")) this._paginationState.start = urlParams.get("pst");
-      if(urlParams.get("pstp")) this._paginationState.stop = urlParams.get("pstp");      
+      if(urlParams.get("start")) this._paginationState.start = urlParams.get("start");
+      if(urlParams.get("stop")) this._paginationState.stop = urlParams.get("stop");      
       
       // Page size (with conditions for != start stop, or page #)
-      if(urlParams.get("psz")) {
-        if( urlParams.get("pst") && urlParams.get("pstp") ) {
-          let paramSize = Number(urlParams.get("psz"));
-          let paramStart = Number(urlParams.get("pst"));
-          let paramStop = Number(urlParams.get("pstp"));
+      if(urlParams.get("pageSize")) {
+        if( urlParams.get("start") && urlParams.get("stop") ) {
+          let paramSize = Number(urlParams.get("pageSize"));
+          let paramStart = Number(urlParams.get("start"));
+          let paramStop = Number(urlParams.get("stop"));
           let startStopRange = (paramStop - paramStart);
 
           if( startStopRange !== paramSize) {
@@ -83,7 +87,7 @@ class FilterHistoryManagement {
         } else {
           // Means the start and stop match pgsize...
           // Double check the page value & set the size as it is passed
-          this._paginationState.pageSize = urlParams.get("psz");
+          this._paginationState.pageSize = urlParams.get("pageSize");
         }
 
         // Use start and top to double check page selected
@@ -95,10 +99,11 @@ class FilterHistoryManagement {
     }
 
     if(thereWereFixes){
-      // Pushes path + new Query param to history so user can press back
-      //this._handlePushState({ fp : this._filterParams, ps : this._paginationState});
+      // Pushes path + new Query param so we can continue on happy path easier next time
+      //this._handlePushState({ fp : this._filterState, ps : this._paginationState});
     }
 
+    return { pagState : this._paginationState, filtState : this._filterState }
   }
 }
 

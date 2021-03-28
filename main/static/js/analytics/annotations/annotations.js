@@ -1,7 +1,7 @@
 /**
  * Page that displays a grid view of selected annotations
  */
-class AnalyticsAnnotations extends TatorPage {
+ class AnalyticsAnnotations extends TatorPage {
   constructor() {
     super();
 
@@ -77,14 +77,12 @@ class AnalyticsAnnotations extends TatorPage {
     this.loading = new LoadingSpinner();
     this._shadow.appendChild( this.loading.getImg() );
 
-    // @TODO Possible Future feature
-    // this.history = new FilterHistoryManagement();
-    
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild( this.modal );
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
+
   }
 
   _init() {
@@ -97,6 +95,11 @@ class AnalyticsAnnotations extends TatorPage {
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then(() => {
 
+      // Init vars for filter state
+      this._filterState = {
+        paramString : "",
+        conditionsObject : ""
+      };
       // Init vars for pagination state
       this._paginationState = {
         pageSize: this._filterResults._paginator.getPageSize(),
@@ -129,17 +132,17 @@ class AnalyticsAnnotations extends TatorPage {
         modelData : this._modelData
       } );
 
-      // Pass panel and localization types to gallery
-      this._filterResults._initPanel( {
-        panelContainer : this._panelContainer,
-        localizationTypes : this.localizationTypes
-      } );
+      // Init history & check if state is stored in URL, update default states
+      this.history = new FilterHistoryManagement({ _paginationState : this._paginationState, _filterState : this._filterState });
+      //this._checkHistoryState();
 
-      // If state is stored in URL, update default states
-      // this.history._readQueryParams();
+      console.log(this._filterState);
 
       // Init Card Gallery and Right Panel
-      this._cardGallery(this._filterParams, this._paginationState);
+      this._cardGallery({ 
+        filterState : this._filterState, 
+        paginationState : this._paginationState
+      });
 
       // Listen for pagination events
       this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
@@ -167,12 +170,27 @@ class AnalyticsAnnotations extends TatorPage {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-  _cardGallery(filterParams, paginationState) {
+  _checkHistoryState(){
+    // If there was a param string, these objects would not be empty
+    const statesObj = this.history._readQueryParams();
+    console.log(statesObj);
+    // If the history returns non-empty objects, update our local state
+    if(statesObj.filtState !== {} && statesObj.filtState !== null) 
+    {
+      this._filterState = statesObj.filtState;
+    }
+    if(statesObj.pagState !== {} && statesObj.pagState !== null)
+    {
+      this._paginationState = statesObj.pagState;
+    } 
+  }
+
+  _cardGallery({ filterState, paginationState}) {
     this.loading.showSpinner();
     this.showDimmer();
 
     // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList(filterParams, paginationState)
+    this.cardData.makeCardList({filterState, paginationState})
     .then((cardList) => {
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show(cardList);
@@ -183,7 +201,7 @@ class AnalyticsAnnotations extends TatorPage {
 
   // Reset the pagination back to page 0
   _updateFilterResults(evt){
-    this._filterParams = evt.detail.conditions;
+    this._filterState.conditionsObject = evt.detail.conditions;
     this._paginationState.init = true;
 
     // @TODO reset to default page size? or keep if something was chosen?
@@ -191,10 +209,15 @@ class AnalyticsAnnotations extends TatorPage {
     this._paginationState.start = 0;
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
-    this._cardGallery(this._filterParams, this._paginationState);
+    
+    // updated the card gallery
+    this._cardGallery({ 
+      filterState : this._filterState, 
+      paginationState : this._paginationState
+    });
 
     // Pushes path + new Query param to history so user can press back
-    //this.history._handlePushState({ fp : this._filterParams, ps : this._paginationState});
+    //this.history._handlePushState({ fp : this._filterState, ps : this._paginationState});
   }
 
   // Handler for pagination click
@@ -205,16 +228,19 @@ class AnalyticsAnnotations extends TatorPage {
     this._paginationState.page = evt.detail.page;
     this._paginationState.pageSize = evt.detail.pgsize;
     this._paginationState.init = false;
-   
-    // get the gallery 
-    this._cardGallery(this._filterParams, this._paginationState);
+
+    // get the gallery
+    this._cardGallery({ 
+      filterState : this._filterState, 
+      paginationState : this._paginationState
+    });
 
     // make sure view lined up top and bottom
     this._filterResults._paginator.setValues(this._paginationState);
     this._filterResults._paginator_top.setValues(this._paginationState);
 
     // Pushes path + new Query param to history so user can press back
-    //this.history._handlePushState({ fp : this._filterParams, ps : this._paginationState});
+    // this.history._handlePushState({ fp : this._filterState, ps : this._paginationState});
   }
 
   // Page dimmer handler
