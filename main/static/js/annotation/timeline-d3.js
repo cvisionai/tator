@@ -44,10 +44,12 @@ class TimelineD3 extends TatorElement {
     this._data = val;
 
     this._data.addEventListener("freshData", evt => {
+      this._setupAttrStyleRangeTypes();
       this._updateData();
     });
 
     this._data.addEventListener("initialized", evt => {
+      this._setupAttrStyleRangeTypes();
       this._updateData();
     });
   }
@@ -64,6 +66,152 @@ class TimelineD3 extends TatorElement {
   }
 
   /**
+   * Expected that state types will not change within the annotator/usage of this timeline.
+   * Therefore, run this once at initialization.
+   *
+   * @postcondition this._attrStyleRangeTypes is set
+   */
+  _setupAttrStyleRangeTypes() {
+
+    if (this._attrStyleRangeTypes != undefined) {
+      return;
+    }
+
+    this._attrStyleRangeTypes = [];
+
+    for (let typeId in this._data._dataTypes) {
+
+      // Grab the dataType and if this is not a state type, then ignore it
+      const dataType = this._data._dataTypes[typeId];
+      if (dataType.isLocalization) {
+        continue;
+      }
+
+      if (dataType.interpolation == "attr_style_range") {
+        // To support attr_style_range, there must at least be one set of
+        // start_frame|end_frame style attributes. Grab the start_frame/end_frame info.
+        //
+        // There can actually be multiple start_frame|end_frame pairs. If this is the case,
+        // there has to be a range associated. If not, then don't show anything and throw a
+        // warning
+        var startFrameAttr;
+        var endFrameAttr;
+        var startFrameCheckAttr;
+        var endFrameCheckAttr;
+        var inVideoCheckAttr;
+        var inVideoCheckAttrList = [];
+        var startFrameAttrList = [];
+        var endFrameAttrList = [];
+        var rangeList = [];
+
+        for (const attr of dataType.attribute_types) {
+          const style = attr['style'];
+
+          if (style) {
+
+            const styleOptions = style.split(' ');
+            const name = attr['name'];
+
+            if (styleOptions.includes("start_frame")) {
+              startFrameAttrList.push(name);
+            }
+            else if (styleOptions.includes("end_frame")) {
+              endFrameAttrList.push(name);
+            }
+            else if (styleOptions.includes("start_frame_check")) {
+              startFrameCheckAttr = name;
+            }
+            else if (styleOptions.includes("end_frame_check")) {
+              endFrameCheckAttr = name;
+            }
+            else if (styleOptions.includes("in_video_check")) {
+              inVideoCheckAttrList.push(name);
+            }
+            else if (styleOptions.includes("range_set")) {
+              rangeList.push({name: name, data: attr["default"], order: attr["order"]});
+            }
+          }
+        }
+
+        if (startFrameAttrList.length == 1 && endFrameAttrList.length == 1) {
+          startFrameAttr = startFrameAttrList[0];
+          endFrameAttr = endFrameAttrList[0]
+          inVideoCheckAttr = null;
+
+          this._attrStyleRangeTypes.push({
+            dataType: dataType,
+            name: dataType.name,
+            startFrameAttr: startFrameAttr,
+            endFrameAttr: endFrameAttr,
+            startFrameCheckAttr: startFrameCheckAttr,
+            endFrameCheckAttr: endFrameCheckAttr,
+            inVideoCheckAttr: inVideoCheckAttr
+          });
+        }
+        else if (startFrameAttrList.length > 1 &&
+          endFrameAttrList.length > 1 &&
+          startFrameAttrList.length == endFrameAttrList.length &&
+          startFrameAttrList.length == rangeList.length) {
+
+          rangeList.sort(function(a, b) {
+              if (a.order < b.order) {
+                return 1;
+              }
+              if (a.order > b.order) {
+                return -1;
+              }
+              return 0;
+            }
+          );
+
+          for (const rangeInfo of rangeList) {
+            const rangeTokens = rangeInfo.data.split('|');
+
+            if (rangeTokens.length < 2 && rangeTokens.length > 3) {
+              console.error("Incorrect datatype setup with attr_style_range interpolation.")
+              break;
+            }
+
+            startFrameAttr = rangeTokens[0];
+            endFrameAttr = rangeTokens[1];
+            inVideoCheckAttr = null;
+
+            if (rangeTokens.length == 3) {
+              if (inVideoCheckAttrList.includes(rangeTokens[2])) {
+                inVideoCheckAttr = rangeTokens[2];
+              }
+            }
+
+            if (!startFrameAttrList.includes(startFrameAttr)) {
+              console.error("Incorrect datatype setup with attr_style_range interpolation.")
+              break;
+            }
+
+            if (!endFrameAttrList.includes(endFrameAttr)) {
+              console.error("Incorrect datatype setup with attr_style_range interpolation.")
+              break;
+            }
+
+            this._attrStyleRangeTypes.push({
+              dataType: dataType,
+              name: rangeInfo.name,
+              startFrameAttr: startFrameAttr,
+              endFrameAttr: endFrameAttr,
+              startFrameCheckAttr: null,
+              endFrameCheckAttr: null,
+              inVideoCheckAttr: inVideoCheckAttr
+            });
+          }
+        }
+        else {
+          console.error("Incorrect datatype setup with attr_style_range interpolation.")
+          continue;
+        }
+      }
+    }
+  }
+
+  /**
    * Called whenever there's been a notification of new data. This will update the GUI.
    */
   _updateData() {
@@ -71,6 +219,7 @@ class TimelineD3 extends TatorElement {
     // Recreate the state and numerical datasets
     this._numericalData = [];
     this._stateData = [];
+    var maxFrame = parseFloat(this._rangeInput.getAttribute("max"));
 
     for (let typeId in this._data._dataTypes) {
 
@@ -81,7 +230,10 @@ class TimelineD3 extends TatorElement {
       }
 
       if (dataType.interpolation == "latest") {
-        let data = this._data._dataByType.get(typeId);
+        let allData = this._data._dataByType.get(typeId);
+        if (!allData) {
+          continue;
+        }
 
         // Get the attributes we care about (the bools) and save off that data
         // in the format expected by the graphics
@@ -91,11 +243,9 @@ class TimelineD3 extends TatorElement {
           if (attrType.dtype == "bool") {
 
             // Collect all the data for this attribute
-            let frames = [];
-            let actualValues = [];
             let graphData = [];
-            for (let elem of data) {
-              let value = elem.attributes[attrType.name]
+            for (let data of allData) {
+              let value = data.attributes[attrType.name];
               let graphValue;
               if (!value) {
                 value = false;
@@ -104,34 +254,105 @@ class TimelineD3 extends TatorElement {
               else {
                 graphValue = 1.0;
               }
-              actualValues.push(value);
-              frames.push(elem.frame);
-              graphData.push({frame: elem.frame, value: graphValue, actualValue: value});
+              graphData.push({frame: data.frame, value: graphValue, actualValue: value});
             }
 
             // If there's data then add it to the plot dataset
             if (graphData.length > 0) {
 
               // Add a point at the last frame to draw the state all the way to the end
-              let lastFrame = parseFloat(this._rangeInput.getAttribute("max"));
-              frames.push(lastFrame);
-              actualValues.push(actualValues[actualValues.length - 1]);
-              graphData.push({...graphData[graphData.length - 1]});
-              graphData[graphData.length - 1].frame = lastFrame;
               graphData.sort((a,b) => {return a.frame - b.frame});
+              graphData.push({...graphData[graphData.length - 1]});
+              graphData[graphData.length - 1].frame = maxFrame;
+
+              if (graphData[0].frame != 0) {
+                graphData.unshift({frame: 0, value: 0.0, actualValue: "false"});
+              }
 
               this._stateData.push({
                 name: attrType.name,
-                //frames: frames,
-                graphData: graphData,
-                //actualValues: actualValues
+                graphData: graphData
               });
+            }
+          }
+          else if (attrType.style) {
+            if (attrType.style == "display_timeline") {
+              // Display this attribute as a numerical graph.
+              // Normalize the data because the graph domain is from 0 to 1.
+              // #TODO Handle negative numbers
             }
           }
         }
       }
-      else if (dataType.interpolation == "attr_style_range") {
+    }
 
+    // Have to loop over the stored _attrStyleRangeTypes separately from the dataTypes
+    // since we treat each start/end range separately in the graph.
+    for (let attrTypeInfo of this._attrStyleRangeTypes) {
+      // We've already figured out how the attributes are connected to each other earlier
+      // with _setupAttrStyleRangeTypes()
+      let allData = this._data._dataByType.get(attrTypeInfo.dataType.id);
+      if (!allData) {
+        continue;
+      }
+
+      let graphData = [];
+      for (let data of allData) {
+        let startFrame = data.attributes[attrTypeInfo.startFrameAttr];
+        let endFrame = data.attributes[attrTypeInfo.endFrameAttr];
+
+        if (attrTypeInfo.startFrameCheckAttr && attrTypeInfo.endFrameCheckAttr) {
+          // Start frame check and end frame check attributes exist.
+          // #TODO This capability may go away in lieu of just using -1 values.
+          if (data.attributes[attrTypeInfo.startFrameCheckAttr] === false) {
+            startFrame = 0;
+          }
+          if (data.attributes[attrTypeInfo.endFrameCheckAttr] === false) {
+            endFrame = maxFrame;
+          }
+        }
+        else {
+          // Start/end frame check attributes don't exist.
+          // Just assume if there's a -1, it's going to stretch
+          if (startFrame == -1) {
+            startFrame = 0;
+          }
+
+          if (endFrame == -1) {
+            endFrame = maxFrame;
+          }
+        }
+
+        if (attrTypeInfo.inVideoCheckAttr) {
+          // A "in video check" attribute is there. Don't draw if this value is false.
+          if (data.attributes[attrTypeInfo.inVideoCheckAttr] === false) {
+            continue;
+          }
+        }
+
+        if (startFrame > -1 && endFrame > -1 && startFrame <= endFrame) {
+          // Save the graphData to the state data list
+          graphData.push({frame: startFrame, value: 1.0, actualValue: true});
+          graphData.push({frame: endFrame, value: 0.0, actualValue: false});
+        }
+      }
+
+      // If there's data then add it to the plot dataset
+      if (graphData.length > 0) {
+
+        // Add a point at the last frame to draw the state all the way to the end
+        graphData.sort((a,b) => {return a.frame - b.frame});
+        graphData.push({...graphData[graphData.length - 1]});
+        graphData[graphData.length - 1].frame = maxFrame;
+
+        if (graphData[0].frame != 0) {
+          graphData.unshift({frame: 0, value: 0.0, actualValue: "false"});
+        }
+
+        this._stateData.push({
+          name: attrTypeInfo.name,
+          graphData: graphData
+        });
       }
     }
 
@@ -162,7 +383,7 @@ class TimelineD3 extends TatorElement {
       this._numericalData.length * (mainStep + 1) +
       this._stateData.length * (mainStep + 1) +
       mainMargin.top + mainMargin.bottom;
-    const mainWidth = 800;
+    const mainWidth = this._mainTimelineDiv.clientWidth;
     this._mainWidth = mainWidth;
     this._mainSvg.attr("viewBox",`0 0 ${mainWidth} ${mainHeight}`);
 
@@ -299,16 +520,16 @@ class TimelineD3 extends TatorElement {
     if (!selection) {
       return;
     }
-    
+
     // Selection is an array of startX and stopX
     // Use this to update the x-axis of the focus panel
     const focusStep = 20; // vertical height of each entry in the series / band
-    const focusMargin = ({top: 20, right: 5, bottom: 20, left: 5});
+    const focusMargin = ({top: 20, right: 5, bottom: 5, left: 5});
     const focusHeight =
       this._numericalData.length * (focusStep + 1) +
       this._stateData.length * (focusStep + 1) +
       focusMargin.top + focusMargin.bottom;
-    const focusWidth = this._mainWidth;
+    const focusWidth = this._mainWidth * 0.8;
     this._focusSvg.attr("viewBox",`0 0 ${focusWidth} ${focusHeight}`);
 
     // Define the axes
@@ -386,15 +607,15 @@ class TimelineD3 extends TatorElement {
     focusG.append("text")
         .attr("x", 4)
         .attr("y", focusStep / 2)
-        .attr("dy", "0.35em")
+        .attr("dy", "0.5em")
         .attr("fill", "#fafafa")
         .text(d => d.name);
 
-    focusG.append("text")
+    const focusStateValues = focusG.append("text")
         .attr("class", "focusStateValues")
-        .attr("x", focusWidth * 0.1)
+        .attr("x", focusWidth * 0.2)
         .attr("y", focusStep / 2)
-        .attr("dy", "0.35em")
+        .attr("dy", "0.5em")
         .attr("fill", "#fafafa");
 
     // States are represented as line graphs
@@ -445,7 +666,7 @@ class TimelineD3 extends TatorElement {
         .attr("fill", "#fafafa")
         .text(d => d.name);
 
-    focusGLine.append("text")
+    const focusLineValues = focusGLine.append("text")
         .attr("class", "focusLineValues")
         .attr("x", focusWidth * 0.1)
         .attr("y", focusStep / 2)
@@ -482,26 +703,24 @@ class TimelineD3 extends TatorElement {
         let texts;
         let currentFrame = focusX.invert(d3.pointer(event)[0]);
 
-        texts = d3.selectAll(".focusLineValues").data(focusLineDataset)
-        texts.attr("opactiy", "1.0")
-        texts.text(function(d) {
-          for (idx = 0; idx < d.length; idx++) {
-            if (d[idx].frame > currentFrame) {
+        focusLineValues.attr("opactiy", "1.0")
+        focusLineValues.text(function(d) {
+          for (idx = 0; idx < d.graphData.length; idx++) {
+            if (d.graphData[idx].frame > currentFrame) {
               if (idx > 0) {
-                return str(d[idx - 1].actualValue);
+                return String(d.graphData[idx - 1].actualValue);
               }
             }
           }
           return "";
         });
 
-        texts = d3.selectAll(".focusStateValues").data(focusStateDataset);
-        texts.attr("opactiy", "1.0");
-        texts.text(function(d) {
-          for (idx = 0; idx < d.length; idx++) {
-            if (d[idx].frame > currentFrame) {
+        focusStateValues.attr("opactiy", "1.0");
+        focusStateValues.text(function(d) {
+          for (idx = 0; idx < d.graphData.length; idx++) {
+            if (d.graphData[idx].frame > currentFrame) {
               if (idx > 0) {
-                return str(d[idx - 1].actualValue);
+                return String(d.graphData[idx - 1].actualValue);
               }
             }
           }
