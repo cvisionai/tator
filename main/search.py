@@ -75,9 +75,9 @@ def _get_mapping_values(entity_type, attributes):
             elif mapping_type == 'double':
                 mapping_values[mapping_name] = float(value)
             elif mapping_type == 'text':
-                mapping_values[mapping_name] = value
+                mapping_values[mapping_name] = str(value).replace("\\", "\\\\")
             elif mapping_type == 'keyword':
-                mapping_values[mapping_name] = value
+                mapping_values[mapping_name] = str(value).replace("\\", "\\\\")
             elif mapping_type == 'date':
                 mapping_values[mapping_name] = value # TODO: reformat?
             elif mapping_type == 'geo_point':
@@ -525,6 +525,7 @@ class TatorSearch:
             aux['_md5'] = entity.md5
             aux['_gid'] = entity.gid
             aux['_uid'] = entity.uid
+            aux['_archive_state'] = entity.archive_state
 
             # Get total size and download size of this file.
             total_size, download_size = entity.get_file_sizes()
@@ -684,7 +685,7 @@ class TatorSearch:
                 )
                 ids += drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in result['hits']['hits']])
             ids = ids[:count]
-            self.es.clear_scroll(scroll_id)
+            self.es.clear_scroll(scroll_id=scroll_id)
         else:
             # TODO: This will NOT return the requested number of results if there are
             # duplicates in the dataset.
@@ -722,8 +723,7 @@ class TatorSearch:
         """
         query['script'] = ''
         mapping_values = _get_mapping_values(entity_type, attrs)
-        for key in mapping_values:
-            val = mapping_values[key]
+        for key, val in mapping_values.items():
             if isinstance(val, bool):
                 if val:
                     val = 'true'

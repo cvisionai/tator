@@ -1,0 +1,200 @@
+# This can be a domain that points to a LAN IP address if you
+# are accessing the site from another machine's browser or you
+# are installing Tator in a VM. Using localhost only works in 
+# a browser running on the same machine running Tator.
+domain: &domain <Insert static IP or domain>
+# Requests for these domains will be redirected to the actual domain.
+#redirects:
+#  - domain: mysite.duckdns.org
+#    # Key filename that will be used in secret for this domain.
+#    tlsKeyFile: mysite_key.key
+#    # Cert filename that will be used in secret for this domain.
+#    tlsCertFile: mysite_cert.crt
+#    # Key secret name that will be used in secret for this domain.
+#    tlsKeySecretName: mysite-tls-key
+#    # Cert secret name that will be used in secret for this domain.
+#    tlsCertSecretName: mysite-tls-cert
+# Enables debug mode for gunicorn. Do NOT enable this in production.
+tatorDebug: true
+# Enables javascript minification.
+useMinJs: false
+# Enable this to turn on "down for maintenance" page.
+maintenance: false
+# Secret key for django. Feel free to change this.
+djangoSecretKey: "9q@$1)+x+zh-3csau(zqhheos2e+ncygac#ol2)1@x2w#kkaer"
+postgresHost: "postgis-svc"
+# Postgres username. Some make commands expect username django, but otherwise
+# it can be changed.
+postgresUsername: "django"
+# Postgres password. Change this for production.
+postgresPassword: "django123"
+redisHost: "tator-redis-master"
+elasticsearchHost: "elasticsearch-logging.kube-system.svc.cluster.local"
+objectStorageHost: "minio-master"
+# If you are using the docker registry container for your registry, you can
+# leave these, otherwise change user/pass to the credentials for your registry.
+dockerUsername: "test"
+dockerPassword: "test"
+dockerRegistry: "localhost:32000"
+systemImageRepo: "localhost:32000"
+#podGCStrategy: "OnWorkflowCompletion"
+#slackToken: "<Your slack API token>" # Optional, for slack notifications
+#slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
+# Enable this to require HTTPS. Be sure to set true for production deployments!
+requireHttps: false
+certCron:
+  # Enable this to enable a cron job to automatically update certificates
+  # periodically from LetsEncrypt. If this is not provided, the Secret objects
+  # tls-cert and tls-key must be created manually.
+  enabled: false
+maintenanceCron:
+  # Enable this to allow maintenance cron jobs to run, such as garbage collection
+  # of deleted database objects and database backups.
+  enabled: true
+migrations:
+  # Enable this if database migrations are allowed.
+  enabled: true
+# List of storage classes for use by workflows. One of these will be randomly
+# passed as a workflow parameter to algorithm workflows, and randomly selected
+# for transcode workflows.
+workflowStorageClasses:
+  - microk8s-hostpath
+pv:
+  hostPath:
+    path: "/media/kubernetes_share"
+# Can optionally supply seperate pv for static files:
+staticPv:
+  enabled: false
+#   nfsServer: "192.168.1.220"
+#   nfsMountOptions:
+#     - nfsvers=4
+#     - nolock
+#   path: "/media/kubernetes_alt"
+#
+pvc:
+  size: 10Ti
+hpa:
+  nginxMinReplicas: 1
+  nginxMaxReplicas: 10
+  nginxCpuPercent: 50
+  gunicornMinReplicas: 1
+  gunicornMaxReplicas: 10
+  gunicornCpuPercent: 50
+# Transcode resource settings
+transcoderMaxRamDiskSize: 2Gi
+transcoderCpuLimit: 1000m
+transcoderMemoryLimit: 2Gi
+# Gunicorn resource settings
+gunicornCpuLimit: 4000m
+gunicornCpuRequest: 1000m
+gunicornMemoryLimit: 4Gi
+gunicornMemoryRequest: 1Gi
+# NGINX resource settings
+nginxCpuLimit: 1000m
+nginxCpuRequest: 250m
+nginxMemoryLimit: 1Gi
+nginxMemoryRequest: 250Mi
+metallb:
+  # Enable this to provide a load balancer implementation on bare metal.
+  enabled: false
+postgis:
+  # Enable this if you want to use the postgis docker image.
+  enabled: true
+  persistence:
+    size: 10Gi
+redis:
+  # Enable this to install the redis helm chart.
+  enabled: true
+  master:
+    persistence:
+      enabled: false
+  slave:
+    persistence:
+      enabled: false
+  nodeSelector:
+    dbServer: "yes"
+  usePassword: false
+metrics-server:
+  enabled: false
+elasticsearch:
+  # Enable this to install the elasticsearch helm chart.
+  enabled: false
+  persistence:
+    enabled: true
+  replicas: 1
+  clusterHealthCheckParams: wait_for_status=yellow&timeout=1s
+  volumeClaimTemplate:
+    accessModes: [ "ReadWriteOnce" ]
+    resources:
+      requests:
+        storage: 30Gi
+  nodeSelector: 
+    dbServer: "yes"
+  hostPath: /media/kubernetes_share/elasticsearch
+filebeat:
+  enabled: false
+  image: docker.elastic.co/beats/filebeat-oss
+  imageTag: 7.4.2
+  filebeatConfig:
+    filebeat.yml: |
+      filebeat.inputs:
+      - type: docker
+        containers.ids:
+        - '*'
+        processors:
+        - add_kubernetes_metadata:
+            in_cluster: true
+      output.elasticsearch:
+        hosts: '${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}'
+      setup.ilm.enabled: false
+kibana:
+  enabled: false
+  kibanaConfig:
+    kibana.yml: |
+      server:
+        basePath: /logs
+minio:
+  enabled: true
+  accessKey: "AKIAIOSFODNN7EXAMPLE"
+  secretKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  persistence:
+    size: "1Ti"
+    existingClaim: "main-pv-claim"
+    subPath: "objects"
+  defaultBucket:
+    enabled: true
+    name: tator
+kube-prometheus-stack:
+  enabled: false
+remoteTranscodes:
+  # Typically for dev processing is done on the same machine.
+  enabled: false
+  # Host/port are obtained via the following (run on the transcode cluster):
+  #   echo $(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
+  host: "your.transcode.domain.org"
+  port: "6443"
+  # Token can be obtained via the following (run on the transcode cluster):
+  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
+  #   TOKEN=$(kubectl describe secret $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
+  #   echo $TOKEN
+  token: "Bearer <Your token here>"
+  # Certificate can be obtained via the following (run on the transcode cluster):
+  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
+  #   CERT=$(kubectl get secret $SECRET_NAME -o yaml | grep -E '^  ca.crt' | cut -f2 -d':' | tr -d " ")
+  #   echo $CERT | base64 --decode
+  cert: |
+    -----BEGIN CERTIFICATE-----
+    <Insert certificate here>
+    -----END CERTIFICATE-----
+cognito:
+  enabled: false
+  config: |
+    aws-region: us-east-2
+    pool-id: <POOL ID HERE>
+    client-id: <ID HERE>
+email:
+  enabled: false
+  sender: "<fill in>"
+  aws_region: "<fill in>"
+  aws_access_key_id: "<fill in>"
+  aws_secret_access_key: "<fill in>"

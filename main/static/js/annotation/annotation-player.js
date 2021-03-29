@@ -453,6 +453,26 @@ class AnnotationPlayer extends TatorElement {
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject)
       .then(() => {
+        const seekInfo = this._video.getQuality("seek");
+        const scrubInfo = this._video.getQuality("scrub");
+        const playInfo = this._video.getQuality("play");
+
+        this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
+          composed: true,
+          detail: {
+            seekQuality: seekInfo.quality,
+            seekFPS: seekInfo.fps,
+            scrubQuality: scrubInfo.quality,
+            scrubFPS: scrubInfo.fps,
+            playQuality: playInfo.quality,
+            playFPS: playInfo.fps,
+            focusedQuality: null,
+            focusedFPS: null,
+            dockedQuality: null,
+            dockedFPS: null,
+          }
+        }));
+
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
         }));
@@ -559,16 +579,16 @@ class AnnotationPlayer extends TatorElement {
     this._video.rateChange(this._rate);
   }
 
-  setQuality(quality) {
+  setQuality(quality, buffer) {
     // For now reload the video
     if (this.is_paused())
     {
-      this._video.setQuality(quality);
+      this._video.setQuality(quality, buffer);
     }
     else
     {
       this.pause();
-      this._video.setQuality(quality);
+      this._video.setQuality(quality, buffer);
     }
     this._video.refresh(true);
   }
@@ -675,12 +695,45 @@ class AnnotationPlayer extends TatorElement {
     const seconds = Math.floor(totalSeconds % 60);
     const secFormatted = ("0" + seconds).slice(-2);
     const minutes = Math.floor(totalSeconds / 60);
-    return minutes + ":" + secFormatted;
+    if (minutes < 60)
+    {
+      return minutes + ":" + secFormatted;
+    }
+    else
+    {
+      let hours = Math.floor(minutes / 60)
+      const minFormatted = ("0" + Math.floor(minutes % 60)).slice(-2);
+      return hours + ":" + minFormatted + ":" + secFormatted;
+    }
   }
 
   _timeToFrame(minutes, seconds) {
     var frame = minutes * 60 * this._fps + seconds * this._fps + 1;
     return frame;
+  }
+
+  displayVideoDiagnosticOverlay(display) {
+    this._video.updateVideoDiagnosticOverlay(display);
+  }
+
+  getVideoSettings() {
+
+    const seekInfo = this._video.getQuality("seek");
+    const scrubInfo = this._video.getQuality("scrub");
+    const playInfo = this._video.getQuality("play");
+
+    return {
+        seekQuality: seekInfo.quality,
+        seekFPS: seekInfo.fps,
+        scrubQuality: scrubInfo.quality,
+        scrubFPS: scrubInfo.fps,
+        playQuality: playInfo.quality,
+        playFPS: playInfo.fps,
+        focusedQuality: null,
+        focusedFPS: null,
+        dockedQuality: null,
+        dockedFPS: null,
+      };
   }
 }
 

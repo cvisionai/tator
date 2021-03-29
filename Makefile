@@ -29,6 +29,12 @@ POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/va
 POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresUsername"])')
 POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresPassword"])')
 
+OBJECT_STORAGE_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("http://tator-minio:9000" if a["minio"]["enabled"] else a["objectStorageHost"])')
+OBJECT_STORAGE_REGION_NAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("us-east-2" if a["minio"]["enabled"] else a["objectStorageRegionName"])')
+OBJECT_STORAGE_BUCKET_NAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["defaultBucket"]["name"] if a["minio"]["enabled"] else a["objectStorageBucketName"])')
+OBJECT_STORAGE_ACCESS_KEY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["accessKey"] if a["minio"]["enabled"] else a["objectStorageAccessKey"])')
+OBJECT_STORAGE_SECRET_KEY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["secretKey"] if a["minio"]["enabled"] else a["objectStorageSecretKey"])')
+
 #############################
 ## Help Rule + Generic targets
 #############################
@@ -292,7 +298,6 @@ FILES = \
     project-detail/section-expand.js \
     project-detail/section-paginator.js \
     project-detail/section-files.js \
-    project-detail/section-overview.js \
     project-detail/media-section.js \
     project-detail/delete-section-form.js \
     project-detail/delete-file-form.js \
@@ -392,6 +397,7 @@ FILES = \
     annotation/version-button.js \
     annotation/version-select.js \
     annotation/version-dialog.js \
+    annotation/video-settings-dialog.js \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
     analytics/dashboard/dashboard.js \
@@ -448,10 +454,10 @@ cleanup-evicted:
 	kubectl get pods | grep Evicted | awk '{print $$1}' | xargs kubectl delete pod
 
 # Example:
-#   make build-search-indices MAX_AGE_DAYS=365
+#   make build-search-indices MAX_AGE_DAYS=365 OBJECT_STORAGE_HOST=
 .PHONY: build-search-indices
 build-search-indices:
-	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)"
+	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)" -p objectStorageHost="$(OBJECT_STORAGE_HOST)" -p objectStorageRegionName="$(OBJECT_STORAGE_REGION_NAME)" -p objectStorageBucketName="$(OBJECT_STORAGE_BUCKET_NAME)" -p objectStorageAccessKey="$(OBJECT_STORAGE_ACCESS_KEY)" -p objectStorageSecretKey="$(OBJECT_STORAGE_SECRET_KEY)"
 
 .PHONY: s3-migrate
 s3-migrate:

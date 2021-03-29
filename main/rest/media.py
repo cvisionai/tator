@@ -14,76 +14,91 @@ from django.db.models import Case, When
 from django.http import Http404
 from PIL import Image
 
-from ..models import ChangeLog
-from ..models import ChangeToObject
-from ..models import Media
-from ..models import MediaType
-from ..models import Section
-from ..models import Localization
-from ..models import State
-from ..models import Project
-from ..models import Resource
-from ..models import Bucket
-from ..models import database_qs
-from ..models import database_query_ids
+from ..models import (
+    ChangeLog,
+    ChangeToObject,
+    Media,
+    MediaType,
+    Section,
+    Localization,
+    State,
+    Project,
+    Resource,
+    Bucket,
+    database_qs,
+    database_query_ids,
+)
 from ..search import TatorSearch
-from ..schema import MediaListSchema
-from ..schema import MediaDetailSchema
-from ..schema import parse
+from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
-from ..s3 import TatorS3
-from ..s3 import get_s3_lookup
-from ..search import TatorSearch
+from ..s3 import TatorS3, get_s3_lookup
 
-from ._util import bulk_create_from_generator
-from ._util import computeRequiredFields
-from ._util import check_required_fields
-from ._base_views import BaseListView
-from ._base_views import BaseDetailView
-from ._media_query import get_media_queryset
-from ._media_query import get_media_es_query
-from ._attributes import bulk_patch_attributes
-from ._attributes import patch_attributes
-from ._attributes import validate_attributes
-from ._permissions import ProjectEditPermission
-from ._permissions import ProjectTransferPermission
+from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
+from ._base_views import BaseListView, BaseDetailView
+from ._media_query import get_media_queryset, get_media_es_query
+from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
+from ._permissions import ProjectEditPermission, ProjectTransferPermission
 
 logger = logging.getLogger(__name__)
 
 MEDIA_PROPERTIES = list(media_schema['properties'].keys())
 
-def _presign(expiration, medias, fields=['archival', 'streaming', 'audio', 'image',
-                                         'thumbnail', 'thumbnail_gif']):
+
+def _get_next_archive_state(desired_archive_state, last_archive_state):
+    if desired_archive_state == "to_live":
+        if last_archive_state == "archived":
+            return "to_live"
+        if last_archive_state == "to_archive":
+            return "live"
+        return None
+
+    if desired_archive_state == "to_archive":
+        if last_archive_state == "live":
+            return "to_archive"
+        if last_archive_state == "to_live":
+            return None
+        return None
+
+    raise ValueError(f"Received invalid value '{desired_archive_state}' for archive_state")
+
+
+def _presign(expiration, medias, fields=None):
     """ Replaces specified media fields with presigned urls.
     """
     # First get resources referenced by the given media.
+    fields = fields or ["archival", "streaming", "audio", "image", "thumbnail", "thumbnail_gif"]
     media_ids = [media['id'] for media in medias]
     resources = Resource.objects.filter(media__in=media_ids)
     s3_lookup = get_s3_lookup(resources)
 
     # Get replace all keys with presigned urls.
     for media_idx, media in enumerate(medias):
-        if media.get('media_files') is not None:
-            for field in fields:
-                if field in media['media_files']:
-                    for idx, media_def in enumerate(media['media_files'][field]):
-                        s3 = s3_lookup[media_def['path']]
-                        media_def['path'] = s3.get_download_url(media_def['path'], expiration)
-                        if field == 'streaming':
-                            if 'segment_info' in media_def:
-                                media_def['segment_info'] = s3.get_download_url(media_def['segment_info'],
-                                                                                expiration)
-                            else:
-                                logger.warning(f"No segment file in media {media['id']} for file "
-                                               f"{media_def['path']}!")
-                        medias[media_idx]['media_files'][field][idx] = media_def
-    return medias
+        if media.get("media_files") is None:
+            continue
+
+        for field in fields:
+            if field not in media["media_files"]:
+                continue
+
+            for idx, media_def in enumerate(media["media_files"][field]):
+                tator_s3 = s3_lookup[media_def["path"]]
+                media_def["path"] = tator_s3.get_download_url(media_def["path"], expiration)
+                if field == "streaming":
+                    if "segment_info" in media_def:
+                        media_def["segment_info"] = tator_s3.get_download_url(
+                            media_def["segment_info"], expiration
+                        )
+                    else:
+                        logger.warning(
+                            f"No segment file in media {media['id']} for file {media_def['path']}!"
+                        )
 
 def _save_image(url, media_obj, project_obj, role):
-    """ Downloads an image, uploads it to the appropriate S3 location, 
-        and returns an updated media object.
+    """
+    Downloads an image, uploads it to the appropriate S3 location and returns an updated media
+    object.
     """
     # Download the image file and load it.
     temp_image = tempfile.NamedTemporaryFile(delete=False)
@@ -95,14 +110,13 @@ def _save_image(url, media_obj, project_obj, role):
     parsed = os.path.basename(urlparse(url).path)
 
     # Set up S3 client.
-    s3 = TatorS3(project_obj.bucket)
-    bucket_name = s3.bucket_name
+    tator_s3 = TatorS3(project_obj.bucket)
 
     # Upload image.
     if media_obj.media_files is None:
         media_obj.media_files = {}
     image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{parsed}"
-    s3.s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+    tator_s3.put_object(image_key, temp_image)
     media_obj.media_files[role] = [{'path': image_key,
                                     'size': os.stat(temp_image.name).st_size,
                                     'resolution': [image.height, image.width],
@@ -146,7 +160,7 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            response_data = _presign(presigned, response_data)
+            _presign(presigned, response_data)
         return response_data
 
     def _post(self, params):
@@ -263,13 +277,11 @@ class MediaListAPI(BaseListView):
 
             # Set up S3 client.
             tator_s3 = TatorS3(project_obj.bucket)
-            s3 = tator_s3.s3
-            bucket_name = tator_s3.bucket_name
 
             if url:
                 # Upload image.
                 image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-                s3.put_object(Bucket=bucket_name, Key=image_key, Body=temp_image)
+                tator_s3.put_object(image_key, temp_image)
                 media_obj.media_files['image'] = [{'path': image_key,
                                                    'size': os.stat(temp_image.name).st_size,
                                                    'resolution': [media_obj.height, media_obj.width],
@@ -281,7 +293,7 @@ class MediaListAPI(BaseListView):
                 # Upload thumbnail.
                 thumb_format = image.format
                 thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
-                s3.put_object(Bucket=bucket_name, Key=thumb_key, Body=temp_thumb)
+                tator_s3.put_object(thumb_key, temp_thumb)
                 media_obj.media_files['thumbnail'] = [{'path': thumb_key,
                                                        'size': os.stat(temp_thumb.name).st_size,
                                                        'resolution': [thumb_height, thumb_width],
@@ -426,31 +438,97 @@ class MediaListAPI(BaseListView):
             recommended to use a GET request first to check what is being updated.
             Only attributes are eligible for bulk patch operations.
         """
+        desired_archive_state = params.pop("archive_state", None)
+        if desired_archive_state is None and params.get("attributes") is None:
+            raise ValueError("Must specify 'attributes' and/or property to patch, but none found")
         qs = get_media_queryset(params['project'], params)
-        count = qs.count()
-        if count > 0:
+        count = 0
+        if qs.exists():
+            ts = TatorSearch()
+            ids_to_update = list(qs.values_list("pk", flat=True).distinct())
+
             # Get the current representation of the object for comparison
-            original_dict = qs.first().model_dict
             new_attrs = validate_attributes(params, qs[0])
-            bulk_patch_attributes(new_attrs, qs)
+            if new_attrs is not None:
+                attr_count = len(ids_to_update)
+                obj = qs.first()
+                ref_table = ContentType.objects.get_for_model(obj)
+                original_dict = obj.model_dict
+                bulk_patch_attributes(new_attrs, qs)
+                query = get_media_es_query(params["project"], params)
+                ts.update(self.kwargs["project"], obj.meta, query, new_attrs)
+                qs = Media.objects.filter(pk__in=ids_to_update)
+                obj = Media.objects.get(id=original_dict["id"])
+                change_dict = obj.change_dict(original_dict)
+                # Create the ChangeLog entry and associate it with all objects in the queryset
+                cl = ChangeLog(
+                    project=obj.project, user=self.request.user, description_of_change=change_dict
+                )
+                cl.save()
+                objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
+                bulk_create_from_generator(objs, ChangeToObject)
+                count = max(count, attr_count)
 
-            # Get one object from the queryset to create the change log
-            obj = qs.first()
-            change_dict = obj.change_dict(original_dict)
-            ref_table = ContentType.objects.get_for_model(obj)
+            if desired_archive_state is not None:
+                archive_count = 0
+                qs = Media.objects.filter(pk__in=ids_to_update)
 
-            query = get_media_es_query(params['project'], params)
-            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
+                # Track previously updated IDs to avoid multiple updates to a single entity
+                previously_updated = []
 
-            # Create the ChangeLog entry and associate it with all objects in the queryset
-            cl = ChangeLog(
-                project=obj.project, user=self.request.user, description_of_change=change_dict
-            )
-            cl.save()
-            objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
-            bulk_create_from_generator(objs, ChangeToObject)
+                # Further filter on current archive state to correctly update based on previous
+                # state
+                for state in ["live", "to_live", "archived", "to_archive"]:
+                    next_archive_state = _get_next_archive_state(desired_archive_state, state)
 
-        return {'message': f'Successfully patched {count} medias!'}
+                    # If the next archive state is a noop, skip the update
+                    if next_archive_state is None:
+                        continue
+
+                    archive_qs = qs.filter(archive_state=state).exclude(pk__in=previously_updated)
+
+                    # If no media match the archive state, skip the update
+                    if not archive_qs.exists():
+                        continue
+
+                    # Get the original dict for creating the change log
+                    archive_objs = list(archive_qs)
+                    obj = archive_objs[0]
+                    ref_table = ContentType.objects.get_for_model(obj)
+                    original_dict = obj.model_dict
+
+                    # Store the list of ids updated for this state and update them
+                    archive_ids_to_update = [o.id for o in archive_objs]
+                    archive_count += len(archive_ids_to_update)
+                    previously_updated += archive_ids_to_update
+                    archive_qs.update(
+                        archive_state=next_archive_state,
+                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                    )
+                    archive_qs = Media.objects.filter(pk__in=archive_ids_to_update)
+
+                    # Update in ES
+                    documents = []
+                    for entity in archive_qs:
+                        documents += ts.build_document(entity)
+                    ts.bulk_add_documents(documents)
+
+                    # Create the ChangeLog entry and associate it with all updated objects
+                    obj = Media.objects.get(id=original_dict["id"])
+                    cl = ChangeLog(
+                        project=obj.project,
+                        user=self.request.user,
+                        description_of_change=obj.change_dict(original_dict),
+                    )
+                    cl.save()
+                    objs = (
+                        ChangeToObject(ref_table=ref_table, ref_id=obj_id, change_id=cl)
+                        for obj_id in archive_ids_to_update
+                    )
+                    bulk_create_from_generator(objs, ChangeToObject)
+                count = max(count, archive_count)
+
+        return {"message": f"Successfully patched {count} medias!"}
 
     def _put(self, params):
         """ Retrieve list of media by ID.
@@ -477,11 +555,11 @@ class MediaDetailAPI(BaseDetailView):
         qs = Media.objects.filter(pk=params['id'], deleted=False)
         if not qs.exists():
             raise Http404
-        response_data = list(qs.values(*MEDIA_PROPERTIES))[0]
+        response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            response_data = _presign(presigned, [response_data])[0]
-        return response_data
+            _presign(presigned, response_data)
+        return response_data[0]
 
     @transaction.atomic
     def _patch(self, params):
@@ -541,6 +619,17 @@ class MediaDetailAPI(BaseDetailView):
                     if params['multi'].get(key):
                         media_files[key] = params['multi'][key]
                 qs.update(media_files=media_files)
+
+            if "archive_state" in params:
+                next_archive_state = _get_next_archive_state(
+                    params["archive_state"], qs[0].archive_state
+                )
+
+                if next_archive_state is not None:
+                    qs.update(
+                        archive_state=next_archive_state,
+                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                    )
 
         obj = Media.objects.get(pk=params['id'], deleted=False)
         TatorSearch().create_document(obj)
@@ -602,4 +691,3 @@ class MediaDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         return Media.objects.all()
-

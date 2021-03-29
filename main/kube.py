@@ -119,15 +119,18 @@ def get_jobs(selector, cache):
     clusters = _get_clusters(cache)
     jobs = []
     for cluster in clusters:
-        api = _get_api(cluster)
-        response = api.list_namespaced_custom_object(
-            group='argoproj.io',
-            version='v1alpha1',
-            namespace='default',
-            plural='workflows',
-            label_selector=f'{selector}',
-        )
-        jobs += response['items']
+        api = _get_api(cluster) 
+        try:
+            response = api.list_namespaced_custom_object(
+                group='argoproj.io',
+                version='v1alpha1',
+                namespace='default',
+                plural='workflows',
+                label_selector=f'{selector}',
+            )
+            jobs += response['items']
+        except:
+            logger.warning(f"Could not reach cluster {cluster.name} at {cluster.host}!")
     return jobs
 
 def cancel_jobs(selector, cache):

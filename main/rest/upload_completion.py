@@ -27,11 +27,6 @@ class UploadCompletionAPI(BaseListView):
 
         # Complete the upload.
         tator_s3 = TatorS3(project_obj.bucket)
-        s3 = tator_s3.s3
-        bucket_name = tator_s3.bucket_name
-        response = s3.complete_multipart_upload(Bucket=bucket_name,
-                                                Key=key,
-                                                MultipartUpload={'Parts': parts},
-                                                UploadId=upload_id)
+        response = tator_s3.complete_multipart_upload(key, parts, upload_id)
         return {'message': f"Upload completion for {key} successful!"}
 

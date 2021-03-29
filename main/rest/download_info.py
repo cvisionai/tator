@@ -2,14 +2,12 @@ import os
 import logging
 from uuid import uuid1
 
-import boto3
 from rest_framework.exceptions import PermissionDenied
 
 from ..models import Project
 from ..models import Resource
 from ..schema import DownloadInfoSchema
-from ..s3 import TatorS3
-from ..s3 import get_s3_lookup
+from ..s3 import TatorS3, get_s3_lookup
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -40,13 +38,13 @@ class DownloadInfoAPI(BaseListView):
         # Set up S3 interfaces.
         response_data = []
         for key in keys:
-            s3 = s3_lookup.get(key, s3_default)
+            tator_s3 = s3_lookup.get(key, s3_default)
             # Make sure the key corresponds to the correct project.
             project_from_key = int(key.split('/')[1])
             if project != project_from_key:
                 raise PermissionDenied
             # Generate presigned url.
-            url = s3.get_download_url(key, expiration)
+            url = tator_s3.get_download_url(key, expiration)
             response_data.append({'key': key, 'url': url})
         return response_data
 
