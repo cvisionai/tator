@@ -279,7 +279,38 @@ class TimelineD3 extends TatorElement {
             if (attrType.style == "display_timeline") {
               // Display this attribute as a numerical graph.
               // Normalize the data because the graph domain is from 0 to 1.
-              // #TODO Handle negative numbers
+              let graphData = [];
+              let maxValue = 0.0;
+              for (let data of allData) {
+                let value = data.attributes[attrType.name];
+                if (!isNaN(value)) {
+                  if (value > maxValue) {
+                    maxValue = value;
+                  }
+                  graphData.push({frame: data.frame, value: 0.0, actualValue: value});
+                }
+              }
+
+              // If there's data then add it to the plot dataset
+              // #TODO Might need to handle negative numbers
+              // #TODO Use min/max values defined by the attribute type if available
+              if (graphData.length > 0) {
+
+                for (let idx = 0; idx < graphData.length; idx++) {
+                  graphData[idx].value = graphData[idx].actualValue / maxValue;
+                }
+
+                // Add a point at the last frame to draw the state all the way to the end
+                // #TODO Not sure if this is needed
+                graphData.sort((a,b) => {return a.frame - b.frame});
+                graphData.push({...graphData[graphData.length - 1]});
+                graphData[graphData.length - 1].frame = maxFrame;
+
+                this._numericalData.push({
+                  name: attrType.name,
+                  graphData: graphData
+                });
+              }
             }
           }
         }
@@ -377,7 +408,7 @@ class TimelineD3 extends TatorElement {
 
     console.log("_updateSvgData");
 
-    const mainStep = 5; // vertical height of each entry in the series / band
+    const mainStep = 10; // vertical height of each entry in the series / band
     const mainMargin = ({top: 20, right: 3, bottom: 3, left: 3});
     const mainHeight =
       this._numericalData.length * (mainStep + 1) +
@@ -477,7 +508,7 @@ class TimelineD3 extends TatorElement {
 
     gLine.append("defs").append("path")
       .attr("id", d => d.pathId.id)
-      .attr("d", d => line(d.values));
+      .attr("d", d => line(d.graphData));
 
     gLine.append("rect")
       .attr("clip-path", d => d.clipId)
@@ -524,7 +555,7 @@ class TimelineD3 extends TatorElement {
     // Selection is an array of startX and stopX
     // Use this to update the x-axis of the focus panel
     const focusStep = 20; // vertical height of each entry in the series / band
-    const focusMargin = ({top: 20, right: 5, bottom: 5, left: 5});
+    const focusMargin = ({top: 20, right: 5, bottom: 10, left: 5});
     const focusHeight =
       this._numericalData.length * (focusStep + 1) +
       this._stateData.length * (focusStep + 1) +
@@ -533,6 +564,7 @@ class TimelineD3 extends TatorElement {
     this._focusSvg.attr("viewBox",`0 0 ${focusWidth} ${focusHeight}`);
 
     // Define the axes
+    var minFrame = this._mainX.invert(selection[0]);
     var focusX = d3.scaleLinear()
       .domain([this._mainX.invert(selection[0]), this._mainX.invert(selection[1])])
       .range([0, focusWidth]);
@@ -583,9 +615,11 @@ class TimelineD3 extends TatorElement {
         .attr("width", focusWidth)
         .attr("height", focusStep);
 
-    focusG.append("defs").append("path")
-      .attr("id", d => d.pathId.id)
-      .attr("d", d => focusArea(d.graphData));
+    if (minFrame > -1) {
+      focusG.append("defs").append("path")
+        .attr("id", d => d.pathId.id)
+        .attr("d", d => focusArea(d.graphData));
+    }
 
     focusG.append("rect")
       .attr("clip-path", d => d.clipId)
@@ -629,7 +663,7 @@ class TimelineD3 extends TatorElement {
       .selectAll("g")
       .data(focusLineDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${(i + this._stateData.length) * (focusStep + 4 ) + focusMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${(i + this._stateData.length) * (focusStep + 4) + focusMargin.top})`);
 
     focusGLine.append("clipPath")
       .attr("id", d => d.clipId.id)
@@ -637,9 +671,11 @@ class TimelineD3 extends TatorElement {
         .attr("width", focusWidth)
         .attr("height", focusStep);
 
-    focusGLine.append("defs").append("path")
+    if (minFrame > -1){
+      focusGLine.append("defs").append("path")
       .attr("id", d => d.pathId.id)
-      .attr("d", d => focusLine(d.values));
+      .attr("d", d => focusLine(d.graphData));
+    }
 
     focusGLine.append("rect")
       .attr("clip-path", d => d.clipId)
@@ -668,7 +704,7 @@ class TimelineD3 extends TatorElement {
 
     const focusLineValues = focusGLine.append("text")
         .attr("class", "focusLineValues")
-        .attr("x", focusWidth * 0.1)
+        .attr("x", focusWidth * 0.2)
         .attr("y", focusStep / 2)
         .attr("dy", "0.5em")
         .attr("fill", "#fafafa");
@@ -700,10 +736,9 @@ class TimelineD3 extends TatorElement {
           .attr("y2", focusHeight);
 
         let idx;
-        let texts;
         let currentFrame = focusX.invert(d3.pointer(event)[0]);
 
-        focusLineValues.attr("opactiy", "1.0")
+        focusLineValues.attr("opactiy", "1.0");
         focusLineValues.text(function(d) {
           for (idx = 0; idx < d.graphData.length; idx++) {
             if (d.graphData[idx].frame > currentFrame) {
