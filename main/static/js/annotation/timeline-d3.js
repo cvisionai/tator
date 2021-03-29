@@ -18,21 +18,24 @@ class TimelineD3 extends TatorElement {
 
     this._mainSvg = d3.select(this._shadow).select("#main-timeline")
       .append("svg")
-      .attr("preserveAspectRatio", "xMinYMin meet")
-      .style("font", "10px sans-serif")
+      //.attr("preserveAspectRatio", "xMinYMid meet")
+      .style("font", "12px sans-serif")
       .style("color", "#a2afcd");
 
     this._focusSvg = d3.select(this._shadow).select("#focus-timeline")
       .append("svg")
-      .attr("preserveAspectRatio", "xMinYMin meet")
-      .style("font", "10px sans-serif")
+      //.attr("preserveAspectRatio", "xMinYMid meet")
+      .style("font", "12px sans-serif")
       .style("color", "#a2afcd");
 
     this._focusLine = this._focusSvg.append("g").attr("display", "none");
 
     // Initially hide the focus timeline. Some external UI element will control
     // whether or not to display this.
-    this.showFocus(false);
+    this._focusTimelineDiv.style.display = "none";
+
+    // Redraw whenever there's a resize
+    window.addEventListener("resize", () => {this._updateSvgData()});
   }
 
   /**
@@ -388,7 +391,13 @@ class TimelineD3 extends TatorElement {
     }
 
     // With the datasets updated, update the timeline plots
-    this._updateSvgData();
+    if (this._numericalData.length > 0 || this._stateData.length > 0) {
+      this.showMain(true);
+      this._updateSvgData();
+    }
+    else {
+      this.showMain(false);
+    }
   }
 
   /**
@@ -436,7 +445,7 @@ class TimelineD3 extends TatorElement {
     // Frame number x-axis ticks
     var xAxis = g => g
       .attr("transform", `translate(0,${mainMargin.top})`)
-      .call(d3.axisTop(mainX).ticks(mainWidth / 100).tickSizeOuter(0).tickFormat(d3.format("d")))
+      .call(d3.axisTop(mainX).ticks().tickSizeOuter(0).tickFormat(d3.format("d")))
       .call(g => g.selectAll(".tick").filter(d => mainX(d) < mainMargin.left || mainX(d) >= mainWidth - mainMargin.right).remove())
       .call(g => g.select(".domain").remove());
 
@@ -555,7 +564,7 @@ class TimelineD3 extends TatorElement {
     // Selection is an array of startX and stopX
     // Use this to update the x-axis of the focus panel
     const focusStep = 20; // vertical height of each entry in the series / band
-    const focusMargin = ({top: 20, right: 5, bottom: 10, left: 5});
+    const focusMargin = ({top: 20, right: 5, bottom: 15, left: 5});
     const focusHeight =
       this._numericalData.length * (focusStep + 1) +
       this._stateData.length * (focusStep + 1) +
@@ -581,7 +590,7 @@ class TimelineD3 extends TatorElement {
     // X-axis that will be displayed to visualize the frame numbers
     var focusXAxis = g => g
       .attr("transform", `translate(0,${focusMargin.top})`)
-      .call(d3.axisTop(focusX).ticks(focusWidth / 100).tickSizeOuter(0).tickFormat(d3.format("d")))
+      .call(d3.axisTop(focusX).ticks().tickSizeOuter(0).tickFormat(d3.format("d")))
       .call(g => g.selectAll(".tick").filter(d => focusX(d) < focusMargin.left || focusX(d) >= focusWidth - focusMargin.right).remove())
       .call(g => g.select(".domain").remove());
 
@@ -721,6 +730,20 @@ class TimelineD3 extends TatorElement {
       .attr("stroke-width", 1)
       .attr("opacity", "0");
 
+    var that = this;
+    this._focusSvg.on("click", function(event, d) {
+
+      const selectedFrame = focusX.invert(d3.pointer(event)[0]);
+      const maxFrame = parseFloat(that._rangeInput.getAttribute("max"));
+
+      if (selectedFrame >= 0 && selectedFrame <= maxFrame) {
+        that.dispatchEvent(new CustomEvent("select", {
+          detail: {
+            frame: selectedFrame
+          }
+        }));
+      }
+    });
     this._focusSvg.on("mouseover", function(event, d) {
         mouseLine.attr("opacity", "1.0");
     });
@@ -798,6 +821,7 @@ class TimelineD3 extends TatorElement {
     else {
       this._focusTimelineDiv.style.display = "none";
     }
+    this._updateSvgData();
   }
 
   /**
