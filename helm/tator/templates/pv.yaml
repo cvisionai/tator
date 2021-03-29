@@ -11,6 +11,10 @@ spec:
   claimRef:
     namespace: default
     name: main-pv-claim
+  {{- if hasKey .Values.pv "hostPath" }}
+  hostPath:
+    path: {{ .Values.pv.hostPath.path }}
+  {{- else }}
   mountOptions:
     {{- range .Values.pv.nfsMountOptions }}
     - {{ . }}
@@ -18,6 +22,7 @@ spec:
   nfs:
     server: {{ .Values.pv.nfsServer }}
     path: {{ .Values.pv.path }}
+  {{- end }}
 ---
 {{ if .Values.staticPv.enabled }}
 kind: PersistentVolume
