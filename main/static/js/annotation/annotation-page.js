@@ -804,9 +804,6 @@ class AnnotationPage extends TatorPage {
           }
         });
         this._browser.addEventListener("open", evt => {
-          if ("drawTimeline" in canvas) {
-            canvas.drawTimeline(evt.detail.typeId);
-          }
           this._settings.setAttribute("type-id", evt.detail.typeId);
         });
         this._browser.addEventListener("close", evt => {

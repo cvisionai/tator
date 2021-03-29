@@ -35,6 +35,8 @@ class TimelineD3 extends TatorElement {
     this._focusTimelineDiv.style.display = "none";
 
     // Redraw whenever there's a resize
+    this._stateData = [];
+    this._numericalData = [];
     window.addEventListener("resize", () => {this._updateSvgData()});
   }
 
@@ -66,6 +68,17 @@ class TimelineD3 extends TatorElement {
    */
   set rangeInput(val) {
     this._rangeInput = val;
+  }
+
+  /**
+   * @returns {integer} Maximum frame to display on the timeline. If unknown, this will be null.
+   */
+  _getMaxFrame() {
+    if (typeof this._rangeInput === "undefined") {
+      return null;
+    }
+
+    return parseInt(this._rangeInput.getAttribute("max"));
   }
 
   /**
@@ -222,7 +235,12 @@ class TimelineD3 extends TatorElement {
     // Recreate the state and numerical datasets
     this._numericalData = [];
     this._stateData = [];
-    var maxFrame = parseFloat(this._rangeInput.getAttribute("max"));
+    var maxFrame = this._getMaxFrame();
+    if (isNaN(maxFrame)) {
+      this.showMain(false);
+      this.showFocus(false);
+      return;
+    }
 
     for (let typeId in this._data._dataTypes) {
 
@@ -269,7 +287,7 @@ class TimelineD3 extends TatorElement {
               graphData[graphData.length - 1].frame = maxFrame;
 
               if (graphData[0].frame != 0) {
-                graphData.unshift({frame: 0, value: 0.0, actualValue: "false"});
+                graphData.unshift({frame: 0, value: 0.0, actualValue: false});
               }
 
               this._stateData.push({
@@ -415,7 +433,10 @@ class TimelineD3 extends TatorElement {
    */
   _updateSvgData() {
 
-    console.log("_updateSvgData");
+    var maxFrame = this._getMaxFrame();
+    if (isNaN(maxFrame)) {
+      return;
+    }
 
     const mainStep = 10; // vertical height of each entry in the series / band
     const mainMargin = ({top: 20, right: 3, bottom: 3, left: 3});
@@ -429,7 +450,7 @@ class TimelineD3 extends TatorElement {
 
     // Define the axes
     var mainX = d3.scaleLinear()
-      .domain([0, parseFloat(this._rangeInput.getAttribute("max"))])
+      .domain([0, maxFrame])
       .range([0, mainWidth])
     this._mainX = mainX;
 
@@ -734,7 +755,7 @@ class TimelineD3 extends TatorElement {
     this._focusSvg.on("click", function(event, d) {
 
       const selectedFrame = focusX.invert(d3.pointer(event)[0]);
-      const maxFrame = parseFloat(that._rangeInput.getAttribute("max"));
+      const maxFrame = that._getMaxFrame();
 
       if (selectedFrame >= 0 && selectedFrame <= maxFrame) {
         that.dispatchEvent(new CustomEvent("select", {
