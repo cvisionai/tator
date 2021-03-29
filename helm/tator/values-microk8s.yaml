@@ -80,6 +80,20 @@ hpa:
   gunicornMinReplicas: 1
   gunicornMaxReplicas: 10
   gunicornCpuPercent: 50
+# Transcode resource settings
+transcoderMaxRamDiskSize: 2Gi
+transcoderCpuLimit: 1000m
+transcoderMemoryLimit: 2Gi
+# Gunicorn resource settings
+gunicornCpuLimit: 4000m
+gunicornCpuRequest: 1000m
+gunicornMemoryLimit: 4Gi
+gunicornMemoryRequest: 1Gi
+# NGINX resource settings
+nginxCpuLimit: 1000m
+nginxCpuRequest: 250m
+nginxMemoryLimit: 1Gi
+nginxMemoryRequest: 250Mi
 metallb:
   # Enable this to provide a load balancer implementation on bare metal.
   enabled: false
@@ -153,10 +167,6 @@ minio:
     name: tator
 kube-prometheus-stack:
   enabled: false
-# Limits on resources for transcode workflows.
-transcoderMaxRamDiskSize: "2Gi"
-transcoderCpuLimit: "1000m"
-transcoderMemoryLimit: "4Gi"
 remoteTranscodes:
   # Typically for dev processing is done on the same machine.
   enabled: false

@@ -29,11 +29,11 @@ spec:
           args: {{ .args }}
           resources:
             limits:
-              cpu: 4000m
-              memory: 16Gi
+              cpu: {{ .Values.gunicornCpuLimit | default "4000m" }}
+              memory: {{ .Values.gunicornMemoryLimit | default "16Gi" }}
             requests:
-              cpu: 1000m
-              memory: 4Gi
+              cpu: {{ .Values.gunicornCpuRequest | default "1000m" }}
+              memory: {{ .Values.gunicornMemoryRequest | default "4Gi" }}
           env:
             - name: DJANGO_SECRET_KEY
               valueFrom:
