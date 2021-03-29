@@ -102,7 +102,6 @@ postgis:
   enabled: true
   persistence:
     size: 10Gi
-  hostPath: /media/kubernetes_share/postgis
 redis:
   # Enable this to install the redis helm chart.
   enabled: true

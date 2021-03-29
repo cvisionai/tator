@@ -67,6 +67,7 @@ spec:
 {{ end }}
 ---
 {{ if .Values.postgis.enabled }}
+{{- if hasKey .Values.postgis "hostPath" }}
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -81,4 +82,5 @@ spec:
     name: postgis-pv-claim
   hostPath:
     path: {{ $.Values.postgis.hostPath }}
+{{- end }}
 {{ end }}
