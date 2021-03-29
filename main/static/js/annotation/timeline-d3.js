@@ -296,8 +296,11 @@ class TimelineD3 extends TatorElement {
               });
             }
           }
-          else if (attrType.style) {
-            if (attrType.style == "display_timeline") {
+          // #TODO This is a temporary fix until display_timeline is the nominal method
+          //       Typically, the first conditional would check if style exists and the
+          //       next would be attrType.style == "display_timeline"
+          else if (attrType.dtype == "float") {
+            if (attrType.dtype == "float") {
               // Display this attribute as a numerical graph.
               // Normalize the data because the graph domain is from 0 to 1.
               let graphData = [];
