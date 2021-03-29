@@ -740,9 +740,20 @@ class TimelineD3 extends TatorElement {
         .attr("fill", "#fafafa");
 
     // Apply the x-axis ticks at the end, after the other graphics have been filled in
-    if (selection[0] >= 0) {
-      this._focusSvg.append("g")
+    var displayXAxis = selection[0] >= 0;
+    if (displayXAxis) {
+      var focusXAxisG = this._focusSvg.append("g")
         .call(focusXAxis);
+
+      var focusFrameTextBackground = focusXAxisG.append("rect")
+        .attr("width", focusWidth)
+        .attr("height", focusStep);
+
+      var focusFrameText = focusXAxisG.append("text")
+        .attr("x", focusWidth * 0.1)
+        .attr("y", -focusStep / 2)
+        .attr("dy", "0.35em")
+        .attr("fill", "#fafafa");
     }
 
     // Create the vertical line hover
@@ -766,7 +777,7 @@ class TimelineD3 extends TatorElement {
       }
     });
     this._focusSvg.on("mouseover", function(event, d) {
-        mouseLine.attr("opacity", "1.0");
+        mouseLine.attr("opacity", "0.5");
     });
     this._focusSvg.on("mouseout", function(event, d) {
         mouseLine.attr("opacity", "0");
@@ -778,6 +789,20 @@ class TimelineD3 extends TatorElement {
           .attr("x2", d3.pointer(event)[0])
           .attr("y1", -focusStep - focusMargin.bottom)
           .attr("y2", focusHeight);
+
+        if (displayXAxis) {
+          focusFrameText.attr("opacity", "1.0");
+          focusFrameText.attr("x", d3.pointer(event)[0]);
+          focusFrameText.text(parseInt(focusX.invert(d3.pointer(event)[0])));
+          var textBBox = focusFrameText.node().getBBox();
+
+          focusFrameTextBackground.attr("opacity", "1.0")
+          focusFrameTextBackground.attr("x", textBBox.x);
+          focusFrameTextBackground.attr("y", textBBox.y);
+          focusFrameTextBackground.attr("width", textBBox.width);
+          focusFrameTextBackground.attr("height", textBBox.height);
+          focusFrameTextBackground.attr("fill", "#151b28");
+        }
 
         let idx;
         let currentFrame = focusX.invert(d3.pointer(event)[0]);
