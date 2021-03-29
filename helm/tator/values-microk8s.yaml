@@ -2,7 +2,7 @@
 # are accessing the site from another machine's browser or you
 # are installing Tator in a VM. Using localhost only works in 
 # a browser running on the same machine running Tator.
-domain: &domain 172.18.16.109
+domain: &domain <Insert static IP or domain>
 # Requests for these domains will be redirected to the actual domain.
 #redirects:
 #  - domain: mysite.duckdns.org
