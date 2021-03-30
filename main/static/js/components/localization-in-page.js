@@ -27,10 +27,6 @@ class LocalizationInPage extends TatorElement {
 
     // Create image canvas
     this._imageCanvas = document.createElement("annotation-image");
-    this._imageCanvas.addDomParent({
-      "object": this._shadow,
-      "alignTo": this._shadow
-    });
     this._imageCanvas._data = this._data;
     this._imageCanvas._undo = this._undo;
     this._shadow.appendChild(this._imageCanvas);
@@ -52,9 +48,10 @@ class LocalizationInPage extends TatorElement {
     this.savedMediaData = {};
   }
 
-  init({ pageModal, modelData }) {
+  init({ pageModal, modelData, panelContainer }) {
     this.pageModal = pageModal;
     this.modelData = modelData;
+    this.panelContainer = panelContainer;
     this.panelData.init(modelData);
   }
 
@@ -104,6 +101,10 @@ class LocalizationInPage extends TatorElement {
 
   _setupHandlers(mediaId, playerType, data) {
     console.log(mediaId);
+    this._player.addDomParent({
+      "object": this.panelContainer,
+      "alignTo": this._shadow
+    });
     this._player.mediaType = data.mediaTypeData;
     this._player.mediaInfo = data.mediaInfo;
     this._setupInitHandlers(this._player, this._data, this._undo);
@@ -239,6 +240,10 @@ class LocalizationInPage extends TatorElement {
             // Only display positive version numbers.
             versions = versions.filter(version => version.number >= 0);
 
+
+            console.log("Localization Types");
+            console.log(localizationTypes);
+
             // @TODO - versions
             for (const version of versions) {
               this._versionLookup[version.id] = version;
@@ -293,8 +298,7 @@ class LocalizationInPage extends TatorElement {
               dataType.isTrack = isTrack;
               dataType.isTLState = isTLState;
             }
-            console.log("Panel Data :::::::::");
-            console.log(this._data);
+
             this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
             this._data.addEventListener("freshData", evt => {
               if (this._newEntityId) {
@@ -392,6 +396,8 @@ class LocalizationInPage extends TatorElement {
             this._browser.addEventListener("select", evt => {
               if (evt.detail.byUser) {
                 if (evt.detail.dataType.isLocalization) {
+                  // @TODO select localization handler
+                  console.log(evt.detail.data);
                   canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
                 } else if (evt.detail.dataType.isTrack) {
                   // select track takes care of frame jump
@@ -521,7 +527,7 @@ class LocalizationInPage extends TatorElement {
               }
             });
 
-            this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
+            //this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
 
             canvas.addEventListener("maximize", () => {
               this._browser.style.display = "none";
@@ -762,6 +768,8 @@ class LocalizationInPage extends TatorElement {
     //   this.removeAttribute("has-open-modal", "");
     // });
   }
+
+  
 
 }
 customElements.define("localization-in-page", LocalizationInPage);

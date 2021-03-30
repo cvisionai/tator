@@ -2650,6 +2650,9 @@ class AnnotationCanvas extends TatorElement
       muteOthers = false;
     }
     listOfLocalizations.forEach(pair => {
+      console.log("listOfLocalizations... pair:");
+      console.log(pair);
+
       var localization = pair.obj;
       var userColor = pair.color;
       var meta = this.getObjectDescription(localization);
@@ -2820,6 +2823,7 @@ class AnnotationCanvas extends TatorElement
     var getAlphaForFrame = function(frame)
     {
 
+
       var alpha = 0;
       var fill_alpha = 0;
       if (Math.floor(frame / rampLength) % 2 == 0)
@@ -2856,6 +2860,8 @@ class AnnotationCanvas extends TatorElement
           let fillAlpha = alphaInfo.fillAlpha;
           var colorInfo = that.computeLocalizationColor(localization,meta);
 
+          console.log("Here, meta:");
+          console.log(meta);
 
           if (meta.dtype == 'box')
           {
@@ -3843,6 +3849,11 @@ class AnnotationCanvas extends TatorElement
           var colorInfo = this.computeLocalizationColor(localization,meta);
           localization.color = colorInfo.color
           var fill = colorInfo.fill;
+
+          console.log("localization");
+          console.log(localization);
+
+          //if(localization.id !== 59856) return false;
 
           if (type=='box')
           {

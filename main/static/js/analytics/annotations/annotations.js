@@ -5,10 +5,6 @@
   constructor() {
     super();
 
-    // Allow css access to body
-    const body = document.getElementsByTagName("BODY")[0];
-    body.setAttribute("class", "analysis-annotations-body");
-
     //
     // Header
     //
@@ -35,7 +31,7 @@
     // Define the main section of the page
     //
     this.main = document.createElement("main");
-    this.main.setAttribute("class", "analysis--main col-9");
+    this.main.setAttribute("class", "enitity-gallery--main col-12");
     this.mainWrapper.appendChild(this.main);
 
     const filterDiv = document.createElement("div");
@@ -63,7 +59,7 @@
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container col-3")
+    this.aside.setAttribute("class", "entity-panel--container slide-close col-3")
     this.mainWrapper.appendChild(this.aside);
 
     // Gallery navigation panel

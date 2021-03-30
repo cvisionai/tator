@@ -14,7 +14,7 @@ class AnnotationsCard extends EntityCard {
     // Add annotation class to list item
     this._li.classList.add("analysis__annotation");
     this.addEventListener("click", this.togglePanel.bind(this) );
-    this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
+    //this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
 
     // prep this var
     this._tmpHidden = null;
@@ -240,6 +240,7 @@ class AnnotationsCard extends EntityCard {
 
   cardClickEvent(openFlag = false){
     /* @ "card-click"*/
+    console.log("Card click event triggered (from card.js)");
     // Send event to panel to hide the localization canvas & title
     let cardClickEvent = new CustomEvent("card-click", { detail : { openFlag, cardObj : this.cardObj } });
     this.dispatchEvent( cardClickEvent );
