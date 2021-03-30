@@ -75,10 +75,10 @@ pvc:
   size: 10Ti
 hpa:
   nginxMinReplicas: 1
-  nginxMaxReplicas: 10
+  nginxMaxReplicas: 1
   nginxCpuPercent: 50
   gunicornMinReplicas: 1
-  gunicornMaxReplicas: 10
+  gunicornMaxReplicas: 1
   gunicornCpuPercent: 50
 # Transcode resource settings
 transcoderMaxRamDiskSize: 2Gi
