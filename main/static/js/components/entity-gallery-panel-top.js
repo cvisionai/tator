@@ -54,19 +54,18 @@ class EntityGalleryPanelTop extends TatorElement {
       this._shadow.appendChild(modalLinkDiv);
       
       // Modal link @TODO styling & copy
-      this._modalLink = document.createElement("a");
-      this._modalLink.setAttribute("class", "btn btn-clear btn-charcoal h3")
-      this._modalLink.setAttribute("href", "#");
-      this._modalLink.textContent = "View in Modal";
-      modalLinkDiv.appendChild(this._modalLink); 
+      // this._modalLink = document.createElement("a");
+      // this._modalLink.setAttribute("class", "btn btn-clear btn-charcoal h3")
+      // this._modalLink.setAttribute("href", "#");
+      // this._modalLink.textContent = "View in Modal";
+      // modalLinkDiv.appendChild(this._modalLink); 
 
       // Modal CTA
-      this._modalLink.addEventListener("click", this._locImage._popModalWithPlayer.bind(this))
+      //this._modalLink.addEventListener("click", this._locImage._popModalWithPlayer.bind(this))
     }
 
-    init({pageModal, modelData}){
-
-      this._locImage.init( {pageModal, modelData} );
+    init({pageModal, modelData, panelContainer}){
+      this._locImage.init( {pageModal, modelData, panelContainer} );
     }
 
     cardClicked(e){

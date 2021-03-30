@@ -3,7 +3,7 @@ class AnnotationsPanelContainer extends TatorElement {
         super();
 
         //default state
-        this.open = true;
+        this.open = false;
 
         // Close side panel bar with arrow and panel title
         this._panelTop = document.createElement("entity-gallery-panel-top");
@@ -24,7 +24,7 @@ class AnnotationsPanelContainer extends TatorElement {
         this.rside = aside;
 
         // listener to close panelContainer
-        this._panelTop.init( { pageModal, modelData } );
+        this._panelTop.init( { pageModal, modelData, panelContainer : this } );
         this._panelTop._topBarArrow.addEventListener("click", this._toggleRightOnClick.bind(this));
     }
 
