@@ -120,7 +120,7 @@ class AnnotationMulti extends TatorElement {
 
     // Magic number matching standard header + footer
     // #TODO This should be re-thought and more flexible initially
-    this._videoHeightPadObject = {height: 175};
+    this._videoHeightPadObject = {height: 210};
     this._headerFooterPad = 100; // Another magic number based on the header and padding below controls footer
 
     const searchParams = new URLSearchParams(window.location.search);

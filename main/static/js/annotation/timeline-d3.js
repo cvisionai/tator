@@ -593,7 +593,7 @@ class TimelineD3 extends TatorElement {
       this._numericalData.length * (focusStep + 1) +
       this._stateData.length * (focusStep + 1) +
       focusMargin.top + focusMargin.bottom;
-    const focusWidth = this._mainWidth * 0.8;
+    const focusWidth = this._mainWidth;
     this._focusSvg.attr("viewBox",`0 0 ${focusWidth} ${focusHeight}`);
 
     // Define the axes
