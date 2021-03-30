@@ -29,7 +29,7 @@ postgresUsername: "django"
 # Postgres password. Change this for production.
 postgresPassword: "django123"
 redisHost: "tator-redis-master"
-elasticsearchHost: "elasticsearch-logging.kube-system.svc.cluster.local"
+elasticsearchHost: "elasticsearch-master"
 objectStorageHost: "minio-master"
 # If you are using the docker registry container for your registry, you can
 # leave these, otherwise change user/pass to the credentials for your registry.
@@ -118,7 +118,8 @@ metrics-server:
   enabled: false
 elasticsearch:
   # Enable this to install the elasticsearch helm chart.
-  enabled: false
+  enabled: true
+  hostPath: "/media/kubernetes_share/elasticsearch"
   persistence:
     enabled: true
   replicas: 1
@@ -130,9 +131,8 @@ elasticsearch:
         storage: 30Gi
   nodeSelector: 
     dbServer: "yes"
-  hostPath: /media/kubernetes_share/elasticsearch
 filebeat:
-  enabled: false
+  enabled: true
   image: docker.elastic.co/beats/filebeat-oss
   imageTag: 7.4.2
   filebeatConfig:
@@ -148,7 +148,8 @@ filebeat:
         hosts: '${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}'
       setup.ilm.enabled: false
 kibana:
-  enabled: false
+  enabled: true
+  image: docker.elastic.co/kibana/kibana-oss
   kibanaConfig:
     kibana.yml: |
       server:
