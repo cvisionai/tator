@@ -18,13 +18,13 @@ class TimelineD3 extends TatorElement {
 
     this._mainSvg = d3.select(this._shadow).select("#main-timeline")
       .append("svg")
-      //.attr("preserveAspectRatio", "xMinYMid meet")
+      .attr("preserveAspectRatio", "xMidYMid meet")
       .style("font", "12px sans-serif")
       .style("color", "#a2afcd");
 
     this._focusSvg = d3.select(this._shadow).select("#focus-timeline")
       .append("svg")
-      //.attr("preserveAspectRatio", "xMinYMid meet")
+      .attr("preserveAspectRatio", "xMidYMid meet")
       .style("font", "12px sans-serif")
       .style("color", "#a2afcd");
 
@@ -37,7 +37,7 @@ class TimelineD3 extends TatorElement {
     // Redraw whenever there's a resize
     this._stateData = [];
     this._numericalData = [];
-    window.addEventListener("resize", () => {this._updateSvgData()});
+    window.addEventListener("resize", this._updateSvgData());
   }
 
   /**
@@ -442,12 +442,12 @@ class TimelineD3 extends TatorElement {
     }
 
     const mainStep = 10; // vertical height of each entry in the series / band
-    const mainMargin = ({top: 20, right: 3, bottom: 3, left: 3});
+    const mainMargin = ({top: 30, right: 3, bottom: 3, left: 3});
     const mainHeight =
       this._numericalData.length * (mainStep + 1) +
       this._stateData.length * (mainStep + 1) +
       mainMargin.top + mainMargin.bottom;
-    const mainWidth = this._mainTimelineDiv.clientWidth;
+    const mainWidth = this._mainTimelineDiv.offsetWidth;
     this._mainWidth = mainWidth;
     this._mainSvg.attr("viewBox",`0 0 ${mainWidth} ${mainHeight}`);
 
@@ -560,6 +560,7 @@ class TimelineD3 extends TatorElement {
         .attr("xlink:href", d => d.pathId.href)
 
     this._mainSvg.append("g")
+      .style("font-size", "12px")
       .call(xAxis);
 
     // Setup the brush to focus/zoom on the main timeline
@@ -587,12 +588,12 @@ class TimelineD3 extends TatorElement {
 
     // Selection is an array of startX and stopX
     // Use this to update the x-axis of the focus panel
-    const focusStep = 20; // vertical height of each entry in the series / band
-    const focusMargin = ({top: 20, right: 5, bottom: 15, left: 5});
+    const focusStep = 25; // vertical height of each entry in the series / band
+    const focusMargin = ({top: 40, right: 5, bottom: 5, left: 5});
     const focusHeight =
       this._numericalData.length * (focusStep + 1) +
       this._stateData.length * (focusStep + 1) +
-      focusMargin.top + focusMargin.bottom;
+      focusMargin.top + focusMargin.bottom + 6;
     const focusWidth = this._mainWidth;
     this._focusSvg.attr("viewBox",`0 0 ${focusWidth} ${focusHeight}`);
 
@@ -676,6 +677,7 @@ class TimelineD3 extends TatorElement {
         .attr("y", focusStep / 2)
         .attr("dy", "0.5em")
         .attr("fill", "#fafafa")
+        .style("font-size", "12px")
         .text(d => d.name);
 
     const focusStateValues = focusG.append("text")
@@ -683,6 +685,7 @@ class TimelineD3 extends TatorElement {
         .attr("x", focusWidth * 0.2)
         .attr("y", focusStep / 2)
         .attr("dy", "0.5em")
+        .style("font-size", "12px")
         .attr("fill", "#fafafa");
 
     // States are represented as line graphs
@@ -729,6 +732,7 @@ class TimelineD3 extends TatorElement {
     // Unlike the main SVG, this SVG will display the corresponding attribute name
     // and the value when the user hovers over the SVG
     focusGLine.append("text")
+        .style("font-size", "12px")
         .attr("x", 4)
         .attr("y", focusStep / 2)
         .attr("dy", "0.5em")
@@ -736,6 +740,7 @@ class TimelineD3 extends TatorElement {
         .text(d => d.name);
 
     const focusLineValues = focusGLine.append("text")
+        .style("font-size", "12px")
         .attr("class", "focusLineValues")
         .attr("x", focusWidth * 0.2)
         .attr("y", focusStep / 2)
@@ -746,6 +751,7 @@ class TimelineD3 extends TatorElement {
     var displayXAxis = selection[0] >= 0;
     if (displayXAxis) {
       var focusXAxisG = this._focusSvg.append("g")
+        .style("font-size", "12px")
         .call(focusXAxis);
 
       var focusFrameTextBackground = focusXAxisG.append("rect")
@@ -753,6 +759,7 @@ class TimelineD3 extends TatorElement {
         .attr("height", focusStep);
 
       var focusFrameText = focusXAxisG.append("text")
+        .style("font-size", "12px")
         .attr("x", focusWidth * 0.1)
         .attr("y", -focusStep / 2)
         .attr("dy", "0.35em")
@@ -800,9 +807,9 @@ class TimelineD3 extends TatorElement {
           var textBBox = focusFrameText.node().getBBox();
 
           focusFrameTextBackground.attr("opacity", "1.0")
-          focusFrameTextBackground.attr("x", textBBox.x);
+          focusFrameTextBackground.attr("x", textBBox.x - textBBox.width / 4);
           focusFrameTextBackground.attr("y", textBBox.y);
-          focusFrameTextBackground.attr("width", textBBox.width);
+          focusFrameTextBackground.attr("width", textBBox.width + textBBox.width / 2);
           focusFrameTextBackground.attr("height", textBBox.height);
           focusFrameTextBackground.attr("fill", "#151b28");
         }
@@ -810,6 +817,7 @@ class TimelineD3 extends TatorElement {
         let idx;
         let currentFrame = focusX.invert(d3.pointer(event)[0]);
 
+        focusLineValues.attr("x", d3.pointer(event)[0]);
         focusLineValues.attr("opactiy", "1.0");
         focusLineValues.text(function(d) {
           for (idx = 0; idx < d.graphData.length; idx++) {
@@ -822,6 +830,7 @@ class TimelineD3 extends TatorElement {
           return "";
         });
 
+        focusStateValues.attr("x", d3.pointer(event)[0]);
         focusStateValues.attr("opactiy", "1.0");
         focusStateValues.text(function(d) {
           for (idx = 0; idx < d.graphData.length; idx++) {
@@ -878,6 +887,13 @@ class TimelineD3 extends TatorElement {
    */
   selectData(data) {
     return;
+  }
+
+  /**
+   * 
+   */
+  redraw() {
+    this._updateSvgData();
   }
 
 }

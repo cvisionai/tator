@@ -1257,6 +1257,7 @@ class AnnotationCanvas extends TatorElement
                                  }
                                });
       that._textOverlay.resize(that.clientWidth, that.clientHeight);
+      that.dispatchEvent(new Event("canvasResized"));
     }
 
     // Set up resize handler.

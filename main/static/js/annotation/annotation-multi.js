@@ -537,6 +537,9 @@ class AnnotationMulti extends TatorElement {
         });
       }
 
+      this._videos[idx].addEventListener("canvasResized", () => {
+        this._timelineD3.redraw();
+      });
       this._videos[idx].addEventListener("safeMode", () => {
         this.safeMode();
       });
