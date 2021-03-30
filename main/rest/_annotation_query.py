@@ -165,7 +165,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if state_ids and (annotation_type == 'localization'):
         localization_ids += list(State.localizations.through.objects\
                                  .filter(state__in=state_ids)\
-                                 .values_list('localization_id', flat=True).distinct())
+                                 .values_list('localization_id', flat=True).distinct('id'))
     if localization_ids:
         if annotation_type == 'localization':
             qs = qs.filter(pk__in=localization_ids)
@@ -197,7 +197,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('id')
-    qs = qs.distinct()
+    qs = qs.distinct('id')
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
     elif start is not None:
@@ -238,7 +238,7 @@ def get_annotation_queryset(project, params, annotation_type):
             qs = qs.difference(parent_set)
 
         qs = qs.order_by('id')
-        qs = qs.distinct()
+        qs = qs.distinct('id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
