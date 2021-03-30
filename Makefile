@@ -450,7 +450,7 @@ cleanup-evicted:
 	kubectl get pods | grep Evicted | awk '{print $$1}' | xargs kubectl delete pod
 
 # Example:
-#   make build-search-indices MAX_AGE_DAYS=365 OBJECT_STORAGE_HOST=
+#   make build-search-indices MAX_AGE_DAYS=365
 .PHONY: build-search-indices
 build-search-indices:
 	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)" -p objectStorageHost="$(OBJECT_STORAGE_HOST)" -p objectStorageRegionName="$(OBJECT_STORAGE_REGION_NAME)" -p objectStorageBucketName="$(OBJECT_STORAGE_BUCKET_NAME)" -p objectStorageAccessKey="$(OBJECT_STORAGE_ACCESS_KEY)" -p objectStorageSecretKey="$(OBJECT_STORAGE_SECRET_KEY)"

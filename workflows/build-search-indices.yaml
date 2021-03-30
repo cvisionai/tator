@@ -9,7 +9,7 @@ spec:
     parameters:
     - name: sections
       value: |
-        ["media"]
+        ["index", "mappings", "media", "treeleaves", "states", "localizations"]
   entrypoint: build-all
   templates:
 
