@@ -14,6 +14,8 @@ class AnnotationsCard extends EntityCard {
     // Add annotation class to list item
     this._li.classList.add("analysis__annotation");
     this.addEventListener("click", this.togglePanel.bind(this) );
+
+    //@TODO pausing on hover behavior -- needs work w/ canvas
     //this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
 
     // prep this var
@@ -217,8 +219,8 @@ class AnnotationsCard extends EntityCard {
     // Send event to panel to show this localization
     this.annotationEvent("hide-annotation");
 
-    //Add back listener
-    this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
+    //Add back listener @TODO pausing on hover behavior -- needs work w/ canvas
+    //this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
 
   }
 
