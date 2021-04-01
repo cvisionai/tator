@@ -162,11 +162,12 @@ class TatorS3:
         return urls, upload_id
 
     def get_size(self, path):
-        """ Returns the size of an object for the given path, if it exists. """
-        size = 0
+        """ Returns the size of an object for the given path, if it exists. 
+            Returns -1 if it does not exist."""
+        size = -1
         try:
             response = self.head_object(path)
-        except ClientError:
+        except ClientError as exc:
             logger.warning(f"Could not find object {path}!")
         else:
             size = response["ContentLength"]
