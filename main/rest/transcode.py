@@ -56,15 +56,15 @@ class TranscodeAPI(BaseListView):
 
         # Attempt to determine upload size. Only use size parameter if size cannot be determined.
         parsed = urlparse(url)
-        same_object_host = f"{parsed.scheme}://{parsed.netloc}" == os.getenv('OBJECT_STORAGE_HOST')
-        same_main_host = parsed.netloc == os.getenv('MAIN_HOST')
-        if same_object_host or same_main_host:
-            # This is a presigned url for S3. Presigned urls do not allow HEAD requests, so parse
-            # out the object key and get object size via S3 api.
-            path = '/'.join(parsed.path.split('/')[-4:])
-            tator_s3 = TatorS3(project_obj.bucket)
-            upload_size = tator_s3.get_size(path)
-        else:
+        # First assume this is a presigned url for S3. Parse
+        # out the object key and get object size via S3 api.
+        path = '/'.join(parsed.path.split('/')[-4:])
+        logger.info(f"Attempting to retrieve size for S3 key {path}...")
+        tator_s3 = TatorS3(project_obj.bucket)
+        upload_size = tator_s3.get_size(path)
+        logger.info(f"Got object size {upload_size} for S3 key {path}")
+        if upload_size == -1:
+            logger.info(f"Failed to get object size for S3 key {path}, trying HEAD at {url}...")
             # This is a normal url. Use HEAD request to obtain content length.
             response = requests.head(url)
             head_succeeded = False
@@ -76,6 +76,7 @@ class TranscodeAPI(BaseListView):
             if (upload_size is None) and (head_succeeded == False):
                 raise Exception("HEAD request failed. Supply `size` parameter to Transcode "
                                 "endpoint!")
+            logger.info(f"Got size {upload_size} for {url}")
 
         # Verify the given media ID exists and is part of the project,
         # then update its fields with the given info.
