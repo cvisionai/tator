@@ -1,4 +1,5 @@
 import uuid
+import os
 import logging
 
 from django.db import transaction
@@ -65,7 +66,7 @@ class InvitationListAPI(BaseListView):
                     raise ValueError(f"Unable to send email to {email}! Invitation creation failed.")
             invite.save()
         return {'message': f"User can register at {url}",
-                'id': invitation.id}
+                'id': invite.id}
 
     def get_queryset(self):
         organization_id = self.kwargs['organization']
