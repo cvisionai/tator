@@ -47,6 +47,7 @@ class EmailAPI(BaseListView):
                     email_addr = entry
 
                 qs = User.objects.filter(email=email_addr)
+                user = qs[0]
 
                 # Correlate with a user object
                 if len(qs) < 1:
@@ -54,7 +55,7 @@ class EmailAPI(BaseListView):
                     raise ValueError(error_msg)
 
                 # Verify user is part of the project
-                qs = Membership.objects.filter(user_id=qs[0].id, project_id=project)
+                qs = Membership.objects.filter(user_id=user.id, project_id=project)
                 if len(qs) < 1:
                     error_msg = f"Recipient (user_id: {user.id}) not part of project"
                     raise ValueError(error_msg)

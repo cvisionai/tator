@@ -63,7 +63,7 @@ class TatorSES:
         email_response = self.ses.send_raw_email(
             Source=settings.TATOR_EMAIL_SENDER,
             Destinations=recipients,
-            RawMessage={'Data': email_msg.as_string()})
+            RawMessage={'Data': msg.as_string()})
 
         return email_response
 
