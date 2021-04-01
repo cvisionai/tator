@@ -35,10 +35,10 @@ class InvitationListSchema(AutoSchema):
 
     def _get_path_parameters(self, path, method):
         return [{
-            'name': 'project',
+            'name': 'organization',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying a project.',
+            'description': 'A unique integer identifying an organization.',
             'schema': {'type': 'integer'},
         }]
 
