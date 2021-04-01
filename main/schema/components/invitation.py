@@ -2,7 +2,6 @@ invitation_properties = {
     'email': {
         'description': 'Unique integer identifying a user.',
         'type': 'string',
-        'format': 'email',
     },
     'permission': {
         'description': 'User permission level for the organization.',
