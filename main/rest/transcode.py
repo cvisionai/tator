@@ -56,13 +56,15 @@ class TranscodeAPI(BaseListView):
 
         # Attempt to determine upload size. Only use size parameter if size cannot be determined.
         parsed = urlparse(url)
-        # First assume this is a presigned url for S3. Parse
-        # out the object key and get object size via S3 api.
-        path = '/'.join(parsed.path.split('/')[-4:])
-        logger.info(f"Attempting to retrieve size for S3 key {path}...")
-        tator_s3 = TatorS3(project_obj.bucket)
-        upload_size = tator_s3.get_size(path)
-        logger.info(f"Got object size {upload_size} for S3 key {path}")
+        upload_size = -1
+        if len(parsed.path.split('/') > 4):
+            # First assume this is a presigned url for S3. Parse
+            # out the object key and get object size via S3 api.
+            path = '/'.join(parsed.path.split('/')[-4:])
+            logger.info(f"Attempting to retrieve size for S3 key {path}...")
+            tator_s3 = TatorS3(project_obj.bucket)
+            upload_size = tator_s3.get_size(path)
+            logger.info(f"Got object size {upload_size} for S3 key {path}")
         if upload_size == -1:
             logger.info(f"Failed to get object size for S3 key {path}, trying HEAD at {url}...")
             # This is a normal url. Use HEAD request to obtain content length.
