@@ -137,7 +137,7 @@ class AttributeTypeListAPI(BaseListView):
         else:
             raise ValueError(
                 f"Could not find attribute name {old_name} in entity type "
-                "{type(entity_type)} ID {entity_type.id}"
+                f"{type(entity_type)} ID {entity_type.id}"
             )
 
         # Determine if the attribute is being mutated
