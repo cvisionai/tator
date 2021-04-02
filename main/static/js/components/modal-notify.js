@@ -22,7 +22,7 @@ class ModalNotify extends ModalDialog {
     });
   }
 
-  init(title, message, error_or_ok) {
+  init(title, message, error_or_ok, buttonText) {
     this._title.nodeValue = title;
     this._message.textContent = message;
     if (error_or_ok == 'error') {
@@ -30,11 +30,17 @@ class ModalNotify extends ModalDialog {
       this._successIcon.style.display = "none";
       this._accept.classList.remove("btn-charcoal");
       this._accept.classList.add("btn-red");
+      if (buttonText) {
+        this._accept.textContent = buttonText;
+      }
     } else {
       this._warningIcon.style.display = "none";
       this._successIcon.style.display = "block";
       this._accept.classList.remove("btn-red");
       this._accept.classList.add("btn-purple");
+      if (buttonText) {
+        this._accept.textContent = buttonText;
+      }
     }
   }
 
