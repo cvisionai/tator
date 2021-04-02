@@ -58,23 +58,17 @@ class LocalizationInPage extends TatorElement {
   initAndShowData({ cardObj }) {
     // Identitifier used to get the canvas' media data
     const mediaId = cardObj.mediaId;
+    const locId = cardObj.id;
 
     // @TODO optimize later - only init this the first time
     if (typeof this.savedMediaData[mediaId] !== "undefined" && this.savedMediaData[mediaId] !== null) {
       console.log("Beginning canvas init from saved data");
+      
       //  --> init the canvas from saved data
       let data = this.savedMediaData[mediaId];
       let dtype = this.savedMediaData[mediaId].mediaTypeData.dtype;
 
-      if (dtype == "image") {
-        //this._imageCanvas.annotationData = annotationData;
-        this._setupImageCanvas(mediaId, data);
-      }
-
-      if (dtype == "video") {
-        //this._videoCanvas.annotationData = annotationData;
-        this._setupVideoCanvas(mediaId, data);
-      }
+      this._setupCanvas({dtype, mediaId, locId, data});
 
     } else {
       // --> Get mediaData and save it to this card object
@@ -82,16 +76,7 @@ class LocalizationInPage extends TatorElement {
       this.panelData.getMediaData(mediaId).then((data) => {
         console.log("Beginning canvas init from new fetch");
         let dtype = data.mediaTypeData.dtype;
-
-        if (dtype == "image") {
-          //this._imageCanvas.annotationData = annotationData;
-          this._setupImageCanvas(mediaId, data);
-        }
-
-        if (dtype == "video") {
-          //this._videoCanvas.annotationData = annotationData;
-          this._setupVideoCanvas(mediaId, data);
-        }
+        this._setupCanvas({dtype, mediaId, locId, data});
 
         // save this data in local memory until we need it again
         this.savedMediaData[mediaId] = data;
@@ -99,39 +84,47 @@ class LocalizationInPage extends TatorElement {
     }
   }
 
-  _setupHandlers(mediaId, playerType, data) {
-    console.log(mediaId);
+  _setupCanvas({dtype, mediaId, locId, data}) {
+    this._player = (dtype == "image") ? this._setupImageCanvas() : this._setupVideoCanvas();
     this._player.addDomParent({
       "object": this.panelContainer,
-      "alignTo": this._shadow
+      "alignTo": this._shadow 
     });
+
+    //overwrite this draw setting
+    if(dtype == "image"){
+      this._player._image._draw.setPushCallback((frameInfo) => {return this._player._image.drawAnnotations(frameInfo, null, null, locId);});
+    }
+    // provide media data to canvas
     this._player.mediaType = data.mediaTypeData;
     this._player.mediaInfo = data.mediaInfo;
+    
+    // init canvas @todo these need refinement
     this._setupInitHandlers(this._player, this._data, this._undo);
-    this._getMetadataTypes(this._player, this._player[playerType]._canvas, null, null, true, mediaId);
+    this._getMetadataTypes(this._player, this._player[`_${dtype}`]._canvas, null, null, true, mediaId);
   }
 
-  _setupImageCanvas(mediaId, data) {
+  _setupImageCanvas() {
     console.log("image only canvas chosen");
     // Inits image-only canvas as player
     this._player = this._imageCanvas;
-    const playerType = "_image";
     
     // Setup image canvas
-    this._setupHandlers( mediaId, playerType, data );
     this._imageCanvas.hidden = false;
     this._videoCanvas.hidden = true;
+
+    return this._imageCanvas;
   }
 
   _setupVideoCanvas(mediaId, data) {
     console.log("video canvas chosen");
     // Inits image-only canvas as player
     this._player = this._videoCanvas;
-    const playerType = "_video";
 
-    this._setupHandlers(mediaId, playerType, data);
     this._videoCanvas.hidden = false;
     this._imageCanvas.hidden = true;
+
+    return this._videoCanvas;
   }
 
   _popModalWithPlayer(e, modal = this.pageModal) {
