@@ -42,6 +42,9 @@
 {{- $finishSettings := dict "Values" .Values "name" "finish-restore-cron" "app" "finish-restore" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"finishrestoration\"]" "schedule" "50 1 * * *" }}
 {{include "tatorCron.template" $finishSettings }}
 ---
+{{- $expireSettings := dict "Values" .Values "name" "expire-invitations-cron" "app" "expire-invitations" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"expireinvitations\"]" "schedule" "50 2 * * *" }}
+{{include "tatorCron.template" $expireSettings }}
+---
 {{- end }}
 {{- if .Values.requireHttps }}
 {{- if .Values.certCron.enabled }}
