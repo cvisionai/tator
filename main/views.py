@@ -53,9 +53,6 @@ class RegistrationView(TemplateView):
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
 
-class CustomView(LoginRequiredMixin, TemplateView):
-    template_name = 'new-project/custom.html'
-
 class AccountProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'account-profile/account-profile.html'
 

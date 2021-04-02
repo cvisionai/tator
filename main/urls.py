@@ -19,7 +19,6 @@ from .views import APIBrowserView
 from .views import MainRedirect
 from .views import RegistrationView
 from .views import ProjectsView
-from .views import CustomView
 from .views import AccountProfileView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
@@ -55,7 +54,6 @@ urlpatterns = [
     path('<int:project_id>/analytics/visualization', AnalyticsVisualizationView.as_view(), name='analytics-visualization'),
     path('<int:project_id>/analytics/reports', AnalyticsReportsView.as_view(), name='analytics-reports'),
     path('projects/', ProjectsView.as_view(), name='projects'),
-    path('new-project/custom/', CustomView.as_view(), name='custom'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
     path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
