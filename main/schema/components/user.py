@@ -23,7 +23,6 @@ user_properties = {
     fields.email: {
         'type': 'string',
         'description': 'Email address of user.',
-        'format': 'email',
     },
 }
 

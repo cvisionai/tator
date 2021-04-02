@@ -2,7 +2,7 @@ from uuid import uuid1
 
 from django.db import transaction
 from django.conf import settings
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import ValidationError
 
 from ..models import User
 from ..models import Invitation
@@ -75,21 +75,23 @@ class UserListAPI(BaseListView):
                 user.set_password(password)
                 user.save()
             else:
-                raise PermissionDenied
+                raise ValueError(f"Registration token must be supplied in URL!")
         else:
             # A registration token has been supplied, use it to find Invitation objects.
             invites = Invitation.objects.filter(registration_token=registration_token,
                                                 status='Pending')
             if invites.count() == 0:
-                raise PermissionDenied
+                raise ValueError("Registration token is expired or invalid!")
             else:
+                invite = invites[0]
+                if (invite.email != email):
+                    raise ValueError("Email address must match where registration token was sent!")
                 user = User(first_name=first_name,
                             last_name=last_name,
                             email=email,
                             username=username)
                 user.set_password(password)
                 user.save()
-                invite = invites[0]
                 Affiliation.objects.create(organization=invite.organization,
                                            permission=invite.permission,
                                            user=user)
