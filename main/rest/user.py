@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 
 from ..models import User
 from ..models import Invitation
+from ..models import Affiliation
 from ..serializers import UserSerializerBasic
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema
@@ -92,6 +93,8 @@ class UserListAPI(BaseListView):
                             username=username)
                 user.set_password(password)
                 user.save()
+                invite.status = "Accepted"
+                invite.save()
                 Affiliation.objects.create(organization=invite.organization,
                                            permission=invite.permission,
                                            user=user)
