@@ -3767,7 +3767,7 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
-  drawAnnotations(frameInfo, drawContext, roi)
+  drawAnnotations(frameInfo, drawContext, roi, focusLoc = -1)
   {
     if (drawContext == undefined)
     {
@@ -3853,39 +3853,40 @@ class AnnotationCanvas extends TatorElement
           console.log("localization");
           console.log(localization);
 
-          //if(localization.id !== 59856) return false;
-
-          if (type=='box')
-          {
-            var poly = this.localizationToPoly(localization, drawContext, roi);
-            drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
-            if (fill.style == "solid")
+          // just show this loc id
+          if(focusLoc > -1 && localization.id === focusLoc) {
+            if (type=='box')
             {
-              drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
+              var poly = this.localizationToPoly(localization, drawContext, roi);
+              drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
+              if (fill.style == "solid")
+              {
+                drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
+              }
+              if (fill.style == "blur")
+              {
+                drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[1.0,0.01,0,0]);
+              }
+              if (fill.style == "gray")
+              {
+                drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[2.0,0,0,0]);
+              }
             }
-            if (fill.style == "blur")
+            else if (type == 'line')
             {
-              drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[1.0,0.01,0,0]);
+              var line = this.localizationToLine(localization, drawContext, roi);
+              drawContext.drawLine(line[0], line[1], localization.color, width, colorInfo.alpha);
             }
-            if (fill.style == "gray")
+            else if (type == 'dot')
             {
-              drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[2.0,0,0,0]);
+              const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+              var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
+              drawContext.drawLine(line[0], line[1], localization.color, dotWidth, colorInfo.alpha);
             }
-          }
-          else if (type == 'line')
-          {
-            var line = this.localizationToLine(localization, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, width, colorInfo.alpha);
-          }
-          else if (type == 'dot')
-          {
-            const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
-            var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, dotWidth, colorInfo.alpha);
-          }
-          else
-          {
-            console.warn("Unsupported localization type: " + type);
+            else
+            {
+              console.warn("Unsupported localization type: " + type);
+            }
           }
         }
       }
