@@ -386,72 +386,72 @@ class LocalizationInPage extends TatorElement {
                 evt.detail.dataType,
               );
             });
-            this._browser.addEventListener("select", evt => {
-              if (evt.detail.byUser) {
-                if (evt.detail.dataType.isLocalization) {
-                  // @TODO select localization handler
-                  console.log(evt.detail.data);
-                  canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
-                } else if (evt.detail.dataType.isTrack) {
-                  // select track takes care of frame jump
-                  canvas.selectTrack(evt.detail.data, undefined, !evt.detail.goToEntityFrame);
-                }
-                else if ('frame' in evt.detail.data) {
-                  if (evt.detail.goToEntityFrame) {
-                    canvas.goToFrame(parseInt(evt.detail.data.frame));
-                  }
-                }
+            // this._browser.addEventListener("select", evt => {
+            //   if (evt.detail.byUser) {
+            //     if (evt.detail.dataType.isLocalization) {
+            //       // @TODO select localization handler
+            //       console.log(evt.detail.data);
+            //       canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
+            //     } else if (evt.detail.dataType.isTrack) {
+            //       // select track takes care of frame jump
+            //       canvas.selectTrack(evt.detail.data, undefined, !evt.detail.goToEntityFrame);
+            //     }
+            //     else if ('frame' in evt.detail.data) {
+            //       if (evt.detail.goToEntityFrame) {
+            //         canvas.goToFrame(parseInt(evt.detail.data.frame));
+            //       }
+            //     }
 
-                if (this._player.selectTimelineData) {
-                  this._player.selectTimelineData(evt.detail.data);
-                }
+            //     if (this._player.selectTimelineData) {
+            //       this._player.selectTimelineData(evt.detail.data);
+            //     }
 
-                if (this._player.mediaType.dtype == "multi") {
-                  if (evt.detail.goToEntityFrame) {
-                    this._player.goToFrame(evt.detail.data.frame);
-                  }
-                }
-              }
-              this._settings.setAttribute("entity-id", evt.detail.data.id);
-              this._settings.setAttribute("entity-type", evt.detail.data.meta);
-              this._settings.setAttribute("type-id", evt.detail.data.meta);
-            });
-            this._browser.addEventListener("capture", evt => {
-              if ('_video' in canvas) {
-                canvas._video.makeDownloadableLocalization(evt.detail.data);
-              }
-              else {
-                canvas._image.makeDownloadableLocalization(evt.detail.data);
-              }
-            });
-            this._browser.addEventListener("open", evt => {
-              if ("drawTimeline" in canvas) {
-                canvas.drawTimeline(evt.detail.typeId);
-              }
-              this._settings.setAttribute("type-id", evt.detail.typeId);
-            });
-            this._browser.addEventListener("close", evt => {
-              this._settings.removeAttribute("type-id");
+            //     if (this._player.mediaType.dtype == "multi") {
+            //       if (evt.detail.goToEntityFrame) {
+            //         this._player.goToFrame(evt.detail.data.frame);
+            //       }
+            //     }
+            //   }
+            //   this._settings.setAttribute("entity-id", evt.detail.data.id);
+            //   this._settings.setAttribute("entity-type", evt.detail.data.meta);
+            //   this._settings.setAttribute("type-id", evt.detail.data.meta);
+            // });
+            // this._browser.addEventListener("capture", evt => {
+            //   if ('_video' in canvas) {
+            //     canvas._video.makeDownloadableLocalization(evt.detail.data);
+            //   }
+            //   else {
+            //     canvas._image.makeDownloadableLocalization(evt.detail.data);
+            //   }
+            // });
+            // this._browser.addEventListener("open", evt => {
+            //   if ("drawTimeline" in canvas) {
+            //     canvas.drawTimeline(evt.detail.typeId);
+            //   }
+            //   this._settings.setAttribute("type-id", evt.detail.typeId);
+            // });
+            // this._browser.addEventListener("close", evt => {
+            //   this._settings.removeAttribute("type-id");
 
-              // The canvas can either be the annotation player or image. The player is the only
-              // annotation that has the concepts of tracks, so the following check is performed.
-              if (typeof canvas.deselectTrack === "function") {
-                canvas.deselectTrack();
-              }
-              canvas.selectNone();
-            });
-            this._browser.addEventListener("frameChange", evt => {
-              if ('track' in evt.detail) {
-                canvas.selectTrack(evt.detail.track, evt.detail.frame);
-              }
-              else {
-                canvas.goToFrame(evt.detail.frame);
-              }
-            });
-            this._browser.addEventListener("patchMeta", evt => {
-              this.clearMetaCaches();
-              canvas.newMetadataItem(evt.detail.typeId, false, evt.detail.obj);
-            });
+            //   // The canvas can either be the annotation player or image. The player is the only
+            //   // annotation that has the concepts of tracks, so the following check is performed.
+            //   if (typeof canvas.deselectTrack === "function") {
+            //     canvas.deselectTrack();
+            //   }
+            //   canvas.selectNone();
+            // });
+            // this._browser.addEventListener("frameChange", evt => {
+            //   if ('track' in evt.detail) {
+            //     canvas.selectTrack(evt.detail.track, evt.detail.frame);
+            //   }
+            //   else {
+            //     canvas.goToFrame(evt.detail.frame);
+            //   }
+            // });
+            // this._browser.addEventListener("patchMeta", evt => {
+            //   this.clearMetaCaches();
+            //   canvas.newMetadataItem(evt.detail.typeId, false, evt.detail.obj);
+            // });
             this._saves = {};
 
             for (const dataType of localizationTypes) {
