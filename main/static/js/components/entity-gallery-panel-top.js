@@ -30,7 +30,8 @@ class EntityGalleryPanelTop extends TatorElement {
       // Panel name
       this._topBarH3 = document.createElement("h3");
       this._topBarH3.setAttribute("class", "entity-panel--container--top-bar--h3 text-semibold h3 ");
-      this._topBarH3.appendChild( document.createTextNode("Annotation Information") );
+      this._headingText = document.createTextNode(`No selection.`);
+      this._topBarH3.appendChild( this._headingText );
       this._box.appendChild(this._topBarH3);
 
       // Panel name
@@ -69,7 +70,7 @@ class EntityGalleryPanelTop extends TatorElement {
     }
 
     cardClicked(e){
-      this.locDataHandler(e.detail)
+      this.locDataHandler(e.detail);
     }
 
     locDataHandler(evtDetail){
@@ -79,8 +80,10 @@ class EntityGalleryPanelTop extends TatorElement {
         // We're opening the panel with new card click
         this._locImage.initAndShowData({ cardObj : evtDetail.cardObj });
         this._locImage.classList.remove("hidden");
+        this._topBarH3.innerHTML = `Annotation Information (ID: ${evtDetail.cardObj.id})`;
       } else {
         this._locImage.classList.add("hidden");
+        this._topBarH3.innerHTML = `No selection.`;
       }
     }
    

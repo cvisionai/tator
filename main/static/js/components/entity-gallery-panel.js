@@ -58,7 +58,7 @@ class EntityGalleryPanel extends TatorElement {
       this.cardObj = cardObj;
 
       // Heading
-      this._heading.textContent = `Annotation Information (ID: ${cardObj.id})`;      
+      //this._heading.textContent = `Annotation Information (ID: ${cardObj.id})`;      
 
       // Setup linkout and the entity data for panel here
       this._mediaLink = this.cardObj.mediaLink;
