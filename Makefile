@@ -208,9 +208,19 @@ FILES = \
     components/upload-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
+    components/canvas-ctxmenu.js \
     components/big-upload-form.js \
     components/upload-element.js \
-    components/entity-card.js \
+    components/entity-gallery-card.js \
+    components/entity-gallery-panel-form.js \
+    components/entity-gallery-panel-top.js \
+    components/entity-gallery-panel.js \
+    components/entity-gallery-resize.js \
+    components/entity-gallery-aspect-ratio.js \
+    components/entity-gallery-paginator.js \
+    components/entity-gallery-labels.js \
+    components/entity-gallery.js \
+    components/localization-in-page.js \
     components/header-notification.js \
     components/header-menu.js \
     components/header-user.js \
@@ -226,10 +236,10 @@ FILES = \
     components/form-file.js \
     components/chevron-right.js \
     components/text-autocomplete.js \
-    components/canvas-ctxmenu.js \
     components/success-light.js \
     components/warning-light.js \
     components/name-dialog.js \
+    components/filter-history-management.js \
     components/filter-data-button.js \
     components/filter-condition.js \
     components/filter-condition-group.js \
@@ -314,7 +324,7 @@ FILES = \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
     annotation/fill-boxes-button.js \
-		annotation/toggle-text-button.js \
+    annotation/toggle-text-button.js \
     annotation/media-capture-button.js \
     annotation/bookmark-button.js \
     annotation/media-link-button.js \
@@ -367,7 +377,7 @@ FILES = \
     annotation/entity-next-button.js \
     annotation/entity-delete-button.js \
     annotation/entity-redraw-button.js \
-		annotation/entity-frame-button.js \
+    annotation/entity-frame-button.js \
     annotation/entity-track-button.js \
     annotation/entity-more.js \
     annotation/entity-selector.js \
@@ -383,6 +393,11 @@ FILES = \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
     analytics/dashboard/dashboard.js \
+    analytics/annotations/panel-container.js \
+    analytics/annotations/card.js \
+    analytics/annotations/gallery.js \
+    analytics/annotations/panel-data.js \
+    analytics/annotations/card-data.js \
     analytics/annotations/annotations.js \
     analytics/collections/collections.js \
     analytics/visualization/visualization.js \
