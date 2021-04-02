@@ -84,24 +84,12 @@ class VideoBufferDemux
     // Video, source, and buffer for seek track
     this._seekVideo = document.createElement("VIDEO");
     this._seekVideo.setAttribute("crossorigin", "anonymous");
-    this._seekBuffer = null;
-    this._seekSource = new MediaSource();
     this._seekReady = false;
     this._pendingSeeks = [];
     this._pendingSeekDeletes = [];
 
     var mime_str='video/mp4; codecs="avc1.64001e"';
 
-    this._seekSource.onsourceopen=() => {
-      this._seekSource.onsourceopen = null;
-      this._seekBuffer = this._seekSource.addSourceBuffer(mime_str);
-      if (this._pendingSeeks.length > 0)
-      {
-        console.info("Applying pending seek data.");
-        var pending = this._pendingSeeks.shift();
-        this.appendSeekBuffer(pending.data, pending.time);
-      }
-    };
 
     for (var idx = 0; idx <= this._numBuffers; idx++)
     {
@@ -120,7 +108,23 @@ class VideoBufferDemux
     this._dataLag = [];
     let init_buffers = () => {
       console.info("Init buffers");
+
+      // Initialize the seek buffer
+      this._seekBuffer = null;
+      this._seekSource = new MediaSource();
       this._seekVideo.src = URL.createObjectURL(this._seekSource);
+      this._seekSource.onsourceopen=() => {
+        this._seekSource.onsourceopen = null;
+        this._seekBuffer = this._seekSource.addSourceBuffer(mime_str);
+        if (this._pendingSeeks.length > 0)
+        {
+          console.info("Applying pending seek data.");
+          var pending = this._pendingSeeks.shift();
+          this.appendSeekBuffer(pending.data, pending.time);
+        }
+      };
+
+      // Initialize the playback buffers
       let that = this;
       var makeSourceBuffer = function(idx, event)
       {
@@ -133,8 +137,10 @@ class VideoBufferDemux
         that._sourceBuffers[idx]=ms.addSourceBuffer(mime_str);
 
         // Reached the onDemand buffer, rest of the function isn't associated with it
-        if (idx == that._numBuffers)
-        {
+        if (idx == that._numBuffers) {
+          if (that._initData){
+            that.appendOnDemandBuffer(that._initData, () => {}, true);
+          }
           return;
         }
 
@@ -155,7 +161,12 @@ class VideoBufferDemux
             let lag = that._dataLag.shift();
             if (lag)
             {
-              setTimeout(() => {that.appendLatestBuffer(lag, handleDataLag);},0);
+              if (lag.callback && that._dataLag.length == 0) {
+                setTimeout(() => {that.appendLatestBuffer(lag.data, lag.callback, "handlingDataLog");},0);
+              }
+              else {
+                setTimeout(() => {that.appendLatestBuffer(lag.data, handleDataLag, "handlingDataLog");},0);
+              }
             }
             else
             {
@@ -538,84 +549,90 @@ class VideoBufferDemux
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
-    if (this._seekBuffer.updating == false && this._seekReady == true)
-    {
-      this._seekBuffer.onupdateend = () => {
-
-        // Remove this handler
-        this._seekBuffer.onupdateend = null;
-        this.cleanSeekBuffer();
-      };
-
-      if (delete_range)
+    if (this._seekReady) {
+      if (this._seekBuffer.updating == false)
       {
-        this._seekBuffer.remove(delete_range[0], delete_range[1]);
+        this._seekBuffer.onupdateend = () => {
+
+          // Remove this handler
+          this._seekBuffer.onupdateend = null;
+          this.cleanSeekBuffer();
+        };
+
+        if (delete_range)
+        {
+          this._seekBuffer.remove(delete_range[0], delete_range[1]);
+        }
       }
-    }
-    else
-    {
-      this._pendingSeekDeletes.push(
-        {'delete_range': delete_range});
+      else
+      {
+        this._pendingSeekDeletes.push(
+          {'delete_range': delete_range});
+      }
     }
   }
   appendSeekBuffer(data, time=undefined)
   {
     // Add to the buffer directly else add to the pending
     // seek to get it there next go around
-    if (this._seekBuffer.updating == false && this._seekReady == true)
-    {
-      this._seekBuffer.onupdateend = () => {
-
-        // Remove this handler
-        this._seekBuffer.onupdateend = null;
-        // Seek to the time requested now that it is loaded
-        if (time != undefined)
-        {
-          this._seekVideo.currentTime = time;
-        }
-      };
-
-      // If this is a data request delete the stuff currently in the buffer
-      if (data != null)
+    if (this._seekReady) {
+      if (this._seekBuffer.updating == false)
       {
-        for (let idx = 0; idx < this._seekBuffer.buffered.length; idx++)
-        {
-          let begin = this._seekBuffer.buffered.start(idx);
-          let end = this._seekBuffer.buffered.end(idx);
+        this._seekBuffer.onupdateend = () => {
 
-          // If the seek buffer has 3 seconds extra on either side
-          // of the request chop of 1 seconds on either side this
-          // means there is a maximum of ~4 second buffer in the
-          // hq seek buffer.
-          if (begin < time - 3)
+          // Remove this handler
+          this._seekBuffer.onupdateend = null;
+          // Seek to the time requested now that it is loaded
+          if (time != undefined)
           {
-            this._pendingSeekDeletes.push({"delete_range": [begin,
-                                                            time-1]});
+            this._seekVideo.currentTime = time;
           }
-          if (end > time + 3)
+        };
+
+        // If this is a data request delete the stuff currently in the buffer
+        if (data != null)
+        {
+          for (let idx = 0; idx < this._seekBuffer.buffered.length; idx++)
           {
-            this._pendingSeekDeletes.push({"delete_range": [time+1,
-                                                            end]});
+            let begin = this._seekBuffer.buffered.start(idx);
+            let end = this._seekBuffer.buffered.end(idx);
+
+            // If the seek buffer has 3 seconds extra on either side
+            // of the request chop of 1 seconds on either side this
+            // means there is a maximum of ~4 second buffer in the
+            // hq seek buffer.
+            if (begin < time - 3)
+            {
+              this._pendingSeekDeletes.push({"delete_range": [begin,
+                                                              time-1]});
+            }
+            if (end > time + 3)
+            {
+              this._pendingSeekDeletes.push({"delete_range": [time+1,
+                                                              end]});
+            }
           }
+          this._seekBuffer.appendBuffer(data);
         }
-        this._seekBuffer.appendBuffer(data);
       }
-    }
-    else
-    {
-      this._pendingSeeks.push({'data': data,
-                               'time': time});
+      else
+      {
+        this._pendingSeeks.push({'data': data,
+                                 'time': time});
+      }
+
     }
   }
 
-  appendLatestBuffer(data, callback)
+  appendLatestBuffer(data, callback, blah)
   {
     if (this._init == false)
     {
-      this._dataLag.push(data);
+      this._dataLag.push({data: data, callback: null});
       setTimeout(callback,100);
       return;
     }
+
     var latest=this.currentIdx();
     if (latest != null)
     {
@@ -655,9 +672,15 @@ class VideoBufferDemux
    *
    * @param {bytes} data - Video segment
    * @param {function} callback - Callback executed once the buffer has been updated
+   * @param {bool} force - Force update if true. False will yield updates only if init'd
    */
-  appendOnDemandBuffer(data, callback)
+  appendOnDemandBuffer(data, callback, force)
   {
+    if (this._init == false && force != true)
+    {
+      console.info("Waiting for init... (onDemand)");
+      return;
+    }
     this._updateBuffers([this._onDemandBufferIndex], data, callback, "onDemand");
   }
 
@@ -715,7 +738,7 @@ class VideoBufferDemux
     }
     if (this._init == false && force == false)
     {
-      console.info("Waiting for init...");
+      console.info("Waiting for init... (appendAllBuffers)");
       this._initData = data;
       setTimeout(callback, 0);
       return;
@@ -1250,7 +1273,13 @@ class VideoCanvas extends AnnotationCanvas {
               // Rest of the fragmented mp4 segment info
               var begin=offsets[idx][0];
               var end=offsets[idx][0] + offsets[idx][1];
-              video_buffer.appendLatestBuffer(data.slice(begin, end), callback);
+              if (typeof video_buffer._dataLag != "undefined" && video_buffer._dataLag.length > 0) {
+                console.log("dataLag has data: " + video_buffer._dataLag.length);
+                video_buffer._dataLag.push({data: data.slice(begin, end), callback: callback});
+              }
+              else {
+                video_buffer.appendLatestBuffer(data.slice(begin, end), callback);
+              }
               idx++;
             }
           }
