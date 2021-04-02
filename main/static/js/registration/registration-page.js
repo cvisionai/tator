@@ -120,17 +120,31 @@ class RegistrationPage extends TatorElement {
         },
         body: JSON.stringify(body),
       })
-      .then( () => {
-        this._modalNotify.init("Registration succeeded!",
-                               "Press Continue to go to login screen.",
-                               "Continue");
+      .then(response => {
+        if (response.status == 400) {
+          return response.json();
+        } else {
+          return Promise.resolve("success");
+        }
+      })
+      .then(data => {
+        if (data == "success") {
+          this._modalNotify.init("Registration succeeded!",
+                                 "Press Continue to go to login screen.",
+                                 "ok",
+                                 "Continue");
+          this._modalNotify.addEventListener("close", evt => {
+            window.location.replace("/registration", "/accounts/login");
+          });
+        } else {
+          this._modalNotify.init("Registration failed!",
+                                 data.message,
+                                 "error",
+                                 "Close");
+        }
         this._modalNotify.setAttribute("is-open", "");
         this.setAttribute("has-open-modal", "");
       })
-      .catch(err => {
-        console.log(err);
-        Utilities.warningAlert("Registration failed!", "#ff3e1d", false);
-      });
     });
   }
 
