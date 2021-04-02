@@ -28,77 +28,65 @@ class RegistrationPage extends TatorElement {
     form.setAttribute("style", "width:500px");
     main.appendChild(form);
 
-    const userName = document.createElement("text-input");
-    userName.setAttribute("name", "Username");
-    userName.setAttribute("type", "string");
-    form.appendChild(userName);
+    this._username = document.createElement("text-input");
+    this._username.setAttribute("name", "Username");
+    this._username.setAttribute("type", "string");
+    form.appendChild(this._username);
 
-    const password1 = document.createElement("text-input");
-    password1.setAttribute("name", "Password");
-    password1.setAttribute("type", "password");
-    form.appendChild(password1);
+    this._password = document.createElement("text-input");
+    this._password.setAttribute("name", "Password");
+    this._password.setAttribute("type", "password");
+    form.appendChild(this._password);
 
-    const password2 = document.createElement("text-input");
-    password2.setAttribute("name", "Password (confirm)");
-    password2.setAttribute("type", "password");
-    form.appendChild(password2);
+    this._passwordConfirm = document.createElement("text-input");
+    this._passwordConfirm.setAttribute("name", "Password (confirm)");
+    this._passwordConfirm.setAttribute("type", "password");
+    form.appendChild(this._passwordConfirm);
 
-    const firstName = document.createElement("text-input");
-    firstName.setAttribute("name", "First name");
-    firstName.setAttribute("type", "string");
-    form.appendChild(firstName);
+    this._firstName = document.createElement("text-input");
+    this._firstName.setAttribute("name", "First name");
+    this._firstName.setAttribute("type", "string");
+    form.appendChild(this._firstName);
 
-    const lastName = document.createElement("text-input");
-    lastName.setAttribute("name", "Last name");
-    lastName.setAttribute("type", "string");
-    form.appendChild(lastName);
+    this._lastName = document.createElement("text-input");
+    this._lastName.setAttribute("name", "Last name");
+    this._lastName.setAttribute("type", "string");
+    form.appendChild(this._lastName);
 
-    const email = document.createElement("text-input");
-    email.setAttribute("name", "Email address");
-    email.setAttribute("type", "string");
-    form.appendChild(email);
+    this._email = document.createElement("text-input");
+    this._email.setAttribute("name", "Email address");
+    this._email.setAttribute("type", "string");
+    form.appendChild(this._email);
 
     const footer = document.createElement("div");
     footer.setAttribute("class", "modal__footer d-flex py-3");
     form.appendChild(footer);
 
-    const submit = document.createElement("input");
-    submit.setAttribute("class", "btn btn-clear");
-    submit.setAttribute("type", "submit");
-    submit.setAttribute("disabled", "");
-    submit.setAttribute("value", "Register");
-    footer.appendChild(submit);
+    this._submit = document.createElement("input");
+    this._submit.setAttribute("class", "btn btn-clear");
+    this._submit.setAttribute("type", "submit");
+    this._submit.setAttribute("disabled", "");
+    this._submit.setAttribute("value", "Register");
+    footer.appendChild(this._submit);
+
+    const errors = document.createElement("div");
+    errors.setAttribute("class", "main__header d-flex flex-column flex-items-center flex-justify-center py-6");
+    main.appendChild(errors);
+
+    this._errorList = document.createElement("ul");
+    this._errorList.setAttribute("class", "form-errors");
+    errors.appendChild(this._errorList);
 
     this._dimmer = document.createElement("div");
     this._dimmer.setAttribute("class", "background-dimmer");
     this._shadow.appendChild(this._dimmer);
 
-    firstName.addEventListener("input", evt => {
-      const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
-      if (re.test(evt.target.value)) {
-        submit.removeAttribute("disabled");
-      } else {
-        submit.setAttribute("disabled", "");
-      }
-    });
-
-    lastName.addEventListener("input", evt => {
-      const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
-      if (re.test(evt.target.value)) {
-        submit.removeAttribute("disabled");
-      } else {
-        submit.setAttribute("disabled", "");
-      }
-    });
-
-    email.addEventListener("input", evt => {
-      const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
-      if (re.test(evt.target.value)) {
-        submit.removeAttribute("disabled");
-      } else {
-        submit.setAttribute("disabled", "");
-      }
-    });
+    this._username.addEventListener("input", evt => this._validateForm(evt));
+    this._password.addEventListener("change", evt => this._validateForm(evt));
+    this._passwordConfirm.addEventListener("change", evt => this._validateForm(evt));
+    this._firstName.addEventListener("input", evt => this._validateForm(evt));
+    this._lastName.addEventListener("input", evt => this._validateForm(evt));
+    this._email.addEventListener("input", evt => this._validateForm(evt));
 
     this._modalNotify = document.createElement("modal-notify");
     div.appendChild(this._modalNotify);
@@ -113,7 +101,7 @@ class RegistrationPage extends TatorElement {
         first_name: firstName.getValue(),
         last_name: lastName.getValue(),
         email: email.getValue(),
-        username: userName.getValue(),
+        username: username.getValue(),
         password: password1.getValue(),
       };
       const params = URLSearchParams(window.location.search);
@@ -131,7 +119,9 @@ class RegistrationPage extends TatorElement {
         body: JSON.stringify(body),
       })
       .then( () => {
-        this._modalNotify.init("Registration succeeded!", "Press Ok to continue to login screen.", "Ok");
+        this._modalNotify.init("Registration succeeded!",
+                               "Press Continue to go to login screen.",
+                               "Continue");
         this._modalNotify.setAttribute("is-open", "");
         this.setAttribute("has-open-modal", "");
       })
@@ -155,6 +145,60 @@ class RegistrationPage extends TatorElement {
           this._dimmer.classList.add("has-open-modal");
         }
         break;
+    }
+  }
+
+  _addError(msg) {
+    const li = document.createElement("li");
+    this._errorList.appendChild(li);
+
+    const h3 = document.createElement("h3");
+    h3.setAttribute("class", "h3 text-red");
+    h3.setAttribute("style", "text-align:center;width:400px");
+    h3.textContent = msg;
+    li.appendChild(h3);
+  }
+
+  _validateForm(evt) {
+    let valid = true;
+
+    // Clear errors
+    while (this._errorList.firstChild) {
+      this._errorList.removeChild(this._errorList.firstChild);
+    }
+
+    // Check username
+    const username = this._username.getValue();
+    if (username.length > 150) {
+      this._addError("Username must be less than 150 characters long.");
+      valid = false;
+    }
+    if (username.length == 0) {
+      valid = false;
+    } else {
+      fetch(`/rest/Users?username=${username}`, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      })
+      .then(response => response.json())
+      .then(existing => {
+        if (existing.length > 0) {
+          this._addError("Username already taken!");
+          this._submit.setAttribute("disabled", "");
+        }
+      });
+    }
+
+    // Enable/disable registration button
+    if (valid) {
+      this._submit.removeAttribute("disabled");
+    } else {
+      this._submit.setAttribute("disabled", "");
     }
   }
 }
