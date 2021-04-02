@@ -318,6 +318,10 @@ class Invitation(Model):
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
 
+    def __str__(self):
+        return (f'{self.email} | {self.organization} | {self.created_by} | '
+                f'{self.created_datetime} | {self.status}')
+
 class Affiliation(Model):
     """Stores a user and their permissions in an organization.
     """
