@@ -17,11 +17,7 @@ class AnnotationPanelData extends HTMLElement {
     async getMediaData(mediaId) {
         console.log("mediaId : "+mediaId);
         this.mediaInfo = await this._modelData.getMedia( mediaId );
-        console.log(":::::::mediaInfo");
-        console.log(this.mediaInfo);
         this.mediaTypeData = await this._modelData.getMediaType( this.mediaInfo.meta );
-        console.log(":::::::mediaTypeData");
-        console.log(this.mediaTypeData);
 
         const mediaData = {
             mediaInfo : this.mediaInfo,
