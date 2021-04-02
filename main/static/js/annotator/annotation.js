@@ -3829,10 +3829,12 @@ class AnnotationCanvas extends TatorElement
 
         for (var localIdx = 0; localIdx < localList.length; localIdx++)
         {
+          
+          var localization=localList[localIdx];
+
           // If we're focusing on one (ie. localization viewer) ignore the others
           // @TODO future only send through the 1 loc's data instead of fetching and hitting this loop
           if(focusLoc > -1 && localization.id === focusLoc) {
-            var localization=localList[localIdx];
             if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
             {
               continue;
