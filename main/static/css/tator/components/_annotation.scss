@@ -52,14 +52,25 @@
   position: absolute;
   top: 28px;
   width: 4px;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
   transition-property: transform;
 
-  box-button.is-selected + line-button + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+  box-button.is-selected
+    + line-button
+    + point-button
+    + zoom-in-button
+    + zoom-out-button
+    + pan-button
+    + & {
     transform: translateY(62px);
   }
 
-  line-button.is-selected + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+  line-button.is-selected
+    + point-button
+    + zoom-in-button
+    + zoom-out-button
+    + pan-button
+    + & {
     transform: translateY(124px);
   }
 
@@ -94,8 +105,8 @@ save-dialog {
   overflow: initial;
   pointer-events: none;
   position: absolute;
-  transform: scale(.95);
-  transition-duration: .25s;
+  transform: scale(0.95);
+  transition-duration: 0.25s;
   transition-property: transform, opacity;
   z-index: 2;
   &.is-open {
@@ -111,8 +122,8 @@ modify-track-dialog {
   overflow: initial;
   pointer-events: none;
   position: absolute;
-  transform: scale(.95);
-  transition-duration: .25s;
+  transform: scale(0.95);
+  transition-duration: 0.25s;
   transition-property: transform, opacity;
   z-index: 2;
   &.is-open {
@@ -123,10 +134,10 @@ modify-track-dialog {
 }
 
 .annotation__panel-group {
-  max-height: calc(100vh - 307px);
-  overflow-y: auto;
-  border-top: 1px solid $color-charcoal--light;
-  padding-bottom: $spacing-3;
+  //   max-height: calc(100vh - 307px);
+  //   overflow-y: auto;
+  //   border-top: 1px solid $color-charcoal--light;
+  //   padding-bottom: $spacing-3;
 
   button {
     justify-content: space-between;
@@ -176,7 +187,11 @@ modify-track-dialog {
 }
 
 .annotation__entity-count {
-  background-image: linear-gradient(to right, rgba($color-charcoal--light, 0%), $color-charcoal--light 15%); // Safari bug on transparent
+  background-image: linear-gradient(
+    to right,
+    rgba($color-charcoal--light, 0%),
+    $color-charcoal--light 15%
+  ); // Safari bug on transparent
   opacity: 0;
   position: absolute;
   right: 0;
@@ -184,7 +199,7 @@ modify-track-dialog {
 
 .entity__button {
   background-color: $color-charcoal--medium;
-  transition-duration: .25s;
+  transition-duration: 0.25s;
   transition-property: background-color, color;
   &:hover,
   &:focus {
@@ -217,7 +232,7 @@ favorite-button {
 }
 
 .annotation__multi-grid {
-    display: grid;
+  display: grid;
 }
 
 .annotation__multi-grid-entry {
@@ -341,66 +356,57 @@ video-canvas {
 }
 
 .select-crosshair {
-    cursor: crosshair;
+  cursor: crosshair;
 }
 
 .select-pointer {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .select-grabbing {
-    cursor: grabbing;
+  cursor: grabbing;
 }
 
 .select-grab {
-    cursor: grab;
+  cursor: grab;
 }
 
 .select-move {
-    cursor: move;
+  cursor: move;
 }
-.select-vertical-resize
-{
-    cursor: ns-resize;
-}
-
-.select-horizontal-resize
-{
-    cursor: ew-resize;
+.select-vertical-resize {
+  cursor: ns-resize;
 }
 
-.select-ne-resize
-{
-    cursor: ne-resize;
+.select-horizontal-resize {
+  cursor: ew-resize;
 }
 
-.select-se-resize
-{
-    cursor: se-resize;
+.select-ne-resize {
+  cursor: ne-resize;
 }
 
-.select-nw-resize
-{
-    cursor: nw-resize;
+.select-se-resize {
+  cursor: se-resize;
 }
 
-.select-sw-resize
-{
-    cursor: sw-resize;
+.select-nw-resize {
+  cursor: nw-resize;
 }
 
-.select-zoom-roi
-{
-    cursor: zoom-in;
+.select-sw-resize {
+  cursor: sw-resize;
 }
 
-.select-not-allowed
-{
-    cursor: not-allowed;
+.select-zoom-roi {
+  cursor: zoom-in;
 }
 
-.video__settings
-{
+.select-not-allowed {
+  cursor: not-allowed;
+}
+
+.video__settings {
   display: grid;
   grid-column-gap: 20px;
   grid-row-gap: 20px;
