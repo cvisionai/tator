@@ -2860,9 +2860,6 @@ class AnnotationCanvas extends TatorElement
           let fillAlpha = alphaInfo.fillAlpha;
           var colorInfo = that.computeLocalizationColor(localization,meta);
 
-          console.log("Here, meta:");
-          console.log(meta);
-
           if (meta.dtype == 'box')
           {
             that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width, alpha);
@@ -3849,9 +3846,6 @@ class AnnotationCanvas extends TatorElement
           var colorInfo = this.computeLocalizationColor(localization,meta);
           localization.color = colorInfo.color
           var fill = colorInfo.fill;
-
-          console.log("localization");
-          console.log(localization);
 
           // just show this loc id
           if(focusLoc > -1 && localization.id === focusLoc) {
