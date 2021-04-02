@@ -61,9 +61,7 @@ class LocalizationInPage extends TatorElement {
     const locId = cardObj.id;
 
     // @TODO optimize later - only init this the first time
-    if (typeof this.savedMediaData[mediaId] !== "undefined" && this.savedMediaData[mediaId] !== null) {
-      console.log("Beginning canvas init from saved data");
-      
+    if (typeof this.savedMediaData[mediaId] !== "undefined" && this.savedMediaData[mediaId] !== null) {      
       //  --> init the canvas from saved data
       let data = this.savedMediaData[mediaId];
       let dtype = this.savedMediaData[mediaId].mediaTypeData.dtype;
@@ -72,9 +70,7 @@ class LocalizationInPage extends TatorElement {
 
     } else {
       // --> Get mediaData and save it to this card object
-      //
       this.panelData.getMediaData(mediaId).then((data) => {
-        console.log("Beginning canvas init from new fetch");
         let dtype = data.mediaTypeData.dtype;
         this._setupCanvas({dtype, mediaId, locId, data});
 
@@ -105,7 +101,12 @@ class LocalizationInPage extends TatorElement {
   }
 
   _setupImageCanvas() {
-    console.log("image only canvas chosen");
+    this._shadow.removeChild(this._imageCanvas);
+    this._imageCanvas = document.createElement("annotation-image");
+    this._imageCanvas._data = this._data;
+    this._imageCanvas._undo = this._undo;
+    this._shadow.appendChild(this._imageCanvas);
+
     // Inits image-only canvas as player
     this._player = this._imageCanvas;
     
@@ -117,7 +118,12 @@ class LocalizationInPage extends TatorElement {
   }
 
   _setupVideoCanvas(mediaId, data) {
-    console.log("video canvas chosen");
+    this._shadow.removeChild(this._videoCanvas);
+    this._videoCanvas = document.createElement("annotation-player");
+    this._videoCanvas._data = this._data;
+    this._videoCanvas._undo = this._undo;
+    this._shadow.appendChild(this._videoCanvas);
+
     // Inits image-only canvas as player
     this._player = this._videoCanvas;
 
@@ -168,7 +174,6 @@ class LocalizationInPage extends TatorElement {
     update,
     mediaId
   ) {
-    console.log(mediaId);
     const projectId = this.modelData._project;
     //let mediaId = Number(this.getAttribute("media-id"));
     if (subelement_id) {
