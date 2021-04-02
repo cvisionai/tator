@@ -254,6 +254,7 @@ FILES = \
     components/filter-dialog.js \
     components/filter-interface.js \
     components/filter-data.js \
+    registration/registration-page.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \

@@ -17,6 +17,7 @@ from rest_framework.schemas import get_schema_view
 
 from .views import APIBrowserView
 from .views import MainRedirect
+from .views import RegistrationView
 from .views import ProjectsView
 from .views import CustomView
 from .views import AccountProfileView
@@ -61,6 +62,7 @@ urlpatterns = [
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(), name='anonymous-gateway'),
+    path('registration', RegistrationView.as_view(), name='registration'),
 ]
 
 if settings.COGNITO_ENABLED:
