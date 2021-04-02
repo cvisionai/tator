@@ -81,6 +81,9 @@ class RegistrationPage extends TatorElement {
     this._dimmer.setAttribute("class", "background-dimmer");
     this._shadow.appendChild(this._dimmer);
 
+    // Whether the form is valid or not
+    this._valid = false;
+
     this._username.addEventListener("input", evt => this._validateForm(evt));
     this._password.addEventListener("change", evt => this._validateForm(evt));
     this._passwordConfirm.addEventListener("change", evt => this._validateForm(evt));
@@ -159,24 +162,17 @@ class RegistrationPage extends TatorElement {
     li.appendChild(h3);
   }
 
-  _validateForm(evt) {
-    let valid = true;
-
-    // Clear errors
-    while (this._errorList.firstChild) {
-      this._errorList.removeChild(this._errorList.firstChild);
-    }
-
+  _validateUsername() {
     // Check username
     const username = this._username.getValue();
     if (username.length > 150) {
       this._addError("Username must be less than 150 characters long.");
-      valid = false;
+      this._valid = false;
     }
     if (username.length == 0) {
-      valid = false;
+      this._valid = false;
     } else {
-      fetch(`/rest/Users?username=${username}`, {
+      return fetch(`/rest/Users?username=${username}`, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -189,17 +185,43 @@ class RegistrationPage extends TatorElement {
       .then(existing => {
         if (existing.length > 0) {
           this._addError("Username already taken!");
-          this._submit.setAttribute("disabled", "");
+          this._valid = false;
         }
       });
     }
+    return Promise.resolve(this._valid);
+  }
 
-    // Enable/disable registration button
-    if (valid) {
-      this._submit.removeAttribute("disabled");
-    } else {
-      this._submit.setAttribute("disabled", "");
+  _validatePassword() {
+    const password = this._password.getValue();
+    if (password.length == 0) {
+      this._valid = false;
+    } else if (password.length < 8) {
+      this._addError("Password must be at least 8 characters long.");
+      this._valid = false;
     }
+  }
+
+  _validateForm(evt) {
+    this._valid = true;
+
+    // Clear errors
+    while (this._errorList.firstChild) {
+      this._errorList.removeChild(this._errorList.firstChild);
+    }
+
+    // Check each field
+    this._validateUsername()
+    .then(() => {
+      this._validatePassword();
+
+      // Enable/disable registration button
+      if (this._valid) {
+        this._submit.removeAttribute("disabled");
+      } else {
+        this._submit.setAttribute("disabled", "");
+      }
+    });
   }
 }
 
