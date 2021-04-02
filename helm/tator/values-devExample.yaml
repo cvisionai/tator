@@ -222,3 +222,8 @@ email:
   aws_region: "<fill in>"
   aws_access_key_id: "<fill in>"
   aws_secret_access_key: "<fill in>"
+anonymousRegistration:
+  # Enable this to allow users to register without an organizational invitation.
+  enabled: false
+  # Enable this to require email confirmation after anonymous registration.
+  emailConfirmation: false

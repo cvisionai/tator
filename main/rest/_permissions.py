@@ -180,8 +180,9 @@ class UserListPermission(BasePermission):
         if _for_schema_view(request, view):
             return True
 
-        if request.method == 'GET':
-            # All users have read-only permission
+        if request.method in ['GET', 'POST']:
+            # All users have read-only permission, POST is validated by registration
+            # token.
             return True
 
         return False
