@@ -335,26 +335,26 @@ class LocalizationInPage extends TatorElement {
               stateMediaIds = this._mediaIds;
             }
 
-            this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
+            //this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
 
-            this._sidebar.localizationTypes = byType;
-            this._sidebar.addEventListener("default", evt => {
-              this.clearMetaCaches();
-              canvas.defaultMode();
-            });
-            this._sidebar.addEventListener("newMeta", evt => {
-              this.clearMetaCaches();
-              canvas.newMetadataItem(evt.detail.typeId, evt.detail.metaMode);
-            });
-            this._sidebar.addEventListener("zoomIn", evt => {
-              canvas.zoomIn();
-            });
-            this._sidebar.addEventListener("zoomOut", evt => {
-              canvas.zoomOut();
-            });
-            this._sidebar.addEventListener("pan", evt => {
-              canvas.pan();
-            });
+            // this._sidebar.localizationTypes = byType;
+            // this._sidebar.addEventListener("default", evt => {
+            //   this.clearMetaCaches();
+            //   canvas.defaultMode();
+            // });
+            // this._sidebar.addEventListener("newMeta", evt => {
+            //   this.clearMetaCaches();
+            //   canvas.newMetadataItem(evt.detail.typeId, evt.detail.metaMode);
+            // });
+            // this._sidebar.addEventListener("zoomIn", evt => {
+            //   canvas.zoomIn();
+            // });
+            // this._sidebar.addEventListener("zoomOut", evt => {
+            //   canvas.zoomOut();
+            // });
+            // this._sidebar.addEventListener("pan", evt => {
+            //   canvas.pan();
+            // });
             canvas.addEventListener("drawComplete", (evt) => {
               if (evt.detail.metaMode == false) {
                 this._sidebar.selectDefault();
@@ -367,9 +367,9 @@ class LocalizationInPage extends TatorElement {
             });
             canvas.addEventListener("select", evt => {
               this._browser.selectEntity(evt.detail);
-              this._settings.setAttribute("entity-id", evt.detail.id);
-              this._settings.setAttribute("entity-type", evt.detail.meta);
-              this._settings.setAttribute("type-id", evt.detail.meta);
+              //this._settings.setAttribute("entity-id", evt.detail.id);
+              //this._settings.setAttribute("entity-type", evt.detail.meta);
+              //this._settings.setAttribute("type-id", evt.detail.meta);
             });
             this._undo.addEventListener("update", evt => {
 
@@ -454,81 +454,81 @@ class LocalizationInPage extends TatorElement {
             // });
             this._saves = {};
 
-            for (const dataType of localizationTypes) {
-              const save = document.createElement("save-dialog");
-              save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
-              this._settings.setAttribute("version", this._version.id);
-              this._main.appendChild(save);
-              this._saves[dataType.id] = save;
+            // for (const dataType of localizationTypes) {
+            //   const save = document.createElement("save-dialog");
+            //   save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+            //   this._settings.setAttribute("version", this._version.id);
+            //   this._main.appendChild(save);
+            //   this._saves[dataType.id] = save;
 
-              save.addEventListener("cancel", () => {
-                this._closeModal(save);
-                canvas.refresh();
-              });
+            //   save.addEventListener("cancel", () => {
+            //     this._closeModal(save);
+            //     canvas.refresh();
+            //   });
 
-              save.addEventListener("save", () => {
-                this._closeModal(save);
-              });
-            }
+            //   save.addEventListener("save", () => {
+            //     this._closeModal(save);
+            //   });
+            // }
 
-            for (const dataType of stateTypes) {
-              const save = document.createElement("save-dialog");
-              save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
-              this._settings.setAttribute("version", this._version.id);
-              this._main.appendChild(save);
-              this._saves[dataType.id] = save;
+            // for (const dataType of stateTypes) {
+            //   const save = document.createElement("save-dialog");
+            //   save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+            //   this._settings.setAttribute("version", this._version.id);
+            //   this._main.appendChild(save);
+            //   this._saves[dataType.id] = save;
 
-              // For states specifically, if we are using the multi-view, we will
-              // create the state across all media
-              if (this._player.mediaType.dtype == "multi") {
-                save.stateMediaIds = this._mediaIds;
-              }
+            //   // For states specifically, if we are using the multi-view, we will
+            //   // create the state across all media
+            //   if (this._player.mediaType.dtype == "multi") {
+            //     save.stateMediaIds = this._mediaIds;
+            //   }
 
-              save.addEventListener("cancel", () => {
-                this._closeModal(save);
-                canvas.refresh();
-              });
+            //   save.addEventListener("cancel", () => {
+            //     this._closeModal(save);
+            //     canvas.refresh();
+            //   });
 
-              save.addEventListener("save", () => {
-                this._closeModal(save);
-              });
-            }
+            //   save.addEventListener("save", () => {
+            //     this._closeModal(save);
+            //   });
+            // }
 
-            canvas.addEventListener("create", evt => {
-              const metaMode = evt.detail.metaMode;
-              const objDescription = evt.detail.objDescription;
-              const dragInfo = evt.detail.dragInfo;
-              const requestObj = evt.detail.requestObj;
-              const canvasPosition = evt.detail.canvasElement.getBoundingClientRect();
+            // canvas.addEventListener("create", evt => {
+            //   const metaMode = evt.detail.metaMode;
+            //   const objDescription = evt.detail.objDescription;
+            //   const dragInfo = evt.detail.dragInfo;
+            //   const requestObj = evt.detail.requestObj;
+            //   const canvasPosition = evt.detail.canvasElement.getBoundingClientRect();
 
-              // Get the save dialog for this type. It gets created
-              // with a metamode flag that changes based on mode. If
-              // it has been created once in a given meta mode, reuse
-              // the attributes from previous runs.
-              // (Fixes Pulse #324572460)
-              var save = this._getSave(objDescription);
-              // Because we can be annotating multiple media_ids, set the dialog save
-              // to the id the draw event came from
-              save._mediaId = evt.detail.mediaId;
-              if (metaMode && save.metaMode) {
-                save.saveObject(requestObj, save.metaCache);
-              }
-              else {
-                this._openModal(objDescription, dragInfo, canvasPosition,
-                  requestObj, metaMode);
-                this._makePreview(objDescription, dragInfo, canvasPosition);
-              }
-            });
+            //   // Get the save dialog for this type. It gets created
+            //   // with a metamode flag that changes based on mode. If
+            //   // it has been created once in a given meta mode, reuse
+            //   // the attributes from previous runs.
+            //   // (Fixes Pulse #324572460)
+            //   var save = this._getSave(objDescription);
+            //   // Because we can be annotating multiple media_ids, set the dialog save
+            //   // to the id the draw event came from
+            //   save._mediaId = evt.detail.mediaId;
+            //   if (metaMode && save.metaMode) {
+            //     save.saveObject(requestObj, save.metaCache);
+            //   }
+            //   else {
+            //     this._openModal(objDescription, dragInfo, canvasPosition,
+            //       requestObj, metaMode);
+            //     this._makePreview(objDescription, dragInfo, canvasPosition);
+            //   }
+            // });
 
             //this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
 
-            canvas.addEventListener("maximize", () => {
-              this._browser.style.display = "none";
-            });
+            // canvas.addEventListener("maximize", () => {
+            //   this._browser.style.display = "none";
+            // });
 
-            canvas.addEventListener("minimize", () => {
-              this._browser.style.display = "block";
-            });
+            // canvas.addEventListener("minimize", () => {
+            //   this._browser.style.display = "block";
+            // });
           });
       });
   }
