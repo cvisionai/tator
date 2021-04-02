@@ -3829,26 +3829,27 @@ class AnnotationCanvas extends TatorElement
 
         for (var localIdx = 0; localIdx < localList.length; localIdx++)
         {
-          var localization=localList[localIdx];
-          if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
-          {
-            continue;
-          }
-          var localization=localList[localIdx];
-          var meta=this.getObjectDescription(localization);
-          var type=meta.dtype;
-          var width=meta.line_width;
-          // Make the line width appear as monitor pixels
-          width *= this._draw.displayToViewportScale()[0];
-          width = Math.round(width);
-
-          // Compute the localization color
-          var colorInfo = this.computeLocalizationColor(localization,meta);
-          localization.color = colorInfo.color
-          var fill = colorInfo.fill;
-
-          // just show this loc id
+          // If we're focusing on one (ie. localization viewer) ignore the others
+          // @TODO future only send through the 1 loc's data instead of fetching and hitting this loop
           if(focusLoc > -1 && localization.id === focusLoc) {
+            var localization=localList[localIdx];
+            if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
+            {
+              continue;
+            }
+            var localization=localList[localIdx];
+            var meta=this.getObjectDescription(localization);
+            var type=meta.dtype;
+            var width=meta.line_width;
+            // Make the line width appear as monitor pixels
+            width *= this._draw.displayToViewportScale()[0];
+            width = Math.round(width);
+
+            // Compute the localization color
+            var colorInfo = this.computeLocalizationColor(localization,meta);
+            localization.color = colorInfo.color
+            var fill = colorInfo.fill;
+          
             if (type=='box')
             {
               var poly = this.localizationToPoly(localization, drawContext, roi);
@@ -3884,6 +3885,7 @@ class AnnotationCanvas extends TatorElement
           }
         }
       }
+      
       return drawContext.dumpDraw();
     }
     else
