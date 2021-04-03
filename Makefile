@@ -146,20 +146,20 @@ dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 .PHONY: tator-image
-tator-image: containers/tator/Dockerfile.gen
+tator-image:
 	$(MAKE) min-js min-css r-docs docs
-	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
+	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile .
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
 .PHONY: postgis-image
-postgis-image:  containers/postgis/Dockerfile.gen
-	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
+postgis-image:
+	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile .
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: containers/tator_client/Dockerfile.gen
-	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f $< . || exit 255
+client-image:
+	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f containers/tator_client/Dockerfile .
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
