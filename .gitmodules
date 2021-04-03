@@ -1,9 +1,6 @@
-[submodule "externals/build_tools"]
-	path = externals/build_tools
-	url = https://github.com/bctcvai/build_tools.git
 [submodule "scripts/packages/tator-py"]
 	path = scripts/packages/tator-py
-	url = https://github.com/cvisionai/tator-py.git
+	url = ../tator-py.git
 [submodule "scripts/packages/tator-r"]
 	path = scripts/packages/tator-r
-	url = https://github.com/cvisionai/tator-r
+	url = ../tator-r.git

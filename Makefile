@@ -145,34 +145,21 @@ clean: cluster-uninstall
 dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
-externals/build_tools/%.sh:
-	@echo "Downloading submodule"
-	@git submodule update --init
-
-externals/build_tools/%.py:
-	@echo "Downloading submodule"
-	@git submodule update --init
-
-# Dockerfile.gen rules (generic)
-%/Dockerfile.gen: %/Dockerfile.mako
-	echo $@ $<
-	./externals/build_tools/makocc.py -o $@ $<
-
 .PHONY: tator-image
-tator-image: containers/tator/Dockerfile.gen
+tator-image:
 	$(MAKE) min-js min-css r-docs docs
-	docker build --network host $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
+	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile .
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
 .PHONY: postgis-image
-postgis-image:  containers/postgis/Dockerfile.gen
-	docker build --network host $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
+postgis-image:
+	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile .
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: containers/tator_client/Dockerfile.gen
-	docker build --network host $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f $< . || exit 255
+client-image:
+	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f containers/tator_client/Dockerfile .
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
@@ -182,17 +169,9 @@ client-latest: client-image
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
 	docker push cvisionai/tator_client:latest
 
-.PHONY: cross-info
-cross-info: ./externals/build_tools/multiArch.py
-	./externals/build_tools/multiArch.py  --help
-
-.PHONY: externals/build_tools/version.py
-externals/build_tools/version.py:
-	externals/build_tools/version.sh > externals_build_tools/version.py
-
 .PHONY: main/version.py
 main/version.py:
-	externals/build_tools/version.sh > main/version.py
+	./scripts/version.sh > main/version.py
 	chmod +x main/version.py
 
 collect-static: min-css min-js
