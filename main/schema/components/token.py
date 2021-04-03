@@ -10,6 +10,10 @@ credentials = {
             'description': 'Account password.',
             'type': 'string',
         },
+        'refresh': {
+            'description': 'If true, forces generation of new token.',
+            'type': 'boolean',
+        },
     },
 }
 

@@ -159,24 +159,7 @@ class CustomGenerator(SchemaGenerator):
             },
         }
 
-        # Add schema for Token endpoint.
         if not parser:
-            schema['paths']['/rest/Token']['post']['requestBody'] = {
-                'content': {'application/json': {
-                    'schema': {'$ref': '#/components/schemas/Credentials'},
-                }},
-            }
-            schema['paths']['/rest/Token']['post']['responses'] = {
-                '200': {
-                    'description': 'Login credentials accepted.',
-                    'content': {'application/json': {'schema': {
-                        '$ref': '#/components/schemas/Token',
-                    }}},
-                },
-                400: {'description': 'Login credentials invalid.'},
-            }
-            schema['paths']['/rest/Token']['post']['tags'] = ['Tator']
-
             # Set security scheme.
             schema['components']['securitySchemes'] = {
                 'TokenAuth': {

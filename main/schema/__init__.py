@@ -71,6 +71,7 @@ from .state_type import StateTypeListSchema
 from .state_type import StateTypeDetailSchema
 from .temporary_file import TemporaryFileDetailSchema
 from .temporary_file import TemporaryFileListSchema
+from .token import TokenSchema
 from .transcode import TranscodeSchema
 from .upload_completion import UploadCompletionSchema
 from .upload_info import UploadInfoSchema

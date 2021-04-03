@@ -3,16 +3,11 @@ import logging
 
 from django.urls import path
 from django.urls import include
-from django.conf.urls import url
 from django.conf import settings
 from django.contrib.auth.views import PasswordChangeView
 from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
 
-from rest_framework.authtoken import views
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
 
 from .views import APIBrowserView
@@ -78,7 +73,6 @@ else:
 
 # This is used for REST calls
 urlpatterns += [
-    url(r'^rest/Token', views.obtain_auth_token),
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
     path(
@@ -365,6 +359,9 @@ urlpatterns += [
     path(
         'rest/TemporaryFile/<int:id>',
         TemporaryFileDetailAPI.as_view(),
+    ),
+    path('rest/Token',
+         TokenAPI.as_view(),
     ),
     path(
         'rest/Transcode/<int:project>',
