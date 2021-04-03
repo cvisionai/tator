@@ -2,8 +2,13 @@
 
 ## Script to create a python module containing version information
 
-pretty=$(git describe --long --all --dirty)
-sha=$(git rev-parse HEAD)
+dir=`pwd`
+if [ "$1" != "" ]; then
+dir=$1
+fi
+
+pretty=$(git -C "${dir}" describe --long --all --dirty)
+sha=$(git -C "${dir}" rev-parse HEAD)
 
 echo """
 #!/usr/bin/env python3
