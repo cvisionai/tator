@@ -69,6 +69,7 @@ from .state_type import StateTypeListAPI
 from .state_type import StateTypeDetailAPI
 from .temporary_file import TemporaryFileListAPI
 from .temporary_file import TemporaryFileDetailAPI
+from .token import TokenAPI
 from .transcode import TranscodeAPI
 from .upload_completion import UploadCompletionAPI
 from .upload_info import UploadInfoAPI

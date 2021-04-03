@@ -3,9 +3,12 @@
 {% load static %}
 
 {% block head %}
-<title>Tator | Custom</title>
+<title>Tator | Token</title>
 {% endblock head %}
 
 {% block body %}
-<create-custom></create-custom>
+<token-page
+  username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}">
+</token-page>
 {% endblock body %}
