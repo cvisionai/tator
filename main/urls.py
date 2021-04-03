@@ -20,6 +20,7 @@ from .views import MainRedirect
 from .views import RegistrationView
 from .views import ProjectsView
 from .views import AccountProfileView
+from .views import TokenView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
 from .views import AnnotationView
@@ -61,6 +62,7 @@ urlpatterns = [
     path('auth-admin', AuthAdminView.as_view()),
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(), name='anonymous-gateway'),
     path('registration', RegistrationView.as_view(), name='registration'),
+    path('token', TokenView.as_view(), name='token'),
 ]
 
 if settings.COGNITO_ENABLED:

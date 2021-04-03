@@ -264,7 +264,8 @@ FILES = \
     projects/new-project.js \
     projects/delete-project.js \
     projects/projects-dashboard.js \
-		account-profile/account-profile.js \
+    account-profile/account-profile.js \
+    token/token-page.js \
     new-project/new-project-close.js \
     new-project/custom/custom-form.js \
     new-project/custom/custom.js \

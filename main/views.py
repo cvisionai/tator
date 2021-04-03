@@ -56,6 +56,9 @@ class ProjectsView(LoginRequiredMixin, TemplateView):
 class AccountProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'account-profile/account-profile.html'
 
+class TokenView(LoginRequiredMixin, TemplateView):
+    template_name = 'token.html'
+
 class ProjectBase(LoginRequiredMixin):
 
     def get_context_data(self, **kwargs):

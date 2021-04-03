@@ -1,0 +1,14 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Token</title>
+{% endblock head %}
+
+{% block body %}
+<token-page
+  username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}">
+</token-page>
+{% endblock body %}

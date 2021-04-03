@@ -31,6 +31,12 @@ class NavMain extends TatorElement {
     this._accountProfile.textContent = "Account Profile";
     this._primary.appendChild(this._accountProfile);
 
+    this._token = document.createElement("a");
+    this._token.setAttribute("class", "nav__link");
+    this._token.setAttribute("href", "/token");
+    this._token.textContent = "API Token";
+    this._primary.appendChild(this._token);
+
     const logout = document.createElement("a");
     logout.setAttribute("class", "nav__link");
     logout.setAttribute("href", "/accounts/logout/");
@@ -98,6 +104,7 @@ class NavMain extends TatorElement {
   disableAccountSettings() {
     this._primary.removeChild(this._changePassword);
     this._primary.removeChild(this._accountProfile);
+    this._primary.removeChild(this._token);
   }
 }
 
