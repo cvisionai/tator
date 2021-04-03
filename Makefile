@@ -241,6 +241,7 @@ FILES = \
     projects/project-description.js \
     projects/project-summary.js \
     projects/new-project.js \
+    projects/new-project-dialog.js \
     projects/delete-project.js \
     projects/projects-dashboard.js \
     account-profile/account-profile.js \
