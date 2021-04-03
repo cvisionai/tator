@@ -17,11 +17,11 @@ class ProjectsDashboard extends TatorPage {
     const h1Text = document.createTextNode("Projects");
     h1.appendChild(h1Text);
 
-    const newProject = document.createElement("a");
-    newProject.setAttribute("class", "btn");
-    newProject.setAttribute("href", "/new-project/custom");
-    newProject.textContent = "New Project";
-    header.appendChild(newProject);
+    this._newProjectButton = document.createElement("a");
+    this._newProjectButton.setAttribute("class", "btn");
+    this._newProjectButton.textContent = "New Project";
+    header.appendChild(this._newProjectButton);
+    this._newProjectButton.style.display = "none"; // Hide until organizations are retrieved.
 
     this._projects = document.createElement("div");
     this._projects.setAttribute("class", "d-flex flex-column");
@@ -29,19 +29,16 @@ class ProjectsDashboard extends TatorPage {
 
     this._newProject = document.createElement("new-project");
     this._projects.appendChild(this._newProject);
+    this._newProject.style.display = "none"; // Hide until organizations are retrieved.
 
-    // Disable new projects until new project workflow is implemented
-    newProject.style.display = "none";
-    this._newProject.style.display = "none";
+    this._newProjectDialog = document.createElement("new-project-dialog");
+    this._projects.appendChild(this._newProjectDialog);
 
     const deleteProject = document.createElement("delete-project");
     this._projects.appendChild(deleteProject);
 
-    this._progress = document.createElement("progress-summary");
-    this._shadow.insertBefore(this._progress, main);
-
-    const cancelJob = document.createElement("cancel-confirm");
-    this._shadow.appendChild(cancelJob);
+    this._modalNotify = document.createElement("modal-notify");
+    main.appendChild(this._modalNotify);
 
     this._removeCallback = evt => {
       deleteProject.setAttribute("project-id", evt.detail.projectId);
@@ -65,47 +62,58 @@ class ProjectsDashboard extends TatorPage {
       deleteProject.removeAttribute("is-open");
     });
 
-    this._progress.addEventListener("groupCancel", evt => {
-      cancelJob.gid = evt.detail.gid;
-      cancelJob.setAttribute("is-open", "");
-      this.setAttribute("has-open-modal", "");
+    this._newProjectDialog.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
     });
 
-    cancelJob.addEventListener("confirmGroupCancel", () => {
-      this.removeAttribute("has-open-modal");
-      cancelJob.removeAttribute("is-open");
-    });
+    this._newProjectButton.addEventListener("click", this._openNewProjectDialog.bind(this));
+    this._newProject.addEventListener("click", this._openNewProjectDialog.bind(this));
 
-    cancelJob.addEventListener("close", () => {
-      this.removeAttribute("has-open-modal");
-    });
-
-    window.addEventListener("load", () => {
-      window.dispatchEvent(new Event("readyForWebsocket"));
+    this._modalNotify.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal", "");
     });
   }
 
   connectedCallback() {
-    const url = window.location.origin + "/rest/Projects";
-    fetch(url, {
-      method: 'GET',
-      credentials: 'same-origin',
+    // Get projects
+    fetch("/rest/Projects", {
+      method: "GET",
+      credentials: "same-origin",
       headers: {
-        'X-CSRF-Token': getCookie("csrftoken"),
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        "X-CSRF-Token": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
       },
     })
     .then(response => response.json())
     .then(projects => {
       for (let project of projects) {
-        const summary = document.createElement('project-summary');
+        const summary = document.createElement("project-summary");
         summary.info = project;
         this._projects.insertBefore(summary, this._newProject);
         summary.addEventListener("remove", this._removeCallback);
       }
     })
-    .catch(error => console.log(error));
+
+    // Get organizations
+    fetch("/rest/Organizations", {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRF-Token": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+    })
+    .then(response => response.json())
+    .then(organizations => {
+      const adminOrganizations = organizations.filter(org => org.permission == "Admin");
+      if (adminOrganizations.length > 0) {
+        this._newProjectDialog.organizations = adminOrganizations;
+        this._newProjectButton.style.display = "flex";
+        this._newProject.style.display = "block";
+      }
+    })
   }
 
   static get observedAttributes() {
@@ -114,6 +122,12 @@ class ProjectsDashboard extends TatorPage {
 
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+  }
+
+  _openNewProjectDialog() {
+    this._newProjectDialog.init();
+    this._newProjectDialog.setAttribute("is-open", "");
+    this.setAttribute("has-open-modal", "");
   }
 }
 
