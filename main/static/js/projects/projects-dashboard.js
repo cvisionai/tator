@@ -55,6 +55,7 @@ class ProjectsDashboard extends TatorPage {
       for (const project of this._projects.children) {
         if (project._projectId == evt.detail.projectId) {
           this._projects.removeChild(project);
+          this._newProjectDialog.removeProject(project);
           break;
         }
       }
@@ -74,6 +75,11 @@ class ProjectsDashboard extends TatorPage {
 
     this._modalNotify.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal", "");
+      // If closed with the close button, don't redirect.
+      const doRedirect = evt.target.shadowRoot.activeElement.tagName != "MODAL-CLOSE";
+      if (this._projectCreationRedirect && doRedirect) {
+        window.location.replace(this._projectCreationRedirect);
+      }
     });
   }
 
@@ -187,33 +193,47 @@ class ProjectsDashboard extends TatorPage {
       default:
         console.error(`Invalid preset: ${preset}`);
     }
+    promise.then(() => {
+      this._modalNotify.init("Project created successfully!",
+                             "Continue to project settings or close this dialog.",
+                             "ok",
+                             "Continue to settings");
+      this._modalNotify.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    })
+    /*.catch(err => {
+      this._projectCreationRedirect = null;
+      this._modalNotify.init("Project creation failed!",
+                             err.message,
+                             "error",
+                             "Close");
+      this._modalNotify.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });*/
   }
 
   _configureImageClassification(projectPromise) {
-    return projectPromise.then(response => {
-      if (response.status == "201") {
-        return fetch(`/rest/MediaType/${project.id}`, {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRF-Token": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: "Images",
-            dtype: "image",
-            attribute_types: [{
-              name: "Label",
-              description: "Image classification label.",
-              dtype: "string",
-              order: 0,
-            }],
-          }),
-        })
-        .then(response => response.json());
-      } else {
-      }
+    return projectPromise.then(project => {
+      return fetch(`/rest/MediaTypes/${project.id}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Images",
+          dtype: "image",
+          attribute_types: [{
+            name: "Label",
+            description: "Image classification label.",
+            dtype: "string",
+            order: 0,
+          }],
+        }),
+      })
+      .then(response => response.json());
     });
   }
 }
