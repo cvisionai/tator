@@ -116,9 +116,9 @@ class NewProjectDialog extends ModalDialog {
     this._confirm = false;
   }
 
-  removeProject(project) {
+  removeProject(projectName) {
     // Removes project from existing names.
-    const index = this._existingNames.indexOf(project.name.toLowerCase());
+    const index = this._existingNames.indexOf(projectName.toLowerCase());
     if (index > -1) {
       this._existingNames.splice(index, 1);
     }

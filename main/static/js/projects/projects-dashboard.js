@@ -55,7 +55,7 @@ class ProjectsDashboard extends TatorPage {
       for (const project of this._projects.children) {
         if (project._projectId == evt.detail.projectId) {
           this._projects.removeChild(project);
-          this._newProjectDialog.removeProject(project);
+          this._newProjectDialog.removeProject(project._text.nodeValue);
           break;
         }
       }
@@ -159,6 +159,7 @@ class ProjectsDashboard extends TatorPage {
     })
     .then(response => response.json())
     .then(project => {
+      this._newProjectId = project.id;
       return fetch(`/rest/Project/${project.id}`, {
         method: "GET",
         credentials: "same-origin",
@@ -183,6 +184,7 @@ class ProjectsDashboard extends TatorPage {
         promise = this._configureImageClassification(projectPromise);
         break;
       case "objectDetection":
+        promise = this._configureObjectDetection(projectPromise);
         break;
       case "multiObjectTracking":
         break;
@@ -234,6 +236,63 @@ class ProjectsDashboard extends TatorPage {
         }),
       })
       .then(response => response.json());
+    });
+  }
+
+  _configureObjectDetection(projectPromise) {
+    return projectPromise.then(project => {
+      const imagePromise = fetch(`/rest/MediaTypes/${project.id}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Images",
+          dtype: "image",
+          attribute_types: [],
+        }),
+      });
+      const videoPromise = fetch(`/rest/MediaTypes/${project.id}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Videos",
+          dtype: "video",
+          attribute_types: [],
+        }),
+      });
+      return Promise.all([imagePromise, videoPromise]);
+    })
+    .then(responses => Promise.all(responses.map(resp => resp.json())))
+    .then(([imageResponse, videoResponse]) => {
+      return fetch(`/rest/LocalizationTypes/${this._newProjectId}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Boxes",
+          dtype: "box",
+          media_types: [imageResponse.id, videoResponse.id],
+          attribute_types: [{
+            name: "Label",
+            description: "Object detection label.",
+            dtype: "string",
+            order: 0,
+          }],
+        }),
+      });
     });
   }
 }
