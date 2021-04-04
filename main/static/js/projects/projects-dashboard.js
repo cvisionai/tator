@@ -83,7 +83,7 @@ class ProjectsDashboard extends TatorPage {
       method: "GET",
       credentials: "same-origin",
       headers: {
-        "X-CSRF-Token": getCookie("csrftoken"),
+        "X-CSRFToken": getCookie("csrftoken"),
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
@@ -104,7 +104,7 @@ class ProjectsDashboard extends TatorPage {
       method: "GET",
       credentials: "same-origin",
       headers: {
-        "X-CSRF-Token": getCookie("csrftoken"),
+        "X-CSRFToken": getCookie("csrftoken"),
         "Accept": "application/json",
         "Content-Type": "application/json",
       },
@@ -141,7 +141,7 @@ class ProjectsDashboard extends TatorPage {
       method: "POST",
       credentials: "same-origin",
       headers: {
-        "X-CSRF-Token": getCookie("csrftoken"),
+        "X-CSRFToken": getCookie("csrftoken"),
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
