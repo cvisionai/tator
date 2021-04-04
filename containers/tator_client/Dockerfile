@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-setuptools python3-dev gcc git vim curl unzip wget \
         && rm -rf /var/lib/apt/lists
 COPY --from=builder /opt/cvision /opt/cvision
-ENV PATH=/opt/cvision/bin/:${"${PATH}"}
+ENV PATH="/opt/cvision/bin/:$PATH"
 RUN echo "/opt/cvision/lib" > /etc/ld.so.conf.d/cvision.conf
 RUN ldconfig
 
