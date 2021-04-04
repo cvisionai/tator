@@ -116,6 +116,18 @@ class NewProjectDialog extends ModalDialog {
     this._confirm = false;
   }
 
+  getProjectSpec() {
+    return {
+      name: this._name.getValue(),
+      summary: this._summary.getValue(),
+      organization: this._organization.getValue(),
+    };
+  }
+
+  getProjectPreset() {
+    return this._preset.getValue();
+  }
+
   _validateName() {
     let valid = true;
     const name = this._name.getValue();
