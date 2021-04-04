@@ -91,10 +91,7 @@ class ProjectsDashboard extends TatorPage {
     .then(response => response.json())
     .then(projects => {
       for (let project of projects) {
-        const summary = document.createElement("project-summary");
-        summary.info = project;
-        this._projects.insertBefore(summary, this._newProject);
-        summary.addEventListener("remove", this._removeCallback);
+        this._insertProjectSummary(project);
       }
       this._newProjectDialog.projects = projects;
     })
@@ -128,6 +125,13 @@ class ProjectsDashboard extends TatorPage {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
   }
 
+  _insertProjectSummary(project) {
+    const summary = document.createElement("project-summary");
+    summary.info = project;
+    this._projects.insertBefore(summary, this._newProject);
+    summary.addEventListener("remove", this._removeCallback);
+  }
+
   _openNewProjectDialog() {
     this._newProjectDialog.init();
     this._newProjectDialog.setAttribute("is-open", "");
@@ -147,7 +151,24 @@ class ProjectsDashboard extends TatorPage {
       },
       body: JSON.stringify(projectSpec),
     })
-    .then(response => response.json());
+    .then(response => response.json())
+    .then(project => {
+      return fetch(`/rest/Project/${project.id}`, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+    })
+    .then(response => response.json())
+    .then(project => {
+      this._projectCreationRedirect = `/${project.id}/project-settings`;
+      this._insertProjectSummary(project);
+      return Promise.resolve(project);
+    });
 
     const preset = this._newProjectDialog.getProjectPreset();
     let promise;
