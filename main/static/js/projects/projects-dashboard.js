@@ -93,6 +93,7 @@ class ProjectsDashboard extends TatorPage {
         this._projects.insertBefore(summary, this._newProject);
         summary.addEventListener("remove", this._removeCallback);
       }
+      this._newProjectDialog.projects = projects;
     })
 
     // Get organizations

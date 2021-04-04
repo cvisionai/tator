@@ -3,6 +3,8 @@ class NewProjectDialog extends ModalDialog {
     super();
 
     this._title.nodeValue = "Create new project";
+    this._main.style.marginBottom = "0";
+    this._main.style.paddingBottom = "0";
 
     this._name = document.createElement("text-input");
     this._name.setAttribute("name", "Name");
@@ -20,15 +22,49 @@ class NewProjectDialog extends ModalDialog {
 
     this._preset = document.createElement("enum-input");
     this._preset.setAttribute("name", "Preset");
+    this._preset.choices = [{
+      value: "imageClassification",
+      label: "Image classification",
+    }, {
+      value: "objectDetection",
+      label: "Object detection",
+    }, {
+      value: "multiObjectTracking",
+      label: "Multi-object tracking",
+    }, {
+      value: "activityRecognition",
+      label: "Activity recognition",
+    }, {
+      value: "none",
+      label: "None (no preset)",
+    }];
     this._main.appendChild(this._preset);
+
+    const messages = document.createElement("div");
+    messages.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center");
+    this._main.appendChild(messages);
+
+    this._messageList = document.createElement("ul");
+    this._messageList.setAttribute("class", "form-errors");
+    messages.appendChild(this._messageList);
+
+    const li = document.createElement("li");
+    this._messageList.appendChild(li);
+
+    this._nameWarning = document.createElement("h3");
+    this._nameWarning.setAttribute("class", "h3 text-red");
+    this._nameWarning.setAttribute("style", "text-align:center;width:400px");
+    this._nameWarning.textContent = "Project with this name exists!";
+    this._nameWarning.style.display = "none";
+    li.appendChild(this._nameWarning);
 
     this._accept = document.createElement("button");
     this._accept.setAttribute("class", "btn btn-clear btn-purple");
-    this._accept.setAttribute("disable", "");
-    this._accept.textContent = "Save";
+    this._accept.setAttribute("disabled", "");
+    this._accept.textContent = "Create project";
     this._footer.appendChild(this._accept);
 
-    // Indicates whether name was saved.
+    // Indicates whether project was created.
     this._confirm = false;
     
     const cancel = document.createElement("button");
@@ -42,6 +78,8 @@ class NewProjectDialog extends ModalDialog {
       this._confirm = true;
       this._closeCallback();
     });
+
+    this._name.addEventListener("input", this._validateName.bind(this));
   }
 
   set organizations(organizations) {
@@ -53,6 +91,10 @@ class NewProjectDialog extends ModalDialog {
       });
     }
     this._organization.choices = choices;
+  }
+
+  set projects(projects) {
+    this._existingNames = projects.map(project => project.name.toLowerCase());
   }
 
   static get observedAttributes() {
@@ -72,6 +114,25 @@ class NewProjectDialog extends ModalDialog {
     this._summary.setValue("");
     this._summary.setValue("");
     this._confirm = false;
+  }
+
+  _validateName() {
+    let valid = true;
+    const name = this._name.getValue();
+    this._nameWarning.style.display = "none";
+    if (name.length == 0) {
+      valid = false;
+    } else {
+      if (this._existingNames.includes(name.toLowerCase())) {
+        valid = false;
+        this._nameWarning.style.display = "block";
+      }
+    }
+    if (valid) {
+      this._accept.removeAttribute("disabled");
+    } else {
+      this._accept.setAttribute("disabled", "");
+    }
   }
 }
 
