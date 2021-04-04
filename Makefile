@@ -148,18 +148,18 @@ dashboard-token:
 .PHONY: tator-image
 tator-image:
 	$(MAKE) min-js min-css r-docs docs
-	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile .
+	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
 .PHONY: postgis-image
 postgis-image:
-	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile .
+	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
 client-image:
-	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f containers/tator_client/Dockerfile .
+	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
