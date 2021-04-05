@@ -2,9 +2,11 @@ class AnnotationsCard extends EntityCard {
   constructor() {
     super();
 
+
     // Add annotation class to list item
     this._li.classList.add("analysis__annotation");
     this.addEventListener("click", this.togglePanel.bind(this) );
+
 
     //@TODO pausing on hover behavior -- needs work w/ canvas
     //this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
@@ -12,8 +14,9 @@ class AnnotationsCard extends EntityCard {
     // prep this var
     this._tmpHidden = null;
   }
+  
 
-  init({obj, panelContainer, annotationPanelDiv}){
+  init(obj, panelContainer, annotationPanelDiv){
     // ID is title
     //this.titleDiv.innerHTML = `ID ${obj.id}`;
     this._id_text.innerHTML = `ID: ${obj.id}`;
@@ -119,8 +122,10 @@ class AnnotationsCard extends EntityCard {
 
   _mouseEnterHandler(e){
     const isHidden = this.annotationPanelDiv.classList.contains("hidden");
-    const isSelected = this.annotationPanelDiv.classList.contains("is-selected");
+    const isSelected = this.annotationPanelDiv.classList.contains("is-selected")
     if(isHidden && !isSelected) {
+      //console.log(`Previewing: ${this.annotationPanelDiv.dataset.locId}`);
+
       // If we do not already have this open or selected... show a preview
       this._showPreview();
 
@@ -131,6 +136,7 @@ class AnnotationsCard extends EntityCard {
   }
 
   _showPreview() {
+
     // this._tmpHidden is null here prob bc of event scope
     const isSelected = this.panelContainer._shadow.querySelector(".is-selected");
 
@@ -156,6 +162,7 @@ class AnnotationsCard extends EntityCard {
 
     // Restore the hidden panel
     if(typeof this._tmpHidden !== "undefined" && this._tmpHidden !== null) this._tmpHidden.classList.remove("hidden");
+
   }
 
   togglePanel(e){
@@ -177,7 +184,6 @@ class AnnotationsCard extends EntityCard {
     } else {
       // Hide open panels
       this._hideOpenPanel();
-      
 
       // Show this content
       this._selectedCardAndPanel();

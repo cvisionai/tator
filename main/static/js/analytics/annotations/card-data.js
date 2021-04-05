@@ -15,17 +15,17 @@ class AnnotationCardData extends HTMLElement {
         this.cardList.filterState = filterState;
         this.cardList.paginationState = paginationState;
 
-        console.log(filterState);
-
         this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterState.conditionsObject, filterState.paramString);
         this.localizations = await this._modelData.getFilteredLocalizations("objects", filterState.conditionsObject, filterState.paramString, paginationState.start, paginationState.stop);
+        this.mediaTypes = this._modelData.getStoredMediaTypes();
+        this.projectId = this._modelData.getProjectId();
+
         await this.getCardList(this.localizations);
         return this.cardList;
     }
 
     getCardList(localizations){
         return new Promise((resolve, reject) => {
-            
             var haveCardShells = function () {
                 if (counter <= 0) {
                     resolve();
@@ -40,18 +40,17 @@ class AnnotationCardData extends HTMLElement {
 
             for(let [i, l] of localizations.entries()){
                 let id = l.id;
-                console.log(l);
-
                 let entityType = this.findMetaDetails( l.meta );
                 //let metaDetails = {name : "sample name", type : "sample type"};
 
-                // #TODO Move this URL generation to _modelData
-                let mediaLink = `/${this.projectId}/annotation/${l.media}?selected_entity=${l.id}&frame=${l.frame}`;
+                let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id);
+                let entityType = this.findMetaDetails(l.meta);
 
                 let attributes = l.attributes;
                 let created = new Date(l.created_datetime);
                 let modified = new Date(l.modified_datetime);
                 let mediaId = l.media;
+
                 let position = i + this.cardList.paginationState.start;
                 let posText = `${position + 1} of ${this.cardList.total}`;
 
@@ -60,6 +59,7 @@ class AnnotationCardData extends HTMLElement {
                     localization : l,
                     entityType,
                     mediaId,
+                    entityType,
                     mediaLink,
                     attributes,
                     created,
@@ -71,13 +71,6 @@ class AnnotationCardData extends HTMLElement {
                 counter--;
                 haveCardShells();
 
-                // #TODO User list shouldn't need to be a promise and should be part
-                //       of the modelData initialization
-                //let promises = [
-                //        this._modelData.getUser(l.modified_by),
-                //        this._modelData.getLocalizationGraphic(l.id)
-                //    ]
-
                 this._modelData.getLocalizationGraphic(l.id).then((image) => {
                     this.dispatchEvent(new CustomEvent("setCardImage", {
                         composed: true,
@@ -86,6 +79,17 @@ class AnnotationCardData extends HTMLElement {
                             image: image
                         }
                     }));
+                });
+
+                this._modelData.getDataById(l.media, "media").then((media) => {
+                    media.entityType = this.findMediaMetaDetails(media.meta);
+                    this.dispatchEvent(new CustomEvent("setMedia", {
+                        composed: true,
+                        detail: {
+                            id: l.id,
+                            media: media
+                        }
+                    }))
                 });
             }
         });
@@ -98,6 +102,15 @@ class AnnotationCardData extends HTMLElement {
             }
         }
     }
+
+    findMediaMetaDetails(id) {
+        for (let mediaType of this.mediaTypes) {
+            if (mediaType.id == id) {
+                return mediaType;
+            }
+        }
+    }
+
 }
 
 customElements.define("annotation-card-data", AnnotationCardData);

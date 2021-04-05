@@ -78,6 +78,7 @@ class AnnotationsGallery extends EntityCardGallery {
     this.pageModal = pageModal;
     this.modelData = modelData;
 
+
     // Init gallery with data for filtering
     // this._labelsDropDown.init({
     //   gallery : this,
@@ -130,6 +131,18 @@ class AnnotationsGallery extends EntityCardGallery {
       var info = this._cardElements[this._currentCardIndexes[id]];
       info.card.setImage(image);
       // info.annotationPanel.setImage(image);
+    }
+  }
+
+  /**
+   * Updates the specific card's panel's media
+   * @param {integer} id
+   * @param {entityObject} media
+   */
+  updateCardMedia(id, media) {
+    if (id in this._currentCardIndexes) {
+      var info = this._cardElements[this._currentCardIndexes[id]];
+      info.annotationPanel.setMedia(media);
     }
   }
 
@@ -217,6 +230,7 @@ class AnnotationsGallery extends EntityCardGallery {
         panelContainer : this.panelContainer, 
         annotationPanelDiv : this._cardElements[index].annotationPanelDiv
       });
+
       card.style.display = "block";
       numberOfDisplayedCards += 1;
 
@@ -239,6 +253,7 @@ class AnnotationsGallery extends EntityCardGallery {
     if(!this.panelContainer.open) this.panelContainer._toggleOpen();
     this.panelControls.locDataHandler( e.detail );
   }
+
 }
 
 customElements.define("annotations-gallery", AnnotationsGallery);

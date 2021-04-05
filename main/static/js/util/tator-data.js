@@ -246,7 +246,7 @@ class TatorData {
 
 
   /**
-   * Returns a localization count
+   * Returns a data for user with user ID
    */
   async getLocalizationCount({params = ""} = {}){
     const response = await fetch(`/rest/LocalizationCount/${this._project}${params}`, {
@@ -266,7 +266,7 @@ class TatorData {
 
 
   /**
-   * Returns localizations list 
+    * Returns localizations list 
    */
   async getLocalizations({ params = "", start = 0, stop = 20} = {}){
     const response = await fetch(`/rest/Localizations/${this._project}?start=${start}&stop=${stop}${params}`, {
@@ -353,6 +353,38 @@ class TatorData {
   }
 
   /**
+   * Retrieves the data for a given entity
+   * @param {integer} id
+   * @param {string} entityType - media|localization
+   */
+  async getDataById(id, entityType) {
+
+    let url = "/rest";
+
+    if (entityType == "localization") {
+      url += "/Localization/";
+    }
+    else if (entityType == "media") {
+      url += "/Media/";
+    }
+
+    url += id;
+
+    var dataPromise = (fetchRetry(url, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    }));
+
+    var outData = await dataPromise.then((response) => {return response.json()});
+    return outData;
+  }
+
+  /**
    * Gets data from the corresponding Tator REST endpoint
    * #TODO Currently, this will search through all of a given entity type
    *
@@ -381,7 +413,7 @@ class TatorData {
    * @returns {array}
    *   Results based on outputType and given filterData
    */
-  async _getData(outputType, filterData, filterString, dataStart, dataStop, mediaIds, versionIds, sectionIds) {
+  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds, sectionIds) {
 
     // #TODO In the future, this may turn into promises per meta/dtype
     var promises = [];
@@ -390,8 +422,6 @@ class TatorData {
     var mediaIds;
     var paramString = "";
     var paramSearch = "";
-
-    // Create the paramString
     for (const name in filterData) {
       entityType = filterData[name].entityType;
       for (let idx = 0; idx < filterData[name].filters.length; idx++) {
@@ -436,14 +466,6 @@ class TatorData {
       }
     }
 
-    // **********
-    // @TODO
-    // if(filterString !== "" && filterString !== null && typeof filterString !== "undefined"){
-    //   paramString = filterString;
-    // }
-    // *********
-    
-
     let url = "/rest";
 
     if (this._localizationTypes.indexOf(entityType) >= 0) {
@@ -462,7 +484,7 @@ class TatorData {
         url += "/Medias/";
       }
     }
-    
+
     if (!isNaN(dataStart) && !isNaN(dataStop)) {
       // Note: & into paramString is taken care of by paramString itself
       url += `${this._project}?start=${dataStart}&stop=${dataStop}${paramString}`;
@@ -471,22 +493,6 @@ class TatorData {
       url += `${this._project}?${paramString}`;
     }
     console.log("Getting data with URL: " + url);
-
-    // **********
-    // @TODO this doesn't belong here, will be lost if we decouple data?
-    // Only place where we have access to the param string, so pushed here
-    // Need to expose elsewhere for history management? or reconstruct?
-    // this._filterState = {};
-    // this._filterState.paramString = paramString;
-    // this._paginationState = {};
-    // this._paginationState.start = dataStart; // @TODO could go w/ NaN check but has error handler downstream
-    // this._paginationState.stop = dataStop;
-    // this.history = new FilterHistoryManagement();
-    // this.history._handlePushState({ 
-    //   fp : this._filterState, 
-    //   ps : this._paginationState
-    // });
-    // **********
 
     promises.push(fetchRetry(url, {
         method: "GET",
@@ -543,8 +549,8 @@ class TatorData {
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredLocalizations(outputType, filters, filterString, dataStart, dataStop) {
-   
+  async getFilteredLocalizations(outputType, filters, dataStart, dataStop) {
+
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
@@ -554,9 +560,7 @@ class TatorData {
         locGroups[locType.name] = {filters: [], entityType: locType};
       });
 
-    if (filters != undefined && filters != null && filters != "") {
-      console.log("Filters: ");
-      console.log(filters);
+    if (filters != undefined) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           mediaFilters.push(filter);
@@ -597,11 +601,9 @@ class TatorData {
           locGroups[filter.category].filters.push(filter);
         }
       });
-      filterString = "";
     }
 
-    var outData = await this._getData(outputType, locGroups, filterString, dataStart, dataStop, mediaIds, versionIds);
-
+    var outData = await this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds);
     return outData;
   }
 
@@ -636,7 +638,7 @@ class TatorData {
       mediaGroups[mediaType.name] = {entityType: mediaType, filters: []};
     });
 
-    if (filters != undefined && filters != null && filters != "" ){
+    if (filters != undefined) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
@@ -658,7 +660,26 @@ class TatorData {
       }
     }
 
-    var outData = await this._getData(outputType, mediaGroups, "", dataStart, dataStop, null, null, sectionIds);
+    var outData = await this._getData(outputType, mediaGroups, dataStart, dataStop, null, null, sectionIds);
     return outData;
+  }
+
+  /**
+   * Creates a Tator link to the given media and provided parameters
+   * Assumes the media is in the same project as this tator data module.
+   * @param {integer} mediaId
+   * @param {integer} frame - optional
+   * @param {integer} entityId - optional
+   * @returns {str} Tator link using given parameters
+   */
+  generateMediaLink(mediaId, frame, entityId) {
+    var outStr = `/${this._project}/annotation/${mediaId}?`;
+    if (mediaId) {
+      outStr += `frame=${frame}`;
+    }
+    if (entityId) {
+      outStr += `selected_entity=${entityId}`;
+    }
+    return outStr;
   }
 }
