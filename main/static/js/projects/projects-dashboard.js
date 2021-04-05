@@ -187,6 +187,7 @@ class ProjectsDashboard extends TatorPage {
         promise = this._configureObjectDetection(projectPromise);
         break;
       case "multiObjectTracking":
+        promise = this._configureMultiObjectTracking(projectPromise);
         break;
       case "activityRecognition":
         promise = this._configureActivityRecognition(projectPromise);
@@ -294,6 +295,65 @@ class ProjectsDashboard extends TatorPage {
           }],
         }),
       });
+    });
+  }
+
+  _configureMultiObjectTracking(projectPromise) {
+    return projectPromise.then(project => {
+      return fetch(`/rest/MediaTypes/${project.id}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Videos",
+          dtype: "video",
+          attribute_types: [],
+        }),
+      })
+    })
+    .then(response => response.json())
+    .then(videoResponse => {
+      const trackPromise = fetch(`/rest/StateTypes/${this._newProjectId}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Tracks",
+          association: "Localization",
+          interpolation: "none",
+          media_types: [videoResponse.id],
+          attribute_types: [{
+            name: "Label",
+            description: "Track label.",
+            dtype: "string",
+            order: 0,
+          }],
+        }),
+      });
+      const boxPromise = fetch(`/rest/LocalizationTypes/${this._newProjectId}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Boxes",
+          dtype: "box",
+          media_types: [videoResponse.id],
+          attribute_types: [],
+        }),
+      });
+      return Promise.all([trackPromise, boxPromise]);
     });
   }
 
