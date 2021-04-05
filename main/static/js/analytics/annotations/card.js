@@ -16,7 +16,7 @@ class AnnotationsCard extends EntityCard {
   }
   
 
-  init(obj, panelContainer, annotationPanelDiv){
+  init({obj, panelContainer, annotationPanelDiv}){
     // ID is title
     //this.titleDiv.innerHTML = `ID ${obj.id}`;
     this._id_text.innerHTML = `ID: ${obj.id}`;
@@ -122,7 +122,7 @@ class AnnotationsCard extends EntityCard {
 
   _mouseEnterHandler(e){
     const isHidden = this.annotationPanelDiv.classList.contains("hidden");
-    const isSelected = this.annotationPanelDiv.classList.contains("is-selected")
+    const isSelected = this.annotationPanelDiv.classList.contains("is-selected");
     if(isHidden && !isSelected) {
       //console.log(`Previewing: ${this.annotationPanelDiv.dataset.locId}`);
 
