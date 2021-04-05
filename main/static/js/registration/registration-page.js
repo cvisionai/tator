@@ -185,7 +185,7 @@ class RegistrationPage extends TatorElement {
     if (username.length == 0) {
       this._valid = false;
     } else {
-      return fetch(`/rest/Users?username=${username}`, {
+      return fetch(`/rest/User/Exists?username=${username}`, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -195,8 +195,8 @@ class RegistrationPage extends TatorElement {
         },
       })
       .then(response => response.json())
-      .then(existing => {
-        if (existing.length > 0) {
+      .then(exists => {
+        if (exists) {
           this._addError("Username already taken!");
           this._valid = false;
         }
@@ -253,7 +253,7 @@ class RegistrationPage extends TatorElement {
     if (email.length == 0) {
       this._valid = false;
     } else {
-      return fetch(`/rest/Users?email=${email}`, {
+      return fetch(`/rest/User/Exists?email=${email}`, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -263,8 +263,8 @@ class RegistrationPage extends TatorElement {
         },
       })
       .then(response => response.json())
-      .then(existing => {
-        if (existing.length > 0) {
+      .then(exists => {
+        if (exists) {
           this._addError("Email already in use!");
           this._valid = false;
         }
