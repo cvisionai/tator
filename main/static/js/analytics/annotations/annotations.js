@@ -5,10 +5,6 @@
   constructor() {
     super();
 
-    // Allow css access to body
-    const body = document.getElementsByTagName("BODY")[0];
-    body.setAttribute("class", "analysis-annotations-body");
-
     //
     // Header
     //
@@ -206,7 +202,7 @@
   }
 
   // Reset the pagination back to page 0
-  _updateFilterResults(evt){r
+  _updateFilterResults(evt){
     this._filterState.conditionsObject = evt.detail.conditions;
     this._paginationState.init = true;
 
