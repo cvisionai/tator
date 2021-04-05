@@ -199,3 +199,9 @@ email:
   aws_region: "<fill in>"
   aws_access_key_id: "<fill in>"
   aws_secret_access_key: "<fill in>"
+anonymousRegistration:
+  # Enable to allow anyone to register to use the site.
+  enabled: true
+  # Enable to require email confirmation for anonymous registration. Automatic email 
+  # must be configured.
+  emailConfirmation: false
