@@ -5,6 +5,10 @@
   constructor() {
     super();
 
+    // Allow css access to body
+    const body = document.getElementsByTagName("BODY")[0];
+    body.setAttribute("class", "analysis-annotations-body");
+
     //
     // Header
     //
@@ -78,7 +82,6 @@
     this._shadow.appendChild( this.modal );
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
-
   }
 
   _init() {
@@ -121,6 +124,11 @@
       // Init panel side behavior
       this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal, modelData : this._modelData });
 
+      // @TODO check from merge
+      this.cardData.addEventListener("setMedia", (evt) => {
+        this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
+      });
+      
       // Pass panel and localization types to gallery
       this._filterResults._initPanel( {
         panelContainer : this._panelContainer,
@@ -166,6 +174,7 @@
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
+
   _checkHistoryState(){
     // If there was a param string, these objects would not be empty
     const statesObj = this.history._readQueryParams();
@@ -187,6 +196,7 @@
 
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList({filterState, paginationState})
+
     .then((cardList) => {
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show(cardList);
@@ -196,7 +206,7 @@
   }
 
   // Reset the pagination back to page 0
-  _updateFilterResults(evt){
+  _updateFilterResults(evt){r
     this._filterState.conditionsObject = evt.detail.conditions;
     this._paginationState.init = true;
 

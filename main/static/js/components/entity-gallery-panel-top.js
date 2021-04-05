@@ -74,6 +74,8 @@ class EntityGalleryPanelTop extends TatorElement {
     }
 
     locDataHandler(evtDetail){
+      console.log("evtDetail");
+      console.log(evtDetail);
       if(evtDetail.openFlag){
         // We're opening the panel with new card click
         this._locImage.initAndShowData({ cardObj : evtDetail.cardObj });

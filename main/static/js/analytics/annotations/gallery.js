@@ -6,7 +6,6 @@ class AnnotationsGallery extends EntityCardGallery {
     *
     */
 
-
     // Custom width for annotations gallery
     this.colSize = 272;
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
@@ -47,7 +46,7 @@ class AnnotationsGallery extends EntityCardGallery {
     this._resizeCards._initGallery(this._ul, this.colSize);
     this.sliderContainer.appendChild( this._resizeCards );
     this._tools.appendChild( this.sliderContainer );
-    
+
     // Tools: Show @aspect ratio
     this.aspectToolContainer = document.createElement("div");
     this.aspectToolContainer.setAttribute("class", "col-3")
@@ -78,6 +77,7 @@ class AnnotationsGallery extends EntityCardGallery {
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
     this.modelData = modelData;
+
 
     // Init gallery with data for filtering
     // this._labelsDropDown.init({
@@ -131,6 +131,18 @@ class AnnotationsGallery extends EntityCardGallery {
       var info = this._cardElements[this._currentCardIndexes[id]];
       info.card.setImage(image);
       // info.annotationPanel.setImage(image);
+    }
+  }
+
+  /**
+   * Updates the specific card's panel's media
+   * @param {integer} id
+   * @param {entityObject} media
+   */
+  updateCardMedia(id, media) {
+    if (id in this._currentCardIndexes) {
+      var info = this._cardElements[this._currentCardIndexes[id]];
+      info.annotationPanel.setMedia(media);
     }
   }
 
@@ -218,6 +230,7 @@ class AnnotationsGallery extends EntityCardGallery {
         panelContainer : this.panelContainer, 
         annotationPanelDiv : this._cardElements[index].annotationPanelDiv
       });
+
       card.style.display = "block";
       numberOfDisplayedCards += 1;
 
@@ -240,7 +253,7 @@ class AnnotationsGallery extends EntityCardGallery {
     if(!this.panelContainer.open) this.panelContainer._toggleOpen();
     this.panelControls.locDataHandler( e.detail );
   }
+
 }
 
 customElements.define("annotations-gallery", AnnotationsGallery);
-    

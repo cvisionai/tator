@@ -1,10 +1,3 @@
-//      // Pin Actions
-      // Pin then < to close the panel (keep open v1)
-      // this.pinned = new EntityPanelPin({ panelContainer: this });
-      // let actions = this.pinned.pinThisEl();
-      // actions.setAttribute("class", "d-flex");
-      // this._main.appendChild(actions);
-
 class EntityPanelPin {
     constructor({ panelContainer, storageKey }){
         this.storageKey = window.location.pathname; // Should contain project ID
@@ -75,6 +68,7 @@ class EntityPanelPin {
 
             // Inner pinDiv
             let pinDiv = document.createElement("entity-gallery-panel from-pin");
+
             annotationPanel.init( pin.obj, this.panelContainer );
             annotationPanelDiv.appendChild(pinDiv);
 
