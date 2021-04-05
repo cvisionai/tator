@@ -8,6 +8,7 @@ from ..models import User
 from ..models import Invitation
 from ..models import Affiliation
 from ..serializers import UserSerializerBasic
+from ..schema import UserExistsSchema
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema
 from ..schema import CurrentUserSchema
@@ -16,6 +17,27 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import UserPermission
 from ._permissions import UserListPermission
+
+class UserExistsAPI(BaseDetailView):
+    """ Determine whether user exists.
+    """
+    schema = UserExistsSchema()
+    queryset = User.objects.all()
+    http_method_names = ['get']
+    # This endpoint does not require authentication.
+
+    def _get(self, params):
+        email = params.get('email', None)
+        username = params.get('username', None)
+        if email is None and username is None:
+            raise Exception("One of username or email must be supplied!")
+        elif email is not None:
+            users = User.objects.filter(email=email)
+        elif username is not None:
+            users = User.objects.filter(username=username)
+        else:
+            users = User.objects.filter(username=username, email=email)
+        return users.exists()
 
 class UserListAPI(BaseListView):
     """ Get list of users.

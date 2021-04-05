@@ -75,6 +75,7 @@ from .token import TokenSchema
 from .transcode import TranscodeSchema
 from .upload_completion import UploadCompletionSchema
 from .upload_info import UploadInfoSchema
+from .user import UserExistsSchema
 from .user import UserListSchema
 from .user import UserDetailSchema
 from .user import CurrentUserSchema

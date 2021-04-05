@@ -380,6 +380,10 @@ urlpatterns += [
         UserListAPI.as_view(),
     ),
     path(
+        'rest/User/Exists',
+        UserExistsAPI.as_view(),
+    ),
+    path(
         'rest/User/GetCurrent',
         CurrentUserAPI.as_view(),
     ),

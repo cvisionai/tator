@@ -73,6 +73,7 @@ from .token import TokenAPI
 from .transcode import TranscodeAPI
 from .upload_completion import UploadCompletionAPI
 from .upload_info import UploadInfoAPI
+from .user import UserExistsAPI
 from .user import UserListAPI
 from .user import UserDetailAPI
 from .user import CurrentUserAPI
