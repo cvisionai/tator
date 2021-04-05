@@ -238,10 +238,6 @@ class LocalizationInPage extends TatorElement {
             // Only display positive version numbers.
             versions = versions.filter(version => version.number >= 0);
 
-
-            console.log("Localization Types");
-            console.log(localizationTypes);
-
             // @TODO - versions
             for (const version of versions) {
               this._versionLookup[version.id] = version;
