@@ -223,6 +223,12 @@ class TwoDPlotType(Enum):
 
 class Organization(Model):
     name = CharField(max_length=128)
+    def user_permission(self, user_id):
+        permission = None
+        qs = self.affiliation_set.filter(user_id=user_id)
+        if qs.exists():
+            permission = qs[0].permission
+        return permission
     def __str__(self):
         return self.name
 
