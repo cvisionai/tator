@@ -189,6 +189,7 @@ class ProjectsDashboard extends TatorPage {
       case "multiObjectTracking":
         break;
       case "activityRecognition":
+        promise = this._configureActivityRecognition(projectPromise);
         break;
       case "none":
         break;
@@ -289,6 +290,49 @@ class ProjectsDashboard extends TatorPage {
             name: "Label",
             description: "Object detection label.",
             dtype: "string",
+            order: 0,
+          }],
+        }),
+      });
+    });
+  }
+
+  _configureActivityRecognition(projectPromise) {
+    return projectPromise.then(project => {
+      return fetch(`/rest/MediaTypes/${project.id}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Videos",
+          dtype: "video",
+          attribute_types: [],
+        }),
+      })
+    })
+    .then(response => response.json())
+    .then(videoResponse => {
+      return fetch(`/rest/StateTypes/${this._newProjectId}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: "Activities",
+          association: "Frame",
+          interpolation: "latest",
+          media_types: [videoResponse.id],
+          attribute_types: [{
+            name: "Something in view",
+            description: "Whether something is happening in the video.",
+            dtype: "bool",
             order: 0,
           }],
         }),
