@@ -304,7 +304,7 @@ def user_save(sender, instance, created, **kwargs):
     if created:
         invites = Invitation.objects.filter(email=instance.email, status='Pending')
         if invites.count() == 0:
-            organization = organization.objects.create(name=f"{instance}'s Team")
+            organization = Organization.objects.create(name=f"{instance}'s Team")
             Affiliation.objects.create(organization=organization,
                                        user=instance,
                                        permission='Admin')
