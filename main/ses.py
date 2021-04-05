@@ -54,7 +54,7 @@ class TatorSES:
         # #TODO Potentially limit the attachment size(s)
         for attachment in attachments:
             f_p = io.BytesIO()
-            TatorS3().download_fileobj(os.getenv('BUCKET_NAME'), attachment['key'], f_p)
+            TatorS3().download_fileobj(attachment['key'], f_p)
             f_p.seek(0)
             part = MIMEApplication(f_p.read())
             part.add_header('Content-Disposition', 'attachment', filename=attachment['name'])
