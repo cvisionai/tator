@@ -50,16 +50,20 @@ class MainRedirect(View):
         return out
 
 
+class RegistrationView(TemplateView):
+    template_name = 'registration/registration.html'
+
+
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
 
 
-class CustomView(LoginRequiredMixin, TemplateView):
-    template_name = 'new-project/custom.html'
-
-
 class AccountProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'account-profile/account-profile.html'
+
+
+class TokenView(LoginRequiredMixin, TemplateView):
+    template_name = 'token.html'
 
 
 class ProjectBase(LoginRequiredMixin):
@@ -96,9 +100,6 @@ class AnalyticsDashboardView(ProjectBase, TemplateView):
 
 class AnalyticsAnnotationsView(ProjectBase, TemplateView):
     template_name = 'analytics/annotations.html'
-
-    def get_class():
-        return template_name
 
 
 class AnalyticsCollectionsView(ProjectBase, TemplateView):
@@ -151,7 +152,6 @@ def validate_project(user, project):
 class AuthProjectView(View):
     def dispatch(self, request, *args, **kwargs):
         """ Identifies permissions for a file in /media
-
         User must be part of the project to access media files.
         Returns 200 on OK, returns 403 on Forbidden
         """
@@ -204,7 +204,6 @@ class AuthProjectView(View):
 class AuthAdminView(View):
     def dispatch(self, request, *args, **kwargs):
         """ Identifies permissions for an nginx location requiring admin
-
         User must have the is_staff flag enabled.
         Returns 200 on OK, returns 403 on Forbidden
         """
