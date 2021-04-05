@@ -162,7 +162,7 @@ class TatorS3:
         return urls, upload_id
 
     def get_size(self, path):
-        """ Returns the size of an object for the given path, if it exists. 
+        """ Returns the size of an object for the given path, if it exists.
             Returns -1 if it does not exist."""
         size = -1
         try:
@@ -183,7 +183,13 @@ class TatorS3:
         if prefix is not None:
             kwargs["Prefix"] = prefix
 
-        return self.s3.list_objects_v2(Bucket=self.bucket_name, **kwargs)
+        response = self.s3.list_objects_v2(Bucket=self.bucket_name, **kwargs)
+
+        # GCP response does not contain the key count
+        if "KeyCount" not in response:
+            response["KeyCount"] = len(response["Contents"]) if "Contents" in response else 0
+
+        return response
 
     def complete_multipart_upload(self, path, parts, upload_id):
         """ Completes a previously started multipart upload. """
