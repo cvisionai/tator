@@ -19,7 +19,7 @@ from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
 
 from .models import *
-from .store import TatorStorage
+from .store import get_tator_store
 from .search import TatorSearch, ALLOWED_MUTATIONS
 
 logger = logging.getLogger(__name__)
@@ -2346,7 +2346,7 @@ class ResourceTestCase(APITestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        self.store = TatorStorage()
+        self.store = get_tator_store()
 
     def _random_store_obj(self):
         """ Creates an store file with random key. Simulates an upload.

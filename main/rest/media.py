@@ -33,7 +33,7 @@ from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
-from ..store import TatorStorage, get_storage_lookup
+from ..store import get_tator_store, get_storage_lookup
 
 from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
 from ._base_views import BaseListView, BaseDetailView
@@ -110,7 +110,7 @@ def _save_image(url, media_obj, project_obj, role):
     parsed = os.path.basename(urlparse(url).path)
 
     # Set up S3 client.
-    tator_store = TatorStorage(project_obj.bucket)
+    tator_store = get_tator_store(project_obj.bucket)
 
     # Upload image.
     if media_obj.media_files is None:
@@ -276,7 +276,7 @@ class MediaListAPI(BaseListView):
                 thumb.close()
 
             # Set up S3 client.
-            tator_store = TatorStorage(project_obj.bucket)
+            tator_store = get_tator_store(project_obj.bucket)
 
             if url:
                 # Upload image.

@@ -15,7 +15,7 @@ from PIL import Image
 from main.models import *
 from main.models import Resource
 from main.search import TatorSearch
-from main.store import TatorStorage
+from main.store import get_tator_store
 
 from django.conf import settings
 from django.db.models import F
@@ -60,7 +60,7 @@ def updateProjectTotals(force=False):
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if media:
-                tator_store = TatorStorage(project.bucket)
+                tator_store = get_tator_store(project.bucket)
                 if "thumbnail" in media.media_files and media.media_files["thumbnail"]:
                     src_path = media.media_files['thumbnail'][0]['path']
                     dest_path = f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"
@@ -290,7 +290,7 @@ def cleanup_object_uploads(max_age_days=1):
             continue
 
         bucket = Bucket.objects.get(pk=item["bucket"]) if item["bucket"] else None
-        tator_store = TatorStorage(bucket)
+        tator_store = get_tator_store(bucket)
 
         prefix = upload_prefix_from_project(project)
         last_key = None
@@ -419,7 +419,7 @@ def set_default_versions():
     logger.info(f"Set all default versions!")
 
 def move_backups_to_s3():
-    store = TatorStorage().store
+    store = get_tator_store().store
     transfer = S3Transfer(store)
     bucket_name = os.getenv('BUCKET_NAME')
     num_moved = 0

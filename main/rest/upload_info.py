@@ -8,7 +8,7 @@ from urllib.parse import urlsplit, urlunsplit
 from ..models import Project
 from ..models import Media
 from ..schema import UploadInfoSchema
-from ..store import TatorStorage
+from ..store import get_tator_store
 from ..util import upload_prefix_from_project
 
 from ._base_views import BaseDetailView
@@ -61,7 +61,7 @@ class UploadInfoAPI(BaseDetailView):
                 raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
 
         # Generate presigned urls.
-        tator_store = TatorStorage(project_obj.bucket)
+        tator_store = get_tator_store(project_obj.bucket)
         urls, upload_id = tator_store.get_upload_urls(key, expiration, num_parts)
 
         # Replace host if external host is given.

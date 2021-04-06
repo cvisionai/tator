@@ -16,7 +16,7 @@ from ..models import safe_delete
 from ..models import Resource
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
-from ..store import TatorStorage
+from ..store import get_tator_store
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -25,7 +25,7 @@ from ._permissions import ProjectFullControlPermission
 def _serialize_projects(projects, user_id):
     project_data = database_qs(projects)
     for idx, project in enumerate(projects):
-        store = TatorStorage(project.bucket)
+        store = get_tator_store(project.bucket)
         if project.creator.pk == user_id:
             project_data[idx]['permission'] = 'Creator'
         else:
@@ -130,7 +130,7 @@ class ProjectDetailAPI(BaseDetailView):
             if project.pk != project_from_key:
                 raise Exception("Invalid thumbnail path for this project!")
 
-            tator_store = TatorStorage(project.bucket)
+            tator_store = get_tator_store(project.bucket)
             if not tator_store.check_key(params["thumb"]):
                 raise ValueError(f"Key {params['thumb']} not found in bucket")
 

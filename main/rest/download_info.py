@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from ..models import Project
 from ..models import Resource
 from ..schema import DownloadInfoSchema
-from ..store import TatorStorage, get_storage_lookup
+from ..store import get_tator_store, get_storage_lookup
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -33,7 +33,7 @@ class DownloadInfoAPI(BaseListView):
         store_lookup = get_storage_lookup(resources)
 
         # Uploads without resources saved will use the default project bucket.
-        store_default = TatorStorage(Project.objects.get(pk=project).bucket)
+        store_default = get_tator_store(Project.objects.get(pk=project).bucket)
 
         # Set up S3 interfaces.
         response_data = []

@@ -45,7 +45,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .download import download_file
-from .store import TatorStorage, ObjectStore, get_storage_lookup
+from .store import get_tator_store, ObjectStore, get_storage_lookup
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -396,7 +396,7 @@ class Bucket(Model):
         they are invalid for the given `endpoint_url`, raises a `ValueError`. If they do not exist,
         they are set in a copy of the `params` dict and this copy is returned.
         """
-        server = TatorStorage(self).server
+        server = get_tator_store(self).server
 
         if server is ObjectStore.GCP:
             return cls._sc_validator(
@@ -954,7 +954,7 @@ class Media(Model, ModelDiffMixin):
 
         resources = Resource.objects.filter(media__in=[self])
         store_lookup = get_storage_lookup(resources)
-        store_default = TatorStorage(self.project.bucket)
+        store_default = get_tator_store(self.project.bucket)
 
         for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif"]:
             if key not in self.media_files:
@@ -998,7 +998,7 @@ class Resource(Model):
         if obj.media.all().count() == 0:
             logger.info(f"Deleting object {path}")
             obj.delete()
-            tator_store = TatorStorage(obj.bucket)
+            tator_store = get_tator_store(obj.bucket)
             tator_store.delete_object(path)
 
     @transaction.atomic
@@ -1014,7 +1014,7 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
         logger.info(f"Archiving object {path}")
         bucket = obj.bucket
-        tator_store = TatorStorage(bucket)
+        tator_store = get_tator_store(bucket)
         return tator_store.archive_object(path, bucket.archive_sc)
 
 
@@ -1030,7 +1030,7 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Requesting restoration of object {path}")
-        tator_store = TatorStorage(obj.bucket)
+        tator_store = get_tator_store(obj.bucket)
         return tator_store.request_restoration(path, bucket.live_sc, min_exp_days)
 
     @transaction.atomic
@@ -1048,7 +1048,7 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
         logger.info(f"Restoring object {path}")
         bucket = obj.bucket
-        tator_store = TatorStorage(bucket)
+        tator_store = get_tator_store(bucket)
         return tator_store.restore_resource(path, bucket.archive_sc, bucket.live_sc)
 
 
@@ -1072,7 +1072,7 @@ def safe_delete(path):
 
 def drop_media_from_resource(path, media):
     """ Drops the specified media from the resource. This should be called when
-        removing a resource from a Media object's media_files but the Media is 
+        removing a resource from a Media object's media_files but the Media is
         not being deleted.
     """
     try:

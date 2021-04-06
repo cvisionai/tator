@@ -8,7 +8,7 @@ from email.mime.application import MIMEApplication
 from django.conf import settings
 import boto3
 
-from .store import TatorStorage
+from .store import get_tator_store
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class TatorSES:
         # #TODO Potentially limit the attachment size(s)
         for attachment in attachments:
             f_p = io.BytesIO()
-            TatorStorage().download_fileobj(attachment['key'], f_p)
+            get_tator_store().download_fileobj(attachment['key'], f_p)
             f_p.seek(0)
             part = MIMEApplication(f_p.read())
             part.add_header('Content-Disposition', 'attachment', filename=attachment['name'])
