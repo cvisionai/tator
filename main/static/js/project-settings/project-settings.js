@@ -22,7 +22,8 @@ class ProjectSettings extends TatorPage {
       "media-type-main-edit",
       "localization-edit",
       "leaf-type-edit",
-      "state-type-edit"
+      "state-type-edit",
+      "membership-edit",
     ];
 
     // Modal parent - to pass to page components
@@ -57,25 +58,30 @@ class ProjectSettings extends TatorPage {
     this.projectView = new ProjectMainEdit();
     this.typesData = new ProjectTypesData(this.projectId);
     let typePromises = this.typesData._getAllTypePromises();
+    this.membershipData = new MembershipData(this.projectId);
+    let membershipPromise = this.membershipData._getMembershipPromise();
 
     const promiseList = [
       this.projectView._fetchGetPromise({"id": this.projectId} ),
-      ...typePromises
+      ...typePromises,
+      membershipPromise,
     ];
 
     Promise.all(promiseList)
-    .then( async([pa, mta, lo, le, st]) => {
+    .then( async([pa, mta, lo, le, st, mem]) => {
       const projectData = pa.json();
       const mediaTypesData = mta.json();
       const localizationData = lo.json();
       const leafTypeData = le.json();
       const stateTypeData = st.json();
+      const membershipData = mem.json();
       Promise.all( [
         projectData, 
         mediaTypesData, 
         localizationData, 
         leafTypeData, 
-        stateTypeData 
+        stateTypeData,
+        membershipData,
       ] ).then( (dataArray) => {
           this.loading.hideSpinner();
           
