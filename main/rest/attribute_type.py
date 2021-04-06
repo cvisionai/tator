@@ -19,6 +19,7 @@ from ._attributes import (
     bulk_rename_attributes,
     bulk_mutate_attributes,
     bulk_delete_attributes,
+    convert_attribute,
 )
 from ._permissions import ProjectFullControlPermission
 
@@ -50,6 +51,9 @@ class AttributeTypeListAPI(BaseListView):
             raise ValueError("Attribute type definition missing 'dtype' field")
         if "enum" == attribute_type["dtype"] and "choices" not in attribute_type:
             raise ValueError("enum attribute type definition missing 'choices' field")
+        if "default" in attribute_type:
+            # Convert default value to this type to validate it.
+            convert_attribute(attribute_type, attribute_type["default"])
 
     @staticmethod
     def _get_models(type_name):
