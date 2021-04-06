@@ -17,6 +17,7 @@ from ._attribute_keywords import attribute_keywords
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible', 'grouping_default', 'delete_child_localizations']
 
+
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
 
@@ -38,7 +39,8 @@ class StateTypeListAPI(BaseListView):
         media_id = params.get('media_id', None)
         if media_id != None:
             if len(media_id) != 1:
-                raise Exception('Entity type list endpoints expect only one media ID!')
+                raise Exception(
+                    'Entity type list endpoints expect only one media ID!')
             media_element = Media.objects.get(pk=media_id[0])
             states = StateType.objects.filter(media=media_element.meta)
             for state in states:
@@ -46,14 +48,15 @@ class StateTypeListAPI(BaseListView):
                     raise Exception('State not in project!')
             response_data = states.values(*fields)
         else:
-            response_data = StateType.objects.filter(project=self.kwargs['project']).values(*fields)
+            response_data = StateType.objects.filter(
+                project=self.kwargs['project']).values(*fields)
         # Get many to many fields.
         state_ids = [state['id'] for state in response_data]
-        media = {obj['statetype_id']:obj['media'] for obj in 
-            StateType.media.through.objects\
-            .filter(statetype__in=state_ids)\
-            .values('statetype_id').order_by('statetype_id')\
-            .annotate(media=ArrayAgg('mediatype_id')).iterator()}
+        media = {obj['statetype_id']: obj['media'] for obj in
+                 StateType.media.through.objects
+                 .filter(statetype__in=state_ids)
+                 .values('statetype_id').order_by('statetype_id')
+                 .annotate(media=ArrayAgg('mediatype_id')).iterator()}
         # Copy many to many fields into response data.
         for state in response_data:
             state['media'] = media.get(state['id'], [])
@@ -68,20 +71,23 @@ class StateTypeListAPI(BaseListView):
         """
         if params['name'] in attribute_keywords:
             raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
-                              "an attribute name!")
+                             "an attribute name!")
         params['project'] = Project.objects.get(pk=params['project'])
         media_types = params.pop('media_types')
         del params['body']
         obj = StateType(**params)
         obj.save()
-        media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
+        media_qs = MediaType.objects.filter(
+            project=params['project'], pk__in=media_types)
         if media_qs.count() != len(media_types):
             obj.delete()
-            raise ObjectDoesNotExist(f"Could not find media IDs {media_types} when creating state type!")
+            raise ObjectDoesNotExist(
+                f"Could not find media IDs {media_types} when creating state type!")
         for media in media_qs:
             obj.media.add(media)
         obj.save()
         return {'message': 'State type created successfully!', 'id': obj.id}
+
 
 class StateTypeDetailAPI(BaseDetailView):
     """ Interact with an individual state type.
@@ -103,9 +109,9 @@ class StateTypeDetailAPI(BaseDetailView):
         """
         state = StateType.objects.filter(pk=params['id']).values(*fields)[0]
         # Get many to many fields.
-        state['media'] = list(StateType.media.through.objects\
-                              .filter(statetype_id=state['id'])\
-                              .aggregate(media=ArrayAgg('mediatype_id'))\
+        state['media'] = list(StateType.media.through.objects
+                              .filter(statetype_id=state['id'])
+                              .aggregate(media=ArrayAgg('mediatype_id'))
                               ['media'])
         return state
 
@@ -121,7 +127,10 @@ class StateTypeDetailAPI(BaseDetailView):
         description = params.get('description', None)
         visible = params.get('visible', None)
         grouping_default = params.get('grouping_default', None)
-        delete_child_localizations = params.get('delete_child_localizations', None)
+        delete_child_localizations = params.get(
+            'delete_child_localizations', None)
+        association = params.get('association', None)
+        interpolation = params.get('interpolation', None)
 
         obj = StateType.objects.get(pk=params['id'])
         if name is not None:
@@ -134,6 +143,10 @@ class StateTypeDetailAPI(BaseDetailView):
             obj.grouping_default = grouping_default
         if delete_child_localizations is not None:
             obj.delete_child_localizations = delete_child_localizations
+        if association is not None:
+            obj.association = association
+        if interpolation is not None:
+            obj.interpolation = interpolation
 
         obj.save()
         return {'message': 'State type updated successfully!'}
@@ -150,4 +163,3 @@ class StateTypeDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         return StateType.objects.all()
-
