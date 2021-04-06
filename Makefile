@@ -385,7 +385,6 @@ FILES = \
     analytics/visualization/visualization.js \
     analytics/reports/reports.js \
     third_party/autocomplete.js \
-    third_party/d3.v6.min.js \
     utilities.js
 
 JSDIR = main/static/js
