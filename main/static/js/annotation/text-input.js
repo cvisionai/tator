@@ -60,11 +60,11 @@ class TextInput extends TatorElement {
             this.getValue = this._validateString;
             break;
           case "datetime":
-            this._input.setAttribute("placeholder", "e.g. 1999-01-01");
+            this._input.setAttribute("placeholder", "e.g. 2020-06-30");
             this.getValue = this._validateDateTime;
             break;
           case "geopos":
-            this._input.setAttribute("placeholder", "e.g. 42.36,-71.06");
+            this._input.setAttribute("placeholder", "e.g. 21.305,-157.858");
             this.getValue = this._validateGeopos;
             break;
           case "password":
