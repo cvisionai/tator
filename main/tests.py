@@ -19,7 +19,7 @@ from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
 
 from .models import *
-from .s3 import TatorS3
+from .s3 import TatorStorage
 from .search import TatorSearch, ALLOWED_MUTATIONS
 
 logger = logging.getLogger(__name__)
@@ -2346,28 +2346,28 @@ class ResourceTestCase(APITestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        self.s3 = TatorS3()
+        self.store = TatorStorage()
 
-    def _random_s3_obj(self):
-        """ Creates an s3 file with random key. Simulates an upload.
+    def _random_store_obj(self):
+        """ Creates an store file with random key. Simulates an upload.
         """
         key = f"test/{str(uuid1())}"
-        self.s3.put_object(key, b"\x00" + os.urandom(16) + b"\x00")
+        self.store.put_object(key, b"\x00" + os.urandom(16) + b"\x00")
         return key
 
-    def _s3_obj_exists(self, key):
-        """ Checks whether an object in s3 exists.
+    def _store_obj_exists(self, key):
+        """ Checks whether an object in store exists.
         """
         try:
-            self.s3.head_object(key)
+            self.store.head_object(key)
         except ClientError:
             return False
         else:
             return True
 
     def _generate_keys(self):
-        keys = {role:self._random_s3_obj() for role in ResourceTestCase.MEDIA_ROLES}
-        segment_key = self._random_s3_obj()
+        keys = {role:self._random_store_obj() for role in ResourceTestCase.MEDIA_ROLES}
+        segment_key = self._random_store_obj()
         return keys, segment_key
 
     def _get_media_def(self, role, keys, segment_key):
@@ -2411,18 +2411,18 @@ class ResourceTestCase(APITestCase):
             media_def = self._get_media_def(role, patch_keys, patch_segment_key)
             response = self.client.patch(f"/rest/{endpoint}/{media.id}?index=0&role={role}", media_def, format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertFalse(self._s3_obj_exists(keys[role]))
-            self.assertTrue(self._s3_obj_exists(patch_keys[role]))
-        self.assertFalse(self._s3_obj_exists(segment_key))
-        self.assertTrue(self._s3_obj_exists(patch_segment_key))
+            self.assertFalse(self._store_obj_exists(keys[role]))
+            self.assertTrue(self._store_obj_exists(patch_keys[role]))
+        self.assertFalse(self._store_obj_exists(segment_key))
+        self.assertTrue(self._store_obj_exists(patch_segment_key))
 
         # Delete the files.
         for role in ResourceTestCase.MEDIA_ROLES:
             endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
             response = self.client.delete(f"/rest/{endpoint}/{media.id}?index=0&role={role}", format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertFalse(self._s3_obj_exists(patch_keys[role]))
-        self.assertFalse(self._s3_obj_exists(patch_segment_key))
+            self.assertFalse(self._store_obj_exists(patch_keys[role]))
+        self.assertFalse(self._store_obj_exists(patch_segment_key))
 
     def test_clones(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
@@ -2451,7 +2451,7 @@ class ResourceTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
-            self.assertTrue(self._s3_obj_exists(keys[role]))
+            self.assertTrue(self._store_obj_exists(keys[role]))
 
         # Clone the media.
         body = {'dest_project': self.project.pk,
@@ -2468,10 +2468,10 @@ class ResourceTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
-            self.assertTrue(self._s3_obj_exists(keys[role]))
+            self.assertTrue(self._store_obj_exists(keys[role]))
 
         TatorSearch().refresh(self.project.pk)
-        
+
         # Clone the clone.
         body = {'dest_project': self.project.pk,
                 'dest_type': self.entity_type.pk,
@@ -2487,14 +2487,14 @@ class ResourceTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
-            self.assertTrue(self._s3_obj_exists(keys[role]))
+            self.assertTrue(self._store_obj_exists(keys[role]))
 
         # Delete the second clone.
         response = self.client.delete(f"/rest/Media/{new_clone_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
-            self.assertFalse(self._s3_obj_exists(keys[role]))
+            self.assertFalse(self._store_obj_exists(keys[role]))
 
     def test_thumbnails(self):
         # Create an image in which thumbnail is autocreated.
@@ -2517,8 +2517,8 @@ class ResourceTestCase(APITestCase):
         image = Media.objects.get(pk=image_id)
         image_key = image.media_files['image'][0]['path']
         thumb_key = image.media_files['thumbnail'][0]['path']
-        self.assertTrue(self._s3_obj_exists(image_key))
-        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertTrue(self._store_obj_exists(image_key))
+        self.assertTrue(self._store_obj_exists(thumb_key))
         self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
         self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
 
@@ -2526,8 +2526,8 @@ class ResourceTestCase(APITestCase):
         response = self.client.delete(f"/rest/Media/{image_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
-        self.assertFalse(self._s3_obj_exists(image_key))
-        self.assertFalse(self._s3_obj_exists(thumb_key))
+        self.assertFalse(self._store_obj_exists(image_key))
+        self.assertFalse(self._store_obj_exists(thumb_key))
 
         # Create an image with thumbnail_url included.
         body = {'url': TEST_IMAGE,
@@ -2544,8 +2544,8 @@ class ResourceTestCase(APITestCase):
         image = Media.objects.get(pk=image_id)
         image_key = image.media_files['image'][0]['path']
         thumb_key = image.media_files['thumbnail'][0]['path']
-        self.assertTrue(self._s3_obj_exists(image_key))
-        self.assertTrue(self._s3_obj_exists(thumb_key))
+        self.assertTrue(self._store_obj_exists(image_key))
+        self.assertTrue(self._store_obj_exists(thumb_key))
         self.assertEqual(Resource.objects.get(path=image_key).media.all()[0].pk, image_id)
         self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, image_id)
 
@@ -2553,8 +2553,8 @@ class ResourceTestCase(APITestCase):
         response = self.client.delete(f"/rest/Media/{image_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
-        self.assertFalse(self._s3_obj_exists(image_key))
-        self.assertFalse(self._s3_obj_exists(thumb_key))
+        self.assertFalse(self._store_obj_exists(image_key))
+        self.assertFalse(self._store_obj_exists(thumb_key))
 
         # Create a video that has thumbnails.
         body = {'thumbnail_url': TEST_IMAGE,
@@ -2571,8 +2571,8 @@ class ResourceTestCase(APITestCase):
         video = Media.objects.get(pk=video_id)
         thumb_key = video.media_files['thumbnail'][0]['path']
         gif_key = video.media_files['thumbnail_gif'][0]['path']
-        self.assertTrue(self._s3_obj_exists(thumb_key))
-        self.assertTrue(self._s3_obj_exists(gif_key))
+        self.assertTrue(self._store_obj_exists(thumb_key))
+        self.assertTrue(self._store_obj_exists(gif_key))
         self.assertEqual(Resource.objects.get(path=thumb_key).media.all()[0].pk, video_id)
         self.assertEqual(Resource.objects.get(path=gif_key).media.all()[0].pk, video_id)
 
@@ -2580,8 +2580,8 @@ class ResourceTestCase(APITestCase):
         response = self.client.delete(f"/rest/Media/{video_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
-        self.assertFalse(self._s3_obj_exists(thumb_key))
-        self.assertFalse(self._s3_obj_exists(gif_key))
+        self.assertFalse(self._store_obj_exists(thumb_key))
+        self.assertFalse(self._store_obj_exists(gif_key))
 
 class AttributeTestCase(APITestCase):
     def setUp(self):

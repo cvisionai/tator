@@ -16,7 +16,7 @@ from ..models import safe_delete
 from ..models import Resource
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
-from ..s3 import TatorS3
+from ..s3 import TatorStorage
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -25,14 +25,14 @@ from ._permissions import ProjectFullControlPermission
 def _serialize_projects(projects, user_id):
     project_data = database_qs(projects)
     for idx, project in enumerate(projects):
-        s3 = TatorS3(project.bucket)
+        store = TatorStorage(project.bucket)
         if project.creator.pk == user_id:
             project_data[idx]['permission'] = 'Creator'
         else:
             project_data[idx]['permission'] = str(project.user_permission(user_id))
         del project_data[idx]['attribute_type_uuids']
         if project_data[idx]['thumb']:
-            project_data[idx]['thumb'] = s3.get_download_url(project_data[idx]['thumb'], 28800)
+            project_data[idx]['thumb'] = store.get_download_url(project_data[idx]['thumb'], 28800)
     return project_data
 
 class ProjectListAPI(BaseListView):
@@ -130,8 +130,8 @@ class ProjectDetailAPI(BaseDetailView):
             if project.pk != project_from_key:
                 raise Exception("Invalid thumbnail path for this project!")
 
-            tator_s3 = TatorS3(project.bucket)
-            if not tator_s3.check_key(params["thumb"]):
+            tator_store = TatorStorage(project.bucket)
+            if not tator_store.check_key(params["thumb"]):
                 raise ValueError(f"Key {params['thumb']} not found in bucket")
 
             if project.thumb:

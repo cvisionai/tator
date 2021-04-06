@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 import requests
 
 from ..kube import TatorTranscode
-from ..s3 import TatorS3
+from ..s3 import TatorStorage
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
@@ -62,8 +62,8 @@ class TranscodeAPI(BaseListView):
             # out the object key and get object size via S3 api.
             path = '/'.join(parsed.path.split('/')[-4:])
             logger.info(f"Attempting to retrieve size for S3 key {path}...")
-            tator_s3 = TatorS3(project_obj.bucket)
-            upload_size = tator_s3.get_size(path)
+            tator_store = TatorStorage(project_obj.bucket)
+            upload_size = tator_store.get_size(path)
             logger.info(f"Got object size {upload_size} for S3 key {path}")
         if upload_size == -1:
             logger.info(f"Failed to get object size from S3, trying HEAD at {url}...")

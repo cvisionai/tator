@@ -4,7 +4,7 @@ import boto3
 
 from ..models import Project
 from ..schema import UploadCompletionSchema
-from ..s3 import TatorS3
+from ..s3 import TatorStorage
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -26,7 +26,7 @@ class UploadCompletionAPI(BaseListView):
         project_obj = Project.objects.get(pk=project)
 
         # Complete the upload.
-        tator_s3 = TatorS3(project_obj.bucket)
-        response = tator_s3.complete_multipart_upload(key, parts, upload_id)
+        tator_store = TatorStorage(project_obj.bucket)
+        response = tator_store.complete_multipart_upload(key, parts, upload_id)
         return {'message': f"Upload completion for {key} successful!"}
 

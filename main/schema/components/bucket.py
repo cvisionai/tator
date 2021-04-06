@@ -19,6 +19,14 @@ bucket_properties = {
         'description': 'Bucket region.',
         'type': 'string',
     },
+    'archive_sc': {
+        'description': 'Storage class in which archived objects live.',
+        'type': 'string',
+    },
+    'live_sc': {
+        'description': 'Storage class in which live objects live.',
+        'type': 'string',
+    },
 }
 
 bucket_spec = {

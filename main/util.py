@@ -15,7 +15,7 @@ from PIL import Image
 from main.models import *
 from main.models import Resource
 from main.search import TatorSearch
-from main.s3 import TatorS3
+from main.s3 import TatorStorage
 
 from django.conf import settings
 from django.db.models import F
@@ -26,10 +26,6 @@ from elasticsearch.helpers import streaming_bulk
 logger = logging.getLogger(__name__)
 
 def upload_prefix_from_project(project):
-    """
-    TatorS3 depends on the keyword `upload` being the third token in the key path for uploaded
-    objects; see main/s3.py for details
-    """
     return f"{project.organization.pk}/{project.pk}/upload"
 
 """ Utility scripts for data management in django-shell """
@@ -64,11 +60,11 @@ def updateProjectTotals(force=False):
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if media:
-                tator_s3 = TatorS3(project.bucket)
+                tator_store = TatorStorage(project.bucket)
                 if "thumbnail" in media.media_files and media.media_files["thumbnail"]:
                     src_path = media.media_files['thumbnail'][0]['path']
                     dest_path = f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"
-                    tator_s3.copy(src_path, dest_path)
+                    tator_store.copy(src_path, dest_path)
                     project.thumb = dest_path
         users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
                             .values_list('user')).order_by('last_name')
@@ -294,7 +290,7 @@ def cleanup_object_uploads(max_age_days=1):
             continue
 
         bucket = Bucket.objects.get(pk=item["bucket"]) if item["bucket"] else None
-        tator_s3 = TatorS3(bucket)
+        tator_store = TatorStorage(bucket)
 
         prefix = upload_prefix_from_project(project)
         last_key = None
@@ -303,7 +299,7 @@ def cleanup_object_uploads(max_age_days=1):
             kwargs = {}
             if last_key:
                 kwargs["StartAfter"] = last_key
-            response = tator_s3.list_objects_v2(prefix, **kwargs)
+            response = tator_store.list_objects_v2(prefix, **kwargs)
             if response["KeyCount"] == 0:
                 break
             key_age_list = [(obj["Key"], now - obj["LastModified"]) for obj in response["Contents"]]
@@ -311,7 +307,7 @@ def cleanup_object_uploads(max_age_days=1):
             for key, age in key_age_list:
                 not_resource = not Resource.objects.filter(path=key).exists()
                 if age > datetime.timedelta(days=max_age_days) and not_resource:
-                    tator_s3.delete_object(key)
+                    tator_store.delete_object(key)
                     num_deleted += 1
         logger.info(f"Deleted {num_deleted} objects in project {project.id}!")
     logger.info("Object cleanup finished!")
@@ -423,8 +419,8 @@ def set_default_versions():
     logger.info(f"Set all default versions!")
 
 def move_backups_to_s3():
-    s3 = TatorS3().s3
-    transfer = S3Transfer(s3)
+    store = TatorStorage().store
+    transfer = S3Transfer(store)
     bucket_name = os.getenv('BUCKET_NAME')
     num_moved = 0
     for backup in os.listdir('/backup'):

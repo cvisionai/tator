@@ -45,7 +45,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .download import download_file
-from .s3 import TatorS3, ObjectStore, get_s3_lookup
+from .s3 import TatorStorage, ObjectStore, get_storage_lookup
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -349,9 +349,87 @@ class Bucket(Model):
     endpoint_url = CharField(max_length=1024)
     region = CharField(max_length=16)
     archive_sc = CharField(
-        max_length=16, choices=[("DEEP_ARCHIVE", "DEEP_ARCHIVE")], default="DEEP_ARCHIVE"
+        max_length=32,
+        choices=[
+            ("STANDARD", "STANDARD"),
+            ("STANDARD_STORAGE_CLASS", "STANDARD_STORAGE_CLASS"),
+            ("DEEP_ARCHIVE", "DEEP_ARCHIVE"),
+            ("COLDLINE_STORAGE_CLASS", "COLDLINE_STORAGE_CLASS"),
+        ],
     )
-    live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")], default="STANDARD")
+    live_sc = CharField(
+        max_length=32,
+        choices=[("STANDARD", "STANDARD"), ("STANDARD_STORAGE_CLASS", "STANDARD_STORAGE_CLASS")],
+    )
+
+    @staticmethod
+    def _sc_validator(
+        params,
+        valid_archive_sc,
+        default_archive_sc,
+        valid_live_sc,
+        default_live_sc,
+        storage_type,
+    ):
+        archive_sc = params.get("archive_sc", "")
+        live_sc = params.get("live_sc", "")
+        new_params = dict(params)
+
+        if archive_sc:
+            if archive_sc not in valid_archive_sc:
+                raise ValueError(f"Archive storage class '{archive_sc}' invalid for {storage_type}")
+        else:
+            new_params["archive_sc"] = "COLDLINE_STORAGE_CLASS"
+        if live_sc:
+            if live_sc not in ["STANDARD_STORAGE_CLASS"]:
+                raise ValueError(
+                    f"Live storage class '{live_sc}' invalid for Google Cloud Storage"
+                )
+        else:
+            new_params["live_sc"] = "STANDARD_STORAGE_CLASS"
+
+        return new_params
+
+    def validate_storage_classes(self, params):
+        """
+        Checks for the existence of `live_sc` and `archive_sc` and validates them if they exist. If
+        they are invalid for the given `endpoint_url`, raises a `ValueError`. If they do not exist,
+        they are set in a copy of the `params` dict and this copy is returned.
+        """
+        server = TatorStorage(self).server
+
+        if server is ObjectStore.GCP:
+            return cls._sc_validator(
+                params,
+                ["STANDARD_STORAGE_CLASS", "COLDLINE_STORAGE_CLASS"],
+                "COLDLINE_STORAGE_CLASS",
+                ["STANDARD_STORAGE_CLASS"],
+                "STANDARD_STORAGE_CLASS",
+                "Google Cloud Storage",
+            )
+
+        if server is ObjectStore.AWS:
+            return cls._sc_validator(
+                params,
+                ["STANDARD", "DEEP_ARCHIVE"],
+                "DEEP_ARCHIVE",
+                ["STANDARD"],
+                "STANDARD",
+                "Amazon AWS",
+            )
+
+        if server is ObjectStore.MINIO:
+            return cls._sc_validator(
+                    params,
+                    ["STANDARD"],
+                    "STANDARD",
+                    ["STANDARD"],
+                    "STANDARD",
+                    "MinIO",
+                )
+
+        raise ValueError(f"Found unknown server type {server}")
+
 
 class Project(Model):
     name = CharField(max_length=128)
@@ -371,7 +449,7 @@ class Project(Model):
     enable_downloads = BooleanField(default=True)
     thumb = CharField(max_length=1024, null=True, blank=True)
     usernames = ArrayField(CharField(max_length=256), default=list)
-    """ Mapping between attribute type names and UUIDs. Used internally for 
+    """ Mapping between attribute type names and UUIDs. Used internally for
         maintaining elasticsearch field aliases.
     """
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
@@ -875,21 +953,21 @@ class Media(Model, ModelDiffMixin):
             return (total_size, download_size)
 
         resources = Resource.objects.filter(media__in=[self])
-        s3_lookup = get_s3_lookup(resources)
-        s3_default = TatorS3(self.project.bucket)
+        store_lookup = get_storage_lookup(resources)
+        store_default = TatorStorage(self.project.bucket)
 
         for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif"]:
             if key not in self.media_files:
                 continue
 
             for media_def in self.media_files[key]:
-                tator_s3 = s3_lookup.get(media_def["path"], s3_default)
-                size = tator_s3.get_size(media_def["path"])
+                tator_store = store_lookup.get(media_def["path"], store_default)
+                size = tator_store.get_size(media_def["path"])
                 total_size += size
                 if key in ["archival", "streaming", "image"] and download_size is None:
                     download_size = size
                 if key == "streaming":
-                    total_size += tator_s3.get_size(media_def.get('segment_info'))
+                    total_size += tator_store.get_size(media_def.get('segment_info'))
         return (total_size, download_size)
 
 class Resource(Model):
@@ -920,8 +998,8 @@ class Resource(Model):
         if obj.media.all().count() == 0:
             logger.info(f"Deleting object {path}")
             obj.delete()
-            tator_s3 = TatorS3(obj.bucket)
-            tator_s3.delete_object(path)
+            tator_store = TatorStorage(obj.bucket)
+            tator_store.delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):
@@ -936,29 +1014,8 @@ class Resource(Model):
         obj = Resource.objects.get(path=path)
         logger.info(f"Archiving object {path}")
         bucket = obj.bucket
-        tator_s3 = TatorS3(bucket)
-
-        if tator_s3.server is ObjectStore.MINIO:
-            logger.info(
-                f"No storage class change required for MinIO bucket, object {path} archived"
-            )
-            return True
-
-        response = tator_s3.head_object(path)
-        archive_sc = bucket.archive_sc
-        if response.get("StorageClass", "") == archive_sc:
-            logger.info(f"Object {path} already archived, skipping")
-            return True
-
-        try:
-            tator_s3.copy(path, path, {"StorageClass": archive_sc, "MetadataDirective": "COPY"})
-        except:
-            logger.warning(f"Exception while archiving object {path}", exc_info=True)
-        response = tator_s3.head_object(path)
-        if response.get("StorageClass", "") != archive_sc:
-            logger.warning(f"Archiving object {path} failed")
-            return False
-        return True
+        tator_store = TatorStorage(bucket)
+        return tator_store.archive_object(path, bucket.archive_sc)
 
 
     @transaction.atomic
@@ -973,27 +1030,8 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Requesting restoration of object {path}")
-        tator_s3 = TatorS3(obj.bucket)
-        if tator_s3.server is ObjectStore.MINIO:
-            logger.info(
-                f"No storage class change required, object {path} restoration requested"
-            )
-            return True
-        response = tator_s3.head_object(path)
-        if 'ongoing-request="true"' in response.get("Restore", ""):
-            logger.info(f"Object {path} has an ongoing restoration request, skipping")
-            return True
-        try:
-            tator_s3.restore_object(path, min_exp_days)
-        except:
-            logger.warning(
-                f"Exception while requesting restoration of object {path}", exc_info=True
-            )
-        response = tator_s3.head_object(path)
-        if "ongoing-request" not in response.get("Restore", ""):
-            logger.warning(f"Request to restore object {path} failed")
-            return False
-        return True
+        tator_store = TatorStorage(obj.bucket)
+        return tator_store.request_restoration(path, bucket.live_sc, min_exp_days)
 
     @transaction.atomic
     def restore_resource(path):
@@ -1008,55 +1046,10 @@ class Resource(Model):
             media.save()
         """
         obj = Resource.objects.get(path=path)
-        bucket = obj.bucket
-        tator_s3 = TatorS3(bucket)
         logger.info(f"Restoring object {path}")
-
-        if tator_s3.server is ObjectStore.MINIO:
-            logger.info(f"No storage class change required for MinIO bucket, object {path} live")
-            return True
-
-        # Check the current state of the restoration request
-        archive_sc = bucket.archive_sc
-        response = tator_s3.head_object(path)
-        request_state = response.get("Restore", "")
-        if not request_state:
-            # There is no ongoing request and the object is not in the temporary restored state
-            storage_class = response.get("StorageClass", "")
-            if storage_class == archive_sc:
-                # Something went wrong with the original restoration request
-                logger.warning(f"Object {path} has no associated restoration request")
-                return False
-            if not storage_class:
-                # The resource was already restored
-                logger.info(f"Object {path} already restored")
-                return True
-
-            # The resource is in an unexpected storage class
-            logger.error(f"Object {path} in unexpected storage class {storage_class}")
-            return False
-        if 'ongoing-request="true"' in request_state:
-            # There is an ongoing request and the object is not ready to be permanently restored
-            logger.info(f"Object {path} not in standard access yet, skipping")
-            return False
-        if 'ongoing-request="false"' not in request_state:
-            # This should not happen unless the API for s3.head_object changes
-            logger.error(f"Unexpected request state '{request_state}' received for object {path}")
-            return False
-
-        # Then ongoing-request="false" must be in request_state, which means its storage class can
-        # be modified
-        try:
-            tator_s3.copy(path, path, {"MetadataDirective": "COPY", "StorageClass": bucket.live_sc})
-        except:
-            logger.warning(
-                f"Exception while changing storage class of object {path}", exc_info=True
-            )
-        response = tator_s3.head_object(path)
-        if response.get("StorageClass", "") == archive_sc:
-            logger.warning(f"Storage class not changed for object {path}")
-            return False
-        return True
+        bucket = obj.bucket
+        tator_store = TatorStorage(bucket)
+        return tator_store.restore_resource(path, bucket.archive_sc, bucket.live_sc)
 
 
 @receiver(post_save, sender=Media)

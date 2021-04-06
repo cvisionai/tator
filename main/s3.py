@@ -16,11 +16,11 @@ class ObjectStore(Enum):
     GCP = "UploadServer"
 
 
-class TatorS3:
+class TatorStorage:
     """Interface for object storage."""
 
     def __init__(self, bucket=None):
-        """Creates the S3 interface."""
+        """Creates the storage interface."""
         if bucket is None:
             endpoint = os.getenv("OBJECT_STORAGE_HOST")
             region = os.getenv("OBJECT_STORAGE_REGION_NAME")
@@ -43,7 +43,7 @@ class TatorS3:
 
         if endpoint:
             config = Config(connect_timeout=5, read_timeout=5, retries={"max_attempts": 5})
-            self.s3 = boto3.client(
+            self.store = boto3.client(
                 "s3",
                 endpoint_url=f"{endpoint}",
                 region_name=region,
@@ -53,10 +53,10 @@ class TatorS3:
             )
         else:
             # Client generator will not have env variables defined
-            self.s3 = boto3.client("s3")
+            self.store = boto3.client("s3")
 
         # Get the type of object store from bucket metadata
-        response = self.s3.head_bucket(Bucket=self.bucket_name)
+        response = self.store.head_bucket(Bucket=self.bucket_name)
         self._server = ObjectStore(response["ResponseMetadata"]["HTTPHeaders"]["server"])
 
         # Set the function that translates object paths stored in PSQL to object keys stored in S3
@@ -66,8 +66,6 @@ class TatorS3:
             self._path_to_key = lambda path: path
 
     def _aws_path_to_key(self, path):
-        # Paths with the word `upload` in them do not need the bucket name prefixed; see
-        # upload_prefix_from_project in main/util.py for details
         return f"{self.bucket_name}/{path}"
 
     @property
@@ -76,18 +74,18 @@ class TatorS3:
 
     def check_key(self, path):
         """ Checks that at least one key matches the given path """
-        return self.list_objects_v2(self._path_to_key(path)).get('Contents') is not None
+        return self.list_objects_v2(self._path_to_key(path)).get("Contents") is not None
 
     def head_object(self, path):
         """ Returns the object metadata for a given path """
-        return self.s3.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
+        return self.store.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def copy(self, source_path, dest_path, extra_args=None):
         """
         Copies an object from one path to another within the same bucket, applying `extra_args`, if
         any
         """
-        return self.s3.copy(
+        return self.store.copy(
             CopySource={"Bucket": self.bucket_name, "Key": self._path_to_key(source_path)},
             Bucket=self.bucket_name,
             Key=self._path_to_key(dest_path),
@@ -102,7 +100,7 @@ class TatorS3:
         if self.server is not ObjectStore.AWS:
             raise ValueError(f"Object store type '{self.server}' has no 'restore_object' method")
 
-        return self.s3.restore_object(
+        return self.store.restore_object(
             Bucket=self.bucket_name,
             Key=self._path_to_key(path),
             RestoreRequest={"Days": min_exp_days},
@@ -110,7 +108,7 @@ class TatorS3:
 
     def delete_object(self, path):
         """ Deletes the object at the given path """
-        return self.s3.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
+        return self.store.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def get_download_url(self, path, expiration):
         if os.getenv("REQUIRE_HTTPS") == "TRUE":
@@ -118,7 +116,7 @@ class TatorS3:
         else:
             PROTO = "http"
         # Generate presigned url.
-        url = self.s3.generate_presigned_url(
+        url = self.store.generate_presigned_url(
             ClientMethod="get_object",
             Params={"Bucket": self.bucket_name, "Key": self._path_to_key(path)},
             ExpiresIn=expiration,
@@ -136,17 +134,17 @@ class TatorS3:
         if num_parts == 1:
             upload_id = ""
             urls = [
-                self.s3.generate_presigned_url(
+                self.store.generate_presigned_url(
                     ClientMethod="put_object",
                     Params={"Bucket": self.bucket_name, "Key": key},
                     ExpiresIn=expiration,
                 )
             ]
         else:
-            response = self.s3.create_multipart_upload(Bucket=self.bucket_name, Key=key)
+            response = self.store.create_multipart_upload(Bucket=self.bucket_name, Key=key)
             upload_id = response["UploadId"]
             urls = [
-                self.s3.generate_presigned_url(
+                self.store.generate_presigned_url(
                     ClientMethod="upload_part",
                     Params={
                         "Bucket": self.bucket_name,
@@ -183,7 +181,7 @@ class TatorS3:
         if prefix is not None:
             kwargs["Prefix"] = prefix
 
-        response = self.s3.list_objects_v2(Bucket=self.bucket_name, **kwargs)
+        response = self.store.list_objects_v2(Bucket=self.bucket_name, **kwargs)
 
         # GCP response does not contain the key count
         if "KeyCount" not in response:
@@ -193,7 +191,7 @@ class TatorS3:
 
     def complete_multipart_upload(self, path, parts, upload_id):
         """ Completes a previously started multipart upload. """
-        return self.s3.complete_multipart_upload(
+        return self.store.complete_multipart_upload(
             Bucket=self.bucket_name,
             Key=self._path_to_key(path),
             MultipartUpload={"Parts": parts},
@@ -202,26 +200,118 @@ class TatorS3:
 
     def put_object(self, path, body):
         """ Uploads the contents of `body` to s3 with the path as the basis for the key. """
-        return self.s3.put_object(Bucket=self.bucket_name, Key=self._path_to_key(path), Body=body)
+        return self.store.put_object(
+            Bucket=self.bucket_name, Key=self._path_to_key(path), Body=body
+        )
 
     def get_object(self, path, byte_range):
         """ Gets the byte range of the object for the given path. """
-        return self.s3.get_object(
+        return self.store.get_object(
             Bucket=self.bucket_name, Key=self._path_to_key(path), Range=byte_range
         )
 
     def download_fileobj(self, path, fp):
         """ Downloads the object for the given path to a file. """
-        self.s3.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
+        self.store.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
+
+    def archive_object(self, path, desired_storage_class):
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == desired_storage_class:
+            logger.info(f"Object {path} already archived, skipping")
+            return True
+
+        try:
+            self.copy(
+                path, path, {"StorageClass": desired_storage_class, "MetadataDirective": "COPY"}
+            )
+        except:
+            logger.warning(f"Exception while archiving object {path}", exc_info=True)
+        response = self.head_object(path)
+        if response.get("StorageClass", "") != desired_storage_class:
+            logger.warning(f"Archiving object {path} failed")
+            return False
+        return True
+
+    def request_restoration(self, path, desired_storage_class, min_exp_days):
+        """ Requests object restortation from archive storage. """
+        if self.server is ObjectStore.MINIO:
+            logger.info(f"No storage class change required, object {path} restoration requested")
+            return True
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == desired_storage_class:
+            logger.info(f"Object {path} already live, skipping")
+            return True
+        if 'ongoing-request="true"' in response.get("Restore", ""):
+            logger.info(f"Object {path} has an ongoing restoration request, skipping")
+            return True
+        try:
+            self.restore_object(path, min_exp_days)
+        except:
+            logger.warning(
+                f"Exception while requesting restoration of object {path}", exc_info=True
+            )
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == desired_storage_class:
+            logger.info(f"Object {path} live")
+            return True
+        if "ongoing-request" not in response.get("Restore", ""):
+            logger.warning(f"Request to restore object {path} failed")
+            return False
+        return True
+
+    def restore_resource(self, path, archive_sc, desired_storage_class):
+        # Check the current state of the restoration request
+        response = self.head_object(path)
+        request_state = response.get("Restore", "")
+        if not request_state:
+            # There is no ongoing request and the object is not in the temporary restored state
+            storage_class = response.get("StorageClass", "")
+            if storage_class == archive_sc:
+                # Something went wrong with the original restoration request
+                logger.warning(f"Object {path} has no associated restoration request")
+                return False
+            if storage_class == desired_storage_class:
+                logger.info(f"Object {path} live")
+                return True
+            if not storage_class:
+                # The resource was already restored
+                logger.info(f"Object {path} already restored")
+                return True
+
+            # The resource is in an unexpected storage class
+            logger.error(f"Object {path} in unexpected storage class {storage_class}")
+            return False
+        if 'ongoing-request="true"' in request_state:
+            # There is an ongoing request and the object is not ready to be permanently restored
+            logger.info(f"Object {path} not in standard access yet, skipping")
+            return False
+        if 'ongoing-request="false"' not in request_state:
+            # This should not happen unless the API for s3.head_object changes
+            logger.error(f"Unexpected request state '{request_state}' received for object {path}")
+            return False
+
+        # Then ongoing-request="false" must be in request_state, which means its storage class can
+        # be modified
+        try:
+            self.copy(path, path, {"MetadataDirective": "COPY", "StorageClass": bucket.live_sc})
+        except:
+            logger.warning(
+                f"Exception while changing storage class of object {path}", exc_info=True
+            )
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == archive_sc:
+            logger.warning(f"Storage class not changed for object {path}")
+            return False
+        return True
 
 
-def get_s3_lookup(resources):
-    """Returns a mapping between resource keys and TatorS3 objects."""
+def get_storage_lookup(resources):
+    """Returns a mapping between resource keys and TatorStorage objects."""
     buckets = resources.values_list("bucket", flat=True).distinct()
     # This is to avoid a circular import
     Bucket = resources.model._meta.get_field("bucket").related_model
     bucket_lookup = {
-        bucket: TatorS3(Bucket.objects.get(pk=bucket)) if bucket else TatorS3()
+        bucket: TatorStorage(Bucket.objects.get(pk=bucket)) if bucket else TatorStorage()
         for bucket in buckets
     }
     return {

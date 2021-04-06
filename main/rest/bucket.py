@@ -7,6 +7,7 @@ from ..models import Organization
 from ..models import Affiliation
 from ..models import Bucket
 from ..models import database_qs
+from ..s3 import TatorStorage
 from ..schema import BucketListSchema
 from ..schema import BucketDetailSchema
 
@@ -35,6 +36,12 @@ class BucketListAPI(BaseListView):
     def _post(self, params):
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
+
+        # Create a temporary Bucket object for storage class validation
+        temp_bucket = Bucket(**params)
+        params = temp_bucket.validate_storage_classes(params)
+        del temp_bucket
+
         bucket = Bucket.objects.create(**params)
         return {'message': f"Bucket {bucket.name} created!", 'id': bucket.id}
 
@@ -64,7 +71,9 @@ class BucketDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        bucket = Bucket.objects.select_for_update().get(pk=params['id']) 
+        bucket = Bucket.objects.select_for_update().get(pk=params['id'])
+        bucket.validate_storage_classes(params)
+
         if 'name' in params:
             bucket.name = params['name']
         if 'access_key' in params:
@@ -75,6 +84,10 @@ class BucketDetailAPI(BaseDetailView):
             bucket.endpoint_url = params['endpoint_url']
         if 'region' in params:
             bucket.region = params['region']
+        if "archive_sc" in params:
+            bucket.archive_sc = params["archive_sc"]
+        if "live_sc" in params:
+            bucket.live_sc = params["live_sc"]
         bucket.save()
         return {'message': f"Bucket {params['id']} updated successfully!"}
 
