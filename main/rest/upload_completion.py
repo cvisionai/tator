@@ -4,7 +4,7 @@ import boto3
 
 from ..models import Project
 from ..schema import UploadCompletionSchema
-from ..s3 import TatorStorage
+from ..store import TatorStorage
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission

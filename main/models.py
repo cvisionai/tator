@@ -45,7 +45,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .download import download_file
-from .s3 import TatorStorage, ObjectStore, get_storage_lookup
+from .store import TatorStorage, ObjectStore, get_storage_lookup
 from .cognito import TatorCognito
 
 from collections import UserDict

@@ -15,7 +15,7 @@ from PIL import Image
 from main.models import *
 from main.models import Resource
 from main.search import TatorSearch
-from main.s3 import TatorStorage
+from main.store import TatorStorage
 
 from django.conf import settings
 from django.db.models import F

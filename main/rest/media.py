@@ -33,7 +33,7 @@ from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
-from ..s3 import TatorStorage, get_storage_lookup
+from ..store import TatorStorage, get_storage_lookup
 
 from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
 from ._base_views import BaseListView, BaseDetailView

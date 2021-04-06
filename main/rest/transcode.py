@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 import requests
 
 from ..kube import TatorTranscode
-from ..s3 import TatorStorage
+from ..store import TatorStorage
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType

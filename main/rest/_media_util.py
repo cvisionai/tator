@@ -12,7 +12,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
-from ..s3 import get_storage_lookup
+from ..store import get_storage_lookup
 from ..models import Resource
 
 logger = logging.getLogger(__name__)

@@ -7,7 +7,7 @@ from ..models import Organization
 from ..models import Affiliation
 from ..models import Bucket
 from ..models import database_qs
-from ..s3 import TatorStorage
+from ..store import TatorStorage
 from ..schema import BucketListSchema
 from ..schema import BucketDetailSchema
 

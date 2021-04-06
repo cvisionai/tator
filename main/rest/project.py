@@ -16,7 +16,7 @@ from ..models import safe_delete
 from ..models import Resource
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
-from ..s3 import TatorStorage
+from ..store import TatorStorage
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView

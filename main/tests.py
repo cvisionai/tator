@@ -19,7 +19,7 @@ from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
 
 from .models import *
-from .s3 import TatorStorage
+from .store import TatorStorage
 from .search import TatorSearch, ALLOWED_MUTATIONS
 
 logger = logging.getLogger(__name__)

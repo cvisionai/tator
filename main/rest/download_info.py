@@ -7,7 +7,7 @@ from rest_framework.exceptions import PermissionDenied
 from ..models import Project
 from ..models import Resource
 from ..schema import DownloadInfoSchema
-from ..s3 import TatorStorage, get_storage_lookup
+from ..store import TatorStorage, get_storage_lookup
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission

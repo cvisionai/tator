@@ -8,7 +8,7 @@ from urllib.parse import urlsplit, urlunsplit
 from ..models import Project
 from ..models import Media
 from ..schema import UploadInfoSchema
-from ..s3 import TatorStorage
+from ..store import TatorStorage
 from ..util import upload_prefix_from_project
 
 from ._base_views import BaseDetailView

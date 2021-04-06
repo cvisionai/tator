@@ -8,7 +8,7 @@ from email.mime.application import MIMEApplication
 from django.conf import settings
 import boto3
 
-from .s3 import TatorStorage
+from .store import TatorStorage
 
 logger = logging.getLogger(__name__)
 
