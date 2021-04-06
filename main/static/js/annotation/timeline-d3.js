@@ -239,6 +239,14 @@ class TimelineD3 extends TatorElement {
     if (isNaN(maxFrame)) {
       this.showMain(false);
       this.showFocus(false);
+
+      this.dispatchEvent(new CustomEvent("graphData", {
+        composed: true,
+        detail: {
+          numericalData: this._numericalData,
+          stateData: this._stateData
+        }
+      }));
       return;
     }
 
@@ -331,7 +339,7 @@ class TimelineD3 extends TatorElement {
                 graphData[graphData.length - 1].frame = maxFrame;
 
                 this._numericalData.push({
-                  name: attrType.name,
+                  name: `${attrType.name} (Max: ${maxValue.toFixed(2)})`,
                   graphData: graphData
                 });
               }
@@ -410,6 +418,14 @@ class TimelineD3 extends TatorElement {
         });
       }
     }
+
+    this.dispatchEvent(new CustomEvent("graphData", {
+      composed: true,
+      detail: {
+        numericalData: this._numericalData,
+        stateData: this._stateData
+      }
+    }));
 
     // With the datasets updated, update the timeline plots
     if (this._numericalData.length > 0 || this._stateData.length > 0) {
@@ -529,45 +545,6 @@ class TimelineD3 extends TatorElement {
       pathId: this._d3UID(),
       name: d.name
     }, d));
-
-    /*
-    var line = d3.line()
-      .curve(d3.curveStepAfter)
-      .x(d => mainX(d.frame))
-      .y(d => mainY(d.value));
-
-    const gLine = this._mainSvg.append("g")
-      .selectAll("g")
-      .data(mainLineDataset)
-      .join("g")
-        .attr("transform", (d, i) => `translate(0,${(i + this._stateData.length) * (mainStep + mainStepPad) + mainMargin.top})`);
-
-    gLine.append("clipPath")
-      .attr("id", d => d.clipId.id)
-      .append("rect")
-        .attr("width", mainWidth)
-        .attr("height", mainStep);
-
-    gLine.append("defs").append("path")
-      .attr("id", d => d.pathId.id)
-      .attr("d", d => line(d.graphData));
-
-    gLine.append("rect")
-      .attr("clip-path", d => d.clipId)
-      .attr("fill", "#262e3d")
-      .attr("width", mainWidth)
-      .attr("height", mainStep);
-
-    gLine.append("g")
-        .attr("clip-path", d => d.clipId)
-      .selectAll("use")
-      .data(d => new Array(1).fill(d))
-      .join("use")
-        .attr("stroke", (d, i) => "#797991")
-        .attr("fill", (d, i) => "none")
-        .attr("transform", (d, i) => `translate(0,${(i + 1) * mainStep})`)
-        .attr("xlink:href", d => d.pathId.href)
-    */
 
     var mainLineY = d3.scaleLinear()
       .domain([-0.1, 1.1])

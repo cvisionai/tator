@@ -256,6 +256,15 @@ class AnnotationMulti extends TatorElement {
       }
     });
 
+    this._timelineD3.addEventListener("graphData", evt => {
+      if (evt.detail.numericalData.length > 0 || evt.detail.stateData.length > 0) {
+        this._timelineMore.style.display = "block";
+      }
+      else {
+        this._timelineMore.style.display = "none";
+      }
+    });
+
     this._timelineD3.addEventListener("select", evt => {
       this.goToFrame(evt.detail.frame);
     });
