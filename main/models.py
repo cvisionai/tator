@@ -349,44 +349,33 @@ class Bucket(Model):
     endpoint_url = CharField(max_length=1024)
     region = CharField(max_length=16)
     archive_sc = CharField(
-        max_length=32,
+        max_length=16,
         choices=[
             ("STANDARD", "STANDARD"),
-            ("STANDARD_STORAGE_CLASS", "STANDARD_STORAGE_CLASS"),
             ("DEEP_ARCHIVE", "DEEP_ARCHIVE"),
-            ("COLDLINE_STORAGE_CLASS", "COLDLINE_STORAGE_CLASS"),
+            ("COLDLINE", "COLDLINE"),
         ],
     )
-    live_sc = CharField(
-        max_length=32,
-        choices=[("STANDARD", "STANDARD"), ("STANDARD_STORAGE_CLASS", "STANDARD_STORAGE_CLASS")],
-    )
+    live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")])
 
     @staticmethod
     def _sc_validator(
         params,
-        valid_archive_sc,
-        default_archive_sc,
-        valid_live_sc,
-        default_live_sc,
+        sc_type,
+        valid_storage_classes,
+        default_storage_class,
         storage_type,
     ):
-        archive_sc = params.get("archive_sc", "")
-        live_sc = params.get("live_sc", "")
+        storage_class = params.get(sc_type, "")
         new_params = dict(params)
 
-        if archive_sc:
-            if archive_sc not in valid_archive_sc:
-                raise ValueError(f"Archive storage class '{archive_sc}' invalid for {storage_type}")
-        else:
-            new_params["archive_sc"] = "COLDLINE_STORAGE_CLASS"
-        if live_sc:
-            if live_sc not in ["STANDARD_STORAGE_CLASS"]:
+        if storage_class:
+            if storage_class not in valid_storage_classes:
                 raise ValueError(
-                    f"Live storage class '{live_sc}' invalid for Google Cloud Storage"
+                    f"'{sc_type}' storage class '{archive_sc}' invalid for {storage_type} store"
                 )
         else:
-            new_params["live_sc"] = "STANDARD_STORAGE_CLASS"
+            new_params[sc_type] = default_storage_class
 
         return new_params
 
@@ -399,34 +388,55 @@ class Bucket(Model):
         server = get_tator_store(self).server
 
         if server is ObjectStore.GCP:
-            return self._sc_validator(
+            new_params = self._sc_validator(
                 params,
+                "archive_sc",
                 ["STANDARD_STORAGE_CLASS", "COLDLINE_STORAGE_CLASS"],
                 "COLDLINE_STORAGE_CLASS",
-                ["STANDARD_STORAGE_CLASS"],
-                "STANDARD_STORAGE_CLASS",
                 "Google Cloud Storage",
             )
+            new_params = self._sc_validator(
+                new_params,
+                "live_sc",
+                ["STANDARD_STORAGE_CLASS"],
+                "STANDARD_STORAGE_CLASS",
+                "Google Cloud",
+            )
+            return new_params
 
         if server is ObjectStore.AWS:
-            return self._sc_validator(
+            new_params = self._sc_validator(
                 params,
+                "archive_sc",
                 ["STANDARD", "DEEP_ARCHIVE"],
                 "DEEP_ARCHIVE",
+                "Amazon AWS",
+            )
+            new_params = self._sc_validator(
+                new_params,
+                "live_sc",
                 ["STANDARD"],
                 "STANDARD",
                 "Amazon AWS",
             )
+            return new_params
 
         if server is ObjectStore.MINIO:
-            return self._sc_validator(
-                    params,
-                    ["STANDARD"],
-                    "STANDARD",
-                    ["STANDARD"],
-                    "STANDARD",
-                    "MinIO",
-                )
+            new_params = self._sc_validator(
+                params,
+                "archive_sc",
+                ["STANDARD"],
+                "STANDARD",
+                "MinIO",
+            )
+            new_params = self._sc_validator(
+                new_params,
+                "live_sc",
+                ["STANDARD"],
+                "STANDARD",
+                "MinIO",
+            )
+            return new_params
 
         raise ValueError(f"Found unknown server type {server}")
 
