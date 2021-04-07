@@ -56,18 +56,9 @@ urlpatterns = [
     path('<int:project_id>/analytics/reports',
          AnalyticsReportsView.as_view(), name='analytics-reports'),
     path('projects/', ProjectsView.as_view(), name='projects'),
-<<<<<<< HEAD
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
     path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
-=======
-    path('<int:project_id>/project-detail',
-         ProjectDetailView.as_view(), name='project-detail'),
-    path('<int:project_id>/project-settings',
-         ProjectSettingsView.as_view(), name='project-settings'),
-    path('<int:project_id>/annotation/<int:id>',
-         AnnotationView.as_view(), name='annotation'),
->>>>>>> 46c58eb90f46885fbb3d4b3942f93b9952700f17
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(),
