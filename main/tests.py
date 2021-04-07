@@ -51,6 +51,7 @@ def create_test_affiliation(user, organization):
 
 def create_test_bucket(organization):
     return Bucket.objects.create(
+        name=str(uuid1()),
         organization=organization,
         access_key='asdf',
         secret_key='asdf',

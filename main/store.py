@@ -60,13 +60,6 @@ class TatorStorage(ABC):
         """
 
     @abstractmethod
-    def restore_object(self, path, min_exp_days):
-        """
-        Requests object restoration from archive. Currently, only ObjectStore.AWS supports this
-        operation.
-        """
-
-    @abstractmethod
     def delete_object(self, path):
         """ Deletes the object at the given path """
 
@@ -133,32 +126,9 @@ class TatorStorage(ABC):
             return False
         return True
 
+    @abstractmethod
     def request_restoration(self, path, desired_storage_class, min_exp_days):
         """ Requests object restortation from archive storage. """
-        if self.server is ObjectStore.MINIO:
-            logger.info(f"No storage class change required, object {path} restoration requested")
-            return True
-        response = self.head_object(path)
-        if response.get("StorageClass", "") == desired_storage_class:
-            logger.info(f"Object {path} already live, skipping")
-            return True
-        if 'ongoing-request="true"' in response.get("Restore", ""):
-            logger.info(f"Object {path} has an ongoing restoration request, skipping")
-            return True
-        try:
-            self.restore_object(path, min_exp_days)
-        except:
-            logger.warning(
-                f"Exception while requesting restoration of object {path}", exc_info=True
-            )
-        response = self.head_object(path)
-        if response.get("StorageClass", "") == desired_storage_class:
-            logger.info(f"Object {path} live")
-            return True
-        if "ongoing-request" not in response.get("Restore", ""):
-            logger.warning(f"Request to restore object {path} failed")
-            return False
-        return True
 
     def restore_resource(self, path, archive_sc, desired_storage_class):
         # Check the current state of the restoration request
@@ -212,14 +182,9 @@ class MinIOStorage(TatorStorage):
         self._server = ObjectStore.MINIO
 
     def head_object(self, path):
-        """ Returns the object metadata for a given path """
         return self.boto3_client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def copy(self, source_path, dest_path, extra_args=None):
-        """
-        Copies an object from one path to another within the same bucket, applying `extra_args`, if
-        any
-        """
         return self.boto3_client.copy(
             CopySource={"Bucket": self.bucket_name, "Key": self._path_to_key(source_path)},
             Bucket=self.bucket_name,
@@ -227,22 +192,11 @@ class MinIOStorage(TatorStorage):
             ExtraArgs=extra_args,
         )
 
-    def restore_object(self, path, min_exp_days):
-        """
-        Requests object restoration from archive. Currently, only ObjectStore.AWS supports this
-        operation.
-        """
-        if self.server is not ObjectStore.AWS:
-            raise ValueError(f"Object store type '{self.server}' has no 'restore_object' method")
-
-        return self.boto3_client.restore_object(
-            Bucket=self.bucket_name,
-            Key=self._path_to_key(path),
-            RestoreRequest={"Days": min_exp_days},
-        )
+    def request_restoration(self, path, desired_storage_class, min_exp_days):
+        logger.info(f"No storage class change required, object {path} restoration requested")
+        return True
 
     def delete_object(self, path):
-        """ Deletes the object at the given path """
         return self.boto3_client.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def get_download_url(self, path, expiration):
@@ -264,7 +218,6 @@ class MinIOStorage(TatorStorage):
         return url
 
     def get_upload_urls(self, path, expiration, num_parts):
-        """ Generates the pre-signed urls for uploading objects for a given path. """
         key = self._path_to_key(path)
         if num_parts == 1:
             upload_id = ""
@@ -295,11 +248,6 @@ class MinIOStorage(TatorStorage):
         return urls, upload_id
 
     def list_objects_v2(self, prefix=None, **kwargs):
-        """
-        Returns the response from boto3.client.list_objects_v2 for the given prefix. Note that no
-        attempts to modify the prefix are made; it is assumed that the given prefix starts with the
-        bucket name if that is relevant.
-        """
         if prefix is not None:
             kwargs["Prefix"] = prefix
 
@@ -312,7 +260,6 @@ class MinIOStorage(TatorStorage):
         return response
 
     def complete_multipart_upload(self, path, parts, upload_id):
-        """ Completes a previously started multipart upload. """
         return self.boto3_client.complete_multipart_upload(
             Bucket=self.bucket_name,
             Key=self._path_to_key(path),
@@ -321,19 +268,16 @@ class MinIOStorage(TatorStorage):
         )
 
     def put_object(self, path, body):
-        """ Uploads the contents of `body` to s3 with the path as the basis for the key. """
         return self.boto3_client.put_object(
             Bucket=self.bucket_name, Key=self._path_to_key(path), Body=body
         )
 
     def get_object(self, path, byte_range):
-        """ Gets the byte range of the object for the given path. """
         return self.boto3_client.get_object(
             Bucket=self.bucket_name, Key=self._path_to_key(path), Range=byte_range
         )
 
     def download_fileobj(self, path, fp):
-        """ Downloads the object for the given path to a file. """
         self.boto3_client.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
 
 
@@ -345,12 +289,52 @@ class S3Storage(MinIOStorage):
     def _path_to_key(self, path):
         return f"{self.bucket_name}/{path}"
 
+    def request_restoration(self, path, desired_storage_class, min_exp_days):
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == desired_storage_class:
+            logger.info(f"Object {path} already live, skipping")
+            return True
+        if 'ongoing-request="true"' in response.get("Restore", ""):
+            logger.info(f"Object {path} has an ongoing restoration request, skipping")
+            return True
+        try:
+            self._restore_object(path, min_exp_days)
+        except:
+            logger.warning(
+                f"Exception while requesting restoration of object {path}", exc_info=True
+            )
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == desired_storage_class:
+            logger.info(f"Object {path} live")
+            return True
+        if "ongoing-request" in response.get("Restore", ""):
+            logger.info(f"Request to restore object {path} successful")
+            return True
+
+        logger.warning(f"Request to restore object {path} failed")
+        return False
+
+    def _restore_object(self, path, min_exp_days):
+        """
+        Requests object restoration from archive. Currently, only ObjectStore.AWS supports this
+        operation.
+        """
+        return self.boto3_client._restore_object(
+            Bucket=self.bucket_name,
+            Key=self._path_to_key(path),
+            RestoreRequest={"Days": min_exp_days},
+        )
+
 
 # TODO finish GCPStorage class
 class GCPStorage(MinIOStorage):
     def __init__(self, bucket, client):
         super().__init__(bucket, client)
         self._server = ObjectStore.GCP
+
+    def request_restoration(self, path, desired_storage_class, min_exp_days):
+        logger.info(f"No need to request restoration from GCP for object {path}")
+        return True
 
 
 def get_tator_store(bucket=None) -> TatorStorage:
@@ -393,8 +377,20 @@ def get_tator_store(bucket=None) -> TatorStorage:
         client = boto3.client("s3")
 
     # Get the type of object store from bucket metadata
-    response = client.head_bucket(Bucket=bucket_name)
-    server = ObjectStore(response["ResponseMetadata"]["HTTPHeaders"]["server"])
+    try:
+        response = client.head_bucket(Bucket=bucket_name)
+    except:
+        logger.warning(
+            f"Failed to retrieve remote bucket information, inferring server type from endpoint"
+        )
+        if "amazonaws" in endpoint:
+            server = ObjectStore.AWS
+        elif "googleapis" in endpoint:
+            server = ObjectStore.GCP
+        else:
+            server = ObjectStore.MINIO
+    else:
+        server = ObjectStore(response["ResponseMetadata"]["HTTPHeaders"]["server"])
 
     return TatorStorage.get_tator_store(server, bucket, client)
 

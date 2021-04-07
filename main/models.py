@@ -399,7 +399,7 @@ class Bucket(Model):
         server = get_tator_store(self).server
 
         if server is ObjectStore.GCP:
-            return cls._sc_validator(
+            return self._sc_validator(
                 params,
                 ["STANDARD_STORAGE_CLASS", "COLDLINE_STORAGE_CLASS"],
                 "COLDLINE_STORAGE_CLASS",
@@ -409,7 +409,7 @@ class Bucket(Model):
             )
 
         if server is ObjectStore.AWS:
-            return cls._sc_validator(
+            return self._sc_validator(
                 params,
                 ["STANDARD", "DEEP_ARCHIVE"],
                 "DEEP_ARCHIVE",
@@ -419,7 +419,7 @@ class Bucket(Model):
             )
 
         if server is ObjectStore.MINIO:
-            return cls._sc_validator(
+            return self._sc_validator(
                     params,
                     ["STANDARD"],
                     "STANDARD",
