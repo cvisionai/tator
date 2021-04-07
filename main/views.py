@@ -96,9 +96,6 @@ class AnalyticsDashboardView(ProjectBase, TemplateView):
 class AnalyticsAnnotationsView(ProjectBase, TemplateView):
     template_name = 'analytics/annotations.html'
 
-    def get_class():
-        return template_name
-
 
 class AnalyticsCollectionsView(ProjectBase, TemplateView):
     template_name = 'analytics/collections.html'
@@ -150,7 +147,6 @@ def validate_project(user, project):
 class AuthProjectView(View):
     def dispatch(self, request, *args, **kwargs):
         """ Identifies permissions for a file in /media
-
         User must be part of the project to access media files.
         Returns 200 on OK, returns 403 on Forbidden
         """
@@ -203,7 +199,6 @@ class AuthProjectView(View):
 class AuthAdminView(View):
     def dispatch(self, request, *args, **kwargs):
         """ Identifies permissions for an nginx location requiring admin
-
         User must have the is_staff flag enabled.
         Returns 200 on OK, returns 403 on Forbidden
         """

@@ -2651,6 +2651,9 @@ class AnnotationCanvas extends TatorElement
       muteOthers = false;
     }
     listOfLocalizations.forEach(pair => {
+      console.log("listOfLocalizations... pair:");
+      console.log(pair);
+
       var localization = pair.obj;
       var userColor = pair.color;
       var meta = this.getObjectDescription(localization);
@@ -2821,6 +2824,7 @@ class AnnotationCanvas extends TatorElement
     var getAlphaForFrame = function(frame)
     {
 
+
       var alpha = 0;
       var fill_alpha = 0;
       if (Math.floor(frame / rampLength) % 2 == 0)
@@ -2856,7 +2860,6 @@ class AnnotationCanvas extends TatorElement
           let alpha = alphaInfo.alpha;
           let fillAlpha = alphaInfo.fillAlpha;
           var colorInfo = that.computeLocalizationColor(localization,meta);
-
 
           if (meta.dtype == 'box')
           {
@@ -3762,7 +3765,7 @@ class AnnotationCanvas extends TatorElement
     }
   }
 
-  drawAnnotations(frameInfo, drawContext, roi)
+  drawAnnotations(frameInfo, drawContext, roi, focusLoc = -1)
   {
     if (drawContext == undefined)
     {
@@ -3827,58 +3830,65 @@ class AnnotationCanvas extends TatorElement
 
         for (var localIdx = 0; localIdx < localList.length; localIdx++)
         {
+          
           var localization=localList[localIdx];
-          if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
-          {
-            continue;
-          }
-          var localization=localList[localIdx];
-          var meta=this.getObjectDescription(localization);
-          var type=meta.dtype;
-          var width=meta.line_width;
-          // Make the line width appear as monitor pixels
-          width *= this._draw.displayToViewportScale()[0];
-          width = Math.round(width);
 
-          // Compute the localization color
-          var colorInfo = this.computeLocalizationColor(localization,meta);
-          localization.color = colorInfo.color
-          var fill = colorInfo.fill;
+          // If we're focusing on one (ie. localization viewer) ignore the others
+          // @TODO future only send through the 1 loc's data instead of fetching and hitting this loop
+          if(focusLoc > -1 && localization.id === focusLoc) {
+            if (this._animatedLocalization && this._animatedLocalization.id == localization.id)
+            {
+              continue;
+            }
+            var localization=localList[localIdx];
+            var meta=this.getObjectDescription(localization);
+            var type=meta.dtype;
+            var width=meta.line_width;
+            // Make the line width appear as monitor pixels
+            width *= this._draw.displayToViewportScale()[0];
+            width = Math.round(width);
 
-          if (type=='box')
-          {
-            var poly = this.localizationToPoly(localization, drawContext, roi);
-            drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
-            if (fill.style == "solid")
+            // Compute the localization color
+            var colorInfo = this.computeLocalizationColor(localization,meta);
+            localization.color = colorInfo.color
+            var fill = colorInfo.fill;
+          
+            if (type=='box')
             {
-              drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
+              var poly = this.localizationToPoly(localization, drawContext, roi);
+              drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
+              if (fill.style == "solid")
+              {
+                drawContext.fillPolygon(poly, width, fill.color, fill.alpha);
+              }
+              if (fill.style == "blur")
+              {
+                drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[1.0,0.01,0,0]);
+              }
+              if (fill.style == "gray")
+              {
+                drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[2.0,0,0,0]);
+              }
             }
-            if (fill.style == "blur")
+            else if (type == 'line')
             {
-              drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[1.0,0.01,0,0]);
+              var line = this.localizationToLine(localization, drawContext, roi);
+              drawContext.drawLine(line[0], line[1], localization.color, width, colorInfo.alpha);
             }
-            if (fill.style == "gray")
+            else if (type == 'dot')
             {
-              drawContext.fillPolygon(poly, width, fill.color, fill.alpha,[2.0,0,0,0]);
+              const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
+              var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
+              drawContext.drawLine(line[0], line[1], localization.color, dotWidth, colorInfo.alpha);
             }
-          }
-          else if (type == 'line')
-          {
-            var line = this.localizationToLine(localization, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, width, colorInfo.alpha);
-          }
-          else if (type == 'dot')
-          {
-            const dotWidth = Math.round(defaultDotWidth*this._draw.displayToViewportScale()[0]);
-            var line = this.localizationToDot(localization, dotWidth, drawContext, roi);
-            drawContext.drawLine(line[0], line[1], localization.color, dotWidth, colorInfo.alpha);
-          }
-          else
-          {
-            console.warn("Unsupported localization type: " + type);
+            else
+            {
+              console.warn("Unsupported localization type: " + type);
+            }
           }
         }
       }
+      
       return drawContext.dumpDraw();
     }
     else

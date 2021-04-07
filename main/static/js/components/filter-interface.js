@@ -31,6 +31,15 @@ class FilterInterface extends TatorElement {
     this._filterStringDiv.setAttribute("class", "px-2 py-2");
     this._filterString.appendChild(this._filterStringDiv);
 
+    this._filterString = document.createElement("div");
+    this._filterString.setAttribute("class", "analysis__filter_string");
+    this._filterString.style.marginLeft = "10px";
+    div.appendChild(this._filterString);
+
+    this._filterStringDiv = document.createElement("div");
+    this._filterStringDiv.setAttribute("class", "px-2 py-2");
+    this._filterString.appendChild(this._filterStringDiv);
+
     // Main filter dialog the user will interact with to set the data filter
     this._filterDialog = document.createElement("filter-dialog");
 

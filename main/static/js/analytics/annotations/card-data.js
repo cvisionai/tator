@@ -6,25 +6,26 @@ class AnnotationCardData extends HTMLElement {
     init(modelData) {
         this._modelData = modelData;
         this.localizationTypes = this._modelData.getStoredLocalizationTypes();
-        this.mediaTypes = this._modelData.getStoredMediaTypes();
         this.projectId = this._modelData.getProjectId();
     }
 
-    async makeCardList(filterParams, paginationState) {
+    async makeCardList({filterState, paginationState}) {
         this.cardList = {};
         this.cardList.cards = [];
-        this.cardList.filterParams = filterParams;
+        this.cardList.filterState = filterState;
         this.cardList.paginationState = paginationState;
 
-        this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterParams);
-        this.localizations = await this._modelData.getFilteredLocalizations("objects", filterParams, paginationState.start, paginationState.stop);
+        this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterState.conditionsObject, filterState.paramString);
+        this.localizations = await this._modelData.getFilteredLocalizations("objects", filterState.conditionsObject, filterState.paramString, paginationState.start, paginationState.stop);
+        this.mediaTypes = this._modelData.getStoredMediaTypes();
+        this.projectId = this._modelData.getProjectId();
+
         await this.getCardList(this.localizations);
         return this.cardList;
     }
 
     getCardList(localizations){
         return new Promise((resolve, reject) => {
-
             var haveCardShells = function () {
                 if (counter <= 0) {
                     resolve();
@@ -39,16 +40,22 @@ class AnnotationCardData extends HTMLElement {
 
             for(let [i, l] of localizations.entries()){
                 let id = l.id;
-                let entityType = this.findMetaDetails(l.meta);
                 let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id);
+                let entityType = this.findMetaDetails(l.meta);
+
                 let attributes = l.attributes;
                 let created = new Date(l.created_datetime);
                 let modified = new Date(l.modified_datetime);
+                let mediaId = l.media;
+
                 let position = i + this.cardList.paginationState.start;
                 let posText = `${position + 1} of ${this.cardList.total}`;
 
                 let card = {
                     id,
+                    localization : l,
+                    entityType,
+                    mediaId,
                     entityType,
                     mediaLink,
                     attributes,
@@ -60,7 +67,6 @@ class AnnotationCardData extends HTMLElement {
                 this.cardList.cards.push(card);
                 counter--;
                 haveCardShells();
-
 
                 this._modelData.getLocalizationGraphic(l.id).then((image) => {
                     this.dispatchEvent(new CustomEvent("setCardImage", {
@@ -101,6 +107,7 @@ class AnnotationCardData extends HTMLElement {
             }
         }
     }
+
 }
 
 customElements.define("annotation-card-data", AnnotationCardData);

@@ -266,10 +266,48 @@ class TatorData {
 
 
   /**
-   * Returns a data for user with user ID
+    * Returns localizations list 
    */
   async getLocalizations({ params = "", start = 0, stop = 20} = {}){
     const response = await fetch(`/rest/Localizations/${this._project}?start=${start}&stop=${stop}${params}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
+
+    return data;
+  }
+
+  /**
+   * Returns a Media data
+   */
+  async getMedia( mediaId ){
+    const response = await fetch(`/rest/Media/${mediaId}?presigned=28800`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
+
+    return data;
+  }
+
+  /**
+   * Returns a MediaType data
+   */
+  async getMediaType( mediaId ){
+    const response = await fetch(`/rest/MediaType/${mediaId}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",

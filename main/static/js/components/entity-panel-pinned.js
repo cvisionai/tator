@@ -67,7 +67,8 @@ class EntityPanelPin {
             this.panelContainer.appendChild( annotationPanelDiv );
 
             // Inner pinDiv
-            let pinDiv = document.createElement("entity-attributes-panel from-pin");
+            let pinDiv = document.createElement("entity-gallery-panel from-pin");
+
             annotationPanel.init( pin.obj, this.panelContainer );
             annotationPanelDiv.appendChild(pinDiv);
 

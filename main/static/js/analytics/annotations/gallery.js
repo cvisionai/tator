@@ -70,10 +70,14 @@ class AnnotationsGallery extends EntityCardGallery {
   // Provide access to side panel for events
   _initPanel({
     panelContainer,
-    panelControls
+    pageModal,
+    modelData
   }){
     this.panelContainer = panelContainer;
-    this.panelControls = panelControls;
+    this.panelControls = this.panelContainer._panelTop;
+    this.pageModal = pageModal;
+    this.modelData = modelData;
+
 
     // Init gallery with data for filtering
     // this._labelsDropDown.init({
@@ -110,7 +114,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     // Hide all cards' panels and de-select
     for (let idx = 0; idx < this._cardElements.length; idx++) {
-      this._cardElements[idx].card._deselectedCard();
+      this._cardElements[idx].card._deselectedCardAndPanel();
     }
 
     // Append the cardList
@@ -126,7 +130,7 @@ class AnnotationsGallery extends EntityCardGallery {
     if (id in this._currentCardIndexes) {
       var info = this._cardElements[this._currentCardIndexes[id]];
       info.card.setImage(image);
-      info.annotationPanel.setImage(image);
+      // info.annotationPanel.setImage(image);
     }
   }
 
@@ -171,10 +175,10 @@ class AnnotationsGallery extends EntityCardGallery {
         // Inner div of side panel
         let annotationPanelDiv = document.createElement("div");
         annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
-        this.panelContainer.appendChild(annotationPanelDiv);
+        this.panelContainer._shadow.appendChild(annotationPanelDiv);
 
         // Init a side panel that can be triggered from card
-        let annotationPanel = document.createElement("entity-attributes-panel");
+        let annotationPanel = document.createElement("entity-gallery-panel");
         annotationPanelDiv.appendChild(annotationPanel);
 
         // Update view
@@ -182,8 +186,6 @@ class AnnotationsGallery extends EntityCardGallery {
           card._li.classList.remove("is-selected");
           annotationPanelDiv.classList.remove("is-selected");
           annotationPanelDiv.classList.add("hidden");
-          console.log(annotationPanelDiv.classList);
-          console.log("Hiding "+annotationPanelDiv.dataset.locId);
         });
 
         // Listen for all clicks on the document
@@ -194,12 +196,7 @@ class AnnotationsGallery extends EntityCardGallery {
         }, false);
 
         // Open panel if a card is clicked
-        card.addEventListener("click", () => {
-          // if the panel is closed and you click, open it...
-          console.log("attempting to call cardClicked");
-          this.panelControls.cardClicked();
-          console.log(this.panelControls);
-        });
+        card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
 
         // Update view
         card._li.classList.toggle("aspect-true");
@@ -217,12 +214,23 @@ class AnnotationsGallery extends EntityCardGallery {
       } else {
         card = this._cardElements[index].card;
       }
-      this._currentCardIndexes[cardObj.id] = index;
+      
+      this._currentCardIndexes[cardObj.id] = index;   
 
-      // Initialize the card and associated panel
-      this._cardElements[index].annotationPanel.init(cardObj, this.panelContainer);
+      // Initialize the card panel
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      card.init(cardObj, this.panelContainer, this._cardElements[index].annotationPanelDiv);
+      this._cardElements[index].annotationPanel.init({
+        cardObj
+      } );
+      
+      
+      // Initialize Card
+      card.init({
+        obj : cardObj, 
+        panelContainer : this.panelContainer, 
+        annotationPanelDiv : this._cardElements[index].annotationPanelDiv
+      });
+
       card.style.display = "block";
       numberOfDisplayedCards += 1;
 
@@ -240,6 +248,12 @@ class AnnotationsGallery extends EntityCardGallery {
       }
     }
   }
+
+  openClosedPanel(e){
+    if(!this.panelContainer.open) this.panelContainer._toggleOpen();
+    this.panelControls.locDataHandler( e.detail );
+  }
+
 }
 
 customElements.define("annotations-gallery", AnnotationsGallery);
