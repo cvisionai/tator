@@ -24,6 +24,8 @@ from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
 from .image_file import ImageFileListSchema
 from .image_file import ImageFileDetailSchema
+from .invitation import InvitationListSchema
+from .invitation import InvitationDetailSchema
 from .job import JobListSchema
 from .job import JobDetailSchema
 from .job_cluster import JobClusterListSchema
@@ -69,9 +71,11 @@ from .state_type import StateTypeListSchema
 from .state_type import StateTypeDetailSchema
 from .temporary_file import TemporaryFileDetailSchema
 from .temporary_file import TemporaryFileListSchema
+from .token import TokenSchema
 from .transcode import TranscodeSchema
 from .upload_completion import UploadCompletionSchema
 from .upload_info import UploadInfoSchema
+from .user import UserExistsSchema
 from .user import UserListSchema
 from .user import UserDetailSchema
 from .user import CurrentUserSchema

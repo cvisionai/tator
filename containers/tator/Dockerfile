@@ -1,9 +1,3 @@
-<%!
-  import multiArch
-  import os
-%>
-
-% if multiArch.arch=="x86_64":
 FROM ubuntu:18.04
 MAINTAINER CVision AI <info@cvisionai.com>
 # Install apt packages
@@ -11,23 +5,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
         python3 python3-pip libgraphviz-dev xdot \
         python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
         ffmpeg wget && rm -rf /var/lib/apt/lists
-%else:
-FROM ubuntu:19.04
-MAINTAINER CVision AI <info@cvisionai.com>
-
-% if multiArch.arch!=multiArch.host:
-#copy over qemu for "cross-compiled" builds
-COPY containers/qemu_support/qemu-aarch64-static /usr/bin
-% endif
-
-RUN chmod 1777 /tmp
-# Install apt packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip libgraphviz-dev xdot \
-        python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
-        libssl-dev ffmpeg wget && \
-        rm -rf /var/lib/apt/lists
-% endif
 
 # Install pip packages
 RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip

@@ -49,18 +49,17 @@ class MainRedirect(View):
                 out = redirect('accounts/login')
         return out
 
+class RegistrationView(TemplateView):
+    template_name = 'registration/registration.html'
 
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
 
-
-class CustomView(LoginRequiredMixin, TemplateView):
-    template_name = 'new-project/custom.html'
-
-
 class AccountProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'account-profile/account-profile.html'
 
+class TokenView(LoginRequiredMixin, TemplateView):
+    template_name = 'token.html'
 
 class ProjectBase(LoginRequiredMixin):
 

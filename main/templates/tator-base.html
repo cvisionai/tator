@@ -64,6 +64,7 @@
     <script src={% static "js/components/filter-dialog.js" %}></script>
     <script src={% static "js/components/filter-interface.js" %}></script>
     <script src={% static "js/components/filter-data.js" %}></script>
+    <script src={% static "js/registration/registration-page.js" %}></script>
     <script src={% static "js/projects/settings-button.js" %}></script>
     <script src={% static "js/projects/project-remove.js" %}></script>
     <script src={% static "js/projects/project-nav.js" %}></script>
@@ -71,9 +72,11 @@
     <script src={% static "js/projects/project-description.js" %}></script>
     <script src={% static "js/projects/project-summary.js" %}></script>
     <script src={% static "js/projects/new-project.js" %}></script>
+    <script src={% static "js/projects/new-project-dialog.js" %}></script>
     <script src={% static "js/projects/delete-project.js" %}></script>
     <script src={% static "js/projects/projects-dashboard.js" %}></script>
     <script src={% static "js/account-profile/account-profile.js" %}></script>
+    <script src={% static "js/token/token-page.js" %}></script>
     <script src={% static "js/new-project/new-project-close.js" %}></script>
     <script src={% static "js/new-project/custom/custom-form.js" %}></script>
     <script src={% static "js/new-project/custom/custom.js" %}></script>
@@ -163,6 +166,7 @@
     <script src={% static "js/annotation/frame-prev.js" %}></script>
     <script src={% static "js/annotation/frame-next.js" %}></script>
     <script src={% static "js/annotation/timeline-canvas.js" %}></script>
+    <script src={% static "js/annotation/timeline-d3.js" %}></script>
     <script src={% static "js/annotation/video-fullscreen.js" %}></script>
     <script src={% static "js/annotator/FrameBuffer.js" %}></script>
     <script src={% static "js/annotator/drawGL_colors.js" %}></script>
@@ -216,8 +220,10 @@
     <script src={% static "js/analytics/visualization/visualization.js" %}></script>
     <script src={% static "js/analytics/reports/reports.js" %}></script>
     <script src={% static "js/third_party/autocomplete.js" %}></script>
+    <script src={% static "js/third_party/d3.v6.min.js" %}></script>
     <script src={% static "js/utilities.js" %}></script>
     {% else %}
+    <script src={% static "js/third_party/d3.v6.min.js" %}></script>
     <script src={% static "js/tator/tator.min.js" %}></script>
     {% endif %}
     {% block head %}

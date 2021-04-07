@@ -20,8 +20,7 @@ from botocore.errorfactory import ClientError
 
 from .models import *
 from .s3 import TatorS3
-from .search import TatorSearch
-from .search import ALLOWED_MUTATIONS
+from .search import TatorSearch, ALLOWED_MUTATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -2347,27 +2346,24 @@ class ResourceTestCase(APITestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        self.s3 = TatorS3().s3
-        self.bucket_name = os.getenv('BUCKET_NAME')
+        self.s3 = TatorS3()
 
     def _random_s3_obj(self):
         """ Creates an s3 file with random key. Simulates an upload.
         """
         key = f"test/{str(uuid1())}"
-        self.s3.put_object(Bucket=self.bucket_name,
-                           Key=key,
-                           Body=b"\x00" + os.urandom(16) + b"\x00")
+        self.s3.put_object(key, b"\x00" + os.urandom(16) + b"\x00")
         return key
 
     def _s3_obj_exists(self, key):
         """ Checks whether an object in s3 exists.
         """
         try:
-            self.s3.head_object(Bucket=self.bucket_name, Key=key)
-            exists = True
+            self.s3.head_object(key)
         except ClientError:
-            exists = False
-        return exists
+            return False
+        else:
+            return True
 
     def _generate_keys(self):
         keys = {role:self._random_s3_obj() for role in ResourceTestCase.MEDIA_ROLES}

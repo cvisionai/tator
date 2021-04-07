@@ -22,12 +22,12 @@ spec:
           image: nginx:1.19.2
           imagePullPolicy: "IfNotPresent"
           resources:
-            requests:
-              cpu: 250m
-              memory: 1Gi
             limits:
-              cpu: 1000m
-              memory: 4Gi
+              cpu: {{ .Values.nginxCpuLimit | default "1000m" }}
+              memory: {{ .Values.nginxMemoryLimit | default "4Gi" }}
+            requests:
+              cpu: {{ .Values.nginxCpuRequest | default "250m" }}
+              memory: {{ .Values.nginxMemoryRequest | default "1Gi" }}
           ports:
             - containerPort: 80
             - containerPort: 443

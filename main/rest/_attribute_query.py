@@ -139,7 +139,7 @@ def get_attribute_es_query(query_params, query, bools, project,
                 'minimum_should_match': 1,
             }}]
             if 'filter' in parent_query['query']['bool']:
-                parent_query['query']['bool']['filter'].append(parent_type_check)
+                parent_query['query']['bool']['filter'] += parent_type_check
             else:
                 parent_query['query']['bool']['filter'] = [parent_type_check]
 

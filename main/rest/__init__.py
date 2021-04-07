@@ -23,6 +23,8 @@ from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
 from .image_file import ImageFileListAPI
 from .image_file import ImageFileDetailAPI
+from .invitation import InvitationListAPI
+from .invitation import InvitationDetailAPI
 from .job import JobListAPI
 from .job import JobDetailAPI
 from .job_cluster import JobClusterListAPI
@@ -67,9 +69,11 @@ from .state_type import StateTypeListAPI
 from .state_type import StateTypeDetailAPI
 from .temporary_file import TemporaryFileListAPI
 from .temporary_file import TemporaryFileDetailAPI
+from .token import TokenAPI
 from .transcode import TranscodeAPI
 from .upload_completion import UploadCompletionAPI
 from .upload_info import UploadInfoAPI
+from .user import UserExistsAPI
 from .user import UserListAPI
 from .user import UserDetailAPI
 from .user import CurrentUserAPI

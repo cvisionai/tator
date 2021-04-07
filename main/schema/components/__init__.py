@@ -33,6 +33,11 @@ from .email import email_attachment_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite
+from .invitation import (
+    invitation_spec,
+    invitation_update,
+    invitation,
+)
 from .job import job_node
 from .job import job
 from .job_cluster import (
@@ -99,6 +104,7 @@ from .transcode import transcode
 from .upload_completion import upload_part
 from .upload_completion import upload_completion_spec
 from .upload_info import upload_info
+from .user import user_spec
 from .user import user_update
 from .user import user
 from .version import version_spec

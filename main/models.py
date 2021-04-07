@@ -19,6 +19,7 @@ from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
 from django.contrib.gis.db.models import FileField
 from django.contrib.gis.db.models import FilePathField
+from django.contrib.gis.db.models import EmailField
 from django.contrib.gis.db.models import PROTECT
 from django.contrib.gis.db.models import CASCADE
 from django.contrib.gis.db.models import SET_NULL
@@ -44,9 +45,7 @@ from django.db import transaction
 
 from .search import TatorSearch
 from .download import download_file
-from .s3 import TatorS3
-from .s3 import get_s3_lookup
-from .s3 import get_s3_size
+from .s3 import TatorS3, ObjectStore, get_s3_lookup
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -224,6 +223,12 @@ class TwoDPlotType(Enum):
 
 class Organization(Model):
     name = CharField(max_length=128)
+    def user_permission(self, user_id):
+        permission = None
+        qs = self.affiliation_set.filter(user_id=user_id)
+        if qs.exists():
+            permission = qs[0].permission
+        return permission
     def __str__(self):
         return self.name
 
@@ -259,6 +264,8 @@ class User(AbstractUser):
     last_login = DateTimeField(null=True, blank=True)
     last_failed_login = DateTimeField(null=True, blank=True)
     failed_login_count = IntegerField(default=0)
+    confirmation_token = UUIDField(primary_key=False, db_index=True, null=True, blank=True)
+    """ Used for email address confirmation for anonymous registrations. """
 
     def move_to_cognito(self, email_verified=False, temp_pw=None):
         cognito = TatorCognito()
@@ -294,6 +301,32 @@ def user_save(sender, instance, created, **kwargs):
             instance.move_to_cognito()
         else:
             TatorCognito().update_attributes(instance)
+    if created:
+        invites = Invitation.objects.filter(email=instance.email, status='Pending')
+        if invites.count() == 0:
+            organization = Organization.objects.create(name=f"{instance}'s Team")
+            Affiliation.objects.create(organization=organization,
+                                       user=instance,
+                                       permission='Admin')
+
+class Invitation(Model):
+    email = EmailField()
+    organization = ForeignKey(Organization, on_delete=CASCADE)
+    permission = CharField(max_length=16,
+                           choices=[('Member', 'Member'), ('Admin', 'Admin')],
+                           default='Member')
+    registration_token = UUIDField(primary_key=False, db_index=True, editable=False,
+                                   default=uuid.uuid1)
+    status = CharField(max_length=16,
+                       choices=[('Pending', 'Pending'), ('Expired', 'Expired'),
+                                ('Accepted', 'Accepted')],
+                       default='Pending')
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return (f'{self.email} | {self.organization} | {self.created_by} | '
+                f'{self.created_datetime} | {self.status}')
 
 class Affiliation(Model):
     """Stores a user and their permissions in an organization.
@@ -315,6 +348,10 @@ class Bucket(Model):
     secret_key = CharField(max_length=40)
     endpoint_url = CharField(max_length=1024)
     region = CharField(max_length=16)
+    archive_sc = CharField(
+        max_length=16, choices=[("DEEP_ARCHIVE", "DEEP_ARCHIVE")], default="DEEP_ARCHIVE"
+    )
+    live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")], default="STANDARD")
 
 class Project(Model):
     name = CharField(max_length=128)
@@ -814,34 +851,45 @@ class Media(Model, ModelDiffMixin):
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
     deleted = BooleanField(default=False)
-    recycled_from = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
-                               related_name='recycled_from')
+    restoration_requested = BooleanField(default=False)
+    archive_state = CharField(
+        max_length=16,
+        choices=[
+            ("live", "live"),
+            ("to_live", "to_live"),
+            ("archived", "archived"),
+            ("to_archive", "to_archive"),
+        ],
+        default="live",
+    )
+    recycled_from = ForeignKey(
+        Project, on_delete=SET_NULL, null=True, blank=True, related_name='recycled_from'
+    )
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.
         """
         total_size = 0
         download_size = None
+        if not self.media_files:
+            return (total_size, download_size)
+
         resources = Resource.objects.filter(media__in=[self])
         s3_lookup = get_s3_lookup(resources)
         s3_default = TatorS3(self.project.bucket)
-        if self.media_files:
-            for key in ['archival', 'streaming', 'image', 'audio', 'thumbnail', 'thumbnail_gif']:
-                if key in self.media_files:
-                    for media_def in self.media_files[key]:
-                        tator_s3 = s3_lookup.get(media_def['path'], s3_default)
-                        s3 = tator_s3.s3
-                        bucket_name = tator_s3.bucket_name
-                        size = get_s3_size(media_def['path'], s3, bucket_name)
-                        total_size += size
-                        if (key in ['archival', 'streaming', 'image']) and (download_size is None):
-                            download_size = size
-                        if key == 'streaming':
-                            try:
-                                total_size += _path_size(media_def['segment_info'], s3, bucket_name)
-                            except:
-                                logger.warning(f"Media {self.id} does not have a segment file "
-                                               f"definition {media_def['path']}!")
+
+        for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif"]:
+            if key not in self.media_files:
+                continue
+
+            for media_def in self.media_files[key]:
+                tator_s3 = s3_lookup.get(media_def["path"], s3_default)
+                size = tator_s3.get_size(media_def["path"])
+                total_size += size
+                if key in ["archival", "streaming", "image"] and download_size is None:
+                    download_size = size
+                if key == "streaming":
+                    total_size += tator_s3.get_size(media_def.get('segment_info'))
         return (total_size, download_size)
 
 class Resource(Model):
@@ -873,9 +921,143 @@ class Resource(Model):
             logger.info(f"Deleting object {path}")
             obj.delete()
             tator_s3 = TatorS3(obj.bucket)
-            s3 = tator_s3.s3
-            bucket_name = tator_s3.bucket_name
-            s3.delete_object(Bucket=bucket_name, Key=path)
+            tator_s3.delete_object(path)
+
+    @transaction.atomic
+    def archive_resource(path):
+        """
+        Moves the object into archive storage. If True is returned by every call to
+        Resource.archive_resource on each path in a media object, the following should be executed
+        by the management command that called this method:
+
+            media.archive_state = "archived"
+            media.save()
+        """
+        obj = Resource.objects.get(path=path)
+        logger.info(f"Archiving object {path}")
+        bucket = obj.bucket
+        tator_s3 = TatorS3(bucket)
+
+        if tator_s3.server is ObjectStore.MINIO:
+            logger.info(
+                f"No storage class change required for MinIO bucket, object {path} archived"
+            )
+            return True
+
+        response = tator_s3.head_object(path)
+        archive_sc = bucket.archive_sc
+        if response.get("StorageClass", "") == archive_sc:
+            logger.info(f"Object {path} already archived, skipping")
+            return True
+
+        try:
+            tator_s3.copy(path, path, {"StorageClass": archive_sc, "MetadataDirective": "COPY"})
+        except:
+            logger.warning(f"Exception while archiving object {path}", exc_info=True)
+        response = tator_s3.head_object(path)
+        if response.get("StorageClass", "") != archive_sc:
+            logger.warning(f"Archiving object {path} failed")
+            return False
+        return True
+
+
+    @transaction.atomic
+    def request_restoration(path, min_exp_days):
+        """
+        Requests object restortation from archive storage. If True is returned by every call to
+        Resource.request_restoration on each path in a media object, the following should be
+        executed by the management command that called this method:
+
+            media.restoration_requested = True
+            media.save()
+        """
+        obj = Resource.objects.get(path=path)
+        logger.info(f"Requesting restoration of object {path}")
+        tator_s3 = TatorS3(obj.bucket)
+        if tator_s3.server is ObjectStore.MINIO:
+            logger.info(
+                f"No storage class change required, object {path} restoration requested"
+            )
+            return True
+        response = tator_s3.head_object(path)
+        if 'ongoing-request="true"' in response.get("Restore", ""):
+            logger.info(f"Object {path} has an ongoing restoration request, skipping")
+            return True
+        try:
+            tator_s3.restore_object(path, min_exp_days)
+        except:
+            logger.warning(
+                f"Exception while requesting restoration of object {path}", exc_info=True
+            )
+        response = tator_s3.head_object(path)
+        if "ongoing-request" not in response.get("Restore", ""):
+            logger.warning(f"Request to restore object {path} failed")
+            return False
+        return True
+
+    @transaction.atomic
+    def restore_resource(path):
+        """
+        Performs the final copy operation that makes a restoration request permanent. Returns True
+        if the copy operation succeeds or if it has succeeded previously. If True is returned by
+        every call to Resource.restore_resource on each path in a media object, the following should
+        be executed by the management command that called this method:
+
+            media.restoration_requested = False
+            media.archive_state = "live"
+            media.save()
+        """
+        obj = Resource.objects.get(path=path)
+        bucket = obj.bucket
+        tator_s3 = TatorS3(bucket)
+        logger.info(f"Restoring object {path}")
+
+        if tator_s3.server is ObjectStore.MINIO:
+            logger.info(f"No storage class change required for MinIO bucket, object {path} live")
+            return True
+
+        # Check the current state of the restoration request
+        archive_sc = bucket.archive_sc
+        response = tator_s3.head_object(path)
+        request_state = response.get("Restore", "")
+        if not request_state:
+            # There is no ongoing request and the object is not in the temporary restored state
+            storage_class = response.get("StorageClass", "")
+            if storage_class == archive_sc:
+                # Something went wrong with the original restoration request
+                logger.warning(f"Object {path} has no associated restoration request")
+                return False
+            if not storage_class:
+                # The resource was already restored
+                logger.info(f"Object {path} already restored")
+                return True
+
+            # The resource is in an unexpected storage class
+            logger.error(f"Object {path} in unexpected storage class {storage_class}")
+            return False
+        if 'ongoing-request="true"' in request_state:
+            # There is an ongoing request and the object is not ready to be permanently restored
+            logger.info(f"Object {path} not in standard access yet, skipping")
+            return False
+        if 'ongoing-request="false"' not in request_state:
+            # This should not happen unless the API for s3.head_object changes
+            logger.error(f"Unexpected request state '{request_state}' received for object {path}")
+            return False
+
+        # Then ongoing-request="false" must be in request_state, which means its storage class can
+        # be modified
+        try:
+            tator_s3.copy(path, path, {"MetadataDirective": "COPY", "StorageClass": bucket.live_sc})
+        except:
+            logger.warning(
+                f"Exception while changing storage class of object {path}", exc_info=True
+            )
+        response = tator_s3.head_object(path)
+        if response.get("StorageClass", "") == archive_sc:
+            logger.warning(f"Storage class not changed for object {path}")
+            return False
+        return True
+
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):

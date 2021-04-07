@@ -60,12 +60,20 @@ class TextInput extends TatorElement {
             this.getValue = this._validateString;
             break;
           case "datetime":
-            this._input.setAttribute("placeholder", "e.g. 1999-01-01");
+            this._input.setAttribute("placeholder", "e.g. 2020-06-30");
             this.getValue = this._validateDateTime;
             break;
           case "geopos":
-            this._input.setAttribute("placeholder", "e.g. 42.36,-71.06");
+            this._input.setAttribute("placeholder", "e.g. 21.305,-157.858");
             this.getValue = this._validateGeopos;
+            break;
+          case "password":
+            this.getValue = this._validatePassword;
+            this._input.setAttribute("type", "password");
+            break;
+          case "email":
+            this.getValue = this._validateEmail;
+            this._input.setAttribute("type", "email");
             break;
         }
         break;
@@ -140,6 +148,14 @@ class TextInput extends TatorElement {
       }
     }
     return ret;
+  }
+
+  _validatePassword() {
+    return this._input.value;
+  }
+
+  _validateEmail() {
+    return this._input.value;
   }
 
   setValue(val) {

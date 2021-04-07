@@ -59,7 +59,7 @@ class AnnotationMulti extends TatorElement {
     timeDiv.appendChild(this._totalTime);
 
     this._timelineMore = document.createElement("entity-more");
-    this._timelineMore.style.display = "none";
+    this._timelineMore.style.display = "block";
     timelineDiv.appendChild(this._timelineMore);
     this._displayTimelineLabels = false;
 
@@ -74,12 +74,9 @@ class AnnotationMulti extends TatorElement {
     outerDiv.appendChild(seekDiv);
 
     var innerDiv = document.createElement("div");
-    this._timeline = document.createElement("timeline-canvas");
-    this._timeline.rangeInput = this._slider;
-    this._timelineAttrRange = document.createElement("timeline-canvas");
-    this._timelineAttrRange.rangeInput = this._slider;
-    innerDiv.appendChild(this._timeline);
-    innerDiv.appendChild(this._timelineAttrRange);
+    this._timelineD3 = document.createElement("timeline-d3");
+    this._timelineD3.rangeInput = this._slider;
+    innerDiv.appendChild(this._timelineD3);
     outerDiv.appendChild(innerDiv);
     timelineDiv.appendChild(outerDiv);
 
@@ -123,7 +120,7 @@ class AnnotationMulti extends TatorElement {
 
     // Magic number matching standard header + footer
     // #TODO This should be re-thought and more flexible initially
-    this._videoHeightPadObject = {height: 175};
+    this._videoHeightPadObject = {height: 210};
     this._headerFooterPad = 100; // Another magic number based on the header and padding below controls footer
 
     const searchParams = new URLSearchParams(window.location.search);
@@ -135,19 +132,7 @@ class AnnotationMulti extends TatorElement {
 
     this._timelineMore.addEventListener("click", () => {
       this._displayTimelineLabels = !this._displayTimelineLabels;
-      this._timelineAttrRange.showLabels = this._displayTimelineLabels;
-      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
-      window.dispatchEvent(new Event("resize"));
-    });
-
-    this._timelineAttrRange.addEventListener("multiCanvas", evt => {
-      if (evt.detail.active) {
-        this._timelineMore.style.display = "block";
-      }
-      else {
-        this._timelineMore.style.display = "none";
-      }
-
+      this._timelineD3.showFocus(this._displayTimelineLabels);
       this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
       window.dispatchEvent(new Event("resize"));
     });
@@ -271,7 +256,16 @@ class AnnotationMulti extends TatorElement {
       }
     });
 
-    this._timeline.addEventListener("select", evt => {
+    this._timelineD3.addEventListener("graphData", evt => {
+      if (evt.detail.numericalData.length > 0 || evt.detail.stateData.length > 0) {
+        this._timelineMore.style.display = "block";
+      }
+      else {
+        this._timelineMore.style.display = "none";
+      }
+    });
+
+    this._timelineD3.addEventListener("select", evt => {
       this.goToFrame(evt.detail.frame);
     });
 
@@ -552,6 +546,9 @@ class AnnotationMulti extends TatorElement {
         });
       }
 
+      this._videos[idx].addEventListener("canvasResized", () => {
+        this._timelineD3.redraw();
+      });
       this._videos[idx].addEventListener("safeMode", () => {
         this.safeMode();
       });
@@ -1052,9 +1049,7 @@ class AnnotationMulti extends TatorElement {
     {
       video.annotationData = val;
     }
-    this._timeline.annotationData = val;
-    this._timelineAttrRange.stateInterpolationType = "attr_style_range";
-    this._timelineAttrRange.annotationData = val;
+    this._timelineD3.annotationData = val;
   }
 
   newMetadataItem(dtype, metaMode, objId) {
@@ -1442,13 +1437,8 @@ class AnnotationMulti extends TatorElement {
     return 0;
   }
 
-  drawTimeline(typeId) {
-    this._timeline.draw(typeId);
-    this._timelineAttrRange.draw(typeId);
-  }
-
   selectTimelineData(data) {
-    this._timelineAttrRange.selectData(data);
+    this._timelineD3.selectData(data);
   }
 
   _frameToTime(frame) {

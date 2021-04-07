@@ -19,6 +19,10 @@ organization = {
             'type': 'integer',
             'description': 'Unique integer identifying the organization.',
         },
+        'permission': {
+            'type': 'string',
+            'description': 'Permission level of user making request.',
+        },
         **organization_properties,
     },
 }

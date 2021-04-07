@@ -34,17 +34,25 @@ spec:
             - name: PGDATA
               value: /var/lib/postgresql/data/db-files
           volumeMounts:
+            {{- if hasKey .Values.postgis "hostPath" }}
             - mountPath: /var/lib/postgresql/data
               name: postgis-pv-claim
+            {{- else }}
+            - mountPath: /var/lib/postgresql/data
+              name: main-pv-claim
+              subPath: postgis
+            {{- end }}
             - mountPath: /backup
               name: main-pv-claim
               subPath: backup
             - mountPath: /dev/shm
               name: sharedmem
       volumes:
+        {{- if hasKey .Values.postgis "hostPath" }}
         - name: postgis-pv-claim
           persistentVolumeClaim:
             claimName: postgis-pv-claim
+        {{- end }}
         - name: main-pv-claim
           persistentVolumeClaim:
             claimName: main-pv-claim

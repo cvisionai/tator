@@ -4,7 +4,7 @@ class NewProject extends TatorElement {
 
     const link = document.createElement("a");
     link.setAttribute("class", "add-new d-flex flex-items-center px-4 text-gray rounded-2");
-    link.setAttribute("href", "/new-project/custom");
+    link.style.cursor = "pointer";
     this._shadow.appendChild(link);
 
     const span = document.createElement("span");

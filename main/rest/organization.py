@@ -11,6 +11,12 @@ from ._permissions import OrganizationAdminPermission
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 
+def _serialize_organizations(organizations, user_id):
+    organization_data = database_qs(organizations)
+    for idx, organization in enumerate(organizations):
+        organization_data[idx]['permission'] = str(organization.user_permission(user_id))
+    return organization_data
+
 class OrganizationListAPI(BaseListView):
     """ Interact with a list of organizations.
     """
@@ -19,7 +25,7 @@ class OrganizationListAPI(BaseListView):
 
     def _get(self, params):
         organizations = self.get_queryset()
-        return database_qs(organizations)
+        return _serialize_organizations(organizations, self.request.user.pk)
 
     def _post(self, params):
         if Organization.objects.filter(
@@ -52,7 +58,8 @@ class OrganizationDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return database_qs(Organization.objects.filter(pk=params['id']))[0]
+        organizations = Organization.objects.filter(pk=params['id'])
+        return _serialize_organizations(organizations, self.request.user.pk)[0]
 
     @transaction.atomic
     def _patch(self, params):

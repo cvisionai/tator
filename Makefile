@@ -29,6 +29,12 @@ POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/va
 POSTGRES_USERNAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresUsername"])')
 POSTGRES_PASSWORD=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresPassword"])')
 
+OBJECT_STORAGE_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("http://tator-minio:9000" if a["minio"]["enabled"] else a["objectStorageHost"])')
+OBJECT_STORAGE_REGION_NAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("us-east-2" if a["minio"]["enabled"] else a["objectStorageRegionName"])')
+OBJECT_STORAGE_BUCKET_NAME=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["defaultBucket"]["name"] if a["minio"]["enabled"] else a["objectStorageBucketName"])')
+OBJECT_STORAGE_ACCESS_KEY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["accessKey"] if a["minio"]["enabled"] else a["objectStorageAccessKey"])')
+OBJECT_STORAGE_SECRET_KEY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["secretKey"] if a["minio"]["enabled"] else a["objectStorageSecretKey"])')
+
 #############################
 ## Help Rule + Generic targets
 #############################
@@ -139,34 +145,21 @@ clean: cluster-uninstall
 dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
-externals/build_tools/%.sh:
-	@echo "Downloading submodule"
-	@git submodule update --init
-
-externals/build_tools/%.py:
-	@echo "Downloading submodule"
-	@git submodule update --init
-
-# Dockerfile.gen rules (generic)
-%/Dockerfile.gen: %/Dockerfile.mako
-	echo $@ $<
-	./externals/build_tools/makocc.py -o $@ $<
-
 .PHONY: tator-image
-tator-image: containers/tator/Dockerfile.gen
+tator-image:
 	$(MAKE) min-js min-css r-docs docs
-	docker build --network host $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f $< . || exit 255
+	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
 .PHONY: postgis-image
-postgis-image:  containers/postgis/Dockerfile.gen
-	docker build --network host $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(DOCKERHUB_USER)/tator_postgis:latest -f $< containers || exit 255
+postgis-image:
+	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: containers/tator_client/Dockerfile.gen
-	docker build --network host $(shell ./externals/build_tools/multiArch.py --buildArgs) -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f $< . || exit 255
+client-image:
+	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
@@ -176,17 +169,9 @@ client-latest: client-image
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
 	docker push cvisionai/tator_client:latest
 
-.PHONY: cross-info
-cross-info: ./externals/build_tools/multiArch.py
-	./externals/build_tools/multiArch.py  --help
-
-.PHONY: externals/build_tools/version.py
-externals/build_tools/version.py:
-	externals/build_tools/version.sh > externals_build_tools/version.py
-
 .PHONY: main/version.py
 main/version.py:
-	externals/build_tools/version.sh > main/version.py
+	./scripts/version.sh > main/version.py
 	chmod +x main/version.py
 
 collect-static: min-css min-js
@@ -251,6 +236,7 @@ FILES = \
     components/filter-dialog.js \
     components/filter-interface.js \
     components/filter-data.js \
+    registration/registration-page.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \
@@ -258,9 +244,11 @@ FILES = \
     projects/project-description.js \
     projects/project-summary.js \
     projects/new-project.js \
+    projects/new-project-dialog.js \
     projects/delete-project.js \
     projects/projects-dashboard.js \
-		account-profile/account-profile.js \
+    account-profile/account-profile.js \
+    token/token-page.js \
     new-project/new-project-close.js \
     new-project/custom/custom-form.js \
     new-project/custom/custom.js \
@@ -350,6 +338,7 @@ FILES = \
     annotation/frame-prev.js \
     annotation/frame-next.js \
     annotation/timeline-canvas.js \
+    annotation/timeline-d3.js \
     annotation/video-fullscreen.js \
     annotator/FrameBuffer.js \
     annotator/drawGL_colors.js \
@@ -451,7 +440,7 @@ cleanup-evicted:
 #   make build-search-indices MAX_AGE_DAYS=365
 .PHONY: build-search-indices
 build-search-indices:
-	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)"
+	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)" -p objectStorageHost="$(OBJECT_STORAGE_HOST)" -p objectStorageRegionName="$(OBJECT_STORAGE_REGION_NAME)" -p objectStorageBucketName="$(OBJECT_STORAGE_BUCKET_NAME)" -p objectStorageAccessKey="$(OBJECT_STORAGE_ACCESS_KEY)" -p objectStorageSecretKey="$(OBJECT_STORAGE_SECRET_KEY)"
 
 .PHONY: s3-migrate
 s3-migrate:

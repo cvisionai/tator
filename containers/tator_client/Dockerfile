@@ -1,9 +1,3 @@
-<%!
-  import multiArch
-  import os
-%>
-
-% if multiArch.arch=="x86_64":
 FROM cvisionai/svt_encoder:v0.0.4 as builder
 ENV LANG C.UTF-8
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -23,27 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-setuptools python3-dev gcc git vim curl unzip wget \
         && rm -rf /var/lib/apt/lists
 COPY --from=builder /opt/cvision /opt/cvision
-ENV PATH=/opt/cvision/bin/:${"${PATH}"}
+ENV PATH="/opt/cvision/bin/:$PATH"
 RUN echo "/opt/cvision/lib" > /etc/ld.so.conf.d/cvision.conf
 RUN ldconfig
-
-%else:
-FROM ubuntu:19.04 AS cvtranscoder
-MAINTAINER CVision AI <info@cvisionai.com>
-
-% if multiArch.arch!=multiArch.host:
-#copy over qemu for "cross-compiled" builds
-COPY containers/qemu_support/qemu-aarch64-static /usr/bin
-% endif
-
-RUN chmod 1777 /tmp
-# Install apt packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip unzip wget \
-        python3-setuptools python3-dev gcc git vim curl \
-        libssl-dev ffmpeg && \
-        rm -rf /var/lib/apt/lists
-% endif
 
 # Install pip packages
 RUN pip3 --no-cache-dir --timeout=1000 install wheel

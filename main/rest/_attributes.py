@@ -182,12 +182,12 @@ def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
 
         except: #pylint: disable=line-too-long
 
-            raise Exception(f"Invalid lat/lon string {val} for geoposition attribute {attr_type.name}, should be two values separated by underscore")
+            raise Exception(f"Invalid lat/lon string {val} for geoposition attribute {attr_type['name']}, should be two values separated by underscore")
         try:
             lat = float(lat) #pylint: disable=line-too-long
 
         except:
-            raise Exception(f"Invalid latitude string {val} for geoposition attribute {attr_type.name}, must be convertible to float.") #pylint: disable=line-too-long
+            raise Exception(f"Invalid latitude string {val} for geoposition attribute {attr_type['name']}, must be convertible to float.") #pylint: disable=line-too-long
 
         try: #pylint: disable=line-too-long
 
@@ -195,13 +195,13 @@ def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
 
         except: #pylint: disable=line-too-long
 
-            raise Exception(f"Invalid longitude string {val} for geoposition attribute {attr_type.name}, must be convertible to float.")
+            raise Exception(f"Invalid longitude string {val} for geoposition attribute {attr_type['name']}, must be convertible to float.")
         if (lat > 90.0) or (lat < -90.0): #pylint: disable=line-too-long
 
-            raise Exception(f"Invalid latitude string {val} for geoposition attribute {attr_type.name}, must be in range (-90.0, 90.0).") #pylint: disable=line-too-long
+            raise Exception(f"Invalid latitude string {val} for geoposition attribute {attr_type['name']}, must be in range (-90.0, 90.0).") #pylint: disable=line-too-long
 
         if (lon > 180.0) or (lon < -180.0):
-            raise Exception(f"Invalid longitude string {val} for geoposition attribute {attr_type.name}, must be in range (-180.0, 180.0).") #pylint: disable=line-too-long
+            raise Exception(f"Invalid longitude string {val} for geoposition attribute {attr_type['name']}, must be in range (-180.0, 180.0).") #pylint: disable=line-too-long
 
         val = Point(lon, lat) # Lon goes first in postgis
     return val
@@ -244,7 +244,8 @@ def _process_for_bulk_op(raw_value):
     if isinstance(raw_value, str):
         raw_value = raw_value.replace("\\","\\\\")
         raw_value = raw_value.replace("\n","\\n")
-        return f"\"{raw_value}\""
+        raw_value = raw_value.replace('\"','\\"')
+        return f'"{raw_value}"'
     if isinstance(raw_value, bool):
         return f"{str(raw_value).lower()}"
 

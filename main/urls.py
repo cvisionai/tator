@@ -3,23 +3,19 @@ import logging
 
 from django.urls import path
 from django.urls import include
-from django.conf.urls import url
 from django.conf import settings
 from django.contrib.auth.views import PasswordChangeView
 from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
 
-from rest_framework.authtoken import views
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
 
 from .views import APIBrowserView
 from .views import MainRedirect
+from .views import RegistrationView
 from .views import ProjectsView
-from .views import CustomView
 from .views import AccountProfileView
+from .views import TokenView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
 from .views import AnnotationView
@@ -60,16 +56,14 @@ urlpatterns = [
     path('<int:project_id>/analytics/reports',
          AnalyticsReportsView.as_view(), name='analytics-reports'),
     path('projects/', ProjectsView.as_view(), name='projects'),
-    path('new-project/custom/', CustomView.as_view(), name='custom'),
-    path('<int:project_id>/project-detail',
-         ProjectDetailView.as_view(), name='project-detail'),
-    path('<int:project_id>/project-settings',
-         ProjectSettingsView.as_view(), name='project-settings'),
-    path('<int:project_id>/annotation/<int:id>',
-         AnnotationView.as_view(), name='annotation'),
+    path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
+    path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
+    path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),
     path('auth-admin', AuthAdminView.as_view()),
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(), name='anonymous-gateway'),
+    path('registration', RegistrationView.as_view(), name='registration'),
+    path('token', TokenView.as_view(), name='token'),
 ]
 
 if settings.COGNITO_ENABLED:
@@ -85,7 +79,6 @@ else:
 
 # This is used for REST calls
 urlpatterns += [
-    url(r'^rest/Token', views.obtain_auth_token),
     path('rest/', APIBrowserView.as_view()),
     path('schema/', schema_view, name='schema'),
     path(
@@ -177,7 +170,13 @@ urlpatterns += [
          ),
     path('rest/ImageFile/<int:id>',
          ImageFileDetailAPI.as_view(),
-         ),
+    ),
+    path('rest/Invitations/<int:organization>',
+         InvitationListAPI.as_view(),
+    ),
+    path('rest/Invitation/<int:id>',
+         InvitationDetailAPI.as_view(),
+    ),
     path(
         'rest/Jobs/<int:project>',
         JobListAPI.as_view(),
@@ -367,6 +366,9 @@ urlpatterns += [
         'rest/TemporaryFile/<int:id>',
         TemporaryFileDetailAPI.as_view(),
     ),
+    path('rest/Token',
+         TokenAPI.as_view(),
+    ),
     path(
         'rest/Transcode/<int:project>',
         TranscodeAPI.as_view(),
@@ -382,6 +384,10 @@ urlpatterns += [
     path(
         'rest/Users',
         UserListAPI.as_view(),
+    ),
+    path(
+        'rest/User/Exists',
+        UserExistsAPI.as_view(),
     ),
     path(
         'rest/User/GetCurrent',

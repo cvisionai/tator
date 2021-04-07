@@ -65,6 +65,9 @@ class CustomGenerator(SchemaGenerator):
                 'FavoriteUpdate': favorite_update,
                 'Favorite': favorite,
                 'ImageDefinition': image_definition,
+                'InvitationSpec': invitation_spec,
+                'InvitationUpdate': invitation_update,
+                'Invitation': invitation,
                 'JobNode': job_node,
                 'Job': job,
                 'JobCluster': job_cluster,
@@ -131,6 +134,7 @@ class CustomGenerator(SchemaGenerator):
                 'UploadCompletionSpec': upload_completion_spec,
                 'UploadInfo': upload_info,
                 'UploadPart': upload_part,
+                'UserSpec': user_spec,
                 'UserUpdate': user_update,
                 'User': user,
                 'VersionSpec': version_spec,
@@ -155,24 +159,7 @@ class CustomGenerator(SchemaGenerator):
             },
         }
 
-        # Add schema for Token endpoint.
         if not parser:
-            schema['paths']['/rest/Token']['post']['requestBody'] = {
-                'content': {'application/json': {
-                    'schema': {'$ref': '#/components/schemas/Credentials'},
-                }},
-            }
-            schema['paths']['/rest/Token']['post']['responses'] = {
-                '200': {
-                    'description': 'Login credentials accepted.',
-                    'content': {'application/json': {'schema': {
-                        '$ref': '#/components/schemas/Token',
-                    }}},
-                },
-                400: {'description': 'Login credentials invalid.'},
-            }
-            schema['paths']['/rest/Token']['post']['tags'] = ['Tator']
-
             # Set security scheme.
             schema['components']['securitySchemes'] = {
                 'TokenAuth': {

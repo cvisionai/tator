@@ -170,10 +170,14 @@ class UserPermission(BasePermission):
         return False
 
 class UserListPermission(BasePermission):
-    """ 1.) Reject all anonymous requests
+    """ 1.) Reject anonymous GET requests
         2.) Allow any read-only requests
+        3.) Always allow POST since permissions are determined in the endpoint
     """
     def has_permission(self, request, view):
+        if request.method == 'POST':
+            return True
+
         if isinstance(request.user, AnonymousUser):
             return False
 
@@ -181,7 +185,8 @@ class UserListPermission(BasePermission):
             return True
 
         if request.method == 'GET':
-            # All users have read-only permission
+            # All users have read-only permission, POST is validated by registration
+            # token.
             return True
 
         return False

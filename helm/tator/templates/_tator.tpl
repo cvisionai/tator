@@ -29,11 +29,11 @@ spec:
           args: {{ .args }}
           resources:
             limits:
-              cpu: 4000m
-              memory: 16Gi
+              cpu: {{ .Values.gunicornCpuLimit | default "4000m" }}
+              memory: {{ .Values.gunicornMemoryLimit | default "16Gi" }}
             requests:
-              cpu: 1000m
-              memory: 4Gi
+              cpu: {{ .Values.gunicornCpuRequest | default "1000m" }}
+              memory: {{ .Values.gunicornMemoryRequest | default "4Gi" }}
           env:
             - name: DJANGO_SECRET_KEY
               valueFrom:
@@ -178,6 +178,22 @@ spec:
             - name: COGNITO_ENABLED
             {{- if .Values.cognito.enabled }}
               value: "TRUE"
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
+            - name: ANONYMOUS_REGISTRATION_ENABLED
+            {{- if hasKey .Values "anonymousRegistration" }}
+            {{- if .Values.anonymousRegistration.enabled }}
+              value: "TRUE"
+            - name: EMAIL_CONFIRMATION
+            {{- if .Values.anonymousRegistration.emailConfirmation }}
+              value: "TRUE"
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
             {{- else }}
               value: "FALSE"
             {{- end }}
