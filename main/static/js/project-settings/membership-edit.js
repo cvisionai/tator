@@ -92,6 +92,17 @@ class MembershipEdit extends TypeForm {
     this._userInput.init(this._userData);
     this._form.appendChild(this._userInput);
 
+    this._permission = document.createElement("enum-input");
+    this._permission.setAttribute("name", "Permission");
+    this._permission.choices = [
+      {value: "View Only"},
+      {value: "Can Edit"},
+      {value: "Can Transfer"},
+      {value: "Can Execute"},
+      {value: "Full Control"},
+    ];
+    this._form.appendChild(this._permission);
+
     current.appendChild(this._form);
     return current;
   }

@@ -10,7 +10,7 @@ class UserInput extends TatorElement {
     label.appendChild(this._name);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-column col-9");
+    div.setAttribute("class", "d-flex flex-column col-8");
     label.appendChild(div);
 
     this._input = document.createElement("input");
@@ -24,7 +24,7 @@ class UserInput extends TatorElement {
     this._shadow.appendChild(div1);
 
     const div2 = document.createElement("div");
-    div2.setAttribute("class", "col-3");
+    div2.setAttribute("class", "col-4");
     div1.appendChild(div2);
 
     const div3 = document.createElement("div");
@@ -101,8 +101,10 @@ class UserInput extends TatorElement {
         this._errors.removeChild(this._errors.firstChild);
       }
       // Add error messages.
-      for (const missing of evt.detail.missing) {
-        this._addError(`Could not find user for ${missing}!`);
+      if (evt.detail.missing) {
+        for (const missing of evt.detail.missing) {
+          this._addError(`Could not find user for ${missing}!`);
+        }
       }
     });
   }
