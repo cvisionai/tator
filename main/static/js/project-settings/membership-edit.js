@@ -114,25 +114,119 @@ class MembershipEdit extends TypeForm {
       return this._getExistingForm(data);
     }
   }
+  
+  _getFormData(id, includeDtype = false) {
+    let formData;
+    if (id == "New") {
+      formData = [];
+      const users = this._userData.getUsers();
+      for (const user of users.values()) {
+        formData.push({
+          user: user.id,
+          project: this.projectId,
+          permission: this._permission.getValue(),
+          username: user.username,
+        });
+      }
+    } else {
+      let form = this._shadow.getElementById(id);
+      let hasErrors = "";
 
-  _getFormData(id, includeDtype = false){
-    let form = this._shadow.getElementById(id);
-    let hasErrors = "";
+      // permission 
+      let permission = form.querySelector('[name="permission"]').value;
 
-    // permission 
-    let permission = form.querySelector('[name="permission"]').value;
-
-    let formData = {
-      permission,
-    };
+      formData = {
+        permission: permission,
+      };
+    }
+      
 
     return formData;
   }
 
-  /*_save({id = -1, globalAttribute = false} = {}){
-  }*/
-
   _savePost() {
+    this.loading.showSpinner();
+    let addNew = new TypeNew({
+      "type" : this.typeName,
+      "projectId" : this.projectId
+    });
+
+    let formDataList = this._getFormData("New", true);
+    console.log("New form Data....");
+    console.log(formDataList);
+
+    let numSucceeded = 0;
+    let numFailed = 0;
+    let errorMessages = "";
+    const promises = [];
+    for (const formData of formDataList) {
+      const username = formData.username;
+      delete formData.username;
+      const promise = addNew.saveFetch(formData).then(([data, status]) => {
+        console.log(data.message);
+        this.loading.hideSpinner();
+
+        if(status != 400){
+          
+          // Hide the add new form
+          this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+
+          // Create and show the container with new type
+          this.sideNav.addItemContainer({
+            "type" : this.typeName,
+            "id" : data.id,
+            "hidden" : false
+          });
+
+          let form = document.createElement( this._getTypeClass() );
+
+          this.sideNav.fillContainer({
+            "type" : this.typeName,
+            "id" : data.id,
+            "itemContents" : form
+          });
+
+          // init form with the data
+          formData.id = data.id;
+          formData.project = this.projectId;
+          if(this.typeName == "LocalizationType" || this.typeName == "StateType") formData.media = formData.media_types;
+          form._init({ 
+            "data": formData, 
+            "modal" : this.modal, 
+            "sidenav" : this.sideNav
+          });
+
+          // Add the item to navigation
+          this._updateNavEvent("new", username, data.id);
+
+          // Increment succeeded.
+          numSucceeded++;
+        } else {
+          errorMessages = `${errorMessages}\n${data.message}`;
+          numFailed++;
+        }
+      }).catch((err) => {
+        console.error(err);
+        errorMessages = `${errorMessages}\n${err}`;
+        numFailed++;
+      });
+      promises.push(promise);
+    }
+
+    // Let user know everything's all set!
+    Promise.all(promises).then(() => {
+      this.loading.hideSpinner();
+      let message;
+      if (numSucceeded > 0) {
+        message = `Successfully created ${numSucceeded} memberships.`;
+        if (numFailed > 0) {
+          message = `${message} Failed to create ${numFailed}.\n${errorMessages}`;
+        }
+        return this._modalSuccess(message);
+      } else {
+        return this._modalError(`Failed to create ${numFailed} memberships.\n${errorMessages}`);
+      }
+    });
   }
 }
 
