@@ -84,6 +84,14 @@ class MembershipEdit extends TypeForm {
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
       } );
+    this._setForm();
+
+    this._userData = document.createElement("user-data");
+    this._userInput = document.createElement("user-input");
+    this._userInput.init(this._userData);
+    this._form.appendChild(this._userInput);
+
+    current.appendChild(this._form);
     return current;
   }
 
