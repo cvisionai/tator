@@ -27,9 +27,16 @@ class UserInput extends TatorElement {
     div2.setAttribute("class", "col-3");
     div1.appendChild(div2);
 
+    const div3 = document.createElement("div");
+    div3.setAttribute("class", "d-flex flex-column")
+    div1.appendChild(div3);
+
     this._pills = document.createElement("div");
     this._pills.setAttribute("class", "py-3 d-flex flex-column");
-    div1.appendChild(this._pills);
+    div3.appendChild(this._pills);
+
+    this._errors = document.createElement("ul");
+    div3.appendChild(this._errors);
 
     this._input.addEventListener("input", () => {
       const value = this._input.value;
@@ -89,6 +96,14 @@ class UserInput extends TatorElement {
           this._addPill(name, user.id);
         }
       }
+      // Clear error messages.
+      while (this._errors.firstChild) {
+        this._errors.removeChild(this._errors.firstChild);
+      }
+      // Add error messages.
+      for (const missing of evt.detail.missing) {
+        this._addError(`Could not find user for ${missing}!`);
+      }
     });
   }
 
@@ -106,6 +121,17 @@ class UserInput extends TatorElement {
       this._data.removeUser(evt.detail.id);
     });
   }
+
+  _addError(msg) {
+    const li = document.createElement("li");
+    this._errors.appendChild(li);
+
+    const h3 = document.createElement("h3");
+    h3.setAttribute("class", "h3 text-red");
+    h3.textContent = msg;
+    li.appendChild(h3);
+  }
+
 }
 
 customElements.define("user-input", UserInput);
