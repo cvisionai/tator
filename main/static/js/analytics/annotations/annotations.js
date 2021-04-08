@@ -92,8 +92,7 @@
 
       // Init vars for filter state
       this._filterState = {
-        paramString : "",
-        conditionsObject : ""
+        conditionsObject: []
       };
       // Init vars for pagination state
       this._paginationState = {
@@ -120,7 +119,7 @@
       // Init panel side behavior
       this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal, modelData : this._modelData });
 
-      // @TODO check from merge
+      // Update the card with the localization's associated media
       this.cardData.addEventListener("setMedia", (evt) => {
         this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
       });

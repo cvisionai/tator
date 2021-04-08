@@ -142,7 +142,7 @@ class AnnotationsGallery extends EntityCardGallery {
   updateCardMedia(id, media) {
     if (id in this._currentCardIndexes) {
       var info = this._cardElements[this._currentCardIndexes[id]];
-      info.annotationPanel.setMedia(media);
+      //info.annotationPanel.setMedia(media);
     }
   }
 

@@ -560,7 +560,7 @@ class TatorData {
         locGroups[locType.name] = {filters: [], entityType: locType};
       });
 
-    if (filters != undefined) {
+    if (Array.isArray(filters)) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           mediaFilters.push(filter);
