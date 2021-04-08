@@ -32,17 +32,6 @@ class MembershipEdit extends TypeForm {
     //
     this._setForm();
 
-    // append input for name
-    const USERNAME = "Username";
-    this._editName = this.inputHelper.inputText( {
-      "labelText": USERNAME,
-      "name": USERNAME.toLowerCase(),
-      "value": data[USERNAME.toLowerCase()],
-      "required" : true,
-      "disabledInput": true,
-    });
-    this._form.appendChild( this._editName );
-
     // permission
     const PERMISSION = "Permission";
     const permissionOptions = [
