@@ -142,6 +142,8 @@ class AnnotationsGallery extends EntityCardGallery {
   updateCardMedia(id, media) {
     if (id in this._currentCardIndexes) {
       var info = this._cardElements[this._currentCardIndexes[id]];
+      //#TODO Entity gallery panel needs to be updated so that it can display multiple
+      //      entity attributes (e.g. media associated with the localization)
       //info.annotationPanel.setMedia(media);
     }
   }

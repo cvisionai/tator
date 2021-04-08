@@ -1110,6 +1110,15 @@ class VideoCanvas extends AnnotationCanvas {
     };
 
     this._addVideoDiagnosticOverlay();
+    this._disableScrubBuffer = false;
+  }
+
+  /**
+   * Permanently disable downloading the scrub buffer.
+   * #TODO Allow some ability to re-enable downloading the scrub buffer.
+   */
+  disableScrubBuffer() {
+    this._disableScrubBuffer = true;
   }
 
   // #TODO Refactor this so that it uses internal variables?
@@ -1209,6 +1218,7 @@ class VideoCanvas extends AnnotationCanvas {
     var that = this;
 
     this._dlWorker = new Worker(`${src_path}/vid_downloader.js`);
+    this._scrubDownloadCount = 0;
 
     this._dlWorker.onmessage =
       function(e)
@@ -1304,8 +1314,12 @@ class VideoCanvas extends AnnotationCanvas {
                                                   detail: {"percent_complete":e.data["percent_complete"]}
                                                 }));
 
+              if (that._disableScrubBuffer && that._scrubDownloadCount >= 2) {
+                return;
+              }
+              that._scrubDownloadCount += 1
               that._dlWorker.postMessage({"type": "download",
-                                          "buf_idx": e.data["buf_idx"]});
+                                          "buf_idx": e.data["buf_idx"]});;
             }
           }
           else
