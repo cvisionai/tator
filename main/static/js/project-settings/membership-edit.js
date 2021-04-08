@@ -88,6 +88,7 @@ class MembershipEdit extends TypeForm {
 
     this._userData = document.createElement("user-data");
     this._userInput = document.createElement("user-input");
+    this._userInput.setAttribute("name", "Search users");
     this._userInput.init(this._userData);
     this._form.appendChild(this._userInput);
 

@@ -10,7 +10,7 @@ class UserInput extends TatorElement {
     label.appendChild(this._name);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-column col-12");
+    div.setAttribute("class", "d-flex flex-column col-9");
     label.appendChild(div);
 
     this._input = document.createElement("input");
@@ -19,9 +19,17 @@ class UserInput extends TatorElement {
     this._input.setAttribute("placeholder", "Enter semicolon delimited usernames or email addresses...");
     div.appendChild(this._input);
 
+    const div1 = document.createElement("div");
+    div1.setAttribute("class", "d-flex flex-row");
+    this._shadow.appendChild(div1);
+
+    const div2 = document.createElement("div");
+    div2.setAttribute("class", "col-3");
+    div1.appendChild(div2);
+
     this._pills = document.createElement("div");
     this._pills.setAttribute("class", "py-3 d-flex flex-column");
-    div.appendChild(this._pills);
+    div1.appendChild(this._pills);
 
     this._input.addEventListener("input", () => {
       const value = this._input.value;
@@ -66,7 +74,11 @@ class UserInput extends TatorElement {
       for (const pill of this._pills.children) {
         if (!users.has(pill.getId())) {
           this._pills.removeChild(pill);
-        } else {
+        }
+      }
+      // Get list of remaining IDs.
+      for (const pill of this._pills.children) {
+        if (users.has(pill.getId())) {
           pillIds.push(pill.getId());
         }
       }
@@ -87,7 +99,7 @@ class UserInput extends TatorElement {
 
   _addPill(name, userId) {
     const pill = document.createElement("removable-pill");
-    pill.setAttribute("class", "py-1");
+    pill.setAttribute("class", "py-1 d-flex");
     pill.init(name, userId);
     this._pills.appendChild(pill);
     pill.addEventListener("removeId", evt => {

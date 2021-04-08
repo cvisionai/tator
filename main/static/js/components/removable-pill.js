@@ -2,16 +2,16 @@ class RemovablePill extends TatorElement {
   constructor() {
     super();
 
-    const label = document.createElement("label");
-    label.setAttribute("class", "form-control input-sm d-flex flex-items-center rounded-1");
-    this._shadow.appendChild(label);
+    const div = document.createElement("div");
+    div.setAttribute("class", "form-control input-sm d-flex flex-items-center rounded-1");
+    this._shadow.appendChild(div);
 
     this._name = document.createTextNode("");
-    label.appendChild(this._name);
+    div.appendChild(this._name);
 
     const button = document.createElement("button");
     button.setAttribute("class", "btn-clear px-1 d-flex text-gray");
-    label.appendChild(button);
+    div.appendChild(button);
 
     const svg = document.createElementNS(svgNamespace, "svg");
     svg.setAttribute("id", "icon-x");
