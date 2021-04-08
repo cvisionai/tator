@@ -9,11 +9,19 @@ class UserInput extends TatorElement {
     this._name = document.createTextNode("");
     label.appendChild(this._name);
 
+    const div = document.createElement("div");
+    div.setAttribute("class", "d-flex flex-column col-12");
+    label.appendChild(div);
+
     this._input = document.createElement("input");
     this._input.setAttribute("class", "form-control input-sm col-12");
     this._input.setAttribute("type", "text");
     this._input.setAttribute("placeholder", "Enter semicolon delimited usernames or email addresses...");
-    label.appendChild(this._input);
+    div.appendChild(this._input);
+
+    this._pills = document.createElement("div");
+    this._pills.setAttribute("class", "py-3 d-flex flex-column");
+    div.appendChild(this._pills);
 
     this._input.addEventListener("input", () => {
       const value = this._input.value;
@@ -52,14 +60,39 @@ class UserInput extends TatorElement {
     // Initialize with a UserData object.
     this._data = data;
     this._data.addEventListener("users", evt => {
-      console.log(`GOT USERS: ${evt.detail.users}`);
-      console.log(`COULDN'T FIND: ${evt.detail.missing}`);
+      const users = evt.detail.users;
+      const pillIds = [];
+      // Remove pills that are no longer in the list.
+      for (const pill of this._pills.children) {
+        if (!users.has(pill.getId())) {
+          this._pills.removeChild(pill);
+        } else {
+          pillIds.push(pill.getId());
+        }
+      }
+      // Create pills for any IDs that don't exist.
+      for (const [userId, user] of users.entries()) {
+        if (!pillIds.includes(userId)) {
+          const name = user.first_name ? `${user.first_name} ${user.last_name}` : user.username;
+          this._addPill(name, user.id);
+        }
+      }
     });
   }
 
   reset() {
     // Go back to default value
     this._input.setValue("");
+  }
+
+  _addPill(name, userId) {
+    const pill = document.createElement("removable-pill");
+    pill.setAttribute("class", "py-1");
+    pill.init(name, userId);
+    this._pills.appendChild(pill);
+    pill.addEventListener("removeId", evt => {
+      this._data.removeUser(evt.detail.id);
+    });
   }
 }
 

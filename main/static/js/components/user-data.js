@@ -56,8 +56,8 @@ class UserData extends TatorElement {
   }
 
   getUsers() {
-    //Returns list of users.
-    return Array.from(this._users.values());
+    //Returns users.
+    return this._users;
   }
 
   removeUser(userId) {
