@@ -1,6 +1,12 @@
 class MembershipData {
   constructor(projectId){
     this.projectId = projectId;
+
+    this._versionsPromise = fetch(`/rest/Versions/${this.projectId}`, {
+      method: "GET",
+      ...sameOriginCredentials(),
+    })
+    .then(response => response.json());
   }
 
   _getMembershipPromise(projectId = this.projectId){
@@ -12,10 +18,6 @@ class MembershipData {
 
   getVersionsPromise() {
     // Returns promise with versions retrieved from server.
-    return fetch(`/rest/Versions/${this.projectId}`, {
-      method: "GET",
-      ...sameOriginCredentials(),
-    })
-    .then(response => response.json());
+    return this._versionsPromise;
   }
 }
