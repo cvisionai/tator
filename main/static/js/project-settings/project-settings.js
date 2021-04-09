@@ -91,6 +91,11 @@ class ProjectSettings extends TatorPage {
             let tc = this.settingsViewClasses[i];
             let formView = document.createElement(tc);
 
+            // Pass in data interface to memberships.
+            if (formView.typeName == "Membership") {
+              formView.init(this.membershipData);
+            }
+
             if(formView.typeName == "Project"){
               // Add project container and nav (set to selected)
               this.makeContainer({
@@ -150,6 +155,9 @@ class ProjectSettings extends TatorPage {
               // Add contents for each Entity
               for(let g of objData){
                 let form = document.createElement(tc);
+                if (form.typeName == "Membership") {
+                  form.init(this.membershipData);
+                }
                 this.settingsNav.fillContainer({
                   "type" : form.typeName,
                   "id" : g.id,

@@ -6,6 +6,10 @@ class MembershipEdit extends TypeForm {
     this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
   }
 
+  init(data) {
+    this._data = data;
+  }
+
   _getEmptyData() {
     return {
       "id" : `New`,
@@ -52,18 +56,23 @@ class MembershipEdit extends TypeForm {
     this._form.appendChild( this.permissionSelect );
 
     // default version
-    /*const VERSION = "Version"; 
-    const versionOptions = [
-    const versionList = new DataVersionList( this.projectId );
-    let versionListWithChecked = versionList.getCompiledVersionList( data[VERSION.toLowerCase()]);
-
-    this._form.appendChild( this.inputHelper.multipleCheckboxes({
-        "labelText" : `Default ${VERSION}`,
+    this._data.getVersionsPromise()
+    .then(versions => {
+      const VERSION = "Version";
+      const versionOptions = versions.map(version => {return {"optText": version.name,
+                                                              "optValue": version.id}});
+      this.versionSelect = this.inputHelper.inputSelectOptions({
+        "labelText": "Default version",
         "name": VERSION.toLowerCase(),
-        "checkboxList": versionListWithChecked
-    } ) );*/
+        "value": data[VERSION.toLowerCase()],
+        "optionsList": versionOptions,
+        "disabledInput": false,
+        "required": true,
+      });
+      this._form.appendChild(this.versionSelect);
+    });
 
-    current.appendChild(this._form)
+    current.appendChild(this._form);
 
     return current;
   }
@@ -92,6 +101,15 @@ class MembershipEdit extends TypeForm {
     ];
     this._form.appendChild(this._permission);
 
+    this._data.getVersionsPromise()
+    .then(versions => {
+      this._version = document.createElement("enum-input");
+      this._version.setAttribute("name", "Default version");
+      this._version.choices = versions.map(version => {return {value: version.id,
+                                                               label: version.name}});
+      this._form.appendChild(this._version);
+    });
+
     current.appendChild(this._form);
     return current;
   }
@@ -114,6 +132,7 @@ class MembershipEdit extends TypeForm {
           user: user.id,
           project: this.projectId,
           permission: this._permission.getValue(),
+          default_version: Number(this._version.getValue()),
           username: user.username,
         });
       }
@@ -123,12 +142,13 @@ class MembershipEdit extends TypeForm {
 
       // permission 
       let permission = form.querySelector('[name="permission"]').value;
+      let version = Number(form.querySelector('[name="version"]').value);
 
       formData = {
         permission: permission,
+        default_version: version,
       };
     }
-      
 
     return formData;
   }
@@ -168,6 +188,7 @@ class MembershipEdit extends TypeForm {
           });
 
           let form = document.createElement( this._getTypeClass() );
+          form.init(this._data);
 
           this.sideNav.fillContainer({
             "type" : this.typeName,
