@@ -299,10 +299,10 @@ def cleanup_object_uploads(max_age_days=1):
             kwargs = {}
             if last_key:
                 kwargs["StartAfter"] = last_key
-            response = tator_store.list_objects_v2(prefix, **kwargs)
-            if response["KeyCount"] == 0:
+            obj_list = tator_store.list_objects_v2(prefix, **kwargs)
+            if not obj_list:
                 break
-            key_age_list = [(obj["Key"], now - obj["LastModified"]) for obj in response["Contents"]]
+            key_age_list = [(obj["Key"], now - obj["LastModified"]) for obj in obj_list]
             last_key = key_age_list[-1][0]
             for key, age in key_age_list:
                 not_resource = not Resource.objects.filter(path=key).exists()

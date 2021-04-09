@@ -2353,7 +2353,7 @@ class ResourceTestCase(APITestCase):
         """ Creates an store file with random key. Simulates an upload.
         """
         key = f"test/{str(uuid1())}"
-        self.store.put_object(key, b"\x00" + os.urandom(16) + b"\x00")
+        self.store.put_string(key, b"\x00" + os.urandom(16) + b"\x00")
         return key
 
     def _store_obj_exists(self, key):

@@ -177,8 +177,8 @@ class MediaUtil:
                 for scatter in sc_graph:
                     start = scatter[0]
                     stop = scatter[0] + scatter[1] - 1 # Byte range is inclusive
-                    response = self._storage.get_object(self._video_file, f"bytes={start}-{stop}")
-                    out_fp.write(response['Body'].read())
+                    body = self._storage.get_object(self._video_file, start=start, stop=stop)
+                    out_fp.write(body)
 
         return lookup, segment_info
 
