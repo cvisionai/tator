@@ -161,6 +161,8 @@ class TypeForm extends TatorElement {
         return "state-type-edit";
       case "Project" : 
         return "project-main-edit";
+      case "Membership" :
+        return "membership-edit";
       default:
         break;
     }
