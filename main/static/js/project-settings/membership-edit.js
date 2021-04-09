@@ -64,7 +64,7 @@ class MembershipEdit extends TypeForm {
       this.versionSelect = this.inputHelper.inputSelectOptions({
         "labelText": "Default version",
         "name": VERSION.toLowerCase(),
-        "value": data[VERSION.toLowerCase()],
+        "value": data.default_version,
         "optionsList": versionOptions,
         "disabledInput": false,
         "required": true,
