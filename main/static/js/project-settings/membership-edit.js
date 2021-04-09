@@ -226,6 +226,7 @@ class MembershipEdit extends TypeForm {
     // Let user know everything's all set!
     Promise.all(promises).then(() => {
       this.loading.hideSpinner();
+      this._userData.reset();
       let message;
       if (numSucceeded > 0) {
         message = `Successfully created ${numSucceeded} memberships.`;
