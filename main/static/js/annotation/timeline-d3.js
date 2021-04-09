@@ -471,7 +471,7 @@ class TimelineD3 extends TatorElement {
     const mainWidth = this._mainTimelineDiv.offsetWidth;
     this._mainWidth = mainWidth;
 
-    //if (this._mainWidth <= 0) { return; }
+    if (this._mainWidth <= 0) { return; }
     this._mainSvg.attr("viewBox",`0 0 ${mainWidth} ${mainHeight}`);
 
     // Define the axes
@@ -671,8 +671,10 @@ class TimelineD3 extends TatorElement {
 
     // The brush will default to nothing being selected
     this._mainBrushG = this._mainSvg.append("g")
-      .call(this._mainBrush)
-      .call(this._mainBrush.move, [0, 0]);
+      .call(this._mainBrush);
+
+    this._mainBrushG
+      .call(this._mainBrush.move, null);
   }
 
   /**
