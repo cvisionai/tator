@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
+from datetime import timedelta
 from enum import Enum
+import json
 import os
 import logging
+from typing import IO, List, Optional, Tuple, Union
 from urllib.parse import urlsplit, urlunsplit
 
 import boto3
 from botocore.client import Config
 from botocore.errorfactory import ClientError
+from google.cloud import storage
+from google.oauth2.service_account import Credentials
 
 logger = logging.getLogger(__name__)
 
@@ -20,23 +25,24 @@ class ObjectStore(Enum):
 class TatorStorage(ABC):
     """Interface for object storage."""
 
-    def __init__(self, bucket, client):
+    def __init__(self, bucket, client, external_host=None):
+        self.bucket = bucket
         self.bucket_name = bucket.name if bucket else os.getenv("BUCKET_NAME")
-        self.external_host = None if bucket else os.getenv("OBJECT_STORAGE_EXTERNAL_HOST")
-        self.boto3_client = client
+        self.client = client
+        self.external_host = external_host
 
     @classmethod
-    def get_tator_store(cls, server, bucket, client):
+    def get_tator_store(cls, server, bucket, client, external_host=None):
         if server is ObjectStore.AWS:
-            return S3Storage(bucket, client)
+            return S3Storage(bucket, client, external_host)
         if server is ObjectStore.GCP:
-            return GCPStorage(bucket, client)
+            return GCPStorage(bucket, client, external_host)
         if server is ObjectStore.MINIO:
-            return MinIOStorage(bucket, client)
+            return MinIOStorage(bucket, client, external_host)
 
         raise ValueError(f"Server type '{server}' is not supported")
 
-    def _path_to_key(self, path):
+    def _path_to_key(self, path: str) -> str:
         """ Returns the storage key for the given path """
         return path
 
@@ -44,34 +50,51 @@ class TatorStorage(ABC):
     def server(self):
         return self._server
 
-    def check_key(self, path):
+    def check_key(self, path: str) -> bool:
         """ Checks that at least one key matches the given path """
         return self.list_objects_v2(self._path_to_key(path)).get("Contents") is not None
 
     @abstractmethod
-    def head_object(self, path):
+    def head_object(self, path: str) -> dict:
         """ Returns the object metadata for a given path """
 
     @abstractmethod
-    def copy(self, source_path, dest_path, extra_args=None):
+    def copy(self, source_path: str, dest_path: str, extra_args: Optional[dict] = None) -> dict:
         """
         Copies an object from one path to another within the same bucket, applying `extra_args`, if
         any
         """
 
     @abstractmethod
-    def delete_object(self, path):
+    def delete_object(self, path: str) -> dict:
         """ Deletes the object at the given path """
 
     @abstractmethod
-    def get_download_url(self, path, expiration):
+    def get_download_url(self, path: str, expiration: int) -> str:
         """ Gets the presigned url for accessing an object """
 
     @abstractmethod
-    def get_upload_urls(self, path, expiration, num_parts):
-        """ Generates the pre-signed urls for uploading objects for a given path. """
+    def _get_multiple_upload_urls(
+        self, key: str, expiration: int, num_parts: int
+    ) -> Tuple[List[str], str]:
+        """
+        Gets multiple presigned upload urls for uploading a large object in more than one part.
+        """
 
-    def get_size(self, path):
+    @abstractmethod
+    def _get_single_upload_url(self, key: str, expiration: int) -> Tuple[List[str], str]:
+        """ Gets a signle presigned upload url for uploading an object in one part. """
+
+    def get_upload_urls(self, path: str, expiration: int, num_parts: int) -> Tuple[List[str], str]:
+        """ Generates the pre-signed urls for uploading objects for a given path. """
+        key = self._path_to_key(path)
+
+        if num_parts == 1:
+            return self._get_single_upload_url(key, expiration)
+
+        return self._get_multiple_upload_urls(key, expiration, num_parts)
+
+    def get_size(self, path: str) -> int:
         """Returns the size of an object for the given path, if it exists.
         Returns -1 if it does not exist."""
         size = -1
@@ -85,7 +108,7 @@ class TatorStorage(ABC):
         return size
 
     @abstractmethod
-    def list_objects_v2(self, prefix=None, **kwargs):
+    def list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> dict:
         """
         Returns the response from boto3.client.list_objects_v2 for the given prefix. Note that no
         attempts to modify the prefix are made; it is assumed that the given prefix starts with the
@@ -93,44 +116,53 @@ class TatorStorage(ABC):
         """
 
     @abstractmethod
-    def complete_multipart_upload(self, path, parts, upload_id):
+    def complete_multipart_upload(self, path: str, parts: int, upload_id: str) -> dict:
         """ Completes a previously started multipart upload. """
 
     @abstractmethod
-    def put_object(self, path, body):
+    def put_object(self, path: str, body: Union[bytes, IO]) -> dict:
         """ Uploads the contents of `body` to s3 with the path as the basis for the key. """
 
     @abstractmethod
-    def get_object(self, path, byte_range):
+    def get_object(self, path: str, byte_range: str) -> dict:
         """ Gets the byte range of the object for the given path. """
 
     @abstractmethod
-    def download_fileobj(self, path, fp):
+    def download_fileobj(self, path: str, fp: IO) -> None:
         """ Downloads the object for the given path to a file. """
 
-    def archive_object(self, path, desired_storage_class):
+    @abstractmethod
+    def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
+        """ Moves the object into the desired storage class """
+
+    def archive_object(self, path: str, archive_storage_class: str) -> bool:
+        """
+        Moves the object to the archive storage class, if necessary. Returns true if the storage
+        class of the object matches the archive storage class.
+        """
         response = self.head_object(path)
-        if response.get("StorageClass", "") == desired_storage_class:
+        if response.get("StorageClass", "") == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
 
         try:
-            self.copy(
-                path, path, {"StorageClass": desired_storage_class, "MetadataDirective": "COPY"}
-            )
+            self._update_storage_class(path, archive_storage_class)
         except:
             logger.warning(f"Exception while archiving object {path}", exc_info=True)
         response = self.head_object(path)
-        if response.get("StorageClass", "") != desired_storage_class:
+        if response.get("StorageClass", "") != archive_storage_class:
             logger.warning(f"Archiving object {path} failed")
             return False
         return True
 
     @abstractmethod
-    def request_restoration(self, path, desired_storage_class, min_exp_days):
-        """ Requests object restortation from archive storage. """
+    def request_restoration(self, path: str, live_storage_class: str, min_exp_days: int) -> bool:
+        """
+        Requests object restortation from archive storage. Returns True if the request is successful
+        or a request is unnecessary.
+        """
 
-    def restore_resource(self, path, archive_sc, desired_storage_class):
+    def restore_resource(self, path: str, archive_sc: str, live_storage_class: str) -> bool:
         # Check the current state of the restoration request
         response = self.head_object(path)
         request_state = response.get("Restore", "")
@@ -141,7 +173,7 @@ class TatorStorage(ABC):
                 # Something went wrong with the original restoration request
                 logger.warning(f"Object {path} has no associated restoration request")
                 return False
-            if storage_class == desired_storage_class:
+            if storage_class == live_storage_class:
                 logger.info(f"Object {path} live")
                 return True
             if not storage_class:
@@ -164,7 +196,7 @@ class TatorStorage(ABC):
         # Then ongoing-request="false" must be in request_state, which means its storage class can
         # be modified
         try:
-            self.copy(path, path, {"MetadataDirective": "COPY", "StorageClass": bucket.live_sc})
+            self._update_storage_class(path, live_storage_class)
         except:
             logger.warning(
                 f"Exception while changing storage class of object {path}", exc_info=True
@@ -177,35 +209,36 @@ class TatorStorage(ABC):
 
 
 class MinIOStorage(TatorStorage):
-    def __init__(self, bucket, client):
-        super().__init__(bucket, client)
+    def __init__(self, bucket, client, external_host=None):
+        super().__init__(bucket, client, external_host)
         self._server = ObjectStore.MINIO
 
     def head_object(self, path):
-        return self.boto3_client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
+        return self.client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def copy(self, source_path, dest_path, extra_args=None):
-        return self.boto3_client.copy(
+        return self.client.copy(
             CopySource={"Bucket": self.bucket_name, "Key": self._path_to_key(source_path)},
             Bucket=self.bucket_name,
             Key=self._path_to_key(dest_path),
             ExtraArgs=extra_args,
         )
 
-    def request_restoration(self, path, desired_storage_class, min_exp_days):
-        logger.info(f"No storage class change required, object {path} restoration requested")
+    def request_restoration(self, path, live_storage_class, min_exp_days):
+        logger.info(f"No need to request restoration for object {path}")
         return True
 
     def delete_object(self, path):
-        return self.boto3_client.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
+        return self.client.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
-    def get_download_url(self, path, expiration):
+    def get_download_url(self, path: str, expiration: int) -> str:
+        """ Gets the presigned url for accessing an object """
         if os.getenv("REQUIRE_HTTPS") == "TRUE":
             PROTO = "https"
         else:
             PROTO = "http"
         # Generate presigned url.
-        url = self.boto3_client.generate_presigned_url(
+        url = self.client.generate_presigned_url(
             ClientMethod="get_object",
             Params={"Bucket": self.bucket_name, "Key": self._path_to_key(path)},
             ExpiresIn=expiration,
@@ -217,50 +250,43 @@ class MinIOStorage(TatorStorage):
             url = urlunsplit(parsed)
         return url
 
-    def get_upload_urls(self, path, expiration, num_parts):
-        key = self._path_to_key(path)
-        if num_parts == 1:
-            upload_id = ""
-            urls = [
-                self.boto3_client.generate_presigned_url(
-                    ClientMethod="put_object",
-                    Params={"Bucket": self.bucket_name, "Key": key},
-                    ExpiresIn=expiration,
-                )
-            ]
-        else:
-            response = self.boto3_client.create_multipart_upload(Bucket=self.bucket_name, Key=key)
-            upload_id = response["UploadId"]
-            urls = [
-                self.boto3_client.generate_presigned_url(
-                    ClientMethod="upload_part",
-                    Params={
-                        "Bucket": self.bucket_name,
-                        "Key": key,
-                        "UploadId": upload_id,
-                        "PartNumber": part,
-                    },
-                    ExpiresIn=expiration,
-                )
-                for part in range(1, num_parts + 1)
-            ]
+    def _get_multiple_upload_urls(self, key, expiration, num_parts):
+        response = self.client.create_multipart_upload(Bucket=self.bucket_name, Key=key)
+        upload_id = response["UploadId"]
+        urls = [
+            self.client.generate_presigned_url(
+                ClientMethod="upload_part",
+                Params={
+                    "Bucket": self.bucket_name,
+                    "Key": key,
+                    "UploadId": upload_id,
+                    "PartNumber": part,
+                },
+                ExpiresIn=expiration,
+            )
+            for part in range(1, num_parts + 1)
+        ]
 
+        for url in urls:
+            logger.info(f"GOOGLE {url}")
         return urls, upload_id
+
+    def _get_single_upload_url(self, key: str, expiration: int) -> Tuple[List[str], str]:
+        url = self.client.generate_presigned_url(
+            ClientMethod="put_object",
+            Params={"Bucket": self.bucket_name, "Key": key},
+            ExpiresIn=expiration,
+        )
+        return [url], ""
 
     def list_objects_v2(self, prefix=None, **kwargs):
         if prefix is not None:
             kwargs["Prefix"] = prefix
 
-        response = self.boto3_client.list_objects_v2(Bucket=self.bucket_name, **kwargs)
-
-        # GCP response does not contain the key count
-        if "KeyCount" not in response:
-            response["KeyCount"] = len(response["Contents"]) if "Contents" in response else 0
-
-        return response
+        return self.client.list_objects_v2(Bucket=self.bucket_name, **kwargs)
 
     def complete_multipart_upload(self, path, parts, upload_id):
-        return self.boto3_client.complete_multipart_upload(
+        return self.client.complete_multipart_upload(
             Bucket=self.bucket_name,
             Key=self._path_to_key(path),
             MultipartUpload={"Parts": parts},
@@ -268,30 +294,33 @@ class MinIOStorage(TatorStorage):
         )
 
     def put_object(self, path, body):
-        return self.boto3_client.put_object(
+        return self.client.put_object(
             Bucket=self.bucket_name, Key=self._path_to_key(path), Body=body
         )
 
     def get_object(self, path, byte_range):
-        return self.boto3_client.get_object(
+        return self.client.get_object(
             Bucket=self.bucket_name, Key=self._path_to_key(path), Range=byte_range
         )
 
     def download_fileobj(self, path, fp):
-        self.boto3_client.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
+        self.client.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
+
+    def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
+        self.copy(path, path, {"StorageClass": desired_storage_class, "MetadataDirective": "COPY"})
 
 
 class S3Storage(MinIOStorage):
-    def __init__(self, bucket, client):
-        super().__init__(bucket, client)
+    def __init__(self, bucket, client, external_host=None):
+        super().__init__(bucket, client, external_host)
         self._server = ObjectStore.AWS
 
     def _path_to_key(self, path):
         return f"{self.bucket_name}/{path}"
 
-    def request_restoration(self, path, desired_storage_class, min_exp_days):
+    def request_restoration(self, path, live_storage_class, min_exp_days):
         response = self.head_object(path)
-        if response.get("StorageClass", "") == desired_storage_class:
+        if response.get("StorageClass", "") == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
             return True
         if 'ongoing-request="true"' in response.get("Restore", ""):
@@ -304,7 +333,7 @@ class S3Storage(MinIOStorage):
                 f"Exception while requesting restoration of object {path}", exc_info=True
             )
         response = self.head_object(path)
-        if response.get("StorageClass", "") == desired_storage_class:
+        if response.get("StorageClass", "") == live_storage_class:
             logger.info(f"Object {path} live")
             return True
         if "ongoing-request" in response.get("Restore", ""):
@@ -319,22 +348,83 @@ class S3Storage(MinIOStorage):
         Requests object restoration from archive. Currently, only ObjectStore.AWS supports this
         operation.
         """
-        return self.boto3_client._restore_object(
+        return self.client.restore_object(
             Bucket=self.bucket_name,
             Key=self._path_to_key(path),
             RestoreRequest={"Days": min_exp_days},
         )
 
 
-# TODO finish GCPStorage class
-class GCPStorage(MinIOStorage):
-    def __init__(self, bucket, client):
-        super().__init__(bucket, client)
+class GCPStorage(TatorStorage):
+    def __init__(self, bucket, client, external_host=None):
+        super().__init__(bucket, client, external_host)
         self._server = ObjectStore.GCP
+        self.gcs_bucket = self.client.get_bucket(self.bucket_name)
 
-    def request_restoration(self, path, desired_storage_class, min_exp_days):
-        logger.info(f"No need to request restoration from GCP for object {path}")
+    def check_key(self, path):
+        pass
+
+    def head_object(self, path):
+        pass
+
+    def copy(self, source_path, dest_path, extra_args=None):
+        pass
+
+    def delete_object(self, path):
+        pass
+
+    def get_download_url(self, path, expiration):
+        pass
+
+    def _get_multiple_upload_urls(self, key, expiration, num_parts):
+        url_and_id = self.gcs_bucket.blob(key).create_resumable_upload_session()
+        return [url_and_id] * num_parts, url_and_id
+
+    def _get_single_upload_url(self, key, expiration):
+        url = self.bucket.blob(key).generate_signed_url(
+            version="v4",
+            expiration=timedelta(seconds=expiration),
+            method="PUT",
+            content_type="application/octet-stream",
+        )
+        return [url], ""
+
+    def list_objects_v2(self, prefix=None, **kwargs):
+        pass
+
+    def complete_multipart_upload(self, path, parts, upload_id):
+        pass
+
+    def put_object(self, path, body):
+        pass
+
+    def get_object(self, path, byte_range):
+        pass
+
+    def download_fileobj(self, path, fp):
+        pass
+
+    def _update_storage_class(self, path, desired_storage_class):
+        pass
+
+    def request_restoration(self, path, live_storage_class, min_exp_days):
+        logger.info(f"No need to request restoration for object {path}")
         return True
+
+    def list_objects_v2(self, prefix=None, **kwargs):
+        response = super().list_objects_v2(prefix, **kwargs)
+
+        # GCP response does not contain the key count
+        response["KeyCount"] = len(response["Contents"]) if "Contents" in response else 0
+
+        return response
+
+    def _update_storage_class(self, path, desired_storage_class):
+        pass
+
+    def complete_multipart_upload(self, path, parts, upload_id):
+        logger.info(f"No need to complete upload for GCP store")
+        return {}
 
 
 def get_tator_store(bucket=None) -> TatorStorage:
@@ -349,6 +439,11 @@ def get_tator_store(bucket=None) -> TatorStorage:
         secret_key = os.getenv("OBJECT_STORAGE_SECRET_KEY")
         bucket_name = os.getenv("BUCKET_NAME")
         external_host = os.getenv("OBJECT_STORAGE_EXTERNAL_HOST")
+    elif bucket.gcs_key_info:
+        gcs_key_info = json.loads(bucket.gcs_key_info)
+        gcs_project = gcs_key_info["project_id"]
+        client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
+        return TatorStorage.get_tator_store(server, bucket, client)
     else:
         endpoint = bucket.endpoint_url
         region = bucket.region
@@ -392,7 +487,7 @@ def get_tator_store(bucket=None) -> TatorStorage:
     else:
         server = ObjectStore(response["ResponseMetadata"]["HTTPHeaders"]["server"])
 
-    return TatorStorage.get_tator_store(server, bucket, client)
+    return TatorStorage.get_tator_store(server, bucket, client, external_host)
 
 
 def get_storage_lookup(resources):

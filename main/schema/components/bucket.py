@@ -27,11 +27,15 @@ bucket_properties = {
         'description': 'Storage class in which live objects live.',
         'type': 'string',
     },
+    'gcs_key_info': {
+        'description': 'JSON string containing Google Cloud Storage credentials.',
+        'type': 'string',
+    },
 }
 
 bucket_spec = {
     'type': 'object',
-    'required': ['name', 'access_key', 'secret_key', 'endpoint_url', 'region'],
+    'required': ['name'],
     'properties': bucket_properties,
 }
 

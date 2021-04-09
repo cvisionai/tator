@@ -1,3 +1,4 @@
+import json
 import os
 import traceback
 
@@ -344,19 +345,40 @@ class Bucket(Model):
     """
     organization = ForeignKey(Organization, on_delete=SET_NULL, null=True, blank=True)
     name = CharField(max_length=63)
-    access_key = CharField(max_length=128)
-    secret_key = CharField(max_length=40)
-    endpoint_url = CharField(max_length=1024)
-    region = CharField(max_length=16)
+    access_key = CharField(max_length=128, null=True, blank=True)
+    secret_key = CharField(max_length=40, null=True, blank=True)
+    endpoint_url = CharField(max_length=1024, null=True, blank=True)
+    region = CharField(max_length=16, null=True, blank=True)
     archive_sc = CharField(
-        max_length=16,
+        max_length=32,
         choices=[
             ("STANDARD", "STANDARD"),
             ("DEEP_ARCHIVE", "DEEP_ARCHIVE"),
             ("COLDLINE", "COLDLINE"),
         ],
     )
-    live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")])
+    live_sc = CharField(max_length=32, choices=[("STANDARD", "STANDARD")])
+    gcs_key_info = TextField(null=True, blank=True)
+
+    @classmethod
+    def validate_kwargs(cls, **kwargs):
+        """ Checks for the existence of keys that define S3 or GCS access, but not both. """
+        gcs_keys = "gcs_key_info" in kwargs
+        s3_keys = all(
+            key in kwargs for key in ["access_key", "secret_key", "endpoint_url", "region"]
+        )
+
+        if gcs_keys == s3_keys:
+            raise ValueError(
+                f"Must specify S3 or GCS params, not {'both' if gcs_keys else 'neither'}."
+            )
+
+        if gcs_keys:
+            try:
+                json.loads(kwargs["gcs_key_info"])
+            except json.JSONDecodeError:
+                logger.warning("Received invalid json while creating bucket.")
+                raise
 
     @staticmethod
     def _sc_validator(
@@ -366,16 +388,12 @@ class Bucket(Model):
         default_storage_class,
         storage_type,
     ):
-        storage_class = params.get(sc_type, "")
         new_params = dict(params)
-
-        if storage_class:
-            if storage_class not in valid_storage_classes:
-                raise ValueError(
-                    f"'{sc_type}' storage class '{archive_sc}' invalid for {storage_type} store"
-                )
-        else:
-            new_params[sc_type] = default_storage_class
+        storage_class = new_params.setdefault(sc_type, default_storage_class)
+        if storage_class not in valid_storage_classes:
+            raise ValueError(
+                f"{sc_type[:-3].title()} storage class '{storage_class}' invalid for {storage_type} store"
+            )
 
         return new_params
 
@@ -388,57 +406,40 @@ class Bucket(Model):
         server = get_tator_store(self).server
 
         if server is ObjectStore.GCP:
-            new_params = self._sc_validator(
-                params,
-                "archive_sc",
-                ["STANDARD_STORAGE_CLASS", "COLDLINE_STORAGE_CLASS"],
-                "COLDLINE_STORAGE_CLASS",
-                "Google Cloud Storage",
-            )
-            new_params = self._sc_validator(
-                new_params,
-                "live_sc",
-                ["STANDARD_STORAGE_CLASS"],
-                "STANDARD_STORAGE_CLASS",
-                "Google Cloud",
-            )
-            return new_params
+            valid_archive_storage_classes = ["STANDARD", "COLDLINE"]
+            default_archive_storage_class = "COLDLINE"
+            valid_live_storage_classes = ["STANDARD"]
+            default_live_storage_class = "STANDARD"
+            storage_type = "Google Cloud Storage"
+        elif server is ObjectStore.AWS:
+            valid_archive_storage_classes = ["STANDARD", "DEEP_ARCHIVE"]
+            default_archive_storage_class = "DEEP_ARCHIVE"
+            valid_live_storage_classes = ["STANDARD"]
+            default_live_storage_class = "STANDARD"
+            storage_type = "Amazon AWS"
+        elif server is ObjectStore.MINIO:
+            valid_archive_storage_classes = ["STANDARD"]
+            default_archive_storage_class = "STANDARD"
+            valid_live_storage_classes = ["STANDARD"]
+            default_live_storage_class = "STANDARD"
+            storage_type = "MinIO"
+        else:
+            raise ValueError(f"Found unknown server type {server}")
 
-        if server is ObjectStore.AWS:
-            new_params = self._sc_validator(
-                params,
-                "archive_sc",
-                ["STANDARD", "DEEP_ARCHIVE"],
-                "DEEP_ARCHIVE",
-                "Amazon AWS",
-            )
-            new_params = self._sc_validator(
-                new_params,
-                "live_sc",
-                ["STANDARD"],
-                "STANDARD",
-                "Amazon AWS",
-            )
-            return new_params
-
-        if server is ObjectStore.MINIO:
-            new_params = self._sc_validator(
-                params,
-                "archive_sc",
-                ["STANDARD"],
-                "STANDARD",
-                "MinIO",
-            )
-            new_params = self._sc_validator(
-                new_params,
-                "live_sc",
-                ["STANDARD"],
-                "STANDARD",
-                "MinIO",
-            )
-            return new_params
-
-        raise ValueError(f"Found unknown server type {server}")
+        new_params = self._sc_validator(
+            params,
+            "archive_sc",
+            valid_archive_storage_classes,
+            default_archive_storage_class,
+            storage_type,
+        )
+        return self._sc_validator(
+            new_params,
+            "live_sc",
+            valid_live_storage_classes,
+            default_live_storage_class,
+            storage_type,
+        )
 
 
 class Project(Model):

@@ -36,6 +36,9 @@ class BucketListAPI(BaseListView):
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
 
+        # Must specify S3 or GCS access keys, not both
+        Bucket.validate_kwargs(**params)
+
         # Create a temporary Bucket object for storage class validation
         temp_bucket = Bucket(**params)
         params = temp_bucket.validate_storage_classes(params)
@@ -70,6 +73,12 @@ class BucketDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
+        try:
+            Bucket.validate_kwargs(**params)
+        except ValueError as err:
+            # Allow for partial updates to S3 parameters
+            if "neither" not in err.message:
+                raise
         bucket = Bucket.objects.select_for_update().get(pk=params['id'])
         bucket.validate_storage_classes(params)
 
@@ -87,6 +96,8 @@ class BucketDetailAPI(BaseDetailView):
             bucket.archive_sc = params["archive_sc"]
         if "live_sc" in params:
             bucket.live_sc = params["live_sc"]
+        if "gcs_key_info" in params:
+            bucket.gcs_key_info = params["gcs_key_info"]
         bucket.save()
         return {'message': f"Bucket {params['id']} updated successfully!"}
 
