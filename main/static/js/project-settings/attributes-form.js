@@ -136,6 +136,7 @@ class AttributesForm extends TatorElement {
   }
 
   _getFormWithValues({
+    clone = false,
     name = "",
     description = "",
     required = false,
@@ -148,6 +149,10 @@ class AttributesForm extends TatorElement {
     choices = [],
     labels = []
   } = {}) {
+
+    // do we want to save all the data shown
+    this.isClone = clone;
+
     // gets attribute object as param destructured over these values
     //sets value on THIS form
     this.form = this._initEmptyForm();
@@ -204,7 +209,7 @@ class AttributesForm extends TatorElement {
       // Choices only apply for enum types
       this._getChoicesInputs({ value : this.choicesVal });
       this._getLabelsInputs({ value : this.labelsVal });
-      this._getEnumDefaultCol();
+      this._getEnumDefaultCol({ defaultVal : this._default});
     }
     
     // if it is not dtype==enum it hides
@@ -282,7 +287,7 @@ class AttributesForm extends TatorElement {
       if (typeof this._choices == "undefined" || this._choices == null) {
         this._getLabelsInputs({});
         this._getChoicesInputs({});
-        this._getEnumDefaultCol();
+        this._getEnumDefaultCol({});
       }
 
       this.placeholderEnum.classList.remove("hidden");
@@ -417,7 +422,11 @@ class AttributesForm extends TatorElement {
     return this._labels
   }
 
-  _getEnumDefaultCol(){
+  _getEnumDefaultCol({defaultVal}){
+    this._enumDefault = {};
+    this._enumDefault.value = defaultVal;
+    this._enumDefault.changed = false;
+
     if(this.placeholderEnum.children > 0) {
       this.placeholderEnum.innerHTML = "";
     }
@@ -430,6 +439,10 @@ class AttributesForm extends TatorElement {
 
     if(this.choicesVal && this.choicesVal.length > 0){
       for(let i of this.choicesVal){
+        let defaultFlag = false;
+        if(this.choicesVal[i] == this._enumDefault.value) {
+          defaultFlag = true;
+        }
         this.appendDefaultRow();
       }
     }
@@ -448,6 +461,8 @@ class AttributesForm extends TatorElement {
       const parent = child.parentNode;
       const index = Array.prototype.indexOf.call(parent.children, child);
       console.log( "New enum default : " + this._choices._inputs[index].getValue() );
+      this._enumDefault.value = this._choices._inputs[index].getValue();
+      this._enumDefault.changed = true;
     });
 
   }
@@ -634,73 +649,68 @@ class AttributesForm extends TatorElement {
     const formData = {};
 
     // name only if changed || can not be "" 
-    if (this._name.changed() && this._name.getValue()) {
+    if ((this._name.changed() || this.isClone) && this._name.getValue() ) {
       formData.name = this._name.getValue();
     }
 
     // 
-    if (this._description.changed() && this._description.getValue()) {
+    if ((this._description.changed()  || this.isClone) && this._description.getValue()) {
       formData.description = this._description.getValue();
     }
 
     //
-    if (this._order.changed() && this._order.getValue()) {
+    if ((this._order.changed()  || this.isClone)&& this._order.getValue()) {
       formData.order = this._order.getValue();
     }
 
     //
-    if (this._required.changed() && this._required.getValue()) {
+    if ((this._required.changed() || this.isClone) && this._required.getValue()) {
       formData.required = this._required.getValue();
     }
 
     //
-    if (this._visible.changed() && this._visible.getValue()) {
+    if ((this._visible.changed() || this.isClone) && this._visible.getValue()) {
       formData.visible = this._visible.getValue();
     }
 
     //
     const dtype = this._dtype.getValue();
-    if (this._dtype.changed() && dtype) {
+    if ((this._dtype.changed() || this.isClone) && dtype) {
       formData.dtype = this._dtype.getValue();
     }
 
     let _default = ""
     if(dtype == "enum"){
-      // try getting the checked, fall back to first, otherwise will use default of ""
-      const child = this.enumDefaultCol.querySelector(`input[name="enum-default"]:checked`)
-      const parent = child.parentNode;
-      const index = Array.prototype.indexOf.call(parent.children, child);
-
-      // @TODO check if this changed first?
-      _default = this._choices._inputs[index].getValue();
-      formData["default"] = _default;
-    } else {
-      if (this._default.changed() && this._default.getValue()) {
-        _default = this._default.getValue();
+      if ((this._enumDefault.changed || this.isClone) && this.enumDefaultValue) {
+        formData["default"] = this.enumDefaultValue;
       }
-      formData["default"] = _default;
+    } else {
+      if ((this._default.changed() || this.isClone) && this._default.getValue()) {
+        _default = this._default.getValue();
+        formData["default"] = _default;
+      }
     }
     
 
     // 
     if (dtype === "int" || dtype === "float") {
       //
-      if (this._minimum.changed() && this._minimum.getValue()) {
+      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue()) {
         formData.minimum = Number(this._minimum.getValue());
       }
 
       //
-      if (this._maximum.changed() && this._maximum.getValue()) {
+      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue()) {
         formData.maximum = Number(this._maximum.getValue());
       }
     }
 
     if (dtype === "enum") {
-      if (this._choices.changed() && this._choices.getValue()) {
+      if ((this._choices.changed() || this.isClone) && this._choices.getValue()) {
         formData.choices = this._choices.getValue();
       }
 
-      if (this._labels.changed() && this._labels.getValue()) {
+      if ((this._labels.changed() || this.isClone) && this._labels.getValue()) {
         formData.labels = this._labels.getValue();
       }
     }
