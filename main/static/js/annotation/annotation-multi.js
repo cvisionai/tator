@@ -527,7 +527,7 @@ class AnnotationMulti extends TatorElement {
 
       // This is the array of all
       this._fps[idx] = video_info.fps;
-      if (idx == 0)
+      if (idx == this._longest_idx)
       {
         let prime = this._videos[idx];
         this.parent._browser.canvas = prime;
@@ -721,7 +721,6 @@ class AnnotationMulti extends TatorElement {
             max_frames = Number(info[idx].num_frames);
             fps_of_max = Number(info[idx].fps);
           }
-          setup_video(idx, info[idx]);
           this._fps[idx] = info[idx].fps;
           this._lengths[idx] = info[idx].num_frames;
           this._lengthTimes[idx] = info[idx].num_frames / info[idx].fps;
@@ -729,6 +728,10 @@ class AnnotationMulti extends TatorElement {
           {
             this._longest_idx = idx;
           }
+        }
+        for (let idx = 0; idx < video_info.length; idx++)
+        {
+          setup_video(idx, info[idx]);
         }
         this._fps_of_max = fps_of_max;
         this._totalTime.textContent = "/ " + this._frameToTime(max_frames);
