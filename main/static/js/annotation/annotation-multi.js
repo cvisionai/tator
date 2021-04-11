@@ -162,7 +162,7 @@ class AnnotationMulti extends TatorElement {
       this.dispatchEvent(new Event("displayLoading", {composed: true}));
 
       // Only use the current frame to prevent glitches
-      let frame = this._videos[0].currentFrame();
+      let frame = this._videos[this._longest_idx].currentFrame();
       if (evt.detail)
       {
         frame = evt.detail.frame;
