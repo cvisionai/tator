@@ -1,402 +1,594 @@
-class AttributesForm extends HTMLElement {
+class AttributesForm extends TatorElement {
   constructor() {
     super();
 
     // Required helpers.
     this.inputHelper = new SettingsInput("media-types-main-edit");
 
+    // Flag values
+    this._changed = false;
   }
 
-  _initEmptyForm(){
+  set changed(val) {
+    this.dispatchEvent(new Event("change"));
+    return this._changed = val;
+  }
+
+  changeReset() {
+    return this._changed = false;
+  }
+
+  _initEmptyForm() {
     const form = document.createElement("form");
     this.form = form;
 
-    //this.form.addEventListener("change", this._formChanged);
-    this.form.addEventListener("change", (event) => {
-      console.log("attribute form changed");
-      console.log("Event target... "+event.target.value);
-      return event.target.closest('form').classList.add("changed");
-    });   
+    this.form.addEventListener("change", this._formChanged.bind(this));
+    // this.form.addEventListener("change", (event) => {
+    //   console.log("Attribute form changed");
+    //   this.changed = true;
+    //   return this.form.classList.add("changed");
+    // });   
 
 
     // Fields for this form
-    // append input for name
-    const NAME = "Name";
-    this.form.appendChild( this.inputHelper.inputText({
-      "labelText" : NAME,
-      "name" : NAME.toLowerCase(),
-      "value" : ""
-    }) );
+    // name
+    this._name = document.createElement("text-input");
+    this._name.setAttribute("name", "Name");
+    this._name.setAttribute("type", "string");
+    this._name.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._name);
 
-    let dataTypeSelectDiv = document.createElement("div");
-    dataTypeSelectDiv.setAttribute("class", "dataTypeSelectDiv");
-    dataTypeSelectDiv.append( this._getDtypeSelectBox( "" ) );
-    this.form.appendChild(dataTypeSelectDiv);
+    // dtype
+    /* the selection will change based on current value */
+    this.dataTypeSelectDiv = document.createElement("div");
+    this.form.appendChild(this.dataTypeSelectDiv);
 
-    // description
-    const DESCRIPTION = "Description";
-    this.form.appendChild( this.inputHelper.inputText( {
-      "labelText" : DESCRIPTION,
-      "name" : DESCRIPTION.toLowerCase(),
-      "value" : ""
-    } ) );
-
-    // order
-    const ORDER = "Order";
-    this.form.appendChild( this.inputHelper.inputText( {
-      "labelText" : ORDER,
-      "name" : ORDER.toLowerCase(),
-      "value" : 0,
-      "type" : "number"
-    } ) );
-
-    // required
-    const REQUIRED = "Required";
-    let req_slideObj = this.inputHelper.inputRadioSlide({
-      labelText : REQUIRED,
-      name : REQUIRED.toLowerCase(),
-      value : false,
-      getSlide : true
-    });
-    this.req_slide = req_slideObj.slide;
-    this.form.appendChild( req_slideObj.fieldset );
-
-    // visible
-    const VISIBLE = "Visible";
-    let vis_slideObj = this.inputHelper.inputRadioSlide({
-      labelText : VISIBLE,
-      name : VISIBLE.toLowerCase(),
-      value : false,
-      getSlide : true
-    });
-    this.vis_slide = vis_slideObj.slide;
-    this.form.appendChild( vis_slideObj.fieldset );
+    this._getDtypeSelectBox("");
+    this.dataTypeSelectDiv.appendChild(this._dtype);
+    
+    this._dtype.addEventListener("change", this._formChanged.bind(this));
 
     // default
-    this.form.appendChild( this._getDefaultInput( 0 ) );
+    /* input inside placeholder hidden until dtype selected */
+    this.placeholderDefault = document.createElement("div");
+    this.placeholderDefault.setAttribute("class", "hidden");
+    this.form.appendChild(this.placeholderDefault);
 
-    /*** @todo - The remaining are added when dtype is added or when values provided ***/
-    // let placeholderDefault = document.createElement("div");
-    // placeholderDefault.setAttribute("class", "placeholderDefault");
-    // this.form.appendChild(placeholderDefault);
+    // description
+    this._description = document.createElement("text-input");
+    this._description.setAttribute("type", "string");
+    this._description.setAttribute("name", "Description");
+    this._description.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._description);
 
-    let placeholderMin = document.createElement("div");
-    placeholderMin.setAttribute("class", "placeholderMin");
-    this.form.appendChild(placeholderMin);
+    // order
+    this._order = document.createElement("text-input");
+    this._order.setAttribute("name", "Order");
+    this._order.setAttribute("type", "int");
+    this._order.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._order);
 
-    let placeholderMax = document.createElement("div");
-    placeholderMax.setAttribute("class", "placeholderMax");
-    this.form.appendChild(placeholderMax);
+    // required
+    this._required = document.createElement("bool-input");
+    this._required.setAttribute("name", "Required");
+    this._required.setAttribute("on-text", "Yes");
+    this._required.setAttribute("off-text", "No");
+    this._required.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._required);
 
-    let placeholderChoices = document.createElement("div");
-    placeholderChoices.setAttribute("class", "placeholderChoices");
-    this.form.appendChild(placeholderChoices);
+    // visible
+    this._visible = document.createElement("bool-input");
+    this._visible.setAttribute("name", "Visible");
+    this._visible.setAttribute("on-text", "Yes");
+    this._visible.setAttribute("off-text", "No");
+    this._visible.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._visible);
 
-    let placeholderLabels = document.createElement("div");
-    placeholderLabels.setAttribute("class", "placeholderLabels");
-    this.form.appendChild(placeholderLabels);
+    // minimum
+    /* input inside placeholder hidden until dtype selected */
+    this.placeholderMin = document.createElement("div");
+    this.placeholderMin.setAttribute("class", "hidden");
+    this.form.appendChild(this.placeholderMin);
+
+    // maximum
+    /* input inside placeholder hidden until dtype selected */
+    this.placeholderMax = document.createElement("div");
+    this.placeholderMax.setAttribute("class", "hidden");
+    this.form.appendChild(this.placeholderMax);
+
+    // enum inputs @todo this can replace separate labels & choices
+    this.placeholderEnum = document.createElement("div");
+    this.placeholderEnum.setAttribute("class", "hidden clear-fix");
+
+    const labelHolder = document.createElement("div");
+    labelHolder.setAttribute("class", "col-4 float-left");
+    const enumLabel = document.createTextNode("Enum Choices");
+    labelHolder.appendChild(enumLabel);
+
+    this.placeholderEnum.appendChild(labelHolder);
+    this.form.appendChild(this.placeholderEnum);
+
+
+    // labels
+    /* input inside placeholder hidden until dtype selected */
+    this.placeholderLabels = document.createElement("div");
+    this.placeholderLabels.setAttribute("class", "col-3 float-left");
+    this.placeholderEnum.appendChild(this.placeholderLabels);
+
+    // choices
+    /* input inside placeholder hidden until dtype selected */
+    this.placeholderChoices = document.createElement("div");
+    this.placeholderChoices.setAttribute("class", "col-3 float-left");
+    this.placeholderEnum.appendChild(this.placeholderChoices);
+
+
+    this._shadow.appendChild(this.form);
 
     return this.form;
   }
 
-  // _formChanged(event){
-  //   console.log("attribute form changed");
-  //   console.log("Event target... "+event.target.value);
-  //   return this.form.classList.add("changed");
-  // }
+  _formChanged() {
+    console.log("Attribute form changed");
+    this.changed = true;
+    return this.form.classList.add("changed");
+  }
 
   _getFormWithValues({
     name = "",
     description = "",
-    required = "",
-    visible = "",
+    required = false,
+    visible = false,
     dtype = "",
     order = "",
     _default = "",
     minimum = "",
     maximum = "",
-    choices = "",
-    labels = ""
-  } = {}){
+    choices = [],
+    labels = []
+  } = {}) {
     // gets attribute object as param destructured over these values
     //sets value on THIS form
     this.form = this._initEmptyForm();
 
-    // These just require a value.
-    this.form.querySelector(`input[name^="name"]`).value = name;
-    this.form.querySelector(`input[name^="description"]`).value = description;
-    this.form.querySelector(`input[name^="order"]`).value = order;
-    //this.form.querySelector(`input[name^="required"]`).value = required;
-    //this.form.querySelector(`input[name^="visible"]`).value = visible;
-    this.form.querySelector(`input[name^="default"]`).value = _default;
+    /* fields that are always available */
+    // Set Name
+    this._name.default = name;
+    this._name.setValue(name);
 
-    // Bools require value set differently
-    this.req_slide.setValue( required );
-    this.vis_slide.setValue( visible );
+    // Set description
+    this._description.default = description;
+    this._description.setValue(description);
 
-    // The dtype select & following fields changes on selection
-    this.form.querySelector(`.dataTypeSelectDiv`).innerHTML = "";
-    this.form.querySelector(`.dataTypeSelectDiv`).appendChild( this._getDtypeSelectBox( dtype ) );
+    // Set order
+    this._order.default = order;
+    this._order.setValue(order);
 
-    this._showMin(dtype, this._getMinInput( minimum ));
-    this._showMax(dtype, this._getMaxInput( maximum ));
+    // required
+    this._required.default = required;
+    this._required.setValue(required);
 
-    this._showChoices(dtype, this._getChoicesInputs( choices ) );
-    this._showLabels(dtype, this._getLabelsInputs( labels ));
+    // visible
+    this._visible.default = visible;
+    this._visible.setValue(visible);
+
+    /* fields that are dynamic */
+    // dtype is reset
+    this._getDtypeSelectBox(dtype);
+
+    // default depends on dtype so use this method
+    if (dtype == 'Select')
+    this._getDefaultInput({
+      dtype,
+      value : _default,  // create new el w/ this value 
+      enumOptions: { choices, labels }
+    });
+    this._showDefault({ dtype });
+
+
+    // minimum
+    this._getMinInput({ value : minimum });
+    this._showMin({ dtype });
+
+    // maximum
+    this._getMaxInput({ value : maximum });
+    this._showMax({ dtype });
+
+
+    if (dtype == 'enum'){
+      this.choicesVal = choices;
+      this.labelsVal = labels;
+      if(choices.length != labels.length) this._optionLengthEqual();
+
+      // Choices only apply for enum types
+      this._getChoicesInputs({ value : this.choicesVal });
+      this._getLabelsInputs({ value : this.labelsVal });
+      this._getEnumDefaultCol();
+    }
+    
+    // if it is not dtype==enum it hides
+    this._showEnumInputs({ dtype });
 
     return this.form;
   }
 
-  // _showDefault( dtype, _default =  this._getDefaultInput( "" ) ){
-  //   let showDefault = (dtype != 'datetime' && dtype != 'geopos') ? true : false;
-  //   if(showDefault){
-  //     this.form.querySelector(`.placeholderDefault`).hidden = false;
-  //
-  //     if(!this.form.querySelector(`.placeholderDefault input`)){
-  //       if(dtu)
-  //       this.form.querySelector(`.placeholderDefault`).appendChild( _default );
-  //     }
-  //
-  //   } else {
-  //     this.form.querySelector(`.placeholderDefault`).hidden = true;
-  //   }
-  // }
-
-  _showMin(dtype, minimum =  this._getMinInput( 0 )){
-    let showMinMax = (dtype == 'int' || dtype == 'float') ? true : false;
-    if(showMinMax){
-      this.form.querySelector(`.placeholderMin`).hidden = false;
-      if(!this.form.querySelector(`.placeholderMin input`)){
-        this.form.querySelector(`.placeholderMin`).appendChild(  minimum  );
-      }
-    } else {
-      this.form.querySelector(`.placeholderMin`).hidden = true;
-    }
-  }
-
-  _showMax(dtype, maximum = this._getMaxInput( 0 )){
-    let showMinMax = (dtype == 'int' || dtype == 'float') ? true : false;
-    if(showMinMax){
-      this.form.querySelector(`.placeholderMax`).hidden = false;
-      if(!this.form.querySelector(`.placeholderMax input`)){
-        this.form.querySelector(`.placeholderMax`).appendChild(  maximum  );
-      }
-    } else {
-      this.form.querySelector(`.placeholderMax`).hidden = true;
-    }
-  }
-
-  _showChoices(dtype, choices =  this._getChoicesInputs( [] ) ){
-    let showChoiceAndLabels = dtype == 'enum' ? true : false;
-    if(showChoiceAndLabels){
-      this.form.querySelector(`.placeholderChoices`).hidden = false;
-      if(!this.form.querySelector(`.placeholderChoices input`)){
-        this.form.querySelector(`.placeholderChoices`).appendChild( choices );
-      }
-    } else {
-      this.form.querySelector(`.placeholderChoices`).hidden = true;
-    }
-  }
-
-  _showLabels(dtype, labels =  this._getLabelsInputs( [] ) ){
-    let showChoiceAndLabels = dtype == 'enum' ? true : false;
-    if(showChoiceAndLabels){
-      this.form.querySelector(`.placeholderLabels`).hidden = false;
-      if(!this.form.querySelector(`.placeholderLabels input`)){
-        this.form.querySelector(`.placeholderLabels`).appendChild( labels );
-      }
-    } else {
-      this.form.querySelector(`.placeholderLabels`).hidden = true;
-    }
-  }
-
-  _getDefaultInput( value, dtype ){
-    const DEFAULT = "Default";
-    let defaultType = "text"
-    if(dtype && dtype == "datetime") defaultType = "datetime-local";
-    
-    return this.inputHelper.inputText({
-      "value" : value,
-      "labelText" : DEFAULT,
-      "name" : DEFAULT.toLowerCase(),
-      "type" : defaultType
-    } ) ;
-  }
-
-  _getMinInput( value ){
-    const MIN = "Minimum";
-    return this.inputHelper.inputText({
-      "labelText" : MIN,
-      "name" : MIN.toLowerCase(),
-      "value" : value,
-      "type" : "number" // number
-    } );
-  }
-
-  _getMaxInput(value){
-    const MAX = "Maximum";
-    return this.inputHelper.inputText({
-        "labelText" : MAX,
-        "name" : MAX.toLowerCase(),
-        "value" : value,
-        "type" : "number" //number
-      } );
-  }
-
-  _getChoicesInputs(value){
-    const CHOICES = "Choices";
-    return this.inputHelper.arrayInputText({
-      "labelText": CHOICES,
-      "name": CHOICES.toLowerCase(),
-      "value": value,
-      "type" : "text"
-    } );
-  }
-
-  _getLabelsInputs(value){
-    const LABELS = "Labels";
-    return this.inputHelper.arrayInputText( {
-      "labelText": LABELS,
-      "name": LABELS.toLowerCase(),
-      "value": value,
-      "type" : "text" //number
-    } );
-  }
-
-  _getDtypeFields(dtype){
-    console.log("_getDtypeFields for " + dtype);
-
-    // now based on DTYPE *** will reveal fields, or create them
-    //this._showDefault(dtype);
-    this._showMin(dtype);
-    this._showMax(dtype);
-    this._showChoices(dtype);
-    this._showLabels(dtype);
-  }
-
-  _getDtypeSelectBox(dtype){
-    let currentOption = dtype;
-    let selectBox = "";
-    let options = "";
-
-    if(dtype != "" && typeof dtype != "undefined" && dtype != null){
-      // Get the allowed options.
-      options = this._getDtypeOptions( this._getAllowedDTypeArray(currentOption) );
-
-      selectBox = this.inputHelper.inputSelectOptions({
-        "labelText": "Data Type",
-        "value": dtype,
-        "optionsList": options,
-        "name" : "dtype"
-      });
-
-      // Add placeholder for warning, and listen for change.
-      let selectorInBox = selectBox.querySelector("select");
-      selectorInBox.addEventListener("change", (e) => {
-        //when changed check if we need to show a warning.
-        let newType = e.target.value;
-        let message = ""
-
-        if(this._getIrreverasibleDTypeArray({ "currentDT": dtype, "newDT": newType})){
-          message = `Warning: ${dtype} to ${newType} is not reversible.`;
-          // Caution 
-          let errorEvent = new CustomEvent("input-caution", {"detail" : 
-            {"errorMsg" : message}
-          });
-          selectorInBox.dispatchEvent(errorEvent);
-        } else if(this._getLossDTypeArray({ "currentDT": dtype, "newDT": newType})){
-          message = `Warning: ${dtype} to ${newType} may cause data loss.`;
-          // Caution 
-          let errorEvent = new CustomEvent("input-caution", {"detail" : 
-            {"errorMsg" : message}
-          });
-          selectorInBox.dispatchEvent(errorEvent);
-        } else {
-          // No probz
-          let successEvent = new CustomEvent("input-valid");
-          selectorInBox.dispatchEvent(successEvent);
+  _optionLengthEqual(){
+    // make the array lengths equal
+    if(this.choicesVal.length > this.labelsVal.length){
+      let labelsLength = this.labelsVal.length;
+      for(const i of this.choicesVal){
+        if(i > labelsLength){
+          this.labelsVal.push("");
         }
+      }
+    } else if(this.choicesVal.length < this.labelsVal.length){
+      let choicesLength = this.choicesVal.length;
+      for(const i of this.labelsVal){
+        if(i > choicesLength){
+          this.choicesVal.push("");
+        }
+      }
+    }
+  }
 
-        // should hide and show them, do not remove data
-        this._getDtypeFields(newType);
+  /* 
+   * These control the hide/show of the inputs
+   *  {@param} dtype required
+   *  if the input has not been init, creates it as empty 
+   */
+  _showDefault({ dtype } = {}) {
+    if(dtype != "Select" && dtype != "enum"){
+      if (typeof this._default == "undefined" || this._default == null) {
+        this._getDefaultInput({ dtype }); // requires dtype
+      }
+    
+      //this._default.setAttribute("data-ignore", "false");
+      this.placeholderDefault.classList.remove("hidden");
+    } else {
+      // this flag allows us not to delete a users value if 
+      // they toggle dtype, but if it is true we don't try to PATCH it
+      //if(this._default) this._default.setAttribute("data-ignore", "true");
+      this.placeholderDefault.classList.add("hidden");
+    }
+  }
+
+  _showMin({ dtype } = {}) {
+    if (dtype == 'int' || dtype == 'float') {
+      if (typeof this._minimum == "undefined" || this._minimum == null) {
+        this._getMinInput({});
+      }
+
+      this.placeholderMin.classList.remove("hidden");
+    } else {
+      this.placeholderMin.classList.add("hidden");
+    }
+  }
+
+  _showMax({ dtype } = {}) {
+    if (dtype == 'int' || dtype == 'float') {
+      if (typeof this._maximum == "undefined" || this._maximum == null) {
+        this._getMaxInput({});
+      }
+
+      this.placeholderMax.classList.remove("hidden");
+    } else {
+      this.placeholderMax.classList.add("hidden");
+    }
+  }
+
+  _showEnumInputs({ dtype } = {}){
+    if ( dtype == 'enum' ) {
+      if (typeof this._choices == "undefined" || this._choices == null) {
+        this._getLabelsInputs({});
+        this._getChoicesInputs({});
+        this._getEnumDefaultCol();
+      }
+
+      this.placeholderEnum.classList.remove("hidden");
+    } else {
+      this.placeholderEnum.classList.add("hidden");
+    }
+  }
+
+  /* 
+   * These control the hide/show of the inputs
+   *  {@param} dtype required for get default ONLY
+   *  {@param} value is optional
+   */
+  _getDefaultInput({
+    dtype, // required
+    value = "", // optional, falls back to "best default"
+    enumOptions = false // optional
+  }) {
+    if(this.placeholderDefault.children.length > 0){
+      this.placeholderDefault.innerHTML = ""; // @TODO best practice to remove all children?
+      this._default = null;
+    }
+
+    // this will be a slider true/false - fale == default
+    if (dtype == "bool") {
+      this._default = document.createElement("bool-input");
+      this.placeholderDefault.appendChild(this._default);
+      this._default.setAttribute("name", "Default");
+
+      this._default.setAttribute("on-text", "Yes");
+      this._default.setAttribute("off-text", "No");
+    } else if (dtype == "enum") {
+      // enum default set in place, hide default input
+      this.placeholderDefault.classList.add("hidden");
+      return;
+    } else {
+      this._default = document.createElement("text-input");
+      this.placeholderDefault.appendChild(this._default);
+      this._default.setAttribute("name", "Default");
+
+      //const type = (dtype == "datetime") ? "datetime-local" : dtype;
+      this._default.setAttribute("type", dtype)
+    }
+
+    this._default.default = value;
+    this._default.setValue(value);
+
+    this._default.addEventListener("change", this._formChanged.bind(this));
+
+    return this._default;
+  }
+
+  _getMinInput({ value } = {}) {
+    if(this.placeholderMin.children.length > 0){
+      this.placeholderMin.innerHTML = "";
+      this._minimum = null;
+    }
+
+    this._minimum = document.createElement("text-input");
+    this.placeholderMin.appendChild(this._minimum);
+
+    this._minimum.setAttribute("name", "Minimum");
+    this._minimum.setAttribute("type", "int");
+    this._minimum.default = value;
+    this._minimum.setValue(value);
+
+    this._minimum.addEventListener("change", this._formChanged.bind(this));
+
+    return this._minimum;
+  }
+
+  _getMaxInput({ value } = {}) {
+    if(this.placeholderMax.children.length > 0){
+      this.placeholderMax.innerHTML = "";
+      this._maximum = null;
+    }
+
+    this._maximum = document.createElement("text-input");
+    this.placeholderMax.appendChild(this._maximum);
+
+    this._maximum.setAttribute("name", "Maximum");
+    this._maximum.setAttribute("type", "int");
+    this._maximum.default = value;
+    this._maximum.setValue(value);
+
+    this._maximum.addEventListener("change", this._formChanged.bind(this));
+
+    return this._maximum;
+  }
+
+  _getChoicesInputs({ value = [] } = {}) {
+    if(this.placeholderChoices.children.length > 0){
+      this.placeholderChoices.innerHTML = "";
+      this._choices = null;
+    }
+
+    this._choices = document.createElement("array-input");
+    this.placeholderChoices.appendChild(this._choices);
+
+    this._choices.setAttribute("name", "Value");
+    this._choices.default = value;
+    this._choices.setValue(value);
+
+    this._choices.addEventListener("change", this._formChanged.bind(this));
+    this._choices.addEventListener("new-input", () => {
+      this.appendDefaultRow();
+      this._labels._newInput("");
+    });
+
+    return this._choices
+  }
+
+  _getLabelsInputs({ value = [] } = {}) {
+    if(this.placeholderLabels.children.length > 0){
+      this.placeholderLabels.innerHTML = "";
+      this._labels = null;
+    }
+
+    this._labels = document.createElement("array-input");
+    this.placeholderLabels.appendChild(this._labels);
+
+    this._labels.setAttribute("name", "Label");
+    this._labels.default = value;
+    this._labels.setValue(value);
+
+    this._labels.addEventListener("change", this._formChanged.bind(this));
+    this._labels.addEventListener("new-input", () => {
+      this.appendDefaultRow();
+      this._choices._newInput("");
+    });
+
+    return this._labels
+  }
+
+  _getEnumDefaultCol(){
+    if(this.placeholderEnum.children > 0) {
+      this.placeholderEnum.innerHTML = "";
+    }
+    this.enumDefaultCol = document.createElement("div");
+    this.enumDefaultCol.setAttribute("class","col-2 float-left text-center");
+    this.placeholderEnum.appendChild(this.enumDefaultCol);
+
+    let _name = document.createTextNode("Default");
+    this.enumDefaultCol.appendChild(_name);
+
+    if(this.choicesVal && this.choicesVal.length > 0){
+      for(let i of this.choicesVal){
+        this.appendDefaultRow();
+      }
+    }
+  }
+
+  //
+  appendDefaultRow(){
+    let currentDefault = document.createElement("input");
+    currentDefault.setAttribute("class", "radio")
+    currentDefault.setAttribute("type", "radio");
+    currentDefault.setAttribute("name", "enum-default");
+    this.enumDefaultCol.appendChild(currentDefault);
+
+    currentDefault.addEventListener("change", () => {
+      const child = currentDefault;
+      const parent = child.parentNode;
+      const index = Array.prototype.indexOf.call(parent.children, child);
+      console.log( "New enum default : " + this._choices._inputs[index].getValue() );
+    });
+
+  }
+
+  //
+  _showDynamicFields(dtype) {
+    this._getDefaultInput({ dtype });
+    this._showDefault({ dtype });
+    this._showMin({ dtype });
+    this._showMax({ dtype });
+    this._showEnumInputs({ dtype });
+    // this._showChoices({ dtype });
+    // this._showLabels({ dtype });
+  }
+
+  _getDtypeSelectBox(dtype) {
+    // remove options if the exist
+    if(this.dataTypeSelectDiv.children.length > 0) {
+      this.dataTypeSelectDiv.innerHTML = "";
+      this._dtype = null;
+    }
+
+    // create the dtype input
+    this._dtype = document.createElement("enum-input");
+    this.dataTypeSelectDiv.appendChild(this._dtype);
+    this._dtype.setAttribute("name", "Data Type")
+
+    // If we have a value
+    // - it was via FETCH so actions = edit
+    // - listener shows warnings & dynamic fields (in some cases)
+    if (dtype != "" && typeof dtype != "undefined" && dtype != null) {
+      // Get the allowed options.
+      const allowedOptions = this._getAllowedDTypeArray(dtype);
+
+      // add options based on dtype and set value
+      this._dtype.choices = this._getFormattedOptions(allowedOptions);
+      this._dtype.default = dtype;
+      this._dtype.setValue(dtype);
+
+      this._dtype.addEventListener("change", (e) => {
+        // get new type, and check fields are all OK
+        let newType = this._dtype.getValue();
+        this._showDynamicFields(newType);
+
+        // when changed check if we need to show a warning.
+        this._dispatchWarningEvents({ dtype, newType });
       });
 
     } else {
-      // Show all, user is selecting dtype for the first time
-      options = this._setAttributeDTypes();
-      options.push("Select");
+      // ELSE there was no prior value user is selecting dtype for the first time
+      // Listener will reveal the correct fields
+      const options = this._setAttributeDTypes();
+      options.push("Select"); // allow nothing selected
 
-      selectBox = this.inputHelper.inputSelectOptions({
-        "labelText": "Data Type",
-        "value": "Select",
-        "name" : "dtype",
-        "optionsList": this._getDtypeOptions( options )
-      });
+      this._dtype.choices = this._getFormattedOptions(options);
+      this._dtype.setValue("Select");
+      this._dtype.default = "Select";
 
       // On change the form will need to change fields.
-      selectBox.addEventListener("change", (e) => {
-        let newType = e.target.value;
-        // should hide and show them, do not remove data
-        this._getDtypeFields(newType);
+      this._dtype.addEventListener("change", (e) => {
+        let newType = this._dtype.getValue();
+        // warning div not required for new dtype selections
+        this._showDynamicFields(newType);
       });
-
     }
-    return selectBox;
+
+    return this._dtype;
   }
 
-  _setAttributeDTypes(){
-    this.attributeDTypes = [ "bool", "int", "float", "enum", "string", "datetime", "geopos"];
+  _dispatchWarningEvents({ dtype, newType }) {
+    if (this._irreversibleCheck({ dtype, newType })) {
+      this.inputHelper.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
+      this._dtype._select.dispatchEvent(new CustomEvent("input-caution", {
+        "detail":
+          { "errorMsg": `Warning: ${dtype} to ${newType} is not reversible.` }
+      }));
+
+    } else if (this._reversibleCheck({ dtype, newType })) {
+      this.inputHelper.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
+      this._dtype._select.dispatchEvent(new CustomEvent("input-caution", {
+        "detail":
+          { "errorMsg": `Warning: ${dtype} to ${newType} may cause data loss.` }
+      }));
+
+    } else {
+      let successEvent = new CustomEvent("input-valid");
+      this._dtype._select.dispatchEvent(successEvent);
+    }
+  }
+
+  _setAttributeDTypes() {
+    this.attributeDTypes = ["bool", "int", "float", "enum", "string", "datetime", "geopos"];
     return this.attributeDTypes;
   }
 
-  _getDTypeRules(){
-    return ( {
-      "bool" : {
-        "allowed": ["enum","string"],
+  _getDTypeRules() {
+    return ({
+      "bool": {
+        "allowed": ["enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": [],
-        "irreversible": ["enum","string"]
+        "irreversible": ["enum", "string"]
       },
-      "int" : {
-        "allowed": ["float","enum","string"],
+      "int": {
+        "allowed": ["float", "enum", "string"],
         "fully-reversible": ["float"],
         "reversible-with-warning": [],
-        "irreversible": ["enum","string"]
+        "irreversible": ["enum", "string"]
       },
-      "float" : {
-        "allowed": ["int","enum","string"],
+      "float": {
+        "allowed": ["int", "enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": ["int"],
-        "irreversible": ["enum","string"]
+        "irreversible": ["enum", "string"]
       },
-      "enum" : {
+      "enum": {
         "allowed": ["string"],
         "fully-reversible": ["string"],
         "reversible-with-warning": [],
         "irreversible": []
       },
-      "string" : {
+      "string": {
         "allowed": ["enum"],
         "fully-reversible": ["enum"],
         "reversible-with-warning": [],
         "irreversible": []
       },
-      "datetime" : {
-        "allowed": ["enum","string"],
+      "datetime": {
+        "allowed": ["enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": [],
-        "irreversible": ["enum","string"]
+        "irreversible": ["enum", "string"]
       },
-      "geopos" : {
-        "allowed": ["enum","string"],
+      "geopos": {
+        "allowed": ["enum", "string"],
         "fully-reversible": [],
         "reversible-with-warning": [],
-        "irreversible": ["enum","string"]
+        "irreversible": ["enum", "string"]
       }
     });
   }
 
-  _getAllowedDTypeArray(dtype){
+  _getAllowedDTypeArray(dtype) {
     let allRules = this._getDTypeRules();
     let ruleSetForDtype = allRules[dtype].allowed;
     //include itself
@@ -405,136 +597,156 @@ class AttributesForm extends HTMLElement {
     return ruleSetForDtype;
   }
 
-  _getLossDTypeArray({ currentDT = "", newDT = ""} = {}){
+  _reversibleCheck({ dtype = "", newType = "" } = {}) {
     let allRules = this._getDTypeRules();
-    let ruleSetForDtype = allRules[currentDT]['reversible-with-warning'];
+    let ruleSetForDtype = allRules[dtype]['reversible-with-warning'];
 
-    return ruleSetForDtype.includes(newDT);
+    return ruleSetForDtype.includes(newType);
   }
 
-  _getIrreverasibleDTypeArray({ currentDT = "", newDT = ""} = {}){
+  _irreversibleCheck({ dtype = "", newType = "" } = {}) {
     let allRules = this._getDTypeRules();
-    let ruleSetForDtype = allRules[currentDT].irreversible;
+    let ruleSetForDtype = allRules[dtype].irreversible;
 
-    return ruleSetForDtype.includes(newDT);
+    return ruleSetForDtype.includes(newType);
   }
 
-  _getDtypeOptions(typeArray){
-    return typeArray.map( (i) => {
-      return ({ "optText": i, "optValue": i });
+  _getFormattedOptions(typeArray) {
+    return typeArray.map((i) => {
+      return ({ "label": i, "value": i });
     });
   }
 
-  _getAttributeFormData(form){
+  // Use this to set choices if you have the arrays
+  _getFormattedEnumOptions({ choices, labels }) {
+    return choices.map((choice, i) => {
+      if (labels[i] != null) {
+        return { value: choice, label: labels[i] }
+      } else {
+        return { value: choice }
+      }
+    });
+  }
+
+  _getAttributeFormData(form) {
+    const formData = {};
+
     // name only if changed || can not be "" 
-    let name = form.querySelector('[name="name"]').value;
+    //if (this._name.changed() && this._name.getValue() !== "") {
+      formData.name = this._name.getValue();
+    //}
 
-    let description = form.querySelector('[name="description"]').value;
+    // 
+    //if (this._description.changed() && this._description.getValue() !== "") {
+      formData.description = this._description.getValue();
+    //}
 
-    let order = Number(form.querySelector('[name="order"]').value);
+    //
+    //if (this._order.changed() && this._order.getValue() !== "") {
+      formData.order = this._order.getValue();
+    //}
 
-    let requiredInputs =  form.querySelectorAll('.radio-slide-wrap input[name="required"]');
-    let required = this.inputHelper._getSliderSetValue(requiredInputs);
+    //
+    //if (this._required.changed() && this._required.getValue() !== "") {
+      formData.required = this._required.getValue();
+    // }
 
-    let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
-    let visible = this.inputHelper._getSliderSetValue(visibleInputs);
+    //
+      //if (this._visible.changed() && this._visible.getValue() !== "") {
+      formData.visible = this._visible.getValue();
+    //}
 
-    let formData = {
-      name,
-      description,
-      order,
-      required,
-      visible
-    };
+    //
+    const dtype = this._dtype.getValue();
+    //if (this._dtype.changed() && dtype !== "") {
+      formData.dtype = this._dtype.getValue();
+    //}
 
-    // only send dtype when it's new, if included cannot be ""
-    let dtypeSelect = form.querySelector('[name="dtype"]');
-    let dtype = dtypeSelect.value;
-    if(dtype !== "" || dtype !== null) {
-      // Set dtype
-      formData.dtype = dtype;
+    let _default = ""
+    if(dtype == "enum"){
+      // try getting the checked, fall back to first, otherwise will use default of ""
+      const child = this.enumDefaultCol.querySelector(`input[name="enum-default"]:checked`)
+      const parent = child.parentNode;
+      const index = Array.prototype.indexOf.call(parent.children, child);
+      _default = this._choices._inputs[index].getValue();
 
-      // Fields that rely on dtype
-      let _default = this._makeDefaultCorrectType(dtype, form.querySelector('[name="default"]').value);
-      formData["default"] = _default;
-
-      if(dtype === "int" || dtype === "float"){
-        let minimum = Number(form.querySelector('[name="minimum"]').value);
-        formData["minimum"] = minimum;
-  
-        let maximum = Number(form.querySelector('[name="maximum"]').value);
-        formData["maximum"] = maximum;
+      if(!index || !_default){
+        _default = this._choices._inputs[0];
       }
-  
-      if(dtype === "enum"){
-        let choicesInputs =  form.querySelectorAll('input[name="choices"]');
-        let choices = this.inputHelper._getArrayInputValue(choicesInputs);
-        formData["choices"] = choices;
-  
-        let labelsInputs =  form.querySelectorAll('input[name="labels"]');
-        let labels = this.inputHelper._getArrayInputValue(labelsInputs);
-        formData["labels"] = labels;
-      }
-
+    } else {
+      _default = this._default.getValue();
     }
-    
-    console.log(formData);
+    formData["default"] = _default;
+
+    // @TODO
+    if (dtype === "int" || dtype === "float") {
+      //
+      //if (this._minimum.changed() && this._minimum.getValue() !== "") {
+        formData.minimum = Number(this._minimum.getValue());
+      //}
+
+      //
+      //if (this._maximum.changed() && this._maximum.getValue() !== "") {
+        formData.maximum = Number(this._maximum.getValue());
+      //}
+    }
+
+    if (dtype === "enum") {
+      //if (this._choices.changed() && this._choices.getValue() !== "") {
+        formData.choices = this._choices.getValue();
+      //}
+
+      //if (this._labels.changed() && this._labels.getValue() !== "") {
+        formData.labels = this._labels.getValue();
+      //}
+    }
+
     return formData;
   }
 
 
 
-  _makeDefaultCorrectType(dtype, _defaultVal){
+  _makeDefaultCorrectType(dtype, _defaultVal) {
     let _default = _defaultVal;
-    console.log(_defaultVal);
-    try{
-      if(dtype == "bool"){
+    try {
+      if (dtype == "bool") {
         _default = Boolean(_defaultVal);
       } else if (dtype == "int" || dtype == "float" || dtype == "datetime" || dtype == "geopos") {
         _default = Number(_defaultVal);
       } else {
         _default = String(_defaultVal);
       }
-    }catch(e){
-      console.log("Error dtype casting default: "+e);
+    } catch (e) {
+      console.error("Error dtype casting default: " + e);
     }
 
     return _default;
   }
-  _getAttributePromises({id = -1, entityType = null, attrForms = [], attrFormsChanged = []} = {}){
-    let attrPromises = {};
-    attrPromises.promises = [];
-    attrPromises.attrNamesNew = [];
-    attrPromises.attrNames = [];
 
-    if(attrFormsChanged && attrFormsChanged.length > 0){
-      attrFormsChanged.forEach((form, i) => {
-        let global = String(form.dataset.isGlobal) == "true" ? "true" : "false";
-        let formData = {
-          "entity_type": entityType,
-          "global" : global,
-          "old_attribute_type_name": form.dataset.oldName,
-          "new_attribute_type": {}
-        };
+  _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
+    const promiseInfo = {};
+    const global = String(form.dataset.isGlobal) == "true" ? "true" : "false";
+    const formData = {
+      "entity_type": entityType,
+      "global": global,
+      "old_attribute_type_name": form.dataset.oldName,
+      "new_attribute_type": {}
+    };
 
-        let attrNameNew = form.querySelector('input[name="name"]').value;
-        attrPromises.attrNamesNew.push(attrNameNew);
+    promiseInfo.newName = this._name.getValue();
+    promiseInfo.oldName = this.dataset.oldName;
 
-        let attrNameOld = form.dataset.oldName;
-        attrPromises.attrNames.push(attrNameOld);
+    // Hand of the data, and call this form unchanged
+    formData.new_attribute_type = this._getAttributeFormData(form);
+    form.classList.remove("changed");
+    this.changeReset();
 
-        formData.new_attribute_type = this._getAttributeFormData(form);
-        form.classList.remove("changed");
+    promiseInfo.promise = this._fetchAttributePatchPromise(id, formData);
 
-        let currentPatch = this._fetchAttributePatchPromise(id, formData);
-        attrPromises.promises.push(currentPatch);
-       
-      });
-      return attrPromises;
-    }
+    return promiseInfo;
   }
 
-  _fetchAttributePatchPromise(parentTypeId, formData){
+  _fetchAttributePatchPromise(parentTypeId, formData) {
     return fetch("/rest/AttributeType/" + parentTypeId, {
       method: "PATCH",
       mode: "cors",

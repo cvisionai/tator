@@ -70,7 +70,7 @@ class SettingsInput {
   ){
     // Specified?
     let specified = false;
-    console.log(value);
+
     if(value != null && value != "") {
       specified = true;
     } else {
@@ -244,16 +244,14 @@ class SettingsInput {
   // @TODO - Works but needs ovveride for label class
   inputRadioSlide({
     value = '',
-    customCol = '',
     labelText = '',
-    type = 'checkbox',
     name = "",
     getSlide = false
   } = {} ){
     const forId = this._getUniqueIdentifier(name);
     const slide = document.createElement("settings-bool-input");
     let fieldset = slide.getFieldSet( name, forId );
-    slide.setLegendText(labelText);
+    if(labelText !== null) slide.setLegendText(labelText);
     slide.setOnLabel("Yes");
     slide.setOffLabel("No");
     slide.setValue(value);
@@ -449,40 +447,51 @@ class SettingsInput {
       // Apppend Input (needs to be appened after the Label)
       labelWrap.append(inputNode);
 
+      this.addWarningWrap(labelWrap, labelDiv, inputNode);
+
+      return labelDiv;
+    }
+
+    addWarningWrap(labelWrap, labelDiv, inputNode, checkErrors = true){
+      
+      if(labelDiv.querySelector('.warning-row')){
+        labelDiv.querySelector('.warning-row').remove();
+      }
       // Warning Message Spot
       let warningRow = document.createElement("div");
-      warningRow.setAttribute("class", "offset-md-3 offset-sm-4 col-md-9 col-sm-8 pb-3");
+      warningRow.setAttribute("class", "warning-row offset-lg-4 col-lg-8 pb-3");
       labelDiv.appendChild(warningRow);
 
       const warning = new InlineWarning();
       warningRow.appendChild(warning.div());
 
       // Dispatch events to validate, and listen for errors
-      inputNode.addEventListener("input", (e) => {
-        let hasError = this.validate.findError(inputNode.name, inputNode.value);
-        if(hasError){
-          let errorEvent = new CustomEvent("input-invalid", {"detail" : 
-            {"errorMsg" : hasError}
-          });
-          inputNode.classList.add("invalid");
-          inputNode.dispatchEvent(errorEvent);
-        } else {
-          let successEvent = new CustomEvent("input-valid");
-          inputNode.classList.remove("invalid");
-          inputNode.dispatchEvent(successEvent);
-        }
-      });
+      if(checkErrors){
+        inputNode.addEventListener("input", (e) => {
+          let hasError = this.validate.findError(inputNode.name, inputNode.value);
+          if(hasError){
+            let errorEvent = new CustomEvent("input-invalid", {"detail" : 
+              {"errorMsg" : hasError}
+            });
+            inputNode.invalid = true;
+            inputNode.classList.add("invalid");
+            inputNode.dispatchEvent(errorEvent);
+          } else {
+            let successEvent = new CustomEvent("input-valid");
+            inputNode.classList.remove("invalid");
+            inputNode.dispatchEvent(successEvent);
+          }    
+        });
 
-      inputNode.addEventListener("input-invalid", (e) => {
-        console.log(e.detail.errorMsg);
-        warning.show(e.detail.errorMsg);
-        labelWrap.classList.remove("caution");
-        labelWrap.classList.remove("successed");
-        labelWrap.classList.add("errored");
-      });
+        inputNode.addEventListener("input-invalid", (e) => {
+          warning.show(e.detail.errorMsg);
+          labelWrap.classList.remove("caution");
+          labelWrap.classList.remove("successed");
+          labelWrap.classList.add("errored");
+        });
+      }
 
       inputNode.addEventListener("input-caution", (e) => {
-        console.log(e.detail.errorMsg);
         warning.showCaution(e.detail.errorMsg);
         labelWrap.classList.remove("successed");
         labelWrap.classList.remove("errored");
@@ -496,7 +505,7 @@ class SettingsInput {
         warning.hide();
       });
 
-      return labelDiv;
+      
     }
 
     addNewRow({
