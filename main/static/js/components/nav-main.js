@@ -58,7 +58,9 @@ class NavMain extends TatorElement {
 
     const knowledge = document.createElement("a");
     knowledge.setAttribute("class", "nav__link");
-    knowledge.setAttribute("href", "#");
+    knowledge.setAttribute("href", "https://www.tator.io/tutorials");
+    knowledge.setAttribute("target", "_blank");
+    knowledge.setAttribute("rel", "noopener noreferrer");
     knowledge.textContent = "Knowledge Base";
     headingDiv.appendChild(knowledge);
 

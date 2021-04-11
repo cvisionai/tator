@@ -18,7 +18,8 @@ class SettingsInput {
         required = false,
         minlength = false,
         maxlength = false,
-        pattern = false
+        pattern = false,
+        disabledInput = false,
       } = {}
     ){
       const forId = this._getUniqueIdentifier(name);
@@ -35,6 +36,7 @@ class SettingsInput {
       if (minlength) inputTextElement.setAttribute("minlength", minlength);
       if (maxlength) inputTextElement.setAttribute("maxlength", maxlength);
       if (pattern) inputTextElement.setAttribute("pattern", pattern);
+      if (disabledInput) inputTextElement.setAttribute("disabled", "");
 
       const classes = `form-control input-monospace input-hide-webkit-autofill ${this.customClass} ${customCol}`
       inputTextElement.setAttribute("class", classes);
