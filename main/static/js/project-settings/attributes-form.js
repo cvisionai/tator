@@ -73,6 +73,7 @@ class AttributesForm extends TatorElement {
     this._required.setAttribute("name", "Required");
     this._required.setAttribute("on-text", "Yes");
     this._required.setAttribute("off-text", "No");
+    this._required.setValue(false);
     this._required.addEventListener("change", this._formChanged.bind(this));
     this.form.appendChild(this._required);
 
@@ -81,6 +82,7 @@ class AttributesForm extends TatorElement {
     this._visible.setAttribute("name", "Visible");
     this._visible.setAttribute("on-text", "Yes");
     this._visible.setAttribute("off-text", "No");
+    this._visible.setValue(false);
     this._visible.addEventListener("change", this._formChanged.bind(this));
     this.form.appendChild(this._visible);
 
@@ -333,7 +335,7 @@ class AttributesForm extends TatorElement {
     return this._default;
   }
 
-  _getMinInput({ value } = {}) {
+  _getMinInput({ value = "" } = {}) {
     if(this.placeholderMin.children.length > 0){
       this.placeholderMin.innerHTML = "";
       this._minimum = null;
@@ -352,7 +354,7 @@ class AttributesForm extends TatorElement {
     return this._minimum;
   }
 
-  _getMaxInput({ value } = {}) {
+  _getMaxInput({ value = "" } = {}) {
     if(this.placeholderMax.children.length > 0){
       this.placeholderMax.innerHTML = "";
       this._maximum = null;
@@ -628,39 +630,39 @@ class AttributesForm extends TatorElement {
     });
   }
 
-  _getAttributeFormData(form) {
+  _getAttributeFormData() {
     const formData = {};
 
     // name only if changed || can not be "" 
-    //if (this._name.changed() && this._name.getValue() !== "") {
+    if (this._name.changed() && this._name.getValue()) {
       formData.name = this._name.getValue();
-    //}
+    }
 
     // 
-    //if (this._description.changed() && this._description.getValue() !== "") {
+    if (this._description.changed() && this._description.getValue()) {
       formData.description = this._description.getValue();
-    //}
+    }
 
     //
-    //if (this._order.changed() && this._order.getValue() !== "") {
+    if (this._order.changed() && this._order.getValue()) {
       formData.order = this._order.getValue();
-    //}
+    }
 
     //
-    //if (this._required.changed() && this._required.getValue() !== "") {
+    if (this._required.changed() && this._required.getValue()) {
       formData.required = this._required.getValue();
-    // }
+    }
 
     //
-      //if (this._visible.changed() && this._visible.getValue() !== "") {
+    if (this._visible.changed() && this._visible.getValue()) {
       formData.visible = this._visible.getValue();
-    //}
+    }
 
     //
     const dtype = this._dtype.getValue();
-    //if (this._dtype.changed() && dtype !== "") {
+    if (this._dtype.changed() && dtype) {
       formData.dtype = this._dtype.getValue();
-    //}
+    }
 
     let _default = ""
     if(dtype == "enum"){
@@ -668,37 +670,39 @@ class AttributesForm extends TatorElement {
       const child = this.enumDefaultCol.querySelector(`input[name="enum-default"]:checked`)
       const parent = child.parentNode;
       const index = Array.prototype.indexOf.call(parent.children, child);
+
+      // @TODO check if this changed first?
       _default = this._choices._inputs[index].getValue();
-
-      if(!index || !_default){
-        _default = this._choices._inputs[0];
-      }
+      formData["default"] = _default;
     } else {
-      _default = this._default.getValue();
+      if (this._default.changed() && this._default.getValue()) {
+        _default = this._default.getValue();
+      }
+      formData["default"] = _default;
     }
-    formData["default"] = _default;
+    
 
-    // @TODO
+    // 
     if (dtype === "int" || dtype === "float") {
       //
-      //if (this._minimum.changed() && this._minimum.getValue() !== "") {
+      if (this._minimum.changed() && this._minimum.getValue()) {
         formData.minimum = Number(this._minimum.getValue());
-      //}
+      }
 
       //
-      //if (this._maximum.changed() && this._maximum.getValue() !== "") {
+      if (this._maximum.changed() && this._maximum.getValue()) {
         formData.maximum = Number(this._maximum.getValue());
-      //}
+      }
     }
 
     if (dtype === "enum") {
-      //if (this._choices.changed() && this._choices.getValue() !== "") {
+      if (this._choices.changed() && this._choices.getValue()) {
         formData.choices = this._choices.getValue();
-      //}
+      }
 
-      //if (this._labels.changed() && this._labels.getValue() !== "") {
+      if (this._labels.changed() && this._labels.getValue()) {
         formData.labels = this._labels.getValue();
-      //}
+      }
     }
 
     return formData;
