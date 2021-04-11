@@ -452,37 +452,36 @@ class TimelineD3 extends TatorElement {
    */
   _updateSvgData() {
 
+    var that = this;
     var maxFrame = this._getMaxFrame();
     if (isNaN(maxFrame)) {
       return;
     }
 
-    var mainLineHeight = 60;
+    this._mainLineHeight = 60;
     if (this._numericalData.length == 0) {
-      mainLineHeight = 0;
+      this._mainLineHeight = 0;
     }
-    const mainStepPad = 2;
-    const mainStep = 5; // vertical height of each entry in the series / band
-    const mainMargin = ({top: 20, right: 3, bottom: 3, left: 3});
-    const mainHeight =
-      mainLineHeight +
-      this._stateData.length * (mainStep + mainStepPad) +
-      mainMargin.top + mainMargin.bottom;
-    const mainWidth = this._mainTimelineDiv.offsetWidth;
-    this._mainWidth = mainWidth;
+    this._mainStepPad = 2;
+    this._mainStep = 5; // vertical height of each entry in the series / band
+    this._mainMargin = ({top: 20, right: 3, bottom: 3, left: 3});
+    this._mainHeight =
+    this._mainLineHeight +
+      this._stateData.length * (this._mainStep + this._mainStepPad) +
+      this._mainMargin.top + this._mainMargin.bottom;
+    this._mainWidth = this._mainTimelineDiv.offsetWidth;
 
     if (this._mainWidth <= 0) { return; }
-    this._mainSvg.attr("viewBox",`0 0 ${mainWidth} ${mainHeight}`);
+    this._mainSvg.attr("viewBox",`0 0 ${this._mainWidth} ${this._mainHeight}`);
 
     // Define the axes
-    var mainX = d3.scaleLinear()
+    this._mainX = d3.scaleLinear()
       .domain([0, maxFrame])
-      .range([0, mainWidth])
-    this._mainX = mainX;
+      .range([0, this._mainWidth])
 
     var mainY = d3.scaleLinear()
       .domain([0, 1.0])
-      .range([0, -mainStep]);
+      .range([0, -this._mainStep]);
 
     // #TODO This is clunky and has no smooth transition, but it works for our application
     //       Potentially worth revisiting in the future and updating the dataset directly
@@ -491,15 +490,15 @@ class TimelineD3 extends TatorElement {
 
     // Frame number x-axis ticks
     var xAxis = g => g
-      .attr("transform", `translate(0,${mainMargin.top})`)
-      .call(d3.axisTop(mainX).ticks().tickSizeOuter(0).tickFormat(d3.format("d")))
-      .call(g => g.selectAll(".tick").filter(d => mainX(d) < mainMargin.left || mainX(d) >= mainWidth - mainMargin.right).remove())
+      .attr("transform", `translate(0,${this._mainMargin.top})`)
+      .call(d3.axisTop(this._mainX).ticks().tickSizeOuter(0).tickFormat(d3.format("d")))
+      .call(g => g.selectAll(".tick").filter(d => this._mainX(d) < this._mainMargin.left || this._mainX(d) >= this._mainWidth - this._mainMargin.right).remove())
       .call(g => g.select(".domain").remove());
 
     // States are represented as area graphs
     var area = d3.area()
       .curve(d3.curveStepAfter)
-      .x(d => mainX(d.frame))
+      .x(d => this._mainX(d.frame))
       .y0(0)
       .y1(d => mainY(d.value));
 
@@ -512,13 +511,13 @@ class TimelineD3 extends TatorElement {
       .selectAll("g")
       .data(mainStateDataset)
       .join("g")
-        .attr("transform", (d, i) => `translate(0,${i * (mainStep + mainStepPad) + mainMargin.top})`);
+        .attr("transform", (d, i) => `translate(0,${i * (this._mainStep + this._mainStepPad) + this._mainMargin.top})`);
 
     gState.append("clipPath")
       .attr("id", d => d.clipId.id)
       .append("rect")
-        .attr("width", mainWidth)
-        .attr("height", mainStep);
+        .attr("width", this._mainWidth)
+        .attr("height", this._mainStep);
 
     gState.append("defs").append("path")
       .attr("id", d => d.pathId.id)
@@ -527,8 +526,8 @@ class TimelineD3 extends TatorElement {
     gState.append("rect")
       .attr("clip-path", d => d.clipId)
       .attr("fill", "#262e3d")
-      .attr("width", mainWidth)
-      .attr("height", mainStep);
+      .attr("width", this._mainWidth)
+      .attr("height", this._mainStep);
 
     gState.append("g")
         .attr("clip-path", d => d.clipId)
@@ -536,7 +535,7 @@ class TimelineD3 extends TatorElement {
       .data(d => new Array(1).fill(d))
       .join("use")
         .attr("fill", (d, i) => "#797991")
-        .attr("transform", (d, i) => `translate(0,${(i + 1) * mainStep})`)
+        .attr("transform", (d, i) => `translate(0,${(i + 1) * this._mainStep})`)
         .attr("xlink:href", d => d.pathId.href);
 
     // Numerical data are represented as line graphs
@@ -548,47 +547,47 @@ class TimelineD3 extends TatorElement {
 
     var mainLineY = d3.scaleLinear()
       .domain([-0.1, 1.1])
-      .range([0, -mainLineHeight]);
+      .range([0, -this._mainLineHeight]);
 
     var mainLine = d3.line()
       .curve(d3.curveStepAfter)
-      .x(d => mainX(d.frame))
+      .x(d => this._mainX(d.frame))
       .y(d => mainLineY(d.value));
 
-    const startOfMainLineGraph = (this._stateData.length) * (mainStep + mainStepPad) + mainMargin.top;
+    const startOfMainLineGraph = (this._stateData.length) * (this._mainStep + this._mainStepPad) + this._mainMargin.top;
 
     if (mainLineDataset.length > 0) {
       this._mainSvg.append("rect")
         .attr("transform", `translate(0,${startOfMainLineGraph})`)
         .attr("fill", "#262e3d")
-        .attr("width", mainWidth)
-        .attr("height", mainLineHeight);
+        .attr("width", this._mainWidth)
+        .attr("height", this._mainLineHeight);
     }
 
-    const mainLineG = this._mainSvg.append("g")
+    this._mainLineG = this._mainSvg.append("g")
       .selectAll("g")
       .data(mainLineDataset)
       .join("g")
         .attr("transform", `translate(0,${startOfMainLineGraph})`);
 
-    const mainLineText = mainLineG.append("text")
+    this._mainLineText = this._mainLineG.append("text")
       .attr("x", 4)
-      .attr("y", mainLineHeight / 2)
+      .attr("y", this._mainLineHeight / 2)
       .attr("dy", "0.35em")
       .attr("fill", "#fafafa")
       .attr("opacity", "0.0");
 
-    mainLineG.append("clipPath")
+      this._mainLineG.append("clipPath")
       .attr("id", d => d.clipId.id)
       .append("rect")
-        .attr("width", mainWidth)
-        .attr("height", mainLineHeight);
+        .attr("width", this._mainWidth)
+        .attr("height", this._mainLineHeight);
 
-    mainLineG.append("defs").append("path")
+    this._mainLineG.append("defs").append("path")
       .attr("id", d => d.pathId.id)
       .attr("d", d => mainLine(d.graphData));
 
-    mainLineG.append("g")
+    this._mainLineG.append("g")
       .attr("clip-path", d => d.clipId)
       .selectAll("use")
       .data(d => new Array(1).fill(d))
@@ -599,17 +598,22 @@ class TimelineD3 extends TatorElement {
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
         .attr("fill", "none")
-        .attr("transform", `translate(0,${mainLineHeight})`)
+        .attr("transform", `translate(0,${this._mainLineHeight})`)
         .attr("xlink:href", d => d.pathId.href)
         .style("stroke-dasharray", ("1, 2"));
+
+    this._mainFrameLine = this._mainSvg.append("line")
+      .attr("stroke", "#fafafa")
+      .attr("stroke-width", 1)
+      .attr("opacity", "0");
 
     this._mainSvg.on("mousemove", function(event) {
 
       event.preventDefault();
 
       // Remember the y-axis is 0 to -1
-      const pointer = d3.pointer(event, this);
-      const pointerFrame = mainX.invert(pointer[0]);
+      const pointer = d3.pointer(event, that);
+      const pointerFrame = that._mainX.invert(pointer[0]);
       const pointerValue = mainLineY.invert(pointer[1] - startOfMainLineGraph) + 1.0;
 
       var selectedData;
@@ -636,26 +640,13 @@ class TimelineD3 extends TatorElement {
         }
       }
 
-      if (typeof selectedData == "undefined") { return; }
-
-      mainLineG.selectAll("use").join("use")
-        .attr("opacity", d => d.name === selectedData.name ? "1.0" : "0.7")
-        .attr("stroke", d => d.name === selectedData.name ? "#fafafa" : "#797991")
-        .attr("stroke-width", d => d.name === selectedData.name ? 1.5 : 0.5)
-        .style("stroke-dasharray", d => d.name === selectedData.name ? null : ("1, 2"));
-
-      mainLineText.attr("opacity", "1.0").text(selectedData.name);
+      if (typeof selectedData != "undefined") {
+        that._highlightMainLine(selectedData.name);
+      }
     })
 
     this._mainSvg.on("mouseleave", function() {
-      mainLineG.selectAll("use")
-        .join("use")
-        .attr("opacity", "0.7")
-        .attr("stroke", "#797991")
-        .attr("stroke-width", 1.0)
-        .style("stroke-dasharray", "1, 2");
-
-      mainLineText.attr("opacity", "0");
+      that._unhighlightMainLines();
     })
 
     // Add the x-axis
@@ -665,7 +656,7 @@ class TimelineD3 extends TatorElement {
 
     // Setup the brush to focus/zoom on the main timeline
     this._mainBrush = d3.brushX()
-      .extent([[mainMargin.left, 0.5], [mainWidth - mainMargin.right, mainHeight - mainMargin.bottom + 0.5]])
+      .extent([[this._mainMargin.left, 0.5], [this._mainWidth - this._mainMargin.right, this._mainHeight - this._mainMargin.bottom + 0.5]])
       .on("end", this._mainBrushEnded.bind(this))
       .on("brush", this._mainBrushed.bind(this));
 
@@ -675,6 +666,34 @@ class TimelineD3 extends TatorElement {
 
     this._mainBrushG
       .call(this._mainBrush.move, null);
+  }
+
+  /**
+   * @param {string} selectedName Name of data to highlight in the main timeline graph
+   */
+  _highlightMainLine(selectedName) {
+
+    this._mainLineG.selectAll("use").join("use")
+      .attr("opacity", d => d.name === selectedName ? "1.0" : "0.7")
+      .attr("stroke", d => d.name === selectedName ? "#fafafa" : "#797991")
+      .attr("stroke-width", d => d.name === selectedName ? 1.5 : 0.5)
+      .style("stroke-dasharray", d => d.name === selectedName ? null : ("1, 2"));
+
+    this._mainLineText.attr("opacity", "1.0").text(selectedName);
+  }
+
+  /**
+   *
+   */
+  _unhighlightMainLines() {
+    this._mainLineG.selectAll("use")
+      .join("use")
+      .attr("opacity", "0.7")
+      .attr("stroke", "#797991")
+      .attr("stroke-width", 1.0)
+      .style("stroke-dasharray", "1, 2");
+
+    this._mainLineText.attr("opacity", "0");
   }
 
   /**
@@ -889,13 +908,18 @@ class TimelineD3 extends TatorElement {
         }));
       }
     });
-    this._focusSvg.on("mouseover", function(event, d) {
+    this._focusSvg.on("mouseover", function() {
         mouseLine.attr("opacity", "0.5");
+        that._mainFrameLine.attr("opacity", "0.5");
     });
-    this._focusSvg.on("mouseout", function(event, d) {
+    this._focusSvg.on("mouseout", function() {
         mouseLine.attr("opacity", "0");
+        that._mainFrameLine.attr("opacity", "0");
     });
     this._focusSvg.on("mousemove", function(event, d) {
+
+        var currentFrame = parseInt(focusX.invert(d3.pointer(event)[0]));
+
         mouseLine
           .attr("opacity", "0.5")
           .attr("x1", d3.pointer(event)[0])
@@ -903,10 +927,17 @@ class TimelineD3 extends TatorElement {
           .attr("y1", -focusStep - focusMargin.bottom)
           .attr("y2", focusHeight);
 
+        that._mainFrameLine
+          .attr("opacity", "0.5")
+          .attr("x1", that._mainX(currentFrame))
+          .attr("x2", that._mainX(currentFrame))
+          .attr("y1", -that._mainStep - that._mainMargin.bottom)
+          .attr("y2", that._mainHeight);
+
         if (displayXAxis) {
           focusFrameText.attr("opacity", "1.0");
           focusFrameText.attr("x", d3.pointer(event)[0]);
-          focusFrameText.text(parseInt(focusX.invert(d3.pointer(event)[0])));
+          focusFrameText.text(currentFrame);
           var textBBox = focusFrameText.node().getBBox();
 
           focusFrameTextBackground.attr("opacity", "1.0")
@@ -918,7 +949,6 @@ class TimelineD3 extends TatorElement {
         }
 
         let idx;
-        let currentFrame = focusX.invert(d3.pointer(event)[0]);
 
         //focusLineValues.attr("x", d3.pointer(event)[0]);
         focusLineValues.attr("opactiy", "1.0");
