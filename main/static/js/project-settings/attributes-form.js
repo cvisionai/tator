@@ -460,7 +460,7 @@ class AttributesForm extends TatorElement {
       const child = currentDefault;
       const parent = child.parentNode;
       const index = Array.prototype.indexOf.call(parent.children, child);
-      console.log( "New enum default : " + this._choices._inputs[index].getValue() );
+      //console.log( "New enum default : " + this._choices._inputs[index].getValue() );
       this._enumDefault.value = this._choices._inputs[index].getValue();
       this._enumDefault.changed = true;
     });
@@ -743,12 +743,15 @@ class AttributesForm extends TatorElement {
     const formData = {
       "entity_type": entityType,
       "global": global,
-      "old_attribute_type_name": form.dataset.oldName,
+      "old_attribute_type_name": this.dataset.oldName,
       "new_attribute_type": {}
     };
 
     promiseInfo.newName = this._name.getValue();
     promiseInfo.oldName = this.dataset.oldName;
+
+    console.log("formData");
+    console.log(formData);
 
     // Hand of the data, and call this form unchanged
     formData.new_attribute_type = this._getAttributeFormData(form);
