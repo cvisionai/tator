@@ -184,11 +184,15 @@ class AnnotationMulti extends TatorElement {
       // the videos are the same frame and if not, it'll attempt to seek to the
       // prime video's location. This essentially is only a +1 retry.
       Promise.allSettled(seekPromiseList).then(() => {
-        let primeFrame = that._videos[0].currentFrame();
+        let primeFrame = this._videos[this._longest_idx].currentFrame();
+        let prime_fps = this._fps[this._longest_idx];
         this._lastScrub = Date.now();
         for (const video of that._videos)
         {
-          if (primeFrame != video.currentFrame())
+          let idx = 0; idx < this._videos.length; idx++
+          let video = this._videos[idx];
+          let this_frame = Math.round(primeFrame * (this._fps[idx]/prime_fps));
+          if (this_frame != video.currentFrame())
           {
             video.seekFrame(frame, video.drawFrame, true).then(this._lastScrub = Date.now());
           }
