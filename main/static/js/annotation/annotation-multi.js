@@ -145,10 +145,13 @@ class AnnotationMulti extends TatorElement {
       const waitOk = now - this._lastScrub > this._scrubInterval;
       if (waitOk) {
         play.setAttribute("is-paused","");
-        for (let video of this._videos)
+        let prime_fps = this._fps[this._longest_idx];
+        for (let idx = 0; idx < this._videos.length; idx++)
         {
+          let video = this._videos[idx];
+          let this_frame = frame * (this._fps[idx]/prime_fps);
           video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
-          video.seekFrame(frame, video.drawFrame)
+          video.seekFrame(this_frame, video.drawFrame)
             .then(this._lastScrub = Date.now());
         }
       }
@@ -166,10 +169,13 @@ class AnnotationMulti extends TatorElement {
       }
 
       var seekPromiseList = [];
-      for (let video of this._videos)
+      let prime_fps = this._fps[this._longest_idx];
+      for (let idx = 0; idx < this._videos.length; idx++)
       {
+        let video = this._videos[idx];
+        let this_frame = frame * (this._fps[idx]/prime_fps);
         video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
-        const seekPromise = video.seekFrame(frame, video.drawFrame, true);
+        const seekPromise = video.seekFrame(this_frame, video.drawFrame, true);
         seekPromiseList.push(seekPromise);
       }
 
