@@ -108,12 +108,12 @@ class AttributesMain extends HTMLElement {
       afObj.submitAttribute.addEventListener("click", (e) => {
         e.preventDefault();
   
-        this._postAttribute( afObj.addAttributeForm );
+        this._postAttribute( afObj.attrForm );
       });
 
       this.boxHelper._modalConfirm({
         "titleText" : "New Attribute",
-        "mainText" : afObj.addAttributeForm,
+        "mainText" : afObj.attrForm.form,
         "buttonSave" : afObj.submitAttribute,
         "scroll" : true
       });
@@ -125,18 +125,18 @@ class AttributesMain extends HTMLElement {
 
   _getAddForm(){
     let attrForm = document.createElement("attributes-form");
-    let addAttributeForm = attrForm._initEmptyForm();
+    attrForm._initEmptyForm();
     let submitAttribute = this.inputHelper.saveButton();
 
-    return {addAttributeForm, submitAttribute};
+    return {attrForm, submitAttribute};
   }
 
-  _postAttribute(form){
+  _postAttribute(formObj){
     this.modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = {
       "entity_type": this.typeName,
-      "addition": form._getAttributeFormData( form )
+      "addition": formObj._getAttributeFormData()
     };
 
     let status = 0;
@@ -391,8 +391,7 @@ class AttributesMain extends HTMLElement {
           "Accept": "application/json",
           "Content-Type": "application/json"
         },
-        //body: JSON.stringify(formData)
-        body: formData
+        body: JSON.stringify(formData)
       });
     } else {
       console.log("Problem with new attribute form data.");
