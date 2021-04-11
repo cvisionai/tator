@@ -220,10 +220,12 @@ class AnnotationMulti extends TatorElement {
     });
 
     fastForward.addEventListener("click", () => {
-      for (let video of this._videos)
+      let prime_fps = this._fps[this._longest_idx];
+      for (let idx = 0; idx < this._videos.length; idx++)
       {
+        let video = this._videos[idx];
         video.pause();
-        video.rateChange(2 * this._rate); // #TODO This is a bug, play() sets the rate back to 1.0
+        video.rateChange(2 * this._rate * (prime_fps/video.fps));
       }
       this.play();
     });
@@ -1137,10 +1139,11 @@ class AnnotationMulti extends TatorElement {
           return;
         }
       }
-
-      for (let video of this._videos)
+      let prime_fps = this._fps[this._longest_idx];
+      for (let idx = 0; idx < this._videos.length; idx++)
       {
-        video.rateChange(this._rate);
+        let video = this._videos[idx];
+        video.rateChange(this._rate * (prime_fps/video.fps));
         playing |= video.play();
       }
 
@@ -1162,11 +1165,13 @@ class AnnotationMulti extends TatorElement {
       this._playbackReadyId += 1;
       this._playbackReadyCount = 0;
       console.log(`waitPlayback (playForward) - ${this._playbackReadyId}`);
-      this.goToFrame(this._videos[0].currentFrame()).then(() => {
-        for (let video of this._videos)
+      this.goToFrame(this._videos[this._longest_idx].currentFrame()).then(() => {
+        let prime_fps = this._fps[this._longest_idx];
+        for (let idx = 0; idx < this._videos.length; idx++)
         {
+          let video = this._videos[idx];
           video.waitPlayback(true, this._playbackReadyId);
-          video.rateChange(this._rate);
+          video.rateChange(this._rate * (prime_fps/video.fps));
           playing |= video.play();
         }
         if (playing)
@@ -1193,10 +1198,11 @@ class AnnotationMulti extends TatorElement {
           return;
         }
       }
-
-      for (let video of this._videos)
+      let prime_fps = this._fps[this._longest_idx];
+      for (let idx = 0; idx < this._videos.length; idx++)
       {
-        video.rateChange(this._rate);
+        let video = this._videos[idx];
+        video.rateChange(this._rate * (prime_fps/video.fps));
         playing |= video.playBackwards();
       }
 
@@ -1219,12 +1225,14 @@ class AnnotationMulti extends TatorElement {
       this._playbackReadyCount = 0;
       this._pauseId = this._playbackReadyId;
       console.log(`waitPlayback (playBackwards) - ${this._playbackReadyId}`);
-      this.goToFrame(this._videos[0].currentFrame()).then(() => {
-        for (let video of this._videos)
+      this.goToFrame(this._videos[this._longest_idx].currentFrame()).then(() => {
+        let prime_fps = this._fps[this._longest_idx];
+        for (let idx = 0; idx < this._videos.length; idx++)
         {
+          let video = this._videos[idx];
           video.waitPlayback(true, this._playbackReadyId);
           video.pause();
-          video.rateChange(this._rate);
+          video.rateChange(this._rate * (prime_fps/video.fps));
           playing |= video.playBackwards();
           if (playing)
           {
