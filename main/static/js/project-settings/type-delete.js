@@ -24,7 +24,7 @@ class TypeDelete {
     async deleteFetch(){     
       const response = await this._fetchPromise();
       const data = await response.json();
-      console.log(data);
+
       return data;
     }
 

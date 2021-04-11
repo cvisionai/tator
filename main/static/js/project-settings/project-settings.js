@@ -185,12 +185,10 @@ class ProjectSettings extends TatorPage {
 
   // Modal for this page, and handlers
   showDimmer(){
-    console.log("Modal opened!");
     return this.setAttribute("has-open-modal", "");
   }
 
   hideDimmer(){
-    console.log("Modal closed!");
     return this.removeAttribute("has-open-modal");
   }
 

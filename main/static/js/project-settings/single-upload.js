@@ -44,8 +44,6 @@ class SingleUpload {
 
   // Uploads using a single request.
   uploadSingle(info) {
-    console.log("this.file.size ---> "+this.file.size);
-    console.log(info);
     return fetch(info.urls[0], {
       method: "PUT",
       signal: this.controller.signal,
@@ -56,14 +54,13 @@ class SingleUpload {
       self.postMessage({command: "uploadProgress",
                         percent: 100,
                         filename: this.file.name});
-                        console.log(info.key);
+
       return info.key;
     });
   }
 
   // Create presigned url for transcode/media create.
   getDownloadInfo(key) {
-    console.log("key: "+key);
     return fetch(`/rest/DownloadInfo/${this.projectId}?expiration=86400`, {
       method: "POST",
       signal: this.controller.signal,
@@ -77,8 +74,6 @@ class SingleUpload {
     })
     .then(response => response.json())
     .then(data => {
-      console.log("data");
-      console.log(data);
       return data[0].url
     });
   }

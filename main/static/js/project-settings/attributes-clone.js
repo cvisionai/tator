@@ -73,7 +73,6 @@ class AttributesClone {
     for(let i of event.target.options){
       if(i.selected == true) {
         value = i.value;
-        console.log("_getAttributeCheckboxes selected entity: " + i.value);
       }
     }
 
@@ -115,7 +114,6 @@ class AttributesClone {
     let entityOptions = [{"optText":"Select", "optValue": ""}];
 
     for(let o in this.entities){
-      console.log(o);
       let option = {"optText":o, "optValue":o};
       entityOptions.push(option)
     }
