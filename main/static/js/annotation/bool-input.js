@@ -99,6 +99,10 @@ class BoolInput extends TatorElement {
   set default(val) {
     this._default = val;
   }
+  
+  changed(){
+    return this.getValue() !== this._default;
+  }
 
   reset() {
     // Go back to default value

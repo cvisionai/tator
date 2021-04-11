@@ -94,6 +94,10 @@ class TextInput extends TatorElement {
     this._default = val;
   }
 
+  changed(){
+    return this.getValue() !== this._default;
+  }
+
   reset() {
     // Go back to default value
     if (typeof this._default !== "undefined") {
