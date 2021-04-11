@@ -577,7 +577,7 @@ class TimelineD3 extends TatorElement {
       .attr("fill", "#fafafa")
       .attr("opacity", "0.0");
 
-      this._mainLineG.append("clipPath")
+    this._mainLineG.append("clipPath")
       .attr("id", d => d.clipId.id)
       .append("rect")
         .attr("width", this._mainWidth)
@@ -607,45 +607,44 @@ class TimelineD3 extends TatorElement {
       .attr("stroke-width", 1)
       .attr("opacity", "0");
 
-    this._mainSvg.on("mousemove", function(event) {
+    this._mainSvg
+      .on("mousemove", function(event) {
+        event.preventDefault();
 
-      event.preventDefault();
+        // Remember the y-axis is 0 to -1
+        const pointer = d3.pointer(event, that);
+        const pointerFrame = that._mainX.invert(pointer[0]);
+        const pointerValue = mainLineY.invert(pointer[1] - startOfMainLineGraph) + 1.0;
 
-      // Remember the y-axis is 0 to -1
-      const pointer = d3.pointer(event, that);
-      const pointerFrame = that._mainX.invert(pointer[0]);
-      const pointerValue = mainLineY.invert(pointer[1] - startOfMainLineGraph) + 1.0;
+        var selectedData;
+        var currentDistance;
+        var selectedDistance = Infinity;
+        for (let datasetIdx = 0; datasetIdx < mainLineDataset.length; datasetIdx++) {
 
-      var selectedData;
-      var currentDistance;
-      var selectedDistance = Infinity;
-      for (let datasetIdx = 0; datasetIdx < mainLineDataset.length; datasetIdx++) {
+          let d = mainLineDataset[datasetIdx];
 
-        let d = mainLineDataset[datasetIdx];
+          for (let idx = 0; idx < d.graphData.length; idx++) {
+            if (d.graphData[idx].frame > pointerFrame) {
+              if (idx > 0) {
 
-        for (let idx = 0; idx < d.graphData.length; idx++) {
-          if (d.graphData[idx].frame > pointerFrame) {
-            if (idx > 0) {
+                currentDistance = Math.abs(pointerValue - d.graphData[idx - 1].value);
+                if (currentDistance < selectedDistance) {
+                  selectedData = d;
+                  selectedDistance = currentDistance
+                }
 
-              currentDistance = Math.abs(pointerValue - d.graphData[idx - 1].value);
-              if (currentDistance < selectedDistance) {
-                selectedData = d;
-                selectedDistance = currentDistance
+                break;
+
               }
-
-              break;
-
             }
           }
         }
-      }
 
-      if (typeof selectedData != "undefined") {
-        that._highlightMainLine(selectedData.name);
-      }
-    })
-
-    this._mainSvg.on("mouseleave", function() {
+        if (typeof selectedData != "undefined") {
+          that._highlightMainLine(selectedData.name);
+        }
+      })
+    .on("mouseleave", function() {
       that._unhighlightMainLines();
     })
 
@@ -669,7 +668,9 @@ class TimelineD3 extends TatorElement {
   }
 
   /**
+   * Highlights the main timeline associated with the provided name.
    * @param {string} selectedName Name of data to highlight in the main timeline graph
+   *                              Assumes the name matches the dataset.
    */
   _highlightMainLine(selectedName) {
 
@@ -683,7 +684,7 @@ class TimelineD3 extends TatorElement {
   }
 
   /**
-   *
+   * Unhighlights all the lines in the main timeline. This is the default.
    */
   _unhighlightMainLines() {
     this._mainLineG.selectAll("use")
@@ -846,15 +847,25 @@ class TimelineD3 extends TatorElement {
       .selectAll("use")
       .data(d => new Array(1).fill(d))
       .join("use")
+        .attr("pointer-events", "none")
         .attr("stroke", (d, i) => "#797991")
         .attr("fill", (d, i) => "none")
         .attr("transform", (d, i) => `translate(0,${(i + 1) * focusStep})`)
         .attr("xlink:href", d => d.pathId.href)
 
+    focusGLine.selectAll("rect")
+      .on("mouseover", function(event, d) {
+        that._highlightMainLine(d.name);
+      })
+      .on("mouseout", function(event, d) {
+        that._unhighlightMainLines();
+      });
+
     // Unlike the main SVG, this SVG will display the corresponding attribute name
     // and the value when the user hovers over the SVG
     focusGLine.append("text")
         .style("font-size", "12px")
+        .attr("pointer-events", "none")
         .attr("x", 4)
         .attr("y", focusStep / 2)
         .attr("dy", "0.5em")
@@ -864,6 +875,7 @@ class TimelineD3 extends TatorElement {
     const focusLineValues = focusGLine.append("text")
         .style("font-size", "12px")
         .attr("class", "focusLineValues")
+        .attr("pointer-events", "none")
         .attr("x", focusWidth * 0.4)
         .attr("y", focusStep / 2)
         .attr("dy", "0.5em")
@@ -890,6 +902,7 @@ class TimelineD3 extends TatorElement {
 
     // Create the vertical line hover
     const mouseLine = this._focusSvg.append("line")
+      .attr("pointer-events", "none")
       .attr("stroke", "#fafafa")
       .attr("stroke-width", 1)
       .attr("opacity", "0");
