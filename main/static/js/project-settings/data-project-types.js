@@ -5,7 +5,6 @@ class ProjectTypesData {
 
     // Creates navigatable to get from type > entity > attributes
     async _getAttributeDataByType(projectId = this.projectId){
-      console.log("_getProjectTypesData: "+projectId);
       // Promise all.... then bundle them up
       let promises = this._getAllTypePromises(projectId);
       this.attributeDataByType = {};

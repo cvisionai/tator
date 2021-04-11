@@ -7,8 +7,6 @@ class MediaTypeMainEdit extends TypeForm {
   }
 
   _getSectionForm(data){
-    console.log("Get section form");
-    console.log(data.id);
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
       } );

@@ -237,6 +237,7 @@ FILES = \
     components/removable-pill.js \
     components/user-input.js \
     components/user-data.js \
+    components/inputs/array-input.js \
     registration/registration-page.js \
     projects/settings-button.js \
     projects/project-remove.js \

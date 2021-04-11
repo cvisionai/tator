@@ -4,10 +4,8 @@ class DataMediaList{
     }
 
     _setProjectMediaList(data = "", update = false){
-      console.log(data);
       if(data == "") return this.projectMediaList = this.getProjectMediaList(update);
-      
-      
+        
       return this.projectMediaList = this.getListFromData(data);
     }
 
@@ -45,32 +43,29 @@ class DataMediaList{
     // - checked is true if the both lists contain the id
     getCompiledMediaList( mediaIds ){
         let newList = [];
-        console.log("getCompiledMediaList");
+
         this._setProjectMediaList();
 
-        if(mediaIds && mediaIds.length > 0){
-          
-        }
-        this.projectMediaList.forEach((media, i) => {
-          if(mediaIds && mediaIds.length > 0){
-            for(let id of mediaIds ){
-              if (media.id == id ) {
-                return newList.push({
-                  "id" : media.id,
-                  "name" : media.name,
-                  "checked" : true
-                });
+        //if(mediaIds && mediaIds.length > 0){
+          this.projectMediaList.forEach((media, i) => {
+            if(mediaIds && mediaIds.length > 0){
+              for(let id of mediaIds ){
+                if (media.id == id ) {
+                  return newList.push({
+                    "id" : media.id,
+                    "name" : media.name,
+                    "checked" : true
+                  });
+                }
               }
             }
-          }
-          return newList.push({
-            "id" : media.id,
-            "name" : media.name,
-            "checked" : false
+            return newList.push({
+              "id" : media.id,
+              "name" : media.name,
+              "checked" : false
+            });
           });
-        });
-        console.log(newList);
-    
+        //}
         return newList;
     }
 
