@@ -2163,9 +2163,12 @@ class AnnotationCanvas extends TatorElement
   {
     var that = this;
     var location = this.scaleToViewport([mouseEvent.offsetX, mouseEvent.offsetY]);
-
+    var relativeVPLocation = [location[0]/this._dims[0], location[1]/this._dims[1]];
+    var relativeImageLocation = [(relativeVPLocation[0]*this._roi[2])+this._roi[0],
+                                 (relativeVPLocation[1]*this._roi[3])+this._roi[1]];
+    var absImageLocation = [relativeImageLocation[0]*this._dims[0], relativeImageLocation[1]*this._dims[1]];
     this._textOverlay.toggleTextDisplay(this._coordinateOverlayIdx,true);
-    const overlay_coordinate_msg =  `${Math.round(location[0])},${Math.round(location[1])}`;
+    const overlay_coordinate_msg =  `${Math.round(absImageLocation[0])},${Math.round(absImageLocation[1])}`;
     this._textOverlay.modifyText(this._coordinateOverlayIdx,
                                  {content: overlay_coordinate_msg});
     // If we are in select or query modes change cursor on over
