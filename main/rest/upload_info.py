@@ -62,7 +62,9 @@ class UploadInfoAPI(BaseDetailView):
 
         # Generate presigned urls.
         tator_store = get_tator_store(project_obj.bucket)
-        urls, upload_id = tator_store.get_upload_urls(key, expiration, num_parts)
+        urls, upload_id = tator_store.get_upload_urls(
+            key, expiration, num_parts, self.request.build_absolute_uri("/")[:-1]
+        )
 
         # Replace host if external host is given.
         if external_host and project_obj.bucket is None:

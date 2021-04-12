@@ -75,24 +75,28 @@ class TatorStorage(ABC):
 
     @abstractmethod
     def _get_multiple_upload_urls(
-        self, key: str, expiration: int, num_parts: int
+        self, key: str, expiration: int, num_parts: int, domain: str
     ) -> Tuple[List[str], str]:
         """
         Gets multiple presigned upload urls for uploading a large object in more than one part.
         """
 
     @abstractmethod
-    def _get_single_upload_url(self, key: str, expiration: int) -> Tuple[List[str], str]:
+    def _get_single_upload_url(
+        self, key: str, expiration: int, domain: str
+    ) -> Tuple[List[str], str]:
         """ Gets a signle presigned upload url for uploading an object in one part. """
 
-    def get_upload_urls(self, path: str, expiration: int, num_parts: int) -> Tuple[List[str], str]:
+    def get_upload_urls(
+        self, path: str, expiration: int, num_parts: int, domain: str
+    ) -> Tuple[List[str], str]:
         """ Generates the pre-signed urls for uploading objects for a given path. """
         key = self._path_to_key(path)
 
         if num_parts == 1:
-            return self._get_single_upload_url(key, expiration)
+            return self._get_single_upload_url(key, expiration, domain)
 
-        return self._get_multiple_upload_urls(key, expiration, num_parts)
+        return self._get_multiple_upload_urls(key, expiration, num_parts, domain)
 
     def get_size(self, path: str) -> int:
         """Returns the size of an object for the given path, if it exists.
@@ -259,7 +263,7 @@ class MinIOStorage(TatorStorage):
             url = urlunsplit(parsed)
         return url
 
-    def _get_multiple_upload_urls(self, key, expiration, num_parts):
+    def _get_multiple_upload_urls(self, key, expiration, num_parts, domain):
         response = self.client.create_multipart_upload(Bucket=self.bucket_name, Key=key)
         upload_id = response["UploadId"]
         urls = [
@@ -280,7 +284,7 @@ class MinIOStorage(TatorStorage):
             logger.info(f"GOOGLE {url}")
         return urls, upload_id
 
-    def _get_single_upload_url(self, key: str, expiration: int) -> Tuple[List[str], str]:
+    def _get_single_upload_url(self, key, expiration, domain):
         url = self.client.generate_presigned_url(
             ClientMethod="put_object",
             Params={"Bucket": self.bucket_name, "Key": key},
@@ -414,11 +418,13 @@ class GCPStorage(TatorStorage):
             method="GET",
         )
 
-    def _get_multiple_upload_urls(self, key, expiration, num_parts):
-        url_and_id = self.gcs_bucket.blob(key).create_resumable_upload_session()
+    def _get_multiple_upload_urls(self, key, expiration, num_parts, domain):
+        url_and_id = self.gcs_bucket.blob(key).create_resumable_upload_session(
+            origin=domain
+        )
         return [url_and_id] * num_parts, url_and_id
 
-    def _get_single_upload_url(self, key, expiration):
+    def _get_single_upload_url(self, key, expiration, domain):
         url = self.gcs_bucket.blob(key).generate_signed_url(
             version="v4",
             expiration=timedelta(seconds=expiration),
