@@ -19,13 +19,6 @@ class FilterDialog extends ModalDialog {
     this._conditionsDiv.setAttribute("class", "analysis__filter_conditions_list");
     this._header.appendChild(this._conditionsDiv);
 
-    const favesDiv = document.createElement("div");
-    favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
-    this._header.appendChild(favesDiv);
-
-    this._favorites = document.createElement("favorites-panel");
-    favesDiv.appendChild(this._favorites);
-
     const apply = document.createElement("button");
     apply.setAttribute("class", "btn btn-clear");
     apply.textContent = "Apply Filter";
