@@ -1278,9 +1278,11 @@ class AnnotationMulti extends TatorElement {
 
   setRate(val) {
     this._rate = val;
-    for (let video of this._videos)
+    let prime_fps = this._fps[this._longest_idx];
+    for (let idx = 0; idx < this._videos.length; idx++)
     {
-        video.rateChange(this._rate);
+        let video = this._videos[idx];
+        video.rateChange(this._rate*(prime_fps/video.fps));
     }
   }
 
