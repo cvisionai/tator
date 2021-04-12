@@ -37,23 +37,44 @@ class ProjectTypesData {
         return this.attributeDataByType;
       }
 
-      _getAllTypePromises(projectId = this.projectId){
-        // Media Type section.
-        this.mediaTypesBlock = document.createElement("media-type-main-edit");
-        this.localizationBlock = document.createElement("localization-edit");
-        this.leafTypesBlock = document.createElement("leaf-type-edit");
-        this.stateTypesBlock = document.createElement("state-type-edit");
-    
-        const mediaTypesPromise = this.mediaTypesBlock._fetchGetPromise({"id": this.projectId} );
-        const localizationsPromise = this.localizationBlock._fetchGetPromise({"id": this.projectId} );
-        const leafTypesPromise = this.leafTypesBlock._fetchGetPromise({"id": this.projectId} );
-        const stateTypesPromise = this.stateTypesBlock._fetchGetPromise({"id": this.projectId} );
+      _getAllTypePromises(){
+        this._getMediaTypePromise();
+        this._getLocTypePromise();
+        this._getLeafTypePromise();
+        this._getStateTypePromise();
+        this._getMembershipDataPromise();
     
         return [
-          mediaTypesPromise,
-          localizationsPromise,
-          leafTypesPromise,
-          stateTypesPromise
+          this.mediaTypesPromise,
+          this.localizationsPromise,
+          this.leafTypesPromise,
+          this.stateTypesPromise,
+          this.membershipPromise
         ];
+      }
+
+      _getMediaTypePromise(){
+        this.mediaTypesBlock = document.createElement("media-type-main-edit");
+        this.mediaTypesPromise = this.mediaTypesBlock._fetchGetPromise({"id": this.projectId} );
+      }
+
+      _getLocTypePromise(){
+        this.localizationBlock = document.createElement("localization-edit");
+        this.localizationsPromise = this.localizationBlock._fetchGetPromise({"id": this.projectId} );
+      }
+
+      _getLeafTypePromise(){
+        this.leafTypesBlock = document.createElement("leaf-type-edit");
+        this.leafTypesPromise = this.leafTypesBlock._fetchGetPromise({"id": this.projectId} );
+      }
+
+      _getStateTypePromise(){
+        this.stateTypesBlock = document.createElement("state-type-edit");
+        this.stateTypesPromise = this.stateTypesBlock._fetchGetPromise({"id": this.projectId} );
+      }
+
+      _getMembershipDataPromise(){
+        this.membershipData = new MembershipData(this.projectId);
+        this.membershipPromise = this.membershipData._getMembershipPromise();
       }
 }
