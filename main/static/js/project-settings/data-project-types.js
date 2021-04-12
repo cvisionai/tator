@@ -55,26 +55,26 @@ class ProjectTypesData {
 
       _getMediaTypePromise(){
         this.mediaTypesBlock = document.createElement("media-type-main-edit");
-        this.mediaTypesPromise = this.mediaTypesBlock._fetchGetPromise({"id": this.projectId} );
+        return this.mediaTypesPromise = this.mediaTypesBlock._fetchGetPromise({"id": this.projectId} );
       }
 
       _getLocTypePromise(){
         this.localizationBlock = document.createElement("localization-edit");
-        this.localizationsPromise = this.localizationBlock._fetchGetPromise({"id": this.projectId} );
+        return this.localizationsPromise = this.localizationBlock._fetchGetPromise({"id": this.projectId} );
       }
 
       _getLeafTypePromise(){
         this.leafTypesBlock = document.createElement("leaf-type-edit");
-        this.leafTypesPromise = this.leafTypesBlock._fetchGetPromise({"id": this.projectId} );
+        return this.leafTypesPromise = this.leafTypesBlock._fetchGetPromise({"id": this.projectId} );
       }
 
       _getStateTypePromise(){
         this.stateTypesBlock = document.createElement("state-type-edit");
-        this.stateTypesPromise = this.stateTypesBlock._fetchGetPromise({"id": this.projectId} );
+        return this.stateTypesPromise = this.stateTypesBlock._fetchGetPromise({"id": this.projectId} );
       }
 
       _getMembershipDataPromise(){
         this.membershipData = new MembershipData(this.projectId);
-        this.membershipPromise = this.membershipData._getMembershipPromise();
+        return this.membershipPromise = this.membershipData._getMembershipPromise();
       }
 }

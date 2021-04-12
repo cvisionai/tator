@@ -18,13 +18,13 @@ class DataMediaList{
             "name" : d.name
         });
       }
-      localStorage.setItem(`MediaData_${this.projectId}`, JSON.stringify(mediaList));
+      sessionStorage.setItem(`MediaData_${this.projectId}`, JSON.stringify(mediaList));
 
       return mediaList;
     }
 
     getProjectMediaList(update){     
-      const mediaListData = localStorage.getItem(`MediaData_${this.projectId}`);
+      const mediaListData = sessionStorage.getItem(`MediaData_${this.projectId}`);
 
       if(!update && mediaListData){
         return JSON.parse(mediaListData);      
