@@ -198,6 +198,7 @@ FILES = \
     util/join-params.js \
     util/filter-utilities.js \
     util/tator-data.js \
+    util/same-origin-credentials.js \
     components/tator-element.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
@@ -246,6 +247,10 @@ FILES = \
     components/filter-dialog.js \
     components/filter-interface.js \
     components/filter-data.js \
+    components/removable-pill.js \
+    components/user-input.js \
+    components/user-data.js \
+    components/inputs/array-input.js \
     registration/registration-page.js \
     projects/settings-button.js \
     projects/project-remove.js \
@@ -308,6 +313,7 @@ FILES = \
     project-settings/data-media-list.js \
     project-settings/data-project-types.js \
     project-settings/data-attributes-clone.js \
+    project-settings/data-memberships.js \
     project-settings/type-new.js \
     project-settings/attributes-clone.js \
     project-settings/attributes-main.js \
@@ -319,6 +325,7 @@ FILES = \
     project-settings/localization-type-edit.js \
     project-settings/leaf-type-edit.js \
     project-settings/state-type-edit.js \
+    project-settings/membership-edit.js \
     project-settings/project-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \

@@ -403,13 +403,6 @@
   transition: 300ms ease all;
 }
 
-.preview {
-  display: block !important;
-  ///opacity: 0.5; @TODO this should prob be used differntly
-  opacity: 1;
-  transition: 300ms ease all;
-}
-
 // Each hide utility only applies to one breakpoint range.
 @media (max-width: $width-sm - 1px) {
   .hide-sm {

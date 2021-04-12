@@ -3,10 +3,17 @@ class AttributesMain extends HTMLElement {
     super();
     this.loading = new LoadingSpinner();
     this.loadingImg = this.loading.getImg()
+
+    this.attrForms = [];
+    this.hasChanges = false;
+  }
+
+  resetChanges(){
+    this.hasChanges = false;
   }
 
   _init(typeName, fromId, projectId, data, modal){
-    console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
+    //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
 
     // Init object global vars
     this.fromId = fromId;
@@ -22,7 +29,6 @@ class AttributesMain extends HTMLElement {
     // Required helpers.
     this.boxHelper = new SettingsBox( this.modal );
     this.inputHelper = new SettingsInput("media-types-main-edit");
-    this.attributeFormHelper = new AttributesForm();
     this.refreshTypeEvent = new Event('settings-refresh');
 
     // Section h1.
@@ -48,13 +54,6 @@ class AttributesMain extends HTMLElement {
     let attributesSection = document.createElement("div");
 
     if(attributeTypes && attributeTypes.length > 0){
-      // Seperator line @TODO component?
-      // let seperator = document.createElement("div");
-      // seperator.setAttribute("class", "col-12 py-2");
-      // seperator.setAttribute("style", "border-bottom: 1px solid #262e3d;");
-      // seperator.innerHTML = "&nbsp;"
-      // attributesSection.append(seperator);
-
       // Attributes list main heading and trigger
       let heading = this.boxHelper.headingWrap({
           "headingText" : `Edit Attributes (${attributeTypes.length})`,
@@ -79,10 +78,11 @@ class AttributesMain extends HTMLElement {
 
       // Loop through and output attribute forms
       for(let a in attributeTypes){
-        hiddenContent.appendChild( this.attributesOutput( {
-            "attributes": attributeTypes[a],
-            "attributeId": a
-          }) );
+        let attributeContent = this.attributesOutput( {
+          "attributes": attributeTypes[a],
+          "attributeId": a
+        });
+        hiddenContent.appendChild( attributeContent );
       }
     }
 
@@ -108,12 +108,12 @@ class AttributesMain extends HTMLElement {
       afObj.submitAttribute.addEventListener("click", (e) => {
         e.preventDefault();
   
-        this._postAttribute( afObj.addAttributeForm );
+        this._postAttribute( afObj.attrForm );
       });
 
       this.boxHelper._modalConfirm({
         "titleText" : "New Attribute",
-        "mainText" : afObj.addAttributeForm,
+        "mainText" : afObj.attrForm.form,
         "buttonSave" : afObj.submitAttribute,
         "scroll" : true
       });
@@ -124,21 +124,21 @@ class AttributesMain extends HTMLElement {
   }
 
   _getAddForm(){
-    let addAttributeForm = this.attributeFormHelper._initEmptyForm();
+    let attrForm = document.createElement("attributes-form");
+    attrForm._initEmptyForm();
     let submitAttribute = this.inputHelper.saveButton();
 
-    return {addAttributeForm, submitAttribute};
+    return {attrForm, submitAttribute};
   }
 
-  _postAttribute(form){
+  _postAttribute(formObj){
     this.modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = {
       "entity_type": this.typeName,
-      "addition": this.attributeFormHelper._getAttributeFormData( form )
+      "addition": formObj._getAttributeFormData()
     };
 
-    console.log(formJSON);
     let status = 0;
     this._fetchPostPromise({"formData" : formJSON})
     .then(response => {
@@ -146,7 +146,6 @@ class AttributesMain extends HTMLElement {
       return response.json()
     })
     .then(data => {
-      console.log(data);
       let currentMessage = data.message;
       let succussIcon = document.createElement("modal-success");
       let warningIcon = document.createElement("modal-warning");
@@ -169,7 +168,7 @@ class AttributesMain extends HTMLElement {
   }
 
   _dispatchRefresh(e){
-    console.log("modal complete closed");
+    //console.log("modal complete closed");
     this.dispatchEvent(this.refreshTypeEvent);   
   }
 
@@ -195,7 +194,7 @@ class AttributesMain extends HTMLElement {
   _getCloneModal(){
     this.loading.showSpinner();
     let typesData = new ProjectTypesData(this.projectId);
-    console.log(typesData);
+
     typesData._getAttributeDataByType().then( (attributeDataByType) => {
       let clone = new AttributesClone( attributeDataByType );
       let cloneForm = clone._init();
@@ -206,8 +205,6 @@ class AttributesMain extends HTMLElement {
         let inputs = clone.getInputs();
         let cloneData = new AttributesData({"projectId":this.projectId, "typeId": this.fromId, "typeName": this.typeName, inputs});
         return cloneData.createClones().then((r) => {
-          console.log("Clone finished - event dispatched");
-          console.log(this);
           this.dispatchEvent(this.refreshTypeEvent);
           this.boxHelper._modalComplete(r)
         });               
@@ -256,18 +253,21 @@ class AttributesMain extends HTMLElement {
     let formId = attributes.name.replace(/[^\w]|_/g, "").toLowerCase();
 
     // Fields for this form
-    const formContents = this.attributeFormHelper._getFormWithValues(attributes);
-    formContents.setAttribute("class", "attribute-form px-4");
-    formContents.id = `${formId}_${this.fromId}`;
-    formContents.data = attributes;
-    formContents.setAttribute("data-old-name", attributes.name);
-    formContents.hidden = true;
+    let attrForm = document.createElement("attributes-form");
 
-    // add listener
-    attributeCurrent.addEventListener("click", (event) => {
-      event.preventDefault();
-      this._toggleAttributes(formContents);
-      this._toggleChevron(event)
+    // create form and attach to the el
+    attrForm._getFormWithValues(attributes);
+    attrForm.form.setAttribute("class", "attribute-form px-4");
+    attrForm.setAttribute("data-old-name", attributes.name);
+    attrForm.id = `${formId}_${this.fromId}`;
+    attrForm.form.data = attributes; // @TODO how is this used?
+    //attrForm.hidden = true;
+
+    this.attrForms.push(attrForm);
+    
+    // form class listener
+    attrForm.addEventListener("change", () => {
+      this.hasChanges = true;
     });
 
     // create box with heading for this form
@@ -276,10 +276,18 @@ class AttributesMain extends HTMLElement {
       "level":2
     } );
 
-    //delete section 
-    formContents.appendChild(this.deleteAttr(attributes.name));
+    let hiddenInnerBox = document.createElement("div");
+    hiddenInnerBox.appendChild(attrForm);
+    hiddenInnerBox.appendChild(this.deleteAttr(attributes.name));
+    hiddenInnerBox.hidden = true;
+    boxOnPage.appendChild(hiddenInnerBox);
 
-    boxOnPage.appendChild(formContents);
+    // add listener
+    attributeCurrent.addEventListener("click", (e) => {
+      e.preventDefault();
+      this._toggleAttributes(hiddenInnerBox);
+      this._toggleChevron(e);
+    });
 
     return boxOnPage;
   }
@@ -355,7 +363,6 @@ class AttributesMain extends HTMLElement {
   
     if(name != "undefined"){
       deleteAttribute.deleteFetch().then((data) => {
-        console.log(data.message);
         this.loading.hideSpinner();
         this.dispatchEvent(this.refreshTypeEvent);
         return this.boxHelper._modalComplete(data.message);

@@ -58,10 +58,7 @@ class SettingsNav extends TatorElement {
     return new CustomEvent('settings-nav-remove', detail);
   }
 
-  newNavItem(e){
-    console.log("START: Event handler newNavItem")
-    console.log(e.detail);
-    
+  newNavItem(e){  
     // Create the link.
     let obj = {
       "id" : e.detail.typeId,
@@ -69,7 +66,6 @@ class SettingsNav extends TatorElement {
     }
     let itemSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}`;
     let subNavLink = this.getSubItem(obj, e.detail.typeName, itemSelector);
-    console.log(subNavLink);
     
     // Find the end of the type's section.
     let addNewNode = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-New']`);
@@ -80,17 +76,11 @@ class SettingsNav extends TatorElement {
   }
 
   updateNavItem(e){
-    console.log("Event handler updateNavItem")
-    console.log(e.detail);
-
     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
     return navItem.innerHTML = e.detail.newName;
   }
 
   deleteNavItem(e){
-    console.log("Event handler deleteNavItem")
-    console.log(e.detail);
-
     // Delete the side nav item, and container
     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
     let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}`);
@@ -239,7 +229,7 @@ class SettingsNav extends TatorElement {
     //
     let itemId = obj.id; // ie. video type with ID of 62
     let subNavLink = document.createElement("a");
-    let subItemText = obj.name;
+    let subItemText = obj.name ? obj.name : obj.username;
 
     subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
     subNavLink.style.paddingLeft = "44px";
@@ -249,7 +239,6 @@ class SettingsNav extends TatorElement {
     // Sub Nav Links
     subNavLink.addEventListener("click", (e) => {
       e.preventDefault();
-      console.log("id for toggle: "+itemIdSelector);
 
       this.makeNavItemsActive( e.target, type );
       this.toggleItemContainer({ "itemIdSelector" : itemIdSelector });

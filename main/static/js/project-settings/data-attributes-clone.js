@@ -6,7 +6,6 @@ class AttributesData {
       this.typeName = typeName;
       this.typeId = typeId;
       this.inputs = inputs;
-      this.attributeFormHelper = new AttributesForm();
       this.inputHelper = new SettingsInput("media-types-main-edit");
       this.responseMessage = "";
     }
@@ -43,12 +42,17 @@ class AttributesData {
         if(c.checked == true){
           nameOfSaved = c.value;
           let cloneValues = JSON.parse(c.dataset.data); //parse data attribute
-          let clonedForm = this.attributeFormHelper._getFormWithValues(cloneValues);
+
+          console.log("cloneValues");
+          console.log(cloneValues);
+
+          this.attributeForm = new AttributesForm();
+          this.attributeForm._getFormWithValues({clone : true, ...cloneValues});
           let formJSON = {
             "entity_type": this.typeName,
-            "addition": this.attributeFormHelper._getAttributeFormData(clonedForm)
+            "addition": this.attributeForm._getAttributeFormData()
           };
-          let status = "";
+          //let status = "";
   
           let promise = this._fetchPostPromise({
             "formData" : formJSON

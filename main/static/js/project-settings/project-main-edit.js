@@ -14,8 +14,8 @@ class ProjectMainEdit extends TypeForm {
   }
   
   _init({ data, modal, sidenav}){
-    console.log(`${this.tagName} init.`);
-    console.log(data);
+    // console.log(`${this.tagName} init.`);
+    // console.log(data);
 
     // init vars
     this.data = data;
@@ -109,7 +109,6 @@ class ProjectMainEdit extends TypeForm {
 
   _fetchPatchPromise({ id = this.projectId } = {}) {
     let data = this._getFormData();
-    console.log(data);
 
     if(this._shadow.querySelectorAll(".errored").length > 0 || this._shadow.querySelectorAll(".invalid").length > 0){
       return this._modalError("Please fix form errors first.");
@@ -192,8 +191,6 @@ class ProjectMainEdit extends TypeForm {
         isImage
       };
 
-      console.log(file.size);
-
       // set preview
       this._thumbnailPreview(file);
 
@@ -201,7 +198,6 @@ class ProjectMainEdit extends TypeForm {
       let uploader = new SingleUpload( uploadData );
       return uploader.start().then( (key) => {
         this._setHiddenThumbInputValue(key);
-        console.log("Uploader complete.");
       });
     });
 
@@ -266,7 +262,7 @@ class ProjectMainEdit extends TypeForm {
 
   _thumbnailPreview(img, isFile = true) {
     let outputElement = this._thumbEdit.querySelector(".projects__image");
-    console.log(img);
+
     if(isFile) {
       outputElement.src = URL.createObjectURL( img );
     } else {
@@ -325,7 +321,6 @@ class ProjectMainEdit extends TypeForm {
     this.loading.hideSpinner();
 
     this.reset();
-    console.log("[Reset with newly fetched project data.]");
   }
 
   // save and formdata
@@ -342,7 +337,7 @@ class ProjectMainEdit extends TypeForm {
       if (thumbVal != "" && thumbVal != null) formDataJSON.thumb = thumbVal;
     }
 
-    console.log(formDataJSON);
+    //console.log(formDataJSON);
 
     return formDataJSON;
   }
@@ -354,7 +349,6 @@ class ProjectMainEdit extends TypeForm {
     if (patch) {
       patch.then(response => {
         return response.json().then(data => {
-          console.log("Save response status: " + response.status)
           if (response.status == "200") {
             this._modalSuccess(data.message);
             this.resetHard();
@@ -439,7 +433,6 @@ class ProjectMainEdit extends TypeForm {
   
     if(this.typeId != "undefined"){
       deleteProject.deleteFetch().then((data) => {
-        console.log(data.message);
         this.loading.hideSpinner();
         this._modalComplete(data.message)
         return setTimeout(function(){

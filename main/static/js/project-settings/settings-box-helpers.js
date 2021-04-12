@@ -111,8 +111,9 @@ class SettingsBox {
   }
 
   // MODAL
+  // @TODO attributes main still using these, but form has its own
   _modalSuccess(message){
-    console.log("modal success");
+    
     this._modalClear();
     let text = document.createTextNode(" Success");
     this.modal._titleDiv.innerHTML = "";
@@ -125,7 +126,7 @@ class SettingsBox {
   }
 
   _modalError(message){
-    console.log("modal error");
+    
     this._modalClear();
     let text = document.createTextNode(" Error saving project details");
     this.modal._titleDiv.innerHTML = "";
@@ -141,7 +142,7 @@ class SettingsBox {
     buttonSave = document.createElement("button"),
     scroll = true
   } = {}){
-    console.log("modal confirm");
+    
     this._modalClear();
     this.modal._titleDiv.innerHTML = titleText;
 
@@ -154,7 +155,7 @@ class SettingsBox {
     if(scroll) this.modal._main.classList.add("fixed-heigh-scroll");
 
     let buttonClose = document.createElement("button")
-    buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold");
+    buttonClose.setAttribute("class", "btn btn-clear btn-charcoal f1 text-semibold");
     buttonClose.innerHTML = "Cancel";
 
     buttonClose.addEventListener("click", this.modal._closeCallback);
@@ -165,7 +166,7 @@ class SettingsBox {
   }
 
   _modalComplete(message){
-    console.log("modal complete");
+    
     this._modalClear();
     let text = document.createTextNode("Complete");
     this.modal._titleDiv.innerHTML = "";
@@ -178,7 +179,6 @@ class SettingsBox {
   }
 
   _modalClear(){
-    console.log("modal clear");
     this.modal._titleDiv.innerHTML = "";
     this.modal._main.innerHTML = "";
     this.modal._footer.innerHTML = "";
@@ -187,7 +187,6 @@ class SettingsBox {
   }
 
   _modalCloseCallback(){
-    console.log("modal close");
     return this.modal._closeCallback();
   }
 

@@ -22,8 +22,8 @@ class TypeForm extends TatorElement {
 
   _init({ data, modal, sidenav}){
     // Log to verify init
-    console.log(`${this.readableTypeName} init.`);
-    console.log(data);
+    // console.log(`${this.readableTypeName} init.`);
+    // console.log(data);
     
     // Initial values
     this.data = data;
@@ -88,11 +88,8 @@ class TypeForm extends TatorElement {
     });
 
     let formData = this._getFormData("New", true);
-    console.log("New form Data....");
-    console.log(formData);
 
     addNew.saveFetch(formData).then(([data, status]) => {
-      console.log(data.message);
       this.loading.hideSpinner();
 
       if(status != 400){
@@ -161,6 +158,8 @@ class TypeForm extends TatorElement {
         return "state-type-edit";
       case "Project" : 
         return "project-main-edit";
+      case "Membership" :
+        return "membership-edit";
       default:
         break;
     }
@@ -182,7 +181,7 @@ class TypeForm extends TatorElement {
     this.attributeSection = document.createElement("attributes-main");
     this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
     this.attributeSection._init(this.typeName, this.typeId, this.projectId, this.data.attribute_types, this.modal);
-
+    
     // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
     this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this) );
 
@@ -197,7 +196,7 @@ class TypeForm extends TatorElement {
     this.saveButton = this.inputHelper.saveButton();
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
-      if( this._shadow.querySelectorAll(".changed").length > 0 ){
+      if( this._form.classList.contains("changed") || this.attributeSection.hasChanges ){
         console.log("Save for id: "+id);
         this._save( {"id":id} )
       } else {
@@ -306,7 +305,6 @@ class TypeForm extends TatorElement {
   
     if(this.typeId != "undefined"){
       deleteType.deleteFetch().then((data) => {
-        console.log(data.message);
         this._updateNavEvent("remove");
         this.loading.hideSpinner();
         return this._modalComplete(data.message);
@@ -359,9 +357,8 @@ class TypeForm extends TatorElement {
 
   // PATCH
   _fetchPatchPromise({id = -1 } = {}){
-    console.log("Patch id: "+id);
+    console.log("Form data for patch id: "+id);
     let formData = this._getFormData(id);
-    console.log(formData);
 
     if(this._shadow.querySelectorAll(".errored").length > 0 || this._shadow.querySelectorAll(".invalid").length > 0){
       return this._modalError("Please fix form errors first.");
@@ -410,38 +407,43 @@ class TypeForm extends TatorElement {
       }
     }
 
-    // Attribute forms
-    let hasAttributeChanges =false;
-    let attrPromises = null;
-    let attrForms = this._shadow.querySelectorAll(`.attribute-form`);
-    let attrFormsChanged = this._shadow.querySelectorAll(`.attribute-form.changed`);
-    let attrFormsInvalid = this._shadow.querySelectorAll(`.attribute-form .invalid`);
-
-    if(attrFormsChanged.length > 0 && attrFormsInvalid.length > 0){
-      // Check Attr forms for errors if there are changes.
-      errors += 1;
-    } else if (attrFormsChanged.length > 0 && attrFormsInvalid.length === 0){
-      // If any of the changed but no errors, proceed.
+    let hasAttributeChanges = false;
+    const attrPromises = {};
+    if(this.attributeSection.hasChanges){
       hasAttributeChanges = true;
-      attrPromises = this.attributeFormHelper._getAttributePromises({
-        id,
-        "entityType" : this.typeName,
-        globalAttribute,
-        attrForms,
-        attrFormsChanged
-      });
-      console.log("attrPromises");
-      console.log(attrPromises);
-      if(attrPromises){
-        promises = [...promises, ...attrPromises.promises];
-      }      
+      const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
+    
+      //@todo make this a flag on the form
+      let attrFormsInvalid = this._shadow.querySelectorAll(`.attribute-form .invalid`);
+
+      if(attrFormsChanged.length > 0 && attrFormsInvalid.length > 0){
+        // Check Attr forms first for errors if there are changes.
+        errors += 1;
+      } else if (attrFormsChanged.length > 0 && attrFormsInvalid.length === 0){
+        // If any of the changed but no errors, proceed.
+        attrPromises.promises = [];
+        attrPromises.attrNamesNew = [];
+        attrPromises.attrNames = [];
+
+        if(attrFormsChanged && attrFormsChanged.length > 0){
+          for(let form of attrFormsChanged){
+            let promiseInfo = form._getPromise({ id, entityType : this.typeName });
+            attrPromises.promises.push(promiseInfo.promise);
+            attrPromises.attrNamesNew.push(promiseInfo.newName);
+            attrPromises.attrNames.push(promiseInfo.oldName);
+          }
+
+          if(attrPromises){
+            promises = [...promises, ...attrPromises.promises];
+          } 
+        }     
+      }
     }
 
     let messageObj = {};
     if(promises.length > 0 && errors === 0){
       // Check if anything changed
       Promise.all(promises).then( async( respArray ) => {
-        console.log(respArray);
         let responses = [];
         respArray.forEach((item, i) => {
           responses.push( item.json() )
@@ -493,15 +495,17 @@ class TypeForm extends TatorElement {
                 this.resetHard(id);
               }
           }).then( () => {
-            console.log(this);
             // Reset changed flag
             //let mainForm = this._shadow.getElementById(id);
             if(this._form.classList.contains("changed")) this._form.classList.remove("changed");
 
             if(hasAttributeChanges){            
-              let attrFormsChanged = this._shadow.querySelectorAll(`.attribute-form.changed`);
+              const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
               if(attrFormsChanged.length > 0 ) {
-                for(let f of attrFormsChanged) f.classList.remove("changed");
+                for(let f of attrFormsChanged) {
+                  f.classList.remove("changed");
+                  f.changeReset();
+                }
               }
             }
          
@@ -512,7 +516,7 @@ class TypeForm extends TatorElement {
           this.loading.hideSpinner();
         });
     } else if (!promises.length > 0 ) {
-      console.log(promises);
+
       this.loading.hideSpinner();
       return this._modalSuccess("Nothing new to save!");
     } else if (!errors === 0) {
@@ -552,16 +556,16 @@ class TypeForm extends TatorElement {
       let formReadable2 = hasAttributeChanges ? attrPromises.attrNamesNew[index] : "";
 
       if( item.status == 200){
-        console.log("Return Message - It's a 200 response.");
+        //console.log("Return Message - It's a 200 response.");
         iconWrap.appendChild(succussIcon);
         messageSuccess += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
       } else if(item.status != 200){
         if (!hasAttributeChanges ){
           iconWrap.appendChild(warningIcon);
-          console.log("Return Message - It's a 400 response for main form.");
+          //console.log("Return Message - It's a 400 response for main form.");
           messageError += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
         } else if(hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-          console.log("Return Message - It's a 400 response for attr form.");
+          //console.log("Return Message - It's a 400 response for attr form.");
           let input = `<input type="checkbox" checked name="global" data-old-name="${formReadable}" class="checkbox"/>`;
           let newName = formReadable == formReadable2 ? "" : ` new name "${formReadable2}"`
           messageConfirm += `<div class="py-2">${input} Attribute "${formReadable}" ${newName}</div>`
@@ -587,19 +591,29 @@ class TypeForm extends TatorElement {
       let confirmCheckboxes = this.modal._shadow.querySelectorAll('[name="global"]');
       this._modalCloseCallback();
          
-      console.log(confirmCheckboxes);
       for(let check of confirmCheckboxes){
         //add and changed flag back to this one
-        console.log(check);
         let name = check.dataset.oldName;
         let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
 
         //add back changed flag
-        this._shadow.querySelector(`#${formId}`).classList.add("changed");
+        for(let form of this.attributeSection.attrForms){
+          // this._shadow.querySelector(`#${formId}`).classList.add("changed");
+          if(form.id == formId){
+            form.classList.add("changed");
+            form.changed = true;
+          }
+        }
 
         if(check.checked == true){
           console.log("User marked as global: "+name);
-          this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "true";
+          //this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "true";
+          for(let form of this.attributeSection.attrForms){
+            // this._shadow.querySelector(`#${formId}`).classList.add("changed");
+            if(form.id == formId){
+              form.dataset.isGlobal = "true";
+            }
+          }
         } else {
           console.log("User marked NOT global, do not resend: "+name);
 
@@ -611,7 +625,7 @@ class TypeForm extends TatorElement {
       this._save({"id" : id, "globalAttribute" : true})
     });
 
-    return buttonSave
+    return buttonSave;
   }
 
   _toggleChevron(e){
@@ -645,7 +659,6 @@ class TypeForm extends TatorElement {
   }
 
   _nameChanged() {
-    console.log("This name changed");
     if (this._getNameInputValue() === this._getNameFromData()) return false;
     return true;
   }
@@ -708,7 +721,6 @@ class TypeForm extends TatorElement {
     this.loading.hideSpinner();
 
     if(this.typeName == "MediaType"){
-      console.log(this.typeName);
       const mediaList = new DataMediaList( this.projectId );
       mediaList._setProjectMediaList(data, true);
     }
@@ -718,7 +730,6 @@ class TypeForm extends TatorElement {
 
   _findDataById(allData){
     for(let x of allData){
-      console.log(`allData.id ${x.id} and this.typeId ${this.typeId}`);
       if (x.id == this.typeId) return x;
     }
     return false;
@@ -726,7 +737,6 @@ class TypeForm extends TatorElement {
 
   // MODAL
   _modalSuccess(message){
-    console.log("modal success");
     this._modalClear();
     let text = document.createTextNode(" Success");
     this.modal._titleDiv.innerHTML = "";
@@ -739,7 +749,6 @@ class TypeForm extends TatorElement {
   }
 
   _modalError(message){
-    console.log("modal error");
     this._modalClear();
     let text = document.createTextNode(" Error");
     this.modal._titleDiv.innerHTML = "";
@@ -755,7 +764,6 @@ class TypeForm extends TatorElement {
     buttonSave = document.createElement("button"),
     scroll = true
   } = {}){
-    console.log("modal confirm");
     this._modalClear();
     this.modal._titleDiv.innerHTML = titleText;
 
@@ -779,7 +787,6 @@ class TypeForm extends TatorElement {
   }
 
   _modalComplete(message){
-    console.log("modal complete");
     this._modalClear();
     let text = document.createTextNode("Complete");
     this.modal._titleDiv.innerHTML = "";
@@ -792,7 +799,6 @@ class TypeForm extends TatorElement {
   }
 
   _modalClear(){
-    console.log("modal clear");
     this.modal._titleDiv.innerHTML = "";
     this.modal._main.innerHTML = "";
     this.modal._footer.innerHTML = "";
@@ -801,13 +807,11 @@ class TypeForm extends TatorElement {
   }
 
   _modalCloseCallback(){
-    console.log("modal close");
     return this.modal._closeCallback();
   }
 
   // Update the navigation
   _updateNavEvent(whatChanged, newName = "", newId = -1){
-    console.log("Update the nav....");
     if(whatChanged == "remove"){
       let event = this.sideNav.removeItemEvent(this.typeId, this.typeName);
       this.sideNav.dispatchEvent(event);

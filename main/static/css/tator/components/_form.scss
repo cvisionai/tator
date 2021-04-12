@@ -32,6 +32,15 @@
   }
 }
 
+.radio {
+  @extend .checkbox;
+  display: block;
+  margin: $spacing-4 auto;
+  &:first-child {
+    margin-top: $spacing-3;
+  }
+}
+
 .form-control,
 .form-select {
   -webkit-appearance: none;
