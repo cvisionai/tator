@@ -729,7 +729,8 @@ class AnnotationCanvas extends TatorElement
     this._textOverlay.style.position = "absolute";
     this._textOverlay.style.display = "none"; // Don't display until a resize
     this._shadow.appendChild(this._textOverlay);
-
+    this._coordinateOverlayIdx = this._textOverlay.addText(0.93,.05, "", {'fontSize':'12pt'});
+    this._textOverlay.toggleTextDisplay(this._coordinateOverlayIdx,false);
     this.overlayTextStyle =
       {"fontSize": "24pt",
        "fontWeight": "bold",
@@ -2142,6 +2143,7 @@ class AnnotationCanvas extends TatorElement
   {
     let needRefresh = false;
     this._textOverlay.classList.remove("select-pointer");
+    this._textOverlay.toggleTextDisplay(this._coordinateOverlayIdx,false);
     if (this._emphasis != null && this._emphasis != this.activeLocalization)
     {
       this._emphasis = null;
@@ -2161,6 +2163,14 @@ class AnnotationCanvas extends TatorElement
   {
     var that = this;
     var location = this.scaleToViewport([mouseEvent.offsetX, mouseEvent.offsetY]);
+    var relativeVPLocation = [location[0]/this._dims[0], location[1]/this._dims[1]];
+    var relativeImageLocation = [(relativeVPLocation[0]*this._roi[2])+this._roi[0],
+                                 (relativeVPLocation[1]*this._roi[3])+this._roi[1]];
+    var absImageLocation = [relativeImageLocation[0]*this._dims[0], relativeImageLocation[1]*this._dims[1]];
+    this._textOverlay.toggleTextDisplay(this._coordinateOverlayIdx,true);
+    const overlay_coordinate_msg =  `${Math.round(absImageLocation[0])},${Math.round(absImageLocation[1])}`;
+    this._textOverlay.modifyText(this._coordinateOverlayIdx,
+                                 {content: overlay_coordinate_msg});
     // If we are in select or query modes change cursor on over
     if (this._mouseMode == MouseMode.QUERY || this._mouseMode == MouseMode.SELECT)
     {
