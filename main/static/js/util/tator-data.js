@@ -266,7 +266,7 @@ class TatorData {
 
 
   /**
-    * Returns localizations list 
+    * Returns localizations list
    */
   async getLocalizations({ params = "", start = 0, stop = 20} = {}){
     const response = await fetch(`/rest/Localizations/${this._project}?start=${start}&stop=${stop}${params}`, {
@@ -674,12 +674,24 @@ class TatorData {
    */
   generateMediaLink(mediaId, frame, entityId) {
     var outStr = `/${this._project}/annotation/${mediaId}?`;
+    var addedParam = false;
+
     if (mediaId) {
+      if (addedParam) {
+        outStr += "&"
+      }
       outStr += `frame=${frame}`;
+      addedParam = true;
     }
+
     if (entityId) {
+      if (addedParam) {
+        outStr += "&"
+      }
       outStr += `selected_entity=${entityId}`;
+      addedParam = true;
     }
+
     return outStr;
   }
 }
