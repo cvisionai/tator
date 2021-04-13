@@ -52,9 +52,10 @@ class TatorSES:
         # Add attachments if there are any
         # Download the S3 object into a byte stream and attach it
         # #TODO Potentially limit the attachment size(s)
+        tator_store = get_tator_store()
         for attachment in attachments:
             f_p = io.BytesIO()
-            get_tator_store().download_fileobj(attachment['key'], f_p)
+            tator_store.download_fileobj(attachment['key'], f_p)
             f_p.seek(0)
             part = MIMEApplication(f_p.read())
             part.add_header('Content-Disposition', 'attachment', filename=attachment['name'])
