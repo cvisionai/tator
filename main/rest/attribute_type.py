@@ -90,6 +90,8 @@ class AttributeTypeListAPI(BaseListView):
         objects = []
         for entity_type, entity in ENTITY_TYPES.values():
             for instance in entity_type.objects.filter(project=project):
+                if not instance.attribute_types:
+                    continue
                 if (
                     any(
                         attribute_name == attribute["name"]

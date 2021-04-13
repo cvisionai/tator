@@ -478,6 +478,7 @@ class AnnotationPage extends TatorPage {
 
     this._versionDialog.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal", "");
+      document.body.classList.remove("shortcuts-disabled");
     });
 
     this._versionDialog.addEventListener("versionSelect", evt => {
@@ -497,6 +498,7 @@ class AnnotationPage extends TatorPage {
     this._versionButton.addEventListener("click", () => {
       this._versionDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
+      document.body.classList.add("shortcuts-disabled");
     });
 
     this._bookmarkDialog.addEventListener("close", evt => {

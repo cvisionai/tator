@@ -503,6 +503,7 @@ class AttributesForm extends TatorElement {
       this._dtype.setValue(dtype);
 
       this._dtype.addEventListener("change", (e) => {
+        this._formChanged();
         // get new type, and check fields are all OK
         let newType = this._dtype.getValue();
         this._showDynamicFields(newType);
@@ -523,6 +524,7 @@ class AttributesForm extends TatorElement {
 
       // On change the form will need to change fields.
       this._dtype.addEventListener("change", (e) => {
+        this._formChanged();
         let newType = this._dtype.getValue();
         // warning div not required for new dtype selections
         this._showDynamicFields(newType);
@@ -649,43 +651,51 @@ class AttributesForm extends TatorElement {
     const formData = {};
 
     // name only if changed || can not be "" 
-    if ((this._name.changed() || this.isClone) && this._name.getValue() ) {
+    //if ((this._name.changed() || this.isClone) && this._name.getValue() ) {
+    if ( this._name.getValue() ) {
       formData.name = this._name.getValue();
     }
 
     // 
-    if ((this._description.changed()  || this.isClone) && this._description.getValue()) {
+    //if ((this._description.changed()  || this.isClone) && this._description.getValue()) {
+    if (this._description.getValue()) {
       formData.description = this._description.getValue();
     }
 
     //
-    if ((this._order.changed()  || this.isClone)&& this._order.getValue()) {
+    //if ((this._order.changed()  || this.isClone)&& this._order.getValue()) {
+    if (this._order.getValue()) {
       formData.order = this._order.getValue();
     }
 
     //
-    if ((this._required.changed() || this.isClone) && this._required.getValue()) {
+    //if ((this._required.changed() || this.isClone) && this._required.getValue()) {
+    if (this._required.getValue()) {
       formData.required = this._required.getValue();
     }
 
     //
-    if ((this._visible.changed() || this.isClone) && this._visible.getValue()) {
+    //if ((this._visible.changed() || this.isClone) && this._visible.getValue()) {
+    if (this._visible.getValue()) {
       formData.visible = this._visible.getValue();
     }
 
     //
     const dtype = this._dtype.getValue();
-    if ((this._dtype.changed() || this.isClone) && dtype) {
+    //if ((this._dtype.changed() || this.isClone) && dtype) {
+    if (dtype) {
       formData.dtype = this._dtype.getValue();
     }
 
     let _default = ""
     if(dtype == "enum"){
-      if ((this._enumDefault.changed || this.isClone) && this.enumDefaultValue) {
+      //if ((this._enumDefault.changed || this.isClone) && this.enumDefaultValue) {
+      if (this.enumDefaultValue) {
         formData["default"] = this.enumDefaultValue;
       }
     } else {
-      if ((this._default.changed() || this.isClone) && this._default.getValue()) {
+      //if ((this._default.changed() || this.isClone) && this._default.getValue()) {
+      if (this._default.getValue()) {
         _default = this._default.getValue();
         formData["default"] = _default;
       }
@@ -695,22 +705,26 @@ class AttributesForm extends TatorElement {
     // 
     if (dtype === "int" || dtype === "float") {
       //
-      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue()) {
+      //if ((this._minimum.changed() || this.isClone) && this._minimum.getValue()) {
+      if (this._minimum.getValue()) {
         formData.minimum = Number(this._minimum.getValue());
       }
 
       //
-      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue()) {
+      //if ((this._maximum.changed() || this.isClone) && this._maximum.getValue()) {
+      if (this._maximum.getValue()) {
         formData.maximum = Number(this._maximum.getValue());
       }
     }
 
     if (dtype === "enum") {
-      if ((this._choices.changed() || this.isClone) && this._choices.getValue()) {
+      //if ((this._choices.changed() || this.isClone) && this._choices.getValue()) {
+      if (this._choices.getValue()) {
         formData.choices = this._choices.getValue();
       }
 
-      if ((this._labels.changed() || this.isClone) && this._labels.getValue()) {
+      //if ((this._labels.changed() || this.isClone) && this._labels.getValue()) {
+      if (this._labels.getValue()) {
         formData.labels = this._labels.getValue();
       }
     }
