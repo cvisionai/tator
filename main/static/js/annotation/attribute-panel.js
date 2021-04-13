@@ -389,9 +389,10 @@ class AttributePanel extends TatorElement {
       const name = widget.getAttribute("name");
       const value = values.attributes[name];
       // Only set the name if it is defined
-      if (value != undefined)
-      {
+      if (value != undefined) {
         widget.setValue(values.attributes[name]);
+      } else if (!["ID", "Created By"].includes(name)) {
+        widget.reset();
       }
     }
     this._emitChanges = true;
