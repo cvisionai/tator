@@ -1093,7 +1093,7 @@ class AnnotationMulti extends TatorElement {
   syncCheck()
   {
     let idx = 0;
-    let primeFrame = video[this._longest_idx].currentFrame();
+    let primeFrame = this._videos[this._longest_idx].currentFrame();
     for (let video of this._videos)
     {
       if (idx == this._longest_idx)
