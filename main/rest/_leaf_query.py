@@ -161,7 +161,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('id')
-    qs = qs.distinct()
+    qs = qs.distinct('id')
     if start is not None and stop is not None:
         qs = qs[start:stop]
     elif start is not None:
@@ -194,7 +194,7 @@ def get_leaf_queryset(project, params):
         query = get_leaf_es_query(params)
         leaf_ids, _  = TatorSearch().search(project, query)
         qs = Leaf.objects.filter(pk__in=leaf_ids, deleted=False).order_by('id')
-        qs = qs.distinct()
+        qs = qs.distinct('id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_leaf_psql_queryset(project, filter_ops, params)
