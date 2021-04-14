@@ -66,14 +66,7 @@ class FilterConditionGroup extends TatorElement {
 
     // Create a new element for the user to apply a new condition/rule to the filter
     addConditionButton.addEventListener("click", () => {
-
-      var newCondition = document.createElement("filter-condition");
-      newCondition.data = this._data;
-      this._conditionDiv.appendChild(newCondition);
-
-      newCondition.addEventListener("remove", () => {
-        this._conditionDiv.removeChild(newCondition);
-      });
+      this.addCondition();
     });
   }
 
@@ -120,11 +113,26 @@ class FilterConditionGroup extends TatorElement {
 
     // Loop through each of the condition data and create the element
     for (let conditionData of val) {
-      var newCondition = document.createElement("filter-condition");
-      newCondition.data = this._data;
-      newCondition.setCondition(conditionData);
-      this._conditionDiv.appendChild(newCondition);
+      this.addCondition(conditionData);
     }
+  }
+
+  /**
+   * @precondition data property of this object must have been set
+   * @param {FilterConditionData} val
+   */
+  addCondition(val) {
+    var newCondition = document.createElement("filter-condition");
+    newCondition.data = this._data;
+
+    if (val != undefined) {
+      newCondition.setCondition(val);
+    }
+    this._conditionDiv.appendChild(newCondition);
+
+    newCondition.addEventListener("remove", () => {
+      this._conditionDiv.removeChild(newCondition);
+    });
   }
 }
 
