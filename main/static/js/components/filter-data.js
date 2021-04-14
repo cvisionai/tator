@@ -24,6 +24,14 @@ class FilterData {
     this.versions = this._modelData.getStoredVersions();
     this.sections = this._modelData.getStoredSections();
 
+    // Want to be able to filter based on localization dtypes. Package up the localization types
+    // and add it as an attribute
+    var localizationTypeOptions = [];
+    for (let idx = 0; idx < this.localizationTypes.length; idx++) {
+      let locType = this.localizationTypes[idx];
+      localizationTypeOptions.push(`${locType.dtype}_${locType.id}`);
+    }
+
     // Versions aren't typically part of the localization type's user attribute list.
     // Pretend that it's an attribute with the name _version and apply it to each
     // localization type so that it can be part of the filter parameters.
@@ -66,6 +74,13 @@ class FilterData {
         dtype: "enum"
       };
       entityType.attribute_types.push(versionAttribute);
+
+      var dtypeAttribute = {
+        choices: localizationTypeOptions,
+        name: "_dtype",
+        dtype: "enum"
+      }
+      entityType.attribute_types.push(dtypeAttribute);
 
       this._allTypes.push(entityType);
     }

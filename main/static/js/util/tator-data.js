@@ -410,10 +410,12 @@ class TatorData {
    *
    * @param #TODO sectionIds
    *
+   * @param {integer} dtype - Optional
+   *
    * @returns {array}
    *   Results based on outputType and given filterData
    */
-  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds, sectionIds) {
+  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds, sectionIds, dtype) {
 
     // #TODO In the future, this may turn into promises per meta/dtype
     var promises = [];
@@ -464,6 +466,10 @@ class TatorData {
           paramString += ","
         }
       }
+    }
+
+    if (dtype != undefined) {
+      paramString += `&type=${dtype}`
     }
 
     let url = "/rest";
@@ -554,6 +560,7 @@ class TatorData {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
+    var typeFilters = [];
     var versionFilters = [];
     var locGroups = {};
       this._localizationTypes.forEach(locType => {
@@ -568,6 +575,9 @@ class TatorData {
         else {
           if (filter.field == "_version") {
             versionFilters.push(filter);
+          }
+          else if (filter.field == "_dtype") {
+            typeFilters.push(filter);
           }
           else {
             localizationFilters.push(filter);
@@ -590,9 +600,18 @@ class TatorData {
       var versionIds = [];
       if (versionFilters.length > 0) {
         for (let idx = 0; idx < versionFilters.length; idx++) {
-            // Expected format (Name (ID:#))
-            // #TODO Maybe this should be moved elsewhere to remove this dependency
-            versionIds.push(Number(versionFilters[idx].value.split('(ID:')[1].replace(")","")));
+          // Expected format (Name (ID:#))
+          // #TODO Maybe this should be moved elsewhere to remove this dependency
+          versionIds.push(Number(versionFilters[idx].value.split('(ID:')[1].replace(")","")));
+        }
+      }
+
+      var dtypeIds = [];
+      if (typeFilters.length > 0) {
+        for (let idx = 0; idx < typeFilters.length; idx++) {
+          // Expected format (type_ID)
+          // #TODO Same comment as versions
+          dtypeIds.push(Number(typeFilters[idx].value.split('_')[1]));
         }
       }
 
@@ -603,7 +622,34 @@ class TatorData {
       });
     }
 
-    var outData = await this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds);
+    var outData = [];
+    var typePromises = [];
+    if (dtypeIds.length > 0) {
+      dtypeIds.forEach(dtypeId => {
+        typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds, null, dtypeId));
+      });
+    }
+    else {
+      typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds));
+    }
+
+    var typeResults = await Promise.all(typePromises);
+    var outData;
+    if (outputType == "count") {
+      outData = 0;
+    }
+    else {
+      outData = [];
+    }
+
+    for (let idx = 0; idx < typeResults.length; idx++) {
+      if (outputType == "count") {
+        outData += Number(typeResults[idx]);
+      }
+      else {
+        outData.push(...typeResults[idx]);
+      }
+    }
     return outData;
   }
 
