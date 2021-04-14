@@ -94,19 +94,38 @@ class FilterConditionGroup extends TatorElement {
   /**
    * @returns {array} - Array of FilterConditionData objects requested by the user.
    */
-   getConditions()
-   {
-     var conditions = [];
-     for (const conditionElem of this._conditionDiv.children)
-     {
-       var validCondition = conditionElem.getCondition();
-       if (validCondition != null)
-       {
-         conditions.push(validCondition);
-       }
-     }
-     return conditions;
-   }
+  getConditions() {
+    var conditions = [];
+    for (const conditionElem of this._conditionDiv.children)
+    {
+      var validCondition = conditionElem.getCondition();
+      if (validCondition != null)
+      {
+        conditions.push(validCondition);
+      }
+    }
+    return conditions;
+  }
+
+  /**
+   * @precondition data property of this object must have been set
+   * @param {array} val - Array of FilterConditionData objects to set the
+   */
+  setConditions(val) {
+
+    // Remove all the children in the conditions div.
+    while (this._conditionDiv.firstChild) {
+      this._conditionDiv.removeChild(this._conditionDiv.firstChild);
+    }
+
+    // Loop through each of the condition data and create the element
+    for (let conditionData of val) {
+      var newCondition = document.createElement("filter-condition");
+      newCondition.data = this._data;
+      newCondition.setCondition(conditionData);
+      this._conditionDiv.appendChild(newCondition);
+    }
+  }
 }
 
 customElements.define("filter-condition-group", FilterConditionGroup);

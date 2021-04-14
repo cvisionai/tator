@@ -29,23 +29,16 @@ class FilterDialog extends ModalDialog {
     cancel.textContent = "Cancel";
     this._footer.appendChild(cancel);
 
+    this._data = null;
+
     /**
      * Event handlers
      */
 
     // Handler when user hits the apply button.
     apply.addEventListener("click", () => {
-      var filterString = ""; // #TODO
-
-      this.dispatchEvent(new CustomEvent("newFilterSet", {
-        detail: {
-          filterString: filterString
-        },
-        composed: true,
-      }));
+      this.dispatchEvent(new Event("newFilterSet"));
     });
-
-    this._data = null;
 
     // Handler when user hits the cancel button.
     cancel.addEventListener("click", () => {
@@ -74,21 +67,25 @@ class FilterDialog extends ModalDialog {
     this._data = val;
 
     // Set the GUI elements
-    this._filter_condition_group = document.createElement("filter-condition-group");
-    this._filter_condition_group.data = this._data;
-    this._filter_condition_group._div.style.marginTop = "10px";
-    this._conditionsDiv.appendChild(this._filter_condition_group);
-
-    // Parse the URL then for settings information
-    // #TODO
+    this._filterConditionGroup = document.createElement("filter-condition-group");
+    this._filterConditionGroup.data = this._data;
+    this._filterConditionGroup._div.style.marginTop = "10px";
+    this._conditionsDiv.appendChild(this._filterConditionGroup);
   }
 
   /**
    * @returns {array} - Array of condition objects requested by the user.
    */
-  getConditions()
-  {
-    return this._filter_condition_group.getConditions();
+  getConditions() {
+    return this._filterConditionGroup.getConditions();
+  }
+
+  /**
+   * Sets the conditions based on the provided info
+   * @param {array} val - List of FilterConditionData objects
+   */
+  setConditions(val) {
+    this._filterConditionGroup.setConditions(val);
   }
 }
 

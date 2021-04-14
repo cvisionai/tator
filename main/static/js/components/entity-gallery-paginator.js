@@ -153,7 +153,7 @@ class EntityGalleryPaginator extends TatorElement {
     this._last.textContent = this._numPages;
 
     // Set page based on given start/stop
-    const pageNumber = this._pageSize * paginationState.start;
+    const pageNumber = Math.floor(paginationState.start / this._pageSize);
     this._setPage(pageNumber);
   }
 

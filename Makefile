@@ -399,6 +399,7 @@ FILES = \
     annotation/video-settings-dialog.js \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
+    analytics/analytics-settings.js \
     analytics/dashboard/dashboard.js \
     analytics/annotations/panel-container.js \
     analytics/annotations/card.js \

@@ -22,6 +22,10 @@
     div.appendChild(this._breadcrumbs);
     this._breadcrumbs.setAttribute("analytics-name", "Annotation Gallery");
 
+    this._settings = document.createElement("analytics-settings");
+    this._settings.style.marginLeft = "50px";
+    div.appendChild(this._settings);
+
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
     this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-12 d-flex");
@@ -70,8 +74,8 @@
     /* Other */
     // Class to hide and showing loading spinner
     // @TODO what is standard use?
-    this.loading = new LoadingSpinner();
-    this._shadow.appendChild( this.loading.getImg() );
+    //this.loading = new LoadingSpinner();
+    //this._shadow.appendChild( this.loading.getImg() );
 
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
@@ -82,8 +86,11 @@
 
   _init() {
 
-    this.loading.showSpinner();
-    this.setAttribute("has-open-modal", "");
+    //this.loading.showSpinner();
+    //this.setAttribute("has-open-modal", "");
+
+    // Initialize the settings with the URL. The settings will be used later on.
+    this._settings.processURL();
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
@@ -92,14 +99,27 @@
 
       // Init vars for filter state
       this._filterState = {
-        conditionsObject: []
+        conditionsObject: this._settings.getFilterConditionsObject()
       };
+
       // Init vars for pagination state
+      let pageSize = this._settings.getPageSize();
+      if (Number.isNaN(pageSize)) {
+        pageSize = this._filterResults._paginator.getPageSize();
+      }
+
+      let page = this._settings.getPage();
+      if (Number.isNaN(page)) {
+        page = 1;
+      }
+
+      let pageStart = (page - 1) * pageSize;
+      let pageStop = pageStart + pageSize;
       this._paginationState = {
-        pageSize: this._filterResults._paginator.getPageSize(),
-        page: 1,
-        start: 0,
-        stop: this._filterResults._paginator.getPageSize(),
+        pageSize: pageSize,
+        page: page,
+        start: pageStart,
+        stop: pageStop,
         init: true
       };
 
@@ -107,6 +127,7 @@
       this._filterDataView = new FilterData(this._modelData);
       this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
+      this._filterView.setFilterConditions(this._filterState.conditionsObject);
 
       // Card Data class collects raw model and parses into view-model format
       this.cardData = document.createElement("annotation-card-data");
@@ -135,8 +156,6 @@
       this.history = new FilterHistoryManagement({ _paginationState : this._paginationState, _filterState : this._filterState });
       //this._checkHistoryState();
 
-      console.log(this._filterState);
-
       // Init Card Gallery and Right Panel
       this._cardGallery({ 
         filterState : this._filterState, 
@@ -146,6 +165,9 @@
       // Listen for pagination events
       this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
       this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
+
+      this._filterResults._paginator.setValues(this._paginationState);
+      this._filterResults._paginator_top.setValues(this._paginationState);
 
       // Listen for filter events
       this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
@@ -186,8 +208,8 @@
   }
 
   _cardGallery({ filterState, paginationState}) {
-    this.loading.showSpinner();
-    this.showDimmer();
+    //this.loading.showSpinner();
+    //this.showDimmer();
 
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList({filterState, paginationState})
@@ -195,14 +217,16 @@
     .then((cardList) => {
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show(cardList);
-      this.loading.hideSpinner();
-      this.hideDimmer();
+      //this.loading.hideSpinner();
+      //this.hideDimmer();
     });
   }
 
   // Reset the pagination back to page 0
   _updateFilterResults(evt){
     this._filterState.conditionsObject = evt.detail.conditions;
+
+    var filterURIString = encodeURIComponent(JSON.stringify(this._filterState.conditionsObject));
     this._paginationState.init = true;
 
     // @TODO reset to default page size? or keep if something was chosen?
@@ -217,8 +241,10 @@
       paginationState : this._paginationState
     });
 
-    // Pushes path + new Query param to history so user can press back
-    //this.history._handlePushState({ fp : this._filterState, ps : this._paginationState});
+    this._settings.setAttribute("filterConditions", filterURIString);
+    this._settings.setAttribute("pagesize", this._paginationState.pageSize);
+    this._settings.setAttribute("page", this._paginationState.page);
+    window.history.pushState({}, "", this._settings.getURL());
   }
 
   // Handler for pagination click
@@ -240,8 +266,9 @@
     this._filterResults._paginator.setValues(this._paginationState);
     this._filterResults._paginator_top.setValues(this._paginationState);
 
-    // Pushes path + new Query param to history so user can press back
-    // this.history._handlePushState({ fp : this._filterState, ps : this._paginationState});
+    this._settings.setAttribute("pagesize", this._paginationState.pageSize);
+    this._settings.setAttribute("page", this._paginationState.page);
+    window.history.pushState({}, "", this._settings.getURL());
   }
 
   // Page dimmer handler
@@ -252,7 +279,6 @@
   hideDimmer(){
     return this.removeAttribute("has-open-modal");
   }
-
 }
 
 customElements.define("analytics-annotations", AnalyticsAnnotations);

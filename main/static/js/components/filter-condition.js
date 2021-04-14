@@ -250,6 +250,34 @@ class FilterCondition extends TatorElement {
       return null;
     }
   }
+
+  /**
+   * @precondition data property of this object must have been set
+   * @param {FilterConditionData} val - Data to set the fields to. These must conform
+   *                                    to the dataTypes.
+   */
+  setCondition(val) {
+
+    // #TODO Add error handling
+    this._category.setValue(val.categoryGroup);
+    this._userSelectedCategory();
+
+    this._fieldName.setValue(val.field);
+    this._userSelectedField();
+
+    this._modifier.setValue(val.modifier);
+    this._userSelectedModifier();
+
+    if (this._value.style.display == "block") {
+      this._value.setValue(val.value);
+    }
+    if (this._valueBool.style.display == "block") {
+      this._valueBool.setValue(val.value);
+    }
+    if (this._valueEnum.style.display == "block") {
+      this._valueEnum.setValue(val.value);
+    }
+  }
 }
 
 customElements.define("filter-condition", FilterCondition);

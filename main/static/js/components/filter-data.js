@@ -24,7 +24,7 @@ class FilterData {
     this.versions = this._modelData.getStoredVersions();
     this.sections = this._modelData.getStoredSections();
 
-    // Versions aren't typically part of the localization.
+    // Versions aren't typically part of the localization type's user attribute list.
     // Pretend that it's an attribute with the name _version and apply it to each
     // localization type so that it can be part of the filter parameters.
     var versionNames = [];
@@ -33,7 +33,7 @@ class FilterData {
       versionNames.push(`${version.name} (ID:${version.id})`);
     }
 
-    // Media sections aren't typically part of the media type.
+    // Media sections aren't typically part of the media type's user attribute list.
     // Pretend that it's an attribute with the name _section and apply it to each
     // media type so that it can be part of the filter parameters.
     var sectionNames = [];

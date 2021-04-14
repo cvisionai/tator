@@ -11,18 +11,9 @@ class LocalizationInPage extends TatorElement {
     super();
 
     // @TODO
-    this._versionButton = document.createElement("version-button");
-    this._versionButton.setAttribute("class", "px-2");
-    this._settings = document.createElement("annotation-settings");
     this._main = document.createElement("main");
-    this._versionDialog = document.createElement("version-dialog");
-    this._bookmarkDialog = document.createElement("name-dialog");
-    this._sidebar = document.createElement("annotation-sidebar");
     this._undo = document.createElement("undo-buffer");
     this._data = document.createElement("annotation-data");
-    this._browser = document.createElement("annotation-browser");
-    this._browser.undoBuffer = this._undo;
-    this._browser.annotationData = this._data;
     this._versionLookup = {};
 
     // Create image canvas
@@ -43,6 +34,10 @@ class LocalizationInPage extends TatorElement {
     // Keep these inactive / out of sight until we have data
     this._imageCanvas.hidden = true;
     this._videoCanvas.hidden = true;
+
+    // #TODO Might want to explore looking at disabling shorcuts within the annotator itself.
+    //       Right now, it only responds to this shortcuts-disabled class.
+    document.body.classList.add("shortcuts-disabled");
 
     //
     this.savedMediaData = {};

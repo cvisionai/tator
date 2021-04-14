@@ -44,16 +44,8 @@ class FilterInterface extends TatorElement {
     // and remove the modal
     this._filterDialog.addEventListener("newFilterSet", () => {
 
-      // Create the filter parmaeters to display in the filter bar
-      this.setFilterBar();
-
-      // Send out an event to anyone listening that there's a new filter applied
-      this.dispatchEvent(new CustomEvent("filterParameters", {
-        composed: true,
-        detail: {
-          conditions: this._filterDialog.getConditions()
-        }
-      }));
+      // Make the GUI updates and dispatch an event denoting there's a new filter to apply
+      this.applyFilterData();
 
       // Close up the dialog
       this._filterDialog.removeAttribute("is-open");
@@ -67,6 +59,24 @@ class FilterInterface extends TatorElement {
       this.dispatchEvent(new Event("closedFilterDialog"));
     });
 
+  }
+
+  /**
+   * Applies the filter conditions based on the dialog, updates the GUI appropriately and
+   * dispatches the filterParameters event
+   */
+  applyFilterData() {
+
+      // Create the filter parmaeters to display in the filter bar
+      this.setFilterBar();
+
+      // Send out an event to anyone listening that there's a new filter applied
+      this.dispatchEvent(new CustomEvent("filterParameters", {
+        composed: true,
+        detail: {
+          conditions: this._filterDialog.getConditions()
+        }
+      }));
   }
 
   /**
@@ -124,6 +134,14 @@ class FilterInterface extends TatorElement {
     }
   }
 
+  /**
+   * Applies the filter string to the filter dialog and then performs applyFilterData
+   * @param {array} val - List of FilterConditionData objects
+   */
+  setFilterConditions(val) {
+    this._filterDialog.setConditions(val);
+    this.setFilterBar();
+  }
 }
 
 customElements.define("filter-interface", FilterInterface);
