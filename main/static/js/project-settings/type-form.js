@@ -409,12 +409,9 @@ class TypeForm extends TatorElement {
 
     let hasAttributeChanges = false;
     const attrPromises = {};
-    if(this.attributeSection.hasChanges){
+    if(this.attributeSection && this.attributeSection.hasChanges){
       hasAttributeChanges = true;
       const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
-    
-      //@todo make this a flag on the form
-      let attrFormsInvalid = this._shadow.querySelectorAll(`.attribute-form .invalid`);
 
       if(attrFormsChanged.length > 0 && attrFormsInvalid.length > 0){
         // Check Attr forms first for errors if there are changes.
