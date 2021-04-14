@@ -74,8 +74,8 @@
     /* Other */
     // Class to hide and showing loading spinner
     // @TODO what is standard use?
-    //this.loading = new LoadingSpinner();
-    //this._shadow.appendChild( this.loading.getImg() );
+    this.loading = new LoadingSpinner();
+    this._shadow.appendChild(this.loading.getImg());
 
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
@@ -86,8 +86,8 @@
 
   _init() {
 
-    //this.loading.showSpinner();
-    //this.setAttribute("has-open-modal", "");
+    this.loading.showSpinner();
+    this.showDimmer();
 
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
@@ -208,8 +208,8 @@
   }
 
   _cardGallery({ filterState, paginationState}) {
-    //this.loading.showSpinner();
-    //this.showDimmer();
+    this.loading.showSpinner();
+    this.showDimmer();
 
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList({filterState, paginationState})
@@ -217,8 +217,8 @@
     .then((cardList) => {
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show(cardList);
-      //this.loading.hideSpinner();
-      //this.hideDimmer();
+      this.loading.hideSpinner();
+      this.hideDimmer();
     });
   }
 

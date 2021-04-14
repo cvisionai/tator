@@ -9,8 +9,8 @@ class AnalyticsSettings extends TatorElement {
     div.setAttribute("class", "annotation__settings d-flex f2");
     this._shadow.appendChild(div);
 
-    this._lock = document.createElement("lock-button");
-    div.appendChild(this._lock);
+    //this._lock = document.createElement("lock-button");
+    //div.appendChild(this._lock);
     
     this._link = document.createElement("media-link-button");
     div.appendChild(this._link);
@@ -46,11 +46,11 @@ class AnalyticsSettings extends TatorElement {
     if (this.hasAttribute("page")) {
       params.set("page", this.getAttribute("page"));
     }
-    if (this._lock._pathLocked.style.display == "block") {
-      params.set("lock", 1);
-    } else {
-      params.set("lock", 0);
-    }
+    //if (this._lock._pathLocked.style.display == "block") {
+    //  params.set("lock", 1);
+    //} else {
+    //  params.set("lock", 0);
+    //}
     return params;
   }
 
