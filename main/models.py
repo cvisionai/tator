@@ -835,7 +835,7 @@ class Media(Model, ModelDiffMixin):
     modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='media_modified_by', db_column='modified_by')
-    name = CharField(max_length=256)
+    name = CharField(max_length=256, db_index=True)
     md5 = SlugField(max_length=32)
     """ md5 hash of the originally uploaded file. """
     last_edit_start = DateTimeField(null=True, blank=True)
