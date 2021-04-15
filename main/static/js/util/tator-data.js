@@ -587,13 +587,21 @@ class TatorData {
 
       // First, grab the media IDs we care about if there are media filters. Otherwise, ignore.
       var mediaIds = [];
+      var mediaIdChunks = [];
       if (mediaFilters.length > 0) {
         mediaIds = await this.getFilteredMedia("ids", mediaFilters);
-        console.log("matching mediaIds: " + mediaIds);
+        //console.log("matching mediaIds: " + mediaIds);
 
         if (mediaIds.length == 0) {
           // Found no matching media, so bail
           return [];
+        }
+        else {
+          let idx, idx2;
+          let chunkSize = 400;
+          for (idx = 0, idx2 = mediaIds.length; idx < idx2; idx += chunkSize) {
+            mediaIdChunks.push(mediaIds.slice(idx, idx + chunkSize));
+          }
         }
       }
 
@@ -624,13 +632,27 @@ class TatorData {
 
     var outData = [];
     var typePromises = [];
-    if (dtypeIds.length > 0) {
-      dtypeIds.forEach(dtypeId => {
-        typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds, null, dtypeId));
-      });
+    if (mediaIdChunks.length > 0) {
+      for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
+        if (dtypeIds.length > 0) {
+          dtypeIds.forEach(dtypeId => {
+            typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIdChunks[chunkIdx], versionIds, null, dtypeId));
+          });
+        }
+        else {
+          typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIdChunks[chunkIdx], versionIds));
+        }
+      }
     }
     else {
-      typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIds, versionIds));
+      if (dtypeIds.length > 0) {
+        dtypeIds.forEach(dtypeId => {
+          typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, [], versionIds, null, dtypeId));
+        });
+      }
+      else {
+        typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, [], versionIds));
+      }
     }
 
     var typeResults = await Promise.all(typePromises);
