@@ -158,6 +158,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         media_ids += media_id
     if media_ids:
         qs = qs.filter(media__in=media_ids)
+        if len(media_ids) > 1:
+            qs = qs.distinct()
 
     localization_ids = []
     if localization_id_put:
