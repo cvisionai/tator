@@ -47,6 +47,14 @@ class UserInput extends TatorElement {
         this._input.value = "";
       }
     });
+
+    this._input.addEventListener("change", () => {
+      const value = this._input.value;
+      if (value.length > 0) {
+        this._data.findUsers([value]);
+        this._input.value = "";
+      }
+    });
   }
 
   static get observedAttributes() {
