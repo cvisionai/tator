@@ -43,10 +43,10 @@ class MediaTypeListAPI(BaseListView):
             if media_element.project.id != self.kwargs['project']:
                 raise Exception('Media not in project!')
             response_data = MediaType.objects.filter(
-                pk=media_element.meta.pk).values(*fields)
+                pk=media_element.meta.pk).order_by('name').values(*fields)
         else:
             response_data = MediaType.objects.filter(
-                project=self.kwargs['project']).values(*fields)
+                project=self.kwargs['project']).order_by('name').values(*fields)
         return list(response_data)
 
     def _post(self, params):
