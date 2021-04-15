@@ -21,6 +21,16 @@ What is Tator?
 
 **IMPORTANT**: Only Chromium-based browsers are supported (Chrome and Edge).
 
+Tutorials
+=========
+
+Getting started
+* [Install Tator](https://www.tator.io/tutorials/2021-03-29-install-tator/)
+* [Install tator-py](https://www.tator.io/tutorials/2021-03-11-install-tator-py/)
+* [Get an API token](https://www.tator.io/tutorials/2021-03-12-get-an-api-token/)
+* [Create a project](https://www.tator.io/tutorials/2021-04-09-create-a-project/)
+* [Add team members](https://www.tator.io/tutorials/2021-03-12-add-team-members/)
+
 Screenshots
 ===========
 
