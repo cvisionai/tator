@@ -448,8 +448,8 @@ def delete_index_project(sender, instance, **kwargs):
 class Membership(Model):
     """Stores a user and their access level for a project.
     """
-    project = ForeignKey(Project, on_delete=CASCADE)
-    user = ForeignKey(User, on_delete=CASCADE)
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=PROTECT, db_column='user')
     permission = EnumField(Permission, max_length=1, default=Permission.CAN_EDIT)
     default_version = ForeignKey(Version, null=True, blank=True, on_delete=SET_NULL)
     def __str__(self):
