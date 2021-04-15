@@ -24,10 +24,9 @@ What is Tator?
 Screenshots
 ===========
 
-![projects](https://user-images.githubusercontent.com/7937658/65167417-83f95c00-da10-11e9-83aa-eec9db99c730.png)
+![project-detail-view](https://user-images.githubusercontent.com/7937658/114918093-afaf1480-9df4-11eb-8968-5edb963029a0.PNG)
 
-![project-detail](https://user-images.githubusercontent.com/7937658/65167420-865bb600-da10-11e9-86b0-2e5d64a12885.png)
+![annotation-view](https://user-images.githubusercontent.com/7937658/114918098-b178d800-9df4-11eb-8845-d982bed5e67d.PNG)
 
-![annotation](https://user-images.githubusercontent.com/7937658/65167423-878ce300-da10-11e9-88e8-8c8926f45c6b.png)
-
+![analytics-view](https://user-images.githubusercontent.com/7937658/114918096-b0e04180-9df4-11eb-8188-9d68f0ef42f1.PNG)
 
