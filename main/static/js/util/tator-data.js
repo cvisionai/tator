@@ -630,24 +630,90 @@ class TatorData {
       });
     }
 
+    // #TODO This process of filtering by dtype list and media id list needs to move into the
+    //       endpoint itself because more data will be obtained here than needed.
+    //
+    //       dataStart/dataStop is used to support pagination.
+
     var outData = [];
     var typePromises = [];
     if (mediaIdChunks.length > 0) {
-      for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
-        if (dtypeIds.length > 0) {
-          dtypeIds.forEach(dtypeId => {
-            typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIdChunks[chunkIdx], versionIds, null, dtypeId));
-          });
+
+      if (isNaN(dataStart) || isNaN(dataStop)) {
+        for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
+          if (dtypeIds.length > 0) {
+            dtypeIds.forEach(dtypeId => {
+              typePromises.push(this._getData(outputType, locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds, undefined, dtypeId));
+            });
+          }
+          else {
+            typePromises.push(this._getData(outputType, locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds));
+          }
         }
-        else {
-          typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, mediaIdChunks[chunkIdx], versionIds));
+      }
+      else {
+        // Need to find out how many localizations there are per chunk.
+        var locCountPromisesArray = [];
+        for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
+          if (dtypeIds.length > 0) {
+            dtypeIds.forEach(dtypeId => {
+              locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds, undefined, dtypeId));
+            });
+          }
+          else {
+            locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds));
+          }
+        }
+        var locCountResults = await Promise.all(locCountPromisesArray);
+
+        // Finally, get the correct set of data now that we know all of the counts.
+        var currentStart = 0;
+        var currentSize = 0;
+        var currentStop = currentStart + currentSize;
+        var locCountResultsIdx = 0;
+
+        for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
+          if (dtypeIds.length > 0) {
+            dtypeIds.forEach(dtypeId => {
+              currentSize = Number(locCountResults[locCountResultsIdx]);
+              currentStop = currentStart + currentSize;
+              locCountResultsIdx += 1;
+
+              if (dataStop < currentStop || ((dataStart < currentStop) && (dataStop - currentStart >= 0))) {
+                let chunkPageStart = dataStart - currentStart;
+                let chunkPageStop = dataStop - currentStart;
+                if (chunkPageStart < 0) {chunkPageStart = 0;}
+                if (chunkPageStop < 0) {
+                  typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, mediaIdChunks[chunkIdx], versionIds, undefined, dtypeId));
+                }
+              }
+
+              currentStart = currentStop;
+            });
+          }
+          else {
+            currentSize = Number(locCountResults[locCountResultsIdx]);
+            currentStop = currentStart + currentSize;
+            locCountResultsIdx += 1;
+
+            if (dataStop < currentStop || ((dataStart < currentStop) && (dataStop - currentStart >= 0))) {
+              let chunkPageStart = dataStart - currentStart;
+              let chunkPageStop = dataStop - currentStart;
+              if (chunkPageStart < 0) {chunkPageStart = 0;}
+              if (chunkPageStop > 0) {
+                typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, mediaIdChunks[chunkIdx], versionIds));
+              }
+            }
+
+            currentStart = currentStop;
+          }
         }
       }
     }
     else {
       if (dtypeIds.length > 0) {
         dtypeIds.forEach(dtypeId => {
-          typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, [], versionIds, null, dtypeId));
+          typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, [], versionIds, undefined, dtypeId));
         });
       }
       else {
