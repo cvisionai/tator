@@ -11,15 +11,22 @@ class EntityGalleryPanel extends TatorElement {
       // Content id
       this._heading = document.createElement("h2");
       this._heading.setAttribute("class", "h2 py-3")
-      this._main.appendChild(this._heading);   
+      this._main.appendChild(this._heading);
 
       // Entity Data in Form ( @TODO Editable? or display only )
       this.entityData = document.createElement("entity-gallery-panel-form");
       this._main.appendChild(this.entityData);
 
+      // #TODO Encapsulate this class into a LocalizationGalleryPanel
+      const mediaHeading = document.createElement("h3");
+      mediaHeading.setAttribute("class", "h3 py-3");
+      mediaHeading.style.margintop = "10px";
+      mediaHeading.textContent = "Associated Media";
+      this._main.appendChild(mediaHeading)
+
       // View media button link to annotation media
       this._linksDiv = document.createElement("div");
-      this._linksDiv.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f1 d-flex col-11");
+      this._linksDiv.setAttribute("class", "annotation__panel-group py-1 text-gray f1 d-flex col-11");
       this._main.appendChild(this._linksDiv);
 
       const mediaLinkDiv = document.createElement("div");
@@ -27,15 +34,17 @@ class EntityGalleryPanel extends TatorElement {
       this._linksDiv.appendChild(mediaLinkDiv);
 
       const mediaLinkLabel = document.createElement("label");
-      mediaLinkLabel.textContent = "View Annotation In Media";
+      mediaLinkLabel.textContent = "View In Annotator";
       mediaLinkDiv.appendChild(mediaLinkLabel);
 
       this._mediaLink = document.createElement("a");
       this._mediaLink.setAttribute("href", "#");
-      //mediaLinkDiv.appendChild(this._mediaLink);
       const goToFrameButton = document.createElement("entity-frame-button");
       goToFrameButton.style.marginLeft = "16px";
       mediaLinkDiv.appendChild(goToFrameButton);
+
+      this.mediaData = document.createElement("entity-gallery-panel-form");
+      this._main.appendChild(this.mediaData);
 
       // actions.appendChild(this.viewMedia);
 
@@ -52,17 +61,18 @@ class EntityGalleryPanel extends TatorElement {
       });
     }
 
-  async init( {        
+  async init( {
     cardObj
   }){
       this.cardObj = cardObj;
 
       // Heading
-      //this._heading.textContent = `Annotation Information (ID: ${cardObj.id})`;      
+      //this._heading.textContent = `Annotation Information (ID: ${cardObj.id})`;
 
       // Setup linkout and the entity data for panel here
       this._mediaLink = this.cardObj.mediaLink;
       this.entityData._init(this.cardObj);
+      this.mediaData._init(this.cardObj.mediaInfo);
     }
 
   }

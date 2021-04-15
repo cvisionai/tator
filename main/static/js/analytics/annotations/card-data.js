@@ -20,6 +20,18 @@ class AnnotationCardData extends HTMLElement {
         this.mediaTypes = this._modelData.getStoredMediaTypes();
         this.projectId = this._modelData.getProjectId();
 
+        var mediaPromises = [];
+        var mediaList = [];
+        for (let idx = 0; idx < this.localizations.length; idx++) {
+            if (!mediaList.includes(this.localizations[idx].media)) {
+                mediaList.push(this.localizations[idx].media);
+            }
+        }
+        for (let idx = 0; idx < mediaList.length; idx++) {
+            mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
+        }
+        this.medias = await Promise.all(mediaPromises);
+
         await this.getCardList(this.localizations);
         return this.cardList;
     }
@@ -51,12 +63,26 @@ class AnnotationCardData extends HTMLElement {
                 let position = i + this.cardList.paginationState.start;
                 let posText = `${position + 1} of ${this.cardList.total}`;
 
+                let media;
+                for (let idx = 0; idx < this.medias.length; idx++) {
+                    if (this.medias[idx].id == mediaId) {
+                        media = this.medias[idx];
+                        break;
+                    }
+                }
+
+                let mediaInfo = {
+                    id: mediaId,
+                    entityType: this.findMediaMetaDetails(media.meta),
+                    attributes: media.attributes,
+                }
+
                 let card = {
                     id,
                     localization : l,
                     entityType,
                     mediaId,
-                    entityType,
+                    mediaInfo,
                     mediaLink,
                     attributes,
                     created,
@@ -76,17 +102,6 @@ class AnnotationCardData extends HTMLElement {
                             image: image
                         }
                     }));
-                });
-
-                this._modelData.getDataById(l.media, "media").then((media) => {
-                    media.entityType = this.findMediaMetaDetails(media.meta);
-                    this.dispatchEvent(new CustomEvent("setMedia", {
-                        composed: true,
-                        detail: {
-                            id: l.id,
-                            media: media
-                        }
-                    }))
                 });
             }
         });
