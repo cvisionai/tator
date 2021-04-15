@@ -99,8 +99,8 @@ class MembershipDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        member = Membership.objects.get(pk=params['id'])
-        return _serialize_memberships([member])[0]
+        memberships = Membership.objects.filter(pk=params['id'])
+        return _serialize_memberships(memberships)[0]
 
     @transaction.atomic
     def _patch(self, params):
