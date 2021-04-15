@@ -668,8 +668,8 @@ class TatorData {
 
         // Finally, get the correct set of data now that we know all of the counts.
         var currentStart = 0;
-        var currentSize = 0;
-        var currentStop = currentStart + currentSize;
+        var currentSize;
+        var currentStop;
         var locCountResultsIdx = 0;
 
         for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
@@ -683,7 +683,7 @@ class TatorData {
                 let chunkPageStart = dataStart - currentStart;
                 let chunkPageStop = dataStop - currentStart;
                 if (chunkPageStart < 0) {chunkPageStart = 0;}
-                if (chunkPageStop < 0) {
+                if (chunkPageStop > 0) {
                   typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, mediaIdChunks[chunkIdx], versionIds, undefined, dtypeId));
                 }
               }
@@ -704,6 +704,9 @@ class TatorData {
                 typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, mediaIdChunks[chunkIdx], versionIds));
               }
             }
+            else if (isNaN(dataStart) && isNaN(dataStop)) {
+              typePromises.push(this._getData(outputType, locGroups, undefined, undefined, [], versionIds, undefined, dtypeId));
+            }
 
             currentStart = currentStop;
           }
@@ -711,9 +714,42 @@ class TatorData {
       }
     }
     else {
+
+      var locCountPromisesArray = [];
       if (dtypeIds.length > 0) {
         dtypeIds.forEach(dtypeId => {
-          typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, [], versionIds, undefined, dtypeId));
+          locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, [], versionIds, undefined, dtypeId));
+        });
+      }
+      else {
+        locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, [], versionIds));
+      }
+      var locCountResults = await Promise.all(locCountPromisesArray);
+
+      if (dtypeIds.length > 0) {
+
+        var currentStart = 0;
+        var currentSize;
+        var currentStop;
+        var locCountResultsIdx = 0;
+        dtypeIds.forEach(dtypeId => {
+          currentSize = Number(locCountResults[locCountResultsIdx]);
+          currentStop = currentStart + currentSize;
+          locCountResultsIdx += 1;
+
+          if (dataStop < currentStop || ((dataStart < currentStop) && (dataStop - currentStart >= 0))) {
+            let chunkPageStart = dataStart - currentStart;
+            let chunkPageStop = dataStop - currentStart;
+            if (chunkPageStart < 0) {chunkPageStart = 0;}
+            if (chunkPageStop > 0) {
+              typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, [], versionIds, undefined, dtypeId));
+            }
+          }
+          else if (isNaN(dataStart) && isNaN(dataStop)) {
+            typePromises.push(this._getData(outputType, locGroups, undefined, undefined, [], versionIds, undefined, dtypeId));
+          }
+
+          currentStart = currentStop;
         });
       }
       else {
