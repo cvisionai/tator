@@ -370,6 +370,50 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
+        self.notify_failure = {
+            'name': 'notify-failure',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'retryPolicy': 'Always',
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
+            'container': {
+                'image': '{{workflow.parameters.client_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['curl',],
+                'args': ['-H', 'Content-Type: application/json',
+                         '-H', 'Authorization: Token {{workflow.parameters.token}}',
+                         '--request', 'POST',
+                         '--data', '{"message":"Transcode failed on {{workflow.parameters.upload_name}}, project {{workflow.parameters.project}}!"}',
+                         '{{workflow.parameters.host}}/rest/Notify',
+                ],
+                'resources': {
+                    'limits': {
+                        'memory': '500Mi',
+                        'cpu': '125m',
+                    },
+                },
+            },
+        }
+
+        self.exit_handler = {
+            'name': 'exit-handler',
+            'steps': [[
+                {
+                    'name': 'failure-handler',
+                    'template': 'notify-failure',
+                    'when': '{{workflow.status}} != Succeeded',
+                },
+            ]],
+        }
+
     def get_prepare_task(self, use_ram_disk):
         prepare_task = {
             'name': 'prepare',
@@ -789,8 +833,11 @@ class TatorTranscode(JobManagerMixin):
                     self.unpack_task,
                     self.get_transcode_dag(),
                     pipeline_task,
-                    self.data_import
+                    self.data_import,
+                    self.notify_failure,
+                    self.exit_handler,
                 ],
+                'onExit': 'exit-handler',
             },
         }
 
