@@ -3,17 +3,14 @@
 What is Tator?
 ==============
 
-**Tator** is a web-based video analytics platform.
+**Tator** is an open-source video analytics web platform that helps researchers explore and analyze colossal amounts of imagery data.
 
-* Upload - Videos or images
-* View - Advanced frame-accurate player with many features
-* Annotate - Draw boxes, lines, dots, or specify activities
-* Describe - Define and set attributes on media and annotations
-* Automate - Launch algorithms on media from the browser
-* Search - Use attribute values to find media and annotations
-* Analyze - Use the API (REST, Python) to write analysis scripts
-* Download - Save media and metadata locally
-* Collaborate - Invite team members and manage permissions
+* **Media management** - Centralized storage and organization of video and imagery
+* **Custom metadata** - Any structure, any label, any way you want to describe your data
+* **Algorithm deployment** - Automate annotation or iterate on algorithms
+* **Analysis** - Generate reports, review results, and share with colleagues
+* **Collaboration** - Invite your team to help annotate, analyze, and review data
+* **REST API** - Develop custom scripts and tools. Clients available in Python and R
 
 **Documentation** is hosted [here](https://tatorapp.com/docs).
 
