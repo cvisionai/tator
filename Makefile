@@ -245,7 +245,6 @@ FILES = \
     components/removable-pill.js \
     components/user-input.js \
     components/user-data.js \
-    components/inputs/array-input.js \
     registration/registration-page.js \
     projects/settings-button.js \
     projects/project-remove.js \
@@ -299,7 +298,6 @@ FILES = \
     project-settings/type-form-validation.js \
     project-settings/settings-input-helpers.js \
     project-settings/settings-box-helpers.js \
-    project-settings/settings-bool-input.js \
     project-settings/type-delete.js \
     project-settings/type-form.js \
     project-settings/settings-nav.js \
@@ -360,10 +358,6 @@ FILES = \
     annotation/annotation-player.js \
     annotation/annotation-image.js \
     annotation/annotation-multi.js \
-    annotation/bool-input.js \
-    annotation/enum-input.js \
-    annotation/text-input.js \
-    annotation/text-area.js \
     annotation/attribute-panel.js \
     annotation/modify-track-dialog.js \
     annotation/progress-dialog.js \
