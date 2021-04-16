@@ -104,9 +104,9 @@ class PermalinkAPI(APIView):
         if params['element'] == 'audio':
             return response_data[0].get('media_files',{}).get('audio',[])[0]['path']
         elif params['element'] == 'thumbnail':
-            search_in = response_data[0].get('thumbnail',[])
+            search_in = response_data[0].get('media_files',{}).get('thumbnail',[])
         elif params['element'] == 'thumbnail_gif':
-            search_in = response_data[0].get('thumbnail_gif',[])
+            search_in = response_data[0].get('media_files',{}).get('thumbnail_gif',[])
         elif params['element'] == 'streaming':
             search_in = response_data[0].get('media_files',{}).get('streaming',[])
         elif params['element'] == 'archival':
