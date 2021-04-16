@@ -54,6 +54,7 @@ from .membership import MembershipDetailAPI
 from .notify import NotifyAPI
 from .organization import OrganizationListAPI
 from .organization import OrganizationDetailAPI
+from .permalink import PermalinkAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
 from .section import SectionListAPI

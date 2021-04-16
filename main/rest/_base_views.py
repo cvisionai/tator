@@ -11,6 +11,8 @@ from django.http import response
 
 from ..schema import parse
 
+from ..rest import _base_views
+
 logger = logging.getLogger(__name__)
 
 """ TODO: add documentation for this """

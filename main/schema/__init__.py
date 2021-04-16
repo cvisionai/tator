@@ -56,6 +56,7 @@ from .membership import MembershipDetailSchema
 from .notify import NotifySchema
 from .organization import OrganizationListSchema
 from .organization import OrganizationDetailSchema
+from .permalink import PermalinkSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
 from .section import SectionListSchema
