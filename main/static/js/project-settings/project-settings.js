@@ -86,7 +86,7 @@ class ProjectSettings extends TatorPage {
 
       // Add nav to that container
       this.settingsNav._addSimpleNav({
-        name : formView._getHeading(objData.id),
+        name : formView._getHeading(),
         type : formView.typeName ,
         id : objData.id,
         selected : true

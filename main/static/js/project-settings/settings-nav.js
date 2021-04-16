@@ -14,7 +14,7 @@ class SettingsNav extends TatorElement {
 
     // Right side panel with contents
     this.itemsContainer = document.createElement("div");
-    this.itemsContainer.setAttribute("class", "NavItem float-left col-md-9 col-xl-10 col-xs-12");
+    this.itemsContainer.setAttribute("class", "NavItem float-left offset-md-3 offset-xl-2 col-md-9 col-xl-10 col-xs-12");
     this.div.appendChild(this.itemsContainer);
 
     // Listen for changes
