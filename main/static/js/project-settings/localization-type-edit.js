@@ -16,89 +16,101 @@ class LocalizationEdit extends TypeForm {
     this._setForm();
 
     // append input for name
-    const NAME = "Name";
-    this._editName = this.inputHelper.inputText( {
-      "labelText": NAME,
-      "name": NAME.toLowerCase(),
-      "value": data[NAME.toLowerCase()],
-      "required" : true 
-    });
-    this._form.appendChild( this._editName );
+    this._editName = document.createElement("text-input");
+    this._editName.setAttribute("name", "Name");
+    this._editName.setAttribute("type", "string");
+    this._editName.setValue(this.data.name);
+    this._editName.default = this.data.name;
+    this._editName.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._editName);
 
     // dtype
-    const DTYPE = "Dtype";
     const dTypeOptions = [
-      { "optText": "Select", "optValue": "" },
-      { "optText": "Box", "optValue": "box" },
-      { "optText": "Line", "optValue": "line" },
-      { "optText": "Dot", "optValue": "dot" }
-    ]
-    let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
-    let dtypeRequired = !disableDtype ? true : false;
-    this.dtypeSelect = this.inputHelper.inputSelectOptions({
-      "labelText": "Data Type",
-      "name": DTYPE.toLowerCase(),
-      "value": data[DTYPE.toLowerCase()],
-      "optionsList" : dTypeOptions,
-      "disabledInput" : disableDtype,
-      "required" : dtypeRequired
-    })
+      { "label": "Select", "value": "" },
+      { "label": "Box", "value": "box" },
+      { "label": "Line", "value": "line" },
+      { "label": "Dot", "value": "dot" }
+    ];
+    this.dtypeSelect = document.createElement("enum-input");
+    this.dtypeSelect.setAttribute("name", "Data Type");
+    this.dtypeSelect.choices = dTypeOptions;
+    if (!data.dtype) {
+      this.dtypeSelect.required = true;
+      this.dtypeSelect.default = "";
+      this.dtypeSelect.addEventListener("change", this._formChanged.bind(this));
+    } else {
+      this.dtypeSelect.setValue(data.dtype);
+      this.dtypeSelect.default = data.dtype;
+      this.dtypeSelect.disabled = true;
+    }
     this._form.appendChild( this.dtypeSelect );
 
     // description
-    const DESCRIPTION = "Description";
-    this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+    this._editDescription = document.createElement("text-input");
+    this._editDescription.setAttribute("name", "Description");
+    this._editDescription.setAttribute("type", "string");
+    this._editDescription.setValue(this.data.description);
+    this._editDescription.default = this.data.description;
+    this._editDescription.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._editDescription);
 
     // color map
-    const COLORMAP = "colorMap";
-    let colMap = data[COLORMAP];
-    let colMapDefault = "";
-    if(typeof colMap !== "undefined" && colMap !== null){
-      if(typeof colMap.default !== "undefined" && colMap.default !== null) colMapDefault = colMap.default;
-    }
-    this._form.appendChild( this.inputHelper.colorInput({
-      "labelText": "Color Map Default",
-      "name": COLORMAP,
-      "value": colMapDefault,
-      "type" : "color"
-    } ) );
+    // this._colorMap = document.createElement("color-input");
+    // const COLORMAP = "colorMap";
+    // let colMap = data[COLORMAP];
+    // let colMapDefault = "";
+    // if(typeof colMap !== "undefined" && colMap !== null){
+    //   if(typeof colMap.default !== "undefined" && colMap.default !== null) colMapDefault = colMap.default;
+    // }
+    // this._form.appendChild( this.inputHelper.colorInput({
+    //   "labelText": "Color Map Default",
+    //   "name": COLORMAP,
+    //   "value": colMapDefault,
+    //   "type" : "color"
+    // } ) );
 
     // visible
-    const VISIBLE = "Visible";
-    this._form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": VISIBLE,
-      "name": VISIBLE.toLowerCase(),
-      "value": data[VISIBLE.toLowerCase()]
-    } ) );
+    this._visibleBool = document.createElement("bool-input");
+    this._visibleBool.setAttribute("name", "Visible");
+    this._visibleBool.setAttribute("on-text", "Yes");
+    this._visibleBool.setAttribute("off-text", "No");
+    this._visibleBool.setValue(this.data.visible);
+    this._visibleBool.default = this.data.visible;
+    this._visibleBool.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._visibleBool);
 
     // line_width
-    const LINE = "line_width";
-    this._form.appendChild( this.inputHelper.inputText({
-      "labelText": "Line Width",
-      "name": LINE,
-      "value": data[LINE],
-      "type" : "number",
-      "min" : 1,
-      "max" : 10
-    } ) );
+    if (data.dtype != 'image') {
+      this._lineWidth = document.createElement("text-input");
+      this._lineWidth.setAttribute("name", "Line Width");
+      this._lineWidth.setAttribute("type", "number");
+      this._lineWidth.setValue(this.data.line_width);
+      this._lineWidth.default = this.data.line_width;
+      this._lineWidth._input.min = 1;
+      this._lineWidth._input.max = 10;
+      this._lineWidth.addEventListener("change", this._formChanged.bind(this));
+      this._form.appendChild(this._lineWidth);
+    }
 
     // grouping default
-    const GROUPING = "grouping_default";
-    this._form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": "Grouping Default",
-      "name": GROUPING.toLowerCase(),
-      "value": data[GROUPING.toLowerCase()]
-    } ) );
+    this._groupingDefault = document.createElement("bool-input");
+    this._groupingDefault.setAttribute("name", "Grouping Default");
+    this._groupingDefault.setAttribute("on-text", "Yes");
+    this._groupingDefault.setAttribute("off-text", "No");
+    this._groupingDefault.setValue(this.data.grouping_default);
+    this._groupingDefault.default = this.data.grouping_default;
+    this._groupingDefault.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._groupingDefault);
 
-    const MEDIA = "Media"; 
-    const mediaList = new DataMediaList( this.projectId );
-    let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
+    // const MEDIA = "Media"; 
+    // const mediaList = new DataMediaList( this.projectId );
+    // let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
 
-    this._form.appendChild( this.inputHelper.multipleCheckboxes({
-        "labelText" : MEDIA,
-        "name": MEDIA.toLowerCase(),
-        "checkboxList": mediaListWithChecked
-    } ) );
+    // this._form.appendChild( this.inputHelper.multipleCheckboxes({
+    //     "labelText" : MEDIA,
+    //     "name": MEDIA.toLowerCase(),
+    //     "checkboxList": mediaListWithChecked
+    // } ) );
 
     current.appendChild(this._form);
 

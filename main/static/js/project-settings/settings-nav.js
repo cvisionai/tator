@@ -93,7 +93,7 @@ class SettingsNav extends TatorElement {
   }
 
 
-  _addNav({name, type, subItems, subItemsOnly = false}){
+  _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true}){
 
     if(subItemsOnly){
       return this._subItemsOnly({
@@ -104,7 +104,8 @@ class SettingsNav extends TatorElement {
       return this._addHeadingWithSubItems({
         name,
         type,
-        subItems
+        subItems,
+        pendingSubItems
       });
     }
   }
@@ -153,7 +154,8 @@ class SettingsNav extends TatorElement {
   _addHeadingWithSubItems({
     name = document.createElement(""), 
     type = "", 
-    subItems = []
+    subItems = [],
+    pendingSubItems = false
   } = {} ){
     let headingBox = document.createElement("div");
     headingBox.setAttribute("class", `SideNav-heading f1 clearfix heading-for-${type}`); // ie. video,image,multi,localization,leaf,state
@@ -188,6 +190,13 @@ class SettingsNav extends TatorElement {
       headingBox.setAttribute("selected", "true");
     });
 
+    // Use a spinner if we are waiting to get the subItem list
+    if (pendingSubItems) {
+      let spinnerImg = document.createElement('img');
+      spinnerImg.src = "/static/images/spinner-transparent.svg";
+      hiddenSubNav.appendChild(spinnerImg);
+    }
+
     // SubItems
     if (subItems.length > 0){
       for(let obj of subItems){
@@ -212,7 +221,10 @@ class SettingsNav extends TatorElement {
 
   // This adds subitems to an existing heading
   // @TODO no "New item" trigger can be added in this fn (requires more el access)
-  _subItemsOnly({ subItems = [], type = "" }){
+  _subItemsOnly({ subItems = [], type = "" }) {
+    let section = this._shadow.querySelector(`.subitems-${type}`);
+    section.querySelector(`img`).hidden = true;
+
     // SubItems
     if (subItems && subItems.length > 0){
       for(let obj of subItems){
@@ -225,7 +237,6 @@ class SettingsNav extends TatorElement {
         if(addNewNode){
           addNewNode.before(subNavLink);
         } else {
-          let section = this._shadow.querySelector(`.subitems-${type}`);
           section.appendChild(subNavLink);
         }
       }
@@ -233,6 +244,7 @@ class SettingsNav extends TatorElement {
       console.log("No subitems for heading "+name);
       // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
+
   }
 
   // This is the the "+" next to item heading

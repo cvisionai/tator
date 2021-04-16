@@ -225,7 +225,7 @@ class TypeForm extends TatorElement {
     this._form = document.createElement("form");
     this._form.id = this.typeId;
 
-    this._form.addEventListener("change", this._formChanged.bind(this));
+    //this._form.addEventListener("change", this._formChanged.bind(this));
 
     return this._form;
   }
@@ -392,11 +392,10 @@ class TypeForm extends TatorElement {
     this.loading.showSpinner();
     
     let promises = []
-    let mainForm = this._shadow.getElementById(id);
     let errors = 0;
 
     // Main type form
-    if(mainForm.classList.contains("changed")) {
+    if( this.changed ) {
       let mainPromise = this._fetchPatchPromise({id});
       
       // Promise will return false if there are errors.
@@ -493,8 +492,7 @@ class TypeForm extends TatorElement {
               }
           }).then( () => {
             // Reset changed flag
-            //let mainForm = this._shadow.getElementById(id);
-            if(this._form.classList.contains("changed")) this._form.classList.remove("changed");
+            this.changed = false;
 
             if(hasAttributeChanges){            
               const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
@@ -525,9 +523,17 @@ class TypeForm extends TatorElement {
     }
   }
 
-  _formChanged( event ) {
-    if(event != "") console.log("Change value... "+event.target.value);
-    return this._form.classList.add("changed");
+  set changed(val) {
+    return this.changed = val;
+  }
+
+  changed(){
+    return this.changed;
+  }
+
+  _formChanged(event) {
+    console.log(`Changed: ${event.target.tagName}`);
+    return this.changed = true;
   }
 
   _handleResponseWithAttributes({
@@ -637,69 +643,69 @@ class TypeForm extends TatorElement {
     return el.hidden = !hidden;
   };
 
-  // name
-  _getNameFromData({ data = this.data} = {}){
-    return data.name;
-  }
+  // // name
+  // _getNameFromData({ data = this.data} = {}){
+  //   return data.name;
+  // }
 
-  _setNameInput(name){
-    let key = "name"
-    return this.inputHelper.inputText( { "labelText": "Name", "name": key, "value": name, "required" : true } );
-  }
+  // _setNameInput(name){
+  //   let key = "name"
+  //   return this.inputHelper.inputText( { "labelText": "Name", "name": key, "value": name, "required" : true } );
+  // }
 
-  _getNameInputValue(){
-    return this._editName.querySelector("input").value;
-  }
+  // _getNameInputValue(){
+  //   return this._editName.querySelector("input").value;
+  // }
 
-  _setNameInputValue(newValue){
-    return this._editName.querySelector("input").value = newValue;
-  }
+  // _setNameInputValue(newValue){
+  //   return this._editName.querySelector("input").value = newValue;
+  // }
 
-  _nameChanged() {
-    if (this._getNameInputValue() === this._getNameFromData()) return false;
-    return true;
-  }
+  // _nameChanged() {
+  //   if (this._getNameInputValue() === this._getNameFromData()) return false;
+  //   return true;
+  // }
 
-  // summary
-  _getSummaryFromData({ data = this.data} = {}){
-    return data.summary;
-  }
+  // // summary
+  // _getSummaryFromData({ data = this.data} = {}){
+  //   return data.summary;
+  // }
 
-  _setSummaryInput(summary){
-    let key = "summary";
-    return this.inputHelper.inputText( { "labelText": "Summary", "Name": key, "value": summary } )
-  }
+  // _setSummaryInput(summary){
+  //   let key = "summary";
+  //   return this.inputHelper.inputText( { "labelText": "Summary", "Name": key, "value": summary } )
+  // }
 
-  _getSummaryInputValue(){
-    return this._editSummary.querySelector("input").value;
-  }
+  // _getSummaryInputValue(){
+  //   return this._editSummary.querySelector("input").value;
+  // }
 
-  _setSummaryInputValue(newValue){
-    return this._editSummary.querySelector("input").value = newValue;
-  }
+  // _setSummaryInputValue(newValue){
+  //   return this._editSummary.querySelector("input").value = newValue;
+  // }
 
-  _summaryChanged() {
-    if (this._getSummaryInputValue() === this._getSummaryFromData()) return false;
-    return true;
-  }
+  // _summaryChanged() {
+  //   if (this._getSummaryInputValue() === this._getSummaryFromData()) return false;
+  //   return true;
+  // }
 
-  // description
-  _getDescriptionFromData({ data = this.data} = {}){
-    return data.description;
-  }
+  // // description
+  // _getDescriptionFromData({ data = this.data} = {}){
+  //   return data.description;
+  // }
 
-  _setDescriptionInput(description){
-    let key = "description";
-    return this.inputHelper.inputText( { "labelText": "Description", "name": key, "value": description } )
-  }
+  // _setDescriptionInput(description){
+  //   let key = "description";
+  //   return this.inputHelper.inputText( { "labelText": "Description", "name": key, "value": description } )
+  // }
 
-  _getDescriptionInputValue(){
-    return this._editDescription.querySelector("input").value;
-  }
+  // _getDescriptionInputValue(){
+  //   return this._editDescription.querySelector("input").value;
+  // }
 
-  _setDescriptionInputValue(newValue){
-    return this._editDescription.querySelector("input").value = newValue;
-  }
+  // _setDescriptionInputValue(newValue){
+  //   return this._editDescription.querySelector("input").value = newValue;
+  // }
 
   // RESET FUNCTIONS
   reset(data = this.data){

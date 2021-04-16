@@ -3,9 +3,9 @@
 // A vertical list of navigational links, typically used on the left side of a page.
 .SideNav {
   position: fixed;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  max-height: 90vh;
+  //overflow-y: scroll;
+  //overflow-x: hidden;
+  //height: 90vh;
   background-color: $color-charcoal--medium;
   transition: background-color 500ms ease;
   border-radius: 10px;
@@ -14,13 +14,17 @@
 
   &:first-child .SideNav-item {
     border-radius: 10px 10px 0 0;
-    overflow: hidden;
+    //overflow: hidden;
     width: auto;
   }
 
   &:last-child {
     //border-bottom: none;
     border-radius: 0 0 10px 10px;
+  }
+
+  @media only screen and ($width-sm) {
+    position: relative;
   }
 }
 
@@ -29,8 +33,7 @@
   position: relative;
   overflow: auto;
   display: block;
-  //width: 100%;
-  // stylelint-disable-next-line primer/spacing
+  max-height: 50vh;
   padding: 12px $spacing-3;
   color: $color-gray--light;
   text-align: left;
@@ -151,6 +154,8 @@
   border: 0;
   position: relative;
   overflow: auto;
+  max-height: 40vh;
+  min-height: 10vh;
 
   &[hidden] {
     display: none;
