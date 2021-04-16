@@ -41,8 +41,8 @@ class PermalinkSchema(AutoSchema):
                 'required': False,
                 'description': 'Object to redirect to via 301.',
                 'schema': {'type': 'string',
-                           'enum' : ['streaming', 'archival', 'audio', 'thumbnail', 'thumbnail_gif'],
-                           'default': 'streaming'},
+                           'enum' : ['auto', 'streaming', 'archival', 'audio', 'image','thumbnail', 'thumbnail_gif'],
+                           'default': 'auto'},
             },
             {
                 'name': 'quality',

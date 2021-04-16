@@ -101,15 +101,26 @@ class PermalinkAPI(APIView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         # Use 24-hour URLS
         _presign(24*3600, response_data)
-        if params['element'] == 'audio':
+
+        element = params['element']
+        if element == 'auto':
+            if qs[0].meta.dtype == 'video':
+                element = 'streaming'
+            elif qs[0].meta.dtype == 'image':
+                element = 'image'
+            elif qs[0].meta.dtype == 'multi':
+                return None
+        if element == 'audio':
             return response_data[0].get('media_files',{}).get('audio',[])[0]['path']
-        elif params['element'] == 'thumbnail':
+        elif element == 'thumbnail':
             search_in = response_data[0].get('media_files',{}).get('thumbnail',[])
-        elif params['element'] == 'thumbnail_gif':
+        elif element == 'thumbnail_gif':
             search_in = response_data[0].get('media_files',{}).get('thumbnail_gif',[])
-        elif params['element'] == 'streaming':
+        elif element == 'image':
+            search_in = response_data[0].get('media_files',{}).get('image',[])
+        elif element == 'streaming':
             search_in = response_data[0].get('media_files',{}).get('streaming',[])
-        elif params['element'] == 'archival':
+        elif element == 'archival':
             search_in = response_data[0].get('media_files',{}).get('archival',[])
 
         if not search_in:
