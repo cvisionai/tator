@@ -3372,6 +3372,19 @@ class AnnotationCanvas extends TatorElement
 
   accentWithHandles(item, color, width, alpha)
   {
+    let allZeros = true;
+    for (let idx = 0; idx < item.length; idx++)
+    {
+      if (item[idx][0] != 0 || item[idx][1] != 0)
+      {
+        allZeros = false;
+        break;
+      }
+    }
+    if (allZeros)
+    {
+      return;
+    }
     if (width == null)
     {
       width = Math.round(defaultDrawWidth * this._draw.displayToViewportScale()[0]);
