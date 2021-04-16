@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href={% static "css/tator/tator.min.css" %} />
     {% settings_value "USE_MIN_JS" as settings_min_js %}
     {% if not settings_min_js %}
+    <script src={% static "js/components/tator-element.js" %}></script>
     <script src={% static "js/node-uuid.js" %}></script>
     <script src={% static "js/StreamSaver.js" %}></script>
     <script src={% static "js/zip-stream.js" %}></script>
@@ -17,15 +18,14 @@
     <script src={% static "js/util/join-params.js" %}></script>
     <script src={% static "js/util/tator-data.js" %}></script>
     <script src={% static "js/util/same-origin-credentials.js" %}></script>
-    <script src={% static "js/components/inputs/feature/color-inputs.js" %}></script>
-    <script src={% static "js/components/inputs/feature/thumb-inputs.js" %}></script>
     <script src={% static "js/components/inputs/array-input.js" %}></script>
     <script src={% static "js/components/inputs/bool-input.js" %}></script>
     <script src={% static "js/components/inputs/checkbox-inputs.js" %}></script>
     <script src={% static "js/components/inputs/enum-input.js" %}></script>
     <script src={% static "js/components/inputs/text-area.js" %}></script>
     <script src={% static "js/components/inputs/text-input.js" %}></script>
-    <script src={% static "js/components/tator-element.js" %}></script>
+    <script src={% static "js/components/inputs/feature/color-inputs.js" %}></script>
+    <script src={% static "js/components/inputs/feature/thumb-inputs.js" %}></script>
     <script src={% static "js/components/labeled-checkbox.js" %}></script>
     <script src={% static "js/components/modal-close.js" %}></script>
     <script src={% static "js/components/modal-warning.js" %}></script>
