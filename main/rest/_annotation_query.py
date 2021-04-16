@@ -158,6 +158,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         media_ids += media_id
     if media_ids:
         qs = qs.filter(media__in=media_ids)
+        if len(media_ids) > 1:
+            qs = qs.distinct()
 
     localization_ids = []
     if localization_id_put:
@@ -170,7 +172,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         if annotation_type == 'localization':
             qs = qs.filter(pk__in=localization_ids)
         elif annotation_type == 'state':
-            qs = qs.filter(localizations__in=localization_ids)
+            qs = qs.filter(localizations__in=localization_ids).distinct()
 
     if state_ids and (annotation_type == 'state'):
         qs = qs.filter(pk__in=state_ids)
@@ -197,7 +199,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('id')
-    qs = qs.distinct()
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
     elif start is not None:
@@ -238,7 +239,6 @@ def get_annotation_queryset(project, params, annotation_type):
             qs = qs.difference(parent_set)
 
         qs = qs.order_by('id')
-        qs = qs.distinct()
     else:
         # If using PSQL, construct the queryset.
         qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)

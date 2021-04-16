@@ -193,7 +193,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         qs = qs.filter(pk__in=media_ids)
 
     if localization_ids is not None:
-        qs = qs.filter(localization__in=localization_ids)
+        qs = qs.filter(localization__in=localization_ids).distinct()
 
     if filter_type is not None:
         qs = qs.filter(meta=filter_type)
@@ -225,7 +225,6 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     qs = qs.order_by('name')
-    qs = qs.distinct()
     if start is not None and stop is not None:
         qs = qs[start:stop]
     elif start is not None:
@@ -266,7 +265,6 @@ def get_media_queryset(project, params):
         query = get_media_es_query(project, params)
         media_ids, _  = TatorSearch().search(project, query)
         qs = Media.objects.filter(pk__in=media_ids).order_by('name')
-        qs = qs.distinct()
     else:
         # If using PSQL, construct the queryset.
         qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)

@@ -93,12 +93,20 @@ class SettingsNav extends TatorElement {
   }
 
 
-  _addNav({name, type, subItems}){
-    return this._addHeadingWithSubItems({
-      name,
-      type,
-      subItems
-    });
+  _addNav({name, type, subItems, subItemsOnly = false}){
+
+    if(subItemsOnly){
+      return this._subItemsOnly({
+        type,
+        subItems
+      })
+    } else {
+      return this._addHeadingWithSubItems({
+        name,
+        type,
+        subItems
+      });
+    }
   }
 
   _addSimpleNav({name, type, id, selected}){
@@ -177,8 +185,7 @@ class SettingsNav extends TatorElement {
       };
       
       this.toggleSubItemList({ "targetEl" : hiddenSubNav});
-  
-      return headingBox.setAttribute("selected", "true");
+      headingBox.setAttribute("selected", "true");
     });
 
     // SubItems
@@ -198,7 +205,34 @@ class SettingsNav extends TatorElement {
       // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
 
-    return this.nav.appendChild(navGroup);
+    this.nav.appendChild(navGroup);
+    
+    return itemHeading;
+  }
+
+  // This adds subitems to an existing heading
+  // @TODO no "New item" trigger can be added in this fn (requires more el access)
+  _subItemsOnly({ subItems = [], type = "" }){
+    // SubItems
+    if (subItems && subItems.length > 0){
+      for(let obj of subItems){
+        let itemSelector = `#itemDivId-${type}-${obj.id}`
+        let subNavLink = this.getSubItem(obj, type, itemSelector);
+        let newSelector = `#itemDivId-${type}-New`;
+        let addNewNode = this._shadow.querySelector(`a[href='${newSelector}']`);
+
+        // Find the end of the type's section.
+        if(addNewNode){
+          addNewNode.before(subNavLink);
+        } else {
+          let section = this._shadow.querySelector(`.subitems-${type}`);
+          section.appendChild(subNavLink);
+        }
+      }
+    } else {
+      console.log("No subitems for heading "+name);
+      // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
+    }
   }
 
   // This is the the "+" next to item heading
@@ -297,6 +331,7 @@ class SettingsNav extends TatorElement {
   }
 
   fillContainer({ id = -1, itemContents = document.createTextNode(""), type = ""}){
+    //console.log(`Filling ${type} container with id ${id}`);
     let itemDivId = `#itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
     let itemDiv = this._shadow.querySelector(itemDivId);
 

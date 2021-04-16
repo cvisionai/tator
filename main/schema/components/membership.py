@@ -47,6 +47,18 @@ membership = {
             'description': 'Username for the membership.',
             'type': 'string',
         },
+        'first_name': {
+            'type': 'string',
+            'description': 'First name of user.',
+        },
+        'last_name': {
+            'type': 'string',
+            'description': 'Last name of user.',
+        },
+        'email': {
+            'type': 'string',
+            'description': 'Email address of user.',
+        },
         'permission': membership_properties['permission'],
         'default_version': membership_properties['default_version'],
     },

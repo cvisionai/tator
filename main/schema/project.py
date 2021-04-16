@@ -35,7 +35,13 @@ class ProjectListSchema(AutoSchema):
         return []
 
     def _get_filter_parameters(self, path, method):
-        return {}
+        return [{
+            'name': 'organization',
+            'in': 'query',
+            'required': False,
+            'description': 'Unique integer identifying an organization.',
+            'schema': {'type': 'integer', 'minimum': 1},
+        }]
 
     def _get_request_body(self, path, method):
         body = {}
