@@ -297,6 +297,11 @@ urlpatterns += [
         OrganizationDetailAPI.as_view(),
     ),
     path(
+        'rest/Permalink/<int:id>',
+        PermalinkAPI.as_view(),
+        name='Permalink'
+    ),
+    path(
         'rest/Projects',
         ProjectListAPI.as_view(),
     ),
