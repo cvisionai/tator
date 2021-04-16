@@ -198,6 +198,14 @@ FILES = \
     util/join-params.js \
     util/tator-data.js \
     util/same-origin-credentials.js \
+    components/inputs/feature/color-inputs.js \
+    components/inputs/feature/thumb-inputs.js \
+    components/inputs/array-input.js \
+    components/inputs/bool-input.js \
+    components/inputs/checkbox-inputs.js \
+    components/inputs/enum-input.js \
+    components/inputs/text-area.js \
+    components/inputs/text-input.js \
     components/tator-element.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
