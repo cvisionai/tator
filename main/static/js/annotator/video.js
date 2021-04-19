@@ -2904,7 +2904,7 @@ class VideoCanvas extends AnnotationCanvas {
   canPlayRate(rate, frame)
   {
     // If the rate is 1.0 or less, we will use the onDemand buffer so we're good to go.
-    if (rate <= 1.0)
+    if (rate <= 4.0)
     {
       return true;
     }
@@ -2924,7 +2924,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > 1.0)
+      if (this._playbackRate > 4.0)
       {
         this._playGenericScrub(Direction.FORWARD);
       }
@@ -2952,7 +2952,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > 1.0)
+      if (this._playbackRate > 4.0)
       {
         this._playGenericScrub(Direction.BACKWARDS);
       }
