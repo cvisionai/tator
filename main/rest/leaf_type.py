@@ -25,7 +25,8 @@ class LeafTypeListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params):
-        return list(LeafType.objects.filter(project=params['project']).values(*fields))
+        return list(LeafType.objects.filter(project=params['project'])\
+                    .order_by('name').values(*fields))
 
     def _post(self, params):
         if params['name'] in attribute_keywords:

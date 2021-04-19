@@ -4,13 +4,26 @@ from ..models import Membership
 from ..models import Project
 from ..models import User
 from ..models import Version
-from ..serializers import MembershipSerializer
+from ..models import database_qs
 from ..schema import MembershipListSchema
 from ..schema import MembershipDetailSchema
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
+
+def _serialize_memberships(memberships):
+    membership_data = database_qs(memberships)
+    for idx, membership in enumerate(memberships):
+        membership_data[idx]['permission'] = str(membership.permission)
+        membership_data[idx]['username'] = membership.user.username
+        membership_data[idx]['first_name'] = membership.user.first_name
+        membership_data[idx]['last_name'] = membership.user.last_name
+        membership_data[idx]['email'] = membership.user.email
+    membership_data.sort(key=lambda membership: membership['last_name'].lower()
+                                                if membership['last_name']
+                                                else membership['username'].lower())
+    return membership_data
 
 class MembershipListAPI(BaseListView):
     """ Create or retrieve a list of project memberships.
@@ -28,7 +41,7 @@ class MembershipListAPI(BaseListView):
 
     def _get(self, params):
         members = Membership.objects.filter(project=params['project'])
-        return MembershipSerializer(members, many=True).data
+        return _serialize_memberships(members)
 
     def _post(self, params):
         project = params['project']
@@ -86,8 +99,8 @@ class MembershipDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        member = Membership.objects.get(pk=params['id'])
-        return MembershipSerializer(member).data
+        memberships = Membership.objects.filter(pk=params['id'])
+        return _serialize_memberships(memberships)[0]
 
     @transaction.atomic
     def _patch(self, params):

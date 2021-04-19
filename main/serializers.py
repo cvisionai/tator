@@ -59,32 +59,6 @@ class UserSerializerBasic(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
-class MembershipSerializer(serializers.ModelSerializer):
-    username = serializers.SerializerMethodField()
-    permission = serializers.SerializerMethodField('get_permission_str')
-
-    def get_username(self, obj):
-        return obj.user.username
-
-    def get_permission_str(self, obj):
-        if obj.permission == Permission.VIEW_ONLY:
-            out = 'View Only'
-        elif obj.permission == Permission.CAN_EDIT:
-            out = 'Can Edit'
-        elif obj.permission == Permission.CAN_TRANSFER:
-            out = 'Can Transfer'
-        elif obj.permission == Permission.CAN_EXECUTE:
-            out = 'Can Execute'
-        elif obj.permission == Permission.FULL_CONTROL:
-            out = 'Full Control'
-        else:
-            raise RuntimeError("Invalid permission setting!")
-        return out
-
-    class Meta:
-        model = Membership
-        fields = ['id', 'project', 'user', 'username', 'permission', 'default_version']
-
 class VersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Version

@@ -543,3 +543,7 @@ selfsigned:
 .PHONY: docs
 docs:
 	make -C doc html
+
+.PHONY: check_schema
+check_schema: tator-image
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false localhost:5000/tator_online:$(GIT_VERSION) python3 manage.py getschema

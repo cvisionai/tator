@@ -46,10 +46,10 @@ class StateTypeListAPI(BaseListView):
             for state in states:
                 if state.project.id != self.kwargs['project']:
                     raise Exception('State not in project!')
-            response_data = states.values(*fields)
+            response_data = states.order_by('name').values(*fields)
         else:
             response_data = StateType.objects.filter(
-                project=self.kwargs['project']).values(*fields)
+                project=self.kwargs['project']).order_by('name').values(*fields)
         # Get many to many fields.
         state_ids = [state['id'] for state in response_data]
         media = {obj['statetype_id']: obj['media'] for obj in

@@ -1179,6 +1179,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       forceSeekBuffer = true;
     }
+    this._draw.beginDraw();
     return this.gotoFrame(this._dispFrame, forceSeekBuffer);
   }
 
@@ -2313,7 +2314,7 @@ class VideoCanvas extends AnnotationCanvas {
         var targetFPS = that._motionComp.targetFPS;
         let fps_msg = `FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${that._fpsScore}, targetFPS=${targetFPS}`;
         that._audioCheck++;
-        if (that._audioPlayer && that._audioCheck % AUDIO_CHECK_INTERVAL == 0)
+        if (that._audioPlayer && that._audioCheck % AUDIO_CHECK_INTERVAL == 0 && that._playbackRate <= 4)
         {
           // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
           const audioDelta = (that.frameToAudioTime(that._dispFrame)-that._audioPlayer.currentTime) * 1000;
