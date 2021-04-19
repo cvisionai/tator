@@ -1,12 +1,12 @@
 /* Class with methods return input types with preset values for editing.*/
 class AttributesData {
-    constructor({projectId, typeName, typeId, inputs}) {
+    constructor({projectId, typeName, typeId, selectedData}) {
       // Feature-related class(es) to customize form element. Applies to all elements.
       this.projectId = projectId;
       this.typeName = typeName;
       this.typeId = typeId;
-      this.inputs = inputs;
-      this.inputHelper = new SettingsInput("media-types-main-edit");
+      this.selectedData = selectedData;
+
       this.responseMessage = "";
     }
 
@@ -36,29 +36,24 @@ class AttributesData {
       this.failedMessages = "";
       let promises  = [];
   
-      for(let checkbox of this.inputs){
-        if(checkbox.getValue()){
-          nameOfSaved = checkbox.getName();
-          let cloneValues = JSON.parse(checkbox.getHiddenData()); //parse data attribute
+      for(let data of this.selectedData){
+        let cloneValue = JSON.parse(data); //parse data attribute
 
-          console.log("cloneValues");
-          console.log(cloneValues);
+        console.log("cloneValue");
+        console.log(cloneValue);
 
-          this.attributeForm = new AttributesForm();
-          this.attributeForm._getFormWithValues({clone : true, ...cloneValues});
-          let formJSON = {
-            "entity_type": this.typeName,
-            "addition": this.attributeForm._getAttributeFormData()
-          };
-          //let status = "";
-  
-          let promise = this._fetchPostPromise({
-            "formData" : formJSON
-          });
+        this.attributeForm = new AttributesForm();
+        this.attributeForm._getFormWithValues({clone : true, ...cloneValue});
+        let formJSON = {
+          "entity_type": this.typeName,
+          "addition": this.attributeForm._getAttributeFormData()
+        };
 
-          promises.push(promise);
-        }
+        let promise = this._fetchPostPromise({
+          "formData" : formJSON
+        });
 
+        promises.push(promise);
       }
 
       return Promise.all(promises).then( async( respArray ) => {
@@ -81,7 +76,7 @@ class AttributesData {
       
               console.log("Clone status "+ status);
               
-              if(response.ok){
+              if(respArray[o].ok){
                 iconWrap.appendChild(succussIcon);
                 this.successMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
               } else {

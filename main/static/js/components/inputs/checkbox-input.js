@@ -49,6 +49,15 @@ class CheckboxInput extends TatorElement {
         this._name.nodeValue = newValue;
         this.name = newValue;
         break;
+      case "type":
+        switch (newValue) {
+          case "number":
+            this.getValue = this.getValueAsNumber;
+            break;
+          case "radio":
+            this.type = "radio";
+            break;
+        }
     }
   }
 
@@ -62,8 +71,20 @@ class CheckboxInput extends TatorElement {
     }
   }
 
+  set disabled(val) {
+    this._input.disabled = val;
+  }
+
   set default(val) {
-    this._default = val;
+    if (val.checked) {
+      return this._default = val.id;
+    } else {
+      return this._default = null;
+    }
+  }
+
+  set _checked(val) {
+    return this._input.checked = val;
   }
 
   changed(){
@@ -72,16 +93,19 @@ class CheckboxInput extends TatorElement {
 
   reset() {
     // Go back to default value
-    if (typeof this._default !== "undefined") {
-      this.setValue(this._default);
+    if (typeof this._checked !== "undefined") {
+      this._input.checked = this._checked;
     } else {
-      this.setValue("", false);
+      
     }
   }
 
-  setValue(val, checked) {
-    this._input.value = val;
-    if (checked) this._input.checked = true;
+  setValue(val) {
+    this._input.value = val.id;
+    this.checked = val.checked;
+    if (val.data) {
+      this.setData(val.data);
+    } 
   }
 
   getValue() {
@@ -92,17 +116,25 @@ class CheckboxInput extends TatorElement {
     }
   }
 
+  getValueAsNumber() {
+    if (this._input.checked) {
+      return Number(this._input.value);
+    } else {
+      return null;
+    }
+  }
+
   getChecked() {
     return this._input.checked;
   }
 
-  set hiddenData(val) {
-    this.hiddenData = val;
+  setData(val) {
+    return this._data = val;
   }
 
   getData() {
-    if (this._input.checked) {
-      return this._input.value;
+    if (this._data) {
+      return this._data;
     } else {
       return null;
     }

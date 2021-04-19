@@ -77,8 +77,10 @@ class StateTypeEdit extends TypeForm {
     let mediaListWithChecked = mediaList.getCompiledMediaList( data.media );
     this._mediaCheckboxes = document.createElement("checkbox-set");
     this._mediaCheckboxes.setAttribute("name", "Media");
+    this._mediaCheckboxes.setAttribute("type", "number");
     this._mediaCheckboxes.setValue(mediaListWithChecked);
     this._mediaCheckboxes.default = mediaListWithChecked;
+    this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._mediaCheckboxes);
 
     // Associations
@@ -137,16 +139,16 @@ class StateTypeEdit extends TypeForm {
   _getFormData(){
     const formData = {};
 
-    if (this._name.changed() && this._name.getValue()) {
-      formData.name = this._name.getValue();
+    if (this._editName.changed() && this._editName.getValue()) {
+      formData.name = this._editName.getValue();
     }
 
     if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {
       formData.dtype = this.dtypeSelect.getValue()
     }
 
-    if (this._description.changed() && this._description.getValue()) {
-      formData.description = this._description.getValue();
+    if (this._editDescription.changed() && this._editDescription.getValue()) {
+      formData.description = this._editDescription.getValue();
     }
 
     if (this._visibleBool.changed() && this._visibleBool.getValue()) {
@@ -158,7 +160,7 @@ class StateTypeEdit extends TypeForm {
     }
 
     if (this._mediaCheckboxes.changed() && this._mediaCheckboxes.getValue()) {
-      formData.media = this._mediaCheckboxes.getValue();
+      formData.media_types = this._mediaCheckboxes.getValue();
     }
 
     if (this._association.changed() && this._association.getValue()) {

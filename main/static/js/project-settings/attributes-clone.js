@@ -88,8 +88,8 @@ class AttributesClone {
     return this.form;
   }
 
-  getInputs(){
-    return this.attributeCheckboxes._inputs;
+  getInputData(){
+    return this.attributeCheckboxes.getData();;
   }
 
   _getAttributeCheckboxes( list ){
@@ -106,7 +106,7 @@ class AttributesClone {
       }
 
       this.attributeCheckboxes = document.createElement("checkbox-set");
-      this.attributeCheckboxes.setAttribute("name", "Attribute(s)")
+      this.attributeCheckboxes.setAttribute("name", "Attribute(s)");
       this.attributeCheckboxes.setValue(newList);
       this.attributeCheckboxes.default = newList;
 

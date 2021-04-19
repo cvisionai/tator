@@ -107,11 +107,5 @@
 
 .btn-edit-overlay {
   position: absolute;
-  top: 84px;
-  left: 25%; // col width
-  width: 84px;
-
-  &.add-new-thumbnail {
-    top: 10px;
-  }
+  bottom: 10px;
 }

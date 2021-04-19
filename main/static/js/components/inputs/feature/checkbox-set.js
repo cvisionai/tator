@@ -18,7 +18,7 @@ class CheckboxSet extends TatorElement {
     }
   
     static get observedAttributes() {
-      return ["name"];
+      return ["name", "type"];
     }
   
     attributeChangedCallback(name, oldValue, newValue) {
@@ -26,17 +26,32 @@ class CheckboxSet extends TatorElement {
         case "name":
           this._name.nodeValue = newValue;
           break;
+        case "type":
+          switch (newValue) {
+            case "number":
+              this.getValue = this.getValueAsNumber;
+              this.type = newValue;
+              break;
+            case "radio":
+              this.getValue = this.getValueAsRadio;
+              this.type = newValue;
+              break;
+          }
       }
     }
   
-    set default(val) {
-      this._default = val; // this will be an array
-    }
+  set default(val) {
+    this.defaultData = val; // full data needed to reset FE
+
+    console.log(val);
+    // default is apples to apples with getValue to check for changes
+    this._default = val.filter(data => data.checked).map(checked => checked.id);
+  }
   
     reset() {
       // Go back to default value
-      if (typeof this._default !== "undefined") {
-        this.setValue(this._default);
+      if (typeof this.defaultData !== "undefined") {
+        this.setValue(this.defaultData);
       } else {
         this.setValue([]);
       }
@@ -52,10 +67,12 @@ class CheckboxSet extends TatorElement {
 
     _newInput(item){
       let checkbox = document.createElement("checkbox-input");
-      checkbox.setAttribute("name", `${item.name}`)
-      checkbox.setValue(item.id);
-      checkbox.default = item.id;
-      checkbox.itemData = item.data;
+      checkbox.setAttribute("name", `${item.name}`);
+      if (this.type != undefined) {
+        checkbox.setAttribute("type", this.type)
+      }
+      checkbox.setValue(item);
+      checkbox.default = item;
       
       return this._addInput(checkbox);
     }
@@ -69,32 +86,37 @@ class CheckboxSet extends TatorElement {
       this._inputs.push(checkbox);
 
       checkbox.addEventListener("change", () => {
+        console.log("checkbox in set changed! {{checkbox val --->}}");
+        console.log(checkbox.getValue());
+        console.log(checkbox.getData());
+        console.log("{{checkbox set --->}}");
+        console.log(this.getValue());
+        console.log(this.getData());
         this.dispatchEvent(new Event("change"));
       });
         
       return this._inputDiv.appendChild(wrapper);
     }
 
-    getValue(){
-      const val = [];
-      // Loop through the inputs
-      for(let checkbox of this._inputs){
-        if(checkbox.getValue().trim() != ""){
-          val.push( checkbox.getValue() );
-        }
-      }
-      return val;
+    // Array of the checked inputs values
+    getValue() {
+      return this._inputs.filter(input => input.getChecked()).map(checked => checked.getValue());
     }
   
-    getDataArray() {
-      const val = [];
-      // Loop through the inputs
-      for(let checkbox of this._inputs){
-        if(checkbox.getValue()){ // if it is checked, push its itemData into val
-          val.push( checkbox.itemData );
-        }
-      }
-      return val;     
+    getValueAsNumber() {
+      return this._inputs.filter(input => input.getChecked()).map(checked => Number(checked.getValue()));
+    }
+    
+    getValueAsRadio() { 
+      // should just get 1 checked, return as string not array
+      return String(this.getValue());
+    }
+  
+    // Array of checked inputs hidden data
+    // @TODO this follows current patter for some checkboxes to store hidden data
+    // should look into setting the data as value instead
+    getData() {
+      return this._inputs.filter(input => input.getChecked()).map(checked => checked.getData());
     }
 
     changed(){
@@ -104,63 +126,3 @@ class CheckboxSet extends TatorElement {
 }
 
 customElements.define("checkbox-set", CheckboxSet);
-
-
-
-
-
-   // multipleCheckboxes({
-//    value = '',
-//    labelText = '',
-//    name = '',
-//    checkboxList = ''
-//  } = {}){
-//    const setName = this._getUniqueIdentifier(name);
-//    const checkboxes = document.createElement("div");
-//    checkboxes.setAttribute("class", `col-md-9 col-sm-8`);
-
-//    const checkboxInner = document.createElement("div");
-//    checkboxInner.setAttribute("class", `d-flex flex-row flex-wrap flex-justify-between`);
-
-//    for(let data of checkboxList){
-//      checkboxInner.appendChild( this._miniCheckboxSet(data, setName) );
-//    }
-
-//    checkboxes.appendChild(checkboxInner);
-
-//    const checkboxesWithLabel = this.labelWrap({
-//      "labelText": labelText,
-//      "inputNode": checkboxes,
-//      "labelType" : "fieldset"
-//    });
-
-//    return checkboxesWithLabel;
-//  }
-
-//  _miniCheckboxSet(data, setName){
-//    // Outputs inputs in rows of three
-//    let miniCheckboxSet = document.createElement("label");
-//    miniCheckboxSet.setAttribute("class", "col-6 py-2");
-
-//    let checkbox = document.createElement("input");
-//    checkbox.setAttribute("type", "checkbox");
-//    checkbox.setAttribute("value", data.id);
-//    checkbox.setAttribute("name", setName);
-//    checkbox.setAttribute("class", "checkbox");
-//    if(data.data){
-//      checkbox.setAttribute("data-data", data.data);
-//    }
-
-//    if (data.checked) checkbox.checked = true;
-
-//    miniCheckboxSet.appendChild(checkbox);
-
-//    let textSpan = document.createElement("span");
-//    textSpan.setAttribute("class", "px-2 v-align-top");
-
-//    let labelText = document.createTextNode(data.name);
-//    textSpan.appendChild(labelText);
-//    miniCheckboxSet.appendChild(textSpan)
-
-//    return miniCheckboxSet;
-//  }

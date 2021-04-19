@@ -55,19 +55,17 @@ class LocalizationEdit extends TypeForm {
     this._form.appendChild(this._editDescription);
 
     // color map
-    // this._colorMap = document.createElement("color-input");
-    // const COLORMAP = "colorMap";
-    // let colMap = data[COLORMAP];
-    // let colMapDefault = "";
-    // if(typeof colMap !== "undefined" && colMap !== null){
-    //   if(typeof colMap.default !== "undefined" && colMap.default !== null) colMapDefault = colMap.default;
-    // }
-    // this._form.appendChild( this.inputHelper.colorInput({
-    //   "labelText": "Color Map Default",
-    //   "name": COLORMAP,
-    //   "value": colMapDefault,
-    //   "type" : "color"
-    // } ) );
+    this._colorMap = document.createElement("color-inputs");
+    this._colorMap.setAttribute("name", "Color Map Default");
+    if (this.data.colorMap && this.data.colorMap.default) {
+      this._colorMap.setValue(this.data.colorMap.default);
+      this._colorMap.default = this.data.colorMap.default;
+    } else {
+      this._colorMap.setValue(null);
+      this._colorMap.default = null;
+    }
+    this._colorMap.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._colorMap);
 
     // visible
     this._visibleBool = document.createElement("bool-input");
@@ -107,8 +105,10 @@ class LocalizationEdit extends TypeForm {
     let mediaListWithChecked = mediaList.getCompiledMediaList( data.media );
     this._mediaCheckboxes = document.createElement("checkbox-set");
     this._mediaCheckboxes.setAttribute("name", "Media");
+    this._mediaCheckboxes.setAttribute("type", "number");
     this._mediaCheckboxes.setValue(mediaListWithChecked);
     this._mediaCheckboxes.default = mediaListWithChecked;
+    this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._mediaCheckboxes);
 
     current.appendChild(this._form);
@@ -119,8 +119,8 @@ class LocalizationEdit extends TypeForm {
   _getFormData(){
     const formData = {};
 
-    if (this._name.changed() && this._name.getValue()) {
-      formData.name = this._name.getValue();
+    if (this._editName.changed() && this._editName.getValue()) {
+      formData.name = this._editName.getValue();
     }
 
     if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {

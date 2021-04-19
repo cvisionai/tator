@@ -41,16 +41,35 @@ class TypeForm extends TatorElement {
 
   setupFormPage(data = this.data) {
     // Section h1.
-    const h1 = document.createElement("h1");
-    h1.setAttribute("class", "h2 pb-3 edit-project__h1");
+    // New heading element.
+    this.h1 = document.createElement("h1");
+    this.h1.setAttribute("class", "h3 pb-3 edit-project__h1");
 
     // Create a form with values, or empty editable form
-    if(!this.data.form && !this.data.form != "empty"){
-      const t = document.createTextNode(`${this.readableTypeName} ${this.typeId} settings.`); 
-      h1.appendChild(t);
+    if (!this.data.form && !this.data.form != "empty") {
+      this.h1_name = document.createTextNode(`${this.data.name} `);
+      this.h1.appendChild(this.h1_name);
 
+      this.separate_span = document.createElement("span");
+      this.separate_span.setAttribute("class", "px-2");
+      this.h1.appendChild(this.separate_span);
+      const h1_separate_span = document.createTextNode(`|`);
+      this.separate_span.appendChild(h1_separate_span);
+
+      this.type_span = document.createElement("span");
+      this.type_span.setAttribute("class", "text-gray text-normal");
+      this.h1.appendChild(this.type_span);
+      const h1_type = document.createTextNode(` ${this.typeName}`);
+      this.type_span.appendChild(h1_type);
+
+      this.id_span = document.createElement("span");
+      this.id_span.setAttribute("class", "text-gray text-normal");
+      this.h1.appendChild(this.id_span);
+      const h1_id = document.createTextNode(` (ID ${this.data.id})`);
+      this.id_span.appendChild(h1_id);
+      
       // Add all elements to page
-      this.typeFormDiv.appendChild(h1);
+      this.typeFormDiv.appendChild( this.h1);
       this.typeFormDiv.appendChild( this._getSectionForm( this.data) );
       this.typeFormDiv.appendChild( this._getAttributeSection( ) );
       this.typeFormDiv.appendChild( this._getSubmitDiv( {"id": this.data.id }) );
@@ -58,9 +77,9 @@ class TypeForm extends TatorElement {
       return this.typeFormDiv;
     } else {
       const t = document.createTextNode(`Add new ${this.readableTypeName}.`); 
-      h1.appendChild(t);
+      this.h1.appendChild(t);
 
-      this.typeFormDiv.appendChild(h1);
+      this.typeFormDiv.appendChild(this.h1);
       this.typeFormDiv.appendChild( this._getSectionForm( this._getEmptyData() ) );
       this.typeFormDiv.appendChild( this._getSubmitNewDiv( {"id": this.data.id }) );
 
@@ -180,7 +199,7 @@ class TypeForm extends TatorElement {
   _getAttributeSection(){
     this.attributeSection = document.createElement("attributes-main");
     this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
-    this.attributeSection._init(this.typeName, this.typeId, this.projectId, this.data.attribute_types, this.modal);
+    this.attributeSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.data.attribute_types, this.modal);
     
     // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
     this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this) );
@@ -196,7 +215,7 @@ class TypeForm extends TatorElement {
     this.saveButton = this.inputHelper.saveButton();
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
-      if( this._form.classList.contains("changed") || this.attributeSection.hasChanges ){
+      if( this.changed || (this.attributeSection && this.attributeSection.hasChanges) ){
         console.log("Save for id: "+id);
         this._save( {"id":id} )
       } else {
@@ -746,7 +765,7 @@ class TypeForm extends TatorElement {
     this.modal._titleDiv.append( document.createElement("modal-success") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
-    //this.modal._main.classList.add("fixed-heigh-scroll");
+    //this.modal._main.classList.add("fixed-height-scroll");
 
     return this.modal.setAttribute("is-open", "true")
   }
@@ -776,7 +795,7 @@ class TypeForm extends TatorElement {
       this.modal._main.innerHTML = mainText;
     }
     
-    if(scroll) this.modal._main.classList.add("fixed-heigh-scroll");
+    if(scroll) this.modal._main.classList.add("fixed-height-scroll");
 
     let buttonClose = document.createElement("button")
     buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold btn-charcoal");
@@ -796,7 +815,7 @@ class TypeForm extends TatorElement {
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     this.modal._footer.innerHTML = "";
-    this.modal._main.classList.remove("fixed-heigh-scroll");
+    this.modal._main.classList.remove("fixed-height-scroll");
 
     return this.modal.setAttribute("is-open", "true");
   }

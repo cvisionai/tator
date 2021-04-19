@@ -80,62 +80,25 @@ class MediaTypeMainEdit extends TypeForm {
     return current;
   }
 
-  _getFormData(id, includeDtype = false){
-      let form = this._shadow.getElementById(id);
-      let hasErrors = "";
-
-      // description 
-      let description = form.querySelector('[name="description"]').value;
-
-      // Visible is a radio slide
-      let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
-      let visible = this.inputHelper._getSliderSetValue(visibleInputs);
-
-      let formData = {
-        description,
-        visible
-      };
-
-      // default volume to Number
-      if(form.querySelector('[name="default_volume"]')) {
-        //maximum of 100
-        let default_volume = Number(form.querySelector('[name="default_volume"]').value);
-        formData["default_volume"] = default_volume;
-      }
-
-      // can not be ""
-      if(this._nameChanged()){
-        let nameInput = form.querySelector('[name="name"]');
-        let name = nameInput.value;
-        //if(name !== "" || name !== null) {
-          formData["name"] = name;
-          //
-          nameInput.classList.remove("has-border");
-          nameInput.classList.remove("is-invalid");
-        // } else {
-        //   nameInput.classList.add("has-border");
-        //   nameInput.classList.add("is-invalid");
-        //   hasErrors += "Name cannot be blank\n";
-        // } 
-        if(!includeDtype) {
-          this._updateNavEvent("rename", name);
-        }   
-      }
+  _getFormData() {
+    const formData = {};
     
-      // only send dtype when it's new, if included cannot be ""
-      if(includeDtype) {
-        let dtypeSelect = form.querySelector('[name="dtype"]');
-        let dtype = dtypeSelect.value;
-        //if(dtype !== "" || dtype !== null) {
-          formData.dtype = dtype;
-        // } else {
-        //   this._input.classList.add("has-border");
-        //   this._input.classList.add("is-invalid");
-        //   hasErrors += "Data Type cannot be blank\n";
-        // }
-      }
+    if (this._editName.changed() && this._editName.getValue()) {
+      formData.name = this._editName.getValue();
+    }
 
-    //if(hasErrors != "") return `Form error: ${hasErrors}`
+    if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {
+      formData.dtype = this.dtypeSelect.getValue()
+    }
+
+    if (this._editDescription.changed() && this._editDescription.getValue()) {
+      formData.description = this._editDescription.getValue();
+    }
+
+    if (this._visibleBool.changed() && this._visibleBool.getValue()) {
+      formData.visible = this._visibleBool.getValue();
+    }
+
     return formData;
   }
 

@@ -120,7 +120,7 @@ class SettingsBox {
     this.modal._titleDiv.append( document.createElement("modal-success") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
-    //this.modal._main.classList.add("fixed-heigh-scroll");
+    //this.modal._main.classList.add("fixed-height-scroll");
 
     return this.modal.setAttribute("is-open", "true")
   }
@@ -152,7 +152,7 @@ class SettingsBox {
       this.modal._main.innerHTML = mainText;
     }
     
-    if(scroll) this.modal._main.classList.add("fixed-heigh-scroll");
+    if(scroll) this.modal._main.classList.add("fixed-height-scroll");
 
     let buttonClose = document.createElement("button")
     buttonClose.setAttribute("class", "btn btn-clear btn-charcoal f1 text-semibold");
@@ -173,7 +173,6 @@ class SettingsBox {
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     this.modal._footer.innerHTML = "";
-    this.modal._main.classList.remove("fixed-heigh-scroll");
 
     return this.modal.setAttribute("is-open", "true");
   }

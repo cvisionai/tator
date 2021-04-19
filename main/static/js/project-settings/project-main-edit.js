@@ -33,9 +33,29 @@ class ProjectMainEdit extends TypeForm {
   setupFormPage(){
     // New heading element.
     this.h1 = document.createElement("h1");
-    this.h1.setAttribute("class", "h2 pb-3 edit-project__h1");
-    const t = document.createTextNode(`Project ${this.projectId} settings.`); 
-    this.h1.appendChild(t);
+    this.h1.setAttribute("class", "h3 pb-3 edit-project__h1");
+
+    this.h1_name = document.createTextNode(`${this.data.name} `);
+    this.h1.appendChild(this.h1_name);
+
+    this.separate_span = document.createElement("span");
+    this.separate_span.setAttribute("class", "px-2");
+    this.h1.appendChild(this.separate_span);
+    const h1_separate_span = document.createTextNode(`|`);
+    this.separate_span.appendChild(h1_separate_span);
+
+    this.type_span = document.createElement("span");
+    this.type_span.setAttribute("class", "text-gray");
+    this.h1.appendChild(this.type_span);
+    const h1_type = document.createTextNode(` ${this.typeName}`);
+    this.type_span.appendChild(h1_type);
+
+    this.id_span = document.createElement("span");
+    this.id_span.setAttribute("class", "text-gray text-normal");
+    this.h1.appendChild(this.id_span);
+    const h1_id = document.createTextNode(` (ID ${this.data.id})`);
+    this.id_span.appendChild(h1_id);
+
     this.typeFormDiv.appendChild(this.h1);
 
     this.typeFormDiv.appendChild( this._getSectionForm() )
@@ -69,7 +89,8 @@ class ProjectMainEdit extends TypeForm {
     // Thumb
     this._thumbUpload = document.createElement("thumb-input");
     this._thumbUpload.setAttribute("name", "Thumbnail");
-    this._thumbUpload.setAttribute("for-property", "thumb");
+    this._thumbUpload.setAttribute("for", "thumb");
+    this._thumbUpload.projectId = this.projectId;
     this._thumbUpload.setValue(this.data.thumb);
     this._thumbUpload.default = this.data.thumb;
     this._thumbUpload.addEventListener("change", this._formChanged.bind(this));
