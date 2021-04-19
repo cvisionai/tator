@@ -87,7 +87,7 @@ class TypeForm extends TatorElement {
       "projectId" : this.projectId
     });
 
-    let formData = this._getFormData("New", true);
+    let formData = this._getFormData("New");
 
     addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();

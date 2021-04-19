@@ -12,44 +12,68 @@ class AttributesClone {
   }
 
   _getDuplicateAttributesForm(){
-    const form = document.createElement("form");
-    this.form = form;
-
+    this.form = document.createElement("form");
     //this.form.addEventListener("change", this._formChanged);
 
     const typeOptions = this._getTypesList();
 
     // Fields for this form
-    const TYPE = "Type";
-    this.typeOptionsSelect = this.inputHelper.inputSelectOptions({
-      "labelText": TYPE,
-      "value": "Select",
-      "optionsList": typeOptions,
-      "name" : TYPE.toLowerCase()
-    });
-    this.form.appendChild(this.typeOptionsSelect);
+    // const TYPE = "Type";
+    // this.typeOptionsSelect = this.inputHelper.inputSelectOptions({
+    //   "labelText": TYPE,
+    //   "value": "Select",
+    //   "optionsList": typeOptions,
+    //   "name" : TYPE.toLowerCase()
+    // });
+    // this.form.appendChild(this.typeOptionsSelect);
 
-    this.submitForm  = null;
+    // Emptyform uses "" for dtype value
+    this._typeSelect = document.createElement("enum-input");
+    this._typeSelect.setAttribute("name", "Type");
+    this._typeSelect.choices = typeOptions;
+    this._typeSelect.setValue("");
+    this._typeSelect.default = "";
+    this.form.appendChild(this._typeSelect);
 
-    this.typeOptionsSelect.addEventListener("change",  (event) => {
-      let value = "";
-  
-      for(let i of event.target.options){
-        if(i.selected == true) {
-          value = i.value;
-        }
-      }
-  
-      let entitySelect = this._getEntitiesForType( value );
+    this.submitForm = null;
+    
+
+
+    this._typeSelect.addEventListener("change",  (event) => {
+      let type = this._typeSelect.getValue();
+      let entitySelect = this._getEntitiesForType( type );
       this.placeholderEntities.innerHTML = ""; //empty any current value
       this.placeholderAttributes.innerHTML = ""; //empty any current value
       this.checkedRadio = []; //removed remembered check
       this.placeholderEntities.appendChild(entitySelect);
+
+      const list = this.attributeDataByType;
+
+      console.log(list);
   
-      return entitySelect.addEventListener("change", (event) => {
-        let checkboxHTML = this._getAttributeCheckboxes(event);
-        this.placeholderAttributes.innerHTML = ""; //empty any current value
-        this.placeholderAttributes.appendChild(checkboxHTML);
+      entitySelect.addEventListener("change", () => {
+        const entity = this._entitySelect.getValue();
+        const attributes = this.entities[entity];
+        if (attributes && attributes.length > 0) {
+          const checkboxHTML = this._getAttributeCheckboxes( attributes );
+          
+          this.placeholderAttributes.innerHTML = ""; //empty any current value
+          this.placeholderAttributes.appendChild(checkboxHTML);
+        } else {
+          const label = document.createElement("label");
+          label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1")
+          label.appendChild(document.createTextNode("Attribute(s)"))
+          
+          const span = document.createElement("span");
+          span.setAttribute("class", "col-8 text-gray");
+          const message = document.createTextNode("None");
+          span.appendChild(message);
+          label.appendChild(span);
+
+          this.placeholderAttributes.innerHTML = ""; //empty any current value
+          this.placeholderAttributes.appendChild(label);
+        }
+        
       });
     });
 
@@ -65,66 +89,75 @@ class AttributesClone {
   }
 
   getInputs(){
-    return this.placeholderAttributes.getElementsByTagName("input");
+    return this.attributeCheckboxes._inputs;
   }
 
-  _getAttributeCheckboxes(event){
-    let value = ""
-    for(let i of event.target.options){
-      if(i.selected == true) {
-        value = i.value;
-      }
-    }
-
+  _getAttributeCheckboxes( list ){
     // make a new list
-    let list = this.entities[value];
     let newList = [];
-    for(let a of list){
-      let entity = {}
-      entity.name = a.name; // checkbox label
-      entity.id = a.name; // checkbox value
-      entity.data = JSON.stringify(a); // checkbox hidden data
-      newList.push(entity);
+
+    if (list) {
+      for(let a of list){
+        let entity = {}
+        entity.name = a.name; // checkbox label
+        entity.id = a.name; // checkbox value
+        entity.data = JSON.stringify(a); // checkbox hidden data
+        newList.push(entity);
+      }
+
+      this.attributeCheckboxes = document.createElement("checkbox-set");
+      this.attributeCheckboxes.setAttribute("name", "Attribute(s)")
+      this.attributeCheckboxes.setValue(newList);
+      this.attributeCheckboxes.default = newList;
+
+      // console.log(newList); // why do I make a new list?
+  
+      // let attributeCheckboxes = this.inputHelper.multipleCheckboxes({
+      //   "value" : '',
+      //   "labelText" : 'Attribute(s)',
+      //   "name" : 'attribute-clones',
+      //   "checkboxList" : newList
+      // });
+  
+      return this.attributeCheckboxes;
     }
-
-    let attributeCheckboxes = this.inputHelper.multipleCheckboxes({
-      "value" : '',
-      "labelText" : 'Attribute(s)',
-      "name" : 'attribute-clones',
-      "checkboxList" : newList
-    });
-
-    return attributeCheckboxes;
   }
 
   // Choose a type and entity to see a list of attributes:
   _getTypesList(){
       return [
-        {"optText": "Select type", "optValue":""},
-        {"optText": "Media Type", "optValue":"MediaType"},
-        {"optText": "Localization Type", "optValue":"LocalizationType"},
-        {"optText": "State Type", "optValue":"StateType"},
-        {"optText": "Leaf Type", "optValue":"LeafType"},
+        {"label": "Select type", "value":""},
+        {"label": "Media Type", "value":"MediaType"},
+        {"label": "Localization Type", "value":"LocalizationType"},
+        {"label": "State Type", "value":"StateType"},
+        {"label": "Leaf Type", "value":"LeafType"},
       ];
   }
 
-  _getEntitiesForType(type){
+  _getEntitiesForType(type) {
+    let entityOptions = [{"label":"Select", "value": ""}];
     this.entities = this.attributeDataByType[type];
 
-    let entityOptions = [{"optText":"Select", "optValue": ""}];
-
-    for(let o in this.entities){
-      let option = {"optText":o, "optValue":o};
-      entityOptions.push(option)
+    if (this.entities) {
+      for (let o in this.entities) {
+        let option = {"label":o, "value":o};
+        entityOptions.push(option)
+      }
+  
+      // let entitySelectBox = this.inputHelper.inputSelectOptions({
+      //   "labelText": "",
+      //   "value": "",
+      //   "optionsList": entityOptions,
+      //   "name" : "entity"
+      // });
+      this._entitySelect = document.createElement("enum-input");
+      this._entitySelect.setAttribute("name", "Entity");
+      this._entitySelect.choices = entityOptions;
+      this._entitySelect.setValue("");
+      this._entitySelect.default = "";
+  
+      return this._entitySelect;
     }
-
-    let entitySelectBox = this.inputHelper.inputSelectOptions({
-      "labelText": "Entity",
-      "value": "",
-      "optionsList": entityOptions,
-      "name" : "entity"
-    });
-
-    return entitySelectBox;
+    
   }
 }

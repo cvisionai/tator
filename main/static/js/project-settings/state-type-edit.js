@@ -73,15 +73,13 @@ class StateTypeEdit extends TypeForm {
     this._form.appendChild(this._groupingDefault);
 
     // Media
-    // const MEDIA = "Media";
-    // const mediaList = new DataMediaList( this.projectId );
-    // let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
-
-    // this._form.appendChild( this.inputHelper.multipleCheckboxes({
-    //     "labelText" : MEDIA,
-    //     "name": MEDIA.toLowerCase(),
-    //     "checkboxList": mediaListWithChecked
-    // } ) );
+    const mediaList = new DataMediaList( this.projectId );
+    let mediaListWithChecked = mediaList.getCompiledMediaList( data.media );
+    this._mediaCheckboxes = document.createElement("checkbox-set");
+    this._mediaCheckboxes.setAttribute("name", "Media");
+    this._mediaCheckboxes.setValue(mediaListWithChecked);
+    this._mediaCheckboxes.default = mediaListWithChecked;
+    this._form.appendChild(this._mediaCheckboxes);
 
     // Associations
     const assocOptions = [
@@ -122,67 +120,58 @@ class StateTypeEdit extends TypeForm {
     this._form.appendChild( this._interpolation );
 
     // Child Localizations
-    this._deleteChildAssoc = document.createElement("bool-input");
-    this._deleteChildAssoc.setAttribute("name", "Delete Child Associations");
-    this._deleteChildAssoc.setAttribute("on-text", "Yes");
-    this._deleteChildAssoc.setAttribute("off-text", "No");
-    this._deleteChildAssoc.setValue(this.data.delete_child_localizations);
-    this._deleteChildAssoc.default = this.data.delete_child_localizations;
-    this._deleteChildAssoc.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._deleteChildAssoc);
-
-
+    this._deleteChildLoc = document.createElement("bool-input");
+    this._deleteChildLoc.setAttribute("name", "Delete Child Localizations");
+    this._deleteChildLoc.setAttribute("on-text", "Yes");
+    this._deleteChildLoc.setAttribute("off-text", "No");
+    this._deleteChildLoc.setValue(this.data.delete_child_localizations);
+    this._deleteChildLoc.default = this.data.delete_child_localizations;
+    this._deleteChildLoc.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._deleteChildLoc);
 
     current.appendChild( this._form );
 
     return current;
   }
 
-  _getFormData(id, includeDtype = false){
-    let form = this._shadow.getElementById(id);
+  _getFormData(){
+    const formData = {};
 
-      // name only if changed || can not be ""
-      let name = form.querySelector('[name="name"]').value;
+    if (this._name.changed() && this._name.getValue()) {
+      formData.name = this._name.getValue();
+    }
 
-      // description only if changed
-      let description = form.querySelector('[name="description"]').value;
+    if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {
+      formData.dtype = this.dtypeSelect.getValue()
+    }
 
-      // Visible is a radio slide
-      let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
-      let visible = this.inputHelper._getSliderSetValue(visibleInputs);
+    if (this._description.changed() && this._description.getValue()) {
+      formData.description = this._description.getValue();
+    }
 
-      // grouping_default is a radio slide
-      let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
-      let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
+    if (this._visibleBool.changed() && this._visibleBool.getValue()) {
+      formData.visible = this._visibleBool.getValue();
+    }
 
-      let mediaInputs =  form.querySelectorAll('input[name^="media"]');
-      let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
-      let media_types = media;
+    if (this._groupingDefault.changed() && this._groupingDefault.getValue()) {
+      formData.grouping_default = this._groupingDefault.getValue();
+    }
 
-      let association = form.querySelector('[name="association"]').value;
-      
-      let interpolation = form.querySelector('[name="interpolation"]').value;
+    if (this._mediaCheckboxes.changed() && this._mediaCheckboxes.getValue()) {
+      formData.media = this._mediaCheckboxes.getValue();
+    }
 
-      let delete_child_localizationsInputs =  form.querySelectorAll('.radio-slide-wrap input[name="delete_child_localizations"]');
-      let delete_child_localizations = this.inputHelper._getSliderSetValue(delete_child_localizationsInputs);
+    if (this._association.changed() && this._association.getValue()) {
+      formData.association = this._association.getValue();
+    }
 
-      let formData = {
-        name,
-        description,
-        visible,
-        grouping_default,
-        //media,
-        media_types,
-        delete_child_localizations,
-        association,
-        interpolation
-      };
+    if (this._interpolation.changed() && this._interpolation.getValue()) {
+      formData.interpolation = this._interpolation.getValue();
+    }
 
-      // only send dtype when it's new
-      if(includeDtype) {
-        let dtype = form.querySelector('[name="dtype"]').value;
-        formData.dtype = dtype;
-      }
+    if (this._deleteChildLoc.changed() && this._deleteChildLoc.getValue()) {
+      formData.delete_child_localizations = this._deleteChildLoc.getValue();
+    }
 
     return formData;
   }

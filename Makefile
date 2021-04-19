@@ -200,9 +200,10 @@ FILES = \
     util/same-origin-credentials.js \
     components/inputs/feature/color-inputs.js \
     components/inputs/feature/thumb-inputs.js \
+    components/inputs/feature/checkbox-set.js \
     components/inputs/array-input.js \
     components/inputs/bool-input.js \
-    components/inputs/checkbox-inputs.js \
+    components/inputs/checkbox-input.js \
     components/inputs/enum-input.js \
     components/inputs/text-area.js \
     components/inputs/text-input.js \

@@ -122,7 +122,7 @@ class MembershipEdit extends TypeForm {
     }
   }
   
-  _getFormData(id, includeDtype = false) {
+  _getFormData(id) {
     let formData;
     if (id == "New") {
       formData = [];

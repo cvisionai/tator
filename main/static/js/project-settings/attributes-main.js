@@ -195,15 +195,23 @@ class AttributesMain extends HTMLElement {
     this.loading.showSpinner();
     let typesData = new ProjectTypesData(this.projectId);
 
-    typesData._getAttributeDataByType().then( (attributeDataByType) => {
+    typesData._getAttributeDataByType().then((attributeDataByType) => {
+      console.log("did it come back from typesData ok? ");
+      console.log(attributeDataByType);
+      
       let clone = new AttributesClone( attributeDataByType );
       let cloneForm = clone._init();
       let cloneSave = this.inputHelper.saveButton();
       
       cloneSave.addEventListener("click", (event) => {
         event.preventDefault();
-        let inputs = clone.getInputs();
-        let cloneData = new AttributesData({"projectId":this.projectId, "typeId": this.fromId, "typeName": this.typeName, inputs});
+        let inputs = clone.getInputs(); // returns checkbox-set
+        let cloneData = new AttributesData({
+          projectId: this.projectId,
+          typeId: this.fromId,
+          typeName: this.typeName,
+          inputs
+        });
         return cloneData.createClones().then((r) => {
           this.dispatchEvent(this.refreshTypeEvent);
           this.boxHelper._modalComplete(r)

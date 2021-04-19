@@ -32,16 +32,14 @@ class AttributesData {
   
     createClones(){
       //create form data & post promise array for the attribute forms, and submit
-      let checkboxes = this.inputs;
       this.successMessages = "";
       this.failedMessages = "";
       let promises  = [];
   
-      for(let c of checkboxes){
-        let nameOfSaved = "";
-        if(c.checked == true){
-          nameOfSaved = c.value;
-          let cloneValues = JSON.parse(c.dataset.data); //parse data attribute
+      for(let checkbox of this.inputs){
+        if(checkbox.getValue()){
+          nameOfSaved = checkbox.getName();
+          let cloneValues = JSON.parse(checkbox.getHiddenData()); //parse data attribute
 
           console.log("cloneValues");
           console.log(cloneValues);
@@ -83,12 +81,10 @@ class AttributesData {
       
               console.log("Clone status "+ status);
               
-              if(status == 201){
+              if(response.ok){
                 iconWrap.appendChild(succussIcon);
                 this.successMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
-              }
-      
-              if(status == 400){
+              } else {
                 iconWrap.appendChild(warningIcon);
                 this.failedMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
               }

@@ -28,8 +28,8 @@ class LeafTypeEdit extends TypeForm {
         { "value" : "leaf", "label" : "Leaf"}
       ];
       // Emptyform uses "" for dtype value
-    this.dtypeSelect = document.createElement("enum-input");
-    this.dtypeSelect.setAttribute("name", "Data Type");
+      this.dtypeSelect = document.createElement("enum-input");
+      this.dtypeSelect.setAttribute("name", "Data Type");
       this.dtypeSelect.choices = dTypeOptions;
       if (!data.dtype) {
         this.dtypeSelect.required = true;
@@ -66,29 +66,23 @@ class LeafTypeEdit extends TypeForm {
       return current;
   }
 
-  _getFormData(id, includeDtype = false){
-    let form = this._shadow.getElementById(id);
+  _getFormData(){
+    const formData = {};
 
-    // name only if changed || can not be ""
-    let name = form.querySelector('[name="name"]').value;
+    if (this._name.changed() && this._name.getValue()) {
+      formData.name = this._name.getValue();
+    }
 
-    // description only if changed
-    let description = form.querySelector('[name="description"]').value;
+    if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {
+      formData.dtype = this.dtypeSelect.getValue()
+    }
 
-    // Visible is a radio slide
-    let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
-    let visible = this.inputHelper._getSliderSetValue(visibleInputs);
+    if (this._editDescription.changed() && this._editDescription.getValue()) {
+      formData.description = this._editDescription.getValue();
+    }
 
-    let formData = {
-      name,
-      description,
-      visible
-    };
-
-    // only send dtype when it's new
-    if(includeDtype) {
-      let dtype = form.querySelector('[name="dtype"]').value;
-      formData.dtype = dtype;
+    if (this._visibleBool.changed() && this._visibleBool.getValue()) {
+      formData.visible = this._visibleBool.getValue();
     }
 
     return formData;

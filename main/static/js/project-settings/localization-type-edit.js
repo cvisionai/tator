@@ -103,69 +103,52 @@ class LocalizationEdit extends TypeForm {
     this._form.appendChild(this._groupingDefault);
 
     // const MEDIA = "Media"; 
-    // const mediaList = new DataMediaList( this.projectId );
-    // let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
-
-    // this._form.appendChild( this.inputHelper.multipleCheckboxes({
-    //     "labelText" : MEDIA,
-    //     "name": MEDIA.toLowerCase(),
-    //     "checkboxList": mediaListWithChecked
-    // } ) );
+    const mediaList = new DataMediaList( this.projectId );
+    let mediaListWithChecked = mediaList.getCompiledMediaList( data.media );
+    this._mediaCheckboxes = document.createElement("checkbox-set");
+    this._mediaCheckboxes.setAttribute("name", "Media");
+    this._mediaCheckboxes.setValue(mediaListWithChecked);
+    this._mediaCheckboxes.default = mediaListWithChecked;
+    this._form.appendChild(this._mediaCheckboxes);
 
     current.appendChild(this._form);
 
     return current;
   }
 
-  _getFormData(id, includeDtype = false){
-    let form = this._shadow.getElementById(id);
+  _getFormData(){
+    const formData = {};
 
-    // name only if changed || can not be ""
-    let name = form.querySelector('[name="name"]').value;
-
-    // description only if changed
-    let description = form.querySelector('[name="description"]').value;
-
-    // Visible is a radio slide
-    let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
-    let visible = this.inputHelper._getSliderSetValue(visibleInputs);
-
-    // grouping_default is a radio slide
-    let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
-    let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
-
-    // line width
-    let line_width = Number(form.querySelector('[name="line_width"]').value);
-
-    let mediaInputs =  form.querySelectorAll('input[name^="media"]');
-    let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
-    let media_types = media;
-
-    let formData = {
-      name,
-      description,
-      visible,
-      grouping_default,
-      //media, 
-      media_types,
-      line_width
-    };
-
-    
-    // Dtype - only send when it's new
-    if(includeDtype) {
-      let dtype = form.querySelector('[name="dtype"]').value;
-      formData.dtype = dtype;
+    if (this._name.changed() && this._name.getValue()) {
+      formData.name = this._name.getValue();
     }
 
-    // Color map
-    let unspecifiedColor = form.querySelector('input[id="unspecifiedColor"]');
-    let colorMap = form.querySelector('input[name="colorMap"]').value;
+    if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {
+      formData.dtype = this.dtypeSelect.getValue()
+    }
 
-    if(!unspecifiedColor.checked && colorMap !== "" && colorMap !== null) {
-      formData.colorMap = { "default" : colorMap} ;
-    } else if (unspecifiedColor.value == "na"){
-      formData.colorMap = {};
+    if (this._editDescription.changed() && this._editDescription.getValue()) {
+      formData.description = this._editDescription.getValue();
+    }
+
+    if (this._colorMap.changed() && this._colorMap.getValue()) {
+      formData.colorMap = this._colorMap.getValue();
+    }
+
+    if (this._visibleBool.changed() && this._visibleBool.getValue()) {
+      formData.visible = this._visibleBool.getValue();
+    }
+
+    if (this._lineWidth.changed() && this._lineWidth.getValue()) {
+      formData.line_width = this._lineWidth.getValue();
+    }
+
+    if (this._groupingDefault.changed() && this._groupingDefault.getValue()) {
+      formData.grouping_default = this._groupingDefault.getValue();
+    }
+
+    if (this._mediaCheckboxes.changed() && this._mediaCheckboxes.getValue()) {
+      formData.media = this._mediaCheckboxes.getValue();
     }
 
     return formData;
