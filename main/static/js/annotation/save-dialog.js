@@ -15,6 +15,10 @@ class SaveDialog extends TatorElement {
     this._span.setAttribute("class", "text-semibold");
     header.appendChild(this._span);
 
+    this._type = document.createElement("enum-input");
+    this._type.setAttribute("name", "Type");
+    this._div.appendChild(this._type);
+
     this._attributes = document.createElement("attribute-panel");
     this._div.appendChild(this._attributes);
 
@@ -74,21 +78,26 @@ class SaveDialog extends TatorElement {
     });
   }
 
-  init(projectId, mediaId, dataType, undo, version, favorites) {
+  init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
 
     this._projectId = projectId;
     this._mediaId = mediaId;
-    this._dataType = dataType;
     this._undo = undo;
     this._version = version;
-    this._span.textContent = dataType.name;
-    this._attributes.dataType = dataType;
-    this._favorites.init(dataType, favorites);
+    this._favoritesData = favorites;
 
     // For the save dialog, the track search bar doesn't need to be shown.
     // The user only needs to modify the attributes in the dialog window.
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);
+
+    // Set choices on type selector.
+    this._type.choices = dataTypes.map(type => {return {label: type.name, value: type}});
+    this._type.addEventListener("change", () => {
+      this._dataType = this._type.getValue();
+      this._span.textContent = this._dataType.name;
+      this._favorites.init(this._dataType, this._favoritesData);
+    });
 
     this._attributes.dispatchEvent(new Event("change"));
   }

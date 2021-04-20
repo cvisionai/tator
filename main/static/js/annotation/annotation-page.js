@@ -838,9 +838,24 @@ class AnnotationPage extends TatorPage {
         });
         this._saves = {};
 
-        for (const dataType of localizationTypes) {
+        for (const dataType of ["box", "line", "dot"]) {
           const save = document.createElement("save-dialog");
-          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+          dataTypes = localizationTypes.filter(type => type.dtype == dataType
+                                                       && type.visible
+                                                       && type.drawable);
+          let defaultType = null;
+          switch(dataType) {
+            case "box":
+              defaultType = this._player.mediaType.default_box;
+              break;
+            case "line":
+              defaultType = this._player.mediaType.default_line;
+              break;
+            case "dot":
+              defaultType = this._player.mediaType.default_dot;
+              break;
+          }
+          save.init(projectId, mediaId, dataTypes, defaultType, this._undo, this._version, favorites);
           this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.id] = save;
@@ -857,7 +872,7 @@ class AnnotationPage extends TatorPage {
 
         for (const dataType of stateTypes) {
           const save = document.createElement("save-dialog");
-          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+          save.init(projectId, mediaId, [dataType], dataType, this._undo, this._version, favorites);
           this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.id] = save;
