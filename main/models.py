@@ -350,14 +350,14 @@ class Bucket(Model):
     endpoint_url = CharField(max_length=1024, null=True, blank=True)
     region = CharField(max_length=16, null=True, blank=True)
     archive_sc = CharField(
-        max_length=32,
+        max_length=16,
         choices=[
             ("STANDARD", "STANDARD"),
             ("DEEP_ARCHIVE", "DEEP_ARCHIVE"),
             ("COLDLINE", "COLDLINE"),
         ],
     )
-    live_sc = CharField(max_length=32, choices=[("STANDARD", "STANDARD")])
+    live_sc = CharField(max_length=16, choices=[("STANDARD", "STANDARD")])
     gcs_key_info = TextField(null=True, blank=True)
 
     @classmethod
