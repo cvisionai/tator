@@ -151,11 +151,11 @@ class StateTypeEdit extends TypeForm {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._visibleBool.changed() && this._visibleBool.getValue()) {
+    if (this._visibleBool.changed() && this._visibleBool.getValue()!== null) {
       formData.visible = this._visibleBool.getValue();
     }
 
-    if (this._groupingDefault.changed() && this._groupingDefault.getValue()) {
+    if (this._groupingDefault.changed() && this._groupingDefault.getValue()!== null) {
       formData.grouping_default = this._groupingDefault.getValue();
     }
 
@@ -171,7 +171,7 @@ class StateTypeEdit extends TypeForm {
       formData.interpolation = this._interpolation.getValue();
     }
 
-    if (this._deleteChildLoc.changed() && this._deleteChildLoc.getValue()) {
+    if (this._deleteChildLoc.changed() && this._deleteChildLoc.getValue() !== null) {
       formData.delete_child_localizations = this._deleteChildLoc.getValue();
     }
 

@@ -670,13 +670,13 @@ class AttributesForm extends TatorElement {
 
     //
     //if ((this._required.changed() || this.isClone) && this._required.getValue()) {
-    if (this._required.getValue()) {
+    if (this._required.getValue()!== null) {
       formData.required = this._required.getValue();
     }
 
     //
     //if ((this._visible.changed() || this.isClone) && this._visible.getValue()) {
-    if (this._visible.getValue()) {
+    if (this._visible.getValue()!== null) {
       formData.visible = this._visible.getValue();
     }
 

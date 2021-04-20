@@ -135,7 +135,7 @@ class LocalizationEdit extends TypeForm {
       formData.colorMap = this._colorMap.getValue();
     }
 
-    if (this._visibleBool.changed() && this._visibleBool.getValue()) {
+    if (this._visibleBool.changed() && this._visibleBool.getValue() !== null) {
       formData.visible = this._visibleBool.getValue();
     }
 
@@ -143,7 +143,7 @@ class LocalizationEdit extends TypeForm {
       formData.line_width = this._lineWidth.getValue();
     }
 
-    if (this._groupingDefault.changed() && this._groupingDefault.getValue()) {
+    if (this._groupingDefault.changed() && this._groupingDefault.getValue() !== null) {
       formData.grouping_default = this._groupingDefault.getValue();
     }
 

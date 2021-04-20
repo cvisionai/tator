@@ -45,7 +45,7 @@ class ProjectMainEdit extends TypeForm {
     this.separate_span.appendChild(h1_separate_span);
 
     this.type_span = document.createElement("span");
-    this.type_span.setAttribute("class", "text-gray");
+    this.type_span.setAttribute("class", "text-gray text-normal");
     this.h1.appendChild(this.type_span);
     const h1_type = document.createTextNode(` ${this.typeName}`);
     this.type_span.appendChild(h1_type);
@@ -109,6 +109,7 @@ class ProjectMainEdit extends TypeForm {
     this._editSummary = document.createElement("text-input");
     this._editSummary.setAttribute("name", "Summary");
     this._editSummary.setAttribute("type", "string");
+    console.log("Summary value "+this.data.summary);
     this._editSummary.setValue(this.data.summary);
     this._editSummary.default = this.data.summary;
     this._editSummary.addEventListener("change", this._formChanged.bind(this));
@@ -148,7 +149,7 @@ class ProjectMainEdit extends TypeForm {
     this._thumbUpload.default = this.data.thumb;
     this._editName.default = this.data.name;
     this._editSummary.default = this.data.summary;
-    this._editSummary.default = this.data.enable_downloads;
+    this._enableDownloads.default = this.data.enable_downloads;
 
     // inputs go back to their deafaults
     this.reset()
@@ -173,7 +174,8 @@ class ProjectMainEdit extends TypeForm {
       formData.summary = this._editSummary.getValue();
     }
 
-    if (this._enableDownloads.changed() && this._enableDownloads.getValue() ) {
+    console.log(`Did it change? ${this._enableDownloads.changed()} and is there value? ${this._enableDownloads.getValue()}`);
+    if (this._enableDownloads.changed() && this._enableDownloads.getValue() !== null ) {
       formData.enable_downloads = this._enableDownloads.getValue();
     }
 

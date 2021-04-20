@@ -81,7 +81,7 @@ class LeafTypeEdit extends TypeForm {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._visibleBool.changed() && this._visibleBool.getValue()) {
+    if (this._visibleBool.changed() && this._visibleBool.getValue() !== null) {
       formData.visible = this._visibleBool.getValue();
     }
 

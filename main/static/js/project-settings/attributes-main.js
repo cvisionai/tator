@@ -35,13 +35,30 @@ class AttributesMain extends HTMLElement {
     // Section h1.
     const h2 = document.createElement("h2");
     h2.setAttribute("class", "h3 py-6 pb-3 edit-project__h1");
-    const t = document.createTextNode(`Attributes | `); 
+    const t = document.createTextNode(`Attributes`); 
     h2.appendChild(t);
+
+    this.separate_span = document.createElement("span");
+    this.separate_span.setAttribute("class", "px-2");
+    h2.appendChild(this.separate_span);
+    const h2_separate_span = document.createTextNode(`|`);
+    this.separate_span.appendChild(h2_separate_span);
 
     const span = document.createElement("span");
     span.setAttribute("class", "text-gray text-normal")
-    span.appendChild( document.createTextNode(`${this.fromName} | ${this.typeName} (ID ${this.fromId})`) );
+    span.appendChild( document.createTextNode(`${this.fromName}`) );
     h2.appendChild(span);
+
+    this.separate_span2 = document.createElement("span");
+    this.separate_span2.setAttribute("class", "px-2 text-gray text-normal");
+    h2.appendChild(this.separate_span2);
+    const h2_separate_span2 = document.createTextNode(`|`);
+    this.separate_span2.appendChild(h2_separate_span2);
+
+    const span2 = document.createElement("span");
+    span2.setAttribute("class", "text-gray text-normal")
+    span2.appendChild( document.createTextNode(`${this.typeName} (ID ${this.fromId})`) );
+    h2.appendChild(span2);
 
     this.attributeDiv.appendChild(h2);
 
