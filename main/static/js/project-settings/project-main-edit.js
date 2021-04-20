@@ -109,7 +109,6 @@ class ProjectMainEdit extends TypeForm {
     this._editSummary = document.createElement("text-input");
     this._editSummary.setAttribute("name", "Summary");
     this._editSummary.setAttribute("type", "string");
-    console.log("Summary value "+this.data.summary);
     this._editSummary.setValue(this.data.summary);
     this._editSummary.default = this.data.summary;
     this._editSummary.addEventListener("change", this._formChanged.bind(this));
@@ -162,20 +161,19 @@ class ProjectMainEdit extends TypeForm {
   _getFormData() {
     let formData = {};
 
-    if (this._thumbUpload.changed() && this._thumbUpload.getValue() ) {
+    if (this._thumbUpload.changed()) {
       formData.thumb = this._thumbUpload.getValue();
     }
 
-    if (this._editName.changed() && this._editName.getValue() ) {
+    if (this._editName.changed()) {
       formData.name = this._editName.getValue();
     }
 
-    if (this._editSummary.changed() && this._editSummary.getValue() ) {
+    if (this._editSummary.changed()) {
       formData.summary = this._editSummary.getValue();
     }
 
-    console.log(`Did it change? ${this._enableDownloads.changed()} and is there value? ${this._enableDownloads.getValue()}`);
-    if (this._enableDownloads.changed() && this._enableDownloads.getValue() !== null ) {
+    if (this._enableDownloads.changed()) {
       formData.enable_downloads = this._enableDownloads.getValue();
     }
 

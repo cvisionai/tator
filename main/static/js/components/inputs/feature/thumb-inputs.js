@@ -129,7 +129,7 @@ class ThumbInput extends TatorElement {
   
     setValue(val) {
       this._preview(val); // @TODO should this be here
-      this._hiddenInput.value = val;
+      this._hiddenInput.setValue(val);
     }
   
   set projectId(val) {
