@@ -726,6 +726,8 @@ class LocalizationType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
+    drawable = BooleanField(default=True)
+    """ Whether this type can be drawn in the UI."""
     grouping_default = BooleanField(default=True)
     """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
