@@ -245,9 +245,6 @@ class AttributeTypeListAPI(BaseListView):
         entity_type.attribute_types.append(new_attribute_type)
         entity_type.save()
 
-        # Create attribute alias mappings
-        ts.create_mapping(entity_type)
-
         # Add new field to all existing attributes if there is a default value
         if obj_qs.exists() and "default" in new_attribute_type:
             new_attr = {new_name: new_attribute_type["default"]}
