@@ -35,12 +35,18 @@ project_update = {
     'type': 'object',
     'properties': {
         'name': project_properties['name'],
-        'summary': project_properties['summary'],
+        'summary': {
+            'description': 'Summary of the project.',
+            'type': 'string',
+        },
         'thumb': {
             'type': 'string',
             'description': 'S3 key of thumbnail used to represent the project.',
         },
-        'enable_downloads': project_properties['enable_downloads'],
+        'enable_downloads': {
+            'description': 'Whether the UI should allow downloads for this project.',
+            'type': 'boolean',
+        },
         'bucket': project_properties['bucket'],
     },
 }
