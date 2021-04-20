@@ -43,8 +43,7 @@ class CheckboxSet extends TatorElement {
   set default(val) {
     this.defaultData = val; // full data needed to reset FE
 
-    console.log(val);
-    // default is apples to apples with getValue to check for changes
+    // default is apples to apples with getValue to check for Array of ids
     this._default = val.filter(data => data.checked).map(checked => checked.id);
   }
   
@@ -114,7 +113,7 @@ class CheckboxSet extends TatorElement {
   
     // Array of checked inputs hidden data
     // @TODO this follows current patter for some checkboxes to store hidden data
-    // should look into setting the data as value instead
+    // should look into setting the data as value instead? or type to data and getValue = this?
     getData() {
       return this._inputs.filter(input => input.getChecked()).map(checked => checked.getData());
     }
