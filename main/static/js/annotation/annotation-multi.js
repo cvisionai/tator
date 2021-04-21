@@ -1126,7 +1126,7 @@ class AnnotationMulti extends TatorElement {
 
   play()
   {
-    if (this._rate > 1.0)
+    if (this._rate > 4.0)
     {
       let playing = false;
       // Check to see if the video player can play at this rate
@@ -1185,7 +1185,7 @@ class AnnotationMulti extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > 1.0)
+    if (this._rate > 4.0)
     {
       let playing = false;
       // Check to see if the video player can play at this rate

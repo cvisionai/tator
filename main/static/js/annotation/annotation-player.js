@@ -509,7 +509,7 @@ class AnnotationPlayer extends TatorElement {
 
   play()
   {
-    if (this._rate > 1.0)
+    if (this._rate > 4.0)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
@@ -536,15 +536,28 @@ class AnnotationPlayer extends TatorElement {
 
   playBackwards()
   {
+    if (this._rate > 4.0)
+    {
+      // Check to see if the video player can play at this rate
+      // at the current frame. If not, inform the user.
+      if (!this._video.canPlayRate(this._rate))
+      {
+        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+        return;
+      }
+    }
+
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
 
-    this._video.pause();
-    this._video.rateChange(this._rate);
-    if (this._video.playBackwards())
-    {
-      this._play.removeAttribute("is-paused");
+    const paused = this.is_paused();
+    if (paused) {
+      this._video.rateChange(this._rate);
+      if (this._video.playBackwards())
+      {
+        this._play.removeAttribute("is-paused");
+      }
     }
   }
 
