@@ -1026,7 +1026,7 @@ class Resource(Model):
         logger.info(f"Archiving object {path}")
         bucket = obj.bucket
         tator_store = get_tator_store(bucket)
-        return tator_store.archive_object(path, bucket.archive_sc)
+        return tator_store.archive_object(path, bucket.archive_sc if bucket else "")
 
 
     @transaction.atomic
@@ -1041,8 +1041,9 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Requesting restoration of object {path}")
-        tator_store = get_tator_store(obj.bucket)
-        return tator_store.request_restoration(path, bucket.live_sc, min_exp_days)
+        bucket = obj.bucket
+        tator_store = get_tator_store(bucket)
+        return tator_store.request_restoration(path, bucket.live_sc if bucket else "", min_exp_days)
 
     @transaction.atomic
     def restore_resource(path):
@@ -1060,7 +1061,13 @@ class Resource(Model):
         logger.info(f"Restoring object {path}")
         bucket = obj.bucket
         tator_store = get_tator_store(bucket)
-        return tator_store.restore_resource(path, bucket.archive_sc, bucket.live_sc)
+        if bucket:
+            archive_sc = bucket.archive_sc
+            live_sc = bucket.live_sc
+        else:
+            archive_sc = ""
+            live_sc = ""
+        return tator_store.restore_resource(path, archive_sc, live_sc)
 
 
 @receiver(post_save, sender=Media)

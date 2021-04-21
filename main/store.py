@@ -151,7 +151,10 @@ class TatorStorage(ABC):
         class of the object matches the archive storage class.
         """
         response = self.head_object(path)
-        if response.get("StorageClass", "") == archive_storage_class:
+        current_storage_class = response.get("StorageClass", "")
+        if not archive_storage_class:
+            archive_storage_class = current_storage_class
+        if current_storage_class == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
 
@@ -166,11 +169,41 @@ class TatorStorage(ABC):
         return True
 
     @abstractmethod
+    def _restore_object(self, path: str, desired_storage_class: str, min_exp_days: int) -> None:
+        """
+        Depending on the storage type, this method will either restore an object to the desired
+        storage class or request its temporary restoration, which will be permanently updated during
+        restore_resource.
+        """
+
     def request_restoration(self, path: str, live_storage_class: str, min_exp_days: int) -> bool:
         """
         Requests object restortation from archive storage. Returns True if the request is successful
         or a request is unnecessary.
         """
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == live_storage_class:
+            logger.info(f"Object {path} already live, skipping")
+            return True
+        if 'ongoing-request="true"' in response.get("Restore", ""):
+            logger.info(f"Object {path} has an ongoing restoration request, skipping")
+            return True
+        try:
+            self._restore_object(path, live_storage_class, min_exp_days)
+        except:
+            logger.warning(
+                f"Exception while requesting restoration of object {path}", exc_info=True
+            )
+        response = self.head_object(path)
+        if response.get("StorageClass", "") == live_storage_class:
+            logger.info(f"Object {path} live")
+            return True
+        if "ongoing-request" in response.get("Restore", ""):
+            logger.info(f"Request to restore object {path} successful")
+            return True
+
+        logger.warning(f"Request to restore object {path} failed")
+        return False
 
     def restore_resource(self, path: str, archive_sc: str, live_storage_class: str) -> bool:
         # Check the current state of the restoration request
@@ -237,9 +270,8 @@ class MinIOStorage(TatorStorage):
             ExtraArgs=extra_args,
         )
 
-    def request_restoration(self, path, live_storage_class, min_exp_days):
-        logger.info(f"No need to request restoration for object {path}")
-        return True
+    def _restore_object(self, path, live_storage_class, min_exp_days):
+        self._update_storage_class(path, live_storage_class)
 
     def delete_object(self, path):
         self.client.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
@@ -338,36 +370,7 @@ class S3Storage(MinIOStorage):
     def _path_to_key(self, path):
         return f"{self.bucket_name}/{path}"
 
-    def request_restoration(self, path, live_storage_class, min_exp_days):
-        response = self.head_object(path)
-        if response.get("StorageClass", "") == live_storage_class:
-            logger.info(f"Object {path} already live, skipping")
-            return True
-        if 'ongoing-request="true"' in response.get("Restore", ""):
-            logger.info(f"Object {path} has an ongoing restoration request, skipping")
-            return True
-        try:
-            self._restore_object(path, min_exp_days)
-        except:
-            logger.warning(
-                f"Exception while requesting restoration of object {path}", exc_info=True
-            )
-        response = self.head_object(path)
-        if response.get("StorageClass", "") == live_storage_class:
-            logger.info(f"Object {path} live")
-            return True
-        if "ongoing-request" in response.get("Restore", ""):
-            logger.info(f"Request to restore object {path} successful")
-            return True
-
-        logger.warning(f"Request to restore object {path} failed")
-        return False
-
-    def _restore_object(self, path, min_exp_days):
-        """
-        Requests object restoration from archive. Currently, only ObjectStore.AWS supports this
-        operation.
-        """
+    def _restore_object(self, path, desired_storage_class, min_exp_days):
         return self.client.restore_object(
             Bucket=self.bucket_name,
             Key=self._path_to_key(path),
@@ -419,9 +422,7 @@ class GCPStorage(TatorStorage):
         )
 
     def _get_multiple_upload_urls(self, key, expiration, num_parts, domain):
-        url_and_id = self.gcs_bucket.blob(key).create_resumable_upload_session(
-            origin=domain
-        )
+        url_and_id = self.gcs_bucket.blob(key).create_resumable_upload_session(origin=domain)
         return [url_and_id] * num_parts, url_and_id
 
     def _get_single_upload_url(self, key, expiration, domain):
@@ -470,9 +471,8 @@ class GCPStorage(TatorStorage):
     def _update_storage_class(self, path, desired_storage_class):
         self._get_blob(path).update_storage_class(desired_storage_class)
 
-    def request_restoration(self, path, live_storage_class, min_exp_days):
-        logger.info(f"No need to request restoration for object {path}")
-        return True
+    def _restore_object(self, path, desired_storage_class, min_exp_days):
+        self._update_storage_class(path, desired_storage_class)
 
 
 def get_tator_store(bucket=None) -> TatorStorage:
