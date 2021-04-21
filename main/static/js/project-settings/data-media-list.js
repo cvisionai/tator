@@ -3,10 +3,14 @@ class DataMediaList{
       this.projectId = projectId;
     }
 
-    _setProjectMediaList(data = "", update = false){
-      if(data == "") return this.projectMediaList = this.getProjectMediaList(update);
-        
-      return this.projectMediaList = this.getListFromData(data);
+    _setProjectMediaList(data = "", update = false) {
+      let promise;
+      if (data == "") {
+        promise = this.getProjectMediaList(update);
+      } else {
+        promise = Promise.resolve(this.getListFromData(data));
+      }
+      return promise;
     }
 
     getListFromData(data){
@@ -27,14 +31,13 @@ class DataMediaList{
       const mediaListData = sessionStorage.getItem(`MediaData_${this.projectId}`);
 
       if(!update && mediaListData){
-        return JSON.parse(mediaListData);      
+        return Promise.resolve(JSON.parse(mediaListData));      
       } else {
         let m = document.createElement("media-type-main-edit");
-        m._fetchGetPromise({"id": this.projectId} )
-        .then(data => data.json).then( data => {
-
+        return m._fetchGetPromise({"id": this.projectId} )
+        .then(data => data.json()).then( data => {
           return this.getListFromData(data);
-        }).catch(err => console.error("Could not get media types."));
+        });
       }      
     }
 
@@ -44,10 +47,9 @@ class DataMediaList{
     getCompiledMediaList( mediaIds ){
         let newList = [];
 
-        this._setProjectMediaList();
+        this._setProjectMediaList().then(mediaList => {
 
-        //if(mediaIds && mediaIds.length > 0){
-          this.projectMediaList.forEach((media, i) => {
+          mediaList.forEach((media, i) => {
             if(mediaIds && mediaIds.length > 0){
               for(let id of mediaIds ){
                 if (media.id == id ) {
@@ -65,7 +67,7 @@ class DataMediaList{
               "checked" : false
             });
           });
-        //}
+        });
         return newList;
     }
 
