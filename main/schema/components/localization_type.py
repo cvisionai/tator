@@ -23,6 +23,11 @@ localization_type_properties = {
         'description': 'Whether this type should be displayed in the UI.',
         'default': True,
     },
+    'drawable': {
+        'type': 'boolean',
+        'description': 'Whether this type can be drawn in the UI. Must also be visible.',
+        'default': True,
+    },
     'grouping_default': {
         'type': 'boolean',
         'description': 'Whether to group elements in the UI by default.',
