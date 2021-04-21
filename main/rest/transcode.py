@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 import requests
 
 from ..kube import TatorTranscode
-from ..s3 import TatorS3
+from ..store import get_tator_store
 from ..cache import TatorCache
 from ..models import Project
 from ..models import MediaType
@@ -61,12 +61,12 @@ class TranscodeAPI(BaseListView):
             # First assume this is a presigned url for S3. Parse
             # out the object key and get object size via S3 api.
             path = '/'.join(parsed.path.split('/')[-4:])
-            logger.info(f"Attempting to retrieve size for S3 key {path}...")
-            tator_s3 = TatorS3(project_obj.bucket)
-            upload_size = tator_s3.get_size(path)
-            logger.info(f"Got object size {upload_size} for S3 key {path}")
+            logger.info(f"Attempting to retrieve size for object key {path}...")
+            tator_store = get_tator_store(project_obj.bucket)
+            upload_size = tator_store.get_size(path)
+            logger.info(f"Got object size {upload_size} for object key {path}")
         if upload_size == -1:
-            logger.info(f"Failed to get object size from S3, trying HEAD at {url}...")
+            logger.info(f"Failed to get object size from object, trying HEAD at {url}...")
             # This is a normal url. Use HEAD request to obtain content length.
             response = requests.head(url)
             head_succeeded = False

@@ -53,7 +53,6 @@ s3_storage_config = {
             'description': 'Name of bucket.',
         },
     },
-    
 }
 
 archive_config = {

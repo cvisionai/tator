@@ -33,7 +33,7 @@ from ..schema import MediaListSchema, MediaDetailSchema, parse
 from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
-from ..s3 import TatorS3, get_s3_lookup
+from ..store import get_tator_store, get_storage_lookup
 
 from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
 from ._base_views import BaseListView, BaseDetailView
@@ -71,7 +71,7 @@ def _presign(expiration, medias, fields=None):
     fields = fields or ["archival", "streaming", "audio", "image", "thumbnail", "thumbnail_gif"]
     media_ids = [media['id'] for media in medias]
     resources = Resource.objects.filter(media__in=media_ids)
-    s3_lookup = get_s3_lookup(resources)
+    store_lookup = get_storage_lookup(resources)
 
     # Get replace all keys with presigned urls.
     for media_idx, media in enumerate(medias):
@@ -83,11 +83,11 @@ def _presign(expiration, medias, fields=None):
                 continue
 
             for idx, media_def in enumerate(media["media_files"][field]):
-                tator_s3 = s3_lookup[media_def["path"]]
-                media_def["path"] = tator_s3.get_download_url(media_def["path"], expiration)
+                tator_store = store_lookup[media_def["path"]]
+                media_def["path"] = tator_store.get_download_url(media_def["path"], expiration)
                 if field == "streaming":
                     if "segment_info" in media_def:
-                        media_def["segment_info"] = tator_s3.get_download_url(
+                        media_def["segment_info"] = tator_store.get_download_url(
                             media_def["segment_info"], expiration
                         )
                     else:
@@ -110,13 +110,13 @@ def _save_image(url, media_obj, project_obj, role):
     parsed = os.path.basename(urlparse(url).path)
 
     # Set up S3 client.
-    tator_s3 = TatorS3(project_obj.bucket)
+    tator_store = get_tator_store(project_obj.bucket)
 
     # Upload image.
     if media_obj.media_files is None:
         media_obj.media_files = {}
     image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{parsed}"
-    tator_s3.put_object(image_key, temp_image)
+    tator_store.put_object(image_key, temp_image)
     media_obj.media_files[role] = [{'path': image_key,
                                     'size': os.stat(temp_image.name).st_size,
                                     'resolution': [image.height, image.width],
@@ -276,12 +276,12 @@ class MediaListAPI(BaseListView):
                 thumb.close()
 
             # Set up S3 client.
-            tator_s3 = TatorS3(project_obj.bucket)
+            tator_store = get_tator_store(project_obj.bucket)
 
             if url:
                 # Upload image.
                 image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-                tator_s3.put_object(image_key, temp_image)
+                tator_store.put_object(image_key, temp_image)
                 media_obj.media_files['image'] = [{'path': image_key,
                                                    'size': os.stat(temp_image.name).st_size,
                                                    'resolution': [media_obj.height, media_obj.width],
@@ -293,7 +293,7 @@ class MediaListAPI(BaseListView):
                 # Upload thumbnail.
                 thumb_format = image.format
                 thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
-                tator_s3.put_object(thumb_key, temp_thumb)
+                tator_store.put_object(thumb_key, temp_thumb)
                 media_obj.media_files['thumbnail'] = [{'path': thumb_key,
                                                        'size': os.stat(temp_thumb.name).st_size,
                                                        'resolution': [thumb_height, thumb_width],
