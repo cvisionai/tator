@@ -33,13 +33,13 @@ class StateTypeEdit extends TypeForm {
     this.dtypeSelect.setAttribute("name", "Data Type");
     this.dtypeSelect.choices = dTypeOptions;
     if (!data.dtype) {
-      this.dtypeSelect.required = true;
+      this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
       this.dtypeSelect.addEventListener("change", this._formChanged.bind(this));
     } else {
       this.dtypeSelect.setValue(data.dtype);
       this.dtypeSelect.default = data.dtype;
-      this.dtypeSelect.disabled = true;
+      this.dtypeSelect._select.disabled = true;
     }
     this._form.appendChild( this.dtypeSelect );
 
