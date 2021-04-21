@@ -89,9 +89,10 @@ Steps
 1. Play the video and verifiy the quality changed.
 1. Play the video 2 seconds from the end. Ensure it finishes the video.
 1. Rewind the video 2 seconds from the beginning. Ensure it stops at 0.
-1. Reload the video, change the rate to 4x, and jump to an unbuffered scrub region. Attempt to play. Verify a window alert is displayed and the video does not play.
+1. Reload the video, change the rate to 4x, and jump to an unbuffered scrub region. Verify video plays.
+1. Change the rate to 8x, and jump to an unbuffered scrub region. Attempt to play. Verify a window alert is displayed and the video does not play.
 1. Change the quality to the highest quality (greater than 360p). In the next steps, verify in the next two steps the playback quality is lower than the selected quality.
-1. In a buffered scrub region, play the video at the 4x rate. Verify the video is playing back at a faster rate.
+1. In a buffered scrub region, play the video at the 8x rate. Verify the video is playing back at a faster rate.
 1. Repeat the above while going playing backwards.
 1. Scrub around the video (click on the timeline dot and drag around)
 1. Use the spacebar to pause/play the video.

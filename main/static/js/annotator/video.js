@@ -1140,7 +1140,7 @@ class VideoCanvas extends AnnotationCanvas {
 
       var textContent = `
       Frame: ${this._videoDiagnostics.currentFrame}\r\n
-      1x Playback Quality: ${this._videoDiagnostics.playQuality}\r\n
+      1x-4x Playback Quality: ${this._videoDiagnostics.playQuality}\r\n
       Scrub Quality: ${this._videoDiagnostics.scrubQuality}\r\n
       Seek Quality: ${this._videoDiagnostics.seekQuality}\r\n
       Source FPS: ${this._videoDiagnostics.sourceFPS}\r\n
@@ -1548,7 +1548,7 @@ class VideoCanvas extends AnnotationCanvas {
         }
         this._scrub_idx = new_play_idx;
       }
-      console.log("Setting 1x playback quality to: " + quality);
+      console.log("Setting 1x-4x playback quality to: " + quality);
 
       // This try/catch exists only because setQuality is sometimes called and
       // invalid indexes are selected.
