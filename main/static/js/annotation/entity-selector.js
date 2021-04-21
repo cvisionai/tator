@@ -115,7 +115,7 @@ class EntitySelector extends TatorElement {
       this._div.classList.toggle("is-open");
       if (this._div.classList.contains("is-open")) {
         this.dispatchEvent(new Event("open"));
-        this._emitSelection(true, true, false);
+        this._emitSelection(true, true, this._autoGoToEntityFrame);
       } else {
         this.dispatchEvent(new Event("close"));
       }
@@ -201,7 +201,7 @@ class EntitySelector extends TatorElement {
 
     this._slider.addEventListener("input", () => {
       this._current.textContent = String(Number(this._slider.value) + 1);
-      this._emitSelection(true, true, false);
+      this._emitSelection(true, true, this._autoGoToEntityFrame);
     });
   }
 
