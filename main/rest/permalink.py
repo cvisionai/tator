@@ -26,7 +26,7 @@ from ..models import (
 from ..schema import PermalinkSchema, parse
 from ..schema.components import media as media_schema
 from ..download import download_file
-from ..s3 import TatorS3, get_s3_lookup
+from ..store import get_tator_store, get_storage_lookup
 
 from ._base_views import process_exception
 from ._permissions import ProjectTransferPermission
@@ -44,7 +44,7 @@ def _presign(expiration, medias, fields=None):
     fields = fields or ["archival", "streaming", "audio", "image", "thumbnail", "thumbnail_gif"]
     media_ids = [media['id'] for media in medias]
     resources = Resource.objects.filter(media__in=media_ids)
-    s3_lookup = get_s3_lookup(resources)
+    storage_lookup = get_storage_lookup(resources)
 
     # Get replace all keys with presigned urls.
     for _, media in enumerate(medias):
@@ -56,11 +56,11 @@ def _presign(expiration, medias, fields=None):
                 continue
 
             for _, media_def in enumerate(media["media_files"][field]):
-                tator_s3 = s3_lookup[media_def["path"]]
-                media_def["path"] = tator_s3.get_download_url(media_def["path"], expiration)
+                tator_store = storage_lookup[media_def["path"]]
+                media_def["path"] = tator_store.get_download_url(media_def["path"], expiration)
                 if field == "streaming":
                     if "segment_info" in media_def:
-                        media_def["segment_info"] = tator_s3.get_download_url(
+                        media_def["segment_info"] = tator_store.get_download_url(
                             media_def["segment_info"], expiration
                         )
                     else:

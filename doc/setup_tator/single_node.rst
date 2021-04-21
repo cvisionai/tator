@@ -434,13 +434,6 @@ Building Tator
 
 Tator uses GNU Make as a means of executing kubectl and helm commands. Below are steps that must be followed before running your first make command, as well as functions that may be performed with the Makefile.
 
-Copy values.yaml
-^^^^^^^^^^^^^^^^
-
-* Copy the example values.yaml. The configuration file should not require modification for this tutorial.
-
-``cp helm/tator/values-devExample.yaml helm/tator/values.yaml``
-
 Clone the Tator repository
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -457,6 +450,13 @@ Clone the Tator repository
 * Update submodules
 
 ``git submodule update --init``
+
+Copy values.yaml
+^^^^^^^^^^^^^^^^
+
+* Copy the example values.yaml. The configuration file should not require modification for this tutorial.
+
+``cp helm/tator/values-devExample.yaml helm/tator/values.yaml``
 
 Install dependencies
 ^^^^^^^^^^^^^^^^^^^^

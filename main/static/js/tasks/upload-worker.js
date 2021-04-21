@@ -80,15 +80,16 @@ class Upload {
     this.isImage = uploadData.isImage;
     this.aborted = false;
     this.numParts = 1;
-    this.chunkSize = 10 * 1024 * 1024; // 10MB
+    this.chunkSize = 10 * 1024 * 1024; // 10MB; must be a multiple of 256KB for GCP
     this.numParts = Math.ceil(this.file.size / this.chunkSize);
     this.parts = [];
     this.controller = new AbortController();
 
     // If number of parts is >100, increase chunk size.
     if (this.numParts > 100) {
-      this.chunkSize = Math.ceil(this.file.size / 100);
-      this.numParts = 100;
+      // Make sure the new chunk size is a multiple of 256KB for GCP
+      this.chunkSize = Math.ceil(Math.ceil(this.file.size / 100) / (256 * 1024)) * 256 * 1024;
+      this.numParts = Math.ceil(this.file.size / this.chunkSize);
     }
 
     // Fingerprint function for TUS client required (also needs to return a promise).
@@ -123,18 +124,28 @@ class Upload {
 
   // Multipart upload.
   uploadMulti(info) {
+    const gcpUpload = info.upload_id === info.urls[0]
     let promise = new Promise(resolve => resolve(true));
     for (let idx=0; idx < this.numParts; idx++) {
       const startByte = this.chunkSize * idx;
       const stopByte = Math.min(startByte + this.chunkSize, this.file.size);
-      promise = promise.then(() => {return fetchRetry(info.urls[idx], {
+      let options = {
         method: "PUT",
         signal: this.controller.signal,
         credentials: "omit",
         body: this.file.slice(startByte, stopByte),
-      });})
+      };
+      if (gcpUpload) {
+        const lastByte = stopByte - 1;
+        const contentLength = lastByte - startByte;
+        options.headers = {
+          "Content-Length": contentLength.toString(),
+          "Content-Range": "bytes " + startByte + "-" + lastByte + "/" + this.file.size,
+        };
+      }
+      promise = promise.then(() => {return fetchRetry(info.urls[idx], options);})
       .then(response => {
-        this.parts.push({ETag: response.headers.get("ETag"), PartNumber: idx + 1});
+        this.parts.push({ETag: response.headers.get("ETag") ? response.headers.get("ETag") : "ETag", PartNumber: idx + 1});
         return this.parts;
       })
       .then(parts => {
@@ -296,5 +307,3 @@ class Upload {
     removeFromActive(this.upload_uid);
   }
 }
-
-
