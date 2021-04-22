@@ -63,13 +63,14 @@ class StateTypeEdit extends TypeForm {
     // Media
     const MEDIA = "Media";
     const mediaList = new DataMediaList( this.projectId );
-    let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
-
-    this._form.appendChild( this.inputHelper.multipleCheckboxes({
-        "labelText" : MEDIA,
-        "name": MEDIA.toLowerCase(),
-        "checkboxList": mediaListWithChecked
-    } ) );
+    mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()])
+    .then(mediaListWithChecked => {
+      this._form.appendChild( this.inputHelper.multipleCheckboxes({
+          "labelText" : MEDIA,
+          "name": MEDIA.toLowerCase(),
+          "checkboxList": mediaListWithChecked
+      } ) );
+    });
 
     // Associations
     const assocOptions = [

@@ -92,13 +92,15 @@ class LocalizationEdit extends TypeForm {
 
     const MEDIA = "Media"; 
     const mediaList = new DataMediaList( this.projectId );
-    let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
+    mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()])
+    .then(mediaListWithChecked => {
 
-    this._form.appendChild( this.inputHelper.multipleCheckboxes({
-        "labelText" : MEDIA,
-        "name": MEDIA.toLowerCase(),
-        "checkboxList": mediaListWithChecked
-    } ) );
+      this._form.appendChild( this.inputHelper.multipleCheckboxes({
+          "labelText" : MEDIA,
+          "name": MEDIA.toLowerCase(),
+          "checkboxList": mediaListWithChecked
+      } ) );
+    });
 
     current.appendChild(this._form);
 
