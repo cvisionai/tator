@@ -96,7 +96,8 @@ class SaveDialog extends TatorElement {
     this._attributes.displayGoToTrack(false);
 
     // Set choices on type selector.
-    this._type.choices = dataTypes.map(type => {return {label: type.name, value: type}});
+    this._type.choices = dataTypes.map(type => {return {label: type.name,
+                                                        value: JSON.stringify(type)}});
     this._type.addEventListener("change", this._setDataType.bind(this));
 
     this._attributes.dispatchEvent(new Event("change"));
@@ -208,7 +209,7 @@ class SaveDialog extends TatorElement {
   }
 
   _setDataType() {
-    this._dataType = this._type.getValue();
+    this._dataType = JSON.parse(this._type.getValue());
     this._span.textContent = this._dataType.name;
     this._attributes.dataType = this._dataType;
     this._favorites.init(this._dataType, this._favoritesData);
