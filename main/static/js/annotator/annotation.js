@@ -3472,7 +3472,6 @@ class AnnotationCanvas extends TatorElement
       that._draw.drawPolygon(boxCoords,
                              colorReq,
                              defaultDrawWidth*that._draw.displayToViewportScale()[0]);
-      that.accentWithHandles(boxCoords, colorReq, defaultDrawWidth*that._draw.displayToViewportScale()[0]);
       that._draw.dispImage(true, true);
     }
     var drawLine=function(dragStart, dragEnd, colorReq)
