@@ -849,14 +849,32 @@ class AnnotationPage extends TatorPage {
             let defaultType = null;
             switch(dataType) {
               case "box":
-                defaultType = this._player.mediaType.default_box;
+                if (this._player.mediaType.default_box) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_box);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
                 break;
               case "line":
-                defaultType = this._player.mediaType.default_line;
+                if (this._player.mediaType.default_line) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_line);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
                 break;
               case "dot":
-                defaultType = this._player.mediaType.default_dot;
+                if (this._player.mediaType.default_dot) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_dot);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
                 break;
+            }
+            if (defaultType === null) {
+              defaultType = dataTypes[0];
             }
             save.init(projectId, mediaId, dataTypes, defaultType, this._undo, this._version, favorites);
             this._settings.setAttribute("version", this._version.id);

@@ -85,10 +85,6 @@ class SaveDialog extends TatorElement {
     this._undo = undo;
     this._version = version;
     this._favoritesData = favorites;
-    this._dataType = defaultType ? defaultType : dataTypes[0];
-    this._span.textContent = this._dataType.name;
-    this._attributes.dataType = this._dataType;
-    this._favorites.init(this._dataType, this._favoritesData);
 
     // For the save dialog, the track search bar doesn't need to be shown.
     // The user only needs to modify the attributes in the dialog window.
@@ -99,6 +95,9 @@ class SaveDialog extends TatorElement {
     this._type.choices = dataTypes.map(type => {return {label: type.name,
                                                         value: JSON.stringify(type)}});
     this._type.addEventListener("change", this._setDataType.bind(this));
+    this._type.default = defaultType.name;
+    this._type.reset();
+    this._setDataType();
 
     this._attributes.dispatchEvent(new Event("change"));
   }
