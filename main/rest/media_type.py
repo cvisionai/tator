@@ -12,7 +12,8 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
-          'default_volume', 'visible', 'archive_config', 'streaming_config', 'overlay_config']
+          'default_volume', 'visible', 'archive_config', 'streaming_config', 'overlay_config',
+          'default_box', 'default_line', 'default_dot']
 
 
 class MediaTypeListAPI(BaseListView):
