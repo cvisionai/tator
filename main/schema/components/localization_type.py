@@ -67,6 +67,7 @@ localization_type_update = {
         'colorMap': localization_type_properties['colorMap'],
         'line_width': localization_type_properties['line_width'],
         'visible': localization_type_properties['visible'],
+        'drawable': localization_type_properties['drawable'],
         'grouping_default': localization_type_properties['grouping_default'],
     },
 }

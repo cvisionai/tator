@@ -129,6 +129,8 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             obj.line_width = params['line_width']
         if 'visible' in params:
             obj.visible = params['visible']
+        if 'drawable' in params:
+            obj.drawable = params['drawable']
         if 'colorMap' in params:
             obj.colorMap = params['colorMap']
         if 'grouping_default' in params:
