@@ -99,6 +99,11 @@ class SaveDialog extends TatorElement {
     this._type.reset();
     this._setDataType();
 
+    // Hide the type selector if there is only one type.
+    if (dataTypes.length == 1) {
+      this._type.style.display = "none";
+    }
+
     this._attributes.dispatchEvent(new Event("change"));
   }
 
