@@ -103,7 +103,7 @@ class AttributesForm extends TatorElement {
     this.placeholderEnum.setAttribute("class", "hidden clear-fix");
 
     const labelHolder = document.createElement("div");
-    labelHolder.setAttribute("class", "col-4 float-left");
+    labelHolder.setAttribute("class", "col-4 col-modal-12 float-left");
     const enumLabel = document.createTextNode("Enum Choices");
     labelHolder.appendChild(enumLabel);
 
@@ -114,13 +114,13 @@ class AttributesForm extends TatorElement {
     // labels
     /* input inside placeholder hidden until dtype selected */
     this.placeholderLabels = document.createElement("div");
-    this.placeholderLabels.setAttribute("class", "col-3 float-left");
+    this.placeholderLabels.setAttribute("class", "col-3 col-modal-5 float-left");
     this.placeholderEnum.appendChild(this.placeholderLabels);
 
     // choices
     /* input inside placeholder hidden until dtype selected */
     this.placeholderChoices = document.createElement("div");
-    this.placeholderChoices.setAttribute("class", "col-3 float-left");
+    this.placeholderChoices.setAttribute("class", "col-3 col-modal-5 float-left");
     this.placeholderEnum.appendChild(this.placeholderChoices);
 
 
@@ -303,8 +303,7 @@ class AttributesForm extends TatorElement {
    */
   _getDefaultInput({
     dtype, // required
-    value = "", // optional, falls back to "best default"
-    enumOptions = false // optional
+    value = "" // optional, falls back to "best default"
   }) {
     if(this.placeholderDefault.children.length > 0){
       this.placeholderDefault.innerHTML = ""; // @TODO best practice to remove all children?
@@ -652,25 +651,25 @@ class AttributesForm extends TatorElement {
 
     // name only if changed || can not be "" 
     //if ((this._name.changed() || this.isClone) && this._name.getValue() ) {
-    if ( this._name.getValue() ) {
+    if ( this._name.getValue() !== null ) {
       formData.name = this._name.getValue();
     }
 
     // 
     //if ((this._description.changed()  || this.isClone) && this._description.getValue()) {
-    if (this._description.getValue()) {
+    if (this._description.getValue() !== null) {
       formData.description = this._description.getValue();
     }
 
     //
     //if ((this._order.changed()  || this.isClone)&& this._order.getValue()) {
-    if (this._order.getValue()) {
+    if (this._order.getValue() !== null) {
       formData.order = this._order.getValue();
     }
 
     //
     //if ((this._required.changed() || this.isClone) && this._required.getValue()) {
-    if (this._required.getValue()!== null) {
+    if (this._required.getValue() !== null) {
       formData.required = this._required.getValue();
     }
 
@@ -683,19 +682,19 @@ class AttributesForm extends TatorElement {
     //
     const dtype = this._dtype.getValue();
     //if ((this._dtype.changed() || this.isClone) && dtype) {
-    if (dtype) {
+    if (dtype !== null ) {
       formData.dtype = this._dtype.getValue();
     }
 
     let _default = ""
-    if(dtype == "enum"){
-      //if ((this._enumDefault.changed || this.isClone) && this.enumDefaultValue) {
-      if (this.enumDefaultValue) {
-        formData["default"] = this.enumDefaultValue;
+    if(dtype === "enum"){
+      //if ((this._enumDefault.changed || this.isClone) && this._enumDefault.value) {
+      if (this._enumDefault  !== null) {
+        formData["default"] = this._enumDefault.value;
       }
     } else {
       //if ((this._default.changed() || this.isClone) && this._default.getValue()) {
-      if (this._default.getValue()) {
+      if (this._default.getValue()  !== null) {
         _default = this._default.getValue();
         formData["default"] = _default;
       }
@@ -706,25 +705,25 @@ class AttributesForm extends TatorElement {
     if (dtype === "int" || dtype === "float") {
       //
       //if ((this._minimum.changed() || this.isClone) && this._minimum.getValue()) {
-      if (this._minimum.getValue()) {
+      if (this._minimum.getValue()  !== null) {
         formData.minimum = Number(this._minimum.getValue());
       }
 
       //
       //if ((this._maximum.changed() || this.isClone) && this._maximum.getValue()) {
-      if (this._maximum.getValue()) {
+      if (this._maximum.getValue()  !== null) {
         formData.maximum = Number(this._maximum.getValue());
       }
     }
 
     if (dtype === "enum") {
       //if ((this._choices.changed() || this.isClone) && this._choices.getValue()) {
-      if (this._choices.getValue()) {
+      if (this._choices.getValue()  !== null) {
         formData.choices = this._choices.getValue();
       }
 
       //if ((this._labels.changed() || this.isClone) && this._labels.getValue()) {
-      if (this._labels.getValue()) {
+      if (this._labels.getValue()  !== null) {
         formData.labels = this._labels.getValue();
       }
     }

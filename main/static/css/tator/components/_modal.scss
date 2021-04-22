@@ -113,3 +113,14 @@
   margin-left: -150px;
   z-index: 1;
 }
+
+.modal__main {
+  // form used out of modal too give it a different width in modal
+  .col-modal-12 {
+    width: 100%;
+  }
+  .col-modal-5 {
+    width: (5 / 12 * 100%);
+  }
+
+}
