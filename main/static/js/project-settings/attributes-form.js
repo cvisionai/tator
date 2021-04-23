@@ -739,8 +739,6 @@ class AttributesForm extends TatorElement {
       }
     } else {
       if ((this._default.changed() || this.isClone)) {
-        console.log(this._default.getValue());
-        console.log(this._default._default);
         formData["default"] = this._default.getValue();
       }
     }
