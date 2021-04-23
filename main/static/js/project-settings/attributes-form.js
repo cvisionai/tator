@@ -235,7 +235,7 @@ class AttributesForm extends TatorElement {
       // Choices only apply for enum types
       this._getChoicesInputs({ value : this.choicesVal });
       this._getLabelsInputs({ value : this.labelsVal });
-      this._getEnumDefaultCol({ defaultVal : this._default});
+      this._getEnumDefaultCol({ defaultVal : _default});
     }
     
     // if it is not dtype==enum it hides
@@ -341,7 +341,7 @@ class AttributesForm extends TatorElement {
    */
   _getDefaultInput({
     dtype, // required
-    value
+    value = "", // keep this
   }) {
     if(this.placeholderDefault.children.length > 0){
       this.placeholderDefault.innerHTML = ""; // @TODO best practice to remove all children?
@@ -387,6 +387,8 @@ class AttributesForm extends TatorElement {
     this.placeHolderUseCurrent.appendChild(this._useCurrent);
 
     this._useCurrent.setAttribute("name", "Use Current As Default");
+    this._useCurrent.setAttribute("on-text", "Yes");
+    this._useCurrent.setAttribute("off-text", "No");
     this._useCurrent.default = value;
     this._useCurrent.setValue(value);
 
@@ -492,23 +494,21 @@ class AttributesForm extends TatorElement {
     let _name = document.createTextNode("Default");
     this.enumDefaultCol.appendChild(_name);
 
-    if(this.choicesVal && this.choicesVal.length > 0){
-      for(let i of this.choicesVal){
-        let defaultFlag = false;
-        if(this.choicesVal[i] == this._enumDefault.value) {
-          defaultFlag = true;
-        }
-        this.appendDefaultRow();
+    if (this.choicesVal && this.choicesVal.length > 0) {
+      for(let val of this.choicesVal){
+        let defaultFlag = (val == this._enumDefault.value) ? true : false;
+        this.appendDefaultRow({defaultFlag});
       }
     }
   }
 
   //
-  appendDefaultRow(){
+  appendDefaultRow({defaultFlag}){
     let currentDefault = document.createElement("input");
     currentDefault.setAttribute("class", "radio")
     currentDefault.setAttribute("type", "radio");
     currentDefault.setAttribute("name", "enum-default");
+    currentDefault.checked = defaultFlag;
     this.enumDefaultCol.appendChild(currentDefault);
 
     currentDefault.addEventListener("change", () => {
