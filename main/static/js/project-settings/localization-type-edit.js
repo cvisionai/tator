@@ -78,12 +78,15 @@ class LocalizationEdit extends TypeForm {
     this._form.appendChild(this._visibleBool);
 
     // drawable
-    const DRAWABLE = "Drawable";
-    this._form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": DRAWABLE,
-      "name": DRAWABLE.toLowerCase(),
-      "value": data[DRAWABLE.toLowerCase()]
-    } ) );
+    this._drawableBool = document.createElement("bool-input");
+    this._drawableBool.setAttribute("name", "Drawable");
+    this._drawableBool.setAttribute("on-text", "Yes");
+    this._drawableBool.setAttribute("off-text", "No");
+    this._drawableBool.setValue(this.data.drawable);
+    this._drawableBool.default = this.data.visible;
+    this._drawableBool.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._drawableBool);
+
 
     // line_width
     if (data.dtype != 'image') {
@@ -149,6 +152,10 @@ class LocalizationEdit extends TypeForm {
 
     if (this._visibleBool.changed()) {
       formData.visible = this._visibleBool.getValue();
+    }
+
+    if (this._drawableBool.changed()) {
+      formData.drawable = this._drawableBool.getValue();
     }
 
     if (this._lineWidth.changed()) {
