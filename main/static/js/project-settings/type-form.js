@@ -89,6 +89,7 @@ class TypeForm extends TatorElement {
       const sectionForm = await this._getSectionForm(this._getEmptyData());
       this.typeFormDiv.appendChild(this.h1);
       this.typeFormDiv.appendChild( sectionForm );
+      this.typeFormDiv.appendChild( this._getSubmitNewDiv( {"id": this.data.id }) );
 
       return this.typeFormDiv;
     }
