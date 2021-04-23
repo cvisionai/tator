@@ -102,14 +102,14 @@ class CheckboxInput extends TatorElement {
 
   setValue(val) {
     this._input.value = val.id;
-    this.checked = val.checked;
+    this._checked = val.checked;
     if (val.data) {
       this.setData(val.data);
     } 
   }
 
   getValue() {
-    if (this._input.checked) {
+    if (this.getChecked()) {
       return this._input.value;
     } else {
       return null;
@@ -117,7 +117,7 @@ class CheckboxInput extends TatorElement {
   }
 
   getValueAsNumber() {
-    if (this._input.checked) {
+    if (this.getChecked()) {
       return Number(this._input.value);
     } else {
       return null;

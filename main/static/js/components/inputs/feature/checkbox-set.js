@@ -85,12 +85,6 @@ class CheckboxSet extends TatorElement {
       this._inputs.push(checkbox);
 
       checkbox.addEventListener("change", () => {
-        console.log("checkbox in set changed! {{checkbox val --->}}");
-        console.log(checkbox.getValue());
-        console.log(checkbox.getData());
-        console.log("{{checkbox set --->}}");
-        console.log(this.getValue());
-        console.log(this.getData());
         this.dispatchEvent(new Event("change"));
       });
         
