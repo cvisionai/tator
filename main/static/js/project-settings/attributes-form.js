@@ -763,8 +763,8 @@ class AttributesForm extends TatorElement {
     promiseInfo.newName = this._name.getValue();
     promiseInfo.oldName = this.dataset.oldName;
 
-    console.log("formData");
-    console.log(formData);
+    // console.log("formData");
+    // console.log(formData);
 
     // Hand of the data, and call this form unchanged
     formData.new_attribute_type = this._getAttributeFormData(form);

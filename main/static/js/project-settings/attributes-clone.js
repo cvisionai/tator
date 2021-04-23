@@ -49,7 +49,7 @@ class AttributesClone {
 
       const list = this.attributeDataByType;
 
-      console.log(list);
+      //console.log(list);
   
       entitySelect.addEventListener("change", () => {
         const entity = this._entitySelect.getValue();

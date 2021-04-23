@@ -11,7 +11,7 @@ class AttributesData {
     }
 
     _fetchPostPromise({formData = null } = {}){
-        console.log("Attribute (new) Post Fetch");
+        console.log("Attribute Clone Post Fetch");
     
         if(formData != null){
           return fetch("/rest/AttributeType/"+this.typeId, {
@@ -39,8 +39,8 @@ class AttributesData {
       for(let data of this.selectedData){
         let cloneValue = JSON.parse(data); //parse data attribute
 
-        console.log("cloneValue");
-        console.log(cloneValue);
+        // console.log("cloneValue");
+        // console.log(cloneValue);
 
         this.attributeForm = new AttributesForm();
         this.attributeForm._getFormWithValues({clone : true, ...cloneValue});
@@ -74,7 +74,7 @@ class AttributesData {
               let warningIcon = document.createElement("modal-warning");
               let iconWrap = document.createElement("span");
       
-              console.log("Clone status "+ status);
+              //console.log("Clone status "+ status);
               
               if(respArray[o].ok){
                 iconWrap.appendChild(succussIcon);

@@ -260,8 +260,8 @@ class AttributesMain extends HTMLElement {
     let typesData = new ProjectTypesData(this.projectId);
 
     typesData._getAttributeDataByType().then((attributeDataByType) => {
-      console.log("did it come back from typesData ok? ");
-      console.log(attributeDataByType);
+      // console.log("did it come back from typesData ok? ");
+      // console.log(attributeDataByType);
       
       const clone = new AttributesClone( attributeDataByType );
       const cloneForm = clone._init();
@@ -270,7 +270,7 @@ class AttributesMain extends HTMLElement {
       cloneSave.addEventListener("click", (e) => {
         e.preventDefault();
         const selectedData = clone.getInputData();
-        console.log(selectedData);
+        //console.log(selectedData);
         
         let cloneData = new AttributesData({
           projectId: this.projectId,
@@ -453,7 +453,7 @@ class AttributesMain extends HTMLElement {
   }
 
   _fetchPostPromise({formData = null } = {}){
-    console.log("Attribute (new) Post Fetch");
+    console.log("Attribute Form Post Fetch");
 
     if(formData != null){
       return fetch("/rest/AttributeType/"+this.fromId, {
