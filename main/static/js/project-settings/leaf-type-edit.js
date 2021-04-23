@@ -52,14 +52,15 @@ class LeafTypeEdit extends TypeForm {
       this._form.appendChild(this._editDescription);
 
       // visible
-      this._visibleBool = document.createElement("bool-input");
-      this._visibleBool.setAttribute("name", "Visible");
-      this._visibleBool.setAttribute("on-text", "Yes");
-      this._visibleBool.setAttribute("off-text", "No");
-      this._visibleBool.setValue(this.data.visible);
-      this._visibleBool.default = this.data.visible;
-      this._visibleBool.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._visibleBool);
+      // @TODO won't be in use until we have a leaf tree editor
+      // this._visibleBool = document.createElement("bool-input");
+      // this._visibleBool.setAttribute("name", "Visible");
+      // this._visibleBool.setAttribute("on-text", "Yes");
+      // this._visibleBool.setAttribute("off-text", "No");
+      // this._visibleBool.setValue(this.data.visible);
+      // this._visibleBool.default = this.data.visible;
+      // this._visibleBool.addEventListener("change", this._formChanged.bind(this));
+      // this._form.appendChild(this._visibleBool);
 
       current.appendChild( this._form );
 
@@ -81,9 +82,9 @@ class LeafTypeEdit extends TypeForm {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._visibleBool.changed()) {
-      formData.visible = this._visibleBool.getValue();
-    }
+    // if (this._visibleBool.changed()) {
+    //   formData.visible = this._visibleBool.getValue();
+    // }
 
     return formData;
   }
