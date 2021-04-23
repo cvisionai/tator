@@ -1108,10 +1108,11 @@ class AnnotationMulti extends TatorElement {
         {
           // Convert to global frame space prior to conversion
           let delta = (video.currentFrame()*(this._fps[idx]/this._fps[this._longest_idx]))-primeFrame;
-          if (Math.abs(delta) > 2)
+          if (Math.abs(delta) > Math.floor(this._fps[idx]/2))
           {
-            const correction = 1.0 + (delta/100);
+            const correction = 1.0 - (delta/100);
             const swag = Math.max(0.95,Math.min(1.05,correction));
+            console.log(`syncCheck ${idx} ${this._longest_idx} swag: ${swag} delta: ${delta} expectedTime: ${expected_time} primeFrame: ${primeFrame} currentFrame: ${video.currentFrame()} fps_ratio: ${this._fps[idx]/this._fps[this._longest_idx]} id: ${video._videoObject.id}`)
             video.rateChange(this._rate*swag);
           }
         }

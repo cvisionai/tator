@@ -1140,6 +1140,7 @@ class VideoCanvas extends AnnotationCanvas {
 
       var textContent = `
       Frame: ${this._videoDiagnostics.currentFrame}\r\n
+      Rate: ${this._playbackRate}\r\n
       1x-4x Playback Quality: ${this._videoDiagnostics.playQuality}\r\n
       Scrub Quality: ${this._videoDiagnostics.scrubQuality}\r\n
       Seek Quality: ${this._videoDiagnostics.seekQuality}\r\n
