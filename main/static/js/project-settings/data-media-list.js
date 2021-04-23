@@ -47,28 +47,21 @@ class DataMediaList{
     getCompiledMediaList( mediaIds ){
         let newList = [];
 
-        this._setProjectMediaList().then(mediaList => {
+        return this._setProjectMediaList().then(mediaList => {
 
           mediaList.forEach((media, i) => {
-            if(mediaIds && mediaIds.length > 0){
-              for(let id of mediaIds ){
-                if (media.id == id ) {
-                  return newList.push({
-                    "id" : media.id,
-                    "name" : media.name,
-                    "checked" : true
-                  });
-                }
-              }
-            }
-            return newList.push({
+            const checkObj = {
               "id" : media.id,
               "name" : media.name,
               "checked" : false
-            });
+            }
+            if (mediaIds.includes(media.id)) {
+              checkObj["checked"] = true;
+            }
+            newList.push(checkObj);
           });
+          return newList;
         });
-        return newList;
     }
 
 

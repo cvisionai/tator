@@ -51,6 +51,18 @@ media_type_properties = {
         'description': 'Visible configuration',
         'type': 'boolean',
     },
+    'default_box': {
+        'description': 'Unique integer identifying default box type for drawing.',
+        'type': 'integer',
+    },
+    'default_line': {
+        'description': 'Unique integer identifying default line type for drawing.',
+        'type': 'integer',
+    },
+    'default_dot': {
+        'description': 'Unique integer identifying default dot type for drawing.',
+        'type': 'integer',
+    },
 }
 
 media_type_spec = {
@@ -69,6 +81,9 @@ media_type_update = {
         'streaming_config': media_type_properties['streaming_config'],
         'visible': media_type_properties['visible'],
         'default_volume': media_type_properties['default_volume'],
+        'default_box': media_type_properties['default_box'],
+        'default_line': media_type_properties['default_line'],
+        'default_dot': media_type_properties['default_dot'],
     },
 }
 

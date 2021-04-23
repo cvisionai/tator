@@ -77,6 +77,14 @@ class LocalizationEdit extends TypeForm {
     this._visibleBool.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._visibleBool);
 
+    // drawable
+    const DRAWABLE = "Drawable";
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
+      "labelText": DRAWABLE,
+      "name": DRAWABLE.toLowerCase(),
+      "value": data[DRAWABLE.toLowerCase()]
+    } ) );
+
     // line_width
     if (data.dtype != 'image') {
       this._lineWidth = document.createElement("text-input");
