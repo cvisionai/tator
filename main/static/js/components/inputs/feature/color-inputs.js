@@ -3,11 +3,15 @@ class ColorInputs extends TatorElement {
       super();
 
       const label = document.createElement("label");
-      label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+      label.setAttribute("class", "d-flex flex-items-center py-1");
       this._shadow.appendChild(label);
 
+      const _styleSpan = document.createElement("span");
+      _styleSpan.setAttribute("class", "col-4");
+      label.appendChild(_styleSpan);
+
       this._name = document.createTextNode("");
-      label.appendChild(this._name);
+      _styleSpan.appendChild(this._name);
 
       this._unspecifiedPreview = document.createElement("text-input");
       this._unspecifiedPreview.setAttribute("name", "Default");
