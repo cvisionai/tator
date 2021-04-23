@@ -39,7 +39,7 @@ class TypeForm extends TatorElement {
     this.setupFormPage(data)
   }
 
-  setupFormPage(data = this.data) {
+  async setupFormPage(data = this.data) {
     // Section h1.
     // New heading element.
     this.h1 = document.createElement("h1");
@@ -47,7 +47,11 @@ class TypeForm extends TatorElement {
 
     // Create a form with values, or empty editable form
     if (!this.data.form && !this.data.form != "empty") {
-      this.h1_name = document.createTextNode(`${this.data.name} `);
+      if (this.typeName == "Membership") {
+        this.h1_name = document.createTextNode(`${this.data.username} `);
+      } else {
+        this.h1_name = document.createTextNode(`${this.data.name} `);
+      }
       this.h1.appendChild(this.h1_name);
 
       this.separate_span = document.createElement("span");
@@ -69,8 +73,9 @@ class TypeForm extends TatorElement {
       this.id_span.appendChild(h1_id);
       
       // Add all elements to page
-      this.typeFormDiv.appendChild( this.h1);
-      this.typeFormDiv.appendChild( this._getSectionForm( this.data) );
+      this.typeFormDiv.appendChild(this.h1);
+      const sectionForm = await this._getSectionForm(this.data);
+      this.typeFormDiv.appendChild( sectionForm );
       this.typeFormDiv.appendChild( this._getAttributeSection( ) );
       this.typeFormDiv.appendChild( this._getSubmitDiv( {"id": this.data.id }) );
       this.typeFormDiv.appendChild( this.deleteTypeSection() );
@@ -80,8 +85,10 @@ class TypeForm extends TatorElement {
       this.h1.appendChild(t);
 
       this.typeFormDiv.appendChild(this.h1);
-      this.typeFormDiv.appendChild( this._getSectionForm( this._getEmptyData() ) );
-      this.typeFormDiv.appendChild( this._getSubmitNewDiv( {"id": this.data.id }) );
+      
+      const sectionForm = await this._getSectionForm(this._getEmptyData());
+      this.typeFormDiv.appendChild(this.h1);
+      this.typeFormDiv.appendChild( sectionForm );
 
       return this.typeFormDiv;
     }
@@ -361,9 +368,22 @@ class TypeForm extends TatorElement {
 
 
   // FETCH FROM MODEL PROMISE STRUCTURE
-  // GET
+  // GET ALL {typeName}
   _fetchGetPromise({id = this.projectId} = {}){
     return fetch(`/rest/${this.typeName}s/${id}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+  }
+
+  // GET {typeName} {ID}
+  _fetchByIdPromise({id = this.typeId} = {}){
+    return fetch(`/rest/${this.typeName}/${id}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -431,10 +451,10 @@ class TypeForm extends TatorElement {
       hasAttributeChanges = true;
       const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
 
-      if(attrFormsChanged.length > 0 && attrFormsInvalid.length > 0){
+      if(attrFormsChanged && attrFormsChanged.length > 0){
         // Check Attr forms first for errors if there are changes.
         errors += 1;
-      } else if (attrFormsChanged.length > 0 && attrFormsInvalid.length === 0){
+      } else if (attrFormsChanged && attrFormsChanged.length > 0){
         // If any of the changed but no errors, proceed.
         attrPromises.promises = [];
         attrPromises.attrNamesNew = [];
@@ -507,7 +527,7 @@ class TypeForm extends TatorElement {
                   mainText
                 );
                 // Reset forms to the saved data from model
-                this.resetHard(id);
+                this.resetHard();
               }
           }).then( () => {
             // Reset changed flag
@@ -669,21 +689,25 @@ class TypeForm extends TatorElement {
   }
 
   async resetHard(){
-    console.log("reset hard");
+    console.log("Hard reset...");
     this.loading.showSpinner();
     //Utilities.warningAlert("Refreshing data", "#fff", false);
-    const response = await this._fetchGetPromise();
-    const data = await response.json();
-    this.data = this._findDataById(data);
+    //const response = await this._fetchGetPromise();
+    const response = await this._fetchByIdPromise();
+    // const data = await response.json();
+    // this.data = this._findDataById(data);
     //Utilities.hideAlert();
+    this.data = await response.json();
     this.loading.hideSpinner();
 
-    if(this.typeName == "MediaType"){
-      const mediaList = new DataMediaList( this.projectId );
-      mediaList._setProjectMediaList(data, true);
-    }
+    this.reset(this.data);
 
-    return this.reset(this.data);
+    // Update media list in the background
+    // In future could send individual media update if fn there to receive it
+    if(this.typeName == "MediaType"){
+      const mediaList = new DataMediaList(this.projectId);
+      mediaList._setProjectMediaList( "", true ); 
+    }
   }
 
   _findDataById(allData){
