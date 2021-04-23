@@ -25,7 +25,10 @@ leaf_type_update = {
     'type': 'object',
     'description': 'Leaf type update.',
     'properties': {
-        'description': leaf_type_properties['description'],
+        'description': {
+            'description': 'Description of the leaf type.',
+            'type': 'string'
+        },
         'name': leaf_type_properties['name'],
     },
 }

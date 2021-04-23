@@ -75,7 +75,10 @@ media_type_update = {
     'type': 'object',
     'properties': {
         'name': media_type_properties['name'],
-        'description': media_type_properties['description'],
+        'description':  {
+            'description': 'Description of the media type.',
+            'type': 'string'
+        },
         'file_format': media_type_properties['file_format'],
         'archive_config': media_type_properties['archive_config'],
         'streaming_config': media_type_properties['streaming_config'],
