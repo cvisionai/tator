@@ -135,6 +135,10 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             obj.colorMap = params['colorMap']
         if 'grouping_default' in params:
             obj.grouping_default = params['grouping_default']
+        if 'media_types' in params:
+            media_types = MediaType.objects.filter(
+                pk__in=params['media_types'])
+            obj.media.set(media_types)
 
         obj.save()
         return {'message': 'Localization type updated successfully!'}

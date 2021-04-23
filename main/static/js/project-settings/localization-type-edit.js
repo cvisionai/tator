@@ -167,7 +167,7 @@ class LocalizationEdit extends TypeForm {
     }
 
     if (this._mediaCheckboxes.changed()) {
-      formData.media = this._mediaCheckboxes.getValue();
+      formData.media_types = this._mediaCheckboxes.getValue();
     }
 
     return formData;
