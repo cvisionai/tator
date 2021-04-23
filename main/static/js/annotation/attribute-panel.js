@@ -47,6 +47,15 @@ class AttributePanel extends TatorElement {
 
   set dataType(val) {
     this._dataType = val;
+
+    // Remove existing attribute widgets.
+    while (true) {
+      const child = this._div.lastChild;
+      if (child === this._idWidget || child === this._createdByWidget) {
+        break;
+      }
+      this._div.removeChild(child);
+    }
     if (val.isTrack) {
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");

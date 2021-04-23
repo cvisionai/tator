@@ -15,6 +15,10 @@ class SaveDialog extends TatorElement {
     this._span.setAttribute("class", "text-semibold");
     header.appendChild(this._span);
 
+    this._type = document.createElement("enum-input");
+    this._type.setAttribute("name", "Type");
+    this._div.appendChild(this._type);
+
     this._attributes = document.createElement("attribute-panel");
     this._div.appendChild(this._attributes);
 
@@ -74,21 +78,31 @@ class SaveDialog extends TatorElement {
     });
   }
 
-  init(projectId, mediaId, dataType, undo, version, favorites) {
+  init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
 
     this._projectId = projectId;
     this._mediaId = mediaId;
-    this._dataType = dataType;
     this._undo = undo;
     this._version = version;
-    this._span.textContent = dataType.name;
-    this._attributes.dataType = dataType;
-    this._favorites.init(dataType, favorites);
+    this._favoritesData = favorites;
 
     // For the save dialog, the track search bar doesn't need to be shown.
     // The user only needs to modify the attributes in the dialog window.
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);
+
+    // Set choices on type selector.
+    this._type.choices = dataTypes.map(type => {return {label: type.name,
+                                                        value: JSON.stringify(type)}});
+    this._type.addEventListener("change", this._setDataType.bind(this));
+    this._type.default = defaultType.name;
+    this._type.reset();
+    this._setDataType();
+
+    // Hide the type selector if there is only one type.
+    if (dataTypes.length == 1) {
+      this._type.style.display = "none";
+    }
 
     this._attributes.dispatchEvent(new Event("change"));
   }
@@ -196,6 +210,13 @@ class SaveDialog extends TatorElement {
       this.style.top = thisTop + "px";
       this.style.left = thisLeft + "px";
     }
+  }
+
+  _setDataType() {
+    this._dataType = JSON.parse(this._type.getValue());
+    this._span.textContent = this._dataType.name;
+    this._attributes.dataType = this._dataType;
+    this._favorites.init(this._dataType, this._favoritesData);
   }
 }
 

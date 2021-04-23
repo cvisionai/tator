@@ -466,6 +466,10 @@ class Project(Model):
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
     """ If set, media will use this bucket by default.
     """
+    default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
+                               related_name='+')
+    """ Default media type for uploads.
+    """
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
     def user_permission(self, user_id):
@@ -702,6 +706,15 @@ class MediaType(Model):
 
     Overlay can optionally be a list of multiple overlays
     """
+    default_box = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
+                             related_name='+')
+    """ Box type used as default in UI. """
+    default_line = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
+                             related_name='+')
+    """ Line type used as default in UI. """
+    default_dot = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
+                             related_name='+')
+    """ Dot type used as default in UI. """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -717,6 +730,8 @@ class LocalizationType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
+    drawable = BooleanField(default=True)
+    """ Whether this type can be drawn in the UI."""
     grouping_default = BooleanField(default=True)
     """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)

@@ -703,7 +703,9 @@ class AnnotationPage extends TatorPage {
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
-          (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
+          if (obj.visible && obj.drawable) {
+            (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
+          }
           return sec;
         }, {});
 
@@ -838,26 +840,61 @@ class AnnotationPage extends TatorPage {
         });
         this._saves = {};
 
-        for (const dataType of localizationTypes) {
+        for (const dataType of ["box", "line", "dot"]) {
           const save = document.createElement("save-dialog");
-          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
-          this._settings.setAttribute("version", this._version.id);
-          this._main.appendChild(save);
-          this._saves[dataType.id] = save;
+          const dataTypes = localizationTypes.filter(type => type.dtype == dataType
+                                                             && type.visible
+                                                             && type.drawable);
+          if (dataTypes.length > 0) {
+            let defaultType = null;
+            switch(dataType) {
+              case "box":
+                if (this._player.mediaType.default_box) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_box);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
+                break;
+              case "line":
+                if (this._player.mediaType.default_line) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_line);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
+                break;
+              case "dot":
+                if (this._player.mediaType.default_dot) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_dot);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
+                break;
+            }
+            if (defaultType === null) {
+              defaultType = dataTypes[0];
+            }
+            save.init(projectId, mediaId, dataTypes, defaultType, this._undo, this._version, favorites);
+            this._settings.setAttribute("version", this._version.id);
+            this._main.appendChild(save);
+            this._saves[dataType] = save;
 
-          save.addEventListener("cancel", () => {
-            this._closeModal(save);
-            canvas.refresh();
-          });
+            save.addEventListener("cancel", () => {
+              this._closeModal(save);
+              canvas.refresh();
+            });
 
-          save.addEventListener("save", () => {
-            this._closeModal(save);
-          });
+            save.addEventListener("save", () => {
+              this._closeModal(save);
+            });
+          }
         }
 
         for (const dataType of stateTypes) {
           const save = document.createElement("save-dialog");
-          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+          save.init(projectId, mediaId, [dataType], dataType, this._undo, this._version, favorites);
           this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.id] = save;
@@ -1243,7 +1280,7 @@ class AnnotationPage extends TatorPage {
       const requestObj = evt.detail.requestObj;
       const canvasPosition = canvasElement.getBoundingClientRect();
 
-      const dialog = this._saves[objDescription.id];
+      const dialog = this._getSave(objDescription);
       dialog.setUI(objDescription);
 
       this._openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode);
@@ -1268,7 +1305,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode) {
-    const save = this._saves[objDescription.id];
+    const save = this._getSave(objDescription);
     save.canvasPosition = canvasPosition;
     save.dragInfo = dragInfo;
     save.requestObj = requestObj;
@@ -1279,7 +1316,13 @@ class AnnotationPage extends TatorPage {
   }
 
   _getSave(objDescription) {
-    return this._saves[objDescription.id];
+    let save;
+    if (["box", "line", "dot"].includes(objDescription.dtype)) {
+      save = this._saves[objDescription.dtype];
+    } else {
+      save = this._saves[objDescription.id];
+    }
+    return save;
   }
 
   clearMetaCaches() {
