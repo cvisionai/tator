@@ -223,7 +223,7 @@ class TypeForm extends TatorElement {
     this.saveButton = this.inputHelper.saveButton();
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
-      if( this.changed || (this.attributeSection && this.attributeSection.hasChanges) ){
+      if( this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges) ){
         console.log("Save for id: "+id);
         this._save( {"id":id} )
       } else {
@@ -396,84 +396,69 @@ class TypeForm extends TatorElement {
   }
 
   // PATCH
-  _fetchPatchPromise({id = -1 } = {}){
-    console.log("Form data for patch id: "+id);
-    let formData = this._getFormData(id);
-
-    if(this._shadow.querySelectorAll(".errored").length > 0 || this._shadow.querySelectorAll(".invalid").length > 0){
-      return this._modalError("Please fix form errors first.");
-    } else if (Object.entries(formData).length === 0) {
-      console.log("No formData")
-      return this._modalSuccess("Nothing new to save!");
-    } else {
-      return fetch(`/rest/${this.typeName}/${id}`, {
-        method: "PATCH",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
-    }
+  _fetchPatchPromise({id = -1, formData } = {}){
+    return fetch(`/rest/${this.typeName}/${id}`, {
+      method: "PATCH",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    });
   }
 
 
 
   _save({id = -1, globalAttribute = false} = {}){
+    // @TODO add back inline error messaging
     // If any fields still have errors don't submit the form.
-    const errorList = this._shadow.querySelectorAll(`.errored`);
-    if(errorList && errorList.length > 0) return this._modalError("Please fix form errors.");;
+    // const errorList = this._shadow.querySelectorAll(`.errored`);
+    // if(errorList && errorList.length > 0) return this._modalError("Please fix form errors.");;
     
     // Start spinner & Get promises list
     console.log("Settings _save method for id: "+id);
     this.loading.showSpinner();
     
     let promises = []
-    let errors = 0;
+    let errors = 0; // @TODO
 
     // Main type form
-    if( this.changed ) {
-      let mainPromise = this._fetchPatchPromise({id});
-      
-      // Promise will return false if there are errors.
-      if(mainPromise){
-        promises.push( this._fetchPatchPromise({id}) );
+    if (this.isChanged()) {
+      console.log("Main form was changed");
+      const formData = this._getFormData();
+      if (Object.entries(formData).length === 0) {
+        return console.error("No formData");
       } else {
-        errors += 1;
+        promises.push( this._fetchPatchPromise({id, formData}) );
       }
+      
     }
 
-    let hasAttributeChanges = false;
-    const attrPromises = {};
-    if(this.attributeSection && this.attributeSection.hasChanges){
-      hasAttributeChanges = true;
+    let hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
+    const attrPromises = {
+      promises: [],
+      attrNamesNew: [],
+      attrNames: []
+    };
+
+    if (hasAttributeChanges) {
       const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
-
       if(attrFormsChanged && attrFormsChanged.length > 0){
-        // Check Attr forms first for errors if there are changes.
-        errors += 1;
-      } else if (attrFormsChanged && attrFormsChanged.length > 0){
-        // If any of the changed but no errors, proceed.
-        attrPromises.promises = [];
-        attrPromises.attrNamesNew = [];
-        attrPromises.attrNames = [];
 
-        if(attrFormsChanged && attrFormsChanged.length > 0){
-          for(let form of attrFormsChanged){
-            let promiseInfo = form._getPromise({ id, entityType : this.typeName });
-            attrPromises.promises.push(promiseInfo.promise);
-            attrPromises.attrNamesNew.push(promiseInfo.newName);
-            attrPromises.attrNames.push(promiseInfo.oldName);
-          }
+        for(let form of attrFormsChanged){
+          let promiseInfo = form._getPromise({ id, entityType : this.typeName });
+          attrPromises.promises.push(promiseInfo.promise);
+          attrPromises.attrNamesNew.push(promiseInfo.newName);
+          attrPromises.attrNames.push(promiseInfo.oldName);
+        }
 
-          if(attrPromises){
-            promises = [...promises, ...attrPromises.promises];
-          } 
-        }     
-      }
+        if(attrPromises.promises.length > 0){
+          promises = [...promises, ...attrPromises.promises];
+        }
+      }     
     }
 
     let messageObj = {};
@@ -538,12 +523,10 @@ class TypeForm extends TatorElement {
               const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
               if(attrFormsChanged.length > 0 ) {
                 for(let f of attrFormsChanged) {
-                  f.classList.remove("changed");
                   f.changeReset();
                 }
               }
             }
-         
           });
 
         }).catch(err => {
@@ -551,24 +534,26 @@ class TypeForm extends TatorElement {
           this.loading.hideSpinner();
         });
     } else if (!promises.length > 0 ) {
-
       this.loading.hideSpinner();
+      console.error("Attempted to save but no promises found.");
       return this._modalSuccess("Nothing new to save!");
     } else if (!errors === 0) {
       this.loading.hideSpinner();
       return this._modalError("Please fix form errors.");
     } else {
       this.loading.hideSpinner();
-      return this._modalError("Problem getting saving form data.");
+      return this._modalError("Problem saving form data.");
     }
   }
 
   set changed(val) {
-    return this.changed = val;
+    console.log(`Changed val set to ${val}`);
+    return this._changed = val;
   }
 
-  changed(){
-    return this.changed;
+  isChanged() {
+    console.log(`Checking is this._changed.... ${this._changed}`);
+    return this._changed;
   }
 
   _formChanged(event) {
@@ -639,28 +624,18 @@ class TypeForm extends TatorElement {
         let name = check.dataset.oldName;
         let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
 
-        //add back changed flag
-        for(let form of this.attributeSection.attrForms){
-          // this._shadow.querySelector(`#${formId}`).classList.add("changed");
-          if(form.id == formId){
-            form.classList.add("changed");
-            form.changed = true;
-          }
-        }
-
         if(check.checked == true){
           console.log("User marked as global: "+name);
-          //this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "true";
           for(let form of this.attributeSection.attrForms){
-            // this._shadow.querySelector(`#${formId}`).classList.add("changed");
-            if(form.id == formId){
-              form.dataset.isGlobal = "true";
+            if (form.id == formId) {
+              // add back changed flag
+              form.changed = true;
+              form.global = true;
+              console.log("set data set global to true");
             }
           }
         } else {
           console.log("User marked NOT global, do not resend: "+name);
-
-          //this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "false";
         }
       }
 
