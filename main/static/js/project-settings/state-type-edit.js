@@ -7,7 +7,7 @@ class StateTypeEdit extends TypeForm {
 
   }
 
-  _getSectionForm(data){
+  async _getSectionForm(data){
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
       } );
@@ -72,13 +72,13 @@ class StateTypeEdit extends TypeForm {
     this._groupingDefault.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._groupingDefault);
 
-    // Media
+    // const MEDIA = "Media"; 
     const mediaList = new DataMediaList( this.projectId );
-    let mediaListWithChecked = mediaList.getCompiledMediaList( data.media );
+    const mediaListWithChecked = await mediaList.getCompiledMediaList( data.media );
     this._mediaCheckboxes = document.createElement("checkbox-set");
     this._mediaCheckboxes.setAttribute("name", "Media");
     this._mediaCheckboxes.setAttribute("type", "number");
-    this._mediaCheckboxes.setValue(mediaListWithChecked);
+    this._mediaCheckboxes.setValue( mediaListWithChecked );
     this._mediaCheckboxes.default = mediaListWithChecked;
     this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._mediaCheckboxes);
