@@ -7,7 +7,7 @@ class LocalizationEdit extends TypeForm {
 
   }
 
-  _getSectionForm(data){
+  async _getSectionForm(data){
     const current = this.boxHelper.boxWrapDefault( {
       "children" : ""
     } );
@@ -56,7 +56,7 @@ class LocalizationEdit extends TypeForm {
 
     // color map
     this._colorMap = document.createElement("color-inputs");
-    this._colorMap.setAttribute("name", "Color Map Default");
+    this._colorMap.setAttribute("name", "Color Map");
     if (this.data.colorMap && this.data.colorMap.default) {
       this._colorMap.setValue(this.data.colorMap.default);
       this._colorMap.default = this.data.colorMap.default;
@@ -102,11 +102,11 @@ class LocalizationEdit extends TypeForm {
 
     // const MEDIA = "Media"; 
     const mediaList = new DataMediaList( this.projectId );
-    let mediaListWithChecked = mediaList.getCompiledMediaList( data.media );
+    const mediaListWithChecked = await mediaList.getCompiledMediaList( data.media );
     this._mediaCheckboxes = document.createElement("checkbox-set");
     this._mediaCheckboxes.setAttribute("name", "Media");
     this._mediaCheckboxes.setAttribute("type", "number");
-    this._mediaCheckboxes.setValue(mediaListWithChecked);
+    this._mediaCheckboxes.setValue( mediaListWithChecked );
     this._mediaCheckboxes.default = mediaListWithChecked;
     this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._mediaCheckboxes);
@@ -119,35 +119,39 @@ class LocalizationEdit extends TypeForm {
   _getFormData(){
     const formData = {};
 
-    if (this._editName.changed() && this._editName.getValue()) {
+    if (this._editName.changed()) {
       formData.name = this._editName.getValue();
     }
 
-    if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {
+    if (this.dtypeSelect.changed()) {
       formData.dtype = this.dtypeSelect.getValue()
     }
 
-    if (this._editDescription.changed() && this._editDescription.getValue()) {
+    if (this._editDescription.changed()) {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._colorMap.changed() && this._colorMap.getValue()) {
-      formData.colorMap = this._colorMap.getValue();
+    if (this._colorMap.changed()) {
+      formData.colorMap = {};
+      const colorMapDefaultVal = this._colorMap.getValue();
+      if (this._colorMap.getValue() !== null) {
+        formData.colorMap.default = colorMapDefaultVal;
+      }
     }
 
-    if (this._visibleBool.changed() && this._visibleBool.getValue() !== null) {
+    if (this._visibleBool.changed()) {
       formData.visible = this._visibleBool.getValue();
     }
 
-    if (this._lineWidth.changed() && this._lineWidth.getValue()) {
-      formData.line_width = this._lineWidth.getValue();
+    if (this._lineWidth.changed()) {
+      formData.line_width = Number(this._lineWidth.getValue());
     }
 
-    if (this._groupingDefault.changed() && this._groupingDefault.getValue() !== null) {
+    if (this._groupingDefault.changed()) {
       formData.grouping_default = this._groupingDefault.getValue();
     }
 
-    if (this._mediaCheckboxes.changed() && this._mediaCheckboxes.getValue()) {
+    if (this._mediaCheckboxes.changed()) {
       formData.media = this._mediaCheckboxes.getValue();
     }
 
