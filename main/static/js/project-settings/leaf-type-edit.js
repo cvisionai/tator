@@ -69,19 +69,19 @@ class LeafTypeEdit extends TypeForm {
   _getFormData(){
     const formData = {};
 
-    if (this._editName.changed() && this._editName.getValue()) {
+    if (this._editName.changed()) {
       formData.name = this._editName.getValue();
     }
 
-    if (this.dtypeSelect.changed() || this.dtypeSelect.getValue()) {
+    if (this.dtypeSelect.changed()) {
       formData.dtype = this.dtypeSelect.getValue()
     }
 
-    if (this._editDescription.changed() && this._editDescription.getValue()) {
+    if (this._editDescription.changed()) {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._visibleBool.changed() && this._visibleBool.getValue() !== null) {
+    if (this._visibleBool.changed()) {
       formData.visible = this._visibleBool.getValue();
     }
 
