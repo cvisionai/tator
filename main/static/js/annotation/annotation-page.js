@@ -709,8 +709,7 @@ class AnnotationPage extends TatorPage {
           return sec;
         }, {});
         const trackTypes = stateTypes.filter(type => type.association == 'Localization'
-                                                     && type.visible
-                                                     && type.drawable);
+                                                     && type.visible);
 
         if (block_signals == true)
         {

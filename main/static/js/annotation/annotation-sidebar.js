@@ -155,9 +155,10 @@ class AnnotationSidebar extends TatorElement {
   set trackTypes(val) {
     if (val.length > 0) {
       this._track.addEventListener("click", evt => {
-        this._selectButton(this._track, evt.shiftKey);
+        this._selectButton(this._track, true);
         this.dispatchEvent(new CustomEvent("newMeta", {
-          detail: {typeId: val.dot[0].id}
+          detail: {typeId: val[0].id,
+                   metaMode: true}
         }));
       });
       document.addEventListener("keydown", evt => {
@@ -165,7 +166,7 @@ class AnnotationSidebar extends TatorElement {
           return;
         }
         if (evt.keyCode === 84) {
-          this._point.dispatchEvent(new MouseEvent("click"));
+          this._track.dispatchEvent(new MouseEvent("click"));
         }
       });
     } else {
