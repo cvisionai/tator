@@ -708,6 +708,9 @@ class AnnotationPage extends TatorPage {
           }
           return sec;
         }, {});
+        const trackTypes = stateTypes.filter(type => type.association == 'Localization'
+                                                     && type.visible
+                                                     && type.drawable);
 
         if (block_signals == true)
         {
@@ -724,6 +727,7 @@ class AnnotationPage extends TatorPage {
         this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
 
         this._sidebar.localizationTypes = byType;
+        this._sidebar.trackTypes = trackTypes;
         this._sidebar.addEventListener("default", evt => {
           this.clearMetaCaches();
           canvas.defaultMode();

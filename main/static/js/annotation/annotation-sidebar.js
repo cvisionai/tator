@@ -19,6 +19,9 @@ class AnnotationSidebar extends TatorElement {
     this._point = document.createElement("point-button");
     this._div.appendChild(this._point);
 
+    this._track = document.createElement("track-button");
+    this._div.appendChild(this._track);
+
     const zoomIn = document.createElement("zoom-in-button");
     this._div.appendChild(zoomIn);
 
@@ -74,10 +77,13 @@ class AnnotationSidebar extends TatorElement {
         this._line.removeAttribute("disabled");
       if (!this._point.permenantDisable)
         this._point.removeAttribute("disabled");
+      if (!this._track.permenantDisable)
+        this._track.removeAttribute("disabled");
     } else {
       this._box.setAttribute("disabled", "");
       this._line.setAttribute("disabled", "");
       this._point.setAttribute("disabled", "");
+      this._track.setAttribute("disabled", "");
     }
   }
 
@@ -143,6 +149,28 @@ class AnnotationSidebar extends TatorElement {
     } else {
       this._point.setAttribute("disabled", "");
       this._point.permenantDisable = true;
+    }
+  }
+
+  set trackTypes(val) {
+    if (val.length > 0) {
+      this._track.addEventListener("click", evt => {
+        this._selectButton(this._track, evt.shiftKey);
+        this.dispatchEvent(new CustomEvent("newMeta", {
+          detail: {typeId: val.dot[0].id}
+        }));
+      });
+      document.addEventListener("keydown", evt => {
+        if (document.body.classList.contains("shortcuts-disabled")) {
+          return;
+        }
+        if (evt.keyCode === 84) {
+          this._point.dispatchEvent(new MouseEvent("click"));
+        }
+      });
+    } else {
+      this._track.setAttribute("disabled", "");
+      this._track.permanentDisable = true;
     }
   }
 
