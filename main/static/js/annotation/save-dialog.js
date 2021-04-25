@@ -70,12 +70,16 @@ class SaveDialog extends TatorElement {
         this._metaCache = Object.assign({},this._values)
       }
       this._attributes.reset();
+      this._trackId = null;
     });
 
     cancel.addEventListener("click", () => {
       this.dispatchEvent(new Event("cancel"));
       this._attributes.reset();
     });
+
+    // Used for continuous track append.
+    this._trackId = null;
   }
 
   init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
@@ -125,14 +129,6 @@ class SaveDialog extends TatorElement {
     }));
 
     if (this._dataType.isTrack) {
-      // This is a track, create the track first then create localization and add it to track.
-      const trackBody = {
-        type: Number(this._dataType.id.split("_")[1]),
-        name: this._dataType.name,
-        version: this._version.id,
-        media_ids: [this._mediaId],
-        ...values,
-      };
       const localizationBody = {
         type: Number(this._dataType.localizationType.id.split("_")[1]),
         name: this._dataType.localizationType.name,
@@ -141,10 +137,34 @@ class SaveDialog extends TatorElement {
         ...requestObj,
         ...values,
       };
-      this._undo.post("States", trackBody, this._dataType)
-      .then(data => {
-        console.log(`DATA: ${data}`);
-      });
+      this._undo.post("Localizations", localizationBody, this._dataType.localizationType)
+      .then(localizationResponse => {
+        if (this._trackId === null) {
+          // Track needs to be created.
+          const trackBody = {
+            type: Number(this._dataType.id.split("_")[1]),
+            name: this._dataType.name,
+            version: this._version.id,
+            media_ids: [this._mediaId],
+            localization_ids: localizationResponse[0].id,
+            ...values,
+          };
+          return this._undo.post("States", trackBody, this._dataType);
+        } else {
+          this.dispatchEvent(new CustomEvent("addDetectionToTrack", {
+            detail: {localizationType: this._dataType.localizationType.id,
+                     trackType: this._dataType.id,
+                     frame: requestObj.frame,
+                     mainTrackId: this._trackId,
+                     detectionId: localizationResponse[0].id[0]}
+          }));
+        }
+      })
+      .then(trackResponse => {
+        if (trackResponse) {
+          this._trackId = trackResponse[0].id[0];
+        }
+      })
 
     } else {
       var body = {

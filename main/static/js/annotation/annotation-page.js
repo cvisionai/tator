@@ -1245,7 +1245,7 @@ class AnnotationPage extends TatorPage {
       });
     });
 
-    menu.addEventListener("addDetectionToTrack", evt => {
+    this._addDetectionToTrack = evt => {
 
       const promise = fetchRetry("/rest/State/" + evt.detail.mainTrackId, {
         method: "PATCH",
@@ -1263,11 +1263,17 @@ class AnnotationPage extends TatorPage {
       })
       .then(response => response.json())
       .then(() => {
+        //this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         Utilities.showSuccessIcon("Detection added to track.");
         canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
       });
-    });
+    };
+
+    menu.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
+    for (const save of Object.values(this._saves)) {
+      save.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
+    }
 
     menu.addEventListener("mergeTracks", evt => {
 
