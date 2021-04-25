@@ -1092,29 +1092,27 @@ class AnnotationMulti extends TatorElement {
 
   syncCheck()
   {
+    // Find the average frame so we can speed up or slow down videos appropriately
+    let primeFrame = 0;
+    for (let video of this._videos) {
+      primeFrame += video.currentFrame();
+    }
+    primeFrame = Math.floor(primeFrame / this._videos.length);
+
+
     let idx = 0;
-    let primeFrame = this._videos[this._longest_idx].currentFrame();
-    for (let video of this._videos)
-    {
-      if (idx == this._longest_idx)
+    for (let video of this._videos) {
+      let expected_time = (primeFrame / this._fps[idx]);
+      if (expected_time <= this._lengthTimes[idx])
       {
-        //pass primeFrame = video.currentFrame();
-      }
-      else
-      {
-        // Verify we are comparing a video who
-        let expected_time = (primeFrame / this._fps[this._longest_idx]);
-        if (expected_time <= this._lengthTimes[idx])
+        // Convert to global frame space prior to conversion
+        let delta = (video.currentFrame()*(this._fps[idx]/this._fps[this._longest_idx]))-primeFrame;
+        if (Math.abs(delta) > Math.floor(this._fps[idx]/2))
         {
-          // Convert to global frame space prior to conversion
-          let delta = (video.currentFrame()*(this._fps[idx]/this._fps[this._longest_idx]))-primeFrame;
-          if (Math.abs(delta) > Math.floor(this._fps[idx]/2))
-          {
-            const correction = 1.0 - (delta/100);
-            const swag = Math.max(0.95,Math.min(1.05,correction));
-            console.log(`syncCheck ${idx} ${this._longest_idx} swag: ${swag} delta: ${delta} expectedTime: ${expected_time} primeFrame: ${primeFrame} currentFrame: ${video.currentFrame()} fps_ratio: ${this._fps[idx]/this._fps[this._longest_idx]} id: ${video._videoObject.id}`)
-            video.rateChange(this._rate*swag);
-          }
+          const correction = 1.0 - (delta/100);
+          const swag = Math.max(0.95,Math.min(1.05,correction));
+          console.log(`syncCheck idx: ${idx} swag: ${swag} delta: ${delta} expectedTime: ${expected_time} primeFrame: ${primeFrame} currentFrame: ${video.currentFrame()} fps_ratio: ${this._fps[idx]/this._fps[this._longest_idx]} id: ${video._videoObject.id}`)
+          video.rateChange(this._rate*swag);
         }
       }
       idx++;
