@@ -242,10 +242,9 @@ class UndoBuffer extends HTMLElement {
         for (const [opIndex, op] of this._forwardOps[this._index].entries()) {
           const [method, uri, id, body] = op;
           const dataType = this._dataTypes[this._index];
-          const promise = this._fetch(op, dataType);
-          promises.push(promise)
+          let promise = this._fetch(op, dataType);
           if (method == "POST") {
-            promise
+            promise = promise
               .then(response => response.json())
               .then(data => {
                 this._emitUpdate(method, data.id[0], body, dataType);
@@ -260,16 +259,18 @@ class UndoBuffer extends HTMLElement {
                 };
                 this._forwardOps.forEach(replace);
                 this._backwardOps.forEach(replace);
+                return data;
               });
           } else {
             this._emitUpdate(method, id, body, dataType);
           }
+          promises.push(promise)
         }
         this._index++;
       }
 
       // Resolve only after all the fetches have been completed
-      Promise.all(promises).then(() => { resolve(); });
+      Promise.all(promises).then(data => { resolve(data); });
     });
 
     return p;
