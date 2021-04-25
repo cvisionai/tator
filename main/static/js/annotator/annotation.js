@@ -3479,8 +3479,6 @@ class AnnotationCanvas extends TatorElement
       var boxCoords = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]];
 
       that._draw.beginDraw();
-      that.drawCrosshair([x0,y0], colorReq, 128);
-      that.drawCrosshair([x2,y2], colorReq, 128);
       that.blackoutOutside(boxCoords);
       that._draw.drawPolygon(boxCoords,
                              colorReq,
@@ -3502,8 +3500,6 @@ class AnnotationCanvas extends TatorElement
       var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 
       that._draw.beginDraw();
-      that.drawCrosshair([x0,y0], colorReq, 128);
-      that.drawCrosshair([x1,y1], colorReq, 128);
       that.blackoutOutside(fauxBoxCoords);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
@@ -3729,7 +3725,6 @@ class AnnotationCanvas extends TatorElement
           if (objType.dtype == 'box')
           {
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
-            that.drawCrosshair(poly[0], color.WHITE, 128);
             that.drawCrosshair(poly[2], color.WHITE, 128);
             that.blackoutOutside(poly);
             this._draw.drawPolygon(poly, color.WHITE,
@@ -3744,7 +3739,6 @@ class AnnotationCanvas extends TatorElement
             let x1 = line[1][0];
             let y1 = line[1][1];
             var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
-            that.drawCrosshair([x0,y0], color.WHITE, 128);
             that.drawCrosshair([x1,y1], color.WHITE, 128);
             that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
@@ -3817,7 +3811,6 @@ class AnnotationCanvas extends TatorElement
           if (type == 'box')
           {
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
-            that.drawCrosshair(poly[0], color.WHITE, 128);
             that.drawCrosshair(poly[2], color.WHITE, 128);
             that.blackoutOutside(poly);
             this._draw.drawPolygon(poly, color.WHITE, width);
@@ -3831,7 +3824,6 @@ class AnnotationCanvas extends TatorElement
             let x1 = line[1][0];
             let y1 = line[1][1];
             var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
-            that.drawCrosshair([x0,y0], color.WHITE, 128);
             that.drawCrosshair([x1,y1], color.WHITE, 128);
             that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0],line[1], color.WHITE, width);
