@@ -2979,11 +2979,11 @@ class AnnotationCanvas extends TatorElement
     else if (objDescription.isTrack == true) {
       // Determine the localization type that should be drawn.
       let localizationTypeId = null;
-      if (this.draft.default_localization) {
-        localizationTypeId = this.draft.default_localization;
+      if (objDescription.default_localization) {
+        localizationTypeId = objDescription.default_localization;
       } else {
         // If default localization type is not set, go by priority box > line > dot.
-        const byType = this._data._dataTypes.reduce((sec, obj) => {
+        const byType = Object.values(this._data._dataTypes).reduce((sec, obj) => {
           if (obj.visible && obj.drawable) {
             (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
           }
@@ -3000,7 +3000,6 @@ class AnnotationCanvas extends TatorElement
       if (localizationTypeId === null) {
         throw "Could not find a localization type to use for track creation!";
       }
-      localizationDescription = this._data._dataTypes[localizationTypeId];
 
       this._mouseMode = MouseMode.NEW;
       this.draft = {...objDescription,
@@ -3056,7 +3055,13 @@ class AnnotationCanvas extends TatorElement
       let lineInfo = dragToLine(dragInfo);
       let dotInfo = [dragInfo.start.x, dragInfo.start.y];
       let localization=null;
-      if (objDescription.dtype=="box" || objDescription.localizationDescription.dtype=="box")
+      let type = objDescription.dtype;
+      if (type == "state") {
+        // We are creating a track.
+        type = objDescription.localizationDescription.dtype;
+      }
+      
+      if (type=="box")
       {
         localization=this.scaleToRelative(boxInfo);
         requestObj.x = localization[0];
@@ -3064,7 +3069,7 @@ class AnnotationCanvas extends TatorElement
         requestObj.width = localization[2];
         requestObj.height = localization[3];
       }
-      else if (objDescription.dtype=="line" || objDescription.localizationDescription.dtype=="line")
+      else if (type=="line")
       {
         localization=this.scaleToRelative(lineInfo, true);
         const [x0, y0, x1, y1] = localization;
@@ -3073,7 +3078,7 @@ class AnnotationCanvas extends TatorElement
         requestObj.u = x1 - x0;
         requestObj.v = y1 - y0;
       }
-      else if (objDescription.dtype=='dot' || objDescription.localizationDescription.dtype=="dot")
+      else if (type=='dot')
       {
         var previewSize=50;
         localization=this.scaleToRelative(dotInfo);
@@ -3592,7 +3597,11 @@ class AnnotationCanvas extends TatorElement
     else if (this.draft)
     {
       // We are drawing
-      var type=this.draft.dtype;
+      let type=this.draft.dtype;
+      if (type == "state") {
+        // We are creating a track.
+        type = this.draft.localizationDescription.dtype;
+      }
 
       if (type == "box")
       {

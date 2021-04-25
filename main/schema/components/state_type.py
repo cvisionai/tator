@@ -39,7 +39,7 @@ state_type_properties = {
                        'Localizations will only be deleted if they are not '
                        'associated with another state. ',
         'default': False,
-    }
+    },
     'default_localization': {
         'type': 'integer',
         'description': 'If this is a track type, this is a unique integer identifying '
