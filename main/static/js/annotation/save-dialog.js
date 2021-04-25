@@ -123,26 +123,51 @@ class SaveDialog extends TatorElement {
     this.dispatchEvent(new CustomEvent("save", {
       detail: values
     }));
-    var body = {
-      type: Number(this._dataType.id.split("_")[1]),
-      name: this._dataType.name,
-      version: this._version.id,
-      ...requestObj,
-      ...values,
-    };
 
-    if (this._dataType.dtype.includes("state")) {
-      if (this._stateMediaIds) {
-        body.media_ids = this._stateMediaIds;
+    if (this._dataType.isTrack) {
+      // This is a track, create the track first then create localization and add it to track.
+      const trackBody = {
+        type: Number(this._dataType.id.split("_")[1]),
+        name: this._dataType.name,
+        version: this._version.id,
+        media_ids: [this._mediaId],
+        ...values,
+      };
+      const localizationBody = {
+        type: Number(this._dataType.localizationType.id.split("_")[1]),
+        name: this._dataType.localizationType.name,
+        version: this._version.id,
+        media_id: this._mediaId,
+        ...requestObj,
+        ...values,
+      };
+      this._undo.post("States", trackBody, this._dataType)
+      .then(data => {
+        console.log(`DATA: ${data}`);
+      });
+
+    } else {
+      var body = {
+        type: Number(this._dataType.id.split("_")[1]),
+        name: this._dataType.name,
+        version: this._version.id,
+        ...requestObj,
+        ...values,
+      };
+
+      if (this._dataType.dtype.includes("state")) {
+        if (this._stateMediaIds) {
+          body.media_ids = this._stateMediaIds;
+        }
+        else {
+          body.media_ids = [this._mediaId];
+        }
+        this._undo.post("States", body, this._dataType);
       }
       else {
-        body.media_ids = [this._mediaId];
+        body.media_id = this._mediaId
+        this._undo.post("Localizations", body, this._dataType);
       }
-      this._undo.post("States", body, this._dataType);
-    }
-    else {
-      body.media_id = this._mediaId
-      this._undo.post("Localizations", body, this._dataType);
     }
   }
 
