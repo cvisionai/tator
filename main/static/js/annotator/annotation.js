@@ -2977,37 +2977,11 @@ class AnnotationCanvas extends TatorElement
       this._metaMode = metaMode;
     }
     else if (objDescription.isTrack == true) {
-      // Determine the localization type that should be drawn.
-      let localizationTypeId = null;
-      if (objDescription.default_localization) {
-        localizationTypeId = objDescription.default_localization;
-      } else {
-        // If default localization type is not set, go by priority box > line > dot.
-        const byType = Object.values(this._data._dataTypes).reduce((sec, obj) => {
-          if (obj.visible && obj.drawable) {
-            (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
-          }
-          return sec;
-        }, {});
-        if (typeof byType.box !== "undefined") {
-          localizationTypeId = byType.box[0].id;
-        } else if (typeof byType.line !== "undefined") {
-          localizationTypeId = byType.line[0].id;
-        } else if (typeof byType.dot !== "undefined") {
-          localizationTypeId = byType.dot[0].id;
-        }
-      }
-      if (localizationTypeId === null) {
-        throw "Could not find a localization type to use for track creation!";
-      }
-
       this._mouseMode = MouseMode.NEW;
-      this.draft = {...objDescription,
-                    localizationDescription: this._data._dataTypes[localizationTypeId]};
+      this.draft = objDescription;
       this._textOverlay.classList.add("select-draw");
       updateStatus("Ready for first track annotation.", "primary", -1);
       this._metaMode = metaMode;
-
     }
     else
     {
@@ -3058,7 +3032,7 @@ class AnnotationCanvas extends TatorElement
       let type = objDescription.dtype;
       if (type == "state") {
         // We are creating a track.
-        type = objDescription.localizationDescription.dtype;
+        type = objDescription.localizationType.dtype;
       }
       
       if (type=="box")
@@ -3600,7 +3574,7 @@ class AnnotationCanvas extends TatorElement
       let type=this.draft.dtype;
       if (type == "state") {
         // We are creating a track.
-        type = this.draft.localizationDescription.dtype;
+        type = this.draft.localizationType.dtype;
       }
 
       if (type == "box")
