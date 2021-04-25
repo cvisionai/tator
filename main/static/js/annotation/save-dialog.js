@@ -156,7 +156,8 @@ class SaveDialog extends TatorElement {
                      trackType: this._dataType.id,
                      frame: requestObj.frame,
                      mainTrackId: this._trackId,
-                     detectionId: localizationResponse[0].id[0]}
+                     detectionId: localizationResponse[0].id[0],
+                     selectTrack: false}
           }));
         }
       })

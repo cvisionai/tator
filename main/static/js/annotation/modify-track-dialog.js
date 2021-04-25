@@ -193,7 +193,8 @@ class ModifyTrackDialog extends TatorElement {
              trackType: this._data.mainTrack.meta,
              frame: this._data.frame,
              mainTrackId: this._data.mainTrack.id,
-             detectionId: this._data.localization.id}}));
+             detectionId: this._data.localization.id,
+             selectTrack: true}}));
     }
     else if (this._data.interface == "trim")
     {
