@@ -40,6 +40,12 @@ state_type_properties = {
                        'associated with another state. ',
         'default': False,
     }
+    'default_localization': {
+        'type': 'integer',
+        'description': 'If this is a track type, this is a unique integer identifying '
+                       'the default localization type that is created when a track is '
+                       'created via the web interface.',
+    }
 }
 
 state_type_spec = {

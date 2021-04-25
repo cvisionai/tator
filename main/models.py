@@ -814,6 +814,11 @@ class StateType(Model):
     """ If enabled, child localizations will be deleted when states of this
         type are deleted.
     """
+    default_localization = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True,
+                                      blank=True, related_name='+')
+    """ If this is a track type, this is the default localization that is created when
+        a track is created via the UI.
+    """
     def __str__(self):
         return f'{self.name} | {self.project}'
 
