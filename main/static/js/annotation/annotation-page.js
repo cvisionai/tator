@@ -1263,7 +1263,7 @@ class AnnotationPage extends TatorPage {
       })
       .then(response => response.json())
       .then(() => {
-        //this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
+        this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         Utilities.showSuccessIcon("Detection added to track.");
         canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
