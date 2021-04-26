@@ -149,9 +149,10 @@ class StateTypeDetailAPI(BaseDetailView):
         if interpolation is not None:
             obj.interpolation = interpolation
         if media_types is not None:
-            media_types = MediaType.objects.filter(
-                pk__in=params['media_types'])
-            obj.media.set(media_types)
+            media_ids = MediaType.objects.filter(
+                project=obj.project.pk, pk__in=media_types)
+            for media in media_ids:
+                obj.media.add(media)
 
         obj.save()
         return {'message': 'State type updated successfully!'}
