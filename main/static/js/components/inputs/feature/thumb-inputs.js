@@ -110,7 +110,7 @@ class ThumbInput extends TatorElement {
       this._default = val;
     }
   
-    changed(){
+  changed() {
       return this.getValue() !== this._default;
     }
   
@@ -176,8 +176,12 @@ class ThumbInput extends TatorElement {
     }
 
   _preview(img) {
-    if(typeof img !== "string") {
-      this._previewImg.src = URL.createObjectURL( img );
+    if (typeof img !== "string") {
+      try {
+        this._previewImg.src = URL.createObjectURL( img );
+       } catch (e) {
+        this._previewImg.src = "/static/images/tator-logo-symbol-only.png";
+      }    
     } else {
       this._previewImg.src = img;
     }

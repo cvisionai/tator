@@ -182,26 +182,30 @@ class ProjectMainEdit extends TypeForm {
 
   _save({ id = -1 } = {}) {
     console.log(`Project _save method for id: ${id}`);
-    const patch = this._fetchPatchPromise({ "id": id });
+    const formData = this._getFormData();
+    if (Object.entries(formData).length === 0) {
+      return console.error("No formData");
+    } else {
+      const patch = this._fetchPatchPromise({ id, formData });
 
-    if (patch) {
-      patch.then(response => {
-        return response.json().then(data => {
-          if (response.status == "200") {
-            this._modalSuccess(data.message);
-            this.resetHard();
-          } else {
-            this._modalError(data.message);
-          }
-        })
+      if (patch) {
+        patch.then(response => {
+          return response.json().then(data => {
+            if (response.status == "200") {
+              this._modalSuccess(data.message);
+              this.resetHard();
+            } else {
+              this._modalError(data.message);
+            }
+          })
+        }
+        )
+          .catch(error => {
+            console.log('Error:', error.message);
+            this._modalError("Internal error: " + error.message);
+          });
       }
-      )
-        .catch(error => {
-          console.log('Error:', error.message);
-          this._modalError("Internal error: " + error.message);
-        });
     }
-
   }
 
   _getHeading(){
