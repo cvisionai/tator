@@ -109,11 +109,13 @@ class EntitySelector extends TatorElement {
     const more = document.createElement("entity-more");
     controls.appendChild(more);
 
+    this._autoGoToEntityFrame = false;
+
     this._expand.addEventListener("click", () => {
       this._div.classList.toggle("is-open");
       if (this._div.classList.contains("is-open")) {
         this.dispatchEvent(new Event("open"));
-        this._emitSelection(true, true, false);
+        this._emitSelection(true, true, this._autoGoToEntityFrame);
       } else {
         this.dispatchEvent(new Event("close"));
       }
@@ -124,7 +126,7 @@ class EntitySelector extends TatorElement {
       if (index > 0) {
         this._current.textContent = String(index);
       }
-      this._emitSelection(true, true, false);
+      this._emitSelection(true, true, this._autoGoToEntityFrame);
     });
 
     next.addEventListener("click", () => {
@@ -132,7 +134,7 @@ class EntitySelector extends TatorElement {
       if (index <= this._data.length) {
         this._current.textContent = String(index);
       }
-      this._emitSelection(true, true, false);
+      this._emitSelection(true, true, this._autoGoToEntityFrame);
     });
 
     this._goToFrameButton.addEventListener("click", () => {
@@ -199,7 +201,7 @@ class EntitySelector extends TatorElement {
 
     this._slider.addEventListener("input", () => {
       this._current.textContent = String(Number(this._slider.value) + 1);
-      this._emitSelection(true, true, false);
+      this._emitSelection(true, true, this._autoGoToEntityFrame);
     });
   }
 
@@ -221,6 +223,15 @@ class EntitySelector extends TatorElement {
   }
   set permission(val) {
     this._permission = val;
+  }
+
+  /**
+   * @param {bool} val - True if frame jump should be emitted if next/prev is selected.
+   *                     False won't auto frame jump. User has to explicitly use the
+   *                     track slider or frame jump button
+   */
+  set autoGoToFrame(val) {
+    this._autoGoToEntityFrame = val;
   }
 
   get data() {

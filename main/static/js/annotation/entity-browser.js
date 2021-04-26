@@ -46,6 +46,7 @@ class EntityBrowser extends TatorElement {
     searchDiv.appendChild(this._search);
 
     const groupDiv = document.createElement("div");
+    groupDiv.setAttribute("class", "text-gray f2");
     spacer.appendChild(groupDiv);
 
     this._group = document.createElement("bool-input");
@@ -53,6 +54,12 @@ class EntityBrowser extends TatorElement {
     this._group.setAttribute("off-text", "Off");
     this._group.setAttribute("on-text", "On");
     groupDiv.appendChild(this._group);
+
+    this._jumpFrame = document.createElement("bool-input");
+    this._jumpFrame.setAttribute("name", "Frame Seek");
+    this._jumpFrame.setAttribute("off-text", "Manual");
+    this._jumpFrame.setAttribute("on-text", "Auto");
+    groupDiv.appendChild(this._jumpFrame);
 
     this._ul = document.createElement("ul");
     this._ul.setAttribute("class", "annotation__entities f2");
@@ -94,6 +101,7 @@ class EntityBrowser extends TatorElement {
 
   set annotationData(val) {
     this._data = val;
+    this._jumpFrame.setValue(false);
     this._data.addEventListener("freshData", evt => {
       if (evt.detail.typeObj.id === this._dataType.id) {
         if (!this._initialized) {
@@ -109,6 +117,12 @@ class EntityBrowser extends TatorElement {
     });
     this._group.addEventListener("change", evt => {
       this._drawControls();
+    });
+    this._jumpFrame.addEventListener("change", evt => {
+      for (const group in this._selectors) {
+        const selector = this._selectors[group];
+        selector.autoGoToFrame = this._jumpFrame.getValue();
+      }
     });
   }
 

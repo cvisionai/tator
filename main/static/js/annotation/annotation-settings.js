@@ -51,6 +51,27 @@ class AnnotationSettings extends TatorElement {
       document.execCommand("copy");
       document.body.removeChild(text);
     });
+
+    document.addEventListener("keydown", evt => {
+      if (document.body.classList.contains("shortcuts-disabled")) {
+        return;
+      }
+      else if (evt.key == 1) {
+        if (!this._rate.hasAttribute("disabled")) {
+          this._rate.setValue(1);
+        }
+      }
+      else if (evt.key == 2) {
+        if (!this._rate.hasAttribute("disabled")) {
+          this._rate.setValue(2);
+        }
+      }
+      else if (evt.key == 4) {
+        if (!this._rate.hasAttribute("disabled")) {
+          this._rate.setValue(4);
+        }
+      }
+    });
   }
 
 

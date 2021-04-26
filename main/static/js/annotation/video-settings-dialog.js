@@ -95,11 +95,11 @@ class VideoSettingsDialog extends ModalDialog {
     });
 
     this._divOptions = {};
-    this._createBuffer(2, "scrub", "Scrub Buffer", "Timeline scrubbing, downloaded playback, greater than 1x playback");
+    this._createBuffer(2, "scrub", "Scrub Buffer", "Timeline scrubbing, downloaded playback, greater than 4x playback");
     this._createBuffer(3, "seek", "Seek Quality", "Pause quality");
-    this._createBuffer(4, "play", "On-Demand 1x Playback", "1x playback for single vidoes and grid videos");
-    this._createBuffer(5, "focusPlayback", "Focused On-Demand 1x Playback", "1x playback for the focused video (if present)");
-    this._createBuffer(6, "dockPlayback", "Docked On-Demand 1x Playback", "1x playback for docked videos (if present)");
+    this._createBuffer(4, "play", "On-Demand 1x-4x Playback", "1x-4x playback for single vidoes and grid videos");
+    this._createBuffer(5, "focusPlayback", "Focused On-Demand 1x-4x Playback", "1x-4x playback for the focused video (if present)");
+    this._createBuffer(6, "dockPlayback", "Docked On-Demand 1x-4x Playback", "1x-4x playback for docked videos (if present)");
   }
 
   _createBuffer(gridRow, id, title, description) {
