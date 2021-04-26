@@ -185,12 +185,13 @@ class TatorSearch:
         new_name = new_attribute_type["name"]
 
         # There should be no existing attribute types on the target entity type with the same name
-        for attribute_type in entity_type.attribute_types:
-            if new_name == attribute_type["name"]:
-                raise ValueError(
-                    f"Attempted to add attribute '{new_name}' to {type(entity_type).__name__} "
-                    f"{entity_type.name} ID {entity_type.id}, but one with that name already exists"
-                )
+        if entity_type.attribute_types:
+            for attribute_type in entity_type.attribute_types:
+                if new_name == attribute_type["name"]:
+                    raise ValueError(
+                        f"Attempted to add attribute '{new_name}' to {type(entity_type).__name__} "
+                        f"{entity_type.name} ID {entity_type.id}, but one with that name already exists"
+                    )
 
         # If no uuid exists, then no other entity types have an attribute type with the same name
         uuid = entity_type.project.attribute_type_uuids.get(new_name)
