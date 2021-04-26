@@ -88,8 +88,7 @@ class VideoBufferDemux
     this._pendingSeeks = [];
     this._pendingSeekDeletes = [];
 
-    var mime_str='video/mp4; codecs="avc1.64001e"';
-
+    this._mime_str = 'video/mp4; codecs="avc1.64001e"';
 
     for (var idx = 0; idx <= this._numBuffers; idx++)
     {
@@ -115,7 +114,7 @@ class VideoBufferDemux
       this._seekVideo.src = URL.createObjectURL(this._seekSource);
       this._seekSource.onsourceopen=() => {
         this._seekSource.onsourceopen = null;
-        this._seekBuffer = this._seekSource.addSourceBuffer(mime_str);
+        this._seekBuffer = this._seekSource.addSourceBuffer(this._mime_str);
         if (this._pendingSeeks.length > 0)
         {
           console.info("Applying pending seek data.");
@@ -134,7 +133,7 @@ class VideoBufferDemux
         ms.onsourceopen=null;
 
         // Need to add a source buffer for the video.
-        that._sourceBuffers[idx]=ms.addSourceBuffer(mime_str);
+        that._sourceBuffers[idx]=ms.addSourceBuffer(that._mime_str);
 
         // Reached the onDemand buffer, rest of the function isn't associated with it
         if (idx == that._numBuffers) {
@@ -206,6 +205,22 @@ class VideoBufferDemux
     {
       init_buffers();
     }
+  }
+
+  recreateOnDemandBuffers(callback) {
+    var idx = this._numBuffers;
+    var ms = new MediaSource();
+    this._mediaSources[idx] = ms;
+    this._vidBuffers[idx] = document.createElement("VIDEO");
+    this._vidBuffers[idx].setAttribute("crossorigin", "anonymous");
+    this._vidBuffers[idx].src = URL.createObjectURL(this._mediaSources[idx]);
+
+    ms.onsourceopen = () => {
+      ms.onsourceopen = null;
+      this._sourceBuffers[idx] = ms.addSourceBuffer(this._mime_str);
+      console.log("recreateOnDemandBuffers - onsourceopen");
+      callback();
+    };
   }
 
   status()
@@ -723,7 +738,7 @@ class VideoBufferDemux
       {
         console.error("Error " + error.code + "; details: " + error.message);
         updateStatus("Video Decode Error", "danger", -1);
-        return;
+        throw `Video Decode Error: ${bufferType}`;
       }
       this.safeUpdate(this._sourceBuffers[bIdx],data).then(wrapper.bind(bIdx));
       this._inUse[bIdx] += data.byteLength;
@@ -1110,6 +1125,8 @@ class VideoCanvas extends AnnotationCanvas {
     };
 
     this._addVideoDiagnosticOverlay();
+
+    this._ftypInfo = {};
   }
 
   // #TODO Refactor this so that it uses internal variables?
@@ -1245,6 +1262,7 @@ class VideoCanvas extends AnnotationCanvas {
         var error = video_buffer.error();
         if (error)
         {
+          console.error("dlWorker thread - video decode error");
           updateStatus("Video decode error", "danger", "-1");
           return;
         }
@@ -1262,6 +1280,13 @@ class VideoCanvas extends AnnotationCanvas {
           {
             if (offsets[idx][2] == 'ftyp')
             {
+              // Save the file info in case we need to reinitialize again
+              var ftypInfo = {};
+              for(let key in e.data) {
+                ftypInfo[key] = e.data[key];
+              }
+              that._ftypInfo[e.data["buf_idx"]] = ftypInfo;
+
               // First part of the fragmented mp4 segment info. Need this and the subsequent
               // "moov" atom to define the file information
               console.log(`Video init of: ${e.data["buf_idx"]}`);
@@ -1370,6 +1395,30 @@ class VideoCanvas extends AnnotationCanvas {
           return;
         }
 
+        var restartOnDemand = function () {
+
+          console.log("******* restarting onDemand: Clearing old buffer");
+          that.stopPlayerThread();
+
+          var video = that._videoElement[that._play_idx];
+
+          var setupCallback = function() {
+            console.log("******* restarting onDemand: Setting up new buffer");
+            var offsets2 = that._ftypInfo[that._play_idx]["offsets"];
+            var data2 = that._ftypInfo[that._play_idx]["buffer"];
+            var begin2 = offsets2[0][0];
+            var end2 = offsets2[1][0]+offsets2[1][1];
+            video.appendOnDemandBuffer(data2.slice(begin2, end2), playCallback);
+          }
+
+          var playCallback = function () {
+            console.log("******* restarting onDemand: Playing");
+            that._playGenericOnDemand(that._direction)
+          };
+
+          video.recreateOnDemandBuffers(setupCallback);
+        }
+
         // Function used to apply the frame data to the onDemand buffer
         // Callback is called after the data has been applied
         var appendBuffer = function(callback)
@@ -1394,7 +1443,22 @@ class VideoCanvas extends AnnotationCanvas {
               // Rest of the video segment information (moof / mdat / mfra)
               var begin = offsets[idx][0];
               var end = offsets[idx][0] + offsets[idx][1];
-              video_buffer.appendOnDemandBuffer(data.slice(begin, end), callback);
+
+              try {
+                if (!that._makeVideoError) {
+                  video_buffer.appendOnDemandBuffer(data.slice(begin, end), callback);
+                }
+                else {
+                  // #DEBUG path - Used to induce a decoding error
+                  that._makeVideoError = false;
+                  video_buffer.appendOnDemandBuffer(data.slice(begin, end - 5), callback);
+                }
+              }
+              catch {
+                setTimeout(function() {
+                  restartOnDemand();
+                },100);
+              }
               idx++;
             }
           }
@@ -1409,6 +1473,9 @@ class VideoCanvas extends AnnotationCanvas {
             // Something catastrophic happened with the video.
             console.error("Error " + error.code + "; details: " + error.message);
             updateStatus("Video Decode Error", "danger", -1);
+            setTimeout(function() {
+              restartOnDemand();
+            },100);
             return;
           }
 
@@ -2383,6 +2450,13 @@ class VideoCanvas extends AnnotationCanvas {
   }
 
   /**
+   * Debug only
+   */
+  _createVideoError() {
+    this._makeVideoError = true;
+  }
+
+  /**
    * Start the video onDemand playback
    *
    * Launches the following threads:
@@ -2979,7 +3053,6 @@ class VideoCanvas extends AnnotationCanvas {
   stopPlayerThread()
   {
     this._onDemandInit = false;
-    this._direction = Direction.STOPPED;
 
     if (this._audioPlayer)
     {
