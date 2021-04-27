@@ -397,7 +397,7 @@ class AttributesForm extends TatorElement {
     return this._useCurrent;
   }
 
-  _getMinInput({ value = "" } = {}) {
+  _getMinInput({ value } = {}) {
     if(this.placeholderMin.children.length > 0){
       this.placeholderMin.innerHTML = "";
       this._minimum = null;
@@ -416,7 +416,7 @@ class AttributesForm extends TatorElement {
     return this._minimum;
   }
 
-  _getMaxInput({ value = "" } = {}) {
+  _getMaxInput({ value } = {}) {
     if(this.placeholderMax.children.length > 0){
       this.placeholderMax.innerHTML = "";
       this._maximum = null;
@@ -710,12 +710,12 @@ class AttributesForm extends TatorElement {
     formData.name = this._name.getValue();
 
     // 
-    if ((this._description.changed()  || this.isClone)) {
+    if ((this._description.changed()  || this.isClone)  && this._order.getValue() !== null) {
       formData.description = this._description.getValue();
     }
 
     //
-    if ((this._order.changed()  || this.isClone)) {
+    if ((this._order.changed() || this.isClone) && this._order.getValue() !== null) {
       formData.order = this._order.getValue();
     }
 
@@ -734,11 +734,11 @@ class AttributesForm extends TatorElement {
     const dtype = this._dtype.getValue();
 
     if(dtype === "enum"){
-      if ((this._enumDefault.changed || this.isClone)) {
+      if ((this._enumDefault.changed || this.isClone) && this._enumDefault.value !== null) {
         formData["default"] = this._enumDefault.value;
       }
     } else {
-      if ((this._default.changed() || this.isClone)) {
+      if ((this._default.changed() || this.isClone) && this._default.getValue() !== null) {
         formData["default"] = this._default.getValue();
       }
     }
@@ -752,10 +752,10 @@ class AttributesForm extends TatorElement {
 
     // 
     if (dtype === "int" || dtype === "float") {
-      if ((this._minimum.changed() || this.isClone)) {
+      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() != null) {
         formData.minimum = Number(this._minimum.getValue());
       }
-      if ((this._maximum.changed() || this.isClone)) {
+      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() != null) {
         formData.maximum = Number(this._maximum.getValue());
       }
     }
