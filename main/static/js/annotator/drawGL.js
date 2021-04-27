@@ -704,7 +704,7 @@ class DrawGL
       {
         this.dispDraw(frameInfo.drawBuffer);
       }
-      if (this.drawBuffer)
+      if (this.drawBuffer && this.drawBuffer.indices.length > 0)
       {
         this.dispDraw(this.drawBuffer);
       }
