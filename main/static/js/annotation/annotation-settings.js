@@ -18,12 +18,6 @@ class AnnotationSettings extends TatorElement {
     this._link = document.createElement("media-link-button");
     div.appendChild(this._link);
 
-    this._prev = document.createElement("media-prev-button");
-    div.appendChild(this._prev);
-
-    this._next = document.createElement("media-next-button");
-    div.appendChild(this._next);
-
     this._rate = document.createElement("rate-control");
     div.appendChild(this._rate);
 
@@ -76,7 +70,7 @@ class AnnotationSettings extends TatorElement {
 
 
   static get observedAttributes() {
-    return ["rate", "zoom", "media-id", "project-id"];
+    return ["rate", "zoom"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -91,87 +85,6 @@ class AnnotationSettings extends TatorElement {
       case "zoom":
         this._zoom.setAttribute("zoom", newValue);
         break;
-      case "media-id":
-        this._setupNav();
-        break;
-      case "project-id":
-        this._setupNav();
-        break;
-    }
-  }
-
-  _setupNav() {
-    const haveMedia = this.hasAttribute("media-id");
-    const haveProject = this.hasAttribute("project-id");
-    if (haveMedia && haveProject) {
-      const projectId = this.getAttribute("project-id");
-      const mediaId = this.getAttribute("media-id");
-      const nextPromise = fetch("/rest/MediaNext/" + mediaId + window.location.search, {
-        method: "GET",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        }
-      });
-      const prevPromise = fetch("/rest/MediaPrev/" + mediaId + window.location.search, {
-        method: "GET",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        }
-      });
-      Promise.all([nextPromise, prevPromise])
-      .then(responses => Promise.all(responses.map(resp => resp.json())))
-      .then(([nextData, prevData]) => {
-        const baseUrl = "/" + projectId + "/annotation/";
-        const searchParams = this._queryParams();
-        const media_id = parseInt(mediaId);
-
-        // Turn disable selected_type.
-        searchParams.delete("selected_type");
-
-        // Only enable next/prev if there is a next/prev
-        if (prevData.prev == -1) {
-          this._prev.disabled = true;
-        }
-        else {
-          this._prev.addEventListener("click", () => {
-            let url = baseUrl + prevData.prev;
-            const searchParams = this._queryParams();
-            searchParams.delete("selected_type");
-            searchParams.delete("selected_entity");
-            searchParams.delete("frame");
-            const typeParams = this._typeParams();
-            if (typeParams) {
-              searchParams.append("selected_type",typeParams)
-            }
-            url += "?" + searchParams.toString();
-            window.location.href = url;
-          });
-        }
-
-        if (nextData.next == -1) {
-          this._next.disabled = true;
-        }
-        else {
-          this._next.addEventListener("click", () => {
-            let url = baseUrl + nextData.next;
-            const searchParams = this._queryParams();
-            searchParams.delete("selected_type");
-            searchParams.delete("selected_entity");
-            searchParams.delete("frame");
-            const typeParams = this._typeParams();
-            if (typeParams) {
-              searchParams.append("selected_type", typeParams)
-            }
-            url += "?" + searchParams.toString();
-            window.location.href = url;
-          });
-        }
-      })
-      .catch(err => console.log("Failed to fetch adjacent media! " + err));
     }
   }
 

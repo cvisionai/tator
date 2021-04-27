@@ -19,6 +19,12 @@ class AnnotationPage extends TatorPage {
     div.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(div);
 
+    this._prev = document.createElement("media-prev-button");
+    div.appendChild(this._prev);
+
+    this._next = document.createElement("media-next-button");
+    div.appendChild(this._next);
+
     this._breadcrumbs = document.createElement("annotation-breadcrumbs");
     div.appendChild(this._breadcrumbs);
 
@@ -100,12 +106,10 @@ class AnnotationPage extends TatorPage {
         this._breadcrumbs.setAttribute("project-name", newValue);
         break;
       case "project-id":
-        this._settings.setAttribute("project-id", newValue);
         this._undo.setAttribute("project-id", newValue);
         this._updateLastVisitedBookmark();
         break;
       case "media-id":
-        this._settings.setAttribute("media-id", newValue);
         const searchParams = new URLSearchParams(window.location.search);
         fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
@@ -249,6 +253,72 @@ class AnnotationPage extends TatorPage {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
           });
+          const nextPromise = fetch(`/rest/MediaNext/${newValue}${window.location.search}`, {
+            method: "GET",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            }
+          });
+          const prevPromise = fetch(`/rest/MediaPrev/${newValue}${window.location.search}`, {
+            method: "GET",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            }
+          });
+          Promise.all([nextPromise, prevPromise])
+          .then(responses => Promise.all(responses.map(resp => resp.json())))
+          .then(([nextData, prevData]) => {
+            const baseUrl = `/${data.project}/annotation/`;
+            const searchParams = this._settings._queryParams();
+            const media_id = parseInt(newValue);
+
+            // Turn disable selected_type.
+            searchParams.delete("selected_type");
+
+            // Only enable next/prev if there is a next/prev
+            if (prevData.prev == -1) {
+              this._prev.disabled = true;
+            }
+            else {
+              this._prev.addEventListener("click", () => {
+                let url = baseUrl + prevData.prev;
+                const searchParams = this._settings._queryParams();
+                searchParams.delete("selected_type");
+                searchParams.delete("selected_entity");
+                searchParams.delete("frame");
+                const typeParams = this._settings._typeParams();
+                if (typeParams) {
+                  searchParams.append("selected_type",typeParams)
+                }
+                url += "?" + searchParams.toString();
+                window.location.href = url;
+              });
+            }
+
+            if (nextData.next == -1) {
+              this._next.disabled = true;
+            }
+            else {
+              this._next.addEventListener("click", () => {
+                let url = baseUrl + nextData.next;
+                const searchParams = this._settings._queryParams();
+                searchParams.delete("selected_type");
+                searchParams.delete("selected_entity");
+                searchParams.delete("frame");
+                const typeParams = this._settings._typeParams();
+                if (typeParams) {
+                  searchParams.append("selected_type", typeParams)
+                }
+                url += "?" + searchParams.toString();
+                window.location.href = url;
+              });
+            }
+          })
+          .catch(err => console.log("Failed to fetch adjacent media! " + err));
           fetch("/rest/Project/" + data.project, {
             method: "GET",
             credentials: "same-origin",
