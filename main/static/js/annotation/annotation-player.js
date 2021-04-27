@@ -73,7 +73,6 @@ class AnnotationPlayer extends TatorElement {
     this._displayTimelineLabels = false;
 
     var outerDiv = document.createElement("div");
-    outerDiv.setAttribute("class", "py-2");
     outerDiv.style.width="100%";
     var seekDiv = document.createElement("div");
     this._slider = document.createElement("seek-bar");
