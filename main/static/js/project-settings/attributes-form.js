@@ -741,7 +741,7 @@ class AttributesForm extends TatorElement {
       if ((this._default.changed() || (this.isClone && this._default.getValue() !== "")) && this._default.getValue() !== null) {
         let defaultVal = this._default.getValue();
         //backend does this but not when value is ""
-        if (dtype == "int" || dtype == float) defaultVal = Number(defaultVal);
+        if (dtype == "int" || dtype == "float") defaultVal = Number(defaultVal);
         formData["default"] = defaultVal;
       }
     }
