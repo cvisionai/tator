@@ -308,8 +308,21 @@ video-canvas {
   padding-bottom: 24px;
 }
 
-.video__rewind,
+.video__rewind { 
+  &:hover,
+  &:focus {
+    color: $color-purple;
+  }
+
+  &:disabled,
+  [disabled] {
+    color: $color-gray--dark;
+    cursor: not-allowed;
+  }
+}
+
 .video__fast-forward {
+  margin-right: 16px;
   &:hover,
   &:focus {
     color: $color-purple;
