@@ -11,7 +11,7 @@ class AnnotationPage extends TatorPage {
 
     const header = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
-    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-6 f3");
+    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-2 f3");
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
@@ -28,12 +28,15 @@ class AnnotationPage extends TatorPage {
     this._breadcrumbs = document.createElement("annotation-breadcrumbs");
     div.appendChild(this._breadcrumbs);
 
+    const settingsDiv = document.createElement("div");
+    settingsDiv.setAttribute("class", "d-flex");
+    header.appendChild(settingsDiv);
+
     this._versionButton = document.createElement("version-button");
-    this._versionButton.setAttribute("class", "px-2");
-    div.appendChild(this._versionButton);
+    settingsDiv.appendChild(this._versionButton);
 
     this._settings = document.createElement("annotation-settings");
-    header.appendChild(this._settings);
+    settingsDiv.appendChild(this._settings);
 
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex");
