@@ -1197,9 +1197,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       forceSeekBuffer = true;
     }
-    const promise = this.gotoFrame(this._dispFrame, forceSeekBuffer);
-    this._draw.beginDraw();
-    return promise;
+    return this.gotoFrame(this._dispFrame, forceSeekBuffer);
   }
 
   currentFrame()
