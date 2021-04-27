@@ -128,7 +128,7 @@ class SaveDialog extends TatorElement {
       detail: values
     }));
 
-    if (this._dataType.isTrack) {
+    if (this._dataType.isTrack && typeof requestObj.localization_ids === "undefined") {
       const localizationBody = {
         type: Number(this._dataType.localizationType.id.split("_")[1]),
         name: this._dataType.localizationType.name,
