@@ -520,17 +520,19 @@ class AnnotationPage extends TatorPage {
       canvas.refresh();
     })
 
-    this._player._rateControl.addEventListener("rateChange", evt => {
-      if ("setRate" in canvas) {
-        canvas.setRate(evt.detail.rate);
-      }
-    });
+    if (this._player._rateControl) {
+      this._player._rateControl.addEventListener("rateChange", evt => {
+        if ("setRate" in canvas) {
+          canvas.setRate(evt.detail.rate);
+        }
+      });
 
-    this._player._qualityControl.addEventListener("qualityChange", evt => {
-      if ("setQuality" in canvas) {
-        canvas.setQuality(evt.detail.quality);
-      }
-    });
+      this._player._qualityControl.addEventListener("qualityChange", evt => {
+        if ("setQuality" in canvas) {
+          canvas.setQuality(evt.detail.quality);
+        }
+      });
+    }
 
     canvas.addEventListener("zoomChange", evt => {
       this._player.setAttribute("zoom", evt.detail.zoom);
