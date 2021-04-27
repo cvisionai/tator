@@ -70,12 +70,16 @@ class SaveDialog extends TatorElement {
         this._metaCache = Object.assign({},this._values)
       }
       this._attributes.reset();
+      this._trackId = null;
     });
 
     cancel.addEventListener("click", () => {
       this.dispatchEvent(new Event("cancel"));
       this._attributes.reset();
     });
+
+    // Used for continuous track append.
+    this._trackId = null;
   }
 
   init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
@@ -123,26 +127,68 @@ class SaveDialog extends TatorElement {
     this.dispatchEvent(new CustomEvent("save", {
       detail: values
     }));
-    var body = {
-      type: Number(this._dataType.id.split("_")[1]),
-      name: this._dataType.name,
-      version: this._version.id,
-      ...requestObj,
-      ...values,
-    };
 
-    if (this._dataType.dtype.includes("state")) {
-      if (this._stateMediaIds) {
-        body.media_ids = this._stateMediaIds;
+    if (this._dataType.isTrack) {
+      const localizationBody = {
+        type: Number(this._dataType.localizationType.id.split("_")[1]),
+        name: this._dataType.localizationType.name,
+        version: this._version.id,
+        media_id: this._mediaId,
+        ...requestObj,
+        ...values,
+      };
+      this._undo.post("Localizations", localizationBody, this._dataType.localizationType)
+      .then(localizationResponse => {
+        if (this._trackId === null) {
+          // Track needs to be created.
+          const trackBody = {
+            type: Number(this._dataType.id.split("_")[1]),
+            name: this._dataType.name,
+            version: this._version.id,
+            media_ids: [this._mediaId],
+            localization_ids: localizationResponse[0].id,
+            ...values,
+          };
+          return this._undo.post("States", trackBody, this._dataType);
+        } else {
+          this.dispatchEvent(new CustomEvent("addDetectionToTrack", {
+            detail: {localizationType: this._dataType.localizationType.id,
+                     trackType: this._dataType.id,
+                     frame: requestObj.frame,
+                     mainTrackId: this._trackId,
+                     detectionId: localizationResponse[0].id[0],
+                     selectTrack: false}
+          }));
+        }
+      })
+      .then(trackResponse => {
+        if (trackResponse) {
+          this._trackId = trackResponse[0].id[0];
+        }
+      })
+
+    } else {
+      var body = {
+        type: Number(this._dataType.id.split("_")[1]),
+        name: this._dataType.name,
+        version: this._version.id,
+        ...requestObj,
+        ...values,
+      };
+
+      if (this._dataType.dtype.includes("state")) {
+        if (this._stateMediaIds) {
+          body.media_ids = this._stateMediaIds;
+        }
+        else {
+          body.media_ids = [this._mediaId];
+        }
+        this._undo.post("States", body, this._dataType);
       }
       else {
-        body.media_ids = [this._mediaId];
+        body.media_id = this._mediaId
+        this._undo.post("Localizations", body, this._dataType);
       }
-      this._undo.post("States", body, this._dataType);
-    }
-    else {
-      body.media_id = this._mediaId
-      this._undo.post("Localizations", body, this._dataType);
     }
   }
 

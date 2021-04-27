@@ -55,24 +55,28 @@
   transition-duration: .25s;
   transition-property: transform;
 
-  box-button.is-selected + line-button + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+  box-button.is-selected + line-button + point-button + track-button + zoom-in-button + zoom-out-button + pan-button + & {
     transform: translateY(62px);
   }
 
-  line-button.is-selected + point-button + zoom-in-button + zoom-out-button + pan-button + & {
+  line-button.is-selected + point-button + track-button + zoom-in-button + zoom-out-button + pan-button + & {
     transform: translateY(124px);
   }
 
-  point-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
+  point-button.is-selected + track-button + zoom-in-button + zoom-out-button + pan-button + & {
     transform: translateY(186px);
   }
 
-  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
+  track-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
     transform: translateY(248px);
   }
 
+  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
+    transform: translateY(310px);
+  }
+
   pan-button.is-selected + & {
-    transform: translateY(372px);
+    transform: translateY(434px);
   }
 }
 
