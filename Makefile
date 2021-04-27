@@ -338,6 +338,7 @@ FILES = \
     annotation/box-button.js \
     annotation/line-button.js \
     annotation/point-button.js \
+    annotation/track-button.js \
     annotation/zoom-in-button.js \
     annotation/zoom-out-button.js \
     annotation/pan-button.js \

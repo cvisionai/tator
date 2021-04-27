@@ -674,6 +674,33 @@ class AnnotationPage extends TatorPage {
           dataType.isLocalization = isLocalization;
           dataType.isTrack = isTrack;
           dataType.isTLState = isTLState;
+
+          if (dataType.isTrack) {
+            // Determine the localization type that should be drawn.
+            let localizationTypeId = null;
+            if (dataType.default_localization) {
+              localizationTypeId = dataType.default_localization;
+            } else {
+              // If default localization type is not set, go by priority box > line > dot.
+              const byType = dataTypes.reduce((sec, obj) => {
+                if (obj.visible && obj.drawable) {
+                  (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
+                }
+                return sec;
+              }, {});
+              if (typeof byType.box !== "undefined") {
+                localizationTypeId = byType.box[0].id;
+              } else if (typeof byType.line !== "undefined") {
+                localizationTypeId = byType.line[0].id;
+              } else if (typeof byType.dot !== "undefined") {
+                localizationTypeId = byType.dot[0].id;
+              }
+            }
+            if (localizationTypeId === null) {
+              throw "Could not find a localization type to use for track creation!";
+            }
+            dataType.localizationType = dataTypes.filter(type => type.id == localizationTypeId)[0];
+          }
         }
         this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
         this._data.addEventListener("freshData", evt => {
@@ -708,6 +735,8 @@ class AnnotationPage extends TatorPage {
           }
           return sec;
         }, {});
+        const trackTypes = stateTypes.filter(type => type.association == 'Localization'
+                                                     && type.visible);
 
         if (block_signals == true)
         {
@@ -724,6 +753,7 @@ class AnnotationPage extends TatorPage {
         this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
 
         this._sidebar.localizationTypes = byType;
+        this._sidebar.trackTypes = trackTypes;
         this._sidebar.addEventListener("default", evt => {
           this.clearMetaCaches();
           canvas.defaultMode();
@@ -1215,7 +1245,7 @@ class AnnotationPage extends TatorPage {
       });
     });
 
-    menu.addEventListener("addDetectionToTrack", evt => {
+    this._addDetectionToTrack = evt => {
 
       const promise = fetchRetry("/rest/State/" + evt.detail.mainTrackId, {
         method: "PATCH",
@@ -1233,11 +1263,19 @@ class AnnotationPage extends TatorPage {
       })
       .then(response => response.json())
       .then(() => {
+        this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         Utilities.showSuccessIcon("Detection added to track.");
-        canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
+        if (evt.detail.selectTrack) {
+          canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
+        }
       });
-    });
+    };
+
+    menu.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
+    for (const save of Object.values(this._saves)) {
+      save.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
+    }
 
     menu.addEventListener("mergeTracks", evt => {
 

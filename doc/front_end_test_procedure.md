@@ -46,6 +46,7 @@ Follow these steps to test the annotation tools.
     - Create new states with the right click menu at various points in the video.
     - Alter the start frame, end frame, and corresponding booleans. Verify the timeline has the right regions highlighted.
     - Play the video and toggle the boolean switches in the activity frame panel. Verify the timeline bar is colored appropriately and the states are saved.
+    - Create new tracks by clicking the Track button and drawing some boxes in different frames.
     - Create new tracks by drawing a box, right click on it and creating a track.
     - Extend the track and trim the track endpoints with the right click menu
     - Merge two tracks with the right click menu

@@ -15,8 +15,8 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'interpolation', 'association', 'visible', 'grouping_default', 'delete_child_localizations']
-
+          'interpolation', 'association', 'visible', 'grouping_default',
+          'delete_child_localizations', 'default_localization']
 
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
