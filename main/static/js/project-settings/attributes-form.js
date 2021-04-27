@@ -734,12 +734,15 @@ class AttributesForm extends TatorElement {
     const dtype = this._dtype.getValue();
 
     if(dtype === "enum"){
-      if ((this._enumDefault.changed || this.isClone) && this._enumDefault.value !== null) {
+      if ((this._enumDefault.changed || (this.isClone && this._enumDefault.value !== "")) && this._enumDefault.value !== null) {
         formData["default"] = this._enumDefault.value;
       }
     } else {
-      if ((this._default.changed() || this.isClone) && this._default.getValue() !== null) {
-        formData["default"] = this._default.getValue();
+      if ((this._default.changed() || (this.isClone && this._default.getValue() !== "")) && this._default.getValue() !== null) {
+        let defaultVal = this._default.getValue();
+        //backend does this but not when value is ""
+        if (dtype == "int" || dtype == float) defaultVal = Number(defaultVal);
+        formData["default"] = defaultVal;
       }
     }
 
@@ -752,10 +755,11 @@ class AttributesForm extends TatorElement {
 
     // 
     if (dtype === "int" || dtype === "float") {
-      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() != null) {
+    // getValue for text-input int comes back as null when default is undefined bc it is NaN
+      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
         formData.minimum = Number(this._minimum.getValue());
       }
-      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() != null) {
+      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() !== null) {
         formData.maximum = Number(this._maximum.getValue());
       }
     }
