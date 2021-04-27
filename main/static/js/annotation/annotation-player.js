@@ -42,9 +42,6 @@ class AnnotationPlayer extends TatorElement {
     this._qualityControl = document.createElement("quality-control");
     settingsDiv.appendChild(this._qualityControl);
 
-    this._zoom = document.createElement("zoom-control");
-    settingsDiv.appendChild(this._zoom);
-
     const timelineDiv = document.createElement("div");
     timelineDiv.setAttribute("class", "scrub__bar d-flex flex-items-center flex-grow px-4");
     playerDiv.appendChild(timelineDiv);
@@ -379,7 +376,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["rate", "zoom"];
+    return ["rate"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -390,9 +387,6 @@ class AnnotationPlayer extends TatorElement {
         } else {
           this._rateControl.textContent = Number(newValue).toFixed(2) + "x";
         }
-        break;
-      case "zoom":
-        this._zoom.setAttribute("zoom", newValue);
         break;
     }
   }
