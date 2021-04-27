@@ -18,15 +18,6 @@ class AnnotationSettings extends TatorElement {
     this._link = document.createElement("media-link-button");
     div.appendChild(this._link);
 
-    this._rate = document.createElement("rate-control");
-    div.appendChild(this._rate);
-
-    this._quality = document.createElement("quality-control");
-    div.appendChild(this._quality);
-
-    this._zoom = document.createElement("zoom-control");
-    div.appendChild(this._zoom);
-
     this._fill_boxes = document.createElement("fill-boxes-button")
     div.appendChild(this._fill_boxes)
 
@@ -46,46 +37,6 @@ class AnnotationSettings extends TatorElement {
       document.body.removeChild(text);
     });
 
-    document.addEventListener("keydown", evt => {
-      if (document.body.classList.contains("shortcuts-disabled")) {
-        return;
-      }
-      else if (evt.key == 1) {
-        if (!this._rate.hasAttribute("disabled")) {
-          this._rate.setValue(1);
-        }
-      }
-      else if (evt.key == 2) {
-        if (!this._rate.hasAttribute("disabled")) {
-          this._rate.setValue(2);
-        }
-      }
-      else if (evt.key == 4) {
-        if (!this._rate.hasAttribute("disabled")) {
-          this._rate.setValue(4);
-        }
-      }
-    });
-  }
-
-
-  static get observedAttributes() {
-    return ["rate", "zoom"];
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case "rate":
-        if (newValue >= 1) {
-          this._rate.textContent = Math.round(newValue) + "x";
-        } else {
-          this._rate.textContent = Number(newValue).toFixed(2) + "x";
-        }
-        break;
-      case "zoom":
-        this._zoom.setAttribute("zoom", newValue);
-        break;
-    }
   }
 
   _typeParams() {
@@ -132,47 +83,6 @@ class AnnotationSettings extends TatorElement {
       params.set("toggle_text", 0);
     }
     return params;
-  }
-
-  set mediaInfo(val)
-  {
-    if (val.media_files && 'streaming' in val.media_files)
-    {
-      let quality_list = [];
-      for (let media_file of val.media_files["streaming"])
-      {
-        quality_list.push(media_file.resolution[0]);
-      }
-      this._quality.resolutions = quality_list;
-      this._quality.show();
-    }
-    else
-    {
-      this._quality.hide();
-    }
-  }
-
-  set quality(val)
-  {
-    this._quality.quality = val;
-  }
-
-  enableQualityChange()
-  {
-    this._quality.removeAttribute("disabled");
-  }
-  disableQualityChange()
-  {
-    this._quality.setAttribute("disabled", "");
-  }
-
-  enableRateChange()
-  {
-    this._rate.removeAttribute("disabled");
-  }
-  disableRateChange()
-  {
-    this._rate.setAttribute("disabled", "");
   }
 }
 

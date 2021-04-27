@@ -303,6 +303,11 @@ video-canvas {
   min-height: 76px;
 }
 
+.scrub__bar {
+  background-color: $color-charcoal--medium;
+  padding-bottom: 24px;
+}
+
 .video__rewind,
 .video__fast-forward {
   &:hover,

@@ -138,7 +138,6 @@ class AnnotationPage extends TatorPage {
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
-          this._settings.mediaInfo = data;
 
           fetch("/rest/MediaType/" + data.meta, {
             method: "GET",
@@ -236,6 +235,7 @@ class AnnotationPage extends TatorPage {
               .then(primeMediaData => {
                 this._videoSettingsDialog.mode("multiview", [primeMediaData]);
                 this._settings.mediaInfo = primeMediaData;
+                this._player.mediaInfo = primeMediaData;
                 var playbackQuality = data.media_files.quality;
                 if (playbackQuality == undefined)
                 {
@@ -245,7 +245,7 @@ class AnnotationPage extends TatorPage {
                 {
                   playbackQuality = Number(searchParams.get("quality"));
                 }
-                this._settings.quality = playbackQuality;
+                this._player.quality = playbackQuality;
                 this._player.setQuality(playbackQuality);
               });
 
@@ -364,7 +364,6 @@ class AnnotationPage extends TatorPage {
             });
           });
         })
-        .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
     }
   }
@@ -486,12 +485,12 @@ class AnnotationPage extends TatorPage {
     });
 
     canvas.addEventListener("playing", () => {
-      this._settings.disableRateChange();
-      this._settings.disableQualityChange();
+      this._player.disableRateChange();
+      this._player.disableQualityChange();
     });
     canvas.addEventListener("paused", () => {
-      this._settings.enableRateChange();
-      this._settings.enableQualityChange();
+      this._player.enableRateChange();
+      this._player.enableQualityChange();
     });
 
     canvas.addEventListener("canvasReady", () => {
@@ -518,29 +517,29 @@ class AnnotationPage extends TatorPage {
       canvas.refresh();
     })
 
-    this._settings.addEventListener("rateChange", evt => {
+    this._player.addEventListener("rateChange", evt => {
       if ("setRate" in canvas) {
         canvas.setRate(evt.detail.rate);
       }
     });
 
-    this._settings.addEventListener("qualityChange", evt => {
+    this._player.addEventListener("qualityChange", evt => {
       if ("setQuality" in canvas) {
         canvas.setQuality(evt.detail.quality);
       }
     });
 
     canvas.addEventListener("zoomChange", evt => {
-      this._settings.setAttribute("zoom", evt.detail.zoom);
+      this._player.setAttribute("zoom", evt.detail.zoom);
     });
 
-    this._settings.addEventListener("zoomPlus", () => {
+    this._player.addEventListener("zoomPlus", () => {
       if ("zoomPlus" in canvas) {
         canvas.zoomPlus();
       }
     });
 
-    this._settings.addEventListener("zoomMinus", () => {
+    this._player.addEventListener("zoomMinus", () => {
       if ("zoomMinus" in canvas) {
         canvas.zoomMinus();
       }
@@ -607,7 +606,7 @@ class AnnotationPage extends TatorPage {
           canvas.setQuality(source.quality, source.name);
 
           if (source.name == "play") {
-            this._settings.quality = source.quality;
+            this._player.quality = source.quality;
           }
         }
       }
@@ -617,7 +616,7 @@ class AnnotationPage extends TatorPage {
       canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
     });
 
-    this._settings.addEventListener("openVideoSettings", () => {
+    this._player.addEventListener("openVideoSettings", () => {
       var videoSettings = canvas.getVideoSettings();
       this._videoSettingsDialog.applySettings(videoSettings);
       this._videoSettingsDialog.setAttribute("is-open", "");
