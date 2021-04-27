@@ -520,13 +520,13 @@ class AnnotationPage extends TatorPage {
       canvas.refresh();
     })
 
-    this._player.addEventListener("rateChange", evt => {
+    this._player._rateControl.addEventListener("rateChange", evt => {
       if ("setRate" in canvas) {
         canvas.setRate(evt.detail.rate);
       }
     });
 
-    this._player.addEventListener("qualityChange", evt => {
+    this._player._qualityControl.addEventListener("qualityChange", evt => {
       if ("setQuality" in canvas) {
         canvas.setQuality(evt.detail.quality);
       }
