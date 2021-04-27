@@ -7,12 +7,6 @@ class QualityControl extends TatorElement {
     summary.setAttribute("class", "annotation__setting d-flex flex-items-center px-1 rounded-1");
     this._shadow.appendChild(summary);
 
-    const rateSpan = document.createElement("div");
-    rateSpan.style.cursor = "default";
-    rateSpan.setAttribute("class", "text-gray px-1");
-    rateSpan.textContent = "Quality:";
-    summary.appendChild(rateSpan);
-
     this._div = document.createElement("div");
     this._div.setAttribute("class", "px-1");
     summary.appendChild(this._div);
