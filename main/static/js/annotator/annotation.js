@@ -3974,6 +3974,7 @@ class AnnotationCanvas extends TatorElement
       this.refresh();
     }
     this._mouseMode = MouseMode.QUERY;
+    this._metaMode = false;
   }
 
   onPlay()
