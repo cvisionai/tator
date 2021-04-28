@@ -11,7 +11,7 @@ class AnnotationPage extends TatorPage {
 
     const header = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
-    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-6 f3");
+    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-2 f3");
     const user = this._header._shadow.querySelector("header-user");
     user.parentNode.insertBefore(header, user);
 
@@ -19,15 +19,24 @@ class AnnotationPage extends TatorPage {
     div.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(div);
 
+    this._prev = document.createElement("media-prev-button");
+    div.appendChild(this._prev);
+
+    this._next = document.createElement("media-next-button");
+    div.appendChild(this._next);
+
     this._breadcrumbs = document.createElement("annotation-breadcrumbs");
     div.appendChild(this._breadcrumbs);
 
+    const settingsDiv = document.createElement("div");
+    settingsDiv.setAttribute("class", "d-flex");
+    header.appendChild(settingsDiv);
+
     this._versionButton = document.createElement("version-button");
-    this._versionButton.setAttribute("class", "px-2");
-    div.appendChild(this._versionButton);
+    settingsDiv.appendChild(this._versionButton);
 
     this._settings = document.createElement("annotation-settings");
-    header.appendChild(this._settings);
+    settingsDiv.appendChild(this._settings);
 
     this._main = document.createElement("main");
     this._main.setAttribute("class", "d-flex");
@@ -100,12 +109,10 @@ class AnnotationPage extends TatorPage {
         this._breadcrumbs.setAttribute("project-name", newValue);
         break;
       case "project-id":
-        this._settings.setAttribute("project-id", newValue);
         this._undo.setAttribute("project-id", newValue);
         this._updateLastVisitedBookmark();
         break;
       case "media-id":
-        this._settings.setAttribute("media-id", newValue);
         const searchParams = new URLSearchParams(window.location.search);
         fetch(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
@@ -134,7 +141,6 @@ class AnnotationPage extends TatorPage {
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
-          this._settings.mediaInfo = data;
 
           fetch("/rest/MediaType/" + data.meta, {
             method: "GET",
@@ -232,6 +238,7 @@ class AnnotationPage extends TatorPage {
               .then(primeMediaData => {
                 this._videoSettingsDialog.mode("multiview", [primeMediaData]);
                 this._settings.mediaInfo = primeMediaData;
+                this._player.mediaInfo = primeMediaData;
                 var playbackQuality = data.media_files.quality;
                 if (playbackQuality == undefined)
                 {
@@ -241,7 +248,7 @@ class AnnotationPage extends TatorPage {
                 {
                   playbackQuality = Number(searchParams.get("quality"));
                 }
-                this._settings.quality = playbackQuality;
+                this._player.quality = playbackQuality;
                 this._player.setQuality(playbackQuality);
               });
 
@@ -249,6 +256,72 @@ class AnnotationPage extends TatorPage {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
           });
+          const nextPromise = fetch(`/rest/MediaNext/${newValue}${window.location.search}`, {
+            method: "GET",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            }
+          });
+          const prevPromise = fetch(`/rest/MediaPrev/${newValue}${window.location.search}`, {
+            method: "GET",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json",
+            }
+          });
+          Promise.all([nextPromise, prevPromise])
+          .then(responses => Promise.all(responses.map(resp => resp.json())))
+          .then(([nextData, prevData]) => {
+            const baseUrl = `/${data.project}/annotation/`;
+            const searchParams = this._settings._queryParams();
+            const media_id = parseInt(newValue);
+
+            // Turn disable selected_type.
+            searchParams.delete("selected_type");
+
+            // Only enable next/prev if there is a next/prev
+            if (prevData.prev == -1) {
+              this._prev.disabled = true;
+            }
+            else {
+              this._prev.addEventListener("click", () => {
+                let url = baseUrl + prevData.prev;
+                const searchParams = this._settings._queryParams();
+                searchParams.delete("selected_type");
+                searchParams.delete("selected_entity");
+                searchParams.delete("frame");
+                const typeParams = this._settings._typeParams();
+                if (typeParams) {
+                  searchParams.append("selected_type",typeParams)
+                }
+                url += "?" + searchParams.toString();
+                window.location.href = url;
+              });
+            }
+
+            if (nextData.next == -1) {
+              this._next.disabled = true;
+            }
+            else {
+              this._next.addEventListener("click", () => {
+                let url = baseUrl + nextData.next;
+                const searchParams = this._settings._queryParams();
+                searchParams.delete("selected_type");
+                searchParams.delete("selected_entity");
+                searchParams.delete("frame");
+                const typeParams = this._settings._typeParams();
+                if (typeParams) {
+                  searchParams.append("selected_type", typeParams)
+                }
+                url += "?" + searchParams.toString();
+                window.location.href = url;
+              });
+            }
+          })
+          .catch(err => console.log("Failed to fetch adjacent media! " + err));
           fetch("/rest/Project/" + data.project, {
             method: "GET",
             credentials: "same-origin",
@@ -294,7 +367,6 @@ class AnnotationPage extends TatorPage {
             });
           });
         })
-        .catch(err => console.error("Failed to retrieve media data: " + err));
         break;
     }
   }
@@ -416,12 +488,12 @@ class AnnotationPage extends TatorPage {
     });
 
     canvas.addEventListener("playing", () => {
-      this._settings.disableRateChange();
-      this._settings.disableQualityChange();
+      this._player.disableRateChange();
+      this._player.disableQualityChange();
     });
     canvas.addEventListener("paused", () => {
-      this._settings.enableRateChange();
-      this._settings.enableQualityChange();
+      this._player.enableRateChange();
+      this._player.enableQualityChange();
     });
 
     canvas.addEventListener("canvasReady", () => {
@@ -448,29 +520,31 @@ class AnnotationPage extends TatorPage {
       canvas.refresh();
     })
 
-    this._settings.addEventListener("rateChange", evt => {
-      if ("setRate" in canvas) {
-        canvas.setRate(evt.detail.rate);
-      }
-    });
+    if (this._player._rateControl) {
+      this._player._rateControl.addEventListener("rateChange", evt => {
+        if ("setRate" in canvas) {
+          canvas.setRate(evt.detail.rate);
+        }
+      });
 
-    this._settings.addEventListener("qualityChange", evt => {
-      if ("setQuality" in canvas) {
-        canvas.setQuality(evt.detail.quality);
-      }
-    });
+      this._player._qualityControl.addEventListener("qualityChange", evt => {
+        if ("setQuality" in canvas) {
+          canvas.setQuality(evt.detail.quality);
+        }
+      });
+    }
 
     canvas.addEventListener("zoomChange", evt => {
-      this._settings.setAttribute("zoom", evt.detail.zoom);
+      this._player.setAttribute("zoom", evt.detail.zoom);
     });
 
-    this._settings.addEventListener("zoomPlus", () => {
+    this._player.addEventListener("zoomPlus", () => {
       if ("zoomPlus" in canvas) {
         canvas.zoomPlus();
       }
     });
 
-    this._settings.addEventListener("zoomMinus", () => {
+    this._player.addEventListener("zoomMinus", () => {
       if ("zoomMinus" in canvas) {
         canvas.zoomMinus();
       }
@@ -537,7 +611,7 @@ class AnnotationPage extends TatorPage {
           canvas.setQuality(source.quality, source.name);
 
           if (source.name == "play") {
-            this._settings.quality = source.quality;
+            this._player.quality = source.quality;
           }
         }
       }
@@ -547,7 +621,7 @@ class AnnotationPage extends TatorPage {
       canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
     });
 
-    this._settings.addEventListener("openVideoSettings", () => {
+    this._player.addEventListener("openVideoSettings", () => {
       var videoSettings = canvas.getVideoSettings();
       this._videoSettingsDialog.applySettings(videoSettings);
       this._videoSettingsDialog.setAttribute("is-open", "");
@@ -674,6 +748,33 @@ class AnnotationPage extends TatorPage {
           dataType.isLocalization = isLocalization;
           dataType.isTrack = isTrack;
           dataType.isTLState = isTLState;
+
+          if (dataType.isTrack) {
+            // Determine the localization type that should be drawn.
+            let localizationTypeId = null;
+            if (dataType.default_localization) {
+              localizationTypeId = dataType.default_localization;
+            } else {
+              // If default localization type is not set, go by priority box > line > dot.
+              const byType = dataTypes.reduce((sec, obj) => {
+                if (obj.visible && obj.drawable) {
+                  (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
+                }
+                return sec;
+              }, {});
+              if (typeof byType.box !== "undefined") {
+                localizationTypeId = byType.box[0].id;
+              } else if (typeof byType.line !== "undefined") {
+                localizationTypeId = byType.line[0].id;
+              } else if (typeof byType.dot !== "undefined") {
+                localizationTypeId = byType.dot[0].id;
+              }
+            }
+            if (localizationTypeId === null) {
+              throw "Could not find a localization type to use for track creation!";
+            }
+            dataType.localizationType = dataTypes.filter(type => type.id == localizationTypeId)[0];
+          }
         }
         this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);
         this._data.addEventListener("freshData", evt => {
@@ -703,9 +804,13 @@ class AnnotationPage extends TatorPage {
         canvas.undoBuffer = this._undo;
         canvas.annotationData = this._data;
         const byType = localizationTypes.reduce((sec, obj) => {
-          (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
+          if (obj.visible && obj.drawable) {
+            (sec[obj.dtype] = sec[obj.dtype] || []).push(obj);
+          }
           return sec;
         }, {});
+        const trackTypes = stateTypes.filter(type => type.association == 'Localization'
+                                                     && type.visible);
 
         if (block_signals == true)
         {
@@ -722,6 +827,7 @@ class AnnotationPage extends TatorPage {
         this._browser.init(dataTypes, this._version, stateMediaIds, this._player.mediaType.dtype != "image");
 
         this._sidebar.localizationTypes = byType;
+        this._sidebar.trackTypes = trackTypes;
         this._sidebar.addEventListener("default", evt => {
           this.clearMetaCaches();
           canvas.defaultMode();
@@ -838,26 +944,61 @@ class AnnotationPage extends TatorPage {
         });
         this._saves = {};
 
-        for (const dataType of localizationTypes) {
+        for (const dataType of ["box", "line", "dot"]) {
           const save = document.createElement("save-dialog");
-          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
-          this._settings.setAttribute("version", this._version.id);
-          this._main.appendChild(save);
-          this._saves[dataType.id] = save;
+          const dataTypes = localizationTypes.filter(type => type.dtype == dataType
+                                                             && type.visible
+                                                             && type.drawable);
+          if (dataTypes.length > 0) {
+            let defaultType = null;
+            switch(dataType) {
+              case "box":
+                if (this._player.mediaType.default_box) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_box);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
+                break;
+              case "line":
+                if (this._player.mediaType.default_line) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_line);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
+                break;
+              case "dot":
+                if (this._player.mediaType.default_dot) {
+                  const filtered = dataTypes.filter(type => type.id == this._player.mediaType.default_dot);
+                  if (filtered.length > 0) {
+                    defaultType = filtered[0];
+                  }
+                }
+                break;
+            }
+            if (defaultType === null) {
+              defaultType = dataTypes[0];
+            }
+            save.init(projectId, mediaId, dataTypes, defaultType, this._undo, this._version, favorites);
+            this._settings.setAttribute("version", this._version.id);
+            this._main.appendChild(save);
+            this._saves[dataType] = save;
 
-          save.addEventListener("cancel", () => {
-            this._closeModal(save);
-            canvas.refresh();
-          });
+            save.addEventListener("cancel", () => {
+              this._closeModal(save);
+              canvas.refresh();
+            });
 
-          save.addEventListener("save", () => {
-            this._closeModal(save);
-          });
+            save.addEventListener("save", () => {
+              this._closeModal(save);
+            });
+          }
         }
 
         for (const dataType of stateTypes) {
           const save = document.createElement("save-dialog");
-          save.init(projectId, mediaId, dataType, this._undo, this._version, favorites);
+          save.init(projectId, mediaId, [dataType], dataType, this._undo, this._version, favorites);
           this._settings.setAttribute("version", this._version.id);
           this._main.appendChild(save);
           this._saves[dataType.id] = save;
@@ -1178,7 +1319,7 @@ class AnnotationPage extends TatorPage {
       });
     });
 
-    menu.addEventListener("addDetectionToTrack", evt => {
+    this._addDetectionToTrack = evt => {
 
       const promise = fetchRetry("/rest/State/" + evt.detail.mainTrackId, {
         method: "PATCH",
@@ -1196,11 +1337,19 @@ class AnnotationPage extends TatorPage {
       })
       .then(response => response.json())
       .then(() => {
+        this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
         Utilities.showSuccessIcon("Detection added to track.");
-        canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
+        if (evt.detail.selectTrack) {
+          canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
+        }
       });
-    });
+    };
+
+    menu.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
+    for (const save of Object.values(this._saves)) {
+      save.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
+    }
 
     menu.addEventListener("mergeTracks", evt => {
 
@@ -1243,7 +1392,7 @@ class AnnotationPage extends TatorPage {
       const requestObj = evt.detail.requestObj;
       const canvasPosition = canvasElement.getBoundingClientRect();
 
-      const dialog = this._saves[objDescription.id];
+      const dialog = this._getSave(objDescription);
       dialog.setUI(objDescription);
 
       this._openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode);
@@ -1268,7 +1417,7 @@ class AnnotationPage extends TatorPage {
   }
 
   _openModal(objDescription, dragInfo, canvasPosition, requestObj, metaMode) {
-    const save = this._saves[objDescription.id];
+    const save = this._getSave(objDescription);
     save.canvasPosition = canvasPosition;
     save.dragInfo = dragInfo;
     save.requestObj = requestObj;
@@ -1279,7 +1428,13 @@ class AnnotationPage extends TatorPage {
   }
 
   _getSave(objDescription) {
-    return this._saves[objDescription.id];
+    let save;
+    if (["box", "line", "dot"].includes(objDescription.dtype)) {
+      save = this._saves[objDescription.dtype];
+    } else {
+      save = this._saves[objDescription.id];
+    }
+    return save;
   }
 
   clearMetaCaches() {

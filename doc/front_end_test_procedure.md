@@ -46,6 +46,7 @@ Follow these steps to test the annotation tools.
     - Create new states with the right click menu at various points in the video.
     - Alter the start frame, end frame, and corresponding booleans. Verify the timeline has the right regions highlighted.
     - Play the video and toggle the boolean switches in the activity frame panel. Verify the timeline bar is colored appropriately and the states are saved.
+    - Create new tracks by clicking the Track button and drawing some boxes in different frames.
     - Create new tracks by drawing a box, right click on it and creating a track.
     - Extend the track and trim the track endpoints with the right click menu
     - Merge two tracks with the right click menu
@@ -89,9 +90,10 @@ Steps
 1. Play the video and verifiy the quality changed.
 1. Play the video 2 seconds from the end. Ensure it finishes the video.
 1. Rewind the video 2 seconds from the beginning. Ensure it stops at 0.
-1. Reload the video, change the rate to 4x, and jump to an unbuffered scrub region. Attempt to play. Verify a window alert is displayed and the video does not play.
+1. Reload the video, change the rate to 4x, and jump to an unbuffered scrub region. Verify video plays.
+1. Change the rate to 8x, and jump to an unbuffered scrub region. Attempt to play. Verify a window alert is displayed and the video does not play.
 1. Change the quality to the highest quality (greater than 360p). In the next steps, verify in the next two steps the playback quality is lower than the selected quality.
-1. In a buffered scrub region, play the video at the 4x rate. Verify the video is playing back at a faster rate.
+1. In a buffered scrub region, play the video at the 8x rate. Verify the video is playing back at a faster rate.
 1. Repeat the above while going playing backwards.
 1. Scrub around the video (click on the timeline dot and drag around)
 1. Use the spacebar to pause/play the video.

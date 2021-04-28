@@ -12,7 +12,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 from django.conf import settings
 
-from ..s3 import get_s3_lookup
+from ..store import get_storage_lookup
 from ..models import Resource
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class MediaUtil:
         # the part of the file we need to
         self._segment_info = None
         resources = Resource.objects.filter(media__in=[video])
-        s3_lookup = get_s3_lookup(resources)
+        store_lookup = get_storage_lookup(resources)
 
         if "streaming" in video.media_files:
             if quality is None:
@@ -43,12 +43,12 @@ class MediaUtil:
                     if delta < max_delta:
                         quality_idx = idx
             self._video_file = video.media_files["streaming"][quality_idx]["path"]
-            self._s3 = s3_lookup[self._video_file]
+            self._storage = store_lookup[self._video_file]
             self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
             self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
             segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
             f_p = io.BytesIO()
-            self._s3.download_fileobj(segment_file, f_p)
+            self._storage.download_fileobj(segment_file, f_p)
             self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
             self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
                                                           ['segments']) if x['name'] == 'moof']
@@ -63,7 +63,7 @@ class MediaUtil:
                         quality_idx = idx
             # Image
             self._video_file = video.media_files["image"][quality_idx]["path"]
-            self._s3 = s3_lookup[self._video_file]
+            self._storage = store_lookup[self._video_file]
             self._height = video.height
             self._width = video.width
         else:
@@ -177,8 +177,8 @@ class MediaUtil:
                 for scatter in sc_graph:
                     start = scatter[0]
                     stop = scatter[0] + scatter[1] - 1 # Byte range is inclusive
-                    response = self._s3.get_object(self._video_file, f"bytes={start}-{stop}")
-                    out_fp.write(response['Body'].read())
+                    body = self._storage.get_object(self._video_file, start=start, stop=stop)
+                    out_fp.write(body)
 
         return lookup, segment_info
 
@@ -322,7 +322,7 @@ class MediaUtil:
         lower = upper + roi[1] * self._height
 
         out = io.BytesIO()
-        self._s3.download_fileobj(self._video_file, out)
+        self._storage.download_fileobj(self._video_file, out)
         out.seek(0)
         img = Image.open(out)
         img = img.crop((left, upper, right, lower))

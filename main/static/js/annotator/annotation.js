@@ -2979,6 +2979,13 @@ class AnnotationCanvas extends TatorElement
       updateStatus("Ready for annotation.", "primary", -1);
       this._metaMode = metaMode;
     }
+    else if (objDescription.isTrack == true) {
+      this._mouseMode = MouseMode.NEW;
+      this.draft = objDescription;
+      this._textOverlay.classList.add("select-draw");
+      updateStatus("Ready for first track annotation.", "primary", -1);
+      this._metaMode = metaMode;
+    }
     else
     {
       this.makeModalCreationPrompt(objDescription);
@@ -3025,7 +3032,13 @@ class AnnotationCanvas extends TatorElement
       let lineInfo = dragToLine(dragInfo);
       let dotInfo = [dragInfo.start.x, dragInfo.start.y];
       let localization=null;
-      if (objDescription.dtype=="box")
+      let type = objDescription.dtype;
+      if (type == "state") {
+        // We are creating a track.
+        type = objDescription.localizationType.dtype;
+      }
+      
+      if (type=="box")
       {
         localization=this.scaleToRelative(boxInfo);
         requestObj.x = localization[0];
@@ -3033,7 +3046,7 @@ class AnnotationCanvas extends TatorElement
         requestObj.width = localization[2];
         requestObj.height = localization[3];
       }
-      else if (objDescription.dtype=="line")
+      else if (type=="line")
       {
         localization=this.scaleToRelative(lineInfo, true);
         const [x0, y0, x1, y1] = localization;
@@ -3042,7 +3055,7 @@ class AnnotationCanvas extends TatorElement
         requestObj.u = x1 - x0;
         requestObj.v = y1 - y0;
       }
-      else if (objDescription.dtype=='dot')
+      else if (type=='dot')
       {
         var previewSize=50;
         localization=this.scaleToRelative(dotInfo);
@@ -3469,13 +3482,10 @@ class AnnotationCanvas extends TatorElement
       var boxCoords = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]];
 
       that._draw.beginDraw();
-      that.drawCrosshair([x0,y0], colorReq, 128);
-      that.drawCrosshair([x2,y2], colorReq, 128);
       that.blackoutOutside(boxCoords);
       that._draw.drawPolygon(boxCoords,
                              colorReq,
                              defaultDrawWidth*that._draw.displayToViewportScale()[0]);
-      that.accentWithHandles(boxCoords, colorReq, defaultDrawWidth*that._draw.displayToViewportScale()[0]);
       that._draw.dispImage(true, true);
     }
     var drawLine=function(dragStart, dragEnd, colorReq)
@@ -3493,14 +3503,11 @@ class AnnotationCanvas extends TatorElement
       var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
 
       that._draw.beginDraw();
-      that.drawCrosshair([x0,y0], colorReq, 128);
-      that.drawCrosshair([x1,y1], colorReq, 128);
       that.blackoutOutside(fauxBoxCoords);
       that._draw.drawLine(lineCoords[0],
                           lineCoords[1],
                           colorReq,
                           defaultDrawWidth*that._draw.displayToViewportScale()[0]);
-      that.accentWithHandles(lineCoords, colorReq);
       that._draw.dispImage(true, true);
     }
     if (this._mouseMode == MouseMode.PAN)
@@ -3562,7 +3569,11 @@ class AnnotationCanvas extends TatorElement
     else if (this.draft)
     {
       // We are drawing
-      var type=this.draft.dtype;
+      let type=this.draft.dtype;
+      if (type == "state") {
+        // We are creating a track.
+        type = this.draft.localizationType.dtype;
+      }
 
       if (type == "box")
       {
@@ -3716,8 +3727,6 @@ class AnnotationCanvas extends TatorElement
           if (objType.dtype == 'box')
           {
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
-            that.drawCrosshair(poly[0], color.WHITE, 128);
-            that.drawCrosshair(poly[2], color.WHITE, 128);
             that.blackoutOutside(poly);
             this._draw.drawPolygon(poly, color.WHITE,
                                    Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
@@ -3731,8 +3740,6 @@ class AnnotationCanvas extends TatorElement
             let x1 = line[1][0];
             let y1 = line[1][1];
             var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
-            that.drawCrosshair([x0,y0], color.WHITE, 128);
-            that.drawCrosshair([x1,y1], color.WHITE, 128);
             that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
             this.accentWithHandles(line, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
@@ -3742,7 +3749,6 @@ class AnnotationCanvas extends TatorElement
             var center = translatedDot(dragEvent.start, dragEvent.current);
             const dotWidth = Math.round(defaultDotWidth * this._draw.displayToViewportScale()[0]);
             this._draw.drawCircle(center, dotWidth/2, color.WHITE);
-            this.drawCrosshair(center, color.WHITE, 128);
           }
           this._draw.dispImage(true, true);
         }
@@ -3804,8 +3810,6 @@ class AnnotationCanvas extends TatorElement
           if (type == 'box')
           {
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
-            that.drawCrosshair(poly[0], color.WHITE, 128);
-            that.drawCrosshair(poly[2], color.WHITE, 128);
             that.blackoutOutside(poly);
             this._draw.drawPolygon(poly, color.WHITE, width);
             this.accentWithHandles(poly, color.WHITE, width);
@@ -3818,8 +3822,6 @@ class AnnotationCanvas extends TatorElement
             let x1 = line[1][0];
             let y1 = line[1][1];
             var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
-            that.drawCrosshair([x0,y0], color.WHITE, 128);
-            that.drawCrosshair([x1,y1], color.WHITE, 128);
             that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0],line[1], color.WHITE, width);
             that.accentWithHandles(line,color.WHITE, width);

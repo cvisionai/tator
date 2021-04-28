@@ -58,6 +58,7 @@
   box-button.is-selected
     + line-button
     + point-button
+    + track-button
     + zoom-in-button
     + zoom-out-button
     + pan-button
@@ -67,6 +68,7 @@
 
   line-button.is-selected
     + point-button
+    + track-button
     + zoom-in-button
     + zoom-out-button
     + pan-button
@@ -74,22 +76,26 @@
     transform: translateY(124px);
   }
 
-  point-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
+  point-button.is-selected + track-button + zoom-in-button + zoom-out-button + pan-button + & {
     transform: translateY(186px);
   }
 
-  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
+  track-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
     transform: translateY(248px);
   }
 
+  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
+    transform: translateY(310px);
+  }
+
   pan-button.is-selected + & {
-    transform: translateY(372px);
+    transform: translateY(434px);
   }
 }
 
 .annotation__panels {
   flex-shrink: 0;
-  width: 334px;
+  width: 400px;
 }
 
 .annotation__panel {
@@ -311,11 +317,29 @@ video-canvas {
 
 .video__controls {
   background-color: $color-charcoal--medium;
-  min-height: 76px;
+  min-height: 64px;
 }
 
-.video__rewind,
+.scrub__bar {
+  background-color: $color-charcoal--medium;
+  padding-bottom: 16px;
+}
+
+.video__rewind { 
+  &:hover,
+  &:focus {
+    color: $color-purple;
+  }
+
+  &:disabled,
+  [disabled] {
+    color: $color-gray--dark;
+    cursor: not-allowed;
+  }
+}
+
 .video__fast-forward {
+  margin-right: 16px;
   &:hover,
   &:focus {
     color: $color-purple;

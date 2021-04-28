@@ -16,7 +16,7 @@ from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
-          'colorMap', 'line_width', 'visible', 'grouping_default']
+          'colorMap', 'line_width', 'visible', 'drawable', 'grouping_default']
 
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
@@ -129,6 +129,8 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             obj.line_width = params['line_width']
         if 'visible' in params:
             obj.visible = params['visible']
+        if 'drawable' in params:
+            obj.drawable = params['drawable']
         if 'colorMap' in params:
             obj.colorMap = params['colorMap']
         if 'grouping_default' in params:

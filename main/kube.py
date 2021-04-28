@@ -130,7 +130,7 @@ def get_jobs(selector, cache):
             )
             jobs += response['items']
         except:
-            logger.warning(f"Could not reach cluster {cluster.name} at {cluster.host}!")
+            pass
     return jobs
 
 def cancel_jobs(selector, cache):

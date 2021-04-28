@@ -15,6 +15,10 @@ class SaveDialog extends TatorElement {
     this._span.setAttribute("class", "text-semibold");
     header.appendChild(this._span);
 
+    this._type = document.createElement("enum-input");
+    this._type.setAttribute("name", "Type");
+    this._div.appendChild(this._type);
+
     this._attributes = document.createElement("attribute-panel");
     this._div.appendChild(this._attributes);
 
@@ -66,29 +70,43 @@ class SaveDialog extends TatorElement {
         this._metaCache = Object.assign({},this._values)
       }
       this._attributes.reset();
+      this._trackId = null;
     });
 
     cancel.addEventListener("click", () => {
       this.dispatchEvent(new Event("cancel"));
       this._attributes.reset();
     });
+
+    // Used for continuous track append.
+    this._trackId = null;
   }
 
-  init(projectId, mediaId, dataType, undo, version, favorites) {
+  init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
 
     this._projectId = projectId;
     this._mediaId = mediaId;
-    this._dataType = dataType;
     this._undo = undo;
     this._version = version;
-    this._span.textContent = dataType.name;
-    this._attributes.dataType = dataType;
-    this._favorites.init(dataType, favorites);
+    this._favoritesData = favorites;
 
     // For the save dialog, the track search bar doesn't need to be shown.
     // The user only needs to modify the attributes in the dialog window.
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);
+
+    // Set choices on type selector.
+    this._type.choices = dataTypes.map(type => {return {label: type.name,
+                                                        value: JSON.stringify(type)}});
+    this._type.addEventListener("change", this._setDataType.bind(this));
+    this._type.default = defaultType.name;
+    this._type.reset();
+    this._setDataType();
+
+    // Hide the type selector if there is only one type.
+    if (dataTypes.length == 1) {
+      this._type.style.display = "none";
+    }
 
     this._attributes.dispatchEvent(new Event("change"));
   }
@@ -109,26 +127,68 @@ class SaveDialog extends TatorElement {
     this.dispatchEvent(new CustomEvent("save", {
       detail: values
     }));
-    var body = {
-      type: Number(this._dataType.id.split("_")[1]),
-      name: this._dataType.name,
-      version: this._version.id,
-      ...requestObj,
-      ...values,
-    };
 
-    if (this._dataType.dtype.includes("state")) {
-      if (this._stateMediaIds) {
-        body.media_ids = this._stateMediaIds;
+    if (this._dataType.isTrack && typeof requestObj.localization_ids === "undefined") {
+      const localizationBody = {
+        type: Number(this._dataType.localizationType.id.split("_")[1]),
+        name: this._dataType.localizationType.name,
+        version: this._version.id,
+        media_id: this._mediaId,
+        ...requestObj,
+        ...values,
+      };
+      this._undo.post("Localizations", localizationBody, this._dataType.localizationType)
+      .then(localizationResponse => {
+        if (this._trackId === null) {
+          // Track needs to be created.
+          const trackBody = {
+            type: Number(this._dataType.id.split("_")[1]),
+            name: this._dataType.name,
+            version: this._version.id,
+            media_ids: [this._mediaId],
+            localization_ids: localizationResponse[0].id,
+            ...values,
+          };
+          return this._undo.post("States", trackBody, this._dataType);
+        } else {
+          this.dispatchEvent(new CustomEvent("addDetectionToTrack", {
+            detail: {localizationType: this._dataType.localizationType.id,
+                     trackType: this._dataType.id,
+                     frame: requestObj.frame,
+                     mainTrackId: this._trackId,
+                     detectionId: localizationResponse[0].id[0],
+                     selectTrack: false}
+          }));
+        }
+      })
+      .then(trackResponse => {
+        if (trackResponse) {
+          this._trackId = trackResponse[0].id[0];
+        }
+      })
+
+    } else {
+      var body = {
+        type: Number(this._dataType.id.split("_")[1]),
+        name: this._dataType.name,
+        version: this._version.id,
+        ...requestObj,
+        ...values,
+      };
+
+      if (this._dataType.dtype.includes("state")) {
+        if (this._stateMediaIds) {
+          body.media_ids = this._stateMediaIds;
+        }
+        else {
+          body.media_ids = [this._mediaId];
+        }
+        this._undo.post("States", body, this._dataType);
       }
       else {
-        body.media_ids = [this._mediaId];
+        body.media_id = this._mediaId
+        this._undo.post("Localizations", body, this._dataType);
       }
-      this._undo.post("States", body, this._dataType);
-    }
-    else {
-      body.media_id = this._mediaId
-      this._undo.post("Localizations", body, this._dataType);
     }
   }
 
@@ -196,6 +256,13 @@ class SaveDialog extends TatorElement {
       this.style.top = thisTop + "px";
       this.style.left = thisLeft + "px";
     }
+  }
+
+  _setDataType() {
+    this._dataType = JSON.parse(this._type.getValue());
+    this._span.textContent = this._dataType.name;
+    this._attributes.dataType = this._dataType;
+    this._favorites.init(this._dataType, this._favoritesData);
   }
 }
 

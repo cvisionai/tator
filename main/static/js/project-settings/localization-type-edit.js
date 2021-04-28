@@ -71,6 +71,14 @@ class LocalizationEdit extends TypeForm {
       "value": data[VISIBLE.toLowerCase()]
     } ) );
 
+    // drawable
+    const DRAWABLE = "Drawable";
+    this._form.appendChild( this.inputHelper.inputRadioSlide({
+      "labelText": DRAWABLE,
+      "name": DRAWABLE.toLowerCase(),
+      "value": data[DRAWABLE.toLowerCase()]
+    } ) );
+
     // line_width
     const LINE = "line_width";
     this._form.appendChild( this.inputHelper.inputText({
@@ -92,13 +100,15 @@ class LocalizationEdit extends TypeForm {
 
     const MEDIA = "Media"; 
     const mediaList = new DataMediaList( this.projectId );
-    let mediaListWithChecked = mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()]);
+    mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()])
+    .then(mediaListWithChecked => {
 
-    this._form.appendChild( this.inputHelper.multipleCheckboxes({
-        "labelText" : MEDIA,
-        "name": MEDIA.toLowerCase(),
-        "checkboxList": mediaListWithChecked
-    } ) );
+      this._form.appendChild( this.inputHelper.multipleCheckboxes({
+          "labelText" : MEDIA,
+          "name": MEDIA.toLowerCase(),
+          "checkboxList": mediaListWithChecked
+      } ) );
+    });
 
     current.appendChild(this._form);
 
@@ -118,6 +128,10 @@ class LocalizationEdit extends TypeForm {
     let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
     let visible = this.inputHelper._getSliderSetValue(visibleInputs);
 
+    // Drawable is a radio slide
+    let drawableInputs =  form.querySelectorAll('.radio-slide-wrap input[name="drawable"]');
+    let drawable = this.inputHelper._getSliderSetValue(drawableInputs);
+
     // grouping_default is a radio slide
     let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
     let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
@@ -133,6 +147,7 @@ class LocalizationEdit extends TypeForm {
       name,
       description,
       visible,
+      drawable,
       grouping_default,
       //media, 
       media_types,

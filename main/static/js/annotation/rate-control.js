@@ -4,14 +4,8 @@ class RateControl extends TatorElement {
 
     const summary = document.createElement("summary");
     summary.style.cursor = "pointer";
-    summary.setAttribute("class", "annotation__setting d-flex flex-items-center px-3 rounded-1");
+    summary.setAttribute("class", "d-flex flex-items-center rounded-1");
     this._shadow.appendChild(summary);
-
-    const rateSpan = document.createElement("div");
-    rateSpan.style.cursor="default";
-    rateSpan.setAttribute("class", "text-gray");
-    rateSpan.textContent = "Rate:";
-    summary.appendChild(rateSpan);
 
     const div = document.createElement("div");
     div.setAttribute("class", "px-1");
@@ -22,8 +16,8 @@ class RateControl extends TatorElement {
     div.appendChild(select);
     this._select = select;
 
-    const rates = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32];
-    for (const rate of rates)
+    this._rates = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32];
+    for (const rate of this._rates)
     {
       let option = document.createElement("option");
       option.setAttribute("value", rate);
@@ -54,6 +48,29 @@ class RateControl extends TatorElement {
           this._select.setAttribute("disabled", "");
         }
         break;
+    }
+  }
+
+  /**
+   * Programmatically sets the selected rate and emits rateChange event
+   * @param {Number} rate
+   */
+  setValue(rate) {
+    for (let idx = 0; idx < this._rates.length; idx++) {
+      if (this._rates[idx] == rate) {
+
+        // Change the UI element
+        this._select.selectedIndex = idx;
+
+        // Send out the rate change event
+        this.dispatchEvent(new CustomEvent("rateChange", {
+          detail: {rate: rate},
+          composed: true
+        }));
+
+        // Done here
+        return;
+      }
     }
   }
 }

@@ -693,7 +693,7 @@ class DrawGL
 
     // If there are extra drawing, draw them too. unless we are muting
     // in which case skip to non-MSAA buffer of frame
-    if (this.drawBuffer || (frameInfo.drawBuffer && !muteAnnotations))
+    if ((this.drawBuffer && this.drawBuffer.indices.length > 0) || (frameInfo.drawBuffer && !muteAnnotations))
     {
       gl.bindFramebuffer(gl.FRAMEBUFFER,this.msaaFramebuffer);
       gl.drawElements(this.gl.TRIANGLES, quadIndices.length, this.gl.UNSIGNED_BYTE, 0)
@@ -704,7 +704,7 @@ class DrawGL
       {
         this.dispDraw(frameInfo.drawBuffer);
       }
-      if (this.drawBuffer)
+      if (this.drawBuffer && this.drawBuffer.indices.length > 0)
       {
         this.dispDraw(this.drawBuffer);
       }
