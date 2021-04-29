@@ -129,20 +129,23 @@ class LocalizationEdit extends TypeForm {
 
   _getFormData(){
     const formData = {};
+    
+    console.log(`Data ID: ${this.data.id}`);
+    const isNew = this.data.id == "New" ? true : false;
 
-    if (this._editName.changed()) {
+    if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
     }
 
-    if (this.dtypeSelect.changed()) {
+    if (this.dtypeSelect.changed() || isNew) {
       formData.dtype = this.dtypeSelect.getValue()
     }
 
-    if (this._editDescription.changed()) {
+    if (this._editDescription.changed() || isNew) {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._colorMap.changed()) {
+    if (this._colorMap.changed() || isNew) {
       formData.colorMap = {};
       const colorMapDefaultVal = this._colorMap.getValue();
       if (this._colorMap.getValue() !== null) {
@@ -150,23 +153,23 @@ class LocalizationEdit extends TypeForm {
       }
     }
 
-    if (this._visibleBool.changed()) {
+    if (this._visibleBool.changed() || isNew) {
       formData.visible = this._visibleBool.getValue();
     }
 
-    if (this._drawableBool.changed()) {
+    if (this._drawableBool.changed() || isNew) {
       formData.drawable = this._drawableBool.getValue();
     }
 
-    if (this._lineWidth.changed()) {
+    if (this._lineWidth.changed() || isNew) {
       formData.line_width = Number(this._lineWidth.getValue());
     }
 
-    if (this._groupingDefault.changed()) {
+    if (this._groupingDefault.changed() || isNew) {
       formData.grouping_default = this._groupingDefault.getValue();
     }
 
-    if (this._mediaCheckboxes.changed()) {
+    if (this._mediaCheckboxes.changed() || isNew) {
       formData.media_types = this._mediaCheckboxes.getValue();
     }
 

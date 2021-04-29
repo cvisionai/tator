@@ -76,8 +76,11 @@ class TypeForm extends TatorElement {
       this.typeFormDiv.appendChild(this.h1);
       const sectionForm = await this._getSectionForm(this.data);
       this.typeFormDiv.appendChild( sectionForm );
-      this.typeFormDiv.appendChild( this._getAttributeSection( ) );
-      this.typeFormDiv.appendChild( this._getSubmitDiv( {"id": this.data.id }) );
+      this.typeFormDiv.appendChild(this._getAttributeSection());
+      
+      const submitNew = this._getSubmitDiv({ "id": this.data.id });
+      this.typeFormDiv.appendChild(submitNew);
+
       this.typeFormDiv.appendChild( this.deleteTypeSection() );
       return this.typeFormDiv;
     } else {
@@ -114,7 +117,7 @@ class TypeForm extends TatorElement {
       "projectId" : this.projectId
     });
 
-    let formData = this._getFormData("New");
+    let formData = this._getFormData();
 
     addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();
@@ -122,6 +125,8 @@ class TypeForm extends TatorElement {
       if(status != 400){
         // Hide the add new form
         this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+        console.log("Resetting new form after save....");
+        this.reset();
 
         // Create and show the container with new type
         this.sideNav.addItemContainer({

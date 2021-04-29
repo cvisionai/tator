@@ -139,39 +139,42 @@ class StateTypeEdit extends TypeForm {
   _getFormData(){
     const formData = {};
 
-    if (this._editName.changed()) {
+    console.log(`Data ID: ${this.data.id}`);
+    const isNew = this.data.id == "New" ? true : false;
+
+    if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
     }
 
-    if (this.dtypeSelect.changed()) {
+    if (this.dtypeSelect.changed() || isNew) {
       formData.dtype = this.dtypeSelect.getValue()
     }
 
-    if (this._editDescription.changed()) {
+    if (this._editDescription.changed() || isNew) {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._visibleBool.changed()) {
+    if (this._visibleBool.changed() || isNew) {
       formData.visible = this._visibleBool.getValue();
     }
 
-    if (this._groupingDefault.changed()) {
+    if (this._groupingDefault.changed() || isNew) {
       formData.grouping_default = this._groupingDefault.getValue();
     }
 
-    if (this._mediaCheckboxes.changed()) {
+    if (this._mediaCheckboxes.changed() || isNew) {
       formData.media_types = this._mediaCheckboxes.getValue();
     }
 
-    if (this._association.changed()) {
+    if (this._association.changed() || isNew) {
       formData.association = this._association.getValue();
     }
 
-    if (this._interpolation.changed()) {
+    if (this._interpolation.changed() || isNew) {
       formData.interpolation = this._interpolation.getValue();
     }
 
-    if (this._deleteChildLoc.changed()) {
+    if (this._deleteChildLoc.changed() || isNew) {
       formData.delete_child_localizations = this._deleteChildLoc.getValue();
     }
 

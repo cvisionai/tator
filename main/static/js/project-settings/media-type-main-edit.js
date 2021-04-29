@@ -82,20 +82,23 @@ class MediaTypeMainEdit extends TypeForm {
 
   _getFormData() {
     const formData = {};
+
+    console.log(`Data ID: ${this.data.id}`);
+    const isNew = this.data.id == "New" ? true : false;
     
-    if (this._editName.changed()) {
+    if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
     }
 
-    if (this.dtypeSelect.changed()) {
+    if (this.dtypeSelect.changed() || isNew) {
       formData.dtype = this.dtypeSelect.getValue()
     }
 
-    if (this._editDescription.changed()) {
+    if (this._editDescription.changed() || isNew) {
       formData.description = this._editDescription.getValue();
     }
 
-    if (this._visibleBool.changed()) {
+    if (this._visibleBool.changed() || isNew) {
       formData.visible = this._visibleBool.getValue();
     }
 
