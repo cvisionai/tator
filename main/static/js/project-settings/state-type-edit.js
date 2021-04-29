@@ -7,7 +7,7 @@ class StateTypeEdit extends TypeForm {
 
   }
 
-  _getSectionForm(data){
+  async _getSectionForm(data){
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
       } );
@@ -16,150 +16,167 @@ class StateTypeEdit extends TypeForm {
     this._setForm();
 
     // append input for name
-    const NAME = "Name";
-    this._form.appendChild( this.inputHelper.inputText({ 
-      "labelText": NAME, 
-      "name": NAME.toLowerCase(), 
-      "value": data[NAME.toLowerCase()],
-      "required" : true 
-    }) );
+    this._editName = document.createElement("text-input");
+    this._editName.setAttribute("name", "Name");
+    this._editName.setAttribute("type", "string");
+    this._editName.setValue(this.data.name);
+    this._editName.default = this.data.name;
+    this._editName.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._editName);
 
     // dtype
-    const DTYPE = "Dtype";
     const dTypeOptions = [
-      { "optText": "State", "optValue": "state" }
+      { "label": "State", "value": "state" }
     ];
-    let disableDtype = data[DTYPE.toLowerCase()] != "" ? true : false;
-    let dtypeRequired = !disableDtype ? true : false;
-    this._form.appendChild( this.inputHelper.inputSelectOptions( {
-      "labelText": "Data Type",
-      "name": DTYPE.toLowerCase(),
-      "value": data[DTYPE.toLowerCase()],
-      "optionsList" : dTypeOptions,
-      "disabledInput" : disableDtype,
-      "required" : dtypeRequired
-    } ) );
+    // Emptyform uses "" for dtype value
+    this.dtypeSelect = document.createElement("enum-input");
+    this.dtypeSelect.setAttribute("name", "Data Type");
+    this.dtypeSelect.choices = dTypeOptions;
+    if (!data.dtype) {
+      this.dtypeSelect._select.required = true;
+      this.dtypeSelect.default = "";
+      this.dtypeSelect.addEventListener("change", this._formChanged.bind(this));
+    } else {
+      this.dtypeSelect.setValue(data.dtype);
+      this.dtypeSelect.default = data.dtype;
+      this.dtypeSelect._select.disabled = true;
+    }
+    this._form.appendChild( this.dtypeSelect );
 
-    //description
-    const DESCRIPTION = "Description";
-    this._form.appendChild( this.inputHelper.inputText( { "labelText": DESCRIPTION, "name": DESCRIPTION.toLowerCase(), "value": data[DESCRIPTION.toLowerCase()] } ) );
+    // description
+    this._editDescription = document.createElement("text-input");
+    this._editDescription.setAttribute("name", "Description");
+    this._editDescription.setAttribute("type", "string");
+    this._editDescription.setValue(this.data.description);
+    this._editDescription.default = this.data.description;
+    this._editDescription.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._editDescription);
 
     // visible
-    const VISIBLE = "Visible";
-    this._form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": VISIBLE,
-      "name": VISIBLE.toLowerCase(),
-      "value": data[VISIBLE.toLowerCase()]
-    } ) );
+    this._visibleBool = document.createElement("bool-input");
+    this._visibleBool.setAttribute("name", "Visible");
+    this._visibleBool.setAttribute("on-text", "Yes");
+    this._visibleBool.setAttribute("off-text", "No");
+    this._visibleBool.setValue(this.data.visible);
+    this._visibleBool.default = this.data.visible;
+    this._visibleBool.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._visibleBool);
 
     // grouping default
-    const GROUPING = "grouping_default";
-    this._form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": "Grouping Default",
-      "name": GROUPING.toLowerCase(),
-      "value": data[GROUPING.toLowerCase()]
-    } ) );
+    this._groupingDefault = document.createElement("bool-input");
+    this._groupingDefault.setAttribute("name", "Grouping Default");
+    this._groupingDefault.setAttribute("on-text", "Yes");
+    this._groupingDefault.setAttribute("off-text", "No");
+    this._groupingDefault.setValue(this.data.grouping_default);
+    this._groupingDefault.default = this.data.grouping_default;
+    this._groupingDefault.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._groupingDefault);
 
-    // Media
-    const MEDIA = "Media";
+    // const MEDIA = "Media"; 
     const mediaList = new DataMediaList( this.projectId );
-    mediaList.getCompiledMediaList( data[MEDIA.toLowerCase()])
-    .then(mediaListWithChecked => {
-      this._form.appendChild( this.inputHelper.multipleCheckboxes({
-          "labelText" : MEDIA,
-          "name": MEDIA.toLowerCase(),
-          "checkboxList": mediaListWithChecked
-      } ) );
-    });
+    const mediaListWithChecked = await mediaList.getCompiledMediaList( data.media );
+    this._mediaCheckboxes = document.createElement("checkbox-set");
+    this._mediaCheckboxes.setAttribute("name", "Media");
+    this._mediaCheckboxes.setAttribute("type", "number");
+    this._mediaCheckboxes.setValue( mediaListWithChecked );
+    this._mediaCheckboxes.default = mediaListWithChecked;
+    this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._mediaCheckboxes);
 
     // Associations
     const assocOptions = [
-      { "optText": "Media", "optValue": "Media" },
-      { "optText": "Frame", "optValue": "Frame" },
-      { "optText": "Localization", "optValue": "Localization" }
+      { "label" : "Select", "value" : ""},
+      { "value": "Media"},
+      { "value": "Frame" },
+      { "value": "Localization" }
     ];
-    const ASSOC = "association";
-    this._form.appendChild( this.inputHelper.inputSelectOptions({
-      "labelText": "Association",
-      "name": ASSOC,
-      "value": data[ASSOC],
-      "optionsList" : assocOptions
-    } ) );
+    this._association = document.createElement("enum-input");
+    this._association.setAttribute("name", "Association");
+    this._association.choices = assocOptions;
+    if (!data.association) {
+      this._association.default = ""; 
+    } else {
+      this._association.setValue(data.association);
+      this._association.default = data.association;
+    }
+    this._association.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild( this._association );
 
     // Interpolation
     const interpOptions = [
-      { "optText": "None", "optValue": "none" },
-      { "optText": "Latest", "optValue": "latest" },
-      { "optText": "Attr Style Range", "optValue": "attr_style_range" }
+      { "label" : "Select", "value" : ""},
+      { "label": "None", "value": "none" },
+      { "label": "Latest", "value": "latest" },
+      { "label": "Attr Style Range", "value": "attr_style_range" }
     ];
-    const INTERP = "interpolation";
-    this._form.appendChild( this.inputHelper.inputSelectOptions({
-      "labelText": "Interpolation",
-      "name": INTERP,
-      "value": data[INTERP],
-      "optionsList" : interpOptions
-    } ) );
+    this._interpolation = document.createElement("enum-input");
+    this._interpolation.setAttribute("name", "Interpolation");
+    this._interpolation.choices = interpOptions;
+    if (!data.interpolation) {
+      this._interpolation.default = ""; 
+    } else {
+      this._interpolation.setValue(data.interpolation);
+      this._interpolation.default = data.interpolation;
+    }
+    this._interpolation.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild( this._interpolation );
 
     // Child Localizations
-    const CHILDASSOC = "delete_child_localizations";
-    this._form.appendChild( this.inputHelper.inputRadioSlide({
-      "labelText": "Delete Child Localizations",
-      "name": CHILDASSOC,
-      "value": data[CHILDASSOC]
-    } ) );
-
-
+    this._deleteChildLoc = document.createElement("bool-input");
+    this._deleteChildLoc.setAttribute("name", "Delete Child Localizations");
+    this._deleteChildLoc.setAttribute("on-text", "Yes");
+    this._deleteChildLoc.setAttribute("off-text", "No");
+    this._deleteChildLoc.setValue(this.data.delete_child_localizations);
+    this._deleteChildLoc.default = this.data.delete_child_localizations;
+    this._deleteChildLoc.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._deleteChildLoc);
 
     current.appendChild( this._form );
 
     return current;
   }
 
-  _getFormData(id, includeDtype = false){
-    let form = this._shadow.getElementById(id);
+  _getFormData(){
+    const formData = {};
 
-      // name only if changed || can not be ""
-      let name = form.querySelector('[name="name"]').value;
+    console.log(`Data ID: ${this.data.id}`);
+    const isNew = this.data.id == "New" ? true : false;
 
-      // description only if changed
-      let description = form.querySelector('[name="description"]').value;
+    if (this._editName.changed() || isNew) {
+      formData.name = this._editName.getValue();
+    }
 
-      // Visible is a radio slide
-      let visibleInputs =  form.querySelectorAll('.radio-slide-wrap input[name="visible"]');
-      let visible = this.inputHelper._getSliderSetValue(visibleInputs);
+    if (this.dtypeSelect.changed() || isNew) {
+      formData.dtype = this.dtypeSelect.getValue()
+    }
 
-      // grouping_default is a radio slide
-      let grouping_defaultInputs =  form.querySelectorAll('.radio-slide-wrap input[name="grouping_default"]');
-      let grouping_default = this.inputHelper._getSliderSetValue(grouping_defaultInputs);
+    if (this._editDescription.changed() || isNew) {
+      formData.description = this._editDescription.getValue();
+    }
 
-      let mediaInputs =  form.querySelectorAll('input[name^="media"]');
-      let media = this.inputHelper._getArrayInputValue(mediaInputs, "checkbox");
-      let media_types = media;
+    if (this._visibleBool.changed() || isNew) {
+      formData.visible = this._visibleBool.getValue();
+    }
 
-      let association = form.querySelector('[name="association"]').value;
-      
-      let interpolation = form.querySelector('[name="interpolation"]').value;
+    if (this._groupingDefault.changed() || isNew) {
+      formData.grouping_default = this._groupingDefault.getValue();
+    }
 
-      let delete_child_localizationsInputs =  form.querySelectorAll('.radio-slide-wrap input[name="delete_child_localizations"]');
-      let delete_child_localizations = this.inputHelper._getSliderSetValue(delete_child_localizationsInputs);
+    if (this._mediaCheckboxes.changed() || isNew) {
+      formData.media_types = this._mediaCheckboxes.getValue();
+    }
 
-      let formData = {
-        name,
-        description,
-        visible,
-        grouping_default,
-        //media,
-        media_types,
-        delete_child_localizations,
-        association,
-        interpolation
-      };
+    if (this._association.changed() || isNew) {
+      formData.association = this._association.getValue();
+    }
 
-      // only send dtype when it's new
-      if(includeDtype) {
-        let dtype = form.querySelector('[name="dtype"]').value;
-        formData.dtype = dtype;
-      }
+    if (this._interpolation.changed() || isNew) {
+      formData.interpolation = this._interpolation.getValue();
+    }
+
+    if (this._deleteChildLoc.changed() || isNew) {
+      formData.delete_child_localizations = this._deleteChildLoc.getValue();
+    }
 
     return formData;
   }

@@ -12,11 +12,12 @@ class AttributesMain extends HTMLElement {
     this.hasChanges = false;
   }
 
-  _init(typeName, fromId, projectId, data, modal){
+  _init(typeName, fromId, fromName, projectId, data, modal){
     //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
 
     // Init object global vars
     this.fromId = fromId;
+    this.fromName = fromName;
     this.typeName = typeName;
     this.projectId = projectId;
     this.modal = modal;
@@ -34,8 +35,31 @@ class AttributesMain extends HTMLElement {
     // Section h1.
     const h2 = document.createElement("h2");
     h2.setAttribute("class", "h3 py-6 pb-3 edit-project__h1");
-    const t = document.createTextNode(`Attribute settings.`); 
+    const t = document.createTextNode(`Attributes`); 
     h2.appendChild(t);
+
+    this.separate_span = document.createElement("span");
+    this.separate_span.setAttribute("class", "px-2");
+    h2.appendChild(this.separate_span);
+    const h2_separate_span = document.createTextNode(`|`);
+    this.separate_span.appendChild(h2_separate_span);
+
+    const span = document.createElement("span");
+    span.setAttribute("class", "text-gray text-normal")
+    span.appendChild( document.createTextNode(`${this.fromName}`) );
+    h2.appendChild(span);
+
+    this.separate_span2 = document.createElement("span");
+    this.separate_span2.setAttribute("class", "px-2 text-gray text-normal");
+    h2.appendChild(this.separate_span2);
+    const h2_separate_span2 = document.createTextNode(`|`);
+    this.separate_span2.appendChild(h2_separate_span2);
+
+    const span2 = document.createElement("span");
+    span2.setAttribute("class", "text-gray text-normal")
+    span2.appendChild( document.createTextNode(`${this.typeName} (ID ${this.fromId})`) );
+    h2.appendChild(span2);
+
     this.attributeDiv.appendChild(h2);
 
     // Create a styled box & Add box to page
@@ -62,6 +86,22 @@ class AttributesMain extends HTMLElement {
           "collapsed": true
         });
       heading.setAttribute("class", `py-4 toggle-attribute text-semibold`);
+
+      // const heading = document.createElement("a");
+      // heading.setAttribute("class", "toggle-attribute clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
+  
+      // const addPlus = document.createElement("span");
+      // addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
+      // const editSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>`;
+      // addPlus.innerHTML = editSvg;
+  
+      // const addText = document.createElement("span");
+      // addText.setAttribute("class", "px-3");
+      // addText.appendChild(document.createTextNode(` Edit Attributes (${attributeTypes.length})`));
+  
+      // heading.appendChild(addPlus);
+      // heading.appendChild(addText);
+
       attributesSection.appendChild(heading);
 
       let hiddenContent = document.createElement("div");
@@ -93,13 +133,25 @@ class AttributesMain extends HTMLElement {
   // Add Attribute
   _getNewAttributesTrigger(){
     // New attribute link
-    let newAttributeTrigger = this.boxHelper.headingWrap({
-        "headingText" : `+ New Attribute`,
-        "descriptionText" : "",
-        "level": 3,
-        "collapsed": false
-      });
-    newAttributeTrigger.setAttribute("class", "clickable py-3");
+    // let newAttributeTrigger = this.boxHelper.headingWrap({
+    //     "headingText" : `+ New Attribute`,
+    //     "descriptionText" : "",
+    //     "level": 3,
+    //     "collapsed": false
+    // });
+    const newAttributeTrigger = document.createElement("a");
+    newAttributeTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
+
+    const addPlus = document.createElement("span");
+    addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
+    addPlus.appendChild(document.createTextNode("+"));
+
+    const addText = document.createElement("span");
+    addText.setAttribute("class", "px-3");
+    addText.appendChild(document.createTextNode(" New Attribute"));
+
+    newAttributeTrigger.appendChild(addPlus);
+    newAttributeTrigger.appendChild(addText);
 
     newAttributeTrigger.addEventListener("click", (event) => {
       event.preventDefault();
@@ -175,13 +227,25 @@ class AttributesMain extends HTMLElement {
   // Clone Attribute
   _getCopyAttributesTrigger(){
     // New attribute link
-    let newCopyTrigger = this.boxHelper.headingWrap({
-        "headingText" : `+ Clone Attribute(s)`,
-        "descriptionText" : "",
-        "level": 3,
-        "collapsed": false
-      });
-    newCopyTrigger.setAttribute("class", "clickable py-3");
+    // let newCopyTrigger = this.boxHelper.headingWrap({
+    //     "headingText" : `+ Clone Attribute(s)`,
+    //     "descriptionText" : "",
+    //     "level": 3,
+    //     "collapsed": false
+    //   });
+    const newCopyTrigger = document.createElement("a");
+    newCopyTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
+
+    const addPlus = document.createElement("span");
+    addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
+    addPlus.appendChild(document.createTextNode("+"));
+
+    const addText = document.createElement("span");
+    addText.setAttribute("class", "px-3");
+    addText.appendChild(document.createTextNode(" Clone Existing"));
+
+    newCopyTrigger.appendChild(addPlus);
+    newCopyTrigger.appendChild(addText);
     
     newCopyTrigger.addEventListener("click", (event) => {
       event.preventDefault();
@@ -195,15 +259,25 @@ class AttributesMain extends HTMLElement {
     this.loading.showSpinner();
     let typesData = new ProjectTypesData(this.projectId);
 
-    typesData._getAttributeDataByType().then( (attributeDataByType) => {
-      let clone = new AttributesClone( attributeDataByType );
-      let cloneForm = clone._init();
-      let cloneSave = this.inputHelper.saveButton();
+    typesData._getAttributeDataByType().then((attributeDataByType) => {
+      // console.log("did it come back from typesData ok? ");
+      // console.log(attributeDataByType);
       
-      cloneSave.addEventListener("click", (event) => {
-        event.preventDefault();
-        let inputs = clone.getInputs();
-        let cloneData = new AttributesData({"projectId":this.projectId, "typeId": this.fromId, "typeName": this.typeName, inputs});
+      const clone = new AttributesClone( attributeDataByType );
+      const cloneForm = clone._init();
+      const cloneSave = this.inputHelper.saveButton();
+      
+      cloneSave.addEventListener("click", (e) => {
+        e.preventDefault();
+        const selectedData = clone.getInputData();
+        //console.log(selectedData);
+        
+        let cloneData = new AttributesData({
+          projectId: this.projectId,
+          typeId: this.fromId,
+          typeName: this.typeName,
+          selectedData
+        });
         return cloneData.createClones().then((r) => {
           this.dispatchEvent(this.refreshTypeEvent);
           this.boxHelper._modalComplete(r)
@@ -379,7 +453,7 @@ class AttributesMain extends HTMLElement {
   }
 
   _fetchPostPromise({formData = null } = {}){
-    console.log("Attribute (new) Post Fetch");
+    console.log("Attribute Form Post Fetch");
 
     if(formData != null){
       return fetch("/rest/AttributeType/"+this.fromId, {

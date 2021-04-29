@@ -75,6 +75,9 @@ class TextInput extends TatorElement {
             this.getValue = this._validateEmail;
             this._input.setAttribute("type", "email");
             break;
+          default:
+            this._input.setAttribute("type", newValue);
+            break
         }
         break;
     }

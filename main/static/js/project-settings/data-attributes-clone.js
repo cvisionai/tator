@@ -1,17 +1,17 @@
 /* Class with methods return input types with preset values for editing.*/
 class AttributesData {
-    constructor({projectId, typeName, typeId, inputs}) {
+    constructor({projectId, typeName, typeId, selectedData}) {
       // Feature-related class(es) to customize form element. Applies to all elements.
       this.projectId = projectId;
       this.typeName = typeName;
       this.typeId = typeId;
-      this.inputs = inputs;
-      this.inputHelper = new SettingsInput("media-types-main-edit");
+      this.selectedData = selectedData;
+
       this.responseMessage = "";
     }
 
     _fetchPostPromise({formData = null } = {}){
-        console.log("Attribute (new) Post Fetch");
+        console.log("Attribute Clone Post Fetch");
     
         if(formData != null){
           return fetch("/rest/AttributeType/"+this.typeId, {
@@ -32,35 +32,28 @@ class AttributesData {
   
     createClones(){
       //create form data & post promise array for the attribute forms, and submit
-      let checkboxes = this.inputs;
       this.successMessages = "";
       this.failedMessages = "";
       let promises  = [];
   
-      for(let c of checkboxes){
-        let nameOfSaved = "";
-        if(c.checked == true){
-          nameOfSaved = c.value;
-          let cloneValues = JSON.parse(c.dataset.data); //parse data attribute
+      for(let data of this.selectedData){
+        let cloneValue = JSON.parse(data); //parse data attribute
 
-          console.log("cloneValues");
-          console.log(cloneValues);
+        // console.log("cloneValue");
+        // console.log(cloneValue);
 
-          this.attributeForm = new AttributesForm();
-          this.attributeForm._getFormWithValues({clone : true, ...cloneValues});
-          let formJSON = {
-            "entity_type": this.typeName,
-            "addition": this.attributeForm._getAttributeFormData()
-          };
-          //let status = "";
-  
-          let promise = this._fetchPostPromise({
-            "formData" : formJSON
-          });
+        this.attributeForm = new AttributesForm();
+        this.attributeForm._getFormWithValues({clone : true, ...cloneValue});
+        let formJSON = {
+          "entity_type": this.typeName,
+          "addition": this.attributeForm._getAttributeFormData()
+        };
 
-          promises.push(promise);
-        }
+        let promise = this._fetchPostPromise({
+          "formData" : formJSON
+        });
 
+        promises.push(promise);
       }
 
       return Promise.all(promises).then( async( respArray ) => {
@@ -81,14 +74,12 @@ class AttributesData {
               let warningIcon = document.createElement("modal-warning");
               let iconWrap = document.createElement("span");
       
-              console.log("Clone status "+ status);
+              //console.log("Clone status "+ status);
               
-              if(status == 201){
+              if(respArray[o].ok){
                 iconWrap.appendChild(succussIcon);
                 this.successMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
-              }
-      
-              if(status == 400){
+              } else {
                 iconWrap.appendChild(warningIcon);
                 this.failedMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
               }

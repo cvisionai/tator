@@ -7,6 +7,7 @@ class AttributesForm extends TatorElement {
 
     // Flag values
     this._changed = false;
+    this._global = false;
   }
 
   set changed(val) {
@@ -14,8 +15,24 @@ class AttributesForm extends TatorElement {
     return this._changed = val;
   }
 
+  set global(val) {
+    return this._global = val;
+  }
+
+  isChanged() {
+    return this._changed;
+  }
+
+  isGlobal() {
+    return this._global;
+  }
+
   changeReset() {
     return this._changed = false;
+  }
+
+  globalReset() {
+    return this._global = false;
   }
 
   _initEmptyForm() {
@@ -53,6 +70,12 @@ class AttributesForm extends TatorElement {
     this.placeholderDefault = document.createElement("div");
     this.placeholderDefault.setAttribute("class", "hidden");
     this.form.appendChild(this.placeholderDefault);
+
+    // use current
+    /* input inside placeholder hidden until dtype selected */
+    this.placeHolderUseCurrent = document.createElement("div");
+    this.placeHolderUseCurrent.setAttribute("class", "hidden");
+    this.form.appendChild(this.placeHolderUseCurrent);
 
     // description
     this._description = document.createElement("text-input");
@@ -103,7 +126,7 @@ class AttributesForm extends TatorElement {
     this.placeholderEnum.setAttribute("class", "hidden clear-fix");
 
     const labelHolder = document.createElement("div");
-    labelHolder.setAttribute("class", "col-4 float-left");
+    labelHolder.setAttribute("class", "col-4 col-modal-12 float-left");
     const enumLabel = document.createTextNode("Enum Choices");
     labelHolder.appendChild(enumLabel);
 
@@ -114,13 +137,13 @@ class AttributesForm extends TatorElement {
     // labels
     /* input inside placeholder hidden until dtype selected */
     this.placeholderLabels = document.createElement("div");
-    this.placeholderLabels.setAttribute("class", "col-3 float-left");
+    this.placeholderLabels.setAttribute("class", "col-3 col-modal-5 float-left");
     this.placeholderEnum.appendChild(this.placeholderLabels);
 
     // choices
     /* input inside placeholder hidden until dtype selected */
     this.placeholderChoices = document.createElement("div");
-    this.placeholderChoices.setAttribute("class", "col-3 float-left");
+    this.placeholderChoices.setAttribute("class", "col-3 col-modal-5 float-left");
     this.placeholderEnum.appendChild(this.placeholderChoices);
 
 
@@ -137,15 +160,16 @@ class AttributesForm extends TatorElement {
 
   _getFormWithValues({
     clone = false,
-    name = "",
-    description = "",
+    name = null,
+    description = null,
     required = false,
     visible = false,
-    dtype = "",
-    order = "",
-    _default = "",
-    minimum = "",
-    maximum = "",
+    dtype = null,
+    order = null,
+    _default = "", // keep this
+    use_current = null,
+    minimum = null,
+    maximum = null,
     choices = [],
     labels = []
   } = {}) {
@@ -183,7 +207,6 @@ class AttributesForm extends TatorElement {
     this._getDtypeSelectBox(dtype);
 
     // default depends on dtype so use this method
-    if (dtype == 'Select')
     this._getDefaultInput({
       dtype,
       value : _default,  // create new el w/ this value 
@@ -191,6 +214,9 @@ class AttributesForm extends TatorElement {
     });
     this._showDefault({ dtype });
 
+    // use current
+    this._getUseCurrent({ value : use_current });
+    this._showUseCurrent({ dtype });
 
     // minimum
     this._getMinInput({ value : minimum });
@@ -209,7 +235,7 @@ class AttributesForm extends TatorElement {
       // Choices only apply for enum types
       this._getChoicesInputs({ value : this.choicesVal });
       this._getLabelsInputs({ value : this.labelsVal });
-      this._getEnumDefaultCol({ defaultVal : this._default});
+      this._getEnumDefaultCol({ defaultVal : _default});
     }
     
     // if it is not dtype==enum it hides
@@ -258,6 +284,18 @@ class AttributesForm extends TatorElement {
     }
   }
 
+  _showUseCurrent({ dtype } = {}) {
+    if (dtype == 'datetime') {
+      if (typeof this._useCurrent == "undefined") {
+        this._getUseCurrent({});
+      }
+
+      this.placeHolderUseCurrent.classList.remove("hidden");
+    } else {
+      this.placeHolderUseCurrent.classList.add("hidden");
+    }
+  }
+
   _showMin({ dtype } = {}) {
     if (dtype == 'int' || dtype == 'float') {
       if (typeof this._minimum == "undefined" || this._minimum == null) {
@@ -303,8 +341,7 @@ class AttributesForm extends TatorElement {
    */
   _getDefaultInput({
     dtype, // required
-    value = "", // optional, falls back to "best default"
-    enumOptions = false // optional
+    value = "", // keep this
   }) {
     if(this.placeholderDefault.children.length > 0){
       this.placeholderDefault.innerHTML = ""; // @TODO best practice to remove all children?
@@ -328,8 +365,8 @@ class AttributesForm extends TatorElement {
       this.placeholderDefault.appendChild(this._default);
       this._default.setAttribute("name", "Default");
 
-      //const type = (dtype == "datetime") ? "datetime-local" : dtype;
-      this._default.setAttribute("type", dtype)
+      // attribute endpoint converts to correct type
+      this._default.setAttribute("type", "text")
     }
 
     this._default.default = value;
@@ -340,7 +377,27 @@ class AttributesForm extends TatorElement {
     return this._default;
   }
 
-  _getMinInput({ value = "" } = {}) {
+  _getUseCurrent({ value = "" } = {}) {
+    if(this.placeHolderUseCurrent.children.length > 0){
+      this.placeHolderUseCurrent.innerHTML = "";
+      this._useCurrent = null;
+    }
+
+    this._useCurrent = document.createElement("bool-input");
+    this.placeHolderUseCurrent.appendChild(this._useCurrent);
+
+    this._useCurrent.setAttribute("name", "Use Current As Default");
+    this._useCurrent.setAttribute("on-text", "Yes");
+    this._useCurrent.setAttribute("off-text", "No");
+    this._useCurrent.default = value;
+    this._useCurrent.setValue(value);
+
+    this._useCurrent.addEventListener("change", this._formChanged.bind(this));
+
+    return this._useCurrent;
+  }
+
+  _getMinInput({ value } = {}) {
     if(this.placeholderMin.children.length > 0){
       this.placeholderMin.innerHTML = "";
       this._minimum = null;
@@ -359,7 +416,7 @@ class AttributesForm extends TatorElement {
     return this._minimum;
   }
 
-  _getMaxInput({ value = "" } = {}) {
+  _getMaxInput({ value } = {}) {
     if(this.placeholderMax.children.length > 0){
       this.placeholderMax.innerHTML = "";
       this._maximum = null;
@@ -437,23 +494,21 @@ class AttributesForm extends TatorElement {
     let _name = document.createTextNode("Default");
     this.enumDefaultCol.appendChild(_name);
 
-    if(this.choicesVal && this.choicesVal.length > 0){
-      for(let i of this.choicesVal){
-        let defaultFlag = false;
-        if(this.choicesVal[i] == this._enumDefault.value) {
-          defaultFlag = true;
-        }
-        this.appendDefaultRow();
+    if (this.choicesVal && this.choicesVal.length > 0) {
+      for(let val of this.choicesVal){
+        let defaultFlag = (val == this._enumDefault.value) ? true : false;
+        this.appendDefaultRow({defaultFlag});
       }
     }
   }
 
   //
-  appendDefaultRow(){
+  appendDefaultRow({defaultFlag}){
     let currentDefault = document.createElement("input");
     currentDefault.setAttribute("class", "radio")
     currentDefault.setAttribute("type", "radio");
     currentDefault.setAttribute("name", "enum-default");
+    currentDefault.checked = defaultFlag;
     this.enumDefaultCol.appendChild(currentDefault);
 
     currentDefault.addEventListener("change", () => {
@@ -471,6 +526,7 @@ class AttributesForm extends TatorElement {
   _showDynamicFields(dtype) {
     this._getDefaultInput({ dtype });
     this._showDefault({ dtype });
+    this._showUseCurrent({ dtype });
     this._showMin({ dtype });
     this._showMax({ dtype });
     this._showEnumInputs({ dtype });
@@ -650,81 +706,69 @@ class AttributesForm extends TatorElement {
   _getAttributeFormData() {
     const formData = {};
 
-    // name only if changed || can not be "" 
-    //if ((this._name.changed() || this.isClone) && this._name.getValue() ) {
-    if ( this._name.getValue() ) {
-      formData.name = this._name.getValue();
-    }
+    // always send name (re: _check_attribute_type)
+    formData.name = this._name.getValue();
 
     // 
-    //if ((this._description.changed()  || this.isClone) && this._description.getValue()) {
-    if (this._description.getValue()) {
+    if ((this._description.changed()  || this.isClone)  && this._order.getValue() !== null) {
       formData.description = this._description.getValue();
     }
 
     //
-    //if ((this._order.changed()  || this.isClone)&& this._order.getValue()) {
-    if (this._order.getValue()) {
+    if ((this._order.changed() || this.isClone) && this._order.getValue() !== null) {
       formData.order = this._order.getValue();
     }
 
     //
-    //if ((this._required.changed() || this.isClone) && this._required.getValue()) {
-    if (this._required.getValue()) {
+    if ((this._required.changed() || this.isClone)) {
       formData.required = this._required.getValue();
     }
 
     //
-    //if ((this._visible.changed() || this.isClone) && this._visible.getValue()) {
-    if (this._visible.getValue()) {
+    if ((this._visible.changed() || this.isClone)) {
       formData.visible = this._visible.getValue();
     }
 
-    //
+    // always send (re: _check_attribute_type)
+    formData.dtype = this._dtype.getValue();
     const dtype = this._dtype.getValue();
-    //if ((this._dtype.changed() || this.isClone) && dtype) {
-    if (dtype) {
-      formData.dtype = this._dtype.getValue();
-    }
 
-    let _default = ""
-    if(dtype == "enum"){
-      //if ((this._enumDefault.changed || this.isClone) && this.enumDefaultValue) {
-      if (this.enumDefaultValue) {
-        formData["default"] = this.enumDefaultValue;
+    if(dtype === "enum"){
+      if ((this._enumDefault.changed || (this.isClone && this._enumDefault.value !== "")) && this._enumDefault.value !== null) {
+        formData["default"] = this._enumDefault.value;
       }
     } else {
-      //if ((this._default.changed() || this.isClone) && this._default.getValue()) {
-      if (this._default.getValue()) {
-        _default = this._default.getValue();
-        formData["default"] = _default;
+      if ((this._default.changed() || (this.isClone && this._default.getValue() !== "")) && this._default.getValue() !== null) {
+        let defaultVal = this._default.getValue();
+        //backend does this but not when value is ""
+        if (dtype == "int" || dtype == "float") defaultVal = Number(defaultVal);
+        formData["default"] = defaultVal;
+      }
+    }
+
+    if (dtype === "datetime") {
+      if (this._useCurrent.changed()) {
+        formData.use_current = this._useCurrent.getValue();
       }
     }
     
 
     // 
     if (dtype === "int" || dtype === "float") {
-      //
-      //if ((this._minimum.changed() || this.isClone) && this._minimum.getValue()) {
-      if (this._minimum.getValue()) {
+    // getValue for text-input int comes back as null when default is undefined bc it is NaN
+      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
         formData.minimum = Number(this._minimum.getValue());
       }
-
-      //
-      //if ((this._maximum.changed() || this.isClone) && this._maximum.getValue()) {
-      if (this._maximum.getValue()) {
+      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() !== null) {
         formData.maximum = Number(this._maximum.getValue());
       }
     }
 
     if (dtype === "enum") {
-      //if ((this._choices.changed() || this.isClone) && this._choices.getValue()) {
-      if (this._choices.getValue()) {
-        formData.choices = this._choices.getValue();
-      }
+      // always send (re: _check_attribute_type)
+      formData.choices = this._choices.getValue();
 
-      //if ((this._labels.changed() || this.isClone) && this._labels.getValue()) {
-      if (this._labels.getValue()) {
+      if ((this._labels.changed() || this.isClone)) {
         formData.labels = this._labels.getValue();
       }
     }
@@ -732,28 +776,9 @@ class AttributesForm extends TatorElement {
     return formData;
   }
 
-
-
-  _makeDefaultCorrectType(dtype, _defaultVal) {
-    let _default = _defaultVal;
-    try {
-      if (dtype == "bool") {
-        _default = Boolean(_defaultVal);
-      } else if (dtype == "int" || dtype == "float" || dtype == "datetime" || dtype == "geopos") {
-        _default = Number(_defaultVal);
-      } else {
-        _default = String(_defaultVal);
-      }
-    } catch (e) {
-      console.error("Error dtype casting default: " + e);
-    }
-
-    return _default;
-  }
-
   _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
     const promiseInfo = {};
-    const global = String(form.dataset.isGlobal) == "true" ? "true" : "false";
+    const global = this.isGlobal() ? "true" : "false";
     const formData = {
       "entity_type": entityType,
       "global": global,
@@ -764,8 +789,8 @@ class AttributesForm extends TatorElement {
     promiseInfo.newName = this._name.getValue();
     promiseInfo.oldName = this.dataset.oldName;
 
-    console.log("formData");
-    console.log(formData);
+    // console.log("formData");
+    // console.log(formData);
 
     // Hand of the data, and call this form unchanged
     formData.new_attribute_type = this._getAttributeFormData(form);

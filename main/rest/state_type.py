@@ -131,6 +131,7 @@ class StateTypeDetailAPI(BaseDetailView):
             'delete_child_localizations', None)
         association = params.get('association', None)
         interpolation = params.get('interpolation', None)
+        media_types = params.get('media_types', None)
 
         obj = StateType.objects.get(pk=params['id'])
         if name is not None:
@@ -147,6 +148,11 @@ class StateTypeDetailAPI(BaseDetailView):
             obj.association = association
         if interpolation is not None:
             obj.interpolation = interpolation
+        if media_types is not None:
+            media_ids = MediaType.objects.filter(
+                project=obj.project.pk, pk__in=media_types)
+            for media in media_ids:
+                obj.media.add(media)
 
         obj.save()
         return {'message': 'State type updated successfully!'}

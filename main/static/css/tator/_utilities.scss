@@ -42,6 +42,10 @@
   position: relative;
 }
 
+.position-absolute {
+  position: absolute;
+}
+
 // Vertical align
 .v-align-top {
   vertical-align: top;
@@ -158,6 +162,46 @@
 .px-6 {
   padding-left: $spacing-6;
   padding-right: $spacing-6;
+}
+
+// Margins
+.mr-3 {
+  margin-right: $spacing-3;
+}
+
+.ml-3 {
+  margin-left: $spacing-3;
+}
+
+.ml-6 {
+  margin-left: $spacing-6;
+}
+
+.mx-6 {
+  margin-left: $spacing-6;
+  margin-right: $spacing-6;
+}
+
+.my-2 {
+  margin-top: $spacing-2;
+  margin-bottom: $spacing-2;
+}
+
+.my-6 {
+  margin-top: $spacing-6;
+  margin-bottom: $spacing-6;
+}
+
+.mt-6 {
+  margin-top: $spacing-6;
+}
+
+.mb-2 {
+  margin-bottom: $spacing-2;
+}
+
+.mb-6 {
+  margin-bottom: $spacing-6;
 }
 
 .btn-clear {
