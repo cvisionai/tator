@@ -103,7 +103,6 @@ class FilterCondition extends TatorElement {
           }
         }
         this._currentType = attributeType;
-        break;
       }
     }
 

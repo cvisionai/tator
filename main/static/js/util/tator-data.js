@@ -344,8 +344,12 @@ class TatorData {
     }
 
     // Lucene search string requires spaces to have the backlash preceding it
-    var field = filter.field.replace(/ /g,"\\ ");
-    var value = filter.value.replace(/ /g,"\\ ");
+    var field = filter.field.replace(/ /g,"\\ ")
+    field = field.replace(/\(/g,"\\(")
+    field = field.replace(/\)/g,"\\)")
+    var value = filter.value.replace(/ /g,"\\ ")
+    value = value.replace(/\(/g,"\\(")
+    value = value.replace(/\)/g,"\\)")
 
     // Finally generate the final parameter string compliant with Tator's REST call
     var paramStr = `${field}:${modifier}${value}${modifierEnd}`;
