@@ -80,16 +80,17 @@ class SettingsNav extends TatorElement {
     return navItem.innerHTML = e.detail.newName;
   }
 
-  deleteNavItem(e){
+  deleteNavItem(e) {
     // Delete the side nav item, and container
     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
     let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}`);
 
-    navItem.parentNode.firstChild.click();
-    container.remove();
-
     // Show something else...
-    return navItem.remove();
+    navItem.parentNode.querySelectorAll('a')[0].click();
+
+    // remove the container and side nav link
+    container.remove();
+    navItem.remove()
   }
 
 
@@ -351,13 +352,18 @@ class SettingsNav extends TatorElement {
   }
 
   // Hide and show to centralize where we are doing this action
-  hide(el){
-    if(el.nodeType == Node.ELEMENT_NODE){
-      return el.hidden = true;
-    } else {
-      let node = this._shadow.getElementById(el);
-      return node.hidden = true;
+  hide(el) {
+    try {
+      if(el.nodeType == Node.ELEMENT_NODE){
+        return el.hidden = true;
+      } else {
+        let node = this._shadow.getElementById(el);
+        return node.hidden = true;
+      }
+    } catch (err) {
+      console.error("Error hiding element.")
     }
+
     
   }
   show(el){
