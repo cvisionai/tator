@@ -518,7 +518,7 @@ class TatorData {
 
         let thisStart = 0;
         let thisAfter = 0;
-        let thisPageSize = 10000;
+        let thisPageSize = 5000;
         let currentCount = 0;
 
         async function getCount() {
@@ -543,11 +543,11 @@ class TatorData {
                 return response.json();
               }).then((data) => {
                 console.log(`count: ${data}`);
-                if (data == 0) {
+                currentCount += data;
+                if (data < thisPageSize) {
                   countDone = true;
                 }
                 else {
-                  currentCount += data;
                   thisAfter += thisPageSize;
                 }
                 waitingForData = false;
