@@ -15,6 +15,17 @@
   }
 }
 
+.add-new {
+  &.add-new-in-form {
+    height: auto;
+
+    &:hover,
+    &:focus {
+      background-color: $color-charcoal--light;
+    }
+  }
+}
+
 .add-new__icon {
   background-color: $color-charcoal--medium;
   height: 34px;

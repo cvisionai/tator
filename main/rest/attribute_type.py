@@ -242,7 +242,11 @@ class AttributeTypeListAPI(BaseListView):
         ts.check_addition(entity_type, new_attribute_type)
 
         # Add the attribute to the desired entity type
-        entity_type.attribute_types.append(new_attribute_type)
+        if entity_type.attribute_types:
+            entity_type.attribute_types.append(new_attribute_type)
+        else:
+            entity_type.attribute_types = []
+            entity_type.attribute_types.append(new_attribute_type)
         entity_type.save()
 
         # Add new field to all existing attributes if there is a default value

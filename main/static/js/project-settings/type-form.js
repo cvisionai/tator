@@ -39,29 +39,59 @@ class TypeForm extends TatorElement {
     this.setupFormPage(data)
   }
 
-  setupFormPage(data = this.data) {
+  async setupFormPage(data = this.data) {
     // Section h1.
-    const h1 = document.createElement("h1");
-    h1.setAttribute("class", "h2 pb-3 edit-project__h1");
+    // New heading element.
+    this.h1 = document.createElement("h1");
+    this.h1.setAttribute("class", "h3 pb-3 edit-project__h1");
 
     // Create a form with values, or empty editable form
-    if(!this.data.form && !this.data.form != "empty"){
-      const t = document.createTextNode(`${this.readableTypeName} ${this.typeId} settings.`); 
-      h1.appendChild(t);
+    if (!this.data.form && !this.data.form != "empty") {
+      if (this.typeName == "Membership") {
+        this.h1_name = document.createTextNode(`${this.data.username} `);
+      } else {
+        this.h1_name = document.createTextNode(`${this.data.name} `);
+      }
+      this.h1.appendChild(this.h1_name);
 
+      this.separate_span = document.createElement("span");
+      this.separate_span.setAttribute("class", "px-2");
+      this.h1.appendChild(this.separate_span);
+      const h1_separate_span = document.createTextNode(`|`);
+      this.separate_span.appendChild(h1_separate_span);
+
+      this.type_span = document.createElement("span");
+      this.type_span.setAttribute("class", "text-gray text-normal");
+      this.h1.appendChild(this.type_span);
+      const h1_type = document.createTextNode(` ${this.typeName}`);
+      this.type_span.appendChild(h1_type);
+
+      this.id_span = document.createElement("span");
+      this.id_span.setAttribute("class", "text-gray text-normal");
+      this.h1.appendChild(this.id_span);
+      const h1_id = document.createTextNode(` (ID ${this.data.id})`);
+      this.id_span.appendChild(h1_id);
+      
       // Add all elements to page
-      this.typeFormDiv.appendChild(h1);
-      this.typeFormDiv.appendChild( this._getSectionForm( this.data) );
-      this.typeFormDiv.appendChild( this._getAttributeSection( ) );
-      this.typeFormDiv.appendChild( this._getSubmitDiv( {"id": this.data.id }) );
+      this.typeFormDiv.appendChild(this.h1);
+      const sectionForm = await this._getSectionForm(this.data);
+      this.typeFormDiv.appendChild( sectionForm );
+      this.typeFormDiv.appendChild(this._getAttributeSection());
+      
+      const submitNew = this._getSubmitDiv({ "id": this.data.id });
+      this.typeFormDiv.appendChild(submitNew);
+
       this.typeFormDiv.appendChild( this.deleteTypeSection() );
       return this.typeFormDiv;
     } else {
       const t = document.createTextNode(`Add new ${this.readableTypeName}.`); 
-      h1.appendChild(t);
+      this.h1.appendChild(t);
 
-      this.typeFormDiv.appendChild(h1);
-      this.typeFormDiv.appendChild( this._getSectionForm( this._getEmptyData() ) );
+      this.typeFormDiv.appendChild(this.h1);
+      
+      const sectionForm = await this._getSectionForm(this._getEmptyData());
+      this.typeFormDiv.appendChild(this.h1);
+      this.typeFormDiv.appendChild( sectionForm );
       this.typeFormDiv.appendChild( this._getSubmitNewDiv( {"id": this.data.id }) );
 
       return this.typeFormDiv;
@@ -87,7 +117,7 @@ class TypeForm extends TatorElement {
       "projectId" : this.projectId
     });
 
-    let formData = this._getFormData("New", true);
+    let formData = this._getFormData();
 
     addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();
@@ -95,6 +125,8 @@ class TypeForm extends TatorElement {
       if(status != 400){
         // Hide the add new form
         this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+        console.log("Resetting new form after save....");
+        this.reset();
 
         // Create and show the container with new type
         this.sideNav.addItemContainer({
@@ -180,7 +212,7 @@ class TypeForm extends TatorElement {
   _getAttributeSection(){
     this.attributeSection = document.createElement("attributes-main");
     this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
-    this.attributeSection._init(this.typeName, this.typeId, this.projectId, this.data.attribute_types, this.modal);
+    this.attributeSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.data.attribute_types, this.modal);
     
     // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
     this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this) );
@@ -196,7 +228,7 @@ class TypeForm extends TatorElement {
     this.saveButton = this.inputHelper.saveButton();
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
-      if( this._form.classList.contains("changed") || this.attributeSection.hasChanges ){
+      if( this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges) ){
         console.log("Save for id: "+id);
         this._save( {"id":id} )
       } else {
@@ -225,7 +257,7 @@ class TypeForm extends TatorElement {
     this._form = document.createElement("form");
     this._form.id = this.typeId;
 
-    this._form.addEventListener("change", this._formChanged.bind(this));
+    //this._form.addEventListener("change", this._formChanged.bind(this));
 
     return this._form;
   }
@@ -342,7 +374,7 @@ class TypeForm extends TatorElement {
 
 
   // FETCH FROM MODEL PROMISE STRUCTURE
-  // GET
+  // GET ALL {typeName}
   _fetchGetPromise({id = this.projectId} = {}){
     return fetch(`/rest/${this.typeName}s/${id}`, {
       method: "GET",
@@ -355,86 +387,83 @@ class TypeForm extends TatorElement {
     });
   }
 
-  // PATCH
-  _fetchPatchPromise({id = -1 } = {}){
-    console.log("Form data for patch id: "+id);
-    let formData = this._getFormData(id);
+  // GET {typeName} {ID}
+  _fetchByIdPromise({id = this.typeId} = {}){
+    return fetch(`/rest/${this.typeName}/${id}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+  }
 
-    if(this._shadow.querySelectorAll(".errored").length > 0 || this._shadow.querySelectorAll(".invalid").length > 0){
-      return this._modalError("Please fix form errors first.");
-    } else if (Object.entries(formData).length === 0) {
-      console.log("No formData")
-      return this._modalSuccess("Nothing new to save!");
-    } else {
-      return fetch(`/rest/${this.typeName}/${id}`, {
-        method: "PATCH",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
-    }
+  // PATCH
+  _fetchPatchPromise({id = -1, formData } = {}){
+    return fetch(`/rest/${this.typeName}/${id}`, {
+      method: "PATCH",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    });
   }
 
 
 
   _save({id = -1, globalAttribute = false} = {}){
+    // @TODO add back inline error messaging
     // If any fields still have errors don't submit the form.
-    const errorList = this._shadow.querySelectorAll(`.errored`);
-    if(errorList && errorList.length > 0) return this._modalError("Please fix form errors.");;
+    // const errorList = this._shadow.querySelectorAll(`.errored`);
+    // if(errorList && errorList.length > 0) return this._modalError("Please fix form errors.");;
     
     // Start spinner & Get promises list
     console.log("Settings _save method for id: "+id);
     this.loading.showSpinner();
     
     let promises = []
-    let mainForm = this._shadow.getElementById(id);
-    let errors = 0;
+    let errors = 0; // @TODO
 
     // Main type form
-    if(mainForm.classList.contains("changed")) {
-      let mainPromise = this._fetchPatchPromise({id});
-      
-      // Promise will return false if there are errors.
-      if(mainPromise){
-        promises.push( this._fetchPatchPromise({id}) );
+    if (this.isChanged()) {
+      console.log("Main form was changed");
+      const formData = this._getFormData();
+      if (Object.entries(formData).length === 0) {
+        return console.error("No formData");
       } else {
-        errors += 1;
+        promises.push( this._fetchPatchPromise({id, formData}) );
       }
+      
     }
 
-    let hasAttributeChanges = false;
-    const attrPromises = {};
-    if(this.attributeSection && this.attributeSection.hasChanges){
-      hasAttributeChanges = true;
+    let hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
+    const attrPromises = {
+      promises: [],
+      attrNamesNew: [],
+      attrNames: []
+    };
+
+    if (hasAttributeChanges) {
       const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
+      if(attrFormsChanged && attrFormsChanged.length > 0){
 
-      if(attrFormsChanged.length > 0 && attrFormsInvalid.length > 0){
-        // Check Attr forms first for errors if there are changes.
-        errors += 1;
-      } else if (attrFormsChanged.length > 0 && attrFormsInvalid.length === 0){
-        // If any of the changed but no errors, proceed.
-        attrPromises.promises = [];
-        attrPromises.attrNamesNew = [];
-        attrPromises.attrNames = [];
+        for(let form of attrFormsChanged){
+          let promiseInfo = form._getPromise({ id, entityType : this.typeName });
+          attrPromises.promises.push(promiseInfo.promise);
+          attrPromises.attrNamesNew.push(promiseInfo.newName);
+          attrPromises.attrNames.push(promiseInfo.oldName);
+        }
 
-        if(attrFormsChanged && attrFormsChanged.length > 0){
-          for(let form of attrFormsChanged){
-            let promiseInfo = form._getPromise({ id, entityType : this.typeName });
-            attrPromises.promises.push(promiseInfo.promise);
-            attrPromises.attrNamesNew.push(promiseInfo.newName);
-            attrPromises.attrNames.push(promiseInfo.oldName);
-          }
-
-          if(attrPromises){
-            promises = [...promises, ...attrPromises.promises];
-          } 
-        }     
-      }
+        if(attrPromises.promises.length > 0){
+          promises = [...promises, ...attrPromises.promises];
+        }
+      }     
     }
 
     let messageObj = {};
@@ -489,23 +518,20 @@ class TypeForm extends TatorElement {
                   mainText
                 );
                 // Reset forms to the saved data from model
-                this.resetHard(id);
+                this.resetHard();
               }
           }).then( () => {
             // Reset changed flag
-            //let mainForm = this._shadow.getElementById(id);
-            if(this._form.classList.contains("changed")) this._form.classList.remove("changed");
+            this.changed = false;
 
             if(hasAttributeChanges){            
               const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
               if(attrFormsChanged.length > 0 ) {
                 for(let f of attrFormsChanged) {
-                  f.classList.remove("changed");
                   f.changeReset();
                 }
               }
             }
-         
           });
 
         }).catch(err => {
@@ -513,21 +539,31 @@ class TypeForm extends TatorElement {
           this.loading.hideSpinner();
         });
     } else if (!promises.length > 0 ) {
-
       this.loading.hideSpinner();
+      console.error("Attempted to save but no promises found.");
       return this._modalSuccess("Nothing new to save!");
     } else if (!errors === 0) {
       this.loading.hideSpinner();
       return this._modalError("Please fix form errors.");
     } else {
       this.loading.hideSpinner();
-      return this._modalError("Problem getting saving form data.");
+      return this._modalError("Problem saving form data.");
     }
   }
 
-  _formChanged( event ) {
-    if(event != "") console.log("Change value... "+event.target.value);
-    return this._form.classList.add("changed");
+  set changed(val) {
+    console.log(`Changed val set to ${val}`);
+    return this._changed = val;
+  }
+
+  isChanged() {
+    console.log(`Checking is this._changed.... ${this._changed}`);
+    return this._changed;
+  }
+
+  _formChanged(event) {
+    console.log(`Changed: ${event.target.tagName}`);
+    return this.changed = true;
   }
 
   _handleResponseWithAttributes({
@@ -593,28 +629,18 @@ class TypeForm extends TatorElement {
         let name = check.dataset.oldName;
         let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
 
-        //add back changed flag
-        for(let form of this.attributeSection.attrForms){
-          // this._shadow.querySelector(`#${formId}`).classList.add("changed");
-          if(form.id == formId){
-            form.classList.add("changed");
-            form.changed = true;
-          }
-        }
-
         if(check.checked == true){
           console.log("User marked as global: "+name);
-          //this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "true";
           for(let form of this.attributeSection.attrForms){
-            // this._shadow.querySelector(`#${formId}`).classList.add("changed");
-            if(form.id == formId){
-              form.dataset.isGlobal = "true";
+            if (form.id == formId) {
+              // add back changed flag
+              form.changed = true;
+              form.global = true;
+              console.log("set data set global to true");
             }
           }
         } else {
           console.log("User marked NOT global, do not resend: "+name);
-
-          //this._shadow.querySelector(`#${formId}`).dataset.isGlobal = "false";
         }
       }
 
@@ -637,70 +663,6 @@ class TypeForm extends TatorElement {
     return el.hidden = !hidden;
   };
 
-  // name
-  _getNameFromData({ data = this.data} = {}){
-    return data.name;
-  }
-
-  _setNameInput(name){
-    let key = "name"
-    return this.inputHelper.inputText( { "labelText": "Name", "name": key, "value": name, "required" : true } );
-  }
-
-  _getNameInputValue(){
-    return this._editName.querySelector("input").value;
-  }
-
-  _setNameInputValue(newValue){
-    return this._editName.querySelector("input").value = newValue;
-  }
-
-  _nameChanged() {
-    if (this._getNameInputValue() === this._getNameFromData()) return false;
-    return true;
-  }
-
-  // summary
-  _getSummaryFromData({ data = this.data} = {}){
-    return data.summary;
-  }
-
-  _setSummaryInput(summary){
-    let key = "summary";
-    return this.inputHelper.inputText( { "labelText": "Summary", "Name": key, "value": summary } )
-  }
-
-  _getSummaryInputValue(){
-    return this._editSummary.querySelector("input").value;
-  }
-
-  _setSummaryInputValue(newValue){
-    return this._editSummary.querySelector("input").value = newValue;
-  }
-
-  _summaryChanged() {
-    if (this._getSummaryInputValue() === this._getSummaryFromData()) return false;
-    return true;
-  }
-
-  // description
-  _getDescriptionFromData({ data = this.data} = {}){
-    return data.description;
-  }
-
-  _setDescriptionInput(description){
-    let key = "description";
-    return this.inputHelper.inputText( { "labelText": "Description", "name": key, "value": description } )
-  }
-
-  _getDescriptionInputValue(){
-    return this._editDescription.querySelector("input").value;
-  }
-
-  _setDescriptionInputValue(newValue){
-    return this._editDescription.querySelector("input").value = newValue;
-  }
-
   // RESET FUNCTIONS
   reset(data = this.data){
     this.typeFormDiv.innerHTML = "";
@@ -708,21 +670,25 @@ class TypeForm extends TatorElement {
   }
 
   async resetHard(){
-    console.log("reset hard");
+    console.log("Hard reset...");
     this.loading.showSpinner();
     //Utilities.warningAlert("Refreshing data", "#fff", false);
-    const response = await this._fetchGetPromise();
-    const data = await response.json();
-    this.data = this._findDataById(data);
+    //const response = await this._fetchGetPromise();
+    const response = await this._fetchByIdPromise();
+    // const data = await response.json();
+    // this.data = this._findDataById(data);
     //Utilities.hideAlert();
+    this.data = await response.json();
     this.loading.hideSpinner();
 
-    if(this.typeName == "MediaType"){
-      const mediaList = new DataMediaList( this.projectId );
-      mediaList._setProjectMediaList(data, true);
-    }
+    this.reset(this.data);
 
-    return this.reset(this.data);
+    // Update media list in the background
+    // In future could send individual media update if fn there to receive it
+    if(this.typeName == "MediaType"){
+      const mediaList = new DataMediaList(this.projectId);
+      mediaList._setProjectMediaList( "", true ); 
+    }
   }
 
   _findDataById(allData){
@@ -740,7 +706,7 @@ class TypeForm extends TatorElement {
     this.modal._titleDiv.append( document.createElement("modal-success") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
-    //this.modal._main.classList.add("fixed-heigh-scroll");
+    //this.modal._main.classList.add("fixed-height-scroll");
 
     return this.modal.setAttribute("is-open", "true")
   }
@@ -770,7 +736,7 @@ class TypeForm extends TatorElement {
       this.modal._main.innerHTML = mainText;
     }
     
-    if(scroll) this.modal._main.classList.add("fixed-heigh-scroll");
+    if(scroll) this.modal._main.classList.add("fixed-height-scroll");
 
     let buttonClose = document.createElement("button")
     buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold btn-charcoal");
@@ -790,7 +756,7 @@ class TypeForm extends TatorElement {
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     this.modal._footer.innerHTML = "";
-    this.modal._main.classList.remove("fixed-heigh-scroll");
+    this.modal._main.classList.remove("fixed-height-scroll");
 
     return this.modal.setAttribute("is-open", "true");
   }

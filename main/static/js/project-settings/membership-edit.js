@@ -37,39 +37,36 @@ class MembershipEdit extends TypeForm {
     this._setForm();
 
     // permission
-    const PERMISSION = "Permission";
     const permissionOptions = [
-      { "optText": "View Only", "optValue": "View Only" },
-      { "optText": "Can Edit", "optValue": "Can Edit" },
-      { "optText": "Can Transfer", "optValue": "Can Transfer" },
-      { "optText": "Can Execute", "optValue": "Can Execute" },
-      { "optText": "Full Control", "optValue": "Full Control" },
+      { "label": "View Only", "value": "View Only" },
+      { "label": "Can Edit", "value": "Can Edit" },
+      { "label": "Can Transfer", "value": "Can Transfer" },
+      { "label": "Can Execute", "value": "Can Execute" },
+      { "label": "Full Control", "value": "Full Control" },
     ];
-    this.permissionSelect = this.inputHelper.inputSelectOptions({
-      "labelText": "Permission",
-      "name": PERMISSION.toLowerCase(),
-      "value": data[PERMISSION.toLowerCase()],
-      "optionsList" : permissionOptions,
-      "disabledInput" : false,
-      "required" : true,
-    });
-    this._form.appendChild( this.permissionSelect );
+    this._permissionSelect = document.createElement("enum-input");
+    this._permissionSelect.setAttribute("name", "Permission");
+    this._permissionSelect.choices = permissionOptions;
+    this._permissionSelect._select.required = true;
+    this._permissionSelect.setValue(data.permission);
+    this._permissionSelect.deafult = data.permission;
+    this._permissionSelect.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild( this._permissionSelect );
 
     // default version
     this._data.getVersionsPromise()
     .then(versions => {
-      const VERSION = "Version";
-      const versionOptions = versions.map(version => {return {"optText": version.name,
-                                                              "optValue": version.id}});
-      this.versionSelect = this.inputHelper.inputSelectOptions({
-        "labelText": "Default version",
-        "name": VERSION.toLowerCase(),
-        "value": data.default_version,
-        "optionsList": versionOptions,
-        "disabledInput": false,
-        "required": true,
-      });
-      this._form.appendChild(this.versionSelect);
+      const versionOptions = versions.map(version => {return {"label": version.name,
+                                                              "value": version.id}});
+      
+      this._versionSelect = document.createElement("enum-input");;
+      this._versionSelect.setAttribute("name", "Version");
+      this._versionSelect.choices = versionOptions;
+      this._versionSelect._select.required = true;
+      this._versionSelect.setValue(data.default_version_id);
+      this._versionSelect.deafult = data.default_version_id;
+      this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
+      this._form.appendChild(this._versionSelect);
     });
 
     current.appendChild(this._form);
@@ -122,7 +119,7 @@ class MembershipEdit extends TypeForm {
     }
   }
   
-  _getFormData(id, includeDtype = false) {
+  _getFormData(id) {
     let formData;
     if (id == "New") {
       formData = [];
@@ -130,24 +127,23 @@ class MembershipEdit extends TypeForm {
       for (const user of users.values()) {
         formData.push({
           user: user.id,
+          username: user.username, // ignored by BE, used by FE only
           project: this.projectId,
           permission: this._permission.getValue(),
           default_version: Number(this._version.getValue()),
-          username: user.username,
+          default_version_id: Number(this._version.getValue()) // ignored by BE, used by FE only
         });
       }
     } else {
-      let form = this._shadow.getElementById(id);
-      let hasErrors = "";
+      formData = {};
 
-      // permission 
-      let permission = form.querySelector('[name="permission"]').value;
-      let version = Number(form.querySelector('[name="version"]').value);
+      if (this._permissionSelect.changed()) {
+        formData.permission = this._permissionSelect.getValue();
+      }
 
-      formData = {
-        permission: permission,
-        default_version: version,
-      };
+      if (this._versionSelect.changed()) {
+        formData.default_version = Number(this._versionSelect.getValue());
+      }
     }
 
     return formData;
@@ -170,7 +166,7 @@ class MembershipEdit extends TypeForm {
     const promises = [];
     for (const formData of formDataList) {
       const username = formData.username;
-      delete formData.username;
+      //delete formData.username;
       const promise = addNew.saveFetch(formData).then(([data, status]) => {
         console.log(data.message);
         this.loading.hideSpinner();

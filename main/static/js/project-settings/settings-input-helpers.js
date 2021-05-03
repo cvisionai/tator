@@ -381,41 +381,7 @@ class SettingsInput {
     }
   }
 
-  editImageUpload({
-    value = "", // img path
-    imgEl = document.createElement("img"),
-    labelText = "",
-    customCol = "col-md-9 col-sm-8",
-    disabledInput = false,
-    name = "",
-    forId = ""
-    } = {}){
-      const setName = this._getUniqueIdentifier(name);
-      let editButton = this.editButton({"customClass" : "btn-edit-overlay btn-small", "name" : name, "forId" : forId});
-
-      imgEl.style.height = "84px";
-      imgEl.style.width = "84px";
-      imgEl.title = labelText;
-      imgEl.setAttribute("class", "projects__image py-4");
-
-      if(value != null){
-        imgEl.src = value;
-      } else {
-        imgEl.src = "/static/images/cvision-logo-svg.svg";
-      }
-
-      const inputWithLabel = this.labelWrap({
-        "labelText": labelText,
-        "inputNode": imgEl,
-        "name": setName,
-        "labelType": "div"
-      });
-
-      inputWithLabel.appendChild(editButton);
-      inputWithLabel.style.position = "relative";
-
-      return inputWithLabel;
-    }
+  
 
 
   /* Wraps any node in a label */
