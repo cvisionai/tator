@@ -524,6 +524,7 @@ class TatorData {
         let thisAfter = 0;
         let thisPageSize = 9000;
         let currentCount = 0;
+        let currentUrl;
 
         async function getCount() {
 
@@ -534,7 +535,13 @@ class TatorData {
 
             if (phase == "getCount") {
               phase = "wait";
-              let currentUrl = url + `&start=${thisStart}&stop=${thisPageSize}&after=${thisAfter}`;
+
+              if (currentCount == 0) {
+                currentUrl = url + `&start=${thisStart}&stop=${thisPageSize}`;
+              }
+              else {
+                currentUrl = url + `&start=${thisStart}&stop=${thisPageSize}&after=${thisAfter}`;
+              }
               console.log("Getting count data with URL: " + currentUrl);
               fetchRetry(currentUrl, {
                 method: "GET",
@@ -547,8 +554,8 @@ class TatorData {
               }).then((response) => {
                 return response.json();
               }).then((data) => {
-                console.log(`count: ${data}`);
                 currentCount += data;
+                console.log(`count: ${data} totalCount: ${currentCount}`);
                 if (data < thisPageSize) {
                   countDone = true;
                 }
@@ -559,8 +566,14 @@ class TatorData {
             }
             else if (phase == "getEntity") {
               phase = "wait";
-              let currentUrl = non_count_url + `&start=${thisPageSize - 1}&stop=${thisPageSize}&after=${thisAfter}`;
-              console.log("Getting entity data with URL: " + non_count_url);
+
+              if (currentCount == 0) {
+                currentUrl = non_count_url + `&start=${thisPageSize - 1}&stop=${thisPageSize}`;
+              }
+              else {
+                currentUrl = non_count_url + `&start=${thisPageSize - 1}&stop=${thisPageSize}&after=${thisAfter}`;
+              }
+              console.log("Getting entity data with URL: " + currentUrl);
               fetchRetry(currentUrl, {
                 method: "GET",
                 credentials: "same-origin",
