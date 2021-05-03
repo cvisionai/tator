@@ -477,10 +477,12 @@ class TatorData {
     }
 
     let url = "/rest";
+    let non_count_url = "/rest";
 
     if (this._localizationTypes.indexOf(entityType) >= 0) {
       if (outputType == "count") {
         url += "/LocalizationCount/";
+        non_count_url += "/Localizations/";
       }
       else {
         url += "/Localizations/";
@@ -489,6 +491,7 @@ class TatorData {
     else if (this._mediaTypes.indexOf(entityType) >= 0) {
       if (outputType == "count") {
         url += "/MediaCount/";
+        non_count_url += "/Medias/";
       }
       else {
         url += "/Medias/";
@@ -512,23 +515,25 @@ class TatorData {
     }
     else {
       url += `${this._project}?${paramString}`;
+      non_count_url += `${this._project}?${paramString}`;
 
       if (outputType == "count") {
         // Force paginate the counts for speed with many thousands of entries
 
         let thisStart = 0;
         let thisAfter = 0;
-        let thisPageSize = 5000;
+        let thisPageSize = 9000;
         let currentCount = 0;
 
         async function getCount() {
 
           let countDone = false;
-          let waitingForData = false;
+          let phase = "getCount";
+
           while (!countDone) {
 
-            if (!waitingForData) {
-              waitingForData = true;
+            if (phase == "getCount") {
+              phase = "wait";
               let currentUrl = url + `&start=${thisStart}&stop=${thisPageSize}&after=${thisAfter}`;
               console.log("Getting count data with URL: " + currentUrl);
               fetchRetry(currentUrl, {
@@ -548,9 +553,27 @@ class TatorData {
                   countDone = true;
                 }
                 else {
-                  thisAfter += thisPageSize;
+                  phase = "getEntity";
                 }
-                waitingForData = false;
+              });
+            }
+            else if (phase == "getEntity") {
+              phase = "wait";
+              let currentUrl = non_count_url + `&start=${thisPageSize - 1}&stop=${thisPageSize}&after=${thisAfter}`;
+              console.log("Getting entity data with URL: " + non_count_url);
+              fetchRetry(currentUrl, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                  "Accept": "application/json",
+                  "Content-Type": "application/json"
+                },
+              }).then((response) => {
+                return response.json();
+              }).then((data) => {
+                thisAfter = data[0].id;
+                phase = "getCount";
               });
             }
             else {
