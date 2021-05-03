@@ -404,7 +404,7 @@ class TatorData {
    *   Used in conjunction with dataStop and pagination of data.
    *   If null, pagination is ignored.
    *
-   * @param {integer} dataStop =
+   * @param {integer} dataStop -
    *   Used in conjunction with dataStart and pagination of data.
    *   If null, pagination is ignored.
    *
@@ -498,22 +498,88 @@ class TatorData {
     if (!isNaN(dataStart) && !isNaN(dataStop)) {
       // Note: & into paramString is taken care of by paramString itself
       url += `${this._project}?start=${dataStart}&stop=${dataStop}${paramString}`;
+
+      console.log("Getting data with URL: " + url);
+      promises.push(fetchRetry(url, {
+          method: "GET",
+          credentials: "same-origin",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+      }));
     }
     else {
       url += `${this._project}?${paramString}`;
+
+      if (outputType == "count") {
+        // Force paginate the counts for speed with many thousands of entries
+
+        let thisStart = 0;
+        let thisAfter = 0;
+        let thisPageSize = 10000;
+        let currentCount = 0;
+
+        async function getCount() {
+
+          let countDone = false;
+          let waitingForData = false;
+          while (!countDone) {
+
+            if (!waitingForData) {
+              waitingForData = true;
+              let currentUrl = url + `&start=${thisStart}&stop=${thisPageSize}&after=${thisAfter}`;
+              console.log("Getting count data with URL: " + currentUrl);
+              fetchRetry(currentUrl, {
+                method: "GET",
+                credentials: "same-origin",
+                headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                  "Accept": "application/json",
+                  "Content-Type": "application/json"
+                },
+              }).then((response) => {
+                return response.json();
+              }).then((data) => {
+                console.log(`count: ${data}`);
+                if (data == 0) {
+                  countDone = true;
+                }
+                else {
+                  currentCount += data;
+                  thisAfter += thisPageSize;
+                }
+                waitingForData = false;
+              });
+            }
+            else {
+              await new Promise(resolve => {
+                setTimeout(resolve, 100)
+              });
+            }
+          }
+
+          const blob = new Blob([JSON.stringify(currentCount, null, 2)], {type : 'application/json'});
+          return new Response(blob);
+        }
+
+        var thisCountPromise = getCount();
+        promises.push(thisCountPromise);
+      }
+      else {
+        console.log("Getting data with URL: " + url);
+        promises.push(fetchRetry(url, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            },
+        }));
+      }
     }
-    console.log("Getting data with URL: " + url);
-
-    promises.push(fetchRetry(url, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-    }));
-
     let resultsJson = [];
     await Promise.all(promises).then((responses) => {
       for (let response of responses) {
