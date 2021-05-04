@@ -42,6 +42,10 @@
   position: relative;
 }
 
+.position-absolute {
+  position: absolute;
+}
+
 // Vertical align
 .v-align-top {
   vertical-align: top;
@@ -164,7 +168,7 @@
   padding-right: $spacing-6;
 }
 
-// Margins
+// Margins R, L, X, Y, Top, Bottom
 .mr-3 {
   margin-right: $spacing-3;
 }
@@ -180,6 +184,11 @@
 .mx-6 {
   margin-left: $spacing-6;
   margin-right: $spacing-6;
+}
+
+.my-2 {
+  margin-top: $spacing-2;
+  margin-bottom: $spacing-2;
 }
 
 .my-6 {

@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href={% static "css/tator/tator.min.css" %} />
     {% settings_value "USE_MIN_JS" as settings_min_js %}
     {% if not settings_min_js %}
+    <script src={% static "js/components/tator-element.js" %}></script>
     <script src={% static "js/node-uuid.js" %}></script>
     <script src={% static "js/StreamSaver.js" %}></script>
     <script src={% static "js/zip-stream.js" %}></script>
@@ -18,7 +19,15 @@
     <script src={% static "js/util/filter-utilities.js" %}></script>
     <script src={% static "js/util/tator-data.js" %}></script>
     <script src={% static "js/util/same-origin-credentials.js" %}></script>
-    <script src={% static "js/components/tator-element.js" %}></script>
+    <script src={% static "js/components/inputs/array-input.js" %}></script>
+    <script src={% static "js/components/inputs/bool-input.js" %}></script>
+    <script src={% static "js/components/inputs/checkbox-input.js" %}></script>
+    <script src={% static "js/components/inputs/enum-input.js" %}></script>
+    <script src={% static "js/components/inputs/text-area.js" %}></script>
+    <script src={% static "js/components/inputs/text-input.js" %}></script>
+    <script src={% static "js/components/inputs/feature/checkbox-set.js" %}></script>
+    <script src={% static "js/components/inputs/feature/color-inputs.js" %}></script>
+    <script src={% static "js/components/inputs/feature/thumb-inputs.js" %}></script>
     <script src={% static "js/components/labeled-checkbox.js" %}></script>
     <script src={% static "js/components/modal-close.js" %}></script>
     <script src={% static "js/components/modal-warning.js" %}></script>
@@ -69,7 +78,6 @@
     <script src={% static "js/components/removable-pill.js" %}></script>
     <script src={% static "js/components/user-input.js" %}></script>
     <script src={% static "js/components/user-data.js" %}></script>
-    <script src={% static "js/components/inputs/array-input.js" %}></script>
     <script src={% static "js/registration/registration-page.js" %}></script>
     <script src={% static "js/projects/settings-button.js" %}></script>
     <script src={% static "js/projects/project-remove.js" %}></script>
@@ -124,7 +132,6 @@
     <script src={% static "js/project-settings/type-form-validation.js" %}></script>
     <script src={% static "js/project-settings/settings-input-helpers.js" %}></script>
     <script src={% static "js/project-settings/settings-box-helpers.js" %}></script>
-    <script src={% static "js/project-settings/settings-bool-input.js" %}></script>
     <script src={% static "js/project-settings/type-delete.js" %}></script>
     <script src={% static "js/project-settings/type-form.js" %}></script>
     <script src={% static "js/project-settings/settings-nav.js" %}></script>
@@ -186,10 +193,6 @@
     <script src={% static "js/annotation/annotation-player.js" %}></script>
     <script src={% static "js/annotation/annotation-image.js" %}></script>
     <script src={% static "js/annotation/annotation-multi.js" %}></script>
-    <script src={% static "js/annotation/bool-input.js" %}></script>
-    <script src={% static "js/annotation/enum-input.js" %}></script>
-    <script src={% static "js/annotation/text-input.js" %}></script>
-    <script src={% static "js/annotation/text-area.js" %}></script>
     <script src={% static "js/annotation/attribute-panel.js" %}></script>
     <script src={% static "js/annotation/modify-track-dialog.js" %}></script>
     <script src={% static "js/annotation/progress-dialog.js" %}></script>

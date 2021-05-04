@@ -14,7 +14,7 @@ class SettingsNav extends TatorElement {
 
     // Right side panel with contents
     this.itemsContainer = document.createElement("div");
-    this.itemsContainer.setAttribute("class", "NavItem float-left col-md-9 col-xl-10 col-xs-12");
+    this.itemsContainer.setAttribute("class", "NavItem float-left offset-md-3 offset-xl-2 col-md-9 col-xl-10 col-xs-12");
     this.div.appendChild(this.itemsContainer);
 
     // Listen for changes
@@ -80,20 +80,21 @@ class SettingsNav extends TatorElement {
     return navItem.innerHTML = e.detail.newName;
   }
 
-  deleteNavItem(e){
+  deleteNavItem(e) {
     // Delete the side nav item, and container
     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
     let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}`);
 
-    navItem.parentNode.firstChild.click();
-    container.remove();
-
     // Show something else...
-    return navItem.remove();
+    navItem.parentNode.querySelectorAll('a')[0].click();
+
+    // remove the container and side nav link
+    container.remove();
+    navItem.remove()
   }
 
 
-  _addNav({name, type, subItems, subItemsOnly = false}){
+  _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true}){
 
     if(subItemsOnly){
       return this._subItemsOnly({
@@ -104,7 +105,8 @@ class SettingsNav extends TatorElement {
       return this._addHeadingWithSubItems({
         name,
         type,
-        subItems
+        subItems,
+        pendingSubItems
       });
     }
   }
@@ -153,7 +155,8 @@ class SettingsNav extends TatorElement {
   _addHeadingWithSubItems({
     name = document.createElement(""), 
     type = "", 
-    subItems = []
+    subItems = [],
+    pendingSubItems = false
   } = {} ){
     let headingBox = document.createElement("div");
     headingBox.setAttribute("class", `SideNav-heading f1 clearfix heading-for-${type}`); // ie. video,image,multi,localization,leaf,state
@@ -188,6 +191,13 @@ class SettingsNav extends TatorElement {
       headingBox.setAttribute("selected", "true");
     });
 
+    // Use a spinner if we are waiting to get the subItem list
+    if (pendingSubItems) {
+      let spinnerImg = document.createElement('img');
+      spinnerImg.src = "/static/images/spinner-transparent.svg";
+      hiddenSubNav.appendChild(spinnerImg);
+    }
+
     // SubItems
     if (subItems.length > 0){
       for(let obj of subItems){
@@ -212,7 +222,10 @@ class SettingsNav extends TatorElement {
 
   // This adds subitems to an existing heading
   // @TODO no "New item" trigger can be added in this fn (requires more el access)
-  _subItemsOnly({ subItems = [], type = "" }){
+  _subItemsOnly({ subItems = [], type = "" }) {
+    let section = this._shadow.querySelector(`.subitems-${type}`);
+    section.querySelector(`img`).hidden = true;
+
     // SubItems
     if (subItems && subItems.length > 0){
       for(let obj of subItems){
@@ -225,7 +238,6 @@ class SettingsNav extends TatorElement {
         if(addNewNode){
           addNewNode.before(subNavLink);
         } else {
-          let section = this._shadow.querySelector(`.subitems-${type}`);
           section.appendChild(subNavLink);
         }
       }
@@ -233,6 +245,7 @@ class SettingsNav extends TatorElement {
       console.log("No subitems for heading "+name);
       // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
+
   }
 
   // This is the the "+" next to item heading
@@ -339,13 +352,18 @@ class SettingsNav extends TatorElement {
   }
 
   // Hide and show to centralize where we are doing this action
-  hide(el){
-    if(el.nodeType == Node.ELEMENT_NODE){
-      return el.hidden = true;
-    } else {
-      let node = this._shadow.getElementById(el);
-      return node.hidden = true;
+  hide(el) {
+    try {
+      if(el.nodeType == Node.ELEMENT_NODE){
+        return el.hidden = true;
+      } else {
+        let node = this._shadow.getElementById(el);
+        return node.hidden = true;
+      }
+    } catch (err) {
+      console.error("Error hiding element.")
     }
+
     
   }
   show(el){
