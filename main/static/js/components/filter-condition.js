@@ -127,6 +127,8 @@ class FilterCondition extends TatorElement {
     var dtype = "string";
     var selectedAttributeType;
 
+    var uniqueFieldChoices = [];
+
     for (const currentType of this._currentTypes) {
       for (const attribute of currentType.attribute_types) {
         if (attribute.name == selectedFieldName) {
@@ -135,7 +137,10 @@ class FilterCondition extends TatorElement {
           if (dtype == "enum") {
             let enumChoices = [];
             for (let choice of attribute.choices) {
-              enumChoices.push({"value": choice});
+              if (uniqueFieldChoices.indexOf(choice) < 0) {
+                enumChoices.push({"value": choice});
+                uniqueFieldChoices.push(choice);
+              }
             }
             this._valueEnum.choices = enumChoices;
           }
