@@ -16,6 +16,9 @@ class AnnotationCardData extends HTMLElement {
         this.cardList.paginationState = paginationState;
 
         this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterState.conditionsObject);
+        if (this.cardList.total > this._modelData.getMaxFetchCount()) {
+            this.cardList.total = this._modelData.getMaxFetchCount();
+        }
         this.localizations = await this._modelData.getFilteredLocalizations("objects", filterState.conditionsObject, paginationState.start, paginationState.stop);
         this.mediaTypes = this._modelData.getStoredMediaTypes();
         this.projectId = this._modelData.getProjectId();

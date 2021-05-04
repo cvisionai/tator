@@ -15,6 +15,12 @@ class TatorData {
 
     this._versions = [];
     this._sections = [];
+
+    this._maxFetchCount = 100000;
+  }
+
+  getMaxFetchCount() {
+    return this._maxFetchCount;
   }
 
   getProjectId() {
@@ -522,10 +528,11 @@ class TatorData {
 
         let thisStart = 0;
         let thisAfter = 0;
-        let thisPageSize = 9000;
+        let thisPageSize = 9500; // 10k is the maximum with the endpoint
         let currentCount = 0;
         let currentUrl;
 
+        var that = this;
         async function getCount() {
 
           let countDone = false;
@@ -556,7 +563,7 @@ class TatorData {
               }).then((data) => {
                 currentCount += data;
                 console.log(`count: ${data} totalCount: ${currentCount}`);
-                if (data < thisPageSize) {
+                if (data < thisPageSize || currentCount > that._maxFetchCount) {
                   countDone = true;
                 }
                 else {

@@ -103,7 +103,12 @@ class AnnotationsGallery extends EntityCardGallery {
     //   this._h3Text = document.createTextNode("All Annotations");
     // }
 
-    this._numFiles.textContent = `${cardList.total} Results`;
+    if (cardList.total >= this.modelData.getMaxFetchCount()) {
+      this._numFiles.textContent = `Too many results to preview. Displaying first ${cardList.total} results.`
+    }
+    else {
+      this._numFiles.textContent = `${cardList.total} Results`;
+    }
 
     // Only populate the pagination when the dataset has changed (and therefore the pagination
     // needs to be reinitialized)
