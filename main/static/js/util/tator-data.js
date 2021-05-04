@@ -16,7 +16,7 @@ class TatorData {
     this._versions = [];
     this._sections = [];
 
-    this._maxFetchCount = 100000;
+    this._maxFetchCount = 10000;
   }
 
   getMaxFetchCount() {
@@ -482,6 +482,11 @@ class TatorData {
       paramString += `&type=${dtype}`
     }
 
+    if (paramString === "") {
+      // Note: This is required for a performance boost.
+      paramString += `&search=%2A`
+    }
+
     let url = "/rest";
     let non_count_url = "/rest";
 
@@ -520,15 +525,15 @@ class TatorData {
       }));
     }
     else {
-      url += `${this._project}?${paramString}`;
-      non_count_url += `${this._project}?${paramString}`;
+      url += `${this._project}?`;
+      non_count_url += `${this._project}?`;
 
       if (outputType == "count") {
         // Force paginate the counts for speed with many thousands of entries
 
         let thisStart = 0;
         let thisAfter = 0;
-        let thisPageSize = 9500; // 10k is the maximum with the endpoint
+        let thisPageSize = 4500; // Error with endpoint when start + stop > 10000
         let currentCount = 0;
         let currentUrl;
 
@@ -536,19 +541,14 @@ class TatorData {
         async function getCount() {
 
           let countDone = false;
-          let phase = "getCount";
+          let phase = "getEntity";
 
           while (!countDone) {
 
             if (phase == "getCount") {
               phase = "wait";
 
-              if (currentCount == 0) {
-                currentUrl = url + `&start=${thisStart}&stop=${thisPageSize}`;
-              }
-              else {
-                currentUrl = url + `&start=${thisStart}&stop=${thisPageSize}&after=${thisAfter}`;
-              }
+              currentUrl = url + `start=${thisStart}&stop=${thisPageSize}&after=${thisAfter}${paramString}`;
               console.log("Getting count data with URL: " + currentUrl);
               fetchRetry(currentUrl, {
                 method: "GET",
@@ -575,10 +575,10 @@ class TatorData {
               phase = "wait";
 
               if (currentCount == 0) {
-                currentUrl = non_count_url + `&start=${thisPageSize - 1}&stop=${thisPageSize}`;
+                currentUrl = non_count_url + `start=0&stop=1${paramString}`;
               }
               else {
-                currentUrl = non_count_url + `&start=${thisPageSize - 1}&stop=${thisPageSize}&after=${thisAfter}`;
+                currentUrl = non_count_url + `start=${thisPageSize - 1}&stop=${thisPageSize}&after=${thisAfter}${paramString}`;
               }
               console.log("Getting entity data with URL: " + currentUrl);
               fetchRetry(currentUrl, {
@@ -592,8 +592,14 @@ class TatorData {
               }).then((response) => {
                 return response.json();
               }).then((data) => {
-                thisAfter = data[0].id;
-                phase = "getCount";
+
+                if (data.length > 0) {
+                  thisAfter = data[0].id;
+                  phase = "getCount";
+                }
+                else {
+                  countDone = true;
+                }
               });
             }
             else {
@@ -611,6 +617,7 @@ class TatorData {
         promises.push(thisCountPromise);
       }
       else {
+        url += `${paramString}`
         console.log("Getting data with URL: " + url);
         promises.push(fetchRetry(url, {
             method: "GET",
