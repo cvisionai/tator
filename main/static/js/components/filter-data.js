@@ -29,7 +29,7 @@ class FilterData {
     var localizationTypeOptions = [];
     for (let idx = 0; idx < this.localizationTypes.length; idx++) {
       let locType = this.localizationTypes[idx];
-      localizationTypeOptions.push(`${locType.dtype}_${locType.id}`);
+      localizationTypeOptions.push(`${locType.dtype}/${locType.name} (ID:${locType.id})`);
     }
 
     // Versions aren't typically part of the localization type's user attribute list.

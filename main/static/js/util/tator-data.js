@@ -739,7 +739,7 @@ class TatorData {
         for (let idx = 0; idx < typeFilters.length; idx++) {
           // Expected format (type_ID)
           // #TODO Same comment as versions
-          dtypeIds.push(Number(typeFilters[idx].value.split('_')[1]));
+          dtypeIds.push(Number(typeFilters[idx].value.split('(ID:')[1].replace(")","")));
         }
       }
 
