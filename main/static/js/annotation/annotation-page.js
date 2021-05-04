@@ -242,7 +242,7 @@ class AnnotationPage extends TatorPage {
                   playbackQuality = Number(searchParams.get("quality"));
                 }
                 this._settings.quality = playbackQuality;
-                this._player.setQuality(playbackQuality);
+                this._player.setQuality(playbackQuality, null, true);
               });
 
             } else {

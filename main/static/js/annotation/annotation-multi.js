@@ -769,7 +769,7 @@ class AnnotationMulti extends TatorElement {
 
     const seekInfo = this._videos[idx].getQuality("seek");
     const scrubInfo = this._videos[idx].getQuality("scrub");
-    const playInfo = this._videos[idx].getQuality("play");
+    const playInfo = this._videos[idx].nearestQuality(this._quality);
     const focusedInfo = this._videos[idx].nearestQuality(this._focusQuality);
     const dockedInfo = this._videos[idx].nearestQuality(this._dockQuality);
 
@@ -1297,7 +1297,7 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
-  setQuality(quality, buffer) {
+  setQuality(quality, buffer, isDefault) {
     if (buffer == "focusPlayback") {
       this._focusQuality = quality;
       for (let videoDiv of this._focusDiv.children) {
@@ -1315,6 +1315,10 @@ class AnnotationMulti extends TatorElement {
       for (let video of this._videos)
       {
         video.setQuality(quality, buffer);
+      }
+
+      if (isDefault) {
+        this.setDefaultVideoSettings(idx);
       }
     }
   }
