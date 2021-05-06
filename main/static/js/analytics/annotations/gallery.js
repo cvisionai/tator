@@ -188,6 +188,10 @@ class AnnotationsGallery extends EntityCardGallery {
         let annotationPanel = document.createElement("entity-gallery-panel");
         annotationPanelDiv.appendChild(annotationPanel);
 
+        // Listen for attribute changes
+        annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
+        annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
+
         // Update view
         annotationPanelDiv.addEventListener("unselected", () => {
           card._li.classList.remove("is-selected");
@@ -253,6 +257,63 @@ class AnnotationsGallery extends EntityCardGallery {
       for (let idx = len - 1; idx >= numberOfDisplayedCards; idx--) {
         this._cardElements[idx].card.style.display = "none";
       }
+    }
+  }
+
+  entityFormChange(e) {
+    console.log(e.detail);
+
+    // @TODO get accurate entity type (other than localization??)
+    return this.formChange({
+      id: e.detail.id,
+      values: { attributes: e.detail.values },
+      type: "Localization"
+    });
+  }
+
+  mediaFormChange(e) {
+    console.log(e.detail);
+
+    return this.formChange({
+      id: e.detail.id,
+      values: { attributes: e.detail.values },
+      type: "Media"
+    });
+  }
+
+  async formChange({ type, id, values } = {}) {
+    const result = await fetch(`/rest/${type}/${id}`, {
+      method: "PATCH",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(values)
+    });
+
+    const data = await result.json();
+    let msg = "";
+    if (result.ok) {  
+      if (data.details && data.details.contains("Exception")) {
+        console.log(data.message);
+        msg = `Error: ${data.message}.`
+        Utilities.warningAlert(msg);
+      } else {
+        msg = `${data.message}`
+        Utilities.showSuccessIcon(msg);
+      }
+
+    } else {
+      if (data.message) {
+        console.log(data.message);
+        msg = `Error: ${data.message}.`
+      } else {
+        msg = `Error saving ${type}.`
+      }
+      Utilities.warningAlert(msg, "#ff3e1d", false);
     }
   }
 
