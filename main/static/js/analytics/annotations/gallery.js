@@ -104,7 +104,7 @@ class AnnotationsGallery extends EntityCardGallery {
     // }
 
     if (cardList.total >= this.modelData.getMaxFetchCount()) {
-      this._numFiles.textContent = `Too many results to preview. Displaying first ${cardList.total} results.`
+      this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
     }
     else {
       this._numFiles.textContent = `${cardList.total} Results`;

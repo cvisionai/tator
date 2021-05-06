@@ -10,6 +10,9 @@ class AnnotationCardData extends HTMLElement {
     }
 
     async makeCardList({filterState, paginationState}) {
+
+        console.log("********** makeCardList");
+
         this.cardList = {};
         this.cardList.cards = [];
         this.cardList.filterState = filterState;

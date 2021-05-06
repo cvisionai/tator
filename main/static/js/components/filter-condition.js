@@ -60,7 +60,7 @@ class FilterCondition extends TatorElement {
     this._div.appendChild(removeButton);
 
     this._data = [];
-    this._currentType = [];
+    this._currentTypes = [];
 
     /*
     * Event handlers
@@ -90,6 +90,7 @@ class FilterCondition extends TatorElement {
     // Create the menu options for the field name
     var fieldChoices = [];
     var uniqueFieldChoices = [];
+    this._currentTypes = [];
 
     for (const attributeType of this._data)
     {
@@ -102,7 +103,7 @@ class FilterCondition extends TatorElement {
             uniqueFieldChoices.push(attribute.name);
           }
         }
-        this._currentType = attributeType;
+        this._currentTypes.push(attributeType);
       }
     }
 
@@ -125,20 +126,26 @@ class FilterCondition extends TatorElement {
     let selectedFieldName = this._fieldName.getValue();
     var dtype = "string";
     var selectedAttributeType;
-    for (const attribute of this._currentType.attribute_types)
-    {
-      if (attribute.name == selectedFieldName)
-      {
-        selectedAttributeType = attribute;
-        dtype = attribute.dtype;
-        if (dtype == "enum") {
-          let enumChoices = [];
-          for (let choice of attribute.choices) {
-            enumChoices.push({"value": choice});
+
+    var uniqueFieldChoices = [];
+
+    for (const currentType of this._currentTypes) {
+      for (const attribute of currentType.attribute_types) {
+        if (attribute.name == selectedFieldName) {
+          selectedAttributeType = attribute;
+          dtype = attribute.dtype;
+          if (dtype == "enum") {
+            let enumChoices = [];
+            for (let choice of attribute.choices) {
+              if (uniqueFieldChoices.indexOf(choice) < 0) {
+                enumChoices.push({"value": choice});
+                uniqueFieldChoices.push(choice);
+              }
+            }
+            this._valueEnum.choices = enumChoices;
           }
-          this._valueEnum.choices = enumChoices;
+          break;
         }
-        break;
       }
     }
 
@@ -201,7 +208,7 @@ class FilterCondition extends TatorElement {
     }
     this._category.choices = choices;
     this._category.selectedIndex = -1;
-    this._currentType = [];
+    this._currentTypes = [];
     this._userSelectedCategory();
   }
 
