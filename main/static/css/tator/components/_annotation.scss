@@ -310,8 +310,12 @@ video-canvas {
   width: 100%;
 }
 
-.video {
+annotation-image {
   width: 100%;
+}
+
+.video {
+  max-width: 100%;
   background: black;
 }
 
