@@ -1,12 +1,4 @@
-// The loc-in-page will be like annotation page in that...
-// - sets up an image or video canvas w/ loc drawn
-// - has listeners and tool controls
-// But, different because
-// - canvas is sized to a page, or modal sizing
-// - has limited tooling available
-// @TODO in progress
-
-class LocalizationInPage extends TatorElement {
+class GalleryPanelLocalization extends TatorElement {
   constructor() {
     super();
 
@@ -303,4 +295,4 @@ class LocalizationInPage extends TatorElement {
 
 
 }
-customElements.define("localization-in-page", LocalizationInPage);
+customElements.define("entity-gallery-panel-localization", GalleryPanelLocalization);

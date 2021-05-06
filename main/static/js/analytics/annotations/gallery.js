@@ -298,7 +298,6 @@ class AnnotationsGallery extends EntityCardGallery {
     let msg = "";
     if (result.ok) {  
       if (data.details && data.details.contains("Exception")) {
-        console.log(data.message);
         msg = `Error: ${data.message}`
         Utilities.warningAlert(msg);
       } else {
@@ -308,7 +307,6 @@ class AnnotationsGallery extends EntityCardGallery {
 
     } else {
       if (data.message) {
-        console.log(data.message);
         msg = `Error: ${data.message}`
       } else {
         msg = `Error saving ${type}.`

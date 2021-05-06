@@ -41,9 +41,6 @@ class EntityGalleryPanel extends TatorElement {
       mediaHeading.appendChild(document.createTextNode("Associated Media"));
       this._main.appendChild(mediaHeading)
       
-  
-      
-      //this._linksDiv.appendChild(mediaLinkDiv);
       this.mediaData = document.createElement("entity-gallery-panel-form");
       this._main.appendChild(this.mediaData);
     }
