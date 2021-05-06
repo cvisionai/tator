@@ -299,7 +299,7 @@ class AnnotationsGallery extends EntityCardGallery {
     if (result.ok) {  
       if (data.details && data.details.contains("Exception")) {
         console.log(data.message);
-        msg = `Error: ${data.message}.`
+        msg = `Error: ${data.message}`
         Utilities.warningAlert(msg);
       } else {
         msg = `${data.message}`
@@ -309,7 +309,7 @@ class AnnotationsGallery extends EntityCardGallery {
     } else {
       if (data.message) {
         console.log(data.message);
-        msg = `Error: ${data.message}.`
+        msg = `Error: ${data.message}`
       } else {
         msg = `Error saving ${type}.`
       }
