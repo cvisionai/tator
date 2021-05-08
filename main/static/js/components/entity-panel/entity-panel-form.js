@@ -3,10 +3,8 @@ class EntityGalleryPanelForm extends TatorElement {
     super();
 
     // @TODO what can be reused for this?
-    this.todo = document.createElement("div");
-    this._shadow.appendChild(this.todo);
-
-    this.inputHelper = new SettingsInput();
+    // this.todo = document.createElement("div");
+    // this._shadow.appendChild(this.todo);
 
     this._div = document.createElement("div");
     this._shadow.appendChild(this._div);
@@ -20,37 +18,8 @@ class EntityGalleryPanelForm extends TatorElement {
    * #TODO In the future, we might want to actually display multiple types (e.g. media + loc)
    * @param {object} data - cardData (add more info)
    */
-  _init(data){
-    /*
-    this.form = document.createElement("form");
-
-    // @TODO this is specific to the data for /analysis/annotations.js
-    for(const [attr, value] of Object.entries(obj.attributes)){
-      // Attribute name and it's value
-      const NAME = "Name";
-      const nameInput = this.inputHelper.inputText({
-        "labelText" : attr,
-        "name" : attr,
-        "value" : value
-      });
-      nameInput.querySelector("input").disabled = true;
-      nameInput.querySelector("input").classList.add("disabled");
-      this.form.appendChild( nameInput );
-    }
-
-      // View Media Button
-      //class="btn btn-clear btn-charcoal text-gray"
-      const viewMedia = document.createElement("a");
-
-      viewMedia.setAttribute("value", "View Media");
-      viewMedia.setAttribute("class", `col-12 btn btn-clear btn-charcoal text-gray text-semibold`);
-      viewMedia.appendChild( document.createTextNode("View Media") );
-      viewMedia.setAttribute("href", obj.mediaLink);
-      this.form.appendChild(viewMedia);
-
-      // Append form to el
-      this._shadow.appendChild(this.form)
-      */
+  _init(data) {
+    console.log(data);
 
     // Hide all of the attribute panels, and then show the one we care about.
     for (const attrTypeId in this._attributeTypes) {
@@ -71,9 +40,25 @@ class EntityGalleryPanelForm extends TatorElement {
       attributes.displaySlider(false);
       attributes.displayGoToTrack(false);
       this._attributeTypes[data.entityType.id] = attributes;
-      attributes.permission = "View Only";
-    }
-    else {
+      //attributes.permission = "View Only";
+
+      attributes.addEventListener("change", () => {
+        this._values = attributes.getValues();
+
+        if (this._values !== null) {
+          const detail = {
+            detail: {
+              id: data.id,
+              values: this._values
+            }
+          };
+          console.log(detail);
+          this.dispatchEvent(new CustomEvent("save", detail));
+
+        }
+      });
+
+    } else {
       attributes = this._attributeTypes[data.entityType.id];
     }
 

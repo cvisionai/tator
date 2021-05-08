@@ -4,7 +4,7 @@ class EntityGalleryPanelTop extends TatorElement {
 
       // Panel top bar
       this._topBar = document.createElement("div");
-      this._topBar.setAttribute("class", "entity-panel--container--top-bar");
+      //this._topBar.setAttribute("class", "entity-panel--container--top-bar");
       this._shadow.appendChild(this._topBar);
 
       // topbar arrow
@@ -24,20 +24,21 @@ class EntityGalleryPanelTop extends TatorElement {
 
       // Text box
       this._box = document.createElement("div");
-      this._box.setAttribute("class", "px-3 py-6");
+      this._box.setAttribute("class", "px-3 pt-4");
       this._topBar.appendChild(this._box);
 
       // Panel name
       this._topBarH3 = document.createElement("h3");
       this._topBarH3.setAttribute("class", "entity-panel--container--top-bar--h3 text-semibold h3 ");
-      this._headingText = document.createTextNode(`No selection.`);
+      this._headingText = document.createElement("span");
+      this._headingText.appendChild(document.createTextNode("No Selection."));
       this._topBarH3.appendChild( this._headingText );
       this._box.appendChild(this._topBarH3);
 
-      // Panel name
-      this._topBarID = document.createElement("h3");
-      this._topBarID.setAttribute("class", "entity-panel--container--top-bar--h3 text-semibold h3 ");
-      this._box.appendChild(this._topBarID);
+      // Panel ID
+      this._topBarID = document.createElement("span");
+      this._topBarID.setAttribute("class", "entity-panel--container--top-bar--id text-normal text-gray h3 ");
+      this._topBarH3.appendChild(this._topBarID);
 
       // Panel text
       // this._topBarP = document.createElement("p");
@@ -46,7 +47,7 @@ class EntityGalleryPanelTop extends TatorElement {
       // this._box.appendChild(this._topBarP);
 
       // Panel Img Canvas
-      this._locImage = document.createElement("localization-in-page");
+      this._locImage = document.createElement("entity-gallery-panel-localization");
       this._box.appendChild(this._locImage);
 
       // Image modal link container @TODO styling
@@ -80,10 +81,12 @@ class EntityGalleryPanelTop extends TatorElement {
         // We're opening the panel with new card click
         this._locImage.initAndShowData({ cardObj : evtDetail.cardObj });
         this._locImage.classList.remove("hidden");
-        this._topBarH3.innerHTML = `Annotation Information (ID: ${evtDetail.cardObj.id})`;
+        this._headingText.innerHTML = `Annotation `;
+        this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
       } else {
         this._locImage.classList.add("hidden");
-        this._topBarH3.innerHTML = `No selection.`;
+        this._headingText.innerHTML = `No selection.`;
+        this._topBarID.innerHTML = ``;
       }
     }
    

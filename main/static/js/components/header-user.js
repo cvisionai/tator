@@ -6,11 +6,15 @@ class HeaderUser extends TatorElement {
     div.setAttribute("class", "d-flex flex-justify-right flex-items-center f3");
     this._shadow.appendChild(div);
 
+    this._lightSpacer = document.createElement("span");
+    this._lightSpacer.style.width = "32px";
+    div.appendChild(this._lightSpacer);
+
     this._success = document.createElement("success-light");
-    div.appendChild(this._success);
+    this._lightSpacer.appendChild(this._success);
 
     this._warning = document.createElement("warning-light");
-    div.appendChild(this._warning);
+    this._lightSpacer.appendChild(this._warning);
 
     const innerDiv = document.createElement("div");
     div.appendChild(innerDiv);

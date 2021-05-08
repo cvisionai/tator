@@ -1,12 +1,4 @@
-// The loc-in-page will be like annotation page in that...
-// - sets up an image or video canvas w/ loc drawn
-// - has listeners and tool controls
-// But, different because
-// - canvas is sized to a page, or modal sizing
-// - has limited tooling available
-// @TODO in progress
-
-class LocalizationInPage extends TatorElement {
+class GalleryPanelLocalization extends TatorElement {
   constructor() {
     super();
 
@@ -29,6 +21,7 @@ class LocalizationInPage extends TatorElement {
     this._shadow.appendChild(this._videoCanvas);
 
     // data
+    // #TODO define this outside component
     this.panelData = document.createElement("annotation-panel-data");
 
     // Keep these inactive / out of sight until we have data
@@ -62,13 +55,13 @@ class LocalizationInPage extends TatorElement {
       let data = this.savedMediaData[mediaId];
       let dtype = this.savedMediaData[mediaId].mediaTypeData.dtype;
 
-      this._setupCanvas({dtype, mediaId, locId, data});
+      this._setupCanvas({ dtype, mediaId, locId, data });
 
     } else {
       // --> Get mediaData and save it to this card object
       this.panelData.getMediaData(mediaId).then((data) => {
         let dtype = data.mediaTypeData.dtype;
-        this._setupCanvas({dtype, mediaId, locId, data});
+        this._setupCanvas({ dtype, mediaId, locId, data });
 
         // save this data in local memory until we need it again
         this.savedMediaData[mediaId] = data;
@@ -76,7 +69,7 @@ class LocalizationInPage extends TatorElement {
     }
   }
 
-  _setupCanvas({dtype, mediaId, locId, data}) {
+  _setupCanvas({ dtype, mediaId, locId, data }) {
     this._player = (dtype == "image") ? this._setupImageCanvas() : this._setupVideoCanvas();
     this._player.addDomParent({
       "object": this.panelContainer,
@@ -303,4 +296,4 @@ class LocalizationInPage extends TatorElement {
 
 
 }
-customElements.define("localization-in-page", LocalizationInPage);
+customElements.define("entity-gallery-panel-localization", GalleryPanelLocalization);
