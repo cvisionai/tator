@@ -223,14 +223,15 @@ FILES = \
     components/upload-element.js \
     components/entity-gallery/entity-gallery.js \
     components/entity-gallery/entity-gallery-card.js \
-    components/entity-gallery/entity-gallery-panel-localization.js \
-    components/entity-gallery/entity-gallery-panel-form.js \
-    components/entity-gallery/entity-gallery-panel-top.js \
-    components/entity-gallery/entity-gallery-panel.js \
     components/entity-gallery/entity-gallery-resize.js \
     components/entity-gallery/entity-gallery-aspect-ratio.js \
     components/entity-gallery/entity-gallery-paginator.js \
     components/entity-gallery/entity-gallery-labels.js \
+    components/entity-panel/entity-panel-localization.js \
+    components/entity-panel/entity-panel-form.js \
+    components/entity-panel/entity-panel-top.js \
+    components/entity-panel/entity-panel-container.js \
+    components/entity-panel/entity-panel.js \
     components/header-notification.js \
     components/header-menu.js \
     components/header-user.js \
@@ -405,7 +406,6 @@ FILES = \
     analytics/analytics-breadcrumbs.js \
     analytics/analytics-settings.js \
     analytics/dashboard/dashboard.js \
-    analytics/annotations/panel-container.js \
     analytics/annotations/card.js \
     analytics/annotations/gallery.js \
     analytics/annotations/panel-data.js \

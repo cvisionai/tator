@@ -67,7 +67,7 @@
     this.mainWrapper.appendChild(this.aside);
 
     // Gallery navigation panel
-    this._panelContainer = document.createElement("annotations-panel-container");
+    this._panelContainer = document.createElement("entity-panel-container");
     this.aside.appendChild(this._panelContainer);
 
     //

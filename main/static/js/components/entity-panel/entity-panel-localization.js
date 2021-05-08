@@ -21,6 +21,7 @@ class GalleryPanelLocalization extends TatorElement {
     this._shadow.appendChild(this._videoCanvas);
 
     // data
+    // #TODO define this outside component
     this.panelData = document.createElement("annotation-panel-data");
 
     // Keep these inactive / out of sight until we have data
@@ -54,13 +55,13 @@ class GalleryPanelLocalization extends TatorElement {
       let data = this.savedMediaData[mediaId];
       let dtype = this.savedMediaData[mediaId].mediaTypeData.dtype;
 
-      this._setupCanvas({dtype, mediaId, locId, data});
+      this._setupCanvas({ dtype, mediaId, locId, data });
 
     } else {
       // --> Get mediaData and save it to this card object
       this.panelData.getMediaData(mediaId).then((data) => {
         let dtype = data.mediaTypeData.dtype;
-        this._setupCanvas({dtype, mediaId, locId, data});
+        this._setupCanvas({ dtype, mediaId, locId, data });
 
         // save this data in local memory until we need it again
         this.savedMediaData[mediaId] = data;
@@ -68,7 +69,7 @@ class GalleryPanelLocalization extends TatorElement {
     }
   }
 
-  _setupCanvas({dtype, mediaId, locId, data}) {
+  _setupCanvas({ dtype, mediaId, locId, data }) {
     this._player = (dtype == "image") ? this._setupImageCanvas() : this._setupVideoCanvas();
     this._player.addDomParent({
       "object": this.panelContainer,
