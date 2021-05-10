@@ -1420,6 +1420,20 @@ class ChangeToObject(Model):
     change_id = ForeignKey(ChangeLog, on_delete=SET_NULL, null=True)
     """ The change that affected the object """
 
+class Announcement(Model):
+    """ Message that may be displayed to users.
+    """
+    subject = CharField(max_length=256)
+    message = CharField(max_length=2048)
+    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True)
+
+class AnnouncementToUser(Model):
+    """ Mapping between announcement and user. The presence of a row in this table
+        means an announcement should be displayed to the user.
+    """
+    announcement = ForeignKey(Announcement, on_delete=CASCADE)
+    user = ForeignKey(User, on_delete=CASCADE)
+
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {
