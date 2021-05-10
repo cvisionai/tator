@@ -1425,7 +1425,8 @@ class Announcement(Model):
     """
     subject = CharField(max_length=256)
     message = CharField(max_length=2048)
-    project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True)
+    eol_datetime = DateTimeField()
 
 class AnnouncementToUser(Model):
     """ Mapping between announcement and user. The presence of a row in this table
