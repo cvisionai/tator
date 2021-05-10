@@ -109,6 +109,14 @@ urlpatterns += [
         AnalysisDetailAPI.as_view(),
     ),
     path(
+        'rest/Announcements',
+        AnnouncementListAPI.as_view(),
+    ),
+    path(
+        'rest/Announcement/<int:id>',
+        AnnouncementDetailAPI.as_view(),
+    ),
+    path(
         'rest/AttributeType/<int:id>',
         AttributeTypeListAPI.as_view(),
     ),

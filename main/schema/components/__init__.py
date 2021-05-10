@@ -10,6 +10,7 @@ from .algorithm import algorithm_manifest
 from .algorithm import algorithm_manifest_spec
 from .analysis import analysis_spec
 from .analysis import analysis
+from .announcement import announcement
 from .attribute_type import (
     autocomplete_service,
     attribute_type,

@@ -40,6 +40,7 @@ class CustomGenerator(SchemaGenerator):
                 'AlgorithmManifestSpec': algorithm_manifest_spec,
                 'AnalysisSpec': analysis_spec,
                 'Analysis': analysis,
+                'Announcement': announcement,
                 'ArchiveConfig': archive_config,
                 'AttributeTypeSpec': attribute_type_spec,
                 'AttributeTypeUpdate': attribute_type_update,
