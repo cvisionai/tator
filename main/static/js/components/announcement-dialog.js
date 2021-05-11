@@ -24,8 +24,9 @@ class AnnouncementDialog extends ModalDialog {
       div.setAttribute("class", "d-flex flex-column col-12 table");
       this._announcements.appendChild(div);
 
-      const content = document.createElement("div");
-      content.innerHTML = marked(announcement.markdown);
+      const content = document.createElement("markdown-div");
+      const rawString = announcement.markdown.replaceAll("\\n", "\n");
+      content.init(rawString);
       div.appendChild(content);
 
       const buttonDiv = document.createElement("div");
@@ -46,6 +47,7 @@ class AnnouncementDialog extends ModalDialog {
         div.parentNode.removeChild(div);
         if (!this._announcements.firstChild) {
           this._closeCallback();
+        }
       });
     }
   }

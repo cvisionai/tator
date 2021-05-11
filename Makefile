@@ -209,6 +209,7 @@ FILES = \
     components/inputs/text-area.js \
     components/inputs/text-input.js \
     components/labeled-checkbox.js \
+    components/markdown-div.js \
     components/modal-close.js \
     components/modal-warning.js \
     components/modal-success.js \
