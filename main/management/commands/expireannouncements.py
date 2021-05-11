@@ -13,7 +13,7 @@ class Command(BaseCommand):
         announcements = Announcement.objects.all()
         num_deleted = 0
         for announcement in list(announcements):
-            if announcement.eol_datetime < datetime.datetime.now():
+            if announcement.eol_datetime < datetime.datetime.now(datetime.timezone.utc):
                 announcement.delete()
                 logger.info(f"Deleted announcement {announcement.id}, "
                             f"EOL was {announcement.eol_datetime}.")
