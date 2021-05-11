@@ -1,3 +1,7 @@
+import datetime
+
+from dateutil.parser import parse
+
 from ..models import Announcement
 from ..models import AnnouncementToUser
 from ..models import database_qs
@@ -15,8 +19,16 @@ class AnnouncementListAPI(BaseListView):
 
     def _get(self, params):
         response_data = []
-        if not self.request.session.get('announcements_shown'):
-            self.request.session['announcements_shown'] = True
+        last_announcement = self.request.session.get('last_announcement')
+        announce = False
+        if last_announcement is None:
+            announce = True
+        else:
+            last_announcement = parse(last_announcement)
+            if (datetime.datetime.now() - last_announcement) > datetime.timedelta(days=1):
+                announce = True
+        if announce:
+            self.request.session['last_announcement'] = datetime.datetime.now().isoformat()
             response_data = database_qs(self.get_queryset())
         return response_data
 
