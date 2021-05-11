@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from main.models import Announcement
 from main.models import AnnouncementToUser
 from main.models import User
+from main.models import Membership
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,8 @@ class Command(BaseCommand):
         users = User.objects.all()
         if options['project']:
             memberships = Membership.objects.filter(project=options['project'])
-            users = memberships.values_list('user', flat=True).distinct()
+            user_ids = memberships.values_list('user', flat=True).distinct()
+            users = User.objects.filter(pk__in=user_ids)
         if options['user']:
             users = User.objects.filter(pk=options['user'])
         to_users = [AnnouncementToUser(announcement=announcement, user=user)
