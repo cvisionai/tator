@@ -4,6 +4,7 @@ import logging
 from django.core.management.base import BaseCommand
 from main.models import Announcement
 from main.models import AnnouncementToUser
+from main.models import User
 
 logger = logging.getLogger(__name__)
 

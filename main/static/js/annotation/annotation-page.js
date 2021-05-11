@@ -91,6 +91,7 @@ class AnnotationPage extends TatorPage {
 
   connectedCallback() {
     this.setAttribute("has-open-modal", "");
+    TatorPage.prototype.connectedCallback.call(this);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

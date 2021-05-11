@@ -31,7 +31,7 @@ class TatorPage extends TatorElement {
     this._dimmer.setAttribute("class", "background-dimmer");
     this._shadow.appendChild(this._dimmer);
 
-    this._announcements = document.createElement("announcements-dialog");
+    this._announcements = document.createElement("announcement-dialog");
     this._shadow.appendChild(this._announcements);
 
     this._announcements.addEventListener("close", evt => {
