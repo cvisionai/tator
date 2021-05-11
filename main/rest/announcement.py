@@ -14,7 +14,11 @@ class AnnouncementListAPI(BaseListView):
     http_method_names = ['get']
 
     def _get(self, params):
-        return database_qs(self.get_queryset())
+        response_data = []
+        if not self.request.session.get('announcements_shown'):
+            self.request.session['announcements_shown'] = True
+            response_data = database_qs(self.get_queryset())
+        return response_data
 
     def get_queryset(self):
         unread = AnnouncementToUser.objects.filter(user=self.request.user)\
