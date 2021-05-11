@@ -184,7 +184,7 @@ class AnnotationPage extends TatorPage {
               player = document.createElement("annotation-image");
               this._player = player;
               this._player.mediaType = type_data;
-              player.style.minWidth="70%";
+              //player.style.minWidth="63%";
               player.addDomParent({"object": this._headerDiv,
                                    "alignTo":  this._browser});
               player.mediaInfo = data;
