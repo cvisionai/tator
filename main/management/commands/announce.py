@@ -11,10 +11,8 @@ class Command(BaseCommand):
     help = 'Creates an announcement, optionally scoped to a project or user.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--subject', type=str, required=True,
-                            help="Subject of the announcement.")
-        parser.add_argument('--message', type=str, required=True,
-                            help="Message body of the announcement.")
+        parser.add_argument('--markdown', type=str, required=True,
+                            help="Text of the announcement in markdown format.")
         parser.add_argument('--expires_in', type=int, default=7,
                             help="Number of days before announcement expires and is deleted.")
         parser.add_argument('--project', type=int,
@@ -26,8 +24,7 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         eol_datetime = datetime.datetime.now() + datetime.timedelta(days=options['expires_in'])
-        announcement = Announcement.objects.create(subject=options['subject'],
-                                                   message=options['message'],
+        announcement = Announcement.objects.create(markdown=options['markdown'],
                                                    eol_datetime=eol_datetime)
         users = User.objects.all()
         if options['project']:
