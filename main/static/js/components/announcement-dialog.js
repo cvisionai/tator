@@ -32,14 +32,20 @@ class AnnouncementDialog extends ModalDialog {
       buttonDiv.setAttribute("class", "d-flex flex-row flex-justify-right");
       div.appendChild(buttonDiv);
 
-      const button = document.createElement("button");
-      button.setAttribute("class", "btn btn-purple");
+      const button = document.createElement("a");
+      button.setAttribute("class", "btn");
+      button.setAttribute("style", "display: flex;");
       button.textContent = "Got it";
       buttonDiv.appendChild(button);
 
       button.addEventListener("click", evt => {
+        fetch(`/rest/Announcement/${announcement.id}`, {
+          method: "DELETE",
+          ...sameOriginCredentials(),
+        });
         div.parentNode.removeChild(div);
-        // TODO: Remove announcement via DELETE request.
+        if (!this._announcements.firstChild) {
+          this._closeCallback();
       });
     }
   }
