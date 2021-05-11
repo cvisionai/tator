@@ -259,6 +259,11 @@ favorite-button {
   max-height: 240px;
 }
 
+.annotation__announcement-list {
+  overflow-y: auto;
+  max-height: 240px;
+}
+
 .annotation__video-player {
   flex-grow: 1;
   overflow: hidden;
