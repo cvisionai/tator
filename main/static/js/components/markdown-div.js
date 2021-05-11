@@ -10,7 +10,13 @@ class MarkdownDiv extends HTMLElement {
   }
 
   init(text) {
-    this._div.innerHTML = marked(text);
+    const renderer = new marked.Renderer();
+    const linkRenderer = renderer.link;
+    renderer.link = (href, title, text) => {
+        const html = linkRenderer.call(renderer, href, title, text);
+        return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+    };
+    this._div.innerHTML = marked(text, { renderer });
   }
 }
 
