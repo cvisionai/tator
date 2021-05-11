@@ -1423,8 +1423,8 @@ class ChangeToObject(Model):
 class Announcement(Model):
     """ Message that may be displayed to users.
     """
-    subject = CharField(max_length=256)
-    message = CharField(max_length=2048)
+    markdown = CharField(max_length=2048)
+    """ This text will be displayed using a markdown parser. """
     created_datetime = DateTimeField(auto_now_add=True)
     eol_datetime = DateTimeField()
 
