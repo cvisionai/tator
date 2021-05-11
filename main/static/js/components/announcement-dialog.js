@@ -21,7 +21,7 @@ class AnnouncementDialog extends ModalDialog {
     // announcements: returned object from Announcement endpoint.
     for (const announcement of announcements) {
       const div = document.createElement("div");
-      div.setAttribute("class", "d-flex flex-column col-12 table");
+      div.setAttribute("class", "d-flex flex-column col-12 py-2 annotation__announcement");
       this._announcements.appendChild(div);
 
       const content = document.createElement("markdown-div");
@@ -30,13 +30,13 @@ class AnnouncementDialog extends ModalDialog {
       div.appendChild(content);
 
       const buttonDiv = document.createElement("div");
-      buttonDiv.setAttribute("class", "d-flex flex-row flex-justify-right");
+      buttonDiv.setAttribute("class", "d-flex flex-row flex-justify-right py-2 px-2");
       div.appendChild(buttonDiv);
 
       const button = document.createElement("a");
       button.setAttribute("class", "btn");
       button.setAttribute("style", "display: flex;");
-      button.textContent = "Got it";
+      button.textContent = "Don't show again";
       buttonDiv.appendChild(button);
 
       button.addEventListener("click", evt => {
