@@ -10,11 +10,14 @@ from main.models import Membership
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Creates an announcement, optionally scoped to a project or user.'
+    help = ('Creates an announcement, optionally scoped to a project or user. Either '
+            '--markdown or --file must be supplied.')
 
     def add_arguments(self, parser):
-        parser.add_argument('--markdown', type=str, required=True,
+        parser.add_argument('--markdown', type=str,
                             help="Text of the announcement in markdown format.")
+        parser.add_argument('--file', type=str,
+                            help="Path to file containing markdown.")
         parser.add_argument('--expires_in', type=int, default=7,
                             help="Number of days before announcement expires and is deleted.")
         parser.add_argument('--project', type=int,
@@ -25,8 +28,15 @@ class Command(BaseCommand):
                                  "shown to this specific user.")
 
     def handle(self, **options):
+        if options['markdown']:
+            markdown = options['markdown']
+        elif options['file']:
+            with open(options['file'], 'r') as f:
+                markdown = f.read()
+        else:
+            raise ValueError("Either --markdown or --file must be supplied!")
         eol_datetime = datetime.datetime.now() + datetime.timedelta(days=options['expires_in'])
-        announcement = Announcement.objects.create(markdown=options['markdown'],
+        announcement = Announcement.objects.create(markdown=markdown,
                                                    eol_datetime=eol_datetime)
         users = User.objects.all()
         if options['project']:
