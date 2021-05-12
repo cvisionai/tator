@@ -6,6 +6,8 @@ from .algorithm import AlgorithmDetailAPI
 from .save_algorithm_manifest import SaveAlgorithmManifestAPI
 from .analysis import AnalysisListAPI
 from .analysis import AnalysisDetailAPI
+from .announcement import AnnouncementListAPI
+from .announcement import AnnouncementDetailAPI
 from .attribute_type import AttributeTypeListAPI
 from .audio_file import AudioFileListAPI
 from .audio_file import AudioFileDetailAPI
