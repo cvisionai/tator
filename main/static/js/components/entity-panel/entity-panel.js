@@ -56,7 +56,7 @@ class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton.addEventListener("click", (e) => {
       e.preventDefault();
       window.open(this._mediaLink);
-    });
+    }, { once: true });
     
     // Init the forms with data
     this.entityData._init(this.cardObj);
