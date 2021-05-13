@@ -58,7 +58,7 @@ class AnnotationCardData extends HTMLElement {
 
             for(let [i, l] of localizations.entries()){
                 let id = l.id;
-                let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id);
+                let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.version);
                 let entityType = this.findMetaDetails(l.meta);
 
                 let attributes = l.attributes;
