@@ -26,6 +26,7 @@
     this._settings.style.marginLeft = "50px";
     div.appendChild(this._settings);
 
+
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
     this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-12 d-flex");
@@ -69,6 +70,15 @@
     // Gallery navigation panel
     this._panelContainer = document.createElement("entity-panel-container");
     this.aside.appendChild(this._panelContainer);
+
+
+    // Settings lock
+    this._settings._lock.addEventListener("click", evt => {
+      const locked = this._settings._lock._pathLocked.style.display != "none";
+      const permissionValue = locked ? "View Only" : "Can Edit";
+      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+      this._panelContainer.dispatchEvent(panelPermissionEvt);
+    });
 
     //
     /* Other */

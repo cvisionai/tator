@@ -2,17 +2,17 @@ class TextInput extends TatorElement {
   constructor() {
     super();
 
-    const label = document.createElement("label");
-    label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
-    this._shadow.appendChild(label);
+    this.label = document.createElement("label");
+    this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this._shadow.appendChild(this.label);
 
     this._name = document.createTextNode("");
-    label.appendChild(this._name);
+    this.label.appendChild(this._name);
 
     this._input = document.createElement("input");
     this._input.setAttribute("class", "form-control input-sm col-8");
     this._input.setAttribute("type", "text");
-    label.appendChild(this._input);
+    this.label.appendChild(this._input);
 
     this._input.addEventListener("change", () => {
       if (this.getValue() === null) {
@@ -59,9 +59,20 @@ class TextInput extends TatorElement {
           case "string":
             this.getValue = this._validateString;
             break;
+          // case "datetime":
+          //   this._input.setAttribute("placeholder", "e.g. 2020-06-30");
+          //   this.getValue = this._validateDateTime;
+          //   break;
           case "datetime":
-            this._input.setAttribute("placeholder", "e.g. 2020-06-30");
+            // this is a datepicker...
+            this._input.setAttribute("type", "datetime-local");
             this.getValue = this._validateDateTime;
+            // requires altered spacing
+            let nameWrap = document.createElement("span");
+            nameWrap.setAttribute("class", "col-4")
+            this.label.prepend(nameWrap);
+            nameWrap.appendChild(this._name);
+            this.label.classList.remove("flex-justify-between");
             break;
           case "geopos":
             this._input.setAttribute("placeholder", "e.g. 21.305,-157.858");
@@ -131,13 +142,14 @@ class TextInput extends TatorElement {
   }
 
   _validateDateTime() {
-    let val = new Date(this._input.value);
-    if (isNaN(val.getTime())) {
-      val = null;
-    } else {
-      val = val.toISOString();
-    }
-    return val;
+    return this._input.value;
+    // let val = new Date(this._input.value);
+    // if (isNaN(val.getTime())) {
+    //   val = null;
+    // } else {
+    //   val = val.toISOString();
+    // }
+    // return val;
   }
 
   _validateGeopos() {
