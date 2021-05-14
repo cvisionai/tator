@@ -221,12 +221,14 @@ FILES = \
     components/canvas-ctxmenu.js \
     components/big-upload-form.js \
     components/upload-element.js \
-    components/entity-gallery/entity-gallery.js \
     components/entity-gallery/entity-gallery-card.js \
     components/entity-gallery/entity-gallery-resize.js \
     components/entity-gallery/entity-gallery-aspect-ratio.js \
     components/entity-gallery/entity-gallery-paginator.js \
     components/entity-gallery/entity-gallery-labels.js \
+    components/entity-gallery/entity-gallery-slider.js \
+    components/entity-gallery/entity-gallery_h-slide.js \
+    components/entity-gallery/entity-gallery_grid.js \
     components/entity-panel/entity-panel-localization.js \
     components/entity-panel/entity-panel-form.js \
     components/entity-panel/entity-panel-top.js \
@@ -411,6 +413,8 @@ FILES = \
     analytics/annotations/panel-data.js \
     analytics/annotations/card-data.js \
     analytics/annotations/annotations.js \
+    analytics/collections/card.js \
+    analytics/collections/gallery.js \
     analytics/collections/collections.js \
     analytics/visualization/visualization.js \
     analytics/reports/reports.js \
