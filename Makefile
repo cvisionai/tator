@@ -210,12 +210,14 @@ FILES = \
     components/inputs/text-area.js \
     components/inputs/text-input.js \
     components/labeled-checkbox.js \
+    components/markdown-div.js \
     components/modal-close.js \
     components/modal-warning.js \
     components/modal-success.js \
     components/modal-dialog.js \
     components/modal-notify.js \
     components/upload-dialog.js \
+    components/announcement-dialog.js \
     components/cancel-button.js \
     components/cancel-confirm.js \
     components/canvas-ctxmenu.js \
@@ -567,3 +569,22 @@ docs:
 .PHONY: check_schema
 check_schema: tator-image
 	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false localhost:5000/tator_online:$(GIT_VERSION) python3 manage.py getschema
+
+ifdef PROJECT_ID
+ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --project $(PROJECT_ID)
+else ifdef USER_ID
+ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --user $(USER_ID)
+else
+ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md
+endif
+# Makes an announcement
+# System-wide announcement:
+# make announce FILE=blah.md
+# Project-wide announcement:
+# make announce FILE=blah.md PROJECT_ID=1
+# User-specific announcement:
+# make announce FILE=blah.md USER_ID=1
+.PHONY: announce
+announce:
+	kubectl cp $(FILE) $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///'):/tmp/announce.md
+	kubectl exec $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- $(ANNOUNCE_CMD) 

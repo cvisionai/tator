@@ -29,12 +29,14 @@
     <script src={% static "js/components/inputs/feature/color-inputs.js" %}></script>
     <script src={% static "js/components/inputs/feature/thumb-inputs.js" %}></script>
     <script src={% static "js/components/labeled-checkbox.js" %}></script>
+    <script src={% static "js/components/markdown-div.js" %}></script>
     <script src={% static "js/components/modal-close.js" %}></script>
     <script src={% static "js/components/modal-warning.js" %}></script>
     <script src={% static "js/components/modal-success.js" %}></script>
     <script src={% static "js/components/modal-dialog.js" %}></script>
     <script src={% static "js/components/modal-notify.js" %}></script>
     <script src={% static "js/components/upload-dialog.js" %}></script>
+    <script src={% static "js/components/announcement-dialog.js" %}></script>
     <script src={% static "js/components/cancel-button.js" %}></script>
     <script src={% static "js/components/cancel-confirm.js" %}></script>
     <script src={% static "js/components/canvas-ctxmenu.js" %}></script>
@@ -236,9 +238,11 @@
     <script src={% static "js/analytics/reports/reports.js" %}></script>
     <script src={% static "js/third_party/autocomplete.js" %}></script>
     <script src={% static "js/third_party/d3.v6.min.js" %}></script>
+    <script src={% static "js/third_party/marked.min.js" %}></script>
     <script src={% static "js/utilities.js" %}></script>
     {% else %}
     <script src={% static "js/third_party/d3.v6.min.js" %}></script>
+    <script src={% static "js/third_party/marked.min.js" %}></script>
     <script src={% static "js/tator/tator.min.js" %}></script>
     {% endif %}
     {% block head %}

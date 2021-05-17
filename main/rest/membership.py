@@ -20,6 +20,8 @@ def _serialize_memberships(memberships):
         membership_data[idx]['first_name'] = membership.user.first_name
         membership_data[idx]['last_name'] = membership.user.last_name
         membership_data[idx]['email'] = membership.user.email
+        membership_data[idx]['default_version'] = membership.default_version.pk\
+                                                  if membership.default_version else None
     membership_data.sort(key=lambda membership: membership['last_name'].lower()
                                                 if membership['last_name']
                                                 else membership['username'].lower())

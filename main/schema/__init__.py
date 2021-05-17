@@ -8,6 +8,8 @@ from .attribute_type import AttributeTypeListSchema
 from .save_algorithm_manifest import SaveAlgorithmManifestSchema
 from .analysis import AnalysisListSchema
 from .analysis import AnalysisDetailSchema
+from .announcement import AnnouncementListSchema
+from .announcement import AnnouncementDetailSchema
 from .audio_file import AudioFileListSchema
 from .audio_file import AudioFileDetailSchema
 from .bookmark import BookmarkListSchema

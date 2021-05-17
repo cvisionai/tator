@@ -125,6 +125,8 @@ class AnnotationMulti extends TatorElement {
 
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
+    this._focusQuality = 1080;
+    this._dockQuality = 144;
     if (searchParams.has("quality"))
     {
       this._quality = Number(searchParams.get("quality"));
@@ -578,32 +580,11 @@ class AnnotationMulti extends TatorElement {
          "color": "white",
          "background": "rgba(0,0,0,0.33)"};
       this._videos[idx].overlayTextStyle = smallTextStyle;
-      this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject).then(() =>
-      {
-        this._focusQuality = 1080;
-        this._dockQuality = 144;
-        const seekInfo = this._videos[idx].getQuality("seek");
-        const scrubInfo = this._videos[idx].getQuality("scrub");
-        const playInfo = this._videos[idx].getQuality("play");
-        const focusedInfo = this._videos[idx].nearestQuality(1080);
-        const dockedInfo = this._videos[idx].nearestQuality(144);
 
-        this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
-          composed: true,
-          detail: {
-            media: video_info,
-            seekQuality: seekInfo.quality,
-            seekFPS: seekInfo.fps,
-            scrubQuality: scrubInfo.quality,
-            scrubFPS: scrubInfo.fps,
-            playQuality: playInfo.quality,
-            playFPS: playInfo.fps,
-            focusedQuality: focusedInfo.quality,
-            focusedFPS: focusedInfo.fps,
-            dockedQuality: dockedInfo.quality,
-            dockedFPS: dockedInfo.fps
-          }
-        }));
+      this._videos[idx].loadFromVideoObject(
+        video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject)
+      .then(() => {
+        this.setDefaultVideoSettings(idx);
       });
 
       // #TODO This should be changed to dispatched events vs. calling the parent directly.
@@ -777,6 +758,37 @@ class AnnotationMulti extends TatorElement {
     // Audio for multi might get fun...
     // Hide volume on videos with no audio
     this._volume_control.style.display = "none";
+  }
+
+  /**
+   * Expected to occur at initialization. Dispatches the default video settings.
+   */
+  setDefaultVideoSettings(idx) {
+
+    console.log(`**** Setting default video settings for: ${idx}`)
+
+    const seekInfo = this._videos[idx].getQuality("seek");
+    const scrubInfo = this._videos[idx].getQuality("scrub");
+    const playInfo = this._videos[idx].nearestQuality(this._quality);
+    const focusedInfo = this._videos[idx].nearestQuality(this._focusQuality);
+    const dockedInfo = this._videos[idx].nearestQuality(this._dockQuality);
+
+    this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
+      composed: true,
+      detail: {
+        media: this._videos[idx],
+        seekQuality: seekInfo.quality,
+        seekFPS: seekInfo.fps,
+        scrubQuality: scrubInfo.quality,
+        scrubFPS: scrubInfo.fps,
+        playQuality: playInfo.quality,
+        playFPS: playInfo.fps,
+        focusedQuality: focusedInfo.quality,
+        focusedFPS: focusedInfo.fps,
+        dockedQuality: dockedInfo.quality,
+        dockedFPS: dockedInfo.fps
+      }
+    }));
   }
 
   setMultiviewUrl(multiviewType, vid_id)
@@ -1285,7 +1297,7 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
-  setQuality(quality, buffer) {
+  setQuality(quality, buffer, isDefault) {
     if (buffer == "focusPlayback") {
       this._focusQuality = quality;
       for (let videoDiv of this._focusDiv.children) {
@@ -1303,6 +1315,10 @@ class AnnotationMulti extends TatorElement {
       for (let video of this._videos)
       {
         video.setQuality(quality, buffer);
+      }
+
+      if (isDefault) {
+        this.setDefaultVideoSettings(idx);
       }
     }
   }

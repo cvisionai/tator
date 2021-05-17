@@ -100,6 +100,7 @@ class AnnotationPage extends TatorPage {
 
   connectedCallback() {
     this.setAttribute("has-open-modal", "");
+    TatorPage.prototype.connectedCallback.call(this);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -248,8 +249,8 @@ class AnnotationPage extends TatorPage {
                 {
                   playbackQuality = Number(searchParams.get("quality"));
                 }
-                this._player.quality = playbackQuality;
-                this._player.setQuality(playbackQuality);
+                this._settings.quality = playbackQuality;
+                this._player.setQuality(playbackQuality, null, true);
               });
 
             } else {

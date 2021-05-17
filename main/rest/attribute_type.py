@@ -148,6 +148,7 @@ class AttributeTypeListAPI(BaseListView):
 
         # Determine if the attribute is being mutated
         attribute_mutated = False
+        dtype_mutated = False
         for key, new_value in new_attribute_type.items():
             # Ignore differences in `name` values, those are handled by a rename
             if key == "name":
@@ -155,7 +156,8 @@ class AttributeTypeListAPI(BaseListView):
             old_value = old_attribute_type.get(key)
             if old_value is None or old_value != new_value:
                 attribute_mutated = True
-                break
+                if key == "dtype":
+                    dtype_mutated = True
 
         # Atomic validation of all changes; TatorSearch.check_* methods raise if there is a problem
         # that would cause either a rename or a mutation to fail.
@@ -200,19 +202,8 @@ class AttributeTypeListAPI(BaseListView):
                 ts.mutate_alias(instance, new_name, new_attribute_type).save()
 
             # Convert entity values
-            if obj_qs.exists():
-                # Get the new attribute type to convert the existing value
-                new_attribute = None
-                for attribute_type in entity_type.attribute_types:
-                    if attribute_type["name"] == new_name:
-                        new_attribute = attribute_type
-                        break
-
-                # Mutate the entity attribute values
-                bulk_mutate_attributes(new_attribute, obj_qs)
-
-            for _, qs in related_objects:
-                if qs.exists():
+            if dtype_mutated:
+                if obj_qs.exists():
                     # Get the new attribute type to convert the existing value
                     new_attribute = None
                     for attribute_type in entity_type.attribute_types:
@@ -221,7 +212,19 @@ class AttributeTypeListAPI(BaseListView):
                             break
 
                     # Mutate the entity attribute values
-                    bulk_mutate_attributes(new_attribute, qs)
+                    bulk_mutate_attributes(new_attribute, obj_qs)
+
+                for _, qs in related_objects:
+                    if qs.exists():
+                        # Get the new attribute type to convert the existing value
+                        new_attribute = None
+                        for attribute_type in entity_type.attribute_types:
+                            if attribute_type["name"] == new_name:
+                                new_attribute = attribute_type
+                                break
+
+                        # Mutate the entity attribute values
+                        bulk_mutate_attributes(new_attribute, qs)
 
             messages.append(
                 f"Attribute '{new_name}' mutated from:\n{old_attribute_type}\nto:\n{new_attribute_type}"
