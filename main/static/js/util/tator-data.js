@@ -960,9 +960,10 @@ class TatorData {
    * @param {integer} mediaId
    * @param {integer} frame - optional
    * @param {integer} entityId - optional
+   * @param {integer} version - optional
    * @returns {str} Tator link using given parameters
    */
-  generateMediaLink(mediaId, frame, entityId) {
+  generateMediaLink(mediaId, frame, entityId, version) {
     var outStr = `/${this._project}/annotation/${mediaId}?`;
     var addedParam = false;
 
@@ -979,6 +980,14 @@ class TatorData {
         outStr += "&"
       }
       outStr += `selected_entity=${entityId}`;
+      addedParam = true;
+    }
+
+    if (version) {
+      if (addedParam) {
+        outStr += "&"
+      }
+      outStr += `version=${version}`;
       addedParam = true;
     }
 

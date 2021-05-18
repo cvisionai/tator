@@ -12,6 +12,26 @@ class EntityGalleryPanelForm extends TatorElement {
     // This object will have properties of the attributeType IDs
     // Each property will link to the attribute panel itself.
     this._attributeTypes = {};
+
+
+    // #TODO This is a band-aid. We need to modify attribute-panel to not include
+    // specific REST calls or utilize a modified form of the SettingsHelper
+    this._attributes = document.createElement("attribute-panel");
+    this._attributes.permission = "View Only"; // start as view only - controlled by lock
+    this._div.appendChild(this._attributes);
+  }
+
+  static get observedAttributes() {
+    return ["permission"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "permission":
+        console.log(`Form permission updated from ${oldValue} to ${newValue}`);
+        this._attributes.permission = newValue; // start as view only - controlled by lock
+        break;
+    }
   }
 
   /**
@@ -19,7 +39,7 @@ class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    */
   _init(data) {
-    console.log(data);
+    //console.log(data);
 
     // Hide all of the attribute panels, and then show the one we care about.
     for (const attrTypeId in this._attributeTypes) {
@@ -27,23 +47,15 @@ class EntityGalleryPanelForm extends TatorElement {
     }
 
     // Haven't seen this attribute type yet
-    var attributes;
     if (!(data.entityType.id in this._attributeTypes)) {
-
-      // #TODO This is a band-aid. We need to modify attribute-panel to not include
-      // specific REST calls or utilize a modified form of the SettingsHelper
-      attributes = document.createElement("attribute-panel");
-      this._div.appendChild(attributes);
-
       data.entityType.isTrack = false;
-      attributes.dataType = data.entityType;
-      attributes.displaySlider(false);
-      attributes.displayGoToTrack(false);
-      this._attributeTypes[data.entityType.id] = attributes;
-      //attributes.permission = "View Only";
+      this._attributes.dataType = data.entityType;
+      this._attributes.displaySlider(false);
+      this._attributes.displayGoToTrack(false);
+      this._attributeTypes[data.entityType.id] = this._attributes;
 
-      attributes.addEventListener("change", () => {
-        this._values = attributes.getValues();
+      this._attributes.addEventListener("change", () => {
+        this._values = this._attributes.getValues();
 
         if (this._values !== null) {
           const detail = {
@@ -54,16 +66,15 @@ class EntityGalleryPanelForm extends TatorElement {
           };
           console.log(detail);
           this.dispatchEvent(new CustomEvent("save", detail));
-
         }
       });
 
     } else {
-      attributes = this._attributeTypes[data.entityType.id];
+      this._attributes = this._attributeTypes[data.entityType.id];
     }
 
-    attributes.setValues(data);
-    attributes.style.display = "block";
+    this._attributes.setValues(data);
+    this._attributes.style.display = "block";
   }
 }
 
