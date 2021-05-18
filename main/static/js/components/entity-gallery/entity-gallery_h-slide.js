@@ -24,20 +24,20 @@ class EntityCardSlideGallery extends TatorElement {
       this._p.appendChild(this._galleryCountText);
       this._tools.appendChild(this._p);
 
-      // Gallery Pagination Bottom
-      this._paginator_top = document.createElement("entity-gallery-paginator");
-      this._paginator_top.div.classList.add("pb-3");
-      this._main.appendChild(this._paginator_top);
+      // // Gallery Pagination Bottom
+      // this._paginator_top = document.createElement("entity-gallery-paginator");
+      // this._paginator_top.div.classList.add("pb-3");
+      // this._main.appendChild(this._paginator_top);
 
       // Gallery List is a list of sliders***
-      this._ul = document.createElement("ul");
+      this._ul = document.createElement("div");
       this._ul.setAttribute("class", "enitity-gallery__ul px-2 py-2 mb-2 rounded-1");
       this._main.appendChild(this._ul);
 
-      // Gallery Pagination Bottom
-      this._paginator = document.createElement("entity-gallery-paginator");
-      this._paginator.div.classList.add("py-5");
-      this._main.appendChild(this._paginator);
+      // // Gallery Pagination Bottom
+      // this._paginator = document.createElement("entity-gallery-paginator");
+      // this._paginator.div.classList.add("py-5");
+      // this._main.appendChild(this._paginator);
    }
 
    init(cardList) {

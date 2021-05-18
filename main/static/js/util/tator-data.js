@@ -16,6 +16,8 @@ class TatorData {
     this._versions = [];
     this._sections = [];
 
+    this._states = [];
+
     this._maxFetchCount = 10000;
   }
 
@@ -993,4 +995,98 @@ class TatorData {
 
     return outStr;
   }
+
+  /* 
+   * Collections 
+   * @param acceptedAssoc {array}
+  */
+  async collectionsInit(acceptedAssoc) {
+    const stateTypes = await this.getStateTypes();
+    const typeData = {};
+    const typeIds = stateTypes.filter(type => acceptedAssoc.includes(type.association)).map(type => {
+      typeData[type.id] = type;
+      return type.id;
+    });
+    const searchMeta = `_meta:(${typeIds.join(" OR ")})`;
+    console.log(searchMeta);
+
+    const stateCount = await this.getStateCount({
+      params: `?search=${encodeURIComponent(searchMeta)}`
+    });
+
+    this._states = await this.getStates({
+      params: `?search=${encodeURIComponent(searchMeta)}`
+    });
+
+    this._states.map(state => {
+      // pass along some data we already fetch about the association, and state name to view with the state
+      state.typeData = typeData[state.meta];
+      return state;
+    });
+
+    this._states.total = stateCount
+
+    return this._states;
+  }
+
+  /**
+   * Retrieves state types
+   */
+  async getStateTypes({ params = "" } = {}) {
+    const response = await fetch(`/rest/StateTypes/${this._project}${params}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
+
+    return data;
+  }
+
+  /**
+     * Retrieves state count
+     */
+  async getStateCount({ params = "" } = {}) {
+    const response = await fetch(`/rest/StateCount/${this._project}${params}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
+
+    return data;
+  }
+
+  /**
+   * Retrieves states (start and stop) 
+   */
+  async getStates({ params = "" } = {}) {
+    const response = await fetch(`/rest/States/${this._project}${params}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
+
+    return data;
+  }
+
 }
+
+
+
