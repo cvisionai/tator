@@ -56,7 +56,7 @@ class AnalyticsButton extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "project-id":
-        this._link.setAttribute("href",`/${newValue}/analytics/annotations`);
+        this._link.setAttribute("href", `/${newValue}/analytics/`);
     }
   }
 }

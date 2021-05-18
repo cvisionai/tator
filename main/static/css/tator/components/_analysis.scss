@@ -209,3 +209,10 @@ body.analysis-annotations-body {
   border: 1px solid $color-charcoal--light;
   margin: 3px;
 }
+
+.analysis__dashboard-box {
+  background: $color-charcoal--medium;
+  width: 250px;
+  height: 250px;
+  margin: 100px 25px;
+}

@@ -209,6 +209,7 @@ FILES = \
     components/inputs/enum-input.js \
     components/inputs/text-area.js \
     components/inputs/text-input.js \
+    components/box-navigation.js \
     components/labeled-checkbox.js \
     components/modal-close.js \
     components/modal-warning.js \

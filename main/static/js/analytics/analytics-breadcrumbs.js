@@ -2,6 +2,8 @@ class AnalyticsBreadcrumbs extends TatorElement {
   constructor() {
     super();
 
+    this.projectId = window.location.pathname.split("/")[1];
+
     const div = document.createElement("div");
     div.setAttribute("class", "annotation__breadcrumbs d-flex flex-items-center px-2 f3 text-gray");
     this._shadow.appendChild(div);
@@ -16,6 +18,7 @@ class AnalyticsBreadcrumbs extends TatorElement {
 
     this.analyticsText = document.createElement("a");
     this.analyticsText.setAttribute("class", "text-gray");
+    this.analyticsText.setAttribute("href", `/${this.projectId}/analytics/`);
     this.analyticsText.textContent = "Analytics";
     div.appendChild(this.analyticsText);
 
@@ -45,8 +48,7 @@ class AnalyticsBreadcrumbs extends TatorElement {
   }
 
   _detailUrl() {
-    const project = window.location.pathname.split("/")[1];
-    return `${window.location.origin}/${project}/project-detail`;
+    return `${window.location.origin}/${this.projectId}/project-detail`;
   }
 }
 
