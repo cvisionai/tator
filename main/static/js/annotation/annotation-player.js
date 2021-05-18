@@ -42,9 +42,9 @@ class AnnotationPlayer extends TatorElement {
     this._qualityControl = document.createElement("quality-control");
     settingsDiv.appendChild(this._qualityControl);
 
-    const timelineDiv = document.createElement("div");
-    timelineDiv.setAttribute("class", "scrub__bar d-flex flex-items-center flex-grow px-4");
-    playerDiv.appendChild(timelineDiv);
+    this._timelineDiv = document.createElement("div");
+    this._timelineDiv.setAttribute("class", "scrub__bar d-flex flex-items-center flex-grow px-4");
+    playerDiv.appendChild(this._timelineDiv);
 
     const timeDiv = document.createElement("div");
     timeDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
@@ -69,7 +69,7 @@ class AnnotationPlayer extends TatorElement {
 
     this._timelineMore = document.createElement("entity-more");
     this._timelineMore.style.display = "block";
-    timelineDiv.appendChild(this._timelineMore);
+    this._timelineDiv.appendChild(this._timelineMore);
     this._displayTimelineLabels = false;
 
     var outerDiv = document.createElement("div");
@@ -86,7 +86,7 @@ class AnnotationPlayer extends TatorElement {
     this._timelineD3.rangeInput = this._slider;
     innerDiv.appendChild(this._timelineD3);
     outerDiv.appendChild(innerDiv);
-    timelineDiv.appendChild(outerDiv);
+    this._timelineDiv.appendChild(outerDiv);
 
     const frameDiv = document.createElement("div");
     frameDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
@@ -411,6 +411,15 @@ class AnnotationPlayer extends TatorElement {
   disableRateChange()
   {
     this._rateControl.setAttribute("disabled", "");
+  }
+
+  hideVideoControls() {
+    this._controls.style.display = "none";
+    this._timelineDiv.style.display = "none";
+  }
+
+  hideVideoText() {
+    this._video.toggleTextOverlays(false);
   }
 
   /**

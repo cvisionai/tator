@@ -106,10 +106,10 @@ class GalleryPanelLocalization extends TatorElement {
   _setupVideoCanvas(mediaId, data) {
     this._shadow.removeChild(this._videoCanvas);
     this._videoCanvas = document.createElement("annotation-player");
-    this._videoCanvas._controls.style.display = "none";
     this._videoCanvas._video.disableScrubBuffer();
     this._videoCanvas._data = this._data;
     this._videoCanvas._undo = this._undo;
+    this._videoCanvas.hideVideoControls();
     this._shadow.appendChild(this._videoCanvas);
 
     // Inits image-only canvas as player
