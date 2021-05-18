@@ -239,7 +239,6 @@ class AnnotationPage extends TatorPage {
               .then(primeMediaData => {
                 this._videoSettingsDialog.mode("multiview", [primeMediaData]);
                 this._settings.mediaInfo = primeMediaData;
-                this._player.mediaInfo = primeMediaData;
                 var playbackQuality = data.media_files.quality;
                 if (playbackQuality == undefined)
                 {
