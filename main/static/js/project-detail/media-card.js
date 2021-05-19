@@ -58,8 +58,8 @@ class MediaCard extends TatorElement {
     this._emblemDiv.appendChild(this._attachmentButton);
 
     const svg = document.createElementNS(svgNamespace, "svg");
-    svg.setAttribute("width", "20");
-    svg.setAttribute("height", "20");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("stroke", "currentColor");
     svg.setAttribute("stroke-width", "2");
@@ -263,7 +263,7 @@ class MediaCard extends TatorElement {
   set attachments(val) {
     this._attachments = val;
     if (val.length > 0) {
-      this._attachmentButton.style.display = "block";
+      this._attachmentButton.style.display = "flex";
     } else {
       this._attachmentButton.style.display = "none";
     }

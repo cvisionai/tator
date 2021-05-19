@@ -27,7 +27,7 @@ class AttachmentDialog extends ModalDialog {
     thead.appendChild(tr);
 
     const thName = document.createElement("th");
-    thName.setAttribute("class", "py-3 col-9");
+    thName.setAttribute("class", "py-3 col-11");
     thName.textContent = "Attachment";
     tr.appendChild(thName);
 
