@@ -65,6 +65,7 @@ class CustomGenerator(SchemaGenerator):
                 'FavoriteSpec': favorite_spec,
                 'FavoriteUpdate': favorite_update,
                 'Favorite': favorite,
+                'FileDefinition': file_definition,
                 'ImageDefinition': image_definition,
                 'InvitationSpec': invitation_spec,
                 'InvitationUpdate': invitation_update,

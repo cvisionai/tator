@@ -22,6 +22,8 @@ from .download_info import DownloadInfoSchema
 from .email import EmailSchema
 from .favorite import FavoriteListSchema
 from .favorite import FavoriteDetailSchema
+from .file import FileListSchema
+from .file import FileDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
 from .image_file import ImageFileListSchema

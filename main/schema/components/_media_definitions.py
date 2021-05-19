@@ -153,6 +153,39 @@ multi_definition = {
     },
 }
 
+file_definition = {
+    'type': 'object',
+    'required': ['path'],
+    'properties': {
+        'name': {
+            'type': 'string',
+            'description': 'Name of the file.',
+        },
+        'path': {
+            'type': 'string',
+            'description': 'Relative URL to the file.',
+        },
+        'size': {
+            'type': 'integer',
+            'description': 'File size in bytes.',
+        },
+        'host': {
+            'description': 'If supplied will use this instead of currently connected '
+                           'host, e.g. https://example.com',
+            'type': 'string',
+        },
+        'http_auth': {
+            'description': 'If specified will be used for HTTP authorization in '
+                           'request for media, i.e. "bearer <token>".',
+            'type': 'string',
+        },
+        'mime': {
+            'description': 'Example mime: "text/csv".',
+            'type': 'string',
+        },
+    },
+}
+
 media_files = {
     'description': 'Object containing upload urls for the transcoded file and '
                    'corresponding `VideoDefinition`.',
@@ -162,6 +195,7 @@ media_files = {
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
         'image': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
+        'attachment': {'type': 'array', 'items': {'$ref': '#/components/schemas/FileDefinition'}},
         'thumbnail': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         'thumbnail_gif': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         **multi_definition['properties'],
