@@ -157,6 +157,10 @@ file_definition = {
     'type': 'object',
     'required': ['path'],
     'properties': {
+        'name': {
+            'type': 'string',
+            'description': 'Name of the file.',
+        },
         'path': {
             'type': 'string',
             'description': 'Relative URL to the file.',
