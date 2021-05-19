@@ -68,7 +68,7 @@ def _presign(expiration, medias, fields=None):
     """ Replaces specified media fields with presigned urls.
     """
     # First get resources referenced by the given media.
-    fields = fields or ["archival", "streaming", "audio", "image", "thumbnail", "thumbnail_gif"]
+    fields = fields or ["archival", "streaming", "audio", "image", "thumbnail", "thumbnail_gif", "attachment"]
     media_ids = [media['id'] for media in medias]
     resources = Resource.objects.filter(media__in=media_ids)
     store_lookup = get_storage_lookup(resources)
