@@ -286,6 +286,7 @@ FILES = \
     project-detail/media-more.js \
     project-detail/media-description.js \
     project-detail/media-card.js \
+    project-detail/attachment-dialog.js \
     project-detail/section-prev.js \
     project-detail/section-next.js \
     project-detail/section-expand.js \
