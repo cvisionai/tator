@@ -152,72 +152,20 @@ class AnnotationPlayer extends TatorElement {
 
     // #TODO Combine with this._slider.addEventListener
     this._zoomSlider.addEventListener("input", evt => {
-      // Along allow a scrub display as the user is going
-      // slow
-      const now = Date.now();
-      const frame = Number(evt.target.value);
-      const waitOk = now - this._lastScrub > this._scrubInterval;
-      if (waitOk) {
-        play.setAttribute("is-paused","");
-        this._video.stopPlayerThread();
-        this._video.seekFrame(frame, this._video.drawFrame)
-        .then(this._lastScrub = Date.now());
-      }
+      this.handleSliderInput(evt);
     });
 
     // #TODO Combine with this._slider.addEventListener
     this._zoomSlider.addEventListener("change", evt => {
-      play.setAttribute("is-paused","");
-      this.dispatchEvent(new Event("displayLoading", {composed: true}));
-      // Only use the current frame to prevent glitches
-      let frame = this._video.currentFrame();
-      if (evt.detail)
-      {
-        frame = evt.detail.frame;
-      }
-      this._video.stopPlayerThread();
-
-      // Use the hq buffer when the input is finalized
-      this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
-        this._lastScrub = Date.now()
-        this.dispatchEvent(new Event("hideLoading", {composed: true}));
-      }).catch(() => {
-        this.dispatchEvent(new Event("hideLoading", {composed: true}));
-      });
+      this.handleSliderChange(evt);
     });
 
     this._slider.addEventListener("input", evt => {
-      // Along allow a scrub display as the user is going
-      // slow
-      const now = Date.now();
-      const frame = Number(evt.target.value);
-      const waitOk = now - this._lastScrub > this._scrubInterval;
-      if (waitOk) {
-        play.setAttribute("is-paused","");
-        this._video.stopPlayerThread();
-        this._video.seekFrame(frame, this._video.drawFrame)
-        .then(this._lastScrub = Date.now());
-      }
+      this.handleSliderInput(evt);
     });
 
     this._slider.addEventListener("change", evt => {
-      play.setAttribute("is-paused","");
-      this.dispatchEvent(new Event("displayLoading", {composed: true}));
-      // Only use the current frame to prevent glitches
-      let frame = this._video.currentFrame();
-      if (evt.detail)
-      {
-        frame = evt.detail.frame;
-      }
-      this._video.stopPlayerThread();
-
-      // Use the hq buffer when the input is finalized
-      this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
-        this._lastScrub = Date.now()
-        this.dispatchEvent(new Event("hideLoading", {composed: true}));
-      }).catch(() => {
-        this.dispatchEvent(new Event("hideLoading", {composed: true}));
-      });
+      this.handleSliderChange(evt);
     });
 
     play.addEventListener("click", () => {
@@ -413,6 +361,45 @@ class AnnotationPlayer extends TatorElement {
           this.playBackwards();
         }
       }
+    });
+  }
+
+  /**
+   * Callback used when user clicks on one of the seek bar sliders 
+   */
+  handleSliderInput(evt) {
+    // Along allow a scrub display as the user is going slow
+    const now = Date.now();
+    const frame = Number(evt.target.value);
+    const waitOk = now - this._lastScrub > this._scrubInterval;
+    if (waitOk) {
+      this._play.setAttribute("is-paused","");
+      this._video.stopPlayerThread();
+      this._video.seekFrame(frame, this._video.drawFrame)
+      .then(this._lastScrub = Date.now());
+    }
+  }
+
+  /**
+   * Callback used when user slides one of the seek bars 
+   */
+  handleSliderChange(evt) {
+    this._play.setAttribute("is-paused","");
+    this.dispatchEvent(new Event("displayLoading", {composed: true}));
+    // Only use the current frame to prevent glitches
+    let frame = this._video.currentFrame();
+    if (evt.detail)
+    {
+      frame = evt.detail.frame;
+    }
+    this._video.stopPlayerThread();
+
+    // Use the hq buffer when the input is finalized
+    this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
+      this._lastScrub = Date.now()
+      this.dispatchEvent(new Event("hideLoading", {composed: true}));
+    }).catch(() => {
+      this.dispatchEvent(new Event("hideLoading", {composed: true}));
     });
   }
 
