@@ -55,6 +55,7 @@ class MediaCard extends TatorElement {
 
     this._attachmentButton = document.createElement("button");
     this._attachmentButton.setAttribute("class", "px-0 btn-clear h2 text-gray hover-text-white");
+    this._attachmentButton.style.display = "none";
     this._emblemDiv.appendChild(this._attachmentButton);
 
     const svg = document.createElementNS(svgNamespace, "svg");
