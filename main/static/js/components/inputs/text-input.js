@@ -59,20 +59,9 @@ class TextInput extends TatorElement {
           case "string":
             this.getValue = this._validateString;
             break;
-          // case "datetime":
-          //   this._input.setAttribute("placeholder", "e.g. 2020-06-30");
-          //   this.getValue = this._validateDateTime;
-          //   break;
           case "datetime":
-            // this is a datepicker...
-            this._input.setAttribute("type", "datetime-local");
+            this._input.setAttribute("placeholder", "e.g. 2020-06-30");
             this.getValue = this._validateDateTime;
-            // requires altered spacing
-            let nameWrap = document.createElement("span");
-            nameWrap.setAttribute("class", "col-4")
-            this.label.prepend(nameWrap);
-            nameWrap.appendChild(this._name);
-            this.label.classList.remove("flex-justify-between");
             break;
           case "geopos":
             this._input.setAttribute("placeholder", "e.g. 21.305,-157.858");
@@ -142,14 +131,13 @@ class TextInput extends TatorElement {
   }
 
   _validateDateTime() {
-    return this._input.value;
-    // let val = new Date(this._input.value);
-    // if (isNaN(val.getTime())) {
-    //   val = null;
-    // } else {
-    //   val = val.toISOString();
-    // }
-    // return val;
+    let val = new Date(this._input.value);
+    if (isNaN(val.getTime())) {
+      val = null;
+    } else {
+      val = val.toISOString();
+    }
+    return val;
   }
 
   _validateGeopos() {
