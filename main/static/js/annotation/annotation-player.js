@@ -249,7 +249,7 @@ class AnnotationPlayer extends TatorElement {
     });
 
     this._timelineD3.addEventListener("zoomedTimeline", evt => {
-      if (evt.detail.minFrame < 0 || evt.detail.maxFrame < 0) {
+      if (evt.detail.minFrame < 1 || evt.detail.maxFrame < 1) {
         // Reset the slider
         this._zoomSlider.hidden = true;
         this._zoomSlider.setAttribute("min", 0);
