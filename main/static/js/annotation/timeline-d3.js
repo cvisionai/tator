@@ -723,12 +723,20 @@ class TimelineD3 extends TatorElement {
     // Define the axes
     var minFrame = this._mainX.invert(selection[0]);
     var focusX = d3.scaleLinear()
-      .domain([this._mainX.invert(selection[0]), this._mainX.invert(selection[1])])
+      .domain([minFrame, this._mainX.invert(selection[1])])
       .range([0, focusWidth]);
 
     var focusY = d3.scaleLinear()
       .domain([0, 1.0])
       .range([0, -focusStep]);
+
+    this.dispatchEvent(new CustomEvent("zoomedTimeline", {
+      composed: true,
+      detail: {
+        minFrame: Math.round(minFrame),
+        maxFrame: Math.round(this._mainX.invert(selection[1]))
+      }
+    }));
 
     // #TODO This is clunky and has no smooth transition, but it works for our application
     //       Potentially worth revisiting in the future and updating the dataset directly
