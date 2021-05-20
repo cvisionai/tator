@@ -12,7 +12,7 @@ class AnnotationMulti extends TatorElement {
     playerDiv.appendChild(this._vidDiv);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "video__controls d-flex flex-items-center px-4");
+    div.setAttribute("class", "video__controls d-flex flex-items-center flex-justify-between px-4");
     playerDiv.appendChild(div);
     this._controls = div;
 
