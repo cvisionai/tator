@@ -1368,7 +1368,7 @@ class AnnotationMulti extends TatorElement {
       }
 
       if (isDefault) {
-        this.setDefaultVideoSettings(idx);
+        this.setDefaultVideoSettings(0);
       }
     }
   }
