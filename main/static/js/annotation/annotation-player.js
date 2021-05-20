@@ -76,7 +76,7 @@ class AnnotationPlayer extends TatorElement {
 
     this._zoomSlider = document.createElement("seek-bar");
     this._zoomSlider.changeVisualType("zoom");
-    this._zoomSlider.hidden = true;
+    this._zoomSliderDiv.hidden = true;
     this._zoomSliderDiv.appendChild(this._zoomSlider);
 
     var innerDiv = document.createElement("div");
@@ -251,12 +251,12 @@ class AnnotationPlayer extends TatorElement {
     this._timelineD3.addEventListener("zoomedTimeline", evt => {
       if (evt.detail.minFrame < 1 || evt.detail.maxFrame < 1) {
         // Reset the slider
-        this._zoomSlider.hidden = true;
+        this._zoomSliderDiv.hidden = true;
         this._zoomSlider.setAttribute("min", 0);
         this._zoomSlider.setAttribute("max", Number(this._mediaInfo.num_frames)-1);
       }
       else {
-        this._zoomSlider.hidden = false;
+        this._zoomSliderDiv.hidden = false;
         this._zoomSlider.setAttribute("min", evt.detail.minFrame);
         this._zoomSlider.setAttribute("max", evt.detail.maxFrame);
         this._zoomSlider.value = Number(this._currentFrameText.textContent);

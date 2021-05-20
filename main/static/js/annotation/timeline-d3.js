@@ -427,14 +427,8 @@ class TimelineD3 extends TatorElement {
       }
     }));
 
-    // With the datasets updated, update the timeline plots
-    if (this._numericalData.length > 0 || this._stateData.length > 0) {
-      this.showMain(true);
-      this._updateSvgData();
-    }
-    else {
-      this.showMain(false);
-    }
+    this.showMain(true);
+    this._updateSvgData();
   }
 
   /**
@@ -489,11 +483,19 @@ class TimelineD3 extends TatorElement {
     this._mainSvg.selectAll('*').remove();
 
     // Frame number x-axis ticks
-    var xAxis = g => g
+    if (this._numericalData.length == 0 && this._stateData.length == 0) {
+      var xAxis = g => g
+        .call(d3.axisBottom(this._mainX).ticks().tickSizeOuter(0).tickFormat(d3.format("d")))
+        .call(g => g.selectAll(".tick").filter(d => this._mainX(d) < this._mainMargin.left || this._mainX(d) >= this._mainWidth - this._mainMargin.right).remove())
+        .call(g => g.select(".domain").remove());
+    }
+    else {
+      var xAxis = g => g
       .attr("transform", `translate(0,${this._mainMargin.top})`)
       .call(d3.axisTop(this._mainX).ticks().tickSizeOuter(0).tickFormat(d3.format("d")))
       .call(g => g.selectAll(".tick").filter(d => this._mainX(d) < this._mainMargin.left || this._mainX(d) >= this._mainWidth - this._mainMargin.right).remove())
       .call(g => g.select(".domain").remove());
+    }
 
     // States are represented as area graphs
     var area = d3.area()
