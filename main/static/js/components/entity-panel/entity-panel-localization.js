@@ -8,29 +8,9 @@ class GalleryPanelLocalization extends TatorElement {
     this._data = document.createElement("annotation-data");
     this._versionLookup = {};
 
-    // Create image canvas
-    this._imageCanvas = document.createElement("annotation-image");
-    this._imageCanvas._data = this._data;
-    this._imageCanvas._undo = this._undo;
-    this._shadow.appendChild(this._imageCanvas);
-
-    // Create video canvas
-    this._videoCanvas = document.createElement("annotation-player");
-    this._videoCanvas._data = this._data;
-    this._videoCanvas._undo = this._undo;
-    this._shadow.appendChild(this._videoCanvas);
-
     // data
     // #TODO define this outside component
     this.panelData = document.createElement("annotation-panel-data");
-
-    // Keep these inactive / out of sight until we have data
-    this._imageCanvas.hidden = true;
-    this._videoCanvas.hidden = true;
-
-    // #TODO Might want to explore looking at disabling shorcuts within the annotator itself.
-    //       Right now, it only responds to this shortcuts-disabled class.
-    document.body.classList.add("shortcuts-disabled");
 
     //
     this.savedMediaData = {};
@@ -87,7 +67,14 @@ class GalleryPanelLocalization extends TatorElement {
   }
 
   _setupImageCanvas() {
-    this._shadow.removeChild(this._imageCanvas);
+    console.log(`setting up image canvas`)
+    if (typeof this._imageCanvas != "undefined") {
+      this._imageCanvas.remove();
+    }
+    if (typeof this._videoCanvas != "undefined") {
+      this._videoCanvas.remove();
+    }
+
     this._imageCanvas = document.createElement("annotation-image");
     this._imageCanvas._data = this._data;
     this._imageCanvas._undo = this._undo;
@@ -96,27 +83,30 @@ class GalleryPanelLocalization extends TatorElement {
     // Inits image-only canvas as player
     this._player = this._imageCanvas;
 
-    // Setup image canvas
-    this._imageCanvas.hidden = false;
-    this._videoCanvas.hidden = true;
 
     return this._imageCanvas;
   }
 
-  _setupVideoCanvas(mediaId, data) {
-    this._shadow.removeChild(this._videoCanvas);
+  _setupVideoCanvas() {
+    console.log(`setting up video canvas`)
+    if (typeof this._imageCanvas != "undefined") {
+      this._imageCanvas.remove();
+    }
+    if (typeof this._videoCanvas != "undefined") {
+      this._videoCanvas.remove();
+    }
+
     this._videoCanvas = document.createElement("annotation-player");
-    this._videoCanvas._video.disableScrubBuffer();
+    this._videoCanvas.disableScrubBuffer();
+    this._videoCanvas.hideVideoControls();
+    this._videoCanvas.hideVideoText();
+    this._videoCanvas.disableShortcuts();
     this._videoCanvas._data = this._data;
     this._videoCanvas._undo = this._undo;
-    this._videoCanvas.hideVideoControls();
     this._shadow.appendChild(this._videoCanvas);
 
     // Inits image-only canvas as player
     this._player = this._videoCanvas;
-
-    this._imageCanvas.hidden = true;
-    this._videoCanvas.hidden = false;
 
     return this._videoCanvas;
   }

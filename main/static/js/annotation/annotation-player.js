@@ -122,6 +122,8 @@ class AnnotationPlayer extends TatorElement {
     const fullscreen = document.createElement("video-fullscreen");
     settingsDiv.appendChild(fullscreen);
 
+    this._shortcutsDisabled = false;
+
     this._scrubInterval = 1000.0/Math.min(guiFPS,30);
     this._lastScrub = Date.now();
     this._rate = 1;
@@ -328,6 +330,10 @@ class AnnotationPlayer extends TatorElement {
 
     document.addEventListener("keydown", evt => {
 
+      if (this._shortcutsDisabled) {
+        return;
+      }
+
       if (document.body.classList.contains("shortcuts-disabled"))
       {
         return;
@@ -388,6 +394,20 @@ class AnnotationPlayer extends TatorElement {
         }
         break;
     }
+  }
+
+  disableScrubBuffer() {
+    this._video.disableScrubBuffer();
+  }
+
+  enableShortcuts() {
+    this._shortcutsDisabled = false;
+    this._video.enableShortcuts();
+  }
+
+  disableShortcuts() {
+    this._shortcutsDisabled = true;
+    this._video.disableShortcuts();
   }
 
   set quality(val)

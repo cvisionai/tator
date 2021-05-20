@@ -1174,11 +1174,10 @@ class VideoCanvas extends AnnotationCanvas {
       ID: ${this._videoDiagnostics.id}\r\n
       `;
 
+
+      var enableDisplay = false;
       if (display == true) {
-        this._textOverlay.toggleTextDisplay(this._videoDiagOverlay, true);
-      }
-      else if (display == false) {
-        this._textOverlay.toggleTextDisplay(this._videoDiagOverlay, false);
+        enableDisplay = true;
       }
 
       this._textOverlay.modifyText(
@@ -1189,7 +1188,8 @@ class VideoCanvas extends AnnotationCanvas {
            "fontSize": "10pt",
            "fontWeight": "bold",
            "color": "white",
-           "background": "rgba(0,0,0,0.33)"}});
+           "background": "rgba(0,0,0,0.33)"}},
+        enableDisplay);
     }
   }
 

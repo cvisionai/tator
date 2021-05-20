@@ -85,6 +85,7 @@ class EntityGalleryPanelTop extends TatorElement {
         this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
       } else {
         this._locImage.classList.add("hidden");
+        this._locImage.clear();
         this._headingText.innerHTML = `No selection.`;
         this._topBarID.innerHTML = ``;
       }
