@@ -1549,6 +1549,12 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  allowSafeMode(allow) {
+    for (let video of this._videos) {
+      video.allowSafeMode = allow;
+    }
+  }
+
   getVideoSettings() {
 
     const seekInfo = this._videos[0].getQuality("seek");

@@ -548,6 +548,10 @@ class AnnotationPage extends TatorPage {
       canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
     });
 
+    this._videoSettingsDialog.addEventListener("allowSafeMode", evt => {
+      canvas.allowSafeMode(evt.detail.allowSafeMode);
+    });
+
     this._settings.addEventListener("openVideoSettings", () => {
       var videoSettings = canvas.getVideoSettings();
       this._videoSettingsDialog.applySettings(videoSettings);

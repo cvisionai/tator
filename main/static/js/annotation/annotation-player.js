@@ -773,6 +773,10 @@ class AnnotationPlayer extends TatorElement {
     this._video.updateVideoDiagnosticOverlay(display);
   }
 
+  allowSafeMode(allow) {
+    this._video.allowSafeMode = allow;
+  }
+
   getVideoSettings() {
 
     const seekInfo = this._video.getQuality("seek");
