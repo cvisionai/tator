@@ -47,7 +47,7 @@ class EntityGalleryPanelTop extends TatorElement {
       // this._box.appendChild(this._topBarP);
 
       // Panel Img Canvas
-      this._locImage = document.createElement("entity-gallery-panel-localization");
+      this._locImage = document.createElement("entity-panel-localization");
       this._box.appendChild(this._locImage);
 
       // Image modal link container @TODO styling
@@ -85,7 +85,6 @@ class EntityGalleryPanelTop extends TatorElement {
         this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
       } else {
         this._locImage.classList.add("hidden");
-        this._locImage.clear();
         this._headingText.innerHTML = `No selection.`;
         this._topBarID.innerHTML = ``;
       }
