@@ -1,17 +1,22 @@
-class TextInput extends TatorElement {
+class DateTimeInput extends TatorElement {
    constructor() {
       super();
 
+      // DATETIME INPUT
       this.label = document.createElement("label");
       this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
       this._shadow.appendChild(this.label);
 
+      const labelInner = document.createElement("span");
+      labelInner.setAttribute("class", "col-4");
+      this.label.appendChild(labelInner);
+
       this._name = document.createTextNode("");
-      this.label.appendChild(this._name);
+      labelInner.appendChild(this._name);
 
       this._input = document.createElement("input");
-      this._input.setAttribute("class", "form-control input-sm col-8");
-      this._input.setAttribute("type", "text");
+      this._input.setAttribute("class", "form-control input-sm");
+      this._input.setAttribute("type", "datetime-local");
       this.label.appendChild(this._input);
 
       this._input.addEventListener("change", () => {
@@ -25,8 +30,6 @@ class TextInput extends TatorElement {
          this.dispatchEvent(new Event("change"));
       });
 
-      this.getValue = this._validateString;
-
       this._input.addEventListener("focus", () => {
          document.body.classList.add("shortcuts-disabled");
       });
@@ -34,11 +37,10 @@ class TextInput extends TatorElement {
       this._input.addEventListener("blur", () => {
          document.body.classList.remove("shortcuts-disabled");
       });
-
    }
 
    static get observedAttributes() {
-      return ["name", "type"];
+      return ["name"];
    }
 
    attributeChangedCallback(name, oldValue, newValue) {
@@ -46,55 +48,10 @@ class TextInput extends TatorElement {
          case "name":
             this._name.nodeValue = newValue;
             break;
-         case "type":
-            switch (newValue) {
-               case "int":
-                  this._input.setAttribute("placeholder", "Enter an integer");
-                  this.getValue = this._validateInt;
-                  break;
-               case "float":
-                  this._input.setAttribute("placeholder", "Enter a number");
-                  this.getValue = this._validateFloat;
-                  break;
-               case "string":
-                  this.getValue = this._validateString;
-                  break;
-               // case "datetime":
-               //   this._input.setAttribute("placeholder", "e.g. 2020-06-30");
-               //   this.getValue = this._validateDateTime;
-               //   break;
-               case "datetime":
-                  // this is a datepicker...
-                  this._input.setAttribute("type", "datetime-local");
-                  this.getValue = this._validateDateTime;
-                  this.setValue = this._setDateTimeValue;
-                  // requires altered spacing
-                  let nameWrap = document.createElement("span");
-                  nameWrap.setAttribute("class", "col-4")
-                  this.label.prepend(nameWrap);
-                  nameWrap.appendChild(this._name);
-                  this.label.classList.remove("flex-justify-between");
-                  break;
-               case "geopos":
-                  this._input.setAttribute("placeholder", "e.g. 21.305,-157.858");
-                  this.getValue = this._validateGeopos;
-                  break;
-               case "password":
-                  this.getValue = this._validatePassword;
-                  this._input.setAttribute("type", "password");
-                  break;
-               case "email":
-                  this.getValue = this._validateEmail;
-                  this._input.setAttribute("type", "email");
-                  break;
-               default:
-                  this._input.setAttribute("type", newValue);
-                  break
-            }
-            break;
       }
    }
 
+   // Permission for datetime only
    set permission(val) {
       if (hasPermission(val, "Can Edit")) {
          this._input.removeAttribute("readonly");
@@ -106,10 +63,12 @@ class TextInput extends TatorElement {
    }
 
    set default(val) {
+      // Value should be the deafult ISO string
       this._default = val;
    }
 
    changed() {
+      // #todo datetime cuts off miliseconds to 3 points, may need to account for this looking like a change here?
       return this.getValue() !== this._default;
    }
 
@@ -122,107 +81,46 @@ class TextInput extends TatorElement {
       }
    }
 
-   _validateInt() {
-      let val = parseInt(this._input.value);
-      if (isNaN(val)) {
-         val = null;
-      }
-      return val;
-   }
-
-   _validateFloat() {
-      let val = parseFloat(this._input.value);
-      if (isNaN(val)) {
-         val = null;
-      }
-      return val;
-   }
-
-   _validateString() {
-      return this._input.value;
-   }
-
-   _validateDateTime() {
-      console.log("Start validate DateTime");
-      let val = new Date(this._input.value);
-      console.log(val);
-      if (isNaN(val.getTime())) {
+   getValue() {
+      let val = this._input.value;
+      if (val === null || val === "" || isNaN(new Date(val).getMonth())) {
          val = null;
       } else {
-         val = val.toISOString();
+         let utcString = val + 'Z';
+         console.log(utcString);
+         let date = new Date(utcString);
+         val = date.toISOString();
       }
-      console.log(val);
-      console.log("End validate DateTime");
+
       return val;
-   }
-
-   _validateGeopos() {
-      const val = this._input.value.split(",");
-      let ret = null;
-      if (val.length == 2) {
-         const lat = parseFloat(val[0]);
-         const lon = parseFloat(val[1]);
-         if (!isNaN(lat) && !isNaN(lon)) {
-            const latOk = (lat < 90.0) && (lat > -90.0);
-            const lonOk = (lon < 180.0) && (lon > -180.0);
-            if (latOk && lonOk) {
-               ret = [lat, lon];
-            }
-         }
-      }
-      return ret;
-   }
-
-   _validatePassword() {
-      return this._input.value;
-   }
-
-   _validateEmail() {
-      return this._input.value;
    }
 
    setValue(val) {
-      this._input.value = val;
-   }
 
-   _setDateTimeValue(val) {
-      // assume any incoming value (not null, undefined or "") is in ISO format
-      if (isoVal) {
-         // convert to datetime string for input
-         // Example 1: 2021-05-15T11:00:00.000 --> 11AM UTC, as a result of "toISOString()"
-         // Other examples of UTC: "11:00:00Z" "11:00Z" "11:00:00Z" or "1100Z"
-         // # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString
-         // Example 2: 
-         // Other ways to represent this same time and differing offsets: "18:30Z", "22:30+04", "1130−0700", and "15:00−03:30"
-         const isoVal = val;
+      // assume any incoming value (not null, or "") is in ISO format
+      if (val === null || val === "" || isNaN(new Date(val).getMonth())) {
+         this._input.value = null;
+      } else {
+         let date = new Date(val);
+         let minuteWithOffset = (date.getMinutes() + date.getTimezoneOffset());
+         date.setMinutes(minuteWithOffset);
 
-         // check if we need to update for local time
-         const userOffest = new Date().getTimezoneOffset().replace("Z", "");
-         const isoValSplit = isoVal.split(".");
-         if (isoValSplit.length > 0) {
-            const date = new Date(isoVal);
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-            const seconds = date.getSeconds();
+         let year = date.getFullYear();
+         let month = ('0' + date.getMonth()).slice(-2);
+         let day = ('0' + date.getDay()).slice(-2);
+         let hours = ('0' + date.getHours()).slice(-2);
+         let minutes = ('0' + date.getMinutes()).slice(-2);
+         let seconds = ('0' + date.getSeconds()).slice(-2);
+         let milliseconds = ('00' + date.getMilliseconds()).slice(-6);
 
-            const offset = isoValSplit[1];
-            const offest2 = date.getTimezoneOffset()
-
-            console.log(`userOffest ${userOffest} * offset ${offset} * offest2 ${offest2}`)
-
-            const datetimeString = `${date.getFullYear()}-${date.getMonth()}-${date.getDay()}T${hours}:${minutes}:${seconds}`;
-
-            console.log(`offset ${offset} for datetime ${datetimeString}`);
-            val = datetimeString
-         }
+         let dateToString = `${year}-${month}-${day}T${hours}:${minutes}`;
+         this._input.value = dateToString;
       }
-
-      this._input.value = val;
    }
 
-   set autocomplete(config) {
-      TatorAutoComplete.enable(this._input, config);
-   }
+   // set autocomplete(config) {
+   //    TatorAutoComplete.enable(this._input, config);
+   // }
 }
 
-customElements.define("text-input", TextInput);
+customElements.define("datetime-input", DateTimeInput);
