@@ -17,7 +17,6 @@ class DateTimeInput extends TatorElement {
       this._input = document.createElement("input");
       this._input.setAttribute("class", "form-control input-sm col-12");
       this._input.setAttribute("type", "datetime-local");
-      this._input.setAttribute("pattern", "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"); // for browser support
       this._input.setAttribute("step", ".1");
       this.label.appendChild(this._input);
 
@@ -91,32 +90,55 @@ class DateTimeInput extends TatorElement {
       } else {
          let utcString = val + 'Z';
          let date = new Date(utcString);
+
          val = date.toISOString();
       }
-
+      console.log(val);
       return val;
    }
 
    setValue(val) {
       // assume any incoming value (not null, or "") is in ISO format
       if (val === null || val === "" || isNaN(new Date(val).getTime())) {
-         this._input.value = null;
+         val = null;
       } else {
          let date = new Date(val);
          let minuteWithOffset = (date.getMinutes() + date.getTimezoneOffset());
          date.setMinutes(minuteWithOffset);
+         console.log(date.toString());
 
          let year = date.getFullYear();
-         let month = ('0' + date.getMonth()).slice(-2);
-         let day = ('0' + date.getDay()).slice(-2);
-         let hours = ('0' + date.getHours()).slice(-2);
-         let minutes = ('0' + date.getMinutes()).slice(-2);
-         let seconds = ('0' + date.getSeconds()).slice(-2);
-         let milliseconds = date.getMilliseconds();
+         let month = (Number(date.getMonth()) + 1).toLocaleString('en-US', {
+            minimumIntegerDigits: 2,
+            useGrouping: false
+         });
+         let day = date.getDate().toLocaleString('en-US', {
+            minimumIntegerDigits: 2,
+            useGrouping: false
+         });
+         let hours = date.getHours().toLocaleString('en-US', {
+            minimumIntegerDigits: 2,
+            useGrouping: false
+         });
+         let minutes = date.getMinutes().toLocaleString('en-US', {
+            minimumIntegerDigits: 2,
+            useGrouping: false
+         });
+         let seconds = date.getSeconds().toLocaleString('en-US', {
+            minimumIntegerDigits: 2,
+            useGrouping: false
+         });
+         let milliseconds = date.getMilliseconds().toLocaleString('en-US', {
+            minimumIntegerDigits: 3,
+            useGrouping: false
+         });
+
          let dateToString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
 
-         this._input.value = dateToString;
+         val = dateToString;
       }
+      console.log(val);
+      this._input.value = val;
    }
 
    // set autocomplete(config) {
