@@ -21,6 +21,8 @@ from .download_info import DownloadInfoAPI
 from .email import EmailAPI
 from .favorite import FavoriteListAPI
 from .favorite import FavoriteDetailAPI
+from .file import FileListAPI
+from .file import FileDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
 from .image_file import ImageFileListAPI
