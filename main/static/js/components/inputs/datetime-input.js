@@ -17,6 +17,7 @@ class DateTimeInput extends TatorElement {
       this._input = document.createElement("input");
       this._input.setAttribute("class", "form-control input-sm col-12");
       this._input.setAttribute("type", "datetime-local");
+      this._input.setAttribute("pattern", "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"); // for browser support
       this._input.setAttribute("step", ".1");
       this.label.appendChild(this._input);
 
@@ -84,11 +85,11 @@ class DateTimeInput extends TatorElement {
 
    getValue() {
       let val = this._input.value;
-      if (val === null || val === "" || isNaN(new Date(val).getMonth())) {
+
+      if (val === null || val === "" || isNaN(new Date(val).getTime())) {
          val = null;
       } else {
          let utcString = val + 'Z';
-         console.log(utcString);
          let date = new Date(utcString);
          val = date.toISOString();
       }
@@ -98,7 +99,7 @@ class DateTimeInput extends TatorElement {
 
    setValue(val) {
       // assume any incoming value (not null, or "") is in ISO format
-      if (val === null || val === "" || isNaN(new Date(val).getMonth())) {
+      if (val === null || val === "" || isNaN(new Date(val).getTime())) {
          this._input.value = null;
       } else {
          let date = new Date(val);
@@ -110,10 +111,9 @@ class DateTimeInput extends TatorElement {
          let day = ('0' + date.getDay()).slice(-2);
          let hours = ('0' + date.getHours()).slice(-2);
          let minutes = ('0' + date.getMinutes()).slice(-2);
-         let seconds = date.getSeconds() == 0 ? "" : ":" + (('0' + date.getSeconds()).slice(-2));
-         let milliseconds = date.getMilliseconds() == 0 ? "" : "." + date.getMilliseconds();
-
-         let dateToString = `${year}-${month}-${day}T${hours}:${minutes}${seconds}${milliseconds}`;
+         let seconds = ('0' + date.getSeconds()).slice(-2);
+         let milliseconds = date.getMilliseconds();
+         let dateToString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
 
          this._input.value = dateToString;
       }

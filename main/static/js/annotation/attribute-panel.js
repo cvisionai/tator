@@ -136,8 +136,20 @@ class AttributePanel extends TatorElement {
         }
         widget.choices = choices;
       } else if (column.dtype == "datetime") {
-        widget = document.createElement("datetime-input");
-        widget.setAttribute("name", column.name);
+        try {
+          widget = document.createElement("datetime-input");
+          widget.setAttribute("name", column.name);
+        } catch (e) {
+          console.log(e.description);
+        }
+
+        if ((widget && widget._input && widget._input.type == "text") || !widget._input) {
+          console.log("No browser support for datetime, or error. Degrading to text-input.");
+          widget = document.createElement("text-input");
+          widget.setAttribute("name", column.name);
+          widget.setAttribute("type", column.dtype);
+          widget.autocomplete = column.autocomplete;
+        }
         //widget.autocomplete = column.autocomplete; #TODO can this use autocomplete?
       } else if (column.style) {
         const style_options = column.style.split(' ');
