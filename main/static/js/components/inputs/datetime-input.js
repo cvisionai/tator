@@ -8,15 +8,16 @@ class DateTimeInput extends TatorElement {
       this._shadow.appendChild(this.label);
 
       const labelInner = document.createElement("span");
-      labelInner.setAttribute("class", "col-4");
+      labelInner.setAttribute("class", "");
       this.label.appendChild(labelInner);
 
       this._name = document.createTextNode("");
       labelInner.appendChild(this._name);
 
       this._input = document.createElement("input");
-      this._input.setAttribute("class", "form-control input-sm");
+      this._input.setAttribute("class", "form-control input-sm col-12");
       this._input.setAttribute("type", "datetime-local");
+      this._input.setAttribute("step", ".1");
       this.label.appendChild(this._input);
 
       this._input.addEventListener("change", () => {
@@ -96,7 +97,6 @@ class DateTimeInput extends TatorElement {
    }
 
    setValue(val) {
-
       // assume any incoming value (not null, or "") is in ISO format
       if (val === null || val === "" || isNaN(new Date(val).getMonth())) {
          this._input.value = null;
@@ -110,10 +110,11 @@ class DateTimeInput extends TatorElement {
          let day = ('0' + date.getDay()).slice(-2);
          let hours = ('0' + date.getHours()).slice(-2);
          let minutes = ('0' + date.getMinutes()).slice(-2);
-         let seconds = ('0' + date.getSeconds()).slice(-2);
-         let milliseconds = ('00' + date.getMilliseconds()).slice(-6);
+         let seconds = date.getSeconds() == 0 ? "" : ":" + (('0' + date.getSeconds()).slice(-2));
+         let milliseconds = date.getMilliseconds() == 0 ? "" : "." + date.getMilliseconds();
 
-         let dateToString = `${year}-${month}-${day}T${hours}:${minutes}`;
+         let dateToString = `${year}-${month}-${day}T${hours}:${minutes}${seconds}${milliseconds}`;
+
          this._input.value = dateToString;
       }
    }
