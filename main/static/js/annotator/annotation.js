@@ -578,12 +578,12 @@ class TextOverlay extends TatorElement {
   toggleTextDisplay(idx, display) {
 
     var enabled;
-    if (typeof display === "undefined") {
-      enabled = true;
-    }
-    else {
+    if (display === true || display === false) {
       this._enabledTexts[idx] = display;
       enabled = display;
+    }
+    else {
+      enabled = this._enabledTexts[idx];
     }
 
     const text = this._texts[idx]

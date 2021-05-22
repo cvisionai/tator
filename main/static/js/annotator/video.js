@@ -1174,9 +1174,11 @@ class VideoCanvas extends AnnotationCanvas {
       ID: ${this._videoDiagnostics.id}\r\n
       `;
 
-
-      var enableDisplay = false;
-      if (display == true) {
+      var enableDisplay = null;
+      if (display === false) {
+        enableDisplay = false;
+      }
+      else if (display === true) {
         enableDisplay = true;
       }
 
