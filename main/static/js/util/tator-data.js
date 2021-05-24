@@ -1003,28 +1003,42 @@ class TatorData {
   async collectionsInit(acceptedAssoc) {
     const stateTypes = await this.getStateTypes();
     const typeData = {};
+    const searchMeta = "";
     const typeIds = stateTypes.filter(type => acceptedAssoc.includes(type.association)).map(type => {
       typeData[type.id] = type;
       return type.id;
     });
-    const searchMeta = `_meta:(${typeIds.join(" OR ")})`;
+
+    console.log(typeIds);
+    if(typeIds && typeIds.length > 1){
+      searchMeta = `_meta:(${typeIds.join(" OR ")})`;
+    } else if(typeIds && typeIds.length == 1) {
+      searchMeta = `_meta:(${typeIds[0]})`;
+    }
+    
     console.log(searchMeta);
 
-    const stateCount = await this.getStateCount({
-      params: `?search=${encodeURIComponent(searchMeta)}`
-    });
+    this._states = {};
+    this._states.total = 0
 
-    this._states = await this.getStates({
-      params: `?search=${encodeURIComponent(searchMeta)}`
-    });
+    if(searchMeta !== "") {
+      const params = `?search=${encodeURIComponent(searchMeta)}`;
+      const stateCount = await this.getStateCount({
+        params
+      });
 
-    this._states.map(state => {
-      // pass along some data we already fetch about the association, and state name to view with the state
-      state.typeData = typeData[state.meta];
-      return state;
-    });
+      this._states = await this.getStates({
+        params
+      });
 
-    this._states.total = stateCount
+      this._states.map(state => {
+        // pass along some data we already fetch about the association, and state name to view with the state
+        state.typeData = typeData[state.meta];
+        return state;
+      });
+
+      this._states.total = stateCount
+    }
 
     return this._states;
   }

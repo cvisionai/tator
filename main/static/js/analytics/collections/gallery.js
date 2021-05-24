@@ -65,16 +65,20 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
 
       // Init slider, which inits inner cards
-      this._addSliders({ states: this.modelData._states });
+      if(this.modelData._states){
+         if (this.modelData._states.total >= this.modelData.getMaxFetchCount()) {
+            this._numFiles.textContent = `Too many results to preview. Displaying the first ${this.modelData._states.total} results.`
+         } else {
+            this._numFiles.textContent = `${this.modelData._states.total} Results`;
+
+             if(this.modelData._states.length > 0){
+               this._addSliders({ states: this.modelData._states });
+             }
+         }         
+      }    
    }
 
    _addSliders({ states }) {
-      if (states.total >= this.modelData.getMaxFetchCount()) {
-         this._numFiles.textContent = `Too many results to preview. Displaying the first ${states.total} results.`
-      } else {
-         this._numFiles.textContent = `${states.total} Results`;
-      }
-
       // Append the sliders
       for (let state of states) {
          this._currentSliderIndexes = {}; // Clear the mapping from entity ID to card index
