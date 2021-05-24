@@ -677,7 +677,7 @@ class AttributePanel extends TatorElement {
     var createdByUsername = null;
     var foundUser = false;
     for (let index = 0; index < this._userList.length; index++) {
-      if (this._userList[index].id == values.created_by || this._userList[index].id == values.user) {
+      if (this._userList[index].id == values.created_by) {
         foundUser = true;
         createdByUsername = this._userList[index].result.username;
         break;
@@ -685,12 +685,7 @@ class AttributePanel extends TatorElement {
     }
 
     if (!foundUser) {
-      if (values.created_by == null || values.created_by == "") {
-        this._getUsername(values.user, this._createdByWidget);
-      }
-      else {
-        this._getUsername(values.created_by, this._createdByWidget);
-      }
+      this._getUsername(values.created_by, this._createdByWidget);
     }
     else {
       this._createdByWidget.setValue(createdByUsername);
