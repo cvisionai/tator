@@ -212,9 +212,11 @@ FILES = \
     components/box-navigation.js \
     components/labeled-checkbox.js \
     components/markdown-div.js \
-    components/modal-close.js \
-    components/modal-warning.js \
-    components/modal-success.js \
+    components/svg-definitions/chevron-right.js \
+    components/svg-definitions/modal-close.js \
+    components/svg-definitions/modal-warning.js \
+    components/svg-definitions/modal-success.js \
+    components/svg-definitions/more-icon.js \
     components/modal-dialog.js \
     components/modal-notify.js \
     components/upload-dialog.js \
@@ -247,10 +249,8 @@ FILES = \
     components/nav-main.js \
     components/keyboard-shortcuts.js \
     components/tator-page.js \
-    components/more-icon.js \
     components/form-text.js \
-    components/form-file.js \
-    components/chevron-right.js \
+    components/form-file.js \   
     components/text-autocomplete.js \
     components/success-light.js \
     components/warning-light.js \
