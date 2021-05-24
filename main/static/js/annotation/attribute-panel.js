@@ -426,16 +426,30 @@ class AttributePanel extends TatorElement {
         widget = document.createElement("enum-input");
         widget.setAttribute("name", column.name);
         let choices = [];
-        for (let idx = 0; idx < column.choices.length; idx++)
-        {
-          let choice = {'value': column.choices[idx]};
-          if (column.labels)
-          {
+        for (let idx = 0; idx < column.choices.length; idx++) {
+          let choice = { 'value': column.choices[idx] };
+          if (column.labels) {
             choice.label = column.labels[idx];
           }
           choices.push(choice);
         }
         widget.choices = choices;
+      } else if (column.dtype == "datetime") {
+        try {
+          widget = document.createElement("datetime-input");
+          widget.setAttribute("name", column.name);
+        } catch (e) {
+          console.log(e.description);
+        }
+
+        if ((widget && widget._input && widget._input.type == "text") || !widget._input) {
+          console.log("No browser support for datetime, or error. Degrading to text-input.");
+          widget = document.createElement("text-input");
+          widget.setAttribute("name", column.name);
+          widget.setAttribute("type", column.dtype);
+          widget.autocomplete = column.autocomplete;
+        }
+        //widget.autocomplete = column.autocomplete; #TODO can this use autocomplete?
       } else if (column.style) {
         const style_options = column.style.split(' ');
         if (column.dtype == "string" && style_options.includes("long_string")) {
@@ -456,7 +470,6 @@ class AttributePanel extends TatorElement {
         }
       }
       else {
-        // TODO: Implement a better datetime widget
         // TODO: Implement a better geopos widget
         widget = document.createElement("text-input");
         widget.setAttribute("name", column.name);
