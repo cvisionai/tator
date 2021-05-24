@@ -59,8 +59,8 @@ class EntityGalleryPanel extends TatorElement {
     }, { once: true });
     
     // Init the forms with data
-    this.entityData._init(this.cardObj);
-    this.mediaData._init(this.cardObj.mediaInfo);
+    this.entityData._init(this.cardObj, this.cardObj.localization, this.cardObj.mediaInfo.media);
+    this.mediaData._init(this.cardObj.mediaInfo, this.cardObj.mediaInfo.media);
   }
 
 }

@@ -1387,6 +1387,27 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  /**
+   * Expected to be set by something like annotation-page.
+   * @param {tator.Media object} val 
+   */
+  setAvailableQualities(val) {
+    if (val.media_files && 'streaming' in val.media_files)
+    {
+      let quality_list = [];
+      for (let media_file of val.media_files["streaming"])
+      {
+        quality_list.push(media_file.resolution[0]);
+      }
+      this._qualityControl.resolutions = quality_list;
+      this._qualityControl.show();
+    }
+    else
+    {
+      this._qualityControl.hide();
+    }
+  }
+
   zoomPlus() {
     for (let video of this._videos)
     {

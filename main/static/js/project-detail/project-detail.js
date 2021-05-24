@@ -163,6 +163,9 @@ class ProjectDetail extends TatorPage {
     const uploadDialog = document.createElement("upload-dialog");
     this._projects.appendChild(uploadDialog);
 
+    const attachmentDialog = document.createElement("attachment-dialog");
+    this._projects.appendChild(attachmentDialog);
+
     this._activityNav = document.createElement("activity-nav");
     main.appendChild(this._activityNav);
 
@@ -324,6 +327,16 @@ class ProjectDetail extends TatorPage {
       } else if (msg.command == "allUploadsDone") {
         this._leaveConfirmOk = false;
       }
+    });
+
+    this._mediaSection.addEventListener("attachments", evt => {
+      attachmentDialog.init(evt.detail);
+      attachmentDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    });
+
+    attachmentDialog.addEventListener("close", evt => {
+      this.removeAttribute("has-open-modal");
     });
 
     this._mediaSection.addEventListener("newName", evt => {

@@ -987,7 +987,7 @@ class Media(Model, ModelDiffMixin):
         store_lookup = get_storage_lookup(resources)
         store_default = get_tator_store(self.project.bucket)
 
-        for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif"]:
+        for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif", "attachment"]:
             if key not in self.media_files:
                 continue
 
@@ -1094,7 +1094,7 @@ class Resource(Model):
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
     if instance.media_files and created:
-        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif', 'attachment']:
             for fp in instance.media_files.get(key, []):
                 Resource.add_resource(fp['path'], instance)
                 if key == 'streaming':
@@ -1130,7 +1130,7 @@ def media_delete(sender, instance, **kwargs):
 def media_post_delete(sender, instance, **kwargs):
     # Delete all the files referenced in media_files
     if not instance.media_files is None:
-        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif']:
+        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif', 'attachment']:
             files = instance.media_files.get(key, [])
             if files is None:
                 files = []
