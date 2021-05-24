@@ -165,7 +165,7 @@ class AttributePanel extends TatorElement {
         for (let index = 0; index < this._versionList.length; index++) {
           if (this._versionList[index].id == values.modified_by) {
             foundVersion = true;
-            username = this._versionList[index].result.name;
+            version = this._versionList[index].result.name;
             break;
           }
         }

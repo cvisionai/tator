@@ -55,9 +55,6 @@ class AnnotationSettings extends TatorElement {
     if (this.hasAttribute("entity-id")) {
       params.set("selected_entity", this.getAttribute("entity-id"));
     }
-    if (this.hasAttribute("entity-type")) {
-      params.set("selected_entity_type",this.getAttribute("entity-type"));
-    }
     if (this._typeParams()) {
       params.set("selected_type", this._typeParams());
     }

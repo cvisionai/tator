@@ -378,30 +378,18 @@ class AnnotationPage extends TatorPage {
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
         const haveEntity = searchParams.has("selected_entity");
-        const haveEntityType = searchParams.has("selected_entity_type");
         const haveType = searchParams.has("selected_type");
         const haveFrame = searchParams.has("frame");
         const haveVersion = searchParams.has("version");
         const haveLock = searchParams.has("lock");
         const haveFillBoxes = searchParams.has("fill_boxes");
         const haveToggleText = searchParams.has("toggle_text");
-        if (haveEntity && haveEntityType) {
-          const typeId = Number(searchParams.get("selected_entity_type"));
+        if (haveEntity && haveType) {
+          const typeId = searchParams.get("selected_type");
           const entityId = Number(searchParams.get("selected_entity"));
-          this._settings.setAttribute("entity-type", typeId);
+          this._settings.setAttribute("type-id", typeId);
           this._settings.setAttribute("entity-id", entityId);
-          for (const dtype of ['state', 'box', 'line', 'dot']) {
-            let modifiedTypeId = dtype + "_" + typeId;
-            if (this._data._dataByType.has(modifiedTypeId)) {
-              const data = this._data._dataByType.get(modifiedTypeId);
-              for (const elem of data) {
-                if (elem.id == entityId) {
-                  this._browser.selectEntity(elem);
-                  break;
-                }
-              }
-            }
-          }
+          this._browser.selectEntityOnUpdate(entityId, typeId);
         } else if (haveType) {
           const typeId = Number(searchParams.get("selected_type"));
           this._settings.setAttribute("type-id", typeId);

@@ -960,14 +960,15 @@ class TatorData {
    * @param {integer} mediaId
    * @param {integer} frame - optional
    * @param {integer} entityId - optional
+   * @param {integer} typeId - optional, will convert to Tator annotator friendly link
    * @param {integer} version - optional
    * @returns {str} Tator link using given parameters
    */
-  generateMediaLink(mediaId, frame, entityId, version) {
+  generateMediaLink(mediaId, frame, entityId, typeId, version) {
     var outStr = `/${this._project}/annotation/${mediaId}?`;
     var addedParam = false;
 
-    if (mediaId) {
+    if (frame) {
       if (addedParam) {
         outStr += "&"
       }
@@ -980,6 +981,24 @@ class TatorData {
         outStr += "&"
       }
       outStr += `selected_entity=${entityId}`;
+      addedParam = true;
+    }
+
+    if (typeId) {
+      if (addedParam) {
+        outStr += "&"
+      }
+
+      let annotatorTypeId;
+      for (let type of this._localizationTypes) {
+        if (type.id == typeId) {
+          annotatorTypeId = type.dtype;
+          break;
+        }
+      }
+      annotatorTypeId += `_${typeId}`
+
+      outStr += `selected_type=${annotatorTypeId}`;
       addedParam = true;
     }
 

@@ -11,6 +11,7 @@ class AnnotationBrowser extends TatorElement {
 
     this._framePanels = {};
     this._entityPanels = {};
+    this._selectEntity = null;
 
     this._media.addEventListener("open", evt => {
       const typeId = evt.detail.typeId;
@@ -69,6 +70,14 @@ class AnnotationBrowser extends TatorElement {
           this._panels.appendChild(frame);
           this._framePanels[dataType.id] = frame;
         }
+      }
+    }
+  }
+
+  selectEntityOnUpdate(entityId, entityTypeId) {
+    for (const typeId in this._entityPanels) {
+      if (typeId == entityTypeId) {
+        this._entityPanels[typeId].selectEntityOnUpdate(entityId);
       }
     }
   }
