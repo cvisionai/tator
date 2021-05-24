@@ -17,12 +17,69 @@ class AttributePanel extends TatorElement {
     this._createdByWidget.setAttribute("name", "Created By");
     this._div.appendChild(this._createdByWidget);
 
+    this._builtInAttrLabel = document.createElement("div");
+    this._builtInAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
+    this._builtInAttrLabel.textContent = "Built-in Attributes";
+    this._shadow.appendChild(this._builtInAttrLabel);
+
+    this._builtInAttrsDiv = document.createElement("div");
+    this._builtInAttrsDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    this._shadow.appendChild(this._builtInAttrsDiv);
+
+    this._builtInAttrLabel.appendChild(this._chevron());
+    this._builtInAttrLabel.addEventListener("click", evt => {
+      this._toggleAttributes(this._builtInAttrsDiv);
+      this._toggleChevron(evt);
+    });
+
+    this._hiddenAttrLabel = document.createElement("div");
+    this._hiddenAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
+    this._hiddenAttrLabel.textContent = "Hidden Attributes";
+    this._shadow.appendChild(this._hiddenAttrLabel);
+
+    this._hiddenAttrsDiv = document.createElement("div");
+    this._hiddenAttrsDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    this._shadow.appendChild(this._hiddenAttrsDiv);
+
+    this._hiddenAttrLabel.appendChild(this._chevron());
+    this._hiddenAttrLabel.addEventListener("click", evt => {
+      this._toggleAttributes(this._hiddenAttrsDiv);
+      this._toggleChevron(evt);
+    });
+
+    // #TODO refactor this to tator-data
     this._userList = [];
+    this._versionList = [];
   }
 
   static get observedAttributes() {
     return ["in-entity-browser"];
   }
+
+  _chevron() {
+    const chevron = document.createElementNS(svgNamespace, "svg");
+    chevron.setAttribute("class", "chevron");
+    chevron.setAttribute("viewBox", "0 0 24 24");
+    chevron.setAttribute("height", "1em");
+    chevron.setAttribute("width", "1em");
+
+    const chevronPath = document.createElementNS(svgNamespace, "path");
+    chevronPath.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+
+    chevron.appendChild(chevronPath);
+
+    return chevron;
+  }
+
+  _toggleChevron(evt){
+    var el = evt.target;
+    return el.classList.toggle('chevron-trigger-90');
+  }
+
+  _toggleAttributes(el){
+    let hidden = el.hidden
+    return el.hidden = !hidden;
+  };
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
@@ -45,6 +102,182 @@ class AttributePanel extends TatorElement {
     }
   }
 
+  /**
+   * @param {Tator.Media} media - Media associated with localization. Optional and only useful
+   *                              with the built in attributes.
+   */
+  set associatedMedia(media) {
+    this._associatedMedia = media;
+  }
+
+  /**
+   * Adds the fields common across all localization and state types
+   */
+  _addCommonBuiltInAttributes() {
+
+    var widget;
+
+    widget = document.createElement("text-input");
+    widget.setAttribute("name", "Frame");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+
+    widget = document.createElement("text-input");
+    widget.setAttribute("name", "Type");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+
+    widget = document.createElement("text-input");
+    widget.setAttribute("name", "Version");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+
+    widget = document.createElement("text-input");
+    widget.setAttribute("name", "Created Datetime");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+
+    widget = document.createElement("text-input");
+    widget.setAttribute("name", "Modified By");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+
+    widget = document.createElement("text-input");
+    widget.setAttribute("name", "Modified Datetime");
+    widget.permission = "View Only";
+    this._builtInAttrsDiv.appendChild(widget);
+  }
+
+  _setBuiltInAttributes(values) {
+    for (const widget of this._builtInAttrsDiv.children) {
+      const name = widget.getAttribute("name");
+
+      if (name == "Frame") {
+        widget.setValue(values.frame);
+      }
+      else if (name == "Type") {
+        widget.setValue(values.meta);
+      }
+      else if (name == "Version") {
+
+        let version = null;
+        let foundVersion = false;
+        for (let index = 0; index < this._versionList.length; index++) {
+          if (this._versionList[index].id == values.modified_by) {
+            foundVersion = true;
+            username = this._versionList[index].result.name;
+            break;
+          }
+        }
+
+        if (!foundVersion) {
+          this._getVersion(values.version, widget);
+        }
+        else {
+          widget.setValue(version);
+        }
+      }
+      else if (name == "Created Datetime") {
+        widget.setValue(values.created_datetime);
+      }
+      else if (name == "Modified By") {
+
+        let username = null;
+        let foundUser = false;
+        for (let index = 0; index < this._userList.length; index++) {
+          if (this._userList[index].id == values.modified_by) {
+            foundUser = true;
+            username = this._userList[index].result.username;
+            break;
+          }
+        }
+
+        if (!foundUser) {
+          this._getUsername(values.modified_by, widget);
+        }
+        else {
+          widget.setValue(username);
+        }
+      }
+      else if (name == "Modified Datetime") {
+        widget.setValue(values.modified_datetime);
+      }
+      else if (name == "x") {
+        let val = `${values.x.toFixed(4)}`;
+        if (this._associatedMedia) {
+          val += ` | ${Math.round(values.x*this._associatedMedia.width)} px`;
+        }
+        widget.setValue(val);
+      }
+      else if (name == "y") {
+        let val = `${values.y.toFixed(4)}`;
+        if (this._associatedMedia) {
+          val += ` | ${Math.round(values.y*this._associatedMedia.height)} px`;
+        }
+        widget.setValue(val);
+      }
+      else if (name == "u") {
+        let val = `${values.u.toFixed(4)}`;
+        if (this._associatedMedia) {
+          val += ` | ${Math.round(values.u*this._associatedMedia.width)} px`;
+        }
+        widget.setValue(val);
+      }
+      else if (name == "v") {
+        let val = `${values.v.toFixed(4)}`;
+        if (this._associatedMedia) {
+          val += ` | ${Math.round(values.v*this._associatedMedia.height)} px`;
+        }
+        widget.setValue(val);
+      }
+      else if (name == "width") {
+        let val = `${values.width.toFixed(4)}`;
+        if (this._associatedMedia) {
+          val += ` | ${Math.round(values.width*this._associatedMedia.width)} px`;
+        }
+        widget.setValue(val);
+      }
+      else if (name == "height") {
+        let val = `${values.height.toFixed(4)}`;
+        if (this._associatedMedia) {
+          val += ` | ${Math.round(values.height*this._associatedMedia.height)} px`;
+        }
+        widget.setValue(val);
+      }
+    }
+  }
+
+  _setHiddenAttributes(values) {
+    for (const widget of this._hiddenAttrsDiv.children) {
+      const name = widget.getAttribute("name");
+      const value = values.attributes[name];
+      // Only set the name if it is defined
+      if (value != undefined) {
+        widget.setValue(values.attributes[name]);
+      }
+    }
+  }
+
+  _removeBuiltInAttributes() {
+    while (this._builtInAttrsDiv.children.length > 0) {
+      this._builtInAttrsDiv.removeChild(this._builtInAttrsDiv.lastChild);
+    }
+  }
+
+  _removeHiddenAttributes() {
+    while (this._hiddenAttrsDiv.children.length > 0) {
+      this._hiddenAttrsDiv.removeChild(this._hiddenAttrsDiv.lastChild);
+    }
+  }
+
+  set enableBuiltInAttributes(val) {
+    this._enableBuiltInAttributes = val;
+  }
+
+  set enableHiddenAttributes(val) {
+    this._enableHiddenAttributes = val;
+  }
+
   set dataType(val) {
     this._dataType = val;
 
@@ -56,6 +289,10 @@ class AttributePanel extends TatorElement {
       }
       this._div.removeChild(child);
     }
+
+    this._removeBuiltInAttributes();
+    this._removeHiddenAttributes();
+
     if (val.isTrack) {
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
@@ -111,6 +348,68 @@ class AttributePanel extends TatorElement {
       this.displayGoToTrack(false);
     }
 
+    // Built-in attributes
+    if (val.dtype == "box") {
+      this._addCommonBuiltInAttributes();
+
+      let widget = document.createElement("text-input");
+      widget.setAttribute("name", "x");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "y");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "width");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "height");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+    }
+    else if (val.dtype == "line") {
+      this._addCommonBuiltInAttributes();
+
+      let widget = document.createElement("text-input");
+      widget.setAttribute("name", "x");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "y");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "u");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "v");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+    }
+    else if (val.dtype == "dot") {
+      this._addCommonBuiltInAttributes();
+
+      let widget = document.createElement("text-input");
+      widget.setAttribute("name", "x");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", "y");
+      widget.permission = "View Only";
+      this._builtInAttrsDiv.appendChild(widget);
+   }
+
+    // User defined attributes
     const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
@@ -165,12 +464,6 @@ class AttributePanel extends TatorElement {
         widget.autocomplete = column.autocomplete;
       }
 
-      // Hide attributes that are less than 0
-      if (column.order < 0)
-      {
-        widget.style.display = "none";
-      }
-
       // Set whether this widget is required
       if (typeof column.required === "undefined") {
         widget.required = false;
@@ -181,7 +474,14 @@ class AttributePanel extends TatorElement {
       if (typeof this._permission !== "undefined" && !ignorePermission) {
         widget.permission = this._permission;
       }
-      this._div.appendChild(widget);
+
+      if (column.order < 0) {
+        this._hiddenAttrsDiv.appendChild(widget);
+      }
+      else {
+        this._div.appendChild(widget);
+      }
+
       if (column.default) {
         widget.default = column.default;
       }
@@ -192,6 +492,24 @@ class AttributePanel extends TatorElement {
           this.dispatchEvent(new Event("change"));
         }
       });
+    }
+
+    if (this._enableBuiltInAttributes && this._builtInAttrsDiv.children.length > 0) {
+      this._builtInAttrLabel.hidden = false;
+      this._builtInAttrsDiv.hidden = true;
+    }
+    else {
+      this._builtInAttrLabel.hidden = true;
+      this._builtInAttrsDiv.hidden = true;
+    }
+
+    if (this._enableHiddenAttributes && this._hiddenAttrsDiv.children.length > 0) {
+      this._hiddenAttrLabel.hidden = false;
+      this._hiddenAttrsDiv.hidden = true;
+    }
+    else {
+      this._hiddenAttrLabel.hidden = true;
+      this._hiddenAttrsDiv.hidden = true;
     }
   }
 
@@ -284,7 +602,7 @@ class AttributePanel extends TatorElement {
     }
   }
 
-  _getUsername(userId) {
+  _getUsername(userId, widget) {
     if (userId){
       fetch("/rest/User/" + userId, {
         method: "GET",
@@ -298,7 +616,26 @@ class AttributePanel extends TatorElement {
       .then(response => { return response.json(); })
       .then(result => {
         this._userList.push({result});
-        this._createdByWidget.setValue(result.username);
+        widget.setValue(result.username);
+      });
+    }
+  }
+
+  _getVersion(versionId, widget) {
+    if (versionId){
+      fetch("/rest/Version/" + versionId, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => { return response.json(); })
+      .then(result => {
+        this._versionList.push({result});
+        widget.setValue(result.name);
       });
     }
   }
@@ -340,15 +677,20 @@ class AttributePanel extends TatorElement {
     var createdByUsername = null;
     var foundUser = false;
     for (let index = 0; index < this._userList.length; index++) {
-      if (this._userList[index].id == values.created_by) {
+      if (this._userList[index].id == values.created_by || this._userList[index].id == values.user) {
         foundUser = true;
-        createdByUsername = this._userList[index].username;
+        createdByUsername = this._userList[index].result.username;
         break;
       }
     }
 
     if (!foundUser) {
-      this._getUsername(values.created_by);
+      if (values.created_by == null || values.created_by == "") {
+        this._getUsername(values.user, this._createdByWidget);
+      }
+      else {
+        this._getUsername(values.created_by, this._createdByWidget);
+      }
     }
     else {
       this._createdByWidget.setValue(createdByUsername);
@@ -404,6 +746,10 @@ class AttributePanel extends TatorElement {
         widget.reset();
       }
     }
+
+    this._setBuiltInAttributes(values);
+    this._setHiddenAttributes(values);
+
     this._emitChanges = true;
   }
 

@@ -81,6 +81,7 @@ class AnnotationCardData extends HTMLElement {
                     id: mediaId,
                     entityType: this.findMediaMetaDetails(media.meta),
                     attributes: media.attributes,
+                    media: media,
                 }
 
                 let card = {
