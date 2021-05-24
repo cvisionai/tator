@@ -204,12 +204,12 @@ FILES = \
     components/inputs/feature/thumb-inputs.js \
     components/inputs/feature/checkbox-set.js \
     components/inputs/array-input.js \
+    components/inputs/user-input.js \
     components/inputs/bool-input.js \
     components/inputs/checkbox-input.js \
     components/inputs/enum-input.js \
     components/inputs/text-area.js \
     components/inputs/text-input.js \
-    components/box-navigation.js \
     components/labeled-checkbox.js \
     components/markdown-div.js \
     components/svg-definitions/chevron-right.js \
@@ -217,6 +217,7 @@ FILES = \
     components/svg-definitions/modal-warning.js \
     components/svg-definitions/modal-success.js \
     components/svg-definitions/more-icon.js \
+    components/svg-definitions/all-svg.js \
     components/modal-dialog.js \
     components/modal-notify.js \
     components/upload-dialog.js \
@@ -250,7 +251,7 @@ FILES = \
     components/keyboard-shortcuts.js \
     components/tator-page.js \
     components/form-text.js \
-    components/form-file.js \   
+    components/form-file.js \
     components/text-autocomplete.js \
     components/success-light.js \
     components/warning-light.js \
@@ -263,7 +264,6 @@ FILES = \
     components/filter-interface.js \
     components/filter-data.js \
     components/removable-pill.js \
-    components/user-input.js \
     components/user-data.js \
     registration/registration-page.js \
     projects/settings-button.js \

@@ -215,4 +215,15 @@ body.analysis-annotations-body {
   width: 250px;
   height: 250px;
   margin: 100px 25px;
+  border: 2px solid transparent;
+  transition: all 300ms linear;
+
+  svg {
+    color: $color-white;
+  }
+
+  &:hover{
+    border-color: $color-charcoal--light;
+    background-color: $color-charcoal--medium70;
+  }
 }
