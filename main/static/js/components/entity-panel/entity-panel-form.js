@@ -17,6 +17,8 @@ class EntityGalleryPanelForm extends TatorElement {
     // #TODO This is a band-aid. We need to modify attribute-panel to not include
     // specific REST calls or utilize a modified form of the SettingsHelper
     this._attributes = document.createElement("attribute-panel");
+    this._attributes.enableBuiltInAttributes = true;
+    this._attributes.enableHiddenAttributes = true;
     this._attributes.permission = "View Only"; // start as view only - controlled by lock
     this._div.appendChild(this._attributes);
   }
@@ -37,8 +39,9 @@ class EntityGalleryPanelForm extends TatorElement {
   /**
    * #TODO In the future, we might want to actually display multiple types (e.g. media + loc)
    * @param {object} data - cardData (add more info)
+   * @param {Media/Localization} attributePanelData
    */
-  _init(data) {
+  _init(data, attributePanelData, associatedMedia) {
     //console.log(data);
 
     // Hide all of the attribute panels, and then show the one we care about.
@@ -73,7 +76,11 @@ class EntityGalleryPanelForm extends TatorElement {
       this._attributes = this._attributeTypes[data.entityType.id];
     }
 
-    this._attributes.setValues(data);
+    if (associatedMedia) {
+      this._attributes.associatedMedia = associatedMedia;
+    }
+
+    this._attributes.setValues(attributePanelData);
     this._attributes.style.display = "block";
   }
 }

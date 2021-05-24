@@ -209,6 +209,7 @@ FILES = \
     components/inputs/checkbox-input.js \
     components/inputs/enum-input.js \
     components/inputs/text-area.js \
+    components/inputs/datetime-input.js \
     components/inputs/text-input.js \
     components/labeled-checkbox.js \
     components/markdown-div.js \

@@ -385,6 +385,9 @@ input[type="color"] {
 
 input[type="datetime-local"] {
   width: auto;
+  &:invalid {
+    border-color: transparent !important;
+  }
 }
 
 ::-webkit-calendar-picker-indicator {
