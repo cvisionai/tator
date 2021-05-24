@@ -4,16 +4,16 @@ class AnnotationMulti extends TatorElement {
 
     window.tator_multi = this;
 
-    this._playerDiv = document.createElement("div");
-    this._playerDiv.setAttribute("class", "annotation__multi-player rounded-bottom-2");
-    this._shadow.appendChild(this._playerDiv);
+    const playerDiv = document.createElement("div");
+    playerDiv.setAttribute("class", "annotation__multi-player rounded-bottom-2");
+    this._shadow.appendChild(playerDiv);
 
     this._vidDiv = document.createElement("div");
-    this._playerDiv.appendChild(this._vidDiv);
+    playerDiv.appendChild(this._vidDiv);
 
     const div = document.createElement("div");
-    div.setAttribute("class", "video__controls d-flex flex-items-center px-4");
-    this._playerDiv.appendChild(div);
+    div.setAttribute("class", "video__controls d-flex flex-items-center flex-justify-between px-4");
+    playerDiv.appendChild(div);
     this._controls = div;
 
     const playButtons = document.createElement("div");
@@ -33,30 +33,40 @@ class AnnotationMulti extends TatorElement {
     playButtons.appendChild(fastForward);
     this._fastForward = fastForward;
 
+    const settingsDiv = document.createElement("div");
+    settingsDiv.setAttribute("class", "d-flex flex-items-center");
+    div.appendChild(settingsDiv);
+
+    this._rateControl = document.createElement("rate-control");
+    settingsDiv.appendChild(this._rateControl);
+
+    this._qualityControl = document.createElement("quality-control");
+    settingsDiv.appendChild(this._qualityControl);
+
     const timelineDiv = document.createElement("div");
-    timelineDiv.setAttribute("class", "d-flex flex-items-center flex-grow px-2");
-    div.appendChild(timelineDiv);
+    timelineDiv.setAttribute("class", "scrub__bar d-flex flex-items-center flex-grow px-4");
+    playerDiv.appendChild(timelineDiv);
 
     const timeDiv = document.createElement("div");
     timeDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
-    timelineDiv.appendChild(timeDiv);
+    playButtons.appendChild(timeDiv);
 
     this._currentTimeInput = document.createElement("input");
     this._currentTimeInput.setAttribute("class", "form-control input-sm1 f2 text-center");
     this._currentTimeInput.setAttribute("type", "text");
     this._currentTimeInput.style.display = "none";
     this._currentTimeInput.style.width = "100px";
-    timeDiv.appendChild(this._currentTimeInput);
+    playButtons.appendChild(this._currentTimeInput);
 
     this._currentTimeText = document.createElement("div");
     this._currentTimeText.textContent = "0:00";
     this._currentTimeText.style.width = "35px";
-    timeDiv.appendChild(this._currentTimeText);
+    playButtons.appendChild(this._currentTimeText);
 
     this._totalTime = document.createElement("div");
     this._totalTime.setAttribute("class", "px-2 text-gray");
     this._totalTime.textContent = "/ 0:00";
-    timeDiv.appendChild(this._totalTime);
+    playButtons.appendChild(this._totalTime);
 
     this._timelineMore = document.createElement("entity-more");
     this._timelineMore.style.display = "block";
@@ -64,7 +74,7 @@ class AnnotationMulti extends TatorElement {
     this._displayTimelineLabels = false;
 
     var outerDiv = document.createElement("div");
-    outerDiv.setAttribute("class", "py-4");
+    outerDiv.setAttribute("class", "py-2");
     outerDiv.style.width="100%";
     var seekDiv = document.createElement("div");
     this._slider = document.createElement("seek-bar");
@@ -82,7 +92,7 @@ class AnnotationMulti extends TatorElement {
 
     const frameDiv = document.createElement("div");
     frameDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
-    timelineDiv.appendChild(frameDiv);
+    playButtons.appendChild(frameDiv);
 
     const framePrev = document.createElement("frame-prev");
     frameDiv.appendChild(framePrev);
@@ -107,12 +117,12 @@ class AnnotationMulti extends TatorElement {
     frameDiv.appendChild(frameNext);
 
     this._volume_control = document.createElement("volume-control");
-    div.appendChild(this._volume_control);
+    settingsDiv.appendChild(this._volume_control);
     this._volume_control.addEventListener("volumeChange", (evt) => {
       this._video.setVolume(evt.detail.volume);
     });
     const fullscreen = document.createElement("video-fullscreen");
-    div.appendChild(fullscreen);
+    settingsDiv.appendChild(fullscreen);
 
     this._scrubInterval = 1000.0/Math.min(guiFPS,30);
     this._lastScrub = Date.now();
@@ -125,6 +135,8 @@ class AnnotationMulti extends TatorElement {
 
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
+    this._focusQuality = 1080;
+    this._dockQuality = 144;
     if (searchParams.has("quality"))
     {
       this._quality = Number(searchParams.get("quality"));
@@ -366,7 +378,61 @@ class AnnotationMulti extends TatorElement {
           this.playBackwards();
         }
       }
+      else if (evt.key == 1) {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          this._rateControl.setValue(1);
+        }
+      }
+      else if (evt.key == 2) {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          this._rateControl.setValue(2);
+        }
+      }
+      else if (evt.key == 4) {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          this._rateControl.setValue(4);
+        }
+      }
     });
+  }
+
+  static get observedAttributes() {
+    return ["rate"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "rate":
+        if (newValue >= 1) {
+          this._rateControl.textContent = Math.round(newValue) + "x";
+        } else {
+          this._rateControl.textContent = Number(newValue).toFixed(2) + "x";
+        }
+        break;
+    }
+  }
+
+  set quality(val)
+  {
+    this._qualityControl.quality = val;
+  }
+
+  enableQualityChange()
+  {
+    this._qualityControl.removeAttribute("disabled");
+  }
+  disableQualityChange()
+  {
+    this._qualityControl.setAttribute("disabled", "");
+  }
+
+  enableRateChange()
+  {
+    this._rateControl.removeAttribute("disabled");
+  }
+  disableRateChange()
+  {
+    this._rateControl.setAttribute("disabled", "");
   }
 
   /**
@@ -578,32 +644,11 @@ class AnnotationMulti extends TatorElement {
          "color": "white",
          "background": "rgba(0,0,0,0.33)"};
       this._videos[idx].overlayTextStyle = smallTextStyle;
-      this._videos[idx].loadFromVideoObject(video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject).then(() =>
-      {
-        this._focusQuality = 1080;
-        this._dockQuality = 144;
-        const seekInfo = this._videos[idx].getQuality("seek");
-        const scrubInfo = this._videos[idx].getQuality("scrub");
-        const playInfo = this._videos[idx].getQuality("play");
-        const focusedInfo = this._videos[idx].nearestQuality(1080);
-        const dockedInfo = this._videos[idx].nearestQuality(144);
 
-        this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
-          composed: true,
-          detail: {
-            media: video_info,
-            seekQuality: seekInfo.quality,
-            seekFPS: seekInfo.fps,
-            scrubQuality: scrubInfo.quality,
-            scrubFPS: scrubInfo.fps,
-            playQuality: playInfo.quality,
-            playFPS: playInfo.fps,
-            focusedQuality: focusedInfo.quality,
-            focusedFPS: focusedInfo.fps,
-            dockedQuality: dockedInfo.quality,
-            dockedFPS: dockedInfo.fps
-          }
-        }));
+      this._videos[idx].loadFromVideoObject(
+        video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject)
+      .then(() => {
+        this.setDefaultVideoSettings(idx);
       });
 
       // #TODO This should be changed to dispatched events vs. calling the parent directly.
@@ -777,6 +822,37 @@ class AnnotationMulti extends TatorElement {
     // Audio for multi might get fun...
     // Hide volume on videos with no audio
     this._volume_control.style.display = "none";
+  }
+
+  /**
+   * Expected to occur at initialization. Dispatches the default video settings.
+   */
+  setDefaultVideoSettings(idx) {
+
+    console.log(`**** Setting default video settings for: ${idx}`)
+
+    const seekInfo = this._videos[idx].getQuality("seek");
+    const scrubInfo = this._videos[idx].getQuality("scrub");
+    const playInfo = this._videos[idx].nearestQuality(this._quality);
+    const focusedInfo = this._videos[idx].nearestQuality(this._focusQuality);
+    const dockedInfo = this._videos[idx].nearestQuality(this._dockQuality);
+
+    this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
+      composed: true,
+      detail: {
+        media: this._videos[idx],
+        seekQuality: seekInfo.quality,
+        seekFPS: seekInfo.fps,
+        scrubQuality: scrubInfo.quality,
+        scrubFPS: scrubInfo.fps,
+        playQuality: playInfo.quality,
+        playFPS: playInfo.fps,
+        focusedQuality: focusedInfo.quality,
+        focusedFPS: focusedInfo.fps,
+        dockedQuality: dockedInfo.quality,
+        dockedFPS: dockedInfo.fps
+      }
+    }));
   }
 
   setMultiviewUrl(multiviewType, vid_id)
@@ -1285,7 +1361,7 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
-  setQuality(quality, buffer) {
+  setQuality(quality, buffer, isDefault) {
     if (buffer == "focusPlayback") {
       this._focusQuality = quality;
       for (let videoDiv of this._focusDiv.children) {
@@ -1304,6 +1380,31 @@ class AnnotationMulti extends TatorElement {
       {
         video.setQuality(quality, buffer);
       }
+
+      if (isDefault) {
+        this.setDefaultVideoSettings(0);
+      }
+    }
+  }
+
+  /**
+   * Expected to be set by something like annotation-page.
+   * @param {tator.Media object} val 
+   */
+  setAvailableQualities(val) {
+    if (val.media_files && 'streaming' in val.media_files)
+    {
+      let quality_list = [];
+      for (let media_file of val.media_files["streaming"])
+      {
+        quality_list.push(media_file.resolution[0]);
+      }
+      this._qualityControl.resolutions = quality_list;
+      this._qualityControl.show();
+    }
+    else
+    {
+      this._qualityControl.hide();
     }
   }
 

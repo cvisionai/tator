@@ -100,6 +100,7 @@ class AnnotationPage extends TatorPage {
 
   connectedCallback() {
     this.setAttribute("has-open-modal", "");
+    TatorPage.prototype.connectedCallback.call(this);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -238,7 +239,6 @@ class AnnotationPage extends TatorPage {
               .then(primeMediaData => {
                 this._videoSettingsDialog.mode("multiview", [primeMediaData]);
                 this._settings.mediaInfo = primeMediaData;
-                this._player.mediaInfo = primeMediaData;
                 var playbackQuality = data.media_files.quality;
                 if (playbackQuality == undefined)
                 {
@@ -248,8 +248,9 @@ class AnnotationPage extends TatorPage {
                 {
                   playbackQuality = Number(searchParams.get("quality"));
                 }
-                this._player.quality = playbackQuality;
-                this._player.setQuality(playbackQuality);
+                this._settings.quality = playbackQuality;
+                this._player.setQuality(playbackQuality, null, true);
+                this._player.setAvailableQualities(primeMediaData);
               });
 
             } else {

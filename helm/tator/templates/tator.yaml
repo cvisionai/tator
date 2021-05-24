@@ -45,6 +45,9 @@
 {{- $expireSettings := dict "Values" .Values "name" "expire-invitations-cron" "app" "expire-invitations" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"expireinvitations\"]" "schedule" "50 2 * * *" }}
 {{include "tatorCron.template" $expireSettings }}
 ---
+{{- $expireAnnouncementSettings := dict "Values" .Values "name" "expire-announcements-cron" "app" "expire-announcements" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"expireannouncements\"]" "schedule" "50 3 * * *" }}
+{{include "tatorCron.template" $expireAnnouncementSettings }}
+---
 {{- end }}
 {{- if .Values.requireHttps }}
 {{- if .Values.certCron.enabled }}

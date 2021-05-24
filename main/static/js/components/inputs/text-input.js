@@ -59,10 +59,11 @@ class TextInput extends TatorElement {
           case "string":
             this.getValue = this._validateString;
             break;
-          // case "datetime":
-          //   this._input.setAttribute("placeholder", "e.g. 2020-06-30");
-          //   this.getValue = this._validateDateTime;
-          //   break;
+          case "datetime":
+            this._input.setAttribute("placeholder", "e.g. 2020-06-30");
+            this.getValue = this._validateDateTime;
+            break;
+          /*
           case "datetime":
             // this is a datepicker...
             this._input.setAttribute("type", "datetime-local");
@@ -74,6 +75,7 @@ class TextInput extends TatorElement {
             nameWrap.appendChild(this._name);
             this.label.classList.remove("flex-justify-between");
             break;
+          */
           case "geopos":
             this._input.setAttribute("placeholder", "e.g. 21.305,-157.858");
             this.getValue = this._validateGeopos;
