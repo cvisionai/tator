@@ -1263,26 +1263,24 @@ class AnnotationCanvas extends TatorElement
         that._canvas.height = that._dims[1];
       }
       that._canvas.style.maxHeight=`${maxHeight}px`;
-
-      // Don't resize the parent
-      // @TODO - if testing ok, this can be removed
-      // that.parentElement.style.maxWidth = `${maxWidth}px`;
-      // that._domParents.forEach(parent => {
-      //   var obj = parent.object;
-      //   var align = parent.alignTo;
-      //   if (align) {
-      //     var style = getComputedStyle(obj, null)
-      //     const end = align.offsetLeft + align.offsetWidth;
-      //     const width = end - obj.offsetLeft -
-      //       parseInt(style.paddingRight);
-      //     obj.style.maxWidth = `${width}px`;
-      //     console.log(`${width}px`);
-      //   }
-      //   else {
-      //     obj.style.maxWidth = `${maxWidth}px`;
-      //     console.log(`${maxWidth}px`);
-      //   }
-      // });
+      that.parentElement.style.maxWidth=`${maxWidth}px`;
+      that._domParents.forEach(parent =>
+                               {
+                                 var obj = parent.object;
+                                 var align = parent.alignTo;
+                                 if (align)
+                                 {
+                                   var style=getComputedStyle(obj,null)
+                                   const end = align.offsetLeft + align.offsetWidth;
+                                   const width = end - obj.offsetLeft -
+                                         parseInt(style.paddingRight);
+                                   obj.style.maxWidth=`${width}px`;
+                                 }
+                                 else
+                                 {
+                                   obj.style.maxWidth=`${maxWidth}px`;
+                                 }
+                               });
       that._textOverlay.resize(that.clientWidth, that.clientHeight);
       that.dispatchEvent(new Event("canvasResized"));
     }
