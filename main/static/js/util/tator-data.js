@@ -9,12 +9,11 @@ class TatorData {
 
     this._mediaTypes = [];
     this._mediaTypeNames = [];
-
     this._localizationTypes = [];
     this._localizaitonTypeNames = [];
-
     this._versions = [];
     this._sections = [];
+    this._algorithms = [];
 
     this._maxFetchCount = 10000;
   }
@@ -43,6 +42,10 @@ class TatorData {
     return this._sections;
   }
 
+  getStoredAlgorithms() {
+    return this._algorithms;
+  }
+
   /**
    * #TODO May want to consider what it is actually necessary here to initialize with to speed up
    *       initial loading times. There typically aren't that many versions. There might be a good
@@ -53,6 +56,7 @@ class TatorData {
     await this.getAllMediaTypes();
     await this.getAllVersions();
     await this.getAllSections();
+    await this.getAllAlgorithms();
   }
 
   /**
@@ -182,6 +186,38 @@ class TatorData {
           Promise.all([sectionsJson])
         .then(([sections]) => {
           this._sections = [...sections];
+          resolve();
+        });
+      });
+
+    });
+
+    await donePromise;
+  }
+
+  /**
+   * #TODO
+   */
+   async getAllAlgorithms() {
+    var donePromise = new Promise(resolve => {
+
+      const restUrl = "/rest/Algorithms/" + this._project;
+      const resultsPromise = fetchRetry(restUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      Promise.all([resultsPromise])
+        .then(([resultsPromise]) => {
+          const resultsJson = resultsPromise.json();
+          Promise.all([resultsJson])
+        .then(([algorithms]) => {
+          this._algorithms = [...algorithms];
           resolve();
         });
       });
@@ -952,6 +988,45 @@ class TatorData {
 
     var outData = await this._getData(outputType, mediaGroups, dataStart, dataStop, null, null, sectionIds);
     return outData;
+  }
+
+  /**
+   * Launches the given algorithm with the provided parameters
+   * @param {string} algorithmName - Name of registered algorithm to launch
+   * @param {array} parameters - Array of {name:..., value:...} objects
+   *
+   * #TODO Add media_query and media_ids parameters
+   */
+  async launchAlgorithm(algorithmName, parameters) {
+
+    // #TODO Launching an algorithm requires sending at least one valid media ID.
+    //       Let's just query and grab the first one.
+    var mediaIds = await this.getFilteredMedia("ids", null, 0, 1);
+
+    let body = {
+      "algorithm_name": algorithmName,
+      "extra_params": parameters,
+      "media_ids": mediaIds
+    }
+
+    var launched = false;
+    await fetchRetry("/rest/AlgorithmLaunch/" + this._project, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body),
+    })
+    .then(response => {
+      if (response.status == 201) {
+        launched = true;
+      }
+    });
+
+    return launched;
   }
 
   /**

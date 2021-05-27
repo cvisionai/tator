@@ -24,6 +24,9 @@ class FilterData {
     this.versions = this._modelData.getStoredVersions();
     this.sections = this._modelData.getStoredSections();
 
+    // #TODO Eventually this wil lbe filtered
+    this.algorithms = this._modelData.getStoredAlgorithms();
+
     // Want to be able to filter based on localization dtypes. Package up the localization types
     // and add it as an attribute
     var localizationTypeOptions = [];
@@ -98,5 +101,26 @@ class FilterData {
   getAllTypes()
   {
     return this._allTypes;
+  }
+
+  /**
+   * #TODO
+   */
+  getAlgorithms() {
+    return this.algorithms;
+  }
+
+  /**
+   * #TODO
+   */
+  getProjectId() {
+    return this._modelData.getProjectId();
+  }
+
+  /**
+   * #TODO
+   */
+  async launchAlgorithm(algorithm, parameters) {
+    return this._modelData.launchAlgorithm(algorithm, parameters);
   }
 }
