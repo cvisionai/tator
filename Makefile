@@ -418,6 +418,7 @@ FILES = \
     analytics/annotations/panel-data.js \
     analytics/annotations/card-data.js \
     analytics/annotations/annotations.js \
+    analytics/collections/slide-data.js \
     analytics/collections/card.js \
     analytics/collections/gallery.js \
     analytics/collections/collections.js \

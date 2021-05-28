@@ -2,40 +2,83 @@ class EntityGallerySlider extends TatorElement {
    constructor() {
       super();
 
+      this.main = document.createElement("div");
+      this.main.setAttribute("class", "entity-gallery-slider");
+      this._shadow.appendChild(this.main);
+
+      this._title = document.createElement("h2");
+      this.main.appendChild(this._title);
+
+      this._count = document.createElement("p");
+      this.main.appendChild(this._count);
+
+      // Property IDs are the entity IDs (which are expected to be unique)
+      // Each property (ID) points to the index of the card information stored in _cardElements
+      this._currentCardIndexes = {};
+
+      // Entity cards aren't deleted. They are reused and hidden if not used.
+      this._cardElements = [];
+
+      // card columns inside slider #todo finish styling
+      this.colSize = 272;
+      this._ul = document.createElement("ul");
+      this._ul.setAttribute("class", "enitity-gallery__ul")
+      this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
+      this.main.appendChild(this._ul);
+
+      this.numberOfDisplayedCards = 0;
+
    }
 
    init({
-      cardData,
       panelContainer,
       pageModal,
-      modelData
+      modelData,
+      slideCardData,
+      // cardCount
    }) {
-      this.cardData = cardData;
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
       this.pageModal = pageModal;
       this.modelData = modelData;
+      this.slideCardData = slideCardData;
 
-      console.log("Made it to SLIDER with data:::::::::::");
-      console.log(cardData);
-      //this.show(this.cardData)
+      this.addEventListener("new-card", (e) => {
+         console.log("new card event triggered! ---> CARD OBJ below");
+         console.log(e.detail.cardData[0]);
+         this._addCard(e.detail.cardIndex, e.detail.cardData[0]);
+      });
+
+      this.slideCardData.addEventListener("setSlideCardImage", (evt) => {
+         this.updateCardImage(evt.detail.id, evt.detail.image);
+      });
+
+      // Update the card with the localization's associated media
+      this.slideCardData.addEventListener("setSlideMedia", (evt) => {
+         this.updateCardMedia(evt.detail.id, evt.detail.media);
+      });
    }
 
-   /* Init function to show and populate gallery w/ pagination */
-   show(cardList) {
-      if (cardList.total >= this.modelData.getMaxFetchCount()) {
-         this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
-      }
-      else {
-         this._numFiles.textContent = `${cardList.total} Results`;
-      }
+static get observedAttributes() {
+    return ["title", "count"];
+  }
 
-      // Only populate the pagination when the dataset has changed (and therefore the pagination
-      // needs to be reinitialized)
-      if (cardList.paginationState.init) {
-         this._paginator.init(cardList.total, cardList.paginationState);
-         this._paginator_top.init(cardList.total, cardList.paginationState);
-      }
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "title":
+        this._title.textContent = newValue;
+        break;
+      case "count":
+         this._count.textContent = newValue;
+        break;
+    }
+  }
+
+   /* Init function to show and populate gallery w/ pagination */
+   show(sliderData) {
+      console.log(sliderData);
+      
+      // Turn this dats into a card list
 
       // Hide all cards' panels and de-select
       for (let idx = 0; idx < this._cardElements.length; idx++) {
@@ -80,24 +123,43 @@ class EntityGallerySlider extends TatorElement {
     * @param {object} cardInfo
     */
    makeCards(cardInfo) {
-
+      console.log(":::::::::cardInfo:::::::::::::")
+      console.log(cardInfo);
       this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
-      var numberOfDisplayedCards = 0;
+      
 
       // Loop through all of the card entries and create a new card if needed. Otherwise
       // apply the card entry to an existing card.
       for (const [index, cardObj] of cardInfo.entries()) {
+         this._addCard(index, cardObj);
+      }
+
+      // Hide unused cards
+      if (this.numberOfDisplayedCards < this._cardElements.length) {
+         const len = this._cardElements.length;
+         for (let idx = len - 1; idx >= numberOfDisplayedCards; idx--) {
+            this._cardElements[idx].card.style.display = "none";
+         }
+      }
+   }
+
+   openClosedPanel(e) {
+      if (!this.panelContainer.open) this.panelContainer._toggleOpen();
+      this.panelControls.locDataHandler(e.detail);
+   }
+
+   _addCard(index, cardObj){
          const newCard = index >= this._cardElements.length;
          let card;
          if (newCard) {
             card = document.createElement("annotations-card");
 
-            // Resize Tool needs to change style within card on change
-            this._resizeCards._slideInput.addEventListener("change", (evt) => {
-               let resizeValue = evt.target.value;
-               let resizeValuePerc = parseFloat(resizeValue / 100);
-               return card._img.style.height = `${130 * resizeValuePerc}px`;
-            });
+            // // Resize Tool needs to change style within card on change
+            // this._resizeCards._slideInput.addEventListener("change", (evt) => {
+            //    let resizeValue = evt.target.value;
+            //    let resizeValuePerc = parseFloat(resizeValue / 100);
+            //    return card._img.style.height = `${130 * resizeValuePerc}px`;
+            // });
 
             // Inner div of side panel
             let annotationPanelDiv = document.createElement("div");
@@ -129,13 +191,13 @@ class EntityGallerySlider extends TatorElement {
             // Open panel if a card is clicked
             card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
 
-            // Update view
-            card._li.classList.toggle("aspect-true");
-            this.addEventListener("view-change", () => {
-               card._li.classList.toggle("aspect-true");
-            });
+            // // Update view
+            // card._li.classList.toggle("aspect-true");
+            // this.addEventListener("view-change", () => {
+            //    card._li.classList.toggle("aspect-true");
+            // });
 
-            cardInfo = {
+            let cardInfo = {
                card: card,
                annotationPanel: annotationPanel,
                annotationPanelDiv: annotationPanelDiv
@@ -156,6 +218,7 @@ class EntityGallerySlider extends TatorElement {
 
 
          // Initialize Card
+         console.log(cardObj);
          card.init({
             obj: cardObj,
             panelContainer: this.panelContainer,
@@ -163,26 +226,12 @@ class EntityGallerySlider extends TatorElement {
          });
 
          card.style.display = "block";
-         numberOfDisplayedCards += 1;
+         this.numberOfDisplayedCards += 1;
 
          // Add new card to the gallery div
          if (newCard) {
             this._ul.appendChild(card);
          }
-      }
-
-      // Hide unused cards
-      if (numberOfDisplayedCards < this._cardElements.length) {
-         const len = this._cardElements.length;
-         for (let idx = len - 1; idx >= numberOfDisplayedCards; idx--) {
-            this._cardElements[idx].card.style.display = "none";
-         }
-      }
-   }
-
-   openClosedPanel(e) {
-      if (!this.panelContainer.open) this.panelContainer._toggleOpen();
-      this.panelControls.locDataHandler(e.detail);
    }
 
 

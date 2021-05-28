@@ -4,7 +4,7 @@ class EntityCardSlideGallery extends TatorElement {
 
       // Gallery Container
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "enitity-gallery px-2 py-2 mx-6 pb-3 mt-6 rounded-1");
+      this._main.setAttribute("class", "enitity-gallery_h-slide px-2 py-2 mx-6 pb-3 mt-6 rounded-1");
       this._shadow.appendChild(this._main);
 
       // Gallery Top Tools and info
@@ -30,9 +30,9 @@ class EntityCardSlideGallery extends TatorElement {
       // this._main.appendChild(this._paginator_top);
 
       // Gallery List is a list of sliders***
-      this._ul = document.createElement("div");
-      this._ul.setAttribute("class", "enitity-gallery__ul px-2 py-2 mb-2 rounded-1");
-      this._main.appendChild(this._ul);
+      this._sliderContainer = document.createElement("div");
+      this._sliderContainer.setAttribute("class", "enitity-gallery__slider-container px-2 py-2 mb-2 rounded-1");
+      this._main.appendChild(this._sliderContainer);
 
       // // Gallery Pagination Bottom
       // this._paginator = document.createElement("entity-gallery-paginator");

@@ -42,7 +42,10 @@ class EntityGalleryPanelForm extends TatorElement {
    * @param {Media/Localization} attributePanelData
    */
   _init(data, attributePanelData, associatedMedia) {
-    //console.log(data);
+    console.log("::::::::: data, attributePanelData, associatedMedia ::::::::");
+    console.log(data);
+    console.log(attributePanelData);
+    console.log(associatedMedia);
 
     // Hide all of the attribute panels, and then show the one we care about.
     for (const attrTypeId in this._attributeTypes) {
@@ -50,7 +53,7 @@ class EntityGalleryPanelForm extends TatorElement {
     }
 
     // Haven't seen this attribute type yet
-    if (!(data.entityType.id in this._attributeTypes)) {
+    if (data.entityType && !(data.entityType.id in this._attributeTypes)) {
       data.entityType.isTrack = false;
       this._attributes.dataType = data.entityType;
       this._attributes.displaySlider(false);

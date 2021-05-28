@@ -79,53 +79,44 @@ class AnalyticsCollections extends TatorPage {
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
-    this._modelData.collectionsInit(this.acceptedTypes).then(() => {
+    this._modelData.init().then( () => {
+      this._modelData.collectionsInit(this.acceptedTypes).then(() => {
+        
 
-      // Card Data class collects raw model and parses into view-model format
-      // this.slideData = document.createElement("collection-slide-data");
-      // this.slideData.init(this._modelData);
+        // Init panel side behavior
+        this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData });
 
-      // this.cardData.addEventListener("setCardImage", (evt) => {
-      //   this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
-      // });
+        // Pass panel and localization types to gallery
+        this._collectionsGallery.init({
+          panelContainer: this._panelContainer,
+          pageModal: this.modal,
+          modelData: this._modelData,
+          galleryContainer: this._collectionsGallery
+        });
 
-      // Init panel side behavior
-      this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData });
+        // Init history & check if state is stored in URL, update default states
+        //this.history = new FilterHistoryManagement({ _paginationState: this._paginationState, _filterState: this._filterState });
+        //this._checkHistoryState();
 
-      // Update the card with the localization's associated media
-      // this.cardData.addEventListener("setMedia", (evt) => {
-      //   this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
-      // });
+        // Init Card Gallery and Right Panel
+        // this._cardGallery({
+        //   filterState: this._filterState,
+        //   paginationState: this._paginationState
+        // });
 
-      // Pass panel and localization types to gallery
-      this._collectionsGallery.init({
-        panelContainer: this._panelContainer,
-        pageModal: this.modal,
-        modelData: this._modelData
+        // // Listen for pagination events
+        // this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
+        // this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
+
+        // this._filterResults._paginator.setValues(this._paginationState);
+        // this._filterResults._paginator_top.setValues(this._paginationState);
+
+        // // Listen for filter events
+        // this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
+        this.loading.hideSpinner();
+        this.hideDimmer();
+
       });
-
-      // Init history & check if state is stored in URL, update default states
-      //this.history = new FilterHistoryManagement({ _paginationState: this._paginationState, _filterState: this._filterState });
-      //this._checkHistoryState();
-
-      // Init Card Gallery and Right Panel
-      // this._cardGallery({
-      //   filterState: this._filterState,
-      //   paginationState: this._paginationState
-      // });
-
-      // // Listen for pagination events
-      // this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-      // this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-
-      // this._filterResults._paginator.setValues(this._paginationState);
-      // this._filterResults._paginator_top.setValues(this._paginationState);
-
-      // // Listen for filter events
-      // this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
-      this.loading.hideSpinner();
-      this.hideDimmer();
-
     });
   }
 

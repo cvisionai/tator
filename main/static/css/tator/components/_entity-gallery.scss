@@ -185,3 +185,27 @@ entity-gallery-aspect-ratio {
     width: 87px;
   }
 }
+
+.entity-gallery-slider {
+  border: 2px solid #151b28;
+
+
+}
+
+.enitity-gallery__slider-container{
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+
+    .enitity-gallery__ul {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 100%;
+      grid-template-rows: 1fr;
+      overflow-x: scroll;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+    }
+}
+

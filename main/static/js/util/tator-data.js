@@ -292,6 +292,25 @@ class TatorData {
     return data;
   }
 
+    /**
+    * Returns localizations list
+   */
+  async getLocalization({ id = ""} = {}){
+    const response = await fetch(`/rest/Localization/${id}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
+
+    return data;
+  }
+
   /**
    * Returns a Media data
    */
@@ -1003,7 +1022,7 @@ class TatorData {
   async collectionsInit(acceptedAssoc) {
     const stateTypes = await this.getStateTypes();
     const typeData = {};
-    const searchMeta = "";
+    let searchMeta = "";
     const typeIds = stateTypes.filter(type => acceptedAssoc.includes(type.association)).map(type => {
       typeData[type.id] = type;
       return type.id;
