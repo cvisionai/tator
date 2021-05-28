@@ -6,6 +6,7 @@ class AnnotationCardData extends HTMLElement {
     init(modelData) {
         this._modelData = modelData;
         this.localizationTypes = this._modelData.getStoredLocalizationTypes();
+        this.mediaTypes = this._modelData.getStoredMediaTypes();
         this.projectId = this._modelData.getProjectId();
     }
 
@@ -23,8 +24,8 @@ class AnnotationCardData extends HTMLElement {
             this.cardList.total = this._modelData.getMaxFetchCount();
         }
         this.localizations = await this._modelData.getFilteredLocalizations("objects", filterState.conditionsObject, paginationState.start, paginationState.stop);
-        this.mediaTypes = this._modelData.getStoredMediaTypes();
-        this.projectId = this._modelData.getProjectId();
+        //this.mediaTypes = this._modelData.getStoredMediaTypes();
+        //this.projectId = this._modelData.getProjectId();
 
         var mediaPromises = [];
         var mediaList = [];
@@ -39,6 +40,8 @@ class AnnotationCardData extends HTMLElement {
         this.medias = await Promise.all(mediaPromises);
 
         await this.getCardList(this.localizations);
+        console.log("this.cardList::::::::::::::");
+        console.log(this.cardList);
         return this.cardList;
     }
 
