@@ -171,6 +171,13 @@ kube-prometheus-stack:
         web.external-url: /prometheus/
         web.route-prefix: "/"
     prometheusSpec:
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: microk8s-hostpath
+            resources:
+              requests:
+                storage: 1Gi
       additionalScrapeConfigs:
         - job_name: node_exporter
           scrape_interval: 10s
