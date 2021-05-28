@@ -18,14 +18,12 @@ class StatsdMiddleware(MiddlewareMixin):
         statsd.increment('django_request_count',
                          tags=['service:tator',
                               f'method:{request.method}',
-                              f'path:{request.path}',
                               f'endpoint:{endpoint}',
                               f'status:{response.status_code}'])
 
-        response_time = (time.time() - request.start_time) * 1000
+        response_time = (time.time() - request.start_time)
         statsd.histogram('django_request_latency_seconds',
                          response_time,
                          tags=['service:tator',
-                              f'path:{request.path}',
                               f'endpoint:{endpoint}'])
         return response
