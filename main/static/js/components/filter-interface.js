@@ -31,6 +31,16 @@ class FilterInterface extends TatorElement {
     this._filterStringDiv.setAttribute("class", "px-2 py-2");
     this._filterString.appendChild(this._filterStringDiv);
 
+    this._algoButton = document.createElement("algorithm-button");
+    this._algoButton.hideNewAlgorithm();
+    div.appendChild(this._algoButton);
+
+    this._confirmRunAlgorithm = document.createElement("confirm-run-algorithm");
+    div.appendChild(this._confirmRunAlgorithm);
+
+    this._modalNotify = document.createElement("modal-notify");
+    div.appendChild(this._modalNotify);
+
     // Main filter dialog the user will interact with to set the data filter
     this._filterDialog = document.createElement("filter-dialog");
 
@@ -59,6 +69,53 @@ class FilterInterface extends TatorElement {
       this.dispatchEvent(new Event("closedFilterDialog"));
     });
 
+    // Respond to user requesting to run an algorithm
+    this._algoButton.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));
+    this._confirmRunAlgorithm.addEventListener("close", this._closeConfirmRunAlgoModal.bind(this));
+  }
+
+  _notify(title, message, error_or_ok) {
+    this._modalNotify.init(title, message, error_or_ok);
+    this._modalNotify.setAttribute("is-open", "");
+    this.setAttribute("has-open-modal", "");
+  }
+
+  /**
+   * Callback when user clicks on an algorithm button.
+   * This launches the confirm run algorithm modal window.
+   */
+   _openConfirmRunAlgoModal(evt) {
+
+    this._confirmRunAlgorithm.init(evt.detail.algorithmName, evt.detail.projectId, null, null, []);
+    this._confirmRunAlgorithm.setAttribute("is-open","");
+    this.setAttribute("has-open-modal", "");
+    document.body.classList.add("shortcuts-disabled");
+  }
+
+  /**
+   * Callback from confirm run algorithm modal choice
+   */
+  _closeConfirmRunAlgoModal(evt) {
+
+    this._confirmRunAlgorithm.removeAttribute("is-open");
+    this.removeAttribute("has-open-modal");
+    document.body.classList.remove("shortcuts-disabled");
+
+    var that = this;
+    if (evt.detail.confirm) {
+      this._dataView.launchAlgorithm(evt.detail.algorithmName, evt.detail.extraParameters).then(launched => {
+        if (launched) {
+          that._notify("Algorithm launched!",
+                       `Successfully launched ${evt.detail.algorithmName}!`,
+                       "ok");
+        }
+        else {
+          that._notify("Error launching algorithm!",
+                      `Failed to launch ${evt.detail.algorithmName}`,
+                      "error");
+        }
+      });
+    }
   }
 
   /**
@@ -91,7 +148,9 @@ class FilterInterface extends TatorElement {
     // on the available types
     this._filterDialog.data = this._dataView.getAllTypes();
 
-    // Now that the UI has been setup, check the URL for settings info (if there are any)
+    // Get the algorithm information. If there are no registered algorithms, disable the button
+    this._algoButton.setAttribute("project-id", this._dataView.getProjectId());
+    this._algoButton.algorithms = this._dataView.getAlgorithms();
   }
 
   /**

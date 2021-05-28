@@ -163,9 +163,9 @@ class AttributePanel extends TatorElement {
         let version = null;
         let foundVersion = false;
         for (let index = 0; index < this._versionList.length; index++) {
-          if (this._versionList[index].id == values.modified_by) {
+          if (this._versionList[index].result.id == values.modified_by) {
             foundVersion = true;
-            username = this._versionList[index].result.name;
+            version = this._versionList[index].result.name;
             break;
           }
         }
@@ -185,7 +185,7 @@ class AttributePanel extends TatorElement {
         let username = null;
         let foundUser = false;
         for (let index = 0; index < this._userList.length; index++) {
-          if (this._userList[index].id == values.modified_by) {
+          if (this._userList[index].result.id == values.modified_by) {
             foundUser = true;
             username = this._userList[index].result.username;
             break;
@@ -689,16 +689,24 @@ class AttributePanel extends TatorElement {
     // Set the user widget
     var createdByUsername = null;
     var foundUser = false;
+
+    var creatorMatchId = values.created_by;
+    if (creatorMatchId == null) {
+      creatorMatchId = values.user;
+    }
+
     for (let index = 0; index < this._userList.length; index++) {
-      if (this._userList[index].id == values.created_by) {
+      let storedId = this._userList[index].result.id;
+      if (storedId == creatorMatchId) {
         foundUser = true;
         createdByUsername = this._userList[index].result.username;
         break;
       }
+
     }
 
     if (!foundUser) {
-      this._getUsername(values.created_by, this._createdByWidget);
+      this._getUsername(creatorMatchId, this._createdByWidget);
     }
     else {
       this._createdByWidget.setValue(createdByUsername);

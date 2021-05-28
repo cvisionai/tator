@@ -311,15 +311,14 @@ favorite-button {
   display: none;
 }
 
-annotation-image,
 video-canvas,
-annotation-multi,
+annotation-image,
 annotation-player {
-  //width: 100%;
+  width: 100%;
 }
 
 .video {
-  max-width: 100%;
+  width: 100%;
   background: black;
 }
 
