@@ -27,10 +27,9 @@ class EntityGalleryPanel extends TatorElement {
       this._main.appendChild(this.entityData);
 
       // Go to frame icon button
-      this.goToFrameButton = document.createElement("entity-frame-button");
-      this.goToFrameButton.button.setAttribute("class", "btn-clear px-2 py-2 rounded-2 f2 text-white entity__button");
+      this.goToFrameButton = document.createElement("entity-frame-link-button");
       this.goToFrameButton.button.setAttribute("tooltip", "View In Annotator");
-      this.goToFrameButton.setAttribute("target", "_blank");
+      this.goToFrameButton.button.setAttribute("target", "_blank");
       this.goToFrameButton.style.marginRight = "16px";
 
       // #TODO Encapsulate this class into a LocalizationGalleryPanel
@@ -53,10 +52,7 @@ class EntityGalleryPanel extends TatorElement {
     // Setup linkout and the entity data for panel here
     this._mediaLink = this.cardObj.mediaLink;
     this._mediaLinkEl.setAttribute("href", this._mediaLink );
-    this.goToFrameButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.open(this._mediaLink);
-    }, { once: true });
+    this.goToFrameButton.button.setAttribute("href", this._mediaLink);
     
     // Init the forms with data
     this.entityData._init(this.cardObj, this.cardObj.localization, this.cardObj.mediaInfo.media);

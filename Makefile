@@ -200,6 +200,7 @@ FILES = \
     util/tator-data.js \
     util/same-origin-credentials.js \
     components/tator-element.js \
+    components/buttons/entity-frame-link-button.js \
     components/inputs/feature/color-inputs.js \
     components/inputs/feature/thumb-inputs.js \
     components/inputs/feature/checkbox-set.js \
