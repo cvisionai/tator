@@ -32,14 +32,14 @@ class EntityCard extends TatorElement {
       this._link.appendChild(this._img);
   
       // containing div for li element (styling)
-      const div = document.createElement("div");
-      div.setAttribute("class", "entity-card__title__container py-2 px-2 lh-default");
-      this._li.appendChild(div);
+      this._styledDiv = document.createElement("div");
+      this._styledDiv.setAttribute("class", "entity-card__title__container py-2 px-2 lh-default");
+      this._li.appendChild(this._styledDiv);
   
       // Title Div
       this.titleDiv = document.createElement("div");
       this.titleDiv.setAttribute("class", "entity-card__title py-1");
-      div.appendChild(this.titleDiv);
+      this._styledDiv.appendChild(this.titleDiv);
   
       // Text for Title Div
       this._name = document.createElement("a");
@@ -50,7 +50,7 @@ class EntityCard extends TatorElement {
       // OPTIONAL Description Div
       this.descDiv = document.createElement("div");
       this.descDiv.setAttribute("class", "entity-card__description py-1 f2");
-      div.appendChild(this.descDiv);
+      this._styledDiv.appendChild(this.descDiv);
       this.descDiv.hidden = true; // HIDDEN default
   
       // "More" (three dots) menu (OPTIONAL)
@@ -63,7 +63,7 @@ class EntityCard extends TatorElement {
       // OPTIONAL pagination + id display
       this._bottom = document.createElement("div");
       this._bottom.setAttribute("class", "f3 d-flex flex-justify-between");
-      div.appendChild(this._bottom);
+      this._styledDiv.appendChild(this._bottom);
 
       // OPTIONAL Detail text (ie file extension)
       this._ext = document.createElement("span");

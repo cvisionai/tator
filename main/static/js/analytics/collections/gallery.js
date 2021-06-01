@@ -19,10 +19,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
       header.setAttribute("class", "project__header d-flex flex-items-center px-2");
       this._p.appendChild(header);
 
-      this._name = document.createElement("h2");
-      this._name.setAttribute("class", "h3 text-white"); //not a typo
-      this._name.textContent = "Collections";
-      header.appendChild(this._name);
+      // this._name = document.createElement("h2");
+      // this._name.setAttribute("class", "h3 text-white"); //not a typo
+      // this._name.textContent = "Collections";
+      // header.appendChild(this._name);
 
       this._numFiles = document.createElement("span");
       this._numFiles.setAttribute("class", "text-gray px-2");
@@ -44,7 +44,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       //this._currentSliderIndexes = {};
 
       // Entity sliders aren't deleted. They are reused and hidden if not used.
-      //this._sliderElements = [];
+      this._sliderElements = [];
    }
 
    // Provide access to side panel for events
@@ -72,7 +72,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          if (this.modelData._states.total >= this.modelData.getMaxFetchCount()) {
             this._numFiles.textContent = `Too many results to preview. Displaying the first ${this.modelData._states.total} results.`
          } else {
-            this._numFiles.textContent = `${this.modelData._states.total} Results`;
+            this._numFiles.textContent = `Showing ${this.modelData._states.total} Collections`;
 
              if(this.modelData._states.length > 0){
                this._addSliders({ states: this.modelData._states });
@@ -95,17 +95,30 @@ class CollectionsGallery extends EntityCardSlideGallery {
             panelContainer: this.panelContainer,
             pageModal: this.pageModal,
             modelData: this.modelData,
-            slideCardData: this.slideCardData
+            slideCardData: this.slideCardData,
+            cardType: "collections-card"
          });
 
-         const stateName = `${state.typeData.name} ID ${state.id} | Media ${state.media[0]} | Version ID ${state.version}`
+         const stateName = `ID ${state.id}`
          slider.setAttribute("title", stateName);
 
          const cardCount = document.createElement("p");
          slider.appendChild(cardCount);
 
-
+         this._sliderElements.push(slider);
          this.sliderList.appendChild(slider);
+
+         slider.addEventListener("click", () => {
+            if(slider.main.classList.contains("active")) {
+               slider.main.classList.remove("active");
+            } else {
+               //when it is clicked, set main to active for this, and remove for others
+               for(let s of this._sliderElements) {
+                  s.main.classList.remove("active");
+               }
+               slider.main.classList.add("active");
+            } 
+         });
 
          // create the cards
          if(state.typeData.association === "Localization") {

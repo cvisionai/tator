@@ -32,7 +32,7 @@ class AnalyticsCollections extends TatorPage {
       // Define the main section of the page
       //
       this.main = document.createElement("main");
-      this.main.setAttribute("class", "enitity-gallery--main col-12");
+      this.main.setAttribute("class", "collections-gallery--main col-12");
       this.mainWrapper.appendChild(this.main);
 
       //
@@ -44,7 +44,7 @@ class AnalyticsCollections extends TatorPage {
       //
       /* Right Navigation Pane - Annotation Detail Viewer */
       this.aside = document.createElement("aside");
-      this.aside.setAttribute("class", "entity-panel--container slide-close col-3")
+      this.aside.setAttribute("class", "entity-panel--container gray-panel slide-close col-3")
       this.mainWrapper.appendChild(this.aside);
 
       // Gallery navigation panel

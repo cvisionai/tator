@@ -3,10 +3,11 @@ class EntityGallerySlider extends TatorElement {
       super();
 
       this.main = document.createElement("div");
-      this.main.setAttribute("class", "entity-gallery-slider");
+      this.main.setAttribute("class", "entity-gallery-slider clickable");
       this._shadow.appendChild(this.main);
 
       this._title = document.createElement("h2");
+      this._title.setAttribute("class", "h2 entity-gallery-slider--title text-gray py-2");
       this.main.appendChild(this._title);
 
       this._count = document.createElement("p");
@@ -20,7 +21,7 @@ class EntityGallerySlider extends TatorElement {
       this._cardElements = [];
 
       // card columns inside slider #todo finish styling
-      this.colSize = 272;
+      this.colSize = 150;
       this._ul = document.createElement("ul");
       this._ul.setAttribute("class", "enitity-gallery__ul")
       this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
@@ -35,7 +36,7 @@ class EntityGallerySlider extends TatorElement {
       pageModal,
       modelData,
       slideCardData,
-      // cardCount
+      cardType
    }) {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
@@ -44,9 +45,9 @@ class EntityGallerySlider extends TatorElement {
       this.slideCardData = slideCardData;
 
       this.addEventListener("new-card", (e) => {
-         console.log("new card event triggered! ---> CARD OBJ below");
+         console.log("new card event triggered! "+cardType+" ---> CARD OBJ below");
          console.log(e.detail.cardData[0]);
-         this._addCard(e.detail.cardIndex, e.detail.cardData[0]);
+         this._addCard(e.detail.cardIndex, e.detail.cardData[0], cardType);
       });
 
       this.slideCardData.addEventListener("setSlideCardImage", (evt) => {
@@ -148,12 +149,12 @@ static get observedAttributes() {
       this.panelControls.locDataHandler(e.detail);
    }
 
-   _addCard(index, cardObj){
+   _addCard(index, cardObj, cardType){
          const newCard = index >= this._cardElements.length;
          let card;
          if (newCard) {
-            card = document.createElement("annotations-card");
-
+            card = document.createElement(cardType);
+            console.log(card);
             // // Resize Tool needs to change style within card on change
             // this._resizeCards._slideInput.addEventListener("change", (evt) => {
             //    let resizeValue = evt.target.value;
