@@ -4,9 +4,25 @@ class AnalyticsDashboard extends TatorPage {
 
       this.projectId = window.location.pathname.split("/")[1];
 
+            //
+      // Header
+      //
+      const header = document.createElement("div");
+      this._headerDiv = this._header._shadow.querySelector("header");
+      header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-6 f3");
+      const user = this._header._shadow.querySelector("header-user");
+      user.parentNode.insertBefore(header, user);
+
+      const div = document.createElement("div");
+      div.setAttribute("class", "d-flex flex-items-center");
+      header.appendChild(div);
+
+      this._breadcrumbs = document.createElement("analytics-breadcrumbs");
+      div.appendChild(this._breadcrumbs);
+
       this.main = document.createElement("main");
       this.main.setAttribute("class", "layout-max py-4 d-flex flex-items-center flex-row");
-      this._shadow.appendChild(this.main);
+      this._shadow.appendChild(this.main);;
 
       // Annotations
       const annotationsBox = this._getDashboardBox({

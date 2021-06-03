@@ -1111,7 +1111,9 @@ class TatorData {
 
   /* 
    * Collections 
-   * @param acceptedAssoc {array}
+   * @param acceptedAssoc {array} of association types to INCLUDE
+   * - Returns states and total information to be processed
+   * - Current endpoints default to pagination to 25 #todo allow pagination param
   */
   async collectionsInit(acceptedAssoc) {
     const stateTypes = await this.getStateTypes();
@@ -1128,8 +1130,6 @@ class TatorData {
     } else if(typeIds && typeIds.length == 1) {
       searchMeta = `_meta:(${typeIds[0]})`;
     }
-    
-    console.log(searchMeta);
 
     this._states = {};
     this._states.total = 0
@@ -1150,7 +1150,9 @@ class TatorData {
         return state;
       });
 
-      this._states.total = stateCount
+      this._states.total = stateCount;
+      this._states.paginationStart = 0;
+      this._states.paginationStop = 25;
     }
 
     return this._states;
@@ -1159,8 +1161,8 @@ class TatorData {
   /**
    * Retrieves state types
    */
-  async getStateTypes({ params = "" } = {}) {
-    const response = await fetch(`/rest/StateTypes/${this._project}${params}`, {
+  async getStateTypes({ params = "?", dataStart = 0, dataStop = 25  } = {}) {
+    const response = await fetch(`/rest/StateTypes/${this._project}${params}&start=${dataStart}&stop=${dataStop}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
@@ -1197,8 +1199,8 @@ class TatorData {
   /**
    * Retrieves states (start and stop) 
    */
-  async getStates({ params = "" } = {}) {
-    const response = await fetch(`/rest/States/${this._project}${params}`, {
+  async getStates({ params = "?", dataStart = 0, dataStop = 25 } = {}) {
+    const response = await fetch(`/rest/States/${this._project}${params}&start=${dataStart}&stop=${dataStop}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",

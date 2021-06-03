@@ -237,6 +237,7 @@ FILES = \
     components/entity-gallery/entity-gallery-slider.js \
     components/entity-gallery/entity-gallery_h-slide.js \
     components/entity-gallery/entity-gallery_grid.js \
+    components/entity-panel/entity-panel-navigation.js \
     components/entity-panel/entity-panel-localization.js \
     components/entity-panel/entity-panel-form.js \
     components/entity-panel/entity-panel-top.js \

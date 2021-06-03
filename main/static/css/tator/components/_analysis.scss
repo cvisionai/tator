@@ -81,6 +81,8 @@ body.analysis-annotations-body {
   grid-template-columns: repeat(auto-fill, minmax(87px, 1fr));
 }
 
+
+.analysis__collection,
 .analysis__annotation {
   //background-color: $color-charcoal--light;
   overflow: hidden;
@@ -124,6 +126,22 @@ body.analysis-annotations-body {
     box-sizing: border-box;
     height: 24px;
     width: 87px;
+  }
+}
+
+.analysis__collection {
+  border: 2px solid transparent;
+  &:hover,
+  &:focus {
+    box-shadow: 0 0 0 3px $color-charcoal--light;
+  }
+
+  &.is-selected {
+    border-color: $color-white;
+    box-shadow: 0 0 0 3px $color-charcoal--light;
+    &:before {
+      background-color: $color-charcoal--light;
+    }
   }
 }
 

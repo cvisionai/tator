@@ -60,6 +60,9 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this.modelData = modelData;
       this.galleryContainer = galleryContainer;
 
+      // Possibly remove this so we can have navigation controls
+      this.panelControls = this.panelContainer._panelTop._topBarArrow.hidden = true;
+
       try{
          this.slideCardData.init(this.modelData);
       } catch(e){
