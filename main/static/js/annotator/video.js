@@ -296,11 +296,10 @@ class VideoBufferDemux
    */
   forTime(time, buffer, direction, maxTime)
   {
-    // #TODO This needs to be revisited
-    //if (this._compat)
-    //{
-    //  return this._vidBuffers[0];
-    //}
+    if (this._compat == true)
+    {
+      return this._vidBuffers[0];
+    }
 
     if (buffer == "play")
     {
