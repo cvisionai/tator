@@ -65,6 +65,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // this.panelContainer._panelTop.panelNav.init();
 
 
+
+
       try{
          this.slideCardData.init(this.modelData);
       } catch(e){
@@ -94,8 +96,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
          state.cards = [];
 
          const slider = document.createElement("entity-gallery-slider");
-         slider.entityFormChange = this.entityFormChange;
-         slider.mediaFormChange = this.mediaFormChange;
+         slider.entityFormChange = this.entityFormChange.bind(this);
+         slider.mediaFormChange = this.mediaFormChange.bind(this);
 
          slider.init({
             panelContainer: this.panelContainer,

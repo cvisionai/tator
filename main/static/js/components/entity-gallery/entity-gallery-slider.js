@@ -204,6 +204,12 @@ static get observedAttributes() {
             annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
             annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
+            // when lock changes set attribute on forms to "View Only" / "Can Edit"
+            this.panelContainer.addEventListener("permission-update", (e) => {
+               annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
+               annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
+            });
+
             // Update view unselected card panel
             annotationPanelDiv.addEventListener("unselected", () => {
                card._li.classList.remove("is-selected");

@@ -19,9 +19,9 @@ class AnalyticsCollections extends TatorPage {
       div.appendChild(this._breadcrumbs);
       this._breadcrumbs.setAttribute("analytics-name", "Collections Gallery");
 
-      // this._settings = document.createElement("analytics-settings");
-      // this._settings.style.marginLeft = "50px";
-      // div.appendChild(this._settings);
+      this._settings = document.createElement("analytics-settings");
+      this._settings.style.marginLeft = "50px";
+      div.appendChild(this._settings);
 
       // Wrapper to allow r.side bar to slide into left
       this.mainWrapper = document.createElement("div");
@@ -50,6 +50,14 @@ class AnalyticsCollections extends TatorPage {
       // Gallery navigation panel
       this._panelContainer = document.createElement("entity-panel-container");
       this.aside.appendChild(this._panelContainer);
+
+      // Settings lock
+      this._settings._lock.addEventListener("click", evt => {
+        const locked = this._settings._lock._pathLocked.style.display != "none";
+        const permissionValue = locked ? "View Only" : "Can Edit";
+        const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+        this._panelContainer.dispatchEvent(panelPermissionEvt);
+      });
 
       //
       /* Other */
@@ -81,8 +89,6 @@ class AnalyticsCollections extends TatorPage {
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then( () => {
       this._modelData.collectionsInit(this.acceptedTypes).then(() => {
-        
-
         // Init panel side behavior
         this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData, panelName: "Track" });
 
