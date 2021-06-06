@@ -197,21 +197,32 @@ entity-gallery-aspect-ratio {
   }
 }
 
-.enitity-gallery__slider-container{
-    overflow-x: scroll;
-    scroll-snap-type: x mandatory;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
+.entity-gallery-slider__ul-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-flow: column nowrap;
+}
+collections-card {
+  display: block;
+}
+.entity-slider-card {
+  width: 150px;
+  margin: 0 15px;
+  display: block;
 
-    .enitity-gallery__ul {
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: 100%;
-      grid-template-rows: 1fr;
-      overflow-x: scroll;
-      scroll-snap-type: x mandatory;
-      scroll-behavior: smooth;
-    }
+  &:first-child{
+    margin-left: 0;
+  }
+}
+.enitity-gallery-slider__ul {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  scroll-snap-type: x mandatory;
+  scroll-snap-stop: always;
+  scroll-snap-align: start end;
+  overflow-x: scroll;
 }
 
 .entity-gallery-slider {

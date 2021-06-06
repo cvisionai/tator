@@ -19,6 +19,7 @@ class AnalyticsDashboard extends TatorPage {
 
       this._breadcrumbs = document.createElement("analytics-breadcrumbs");
       div.appendChild(this._breadcrumbs);
+      this._breadcrumbs.setAttribute("analytics-name", "Dashboard");
 
       this.main = document.createElement("main");
       this.main.setAttribute("class", "layout-max py-4 d-flex flex-items-center flex-row");
@@ -58,6 +59,22 @@ class AnalyticsDashboard extends TatorPage {
         });
       this.main.appendChild(reportsBox);
     }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+    switch (name) {
+      case "project-name":
+        this._breadcrumbs.setAttribute("project-name", newValue);
+        break;
+      case "project-id":
+        //this._init();
+        break;
+    }
+  }
+
+  static get observedAttributes() {
+    return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+  }
 
     _getDashboardBox({name, href, iconName}={}){
       const height = "2em";

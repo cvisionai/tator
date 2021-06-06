@@ -22,9 +22,9 @@ class AnalyticsBreadcrumbs extends TatorElement {
     this.analyticsText.textContent = "Analytics";
     div.appendChild(this.analyticsText);
 
-    const chevron2 = document.createElement("chevron-right");
-    chevron2.setAttribute("class", "px-2");
-    div.appendChild(chevron2);
+    this.chevron2 = document.createElement("chevron-right");
+    this.chevron2.setAttribute("class", "px-2");
+    div.appendChild(this.chevron2);
 
     this._analyticsText = document.createElement("a");
     this._analyticsText.setAttribute("class", "text-gray");
@@ -38,11 +38,18 @@ class AnalyticsBreadcrumbs extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "project-name":
+
         this._projectText.textContent = newValue;
         this._projectText.setAttribute("href", this._detailUrl());
+
+
         break;
       case "analytics-name":
-        this._analyticsText.textContent = newValue;
+        if (newValue != "Dashboard") {
+          this._analyticsText.textContent = newValue;
+        } else {
+          this.chevron2.hidden = true;
+        }
         break;
     }
   }

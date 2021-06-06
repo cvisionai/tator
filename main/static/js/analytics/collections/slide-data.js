@@ -32,9 +32,88 @@ class CollectionSlideCardData extends HTMLElement {
             this.medias = await Promise.all(mediaPromises);
 
             await this.getSlideCardList(this.localization);
+            return this.slideCardList.slideCards;
+         } else if (type == "Media") {
+            await this.getSlideMediaCardList(id);
+            return this.slideCardList.slideCards;
          }
       
-        return this.slideCardList.slideCards;
+        
+    }
+
+    getSlideMediaCardList(mediaId){
+        return new Promise((resolve, reject) => {
+            var haveSlideCardShells = function () {
+                if (counter <= 0) {
+                    resolve();
+                }
+            }
+
+            let counter = 1;
+            //console.log("Processing " + counter + " localizations in gallery.");
+
+            // Handle the case where we get nothing back
+            haveSlideCardShells();
+
+            let l = localization;
+            let id = l.id;
+            let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.version);
+            let entityType = this.findMetaDetails(l.meta);
+
+            //console.log("entityType");
+            //console.log(entityType);
+
+            let attributes = l.attributes;
+            let created = new Date(l.created_datetime);
+            let modified = new Date(l.modified_datetime);
+            let mediaId = l.media;
+
+            // let position = i + this.slideCardList.paginationState.start;
+            // let posText = `${position + 1} of ${this.slideCardList.total}`;
+
+            let media;
+            for (let idx = 0; idx < this.medias.length; idx++) {
+               if (this.medias[idx].id == mediaId) {
+                  media = this.medias[idx];
+                  break;
+               }
+            }
+
+            let mediaInfo = {
+               id: mediaId,
+               entityType: this.findMediaMetaDetails(media.meta),
+               attributes: media.attributes,
+               media: media,
+            }
+
+            let slideCard = {
+               id,
+               localization : l,
+               entityType,
+               mediaId,
+               mediaInfo,
+               mediaLink,
+               attributes,
+               created,
+               modified
+               //posText
+            };
+
+            this.slideCardList.slideCards.push(slideCard);
+            counter--;
+            haveSlideCardShells();
+
+            this._modelData.getLocalizationGraphic(l.id).then((image) => {
+               console.log("getLocalizationGraphic for this Loc resolved, id: "+l.id);
+               this.dispatchEvent(new CustomEvent("setSlideCardImage", {
+                  composed: true,
+                  detail: {
+                        id: l.id,
+                        image: image
+                  }
+               }));
+            });
+        });
     }
 
     getSlideCardList(localization){

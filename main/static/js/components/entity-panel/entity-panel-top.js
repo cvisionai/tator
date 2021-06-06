@@ -22,6 +22,11 @@ class EntityGalleryPanelTop extends TatorElement {
       svg.appendChild(path);
       this._topBar.appendChild(this._topBarArrow);
 
+      // Optional navigation
+      this.panelNav = document.createElement("entity-panel-navigation");
+      this.panelNav.hidden = true;
+      this._topBar.appendChild(this.panelNav);
+
       // Text box
       this._box = document.createElement("div");
       this._box.setAttribute("class", "px-3 pt-4");
@@ -46,6 +51,8 @@ class EntityGalleryPanelTop extends TatorElement {
       // this._topBarP.appendChild( document.createTextNode("Hover over localizations in gallery to preview annotations. Click to pin in the viewer.") );
       // this._box.appendChild(this._topBarP);
 
+
+
       // Panel Img Canvas
       this._locImage = document.createElement("entity-panel-localization");
       this._box.appendChild(this._locImage);
@@ -66,8 +73,9 @@ class EntityGalleryPanelTop extends TatorElement {
       //this._modalLink.addEventListener("click", this._locImage._popModalWithPlayer.bind(this))
     }
 
-    init({pageModal, modelData, panelContainer}){
+  init({ pageModal, modelData, panelContainer, panelName }) {
       this._locImage.init( {pageModal, modelData, panelContainer} );
+      this.panelName = panelName;
     }
 
     cardClicked(e){
@@ -81,7 +89,7 @@ class EntityGalleryPanelTop extends TatorElement {
         // We're opening the panel with new card click
         this._locImage.initAndShowData({ cardObj : evtDetail.cardObj });
         this._locImage.classList.remove("hidden");
-        this._headingText.innerHTML = `Annotation `;
+        this._headingText.innerHTML = this.panelName;
         this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
       } else {
         this._locImage.classList.add("hidden");

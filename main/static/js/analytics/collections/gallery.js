@@ -61,7 +61,9 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this.galleryContainer = galleryContainer;
 
       // Possibly remove this so we can have navigation controls
-      this.panelControls = this.panelContainer._panelTop._topBarArrow.hidden = true;
+      // this.panelContainer._panelTop._topBarArrow.hidden = true;
+      // this.panelContainer._panelTop.panelNav.init();
+
 
       try{
          this.slideCardData.init(this.modelData);
@@ -79,6 +81,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
              if(this.modelData._states.length > 0){
                this._addSliders({ states: this.modelData._states });
+
              }
          }         
       }    
@@ -111,16 +114,32 @@ class CollectionsGallery extends EntityCardSlideGallery {
          this._sliderElements.push(slider);
          this.sliderList.appendChild(slider);
 
-         slider.addEventListener("click", () => {
-            if(slider.main.classList.contains("active")) {
-               slider.main.classList.remove("active");
-            } else {
+         // tell the panel about these cards
+         // this.panelContainer._panelTop.panelNav.pushNavData({
+         //    sliderIndex: (this.sliderList.length - 1),
+         //    entityList: slider._cardElements
+         // });
+
+         slider.addEventListener("click", (e) => {
+            console.log("Slider clicked!! is it already active? " + slider.main.classList.contains("active"))
+            if (!slider.main.classList.contains("active")) {
+            //    slider.main.classList.remove("active");
+            //    if (this.sliderList.length) {
+            //       for (let s of this.sliderList) {
+            //          const inactiveEvent = new Event("slider-inactive");
+            //          s.dispatchEvent(inactiveEvent);
+            //       }
+            //    }
+
+            // } else {
                //when it is clicked, set main to active for this, and remove for others
                for(let s of this._sliderElements) {
                   s.main.classList.remove("active");
                }
                slider.main.classList.add("active");
-            } 
+               const activeEvent = new CustomEvent("slider-active", { detail: { target: e.target } });
+               slider.dispatchEvent(activeEvent);
+            }
          });
 
          // create the cards
@@ -132,7 +151,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
                for(let [i, loc] of state.localizations.entries()){
                   console.log(`Card data for loc ${loc}`);
                   let card = await this.slideCardData.makeCardList( { type: "Localization", id: loc } );
-                  card.posText = `${i} of ${state.localizations.length}`;
+                  //card.posText = `${i} of ${state.localizations.length}`;
                   console.log(card);
 
                   state.cards.push(card);               

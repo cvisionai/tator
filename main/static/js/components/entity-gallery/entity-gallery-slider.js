@@ -20,12 +20,16 @@ class EntityGallerySlider extends TatorElement {
       // Entity cards aren't deleted. They are reused and hidden if not used.
       this._cardElements = [];
 
+      this.styleDiv = document.createElement("div");
+      this.styleDiv.setAttribute("class", "entity-gallery-slider__ul-container");
+      this.main.appendChild(this.styleDiv);
+
       // card columns inside slider #todo finish styling
-      this.colSize = 150;
+      //this.colSize = 150;
       this._ul = document.createElement("ul");
-      this._ul.setAttribute("class", "enitity-gallery__ul")
-      this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
-      this.main.appendChild(this._ul);
+      this._ul.setAttribute("class", "enitity-gallery-slider__ul py-1")
+      //this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
+      this.styleDiv.appendChild(this._ul);
 
       this.numberOfDisplayedCards = 0;
 
@@ -43,6 +47,31 @@ class EntityGallerySlider extends TatorElement {
       this.pageModal = pageModal;
       this.modelData = modelData;
       this.slideCardData = slideCardData;
+
+      this.addEventListener("slider-active", (e) => {
+         console.log("Slider chosen, show first card");
+
+         for (let idx = 0; idx < this._cardElements.length; idx++) {
+            // if they directly chose a card, that's great stop there....
+            let listEl = this._cardElements[idx].card._li;
+            if (listEl.classList.contains("is-selected")) {
+               return false;
+            }
+
+         }
+         // if you got here, they just clicked the slider box, select the first card
+         if (this._cardElements[0] && this._cardElements[0].card) {
+            return this._cardElements[0].card.click();
+         }
+      });
+
+      this.addEventListener("slider-inactive", (e) => {
+         console.log("Slider inactive hide cards");
+         // Hide all cards' panels and de-select
+         for (let idx = 0; idx < this._cardElements.length; idx++) {
+            this._cardElements[idx].card._deselectedCardAndPanel();
+         }
+      });
 
       this.addEventListener("new-card", (e) => {
          console.log("new card event triggered! "+cardType+" ---> CARD OBJ below");
@@ -175,7 +204,7 @@ static get observedAttributes() {
             annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
             annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
-            // Update view
+            // Update view unselected card panel
             annotationPanelDiv.addEventListener("unselected", () => {
                card._li.classList.remove("is-selected");
                annotationPanelDiv.classList.remove("is-selected");

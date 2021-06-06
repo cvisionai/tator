@@ -4,7 +4,7 @@ class CollectionsCard extends EntityCard {
 
 
     // Add annotation class to list item
-    this._li.classList.add("analysis__collection");
+    this._li.setAttribute("class", "analysis__collection entity-slider-card entity-card aspect-true");
     this.addEventListener("click", this.togglePanel.bind(this) );
 
 

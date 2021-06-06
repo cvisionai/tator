@@ -148,7 +148,7 @@
       });
 
       // Init panel side behavior
-      this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal, modelData : this._modelData });
+      this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal, modelData : this._modelData, panelName: "Annotation" });
 
       // Update the card with the localization's associated media
       this.cardData.addEventListener("setMedia", (evt) => {

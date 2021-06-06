@@ -2,19 +2,20 @@ class EntityPanelNavigation extends TatorElement {
    constructor() {
       super();
 
-      const controls = document.createElement("div");
-      controls.setAttribute("class", "entity-panel-navigation");
-      this._shadow.appendChild(controls);
+      this.controls = document.createElement("div");
+      this.controls.setAttribute("class", "entity-panel-navigation col-12 d-flex flex-items-center");
+      this.controls.hidden = true; // hide until init
+      this._shadow.appendChild(this.controls);
 
-      this.previous = document.createElement("entity-prev-button");
-      controls.appendChild(this.previousButton);
+      this.prev = document.createElement("entity-prev-button");
+      this.controls.appendChild(this.prev);
 
       // this.nextButton = document.createElement("entity-next-button");
       // div.appendChild(this.nextButton);
 
       const details = document.createElement("details");
       details.setAttribute("class", "position-relative");
-      controls.appendChild(details);
+      this.controls.appendChild(details);
 
       const summary = document.createElement("summary");
       summary.setAttribute("class", "d-flex flex-items-center px-1");
@@ -43,13 +44,53 @@ class EntityPanelNavigation extends TatorElement {
       div.appendChild(this._slider);
 
       this.next = document.createElement("entity-next-button");
-      controls.appendChild(next);
+      this.controls.appendChild(this.next);
+
+      this.panelGroups = [];
 
    }
 
    init() {
+      this.controls.hidden = false; 
+   }
+
+   _emitSelection() {
+      console.log("emit selection fn in entity navigation");
+   }
+
+   pushNavData({slideIndex, entityList}){
+      // Create a nav for a particular list and save it by index #todo
+      this.panelGroups.push(entityList); // should match slideIndex
+
+      console.log(`entityList lenght ${entityList.length}`)
+
+      this.prev.addEventListener("click", () => {
+         const index = parseInt(this._current.textContent) - 1;
+         if (index > 0) {
+         this._current.textContent = String(index);
+         }
+         this._emitSelection();
+      });
+
+      this.next.addEventListener("click", () => {
+         const index = parseInt(this._current.textContent) + 1;
+         if (index <= this._data.length) {
+         this._current.textContent = String(index);
+         }
+         this._emitSelection();
+      });
+
+      this._slider.addEventListener("input", () => {
+         this._current.textContent = String(Number(this._slider.value) + 1);
+         this._emitSelection();
+      });
+   }
+
+   showSelectedNav(){
 
    }
 }
+
+
 
 customElements.define("entity-panel-navigation", EntityPanelNavigation);
