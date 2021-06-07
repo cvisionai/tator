@@ -1620,7 +1620,7 @@ class AnnotationCanvas extends TatorElement
           line = this.boundsCheck(line);
 
           // Update localization based on motion
-          var expLine=this.scaleToRelative(this.explodeLine(line));
+          var expLine=this.scaleToRelative(this.explodeLine(line), true);
           this.activeLocalization.x0 = expLine[0];
           this.activeLocalization.y0 = expLine[1];
           this.activeLocalization.x1 = expLine[2];
@@ -3741,7 +3741,7 @@ class AnnotationCanvas extends TatorElement
           else if (objType.dtype == 'line')
           {
             var line=translatedLine(dragEvent.start, dragEvent.end);
-            var lineScaled=this.scaleToRelative([line[0][0], line[0][1], line[1][0], line[1][1]]);
+            var lineScaled=this.scaleToRelative([line[0][0], line[0][1], line[1][0], line[1][1]], true);
             this.activeLocalization.x0 = lineScaled[0];
             this.activeLocalization.y0 = lineScaled[1];
             this.activeLocalization.x1 = lineScaled[2];
@@ -3826,7 +3826,7 @@ class AnnotationCanvas extends TatorElement
           }
           else if (type == 'line')
           {
-            var localization=this.scaleToRelative(this.explodeLine(translatedLine(dragEvent.start, dragEvent.end)));
+            var localization=this.scaleToRelative(this.explodeLine(translatedLine(dragEvent.start, dragEvent.end)), true);
             this.activeLocalization.x0 = localization[0];
             this.activeLocalization.y0 = localization[1];
             this.activeLocalization.x1 = localization[2];
