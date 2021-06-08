@@ -8,6 +8,11 @@ class EntityGalleryPanel extends TatorElement {
       this._main.style.marginTop = "-20px"
       this._shadow.appendChild(this._main);
 
+      // Optional static image
+      this._staticImage = document.createElement("img");
+      this._staticImage.hidden = true;
+      this._main.appendChild(this._staticImage);
+
       // View in media
       this._mediaLinkEl = document.createElement("a");
       this._mediaLinkEl.appendChild(document.createTextNode("View In Annotator"));
@@ -25,6 +30,18 @@ class EntityGalleryPanel extends TatorElement {
       // Entity Data in Form
       this.entityData = document.createElement("entity-gallery-panel-form");
       this._main.appendChild(this.entityData);
+
+      // State Data heading (if state)
+      this.stateHeading = document.createElement("h3");
+      this.stateHeading.setAttribute("class", "py-3 text-semibold");
+      this.stateHeading.appendChild(document.createTextNode("State Data"));
+      this.stateHeading.hidden = true;
+      this._main.appendChild(this.stateHeading);
+
+      // State Data in Form
+      this.stateData = document.createElement("entity-gallery-panel-form");
+      this.stateData.hidden = true;
+      this._main.appendChild(this.stateData);
 
       // Go to frame icon button
       this.goToFrameButton = document.createElement("entity-frame-link-button");
@@ -45,7 +62,8 @@ class EntityGalleryPanel extends TatorElement {
     }
 
   async init( {
-    cardObj
+    cardObj,
+    includeStateData = false
   }){
     this.cardObj = cardObj;
   
@@ -55,8 +73,28 @@ class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton.button.setAttribute("href", this._mediaLink);
     
     // Init the forms with data
-    this.entityData._init(this.cardObj, this.cardObj.localization, this.cardObj.mediaInfo.media);
-    this.mediaData._init(this.cardObj.mediaInfo, this.cardObj.mediaInfo.media);
+    this.entityData._init({
+        data: this.cardObj, 
+        attributePanelData: this.cardObj.localization, 
+        associatedMedia: this.cardObj.mediaInfo.media
+      });
+    this.mediaData._init({
+      data: this.cardObj.mediaInfo, 
+      attributePanelData: this.cardObj.mediaInfo.media
+    });
+
+    if(includeStateData){
+      this.stateHeading.hidden = false;
+      this.stateData.hidden = false;
+      this.mediaData._init({
+        data: this.cardObj.state, 
+        attributePanelData: this.cardObj.mediaInfo.media
+      });
+    }
+  }
+
+  setImage(imageSource){
+    this._staticImage.setAttribute("src", imageSource);
   }
 
 }

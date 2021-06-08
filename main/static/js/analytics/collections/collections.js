@@ -90,7 +90,13 @@ class AnalyticsCollections extends TatorPage {
     this._modelData.init().then( () => {
       this._modelData.collectionsInit(this.acceptedTypes).then(() => {
         // Init panel side behavior
-        this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData, panelName: "Track" });
+        this._panelContainer.init({ 
+            main: this.main, 
+            aside: this.aside, 
+            pageModal: this.modal, 
+            modelData: this._modelData, 
+            panelName: "Track"
+          });
 
         // Pass panel and localization types to gallery
         this._collectionsGallery.init({

@@ -198,17 +198,17 @@ entity-gallery-aspect-ratio {
 }
 
 .entity-gallery-slider__ul-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-flow: column nowrap;
+  // display: flex;
+  // align-items: center;
+  // justify-content: space-between;
+  // flex-flow: column nowrap;
 }
 collections-card {
   display: block;
 }
 .entity-slider-card {
   width: 150px;
-  margin: 0 15px;
+  //margin: 0 15px;
   display: block;
 
   &:first-child{
@@ -216,13 +216,33 @@ collections-card {
   }
 }
 .enitity-gallery-slider__ul {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  scroll-snap-type: x mandatory;
-  scroll-snap-stop: always;
-  scroll-snap-align: start end;
-  overflow-x: scroll;
+  display: grid;
+  grid-gap: 15px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(150px, 1fr);
+  width: max-content;
+  overflow: hidden;
+  // background-image: linear-gradient(
+  //   to left,
+  //   $color-charcoal--light 5px,
+  //   transparent 5px
+  // );
+
+  
+
+  &.open {
+    display: grid;
+    grid-gap: 15px;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(150px,  1fr));
+    width: 100%;
+    overflow: hidden;
+    background-image: none;
+
+    .entity-slider-card {
+      margin: 0;
+    }
+  }
 }
 
 .entity-gallery-slider {

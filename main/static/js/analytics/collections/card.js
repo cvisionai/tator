@@ -4,7 +4,7 @@ class CollectionsCard extends EntityCard {
 
 
     // Add annotation class to list item
-    this._li.setAttribute("class", "analysis__collection entity-slider-card entity-card aspect-true");
+    this._li.setAttribute("class", "analysis__collection entity-slider-card entity-card aspect-true rounded-2");
     this.addEventListener("click", this.togglePanel.bind(this) );
 
 
@@ -17,6 +17,8 @@ class CollectionsCard extends EntityCard {
   
 
   init({obj, panelContainer, annotationPanelDiv}){
+    console.log("collections card")
+    console.log(obj);
     this._styledDiv.classList.add("dark-card");
     this._styledDiv.classList.remove("py-2");
     // ID is title
@@ -29,24 +31,25 @@ class CollectionsCard extends EntityCard {
 
     // Additional information about localization
     // Name and type like "ABOX (Box)"
-    //this.typeInfo = document.createElement('div');
-    //this.typeInfo.innerHTML = `${obj.localizationType.name} (${obj.localizationType.type})`;
-    //this.titleDiv.appendChild(this.typeInfo);
+    // this.typeInfo = document.createElement('div');
+    // this.typeInfo.innerHTML = `${obj.localizationType.name} (${obj.localizationType.type})`;
+    // this.titleDiv.appendChild(this.typeInfo);
 
 
     // Graphic
-    if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
+    if(typeof obj.image !== "undefined" && obj.image !== null) {
+      this.setAttribute("thumb", obj.image);
+    } else if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
       this.reader = new FileReader();
       this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
       this.reader.addEventListener("load", this._setImgSrc.bind(this));
-    }
-    else {
+    } else {
       this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
     }
 
     // Add position text related to pagination
-    //this.setAttribute("pos-text", obj.posText);
-    this._pos_text.hidden = true; //#TODO
+    this.setAttribute("pos-text", obj.posText);
+    //this._pos_text.hidden = true; //#TODO
 
     // Link to the media @TODO
     // this.mediaLink = document.createElement('div');
@@ -54,15 +57,15 @@ class CollectionsCard extends EntityCard {
     // this.descDiv.appendChild(this.mediaLink);
 
     // Display the first 0 order attribute value
-    // this.setAttribute("name", "");
-    // for (let attrType of obj.entityType.attribute_types) {
-    //   if (attrType.order == 0) {
-    //     if (obj.attributes[attrType.name] != undefined) {
-    //       this._name.textContent = obj.attributes[attrType.name];
-    //     }
-    //     break;
-    //   }
-    // }
+    this.setAttribute("name", "");
+    for (let attrType of obj.entityType.attribute_types) {
+      if (attrType.order == 0) {
+        if (obj.attributes[attrType.name] != undefined) {
+          this._name.textContent = obj.attributes[attrType.name];
+        }
+        break;
+      }
+    }
 
     /*
     this.attributesDiv = document.createElement('div');
@@ -120,6 +123,11 @@ class CollectionsCard extends EntityCard {
 
   _setImgSrc (e) {
     this.setAttribute("thumb", this.reader.result);
+  }
+
+  setImageStatic(image) {
+    console.log("setImageStatic");
+    this.setAttribute("thumb", image);
   }
 
   _mouseEnterHandler(e){
@@ -241,7 +249,7 @@ class CollectionsCard extends EntityCard {
 
   cardClickEvent(openFlag = false){
     /* @ "card-click"*/
-    console.log("Card click event triggered (from card.js)");
+    //console.log("Card click event triggered (from card.js)");
     // Send event to panel to hide the localization canvas & title
     let cardClickEvent = new CustomEvent("card-click", { detail : { openFlag, cardObj : this.cardObj } });
     this.dispatchEvent( cardClickEvent );

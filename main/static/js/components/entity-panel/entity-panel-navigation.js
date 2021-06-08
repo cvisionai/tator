@@ -55,14 +55,14 @@ class EntityPanelNavigation extends TatorElement {
    }
 
    _emitSelection() {
-      console.log("emit selection fn in entity navigation");
+      //console.log("emit selection fn in entity navigation");
    }
 
    pushNavData({slideIndex, entityList}){
       // Create a nav for a particular list and save it by index #todo
       this.panelGroups.push(entityList); // should match slideIndex
 
-      console.log(`entityList lenght ${entityList.length}`)
+      //console.log(`entityList length ${entityList.length}`)
 
       this.prev.addEventListener("click", () => {
          const index = parseInt(this._current.textContent) - 1;

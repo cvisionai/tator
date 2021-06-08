@@ -48,8 +48,12 @@ class EntityGallerySlider extends TatorElement {
       this.modelData = modelData;
       this.slideCardData = slideCardData;
 
+      // console.log("::::::::::::::::::slideCardData");
+      // console.log(slideCardData);
+
       this.addEventListener("slider-active", (e) => {
-         console.log("Slider chosen, show first card");
+         //console.log("Slider chosen, show first card");
+         this._ul.classList.add("open");
 
          for (let idx = 0; idx < this._cardElements.length; idx++) {
             // if they directly chose a card, that's great stop there....
@@ -66,22 +70,21 @@ class EntityGallerySlider extends TatorElement {
       });
 
       this.addEventListener("slider-inactive", (e) => {
-         console.log("Slider inactive hide cards");
+         //console.log("Slider inactive hide cards");
+         this._ul.classList.remove("open");
          // Hide all cards' panels and de-select
-         for (let idx = 0; idx < this._cardElements.length; idx++) {
-            this._cardElements[idx].card._deselectedCardAndPanel();
-         }
+         // for (let idx = 0; idx < this._cardElements.length; idx++) {
+         //    this._cardElements[idx].card._deselectedCardAndPanel();
+         // }
       });
 
       this.addEventListener("new-card", (e) => {
-         console.log("new card event triggered! "+cardType+" ---> CARD OBJ below");
+         console.log("New card event triggered! Index "+e.detail.cardIndex+" Data:");
          console.log(e.detail.cardData[0]);
          this._addCard(e.detail.cardIndex, e.detail.cardData[0], cardType);
       });
 
-      this.slideCardData.addEventListener("setSlideCardImage", (evt) => {
-         this.updateCardImage(evt.detail.id, evt.detail.image);
-      });
+      this.slideCardData.addEventListener("setSlideCardImage", this.updateCardImage.bind(this));
 
       // Update the card with the localization's associated media
       this.slideCardData.addEventListener("setSlideMedia", (evt) => {
@@ -106,10 +109,6 @@ static get observedAttributes() {
 
    /* Init function to show and populate gallery w/ pagination */
    show(sliderData) {
-      console.log(sliderData);
-      
-      // Turn this dats into a card list
-
       // Hide all cards' panels and de-select
       for (let idx = 0; idx < this._cardElements.length; idx++) {
          this._cardElements[idx].card._deselectedCardAndPanel();
@@ -124,11 +123,15 @@ static get observedAttributes() {
     * @param {integer} id
     * @param {image} image
     */
-   updateCardImage(id, image) {
-      if (id in this._currentCardIndexes) {
-         var info = this._cardElements[this._currentCardIndexes[id]];
+   updateCardImage(e) {
+      // We need to check if this slider has the card we heard about...
+      const id = e.detail.id;
+      var index = this._currentCardIndexes[id]
+      var info = this._cardElements[index];
+
+      if (typeof this._currentCardIndexes[id] !== "undefined" && typeof info !== "undefined") {
+         const image = e.detail.image;
          info.card.setImage(image);
-         // info.annotationPanel.setImage(image);
       }
    }
 
@@ -153,16 +156,13 @@ static get observedAttributes() {
     * @param {object} cardInfo
     */
    makeCards(cardInfo) {
-      console.log(":::::::::cardInfo:::::::::::::")
-      console.log(cardInfo);
       this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
       
-
       // Loop through all of the card entries and create a new card if needed. Otherwise
       // apply the card entry to an existing card.
-      for (const [index, cardObj] of cardInfo.entries()) {
+      //for (const [index, cardObj] of cardInfo.entries()) {
          this._addCard(index, cardObj);
-      }
+      //}
 
       // Hide unused cards
       if (this.numberOfDisplayedCards < this._cardElements.length) {
@@ -183,7 +183,7 @@ static get observedAttributes() {
          let card;
          if (newCard) {
             card = document.createElement(cardType);
-            console.log(card);
+
             // // Resize Tool needs to change style within card on change
             // this._resizeCards._slideInput.addEventListener("change", (evt) => {
             //    let resizeValue = evt.target.value;
@@ -238,6 +238,20 @@ static get observedAttributes() {
                annotationPanel: annotationPanel,
                annotationPanelDiv: annotationPanelDiv
             };
+
+
+            if(cardObj.image) {
+               annotationPanel.localizationType = false;
+               annotationPanel.setImage(cardObj.image);
+               if(cardObj.thumbnail) {
+                  card.setImageStatic(cardObj.thumbnail);
+               } else {
+                  card.setImageStatic(cardObj.image);
+               }
+            }
+
+
+
             this._cardElements.push(cardInfo);
 
          } else {
@@ -254,7 +268,6 @@ static get observedAttributes() {
 
 
          // Initialize Card
-         console.log(cardObj);
          card.init({
             obj: cardObj,
             panelContainer: this.panelContainer,

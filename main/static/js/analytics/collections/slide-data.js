@@ -22,8 +22,6 @@ class CollectionSlideCardData extends HTMLElement {
 
          if(type == "Localization"){
             this.localization = await this._modelData.getLocalization({ id });
-            this.mediaTypes = this._modelData.getStoredMediaTypes();
-            this.projectId = this._modelData.getProjectId();
 
             //console.log(this.localization);
             var mediaPromises = [this._modelData.getMedia( this.localization.media )];
@@ -34,14 +32,16 @@ class CollectionSlideCardData extends HTMLElement {
             await this.getSlideCardList(this.localization);
             return this.slideCardList.slideCards;
          } else if (type == "Media") {
-            await this.getSlideMediaCardList(id);
+            this.media = await this._modelData.getMedia( id )
+
+            await this.getSlideMediaCardList(this.media);
             return this.slideCardList.slideCards;
          }
       
         
     }
 
-    getSlideMediaCardList(mediaId){
+    getSlideMediaCardList(media, stateMediaId){
         return new Promise((resolve, reject) => {
             var haveSlideCardShells = function () {
                 if (counter <= 0) {
@@ -55,64 +55,55 @@ class CollectionSlideCardData extends HTMLElement {
             // Handle the case where we get nothing back
             haveSlideCardShells();
 
-            let l = localization;
-            let id = l.id;
-            let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.version);
-            let entityType = this.findMetaDetails(l.meta);
+            let m = media;
+            let id = m.id;
+            let mediaLink = this._modelData.generateMediaLink(m.id); // @todo - l.frame, l.id, l.version
+            let entityType = this.findMediaMetaDetails(m.meta)
+            let attributes = m.attributes;
+            let created = new Date(m.created_datetime);
+            let modified = new Date(m.modified_datetime);
+            let mediaId = id;
 
-            //console.log("entityType");
-            //console.log(entityType);
-
-            let attributes = l.attributes;
-            let created = new Date(l.created_datetime);
-            let modified = new Date(l.modified_datetime);
-            let mediaId = l.media;
-
-            // let position = i + this.slideCardList.paginationState.start;
-            // let posText = `${position + 1} of ${this.slideCardList.total}`;
-
-            let media;
-            for (let idx = 0; idx < this.medias.length; idx++) {
-               if (this.medias[idx].id == mediaId) {
-                  media = this.medias[idx];
-                  break;
-               }
-            }
+            let image = m.media_files.image[0].path;
+            let thumbnail = m.media_files.thumbnail[0].path;
 
             let mediaInfo = {
-               id: mediaId,
-               entityType: this.findMediaMetaDetails(media.meta),
-               attributes: media.attributes,
-               media: media,
+               id,
+               entityType,
+               attributes,
+               media: m,
             }
 
             let slideCard = {
                id,
-               localization : l,
+               localization : m, // # todo - fix this downstream to not rely on localization
                entityType,
                mediaId,
                mediaInfo,
                mediaLink,
                attributes,
                created,
-               modified
-               //posText
+               modified,
+               image,
+               thumbnail 
             };
 
             this.slideCardList.slideCards.push(slideCard);
             counter--;
             haveSlideCardShells();
 
-            this._modelData.getLocalizationGraphic(l.id).then((image) => {
-               console.log("getLocalizationGraphic for this Loc resolved, id: "+l.id);
-               this.dispatchEvent(new CustomEvent("setSlideCardImage", {
-                  composed: true,
-                  detail: {
-                        id: l.id,
-                        image: image
-                  }
-               }));
-            });
+            
+
+            // console.log(thumbnail);
+
+            // console.log("dispatching slide image id "+id+" with thumbnail");
+            // this.dispatchEvent(new CustomEvent("setSlideCardImage", {
+            //    composed: true,
+            //    detail: {
+            //          id,
+            //          image,
+            //          thumbnail               }
+            // }));
         });
     }
 
@@ -134,17 +125,10 @@ class CollectionSlideCardData extends HTMLElement {
             let id = l.id;
             let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.version);
             let entityType = this.findMetaDetails(l.meta);
-
-            //console.log("entityType");
-            //console.log(entityType);
-
             let attributes = l.attributes;
             let created = new Date(l.created_datetime);
             let modified = new Date(l.modified_datetime);
             let mediaId = l.media;
-
-            // let position = i + this.slideCardList.paginationState.start;
-            // let posText = `${position + 1} of ${this.slideCardList.total}`;
 
             let media;
             for (let idx = 0; idx < this.medias.length; idx++) {
@@ -171,7 +155,6 @@ class CollectionSlideCardData extends HTMLElement {
                attributes,
                created,
                modified
-               //posText
             };
 
             this.slideCardList.slideCards.push(slideCard);
@@ -204,11 +187,8 @@ class CollectionSlideCardData extends HTMLElement {
     }
 
     findMediaMetaDetails(id) {
-       console.log("findMediaMetaDetails to match id  = "+id);
         for (let mediaType of this.mediaTypes) {
             if (mediaType.id == id) {
-               console.log("found! returning.....");
-               console.log(mediaType);
                 return mediaType;
             }
         }

@@ -1124,7 +1124,7 @@ class TatorData {
       return type.id;
     });
 
-    console.log(typeIds);
+    //console.log(typeIds);
     if(typeIds && typeIds.length > 1){
       searchMeta = `_meta:(${typeIds.join(" OR ")})`;
     } else if(typeIds && typeIds.length == 1) {
@@ -1135,13 +1135,16 @@ class TatorData {
     this._states.total = 0
 
     if(searchMeta !== "") {
-      const params = `?search=${encodeURIComponent(searchMeta)}`;
-      const stateCount = await this.getStateCount({
-        params
-      });
+      let stateCount = 0;
+      
+      for(let t of typeIds){
+        stateCount += await this.getStateCount({
+          params: `?type=${t}`
+        });
+      }
 
       this._states = await this.getStates({
-        params
+        params: `?search=${encodeURIComponent(searchMeta)}`
       });
 
       this._states.map(state => {

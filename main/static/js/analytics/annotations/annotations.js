@@ -205,7 +205,7 @@
   _checkHistoryState(){
     // If there was a param string, these objects would not be empty
     const statesObj = this.history._readQueryParams();
-    console.log(statesObj);
+    //console.log(statesObj);
     // If the history returns non-empty objects, update our local state
     if(statesObj.filtState !== {} && statesObj.filtState !== null) 
     {

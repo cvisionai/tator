@@ -30,7 +30,7 @@ class EntityGalleryPanelForm extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "permission":
-        console.log(`Form permission updated from ${oldValue} to ${newValue}`);
+        //console.log(`Form permission updated from ${oldValue} to ${newValue}`);
         this._attributes.permission = newValue; // start as view only - controlled by lock
         break;
     }
@@ -41,12 +41,7 @@ class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    * @param {Media/Localization} attributePanelData
    */
-  _init(data, attributePanelData, associatedMedia) {
-    console.log("::::::::: data, attributePanelData, associatedMedia ::::::::");
-    console.log(data);
-    console.log(attributePanelData);
-    console.log(associatedMedia);
-
+  _init({data, attributePanelData, associatedMedia}) {
     // Hide all of the attribute panels, and then show the one we care about.
     for (const attrTypeId in this._attributeTypes) {
       this._attributeTypes[attrTypeId].style.display = "none";
@@ -70,7 +65,7 @@ class EntityGalleryPanelForm extends TatorElement {
               values: this._values
             }
           };
-          console.log(detail);
+          //console.log(detail);
           this.dispatchEvent(new CustomEvent("save", detail));
         }
       });

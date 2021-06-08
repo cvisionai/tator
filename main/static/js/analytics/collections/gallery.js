@@ -64,9 +64,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // this.panelContainer._panelTop._topBarArrow.hidden = true;
       // this.panelContainer._panelTop.panelNav.init();
 
-
-
-
       try{
          this.slideCardData.init(this.modelData);
       } catch(e){
@@ -79,7 +76,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
          if (this.modelData._states.total >= this.modelData.getMaxFetchCount()) {
             this._numFiles.textContent = `Too many results to preview. Displaying the first ${this.modelData._states.total} results.`
          } else {
-            this._numFiles.textContent = `Showing ${this.modelData._states.total} Collections`;
+            const total = this.modelData._states.total;
+            let totalText = "";
+
+            if(total > (this.modelData._states.paginationStop - this.modelData._states.paginationStart) ){
+               totalText = `Showing ${this.modelData._states.paginationStart} to ${this.modelData._states.paginationStop} of ${total} of  Collections`
+            } else {
+               totalText = `Showing ${total} Collections`
+            }
+            this._numFiles.textContent = totalText;
 
              if(this.modelData._states.length > 0){
                this._addSliders({ states: this.modelData._states });
@@ -90,10 +95,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    async _addSliders({ states }) {
+      
       // Append the sliders
       for (let state of states) {
          //this._currentSliderIndexes = {}; // Clear the mapping from entity ID to card index
          state.cards = [];
+         let counter = 0;
 
          const slider = document.createElement("entity-gallery-slider");
          slider.entityFormChange = this.entityFormChange.bind(this);
@@ -123,20 +130,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
          // });
 
          slider.addEventListener("click", (e) => {
-            console.log("Slider clicked!! is it already active? " + slider.main.classList.contains("active"))
             if (!slider.main.classList.contains("active")) {
-            //    slider.main.classList.remove("active");
-            //    if (this.sliderList.length) {
-            //       for (let s of this.sliderList) {
-            //          const inactiveEvent = new Event("slider-inactive");
-            //          s.dispatchEvent(inactiveEvent);
-            //       }
-            //    }
-
-            // } else {
                //when it is clicked, set main to active for this, and remove for others
                for(let s of this._sliderElements) {
                   s.main.classList.remove("active");
+                  const inactiveEvent = new Event("slider-inactive");
+                  s.dispatchEvent(inactiveEvent);
                }
                slider.main.classList.add("active");
                const activeEvent = new CustomEvent("slider-active", { detail: { target: e.target } });
@@ -145,47 +144,31 @@ class CollectionsGallery extends EntityCardSlideGallery {
          });
 
          // create the cards
-         if(state.typeData.association === "Localization") {
-            
+         const galleryList = state.typeData.association === "Localization" ? state.localizations : state.media;
+         if(galleryList) {
+            const totalList = galleryList.length;
             // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
-            if(state.localizations.length > 0){
+            if(totalList > 0){
                // Otherwise, get the localizations & make cards with slideCard
-               for(let [i, loc] of state.localizations.entries()){
-                  console.log(`Card data for loc ${loc}`);
-                  let card = await this.slideCardData.makeCardList( { type: "Localization", id: loc } );
-                  //card.posText = `${i} of ${state.localizations.length}`;
-                  console.log(card);
+               for(let id of galleryList){
+                  const cardInitData = { type : state.typeData.association, id }; 
+                  const card = await this.slideCardData.makeCardList( cardInitData );
+                  
+                  if(card){
+                     card[0].posText = `${counter+1} of ${totalList}`;
+                     card[0]["state-type"] = state.typeData.association;
+                     card[0].state = state;
+                     //states.cards.push(card);
 
-                  state.cards.push(card);               
-
-                  // # todo -- if we store all the cards with the state object, we could show just the first 5, and then this new card event happens when they scroll?
-                  // # todo -- or when they slide in this gallery we have an event to get more localizations.....
-                  // start with just passing info from state to cards, then improve it
-
-                  let newCardEvent = new CustomEvent('new-card', {detail : { cardData : card, cardIndex : i}} );
-                  slider.dispatchEvent(newCardEvent);
+                     let newCardEvent = new CustomEvent('new-card', {detail : { cardData : card, cardIndex : counter}} );
+                     slider.dispatchEvent(newCardEvent);
+                     counter++;
+                  }
                }
-
-            }
-            
-
-            
-         } else if (state.typeData.association === "Media") {
-            // #TODO Not sure if this is how it would work for media
-            // if(state.media.length > 0){
-            //    // Get the media & make cards with slideCard
-            //    state.cards =  await slideCard.makeCardList( "Media", state.media )
-            // }
-
+            }    
          }
-         // } else {
-         //    // #TODO
-         // }        
-
-         
+     
       }
-
-
    }
 
    entityFormChange(e) {

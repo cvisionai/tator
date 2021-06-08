@@ -71,33 +71,60 @@ class EntityGalleryPanelTop extends TatorElement {
 
       // Modal CTA
       //this._modalLink.addEventListener("click", this._locImage._popModalWithPlayer.bind(this))
+
+      // If the panel is showing a localization default is true
+      this.localizationType = true;
+  }
+
+  static get observedAttributes() {
+    return ["localization-type"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "localization-type":
+        //console.log("Panel top setting for localizationType was "+oldValue+" is now: "+newValue)
+        this.localizationType = newValue;
+        break;
     }
+  }
 
   init({ pageModal, modelData, panelContainer, panelName }) {
+    if(this.localizationType){
       this._locImage.init( {pageModal, modelData, panelContainer} );
-      this.panelName = panelName;
     }
+      
+    this.panelName = panelName;
+  }
 
-    cardClicked(e){
+  cardClicked(e){
+    if(this.localizationType){
       this.locDataHandler(e.detail);
     }
-
-    locDataHandler(evtDetail){
-      console.log("evtDetail");
-      console.log(evtDetail);
-      if(evtDetail.openFlag){
-        // We're opening the panel with new card click
-        this._locImage.initAndShowData({ cardObj : evtDetail.cardObj });
-        this._locImage.classList.remove("hidden");
-        this._headingText.innerHTML = this.panelName;
-        this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
-      } else {
-        this._locImage.classList.add("hidden");
-        this._headingText.innerHTML = `No selection.`;
-        this._topBarID.innerHTML = ``;
-      }
-    }
-   
+    this.headingHandler(e.detail);
   }
+
+  locDataHandler(evtDetail){
+    if(evtDetail.openFlag){
+      // We're opening the panel with new card click
+      this._locImage.initAndShowData({ cardObj : evtDetail.cardObj });
+      this._locImage.classList.remove("hidden");
+    } else {
+      this._locImage.classList.add("hidden");
+    }
+  }
+
+  headingHandler(evtDetail){
+    if(evtDetail.openFlag){
+      // We're opening the panel with new card click
+      this._headingText.innerHTML = this.panelName;
+      this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
+    } else {
+      this._headingText.innerHTML = `No selection.`;
+      this._topBarID.innerHTML = ``;
+    }
+  }
+  
+}
   
   customElements.define("entity-gallery-panel-top", EntityGalleryPanelTop);  

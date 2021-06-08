@@ -11,9 +11,6 @@ class AnnotationCardData extends HTMLElement {
     }
 
     async makeCardList({filterState, paginationState}) {
-
-        console.log("********** makeCardList");
-
         this.cardList = {};
         this.cardList.cards = [];
         this.cardList.filterState = filterState;
@@ -40,8 +37,7 @@ class AnnotationCardData extends HTMLElement {
         this.medias = await Promise.all(mediaPromises);
 
         await this.getCardList(this.localizations);
-        console.log("this.cardList::::::::::::::");
-        console.log(this.cardList);
+
         return this.cardList;
     }
 

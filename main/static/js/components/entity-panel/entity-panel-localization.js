@@ -169,8 +169,8 @@ class GalleryPanelLocalization extends TatorElement {
         break;
       }
     }
-
-    this._data.init(dataTypes, selected_version, this.modelData.getProjectId(), this._localization.media, false, false);
+  if(locDataType){
+        this._data.init(dataTypes, selected_version, this.modelData.getProjectId(), this._localization.media, false, false);
     this._player.undoBuffer = this._undo;
     this._player.annotationData = this._data;
     this._data.updateTypeWithData(locDataType, this._localization)
@@ -178,6 +178,8 @@ class GalleryPanelLocalization extends TatorElement {
     this._player.addEventListener("canvasReady", () => {
         this._player.selectLocalization(this._localization);
     });
+  }
+
 
   }
 }
