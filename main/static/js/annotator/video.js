@@ -2180,6 +2180,10 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    // In the event some out of band drawing has happened, make sure to clear any latent
+    // draw buffers.
+    this._draw.beginDraw();
+
     var finalPromise = new Promise((resolve, reject) => {
       var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
       promise.then(() =>
