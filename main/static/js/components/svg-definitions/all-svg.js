@@ -13,8 +13,8 @@ class SvgDefinition {
       if(typeof val == "undefined") name = "smile-icon";
       this._iconName = val;
       this._iconPath = this._getIconPath(val);
-      console.log(this._iconName);
-      console.log(this._iconPath);
+      // console.log(this._iconName);
+      // console.log(this._iconPath);
 
       const div = document.createElement("div");
       div.setAttribute("class", "d-flex flex-items-center");
