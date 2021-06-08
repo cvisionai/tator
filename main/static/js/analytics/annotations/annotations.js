@@ -154,12 +154,13 @@
       this.cardData.addEventListener("setMedia", (evt) => {
         this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
       });
-      
+
       // Pass panel and localization types to gallery
       this._filterResults._initPanel( {
         panelContainer : this._panelContainer,
         pageModal : this.modal,
-        modelData : this._modelData
+        modelData : this._modelData,
+        cardData: this.cardData
       } );
 
       // Init history & check if state is stored in URL, update default states
@@ -167,8 +168,8 @@
       //this._checkHistoryState();
 
       // Init Card Gallery and Right Panel
-      this._cardGallery({ 
-        filterState : this._filterState, 
+      this._cardGallery({
+        filterState : this._filterState,
         paginationState : this._paginationState
       });
 
@@ -207,14 +208,14 @@
     const statesObj = this.history._readQueryParams();
     console.log(statesObj);
     // If the history returns non-empty objects, update our local state
-    if(statesObj.filtState !== {} && statesObj.filtState !== null) 
+    if(statesObj.filtState !== {} && statesObj.filtState !== null)
     {
       this._filterState = statesObj.filtState;
     }
     if(statesObj.pagState !== {} && statesObj.pagState !== null)
     {
       this._paginationState = statesObj.pagState;
-    } 
+    }
   }
 
   _cardGallery({ filterState, paginationState}) {
@@ -244,10 +245,10 @@
     this._paginationState.start = 0;
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
-    
+
     // updated the card gallery
-    this._cardGallery({ 
-      filterState : this._filterState, 
+    this._cardGallery({
+      filterState : this._filterState,
       paginationState : this._paginationState
     });
 
@@ -267,8 +268,8 @@
     this._paginationState.init = false;
 
     // get the gallery
-    this._cardGallery({ 
-      filterState : this._filterState, 
+    this._cardGallery({
+      filterState : this._filterState,
       paginationState : this._paginationState
     });
 

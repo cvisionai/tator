@@ -246,7 +246,7 @@ class TatorData {
     return data;
   }
 
-    /**
+  /**
    * Returns data for getLocalizationGraphic with project ID
    */
   async getLocalizationGraphic( localizationID ){
@@ -266,6 +266,23 @@ class TatorData {
     return data;
   }
 
+  /**
+   * Gets localization object based on ID
+   */
+  async getLocalization(localizationId){
+    const response = await fetch(`/rest/Localization/${localizationId}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json();
+    return data;
+  }
 
   /**
    * Returns a data for user with user ID

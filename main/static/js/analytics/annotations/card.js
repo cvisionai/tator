@@ -52,15 +52,7 @@ class AnnotationsCard extends EntityCard {
     // this.descDiv.appendChild(this.mediaLink);
 
     // Display the first 0 order attribute value
-    this.setAttribute("name", "");
-    for (let attrType of obj.entityType.attribute_types) {
-      if (attrType.order == 0) {
-        if (obj.attributes[attrType.name] != undefined) {
-          this._name.textContent = obj.attributes[attrType.name];
-        }
-        break;
-      }
-    }
+    this.displayAttributes();
 
     /*
     this.attributesDiv = document.createElement('div');
@@ -104,6 +96,18 @@ class AnnotationsCard extends EntityCard {
     // More actions
     // this._more.hidden = false;
     // Add more ... > labels, swap views?
+  }
+
+  displayAttributes() {
+    this.setAttribute("name", "");
+    for (let attrType of this.cardObj.entityType.attribute_types) {
+      if (attrType.order == 0) {
+        if (this.cardObj.attributes[attrType.name] != undefined) {
+          this._name.textContent = this.cardObj.attributes[attrType.name];
+        }
+        break;
+      }
+    }
   }
 
   /**
