@@ -60,6 +60,7 @@ from .membership import MembershipDetailSchema
 from .notify import NotifySchema
 from .organization import OrganizationListSchema
 from .organization import OrganizationDetailSchema
+from .password_reset import PasswordResetListSchema
 from .permalink import PermalinkSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema

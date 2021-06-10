@@ -317,6 +317,10 @@ urlpatterns += [
         OrganizationDetailAPI.as_view(),
     ),
     path(
+        'rest/PasswordReset',
+        PasswordResetListAPI.as_view(),
+    ),
+    path(
         'rest/Permalink/<int:id>',
         PermalinkAPI.as_view(),
         name='Permalink'
