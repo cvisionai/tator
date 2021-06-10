@@ -207,19 +207,24 @@ collections-card {
   display: block;
 }
 .entity-slider-card {
-  width: 150px;
-  //margin: 0 15px;
+  width: 272px;
   display: block;
 
   &:first-child{
     margin-left: 0;
   }
 }
+
+.entity-gallery-slider__ul-container {
+  overflow: hidden;
+}
+
+
 .enitity-gallery-slider__ul {
   display: grid;
   grid-gap: 15px;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(150px, 1fr);
+  grid-template-columns: minmax(272px, 1fr);
   width: max-content;
   overflow: hidden;
   // background-image: linear-gradient(
@@ -234,7 +239,7 @@ collections-card {
     display: grid;
     grid-gap: 15px;
     grid-auto-flow: row;
-    grid-template-columns: repeat(auto-fill, minmax(150px,  1fr));
+    grid-template-columns: repeat(auto-fill, minmax(272px,  1fr));
     width: 100%;
     overflow: hidden;
     background-image: none;

@@ -97,11 +97,11 @@ class EntityGalleryPanelTop extends TatorElement {
     this.panelName = panelName;
   }
 
-  cardClicked(e){
+  openHandler(evtDetail){
     if(this.localizationType){
-      this.locDataHandler(e.detail);
+      this.locDataHandler(evtDetail);
     }
-    this.headingHandler(e.detail);
+    this.headingHandler(evtDetail);
   }
 
   locDataHandler(evtDetail){
@@ -115,6 +115,7 @@ class EntityGalleryPanelTop extends TatorElement {
   }
 
   headingHandler(evtDetail){
+    console.log("Heading handler");
     if(evtDetail.openFlag){
       // We're opening the panel with new card click
       this._headingText.innerHTML = this.panelName;

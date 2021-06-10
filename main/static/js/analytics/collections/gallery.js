@@ -104,6 +104,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
          const slider = document.createElement("entity-gallery-slider");
          slider.entityFormChange = this.entityFormChange.bind(this);
+         slider.stateFormChange = this.stateFormChange.bind(this);
          slider.mediaFormChange = this.mediaFormChange.bind(this);
 
          slider.init({
@@ -141,6 +142,14 @@ class CollectionsGallery extends EntityCardSlideGallery {
                const activeEvent = new CustomEvent("slider-active", { detail: { target: e.target } });
                slider.dispatchEvent(activeEvent);
             }
+            // } else { 
+            //       
+            //    console.log("This is already open!")
+            //    //toggle it shut
+            //    const inactiveEvent = new Event("slider-inactive");
+            //    slider.dispatchEvent(inactiveEvent);
+
+            // }
          });
 
          // create the cards
@@ -156,8 +165,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   
                   if(card){
                      card[0].posText = `${counter+1} of ${totalList}`;
-                     card[0]["state-type"] = state.typeData.association;
-                     card[0].state = state;
+                     card[0].stateType = state.typeData.association;
+                     card[0].stateInfo = {
+                        id : state.id,
+                        attributes: state.attributes,
+                        entityType: state.typeData,
+                        state : state
+                     }
                      //states.cards.push(card);
 
                      let newCardEvent = new CustomEvent('new-card', {detail : { cardData : card, cardIndex : counter}} );
@@ -181,6 +195,18 @@ class CollectionsGallery extends EntityCardSlideGallery {
       type: "Localization"
     });
   }
+
+
+   stateFormChange(e) {
+      console.log(e.detail);
+
+      // @TODO get accurate entity type (other than localization??)
+      return this.formChange({
+         id: e.detail.id,
+         values: { attributes: e.detail.values },
+         type: "State"
+      });
+   }
 
   mediaFormChange(e) {
     console.log(e.detail);

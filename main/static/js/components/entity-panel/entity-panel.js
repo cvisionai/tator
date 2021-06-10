@@ -22,13 +22,15 @@ class EntityGalleryPanel extends TatorElement {
       this._main.appendChild(this._mediaLinkEl);            
 
       // Entity Data heading
-      const entityHeading = document.createElement("h3");
-      entityHeading.setAttribute("class", "py-3 text-semibold");
-      entityHeading.appendChild(document.createTextNode("Entity Data"));
-      this._main.appendChild(entityHeading);
+      this.entityHeading = document.createElement("h3");
+      this.entityHeading.setAttribute("class", "py-3 text-semibold");
+      this.entityHeading.appendChild(document.createTextNode("Entity Data"));
+      this.entityHeading.hidden = true;
+      this._main.appendChild(this.entityHeading);
 
       // Entity Data in Form
       this.entityData = document.createElement("entity-gallery-panel-form");
+      this.entityData.hidden = true;
       this._main.appendChild(this.entityData);
 
       // State Data heading (if state)
@@ -73,21 +75,29 @@ class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton.button.setAttribute("href", this._mediaLink);
     
     // Init the forms with data
-    this.entityData._init({
+    if (!this.cardObj.stateInfo) {
+      // Show localization entity data
+      this.showEntityData();
+      this.entityData._init({
         data: this.cardObj, 
         attributePanelData: this.cardObj.localization, 
         associatedMedia: this.cardObj.mediaInfo.media
       });
-    this.mediaData._init({
-      data: this.cardObj.mediaInfo, 
-      attributePanelData: this.cardObj.mediaInfo.media
-    });
+    }
 
-    if(includeStateData){
-      this.stateHeading.hidden = false;
-      this.stateData.hidden = false;
+    // Any card with state information
+    if(this.cardObj.stateInfo){
+      this.showStateData();
+      this.stateData._init({
+        data: this.cardObj.stateInfo, 
+        attributePanelData: this.cardObj.stateInfo.state, 
+      });
+    }  
+
+    // Any card with media information
+    if(this.cardObj.mediaInfo){
       this.mediaData._init({
-        data: this.cardObj.state, 
+        data: this.cardObj.mediaInfo, 
         attributePanelData: this.cardObj.mediaInfo.media
       });
     }
@@ -95,6 +105,16 @@ class EntityGalleryPanel extends TatorElement {
 
   setImage(imageSource){
     this._staticImage.setAttribute("src", imageSource);
+  }
+
+  showStateData(){
+    this.stateHeading.hidden = false;
+    this.stateData.hidden = false;
+  }
+
+  showEntityData(){
+    this.entityHeading.hidden = false;
+    this.entityData.hidden = false;
   }
 
 }

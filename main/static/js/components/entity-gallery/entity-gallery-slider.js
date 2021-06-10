@@ -50,7 +50,6 @@ class EntityGallerySlider extends TatorElement {
 
       // console.log("::::::::::::::::::slideCardData");
       // console.log(slideCardData);
-
       this.addEventListener("slider-active", (e) => {
          //console.log("Slider chosen, show first card");
          this._ul.classList.add("open");
@@ -66,16 +65,16 @@ class EntityGallerySlider extends TatorElement {
          // if you got here, they just clicked the slider box, select the first card
          if (this._cardElements[0] && this._cardElements[0].card) {
             return this._cardElements[0].card.click();
-         }
+         }    
       });
 
       this.addEventListener("slider-inactive", (e) => {
          //console.log("Slider inactive hide cards");
          this._ul.classList.remove("open");
          // Hide all cards' panels and de-select
-         // for (let idx = 0; idx < this._cardElements.length; idx++) {
-         //    this._cardElements[idx].card._deselectedCardAndPanel();
-         // }
+         for (let idx = 0; idx < this._cardElements.length; idx++) {
+            this._cardElements[idx].card._deselectedCardAndPanel();
+         }
       });
 
       this.addEventListener("new-card", (e) => {
@@ -174,8 +173,9 @@ static get observedAttributes() {
    }
 
    openClosedPanel(e) {
+      console.log(e.detail)
       if (!this.panelContainer.open) this.panelContainer._toggleOpen();
-      this.panelControls.locDataHandler(e.detail);
+      this.panelControls.openHandler(e.detail);
    }
 
    _addCard(index, cardObj, cardType){
@@ -201,12 +201,15 @@ static get observedAttributes() {
             annotationPanelDiv.appendChild(annotationPanel);
 
             // Listen for attribute changes
+            // #todo needs to be componentized? 
             annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
+            annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
             annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
             // when lock changes set attribute on forms to "View Only" / "Can Edit"
             this.panelContainer.addEventListener("permission-update", (e) => {
                annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
+               annotationPanel.stateData.setAttribute("permission", e.detail.permissionValue);
                annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
             });
 

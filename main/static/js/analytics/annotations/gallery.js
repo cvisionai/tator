@@ -323,7 +323,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
   openClosedPanel(e){
     if(!this.panelContainer.open) this.panelContainer._toggleOpen();
-    this.panelControls.locDataHandler( e.detail );
+    this.panelControls.openHandler( e.detail );
   }
 
 }
