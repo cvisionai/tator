@@ -33,6 +33,10 @@ class PasswordResetRequestPage extends TatorElement {
     this._email.setAttribute("type", "email");
     form.appendChild(this._email);
 
+    const footer = document.createElement("div");
+    footer.setAttribute("class", "modal__footer d-flex py-3");
+    form.appendChild(footer);
+
     this._submit = document.createElement("input");
     this._submit.setAttribute("class", "btn btn-clear");
     this._submit.setAttribute("type", "submit");
@@ -135,25 +139,11 @@ class PasswordResetRequestPage extends TatorElement {
 
   _validateEmail() {
     const email = this._email.getValue();
-    if (email.length == 0) {
-      this._valid = false;
+    const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (re.test(email)) {
+      this._valid = true;
     } else {
-      return fetch(`/rest/User/Exists?email=${email}`, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .then(response => response.json())
-      .then(exists => {
-        if (!exists) {
-          this._addError("Email is not registered!");
-          this._valid = false;
-        }
-      });
+      this._valid = false;
     }
     return Promise.resolve(this._valid);
   }
