@@ -37,9 +37,9 @@ class PasswordResetListAPI(BaseListView):
                 recipients=[email],
                 title=f"Tator password reset",
                 text=f"A password reset has been requested for this email address ({email}). "
-                     f"If you did not initiate this password reset this message can be ignored. "
+                     f"If you did not initiate the reset this message can be ignored. "
                      f"To reset your password, please visit: \n\n{url}\n\n"
-                      "This url will expire in 24 hours.",
+                      "This URL will expire in 24 hours.",
                 html=None,
                 attachments=[])
             if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
