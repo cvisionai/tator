@@ -149,8 +149,8 @@ class PasswordResetRequestPage extends TatorElement {
       })
       .then(response => response.json())
       .then(exists => {
-        if (exists) {
-          this._addError("Email already in use!");
+        if (!exists) {
+          this._addError("Email is not registered!");
           this._valid = false;
         }
       });
