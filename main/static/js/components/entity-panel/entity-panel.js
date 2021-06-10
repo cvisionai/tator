@@ -75,7 +75,7 @@ class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton.button.setAttribute("href", this._mediaLink);
     
     // Init the forms with data
-    if (!this.cardObj.stateInfo) {
+    if (!(this.cardObj.stateInfo && this.cardObj.stateType == "Media")) {
       // Show localization entity data
       this.showEntityData();
       this.entityData._init({
