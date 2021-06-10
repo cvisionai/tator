@@ -50,6 +50,12 @@ class MainRedirect(View):
 class RegistrationView(TemplateView):
     template_name = 'registration/registration.html'
 
+class PasswordResetRequestView(TemplateView):
+    template_name = 'password-reset/password-reset-request.html'
+
+class PasswordResetView(TemplateView):
+    template_name = 'password-reset/password-reset.html'
+
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
 
