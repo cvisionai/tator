@@ -249,6 +249,7 @@ FILES = \
     components/user-input.js \
     components/user-data.js \
     registration/registration-page.js \
+    password-reset/password-reset-request-page.js \
     projects/settings-button.js \
     projects/project-remove.js \
     projects/project-nav.js \
