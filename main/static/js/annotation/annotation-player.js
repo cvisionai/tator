@@ -150,7 +150,7 @@ class AnnotationPlayer extends TatorElement {
     this._timelineMore.addEventListener("click", () => {
       this._displayTimelineLabels = !this._displayTimelineLabels;
       this._timelineD3.showFocus(this._displayTimelineLabels);
-      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -281,6 +281,8 @@ class AnnotationPlayer extends TatorElement {
       else {
         this._timelineMore.style.display = "none";
       }
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
     });
 
     this._timelineD3.addEventListener("select", evt => {

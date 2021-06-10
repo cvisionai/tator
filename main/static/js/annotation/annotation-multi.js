@@ -46,6 +46,7 @@ class AnnotationMulti extends TatorElement {
     const timelineDiv = document.createElement("div");
     timelineDiv.setAttribute("class", "scrub__bar d-flex flex-items-center flex-grow px-4");
     playerDiv.appendChild(timelineDiv);
+    this._timelineDiv = timelineDiv;
 
     const timeDiv = document.createElement("div");
     timeDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
@@ -154,7 +155,7 @@ class AnnotationMulti extends TatorElement {
     this._timelineMore.addEventListener("click", () => {
       this._displayTimelineLabels = !this._displayTimelineLabels;
       this._timelineD3.showFocus(this._displayTimelineLabels);
-      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
       window.dispatchEvent(new Event("resize"));
     });
 
@@ -260,6 +261,8 @@ class AnnotationMulti extends TatorElement {
       else {
         this._timelineMore.style.display = "none";
       }
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
     });
 
     this._timelineD3.addEventListener("select", evt => {
