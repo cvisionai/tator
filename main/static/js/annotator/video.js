@@ -2728,7 +2728,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         console.log(`(ID:${this._videoObject.id}) Launching playback loader`);
         this._loaderStarted = true;
-        this._loaderTimeout = setTimeout(() => {this.loaderThread(true, "play")}, 250);
+        this._loaderTimeout = setTimeout(() => {this.loaderThread(true, "play")}, 0);
       }
     }
 
