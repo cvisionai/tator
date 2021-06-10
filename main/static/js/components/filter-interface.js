@@ -1,72 +1,94 @@
 /**
  * Filter/search widget
- *
- * Encapsulates the filter query bar and associated modal.
  */
 class FilterInterface extends TatorElement {
 
   constructor() {
     super();
 
-    const div = document.createElement("div");
-    div.setAttribute("class", "analysis__filter_interface px-6 py-3 rounded-2");
-    this._shadow.appendChild(div);
+    var outerDiv = document.createElement("div");
+    outerDiv.setAttribute("class", "analysis__filter_interface px-3 py-2 rounded-2");
+    this._shadow.appendChild(outerDiv);
 
-    /*
-    const barLabel = document.createElement("span");
-    barLabel.textContent = "Filter Criteria"
-    barLabel.setAttribute("class", "f1 text-gray text-semibold");
-    div.appendChild(barLabel);
-    */
+    /**
+     * Main button area
+     */
+    this._topNav = document.createElement("div");
+    this._topNav.setAttribute("class", "analysis__filter_main");
+    outerDiv.appendChild(this._topNav);
+
+    this._filterNavDiv = document.createElement("div");
+    this._filterNavDiv.setAttribute("class", "analysis__filter_nav");
+    this._filterNavDiv.style.paddingRight = "16px";
+    this._topNav.appendChild(this._filterNavDiv);
 
     const filterButton = document.createElement("filter-data-button");
-    div.appendChild(filterButton);
-
-    this._filterString = document.createElement("div");
-    this._filterString.setAttribute("class", "analysis__filter_string");
-    this._filterString.style.marginLeft = "10px";
-    div.appendChild(this._filterString);
-
-    this._filterStringDiv = document.createElement("div");
-    this._filterStringDiv.setAttribute("class", "px-2 py-2");
-    this._filterString.appendChild(this._filterStringDiv);
+    this._filterNavDiv.appendChild(filterButton);
 
     this._algoButton = document.createElement("algorithm-button");
-    this._algoButton.hideNewAlgorithm();
-    div.appendChild(this._algoButton);
+    this._filterNavDiv.appendChild(this._algoButton);
+
+
+    /**
+     * Filter condition interface
+     */
+
+    this._filterListDiv = document.createElement("div");
+    this._filterListDiv.setAttribute("class", "analysis__filter_conditions_interface px-3 py-3");
+    this._filterListDiv.hidden = true;
+    outerDiv.appendChild(this._filterListDiv);
+
+    this._conditionsDiv = document.createElement("div");
+    this._conditionsDiv.setAttribute("class", "analysis__filter_conditions_list");
+    this._filterListDiv.appendChild(this._conditionsDiv);
+
+    var footerDiv = document.createElement("div");
+    footerDiv.setAttribute("class", "modal__footer d-flex mt-6");
+    this._filterListDiv.appendChild(footerDiv);
+
+    const apply = document.createElement("button");
+    apply.setAttribute("class", "btn btn-clear f2");
+    apply.textContent = "Search";
+    apply.style.height = "32px";
+    footerDiv.appendChild(apply);
+
+    const cancel = document.createElement("button");
+    cancel.setAttribute("class", "btn btn-clear btn-charcoal f2");
+    cancel.style.height = "32px";
+    cancel.textContent = "Cancel";
+    footerDiv.appendChild(cancel);
+
+    /**
+     * Filter condition pill boxes
+     */
+    this._filterStringDiv = document.createElement("div");
+    this._filterStringDiv.setAttribute("class", "analysis__filter_string");
+    this._filterStringDiv.style.paddingLeft = "16px";
+    this._topNav.appendChild(this._filterStringDiv);
 
     this._confirmRunAlgorithm = document.createElement("confirm-run-algorithm");
-    div.appendChild(this._confirmRunAlgorithm);
+    this._shadow.appendChild(this._confirmRunAlgorithm);
 
     this._modalNotify = document.createElement("modal-notify");
-    div.appendChild(this._modalNotify);
+    this._shadow.appendChild(this._modalNotify);
 
-    // Main filter dialog the user will interact with to set the data filter
-    this._filterDialog = document.createElement("filter-dialog");
-
-    // Click handler to pop open the corresponding dialog window
     filterButton.addEventListener("click", () => {
-      this._filterDialog.setAttribute("is-open", "");
-      this.dispatchEvent(new Event("openedFilterDialog"));
+      this._filterListDiv.style.display = "block";
+      this._filterNavDiv.style.display = "none";
+      this._filterStringDiv.style.display = "none";
     });
 
-    // Respond to user hitting apply in the filter dialog. Update the data filter
-    // and remove the modal
-    this._filterDialog.addEventListener("newFilterSet", () => {
-
-      // Make the GUI updates and dispatch an event denoting there's a new filter to apply
+    apply.addEventListener("click", () => {
       this.applyFilterData();
-
-      // Close up the dialog
-      this._filterDialog.removeAttribute("is-open");
-      this.dispatchEvent(new Event("closedFilterDialog"));
+      this._filterListDiv.style.display = "none";
+      this._filterNavDiv.style.display = "flex";
+      this._filterStringDiv.style.display = "flex";
     });
 
-    // Respond to user hitting close in the filter dialog. Don't update the data filter
-    // but remove the modal
-    this._filterDialog.addEventListener("close", () => {
-      this._filterDialog.removeAttribute("is-open");
-      this.dispatchEvent(new Event("closedFilterDialog"));
+    cancel.addEventListener("click", () => {
+      this._filterListDiv.style.display = "none";
+      this._filterNavDiv.style.display = "flex";
+      this._filterStringDiv.style.display = "flex";
     });
 
     // Respond to user requesting to run an algorithm
@@ -124,16 +146,16 @@ class FilterInterface extends TatorElement {
    */
   applyFilterData() {
 
-      // Create the filter parmaeters to display in the filter bar
-      this.setFilterBar();
+    // Create the filter parmaeters to display in the filter bar
+    this.setFilterBar();
 
-      // Send out an event to anyone listening that there's a new filter applied
-      this.dispatchEvent(new CustomEvent("filterParameters", {
-        composed: true,
-        detail: {
-          conditions: this._filterDialog.getConditions()
-        }
-      }));
+    // Send out an event to anyone listening that there's a new filter applied
+    this.dispatchEvent(new CustomEvent("filterParameters", {
+      composed: true,
+      detail: {
+        conditions: this._filterConditionGroup.getConditions()
+      }
+    }));
   }
 
   /**
@@ -146,23 +168,17 @@ class FilterInterface extends TatorElement {
 
     // With the data view connected, query the data and setup the UI based
     // on the available types
-    this._filterDialog.data = this._dataView.getAllTypes();
+
+    // Set the GUI elements
+    this._filterConditionGroup = document.createElement("filter-condition-group");
+    this._filterConditionGroup.data = this._dataView.getAllTypes();
+    this._filterConditionGroup._div.style.marginTop = "10px";
+    this._conditionsDiv.appendChild(this._filterConditionGroup);
 
     // Get the algorithm information. If there are no registered algorithms, disable the button
     this._algoButton.setAttribute("project-id", this._dataView.getProjectId());
     this._algoButton.algorithms = this._dataView.getAlgorithms();
-  }
-
-  /**
-   * Sets the parent element that the filter dialog will be added to.
-   * This needs to be set prior to the user clicking on the filter button
-   *
-   * @param {div} parent - Parent div that the dialog will be a child of.
-   *                       This allows the dialog window to pop up with the has-open-modal
-   *                       class attribute enabled.
-   */
-  setDialogParent(parent) {
-    parent.appendChild(this._filterDialog);
+    this._algoButton.hideNewAlgorithm();
   }
 
   /**
@@ -176,20 +192,19 @@ class FilterInterface extends TatorElement {
     }
 
     // Loop through all the conditions and create the string
-    var conditions = this._filterDialog.getConditions();
+    var conditions = this._filterConditionGroup.getConditions();
     for (const [index, condition] of conditions.entries()) {
+      const pill = document.createElement("removable-pill");
+      this._filterStringDiv.appendChild(pill);
 
-      var elem = document.createElement("span");
-      elem.setAttribute("class", "text-gray px-1");
-      elem.textContent = condition.getString();
-      this._filterStringDiv.appendChild(elem);
-
-      if (index != conditions.length - 1) {
-        var elem = document.createElement("span");
-        elem.setAttribute("class", "text-purple px-1");
-        elem.textContent = "AND";
-        this._filterStringDiv.appendChild(elem);
-      }
+      pill.setAttribute("class", "py-1 d-flex");
+      pill.style.marginRight = "5px";
+      pill.init(condition.getString(), 0);
+      pill.addEventListener("removeId", evt => {
+        conditions.splice(index, 1);
+        this._filterConditionGroup.setConditions(conditions);
+        this.applyFilterData();
+      });
     }
   }
 
@@ -198,7 +213,7 @@ class FilterInterface extends TatorElement {
    * @param {array} val - List of FilterConditionData objects
    */
   setFilterConditions(val) {
-    this._filterDialog.setConditions(val);
+    this._filterConditionGroup.setConditions(val);
     this.setFilterBar();
   }
 }

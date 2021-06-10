@@ -7,11 +7,10 @@ class FilterConditionGroup extends TatorElement {
     super();
 
     this._div = document.createElement("div");
-    this._div.setAttribute("class", "analysis__filter_condition_group py-3")
     this._shadow.appendChild(this._div);
 
     var headerDiv = document.createElement("div");
-    headerDiv.textContent = "Conditions";
+    headerDiv.textContent = "Add Condition";
     headerDiv.setAttribute("class", "d-flex flex-items-center text-semibold text-gray f2");
     this._div.appendChild(headerDiv);
 

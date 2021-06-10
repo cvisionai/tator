@@ -44,7 +44,6 @@
     this.main.appendChild(filterDiv);
 
     this._filterView = document.createElement("filter-interface");
-    this._filterView.setDialogParent(this._shadow);
     filterDiv.appendChild(this._filterView);
 
     // Respond to events from the filter interface
