@@ -102,6 +102,7 @@ Steps
 1. Repeat step 18 using the current time in the timeline.
 1. Repeat the above steps with a multi-view video.
 1. Open both single video and multi-view medias in a new tab. Verify there are no errors and video starts downloading when switching to the tab.
+1. Open a single video. Zoom in a section in the video timeline. Scrub using the zoomed scrub bar and verify scrub works and the bounds are within the zoomed section. Repeat with a multi-view video.
 
 
 ## Video Settings Tests
