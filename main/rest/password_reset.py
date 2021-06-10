@@ -28,9 +28,10 @@ class PasswordResetListAPI(BaseListView):
             raise RuntimeError(f"Email {email} is not registered with a user!")
         if users.count() > 1:
             raise RuntimeError(f"Email {email} is in use by multiple users!")
-        reset = PasswordReset(user=users[0],
+        user = users[0]
+        reset = PasswordReset(user=user,
                               reset_token=uuid.uuid1())
-        url = f"{os.getenv('MAIN_HOST')}/password-reset?reset_token={reset.reset_token}"
+        url = f"{os.getenv('MAIN_HOST')}/password-reset?reset_token={reset.reset_token}&user={user.id}"
         if settings.TATOR_EMAIL_ENABLED:
             email_response = TatorSES().email(
                 sender=settings.TATOR_EMAIL_SENDER,
