@@ -81,7 +81,7 @@ def create_test_algorithm(user, name, project):
         files_per_job=1,
         description="test description",
         categories=["categoryA", "categoryB"],
-        parameters=[{"name": "param-name", "dtype": "param-dtype"}]
+        parameters=[{"name": "param-name", "value": "param-dtype"}]
     )
     obj.manifest.save(
         name='asdf.yaml',
