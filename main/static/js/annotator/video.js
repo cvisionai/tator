@@ -2329,7 +2329,8 @@ class VideoCanvas extends AnnotationCanvas {
     // Start the FPS monitor once we start playing
     if (this._diagTimeout == null)
     {
-      this._diagTimeout = setTimeout(() => {this.diagThread(Date.now());}, schedDiagInterval);
+      const lastTime = performance.now();
+      this._diagTimeout = setTimeout(() => {this.diagThread(lastTime);}, schedDiagInterval);
     }
 
     let increment = 0;
@@ -2383,7 +2384,7 @@ class VideoCanvas extends AnnotationCanvas {
   diagThread(last)
   {
     const AUDIO_CHECK_INTERVAL = 1; // This could be tweaked if we are too CPU intensive
-    var diagInterval = Date.now()-last;
+    var diagInterval = performance.now()-last;
     var calculatedFPS = (this._fpsDiag / diagInterval)*1000.0;
     var loadFPS = ((this._fpsLoadDiag / diagInterval)*1000.0);
     var targetFPS = this._motionComp.targetFPS;
@@ -2444,9 +2445,10 @@ class VideoCanvas extends AnnotationCanvas {
       this._videoObject.media_files["streaming"][this._seek_idx].resolution[0],
       this._videoObject.id);
 
+    last = performance.now();
     if (this._direction!=Direction.STOPPED)
     {
-      this._diagTimeout = setTimeout(() => {this.diagThread(Date.now())}, 2000.0);
+      this._diagTimeout = setTimeout(() => {this.diagThread(last);}, 2000.0);
     }
   }
 
@@ -2626,7 +2628,7 @@ class VideoCanvas extends AnnotationCanvas {
           var end = ranges.end(rangeIdx);
           var start = ranges.start(rangeIdx);
 
-          if (this._direction == Direction.FORWARD)
+          if (this._direction == Direction.FORWARD || this._direction == Direction.STOPPED)
           {
             var timeToEnd = end - currentTime;
           }
