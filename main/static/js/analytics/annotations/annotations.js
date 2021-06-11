@@ -72,13 +72,6 @@
     this.aside.appendChild(this._panelContainer);
 
 
-    // Settings lock
-    this._settings._lock.addEventListener("click", evt => {
-      const locked = this._settings._lock._pathLocked.style.display != "none";
-      const permissionValue = locked ? "View Only" : "Can Edit";
-      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-      this._panelContainer.dispatchEvent(panelPermissionEvt);
-    });
 
     //
     /* Other */
@@ -101,6 +94,17 @@
 
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
+
+    // Set lock value
+    if (this._settings.hasAttribute("lock")) {
+      let settingsLock = this._settings.getAttribute("lock");
+
+      if (settingsLock === "1") {
+        console.log("open the lock");
+        this._settings._lock.unlock();
+        this._panelContainer.setAttribute("permissionValue", "Can Edit");
+      }
+    }
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
@@ -162,10 +166,6 @@
         modelData : this._modelData
       } );
 
-      // Init history & check if state is stored in URL, update default states
-      this.history = new FilterHistoryManagement({ _paginationState : this._paginationState, _filterState : this._filterState });
-      //this._checkHistoryState();
-
       // Init Card Gallery and Right Panel
       this._cardGallery({ 
         filterState : this._filterState, 
@@ -182,6 +182,20 @@
       // Listen for filter events
       this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
 
+      // Settings lock value
+      this._settings._lock.addEventListener("click", evt => {
+        const locked = this._settings._lock._pathLocked.style.display != "none";
+        const permissionValue = locked ? "View Only" : "Can Edit";
+        const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+        this._panelContainer.dispatchEvent(panelPermissionEvt);
+
+        if (locked) {
+          this._settings.setAttribute("lock", 0);
+        } else {
+          this._settings.setAttribute("lock", 1);
+        }
+        //window.history.pushState({}, "", this._settings.getURL());
+      });
     });
   }
 
@@ -199,22 +213,6 @@
 
   static get observedAttributes() {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
-  }
-
-
-  _checkHistoryState(){
-    // If there was a param string, these objects would not be empty
-    const statesObj = this.history._readQueryParams();
-    //console.log(statesObj);
-    // If the history returns non-empty objects, update our local state
-    if(statesObj.filtState !== {} && statesObj.filtState !== null) 
-    {
-      this._filterState = statesObj.filtState;
-    }
-    if(statesObj.pagState !== {} && statesObj.pagState !== null)
-    {
-      this._paginationState = statesObj.pagState;
-    } 
   }
 
   _cardGallery({ filterState, paginationState}) {

@@ -52,13 +52,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
       panelContainer,
       pageModal,
       modelData,
-      galleryContainer
+      galleryContainer,
+      analyticsSettings
    }) {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
       this.pageModal = pageModal;
       this.modelData = modelData;
       this.galleryContainer = galleryContainer;
+      this.analyticsSettings = analyticsSettings;
 
       // Possibly remove this so we can have navigation controls
       // this.panelContainer._panelTop._topBarArrow.hidden = true;
@@ -87,8 +89,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             this._numFiles.textContent = totalText;
 
              if(this.modelData._states.length > 0){
-               this._addSliders({ states: this.modelData._states });
-
+                this._addSliders({ states: this.modelData._states });
              }
          }         
       }    
@@ -103,6 +104,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          let counter = 0;
 
          const slider = document.createElement("entity-gallery-slider");
+         slider.setAttribute("id", state.id);
          slider.entityFormChange = this.entityFormChange.bind(this);
          slider.stateFormChange = this.stateFormChange.bind(this);
          slider.mediaFormChange = this.mediaFormChange.bind(this);
@@ -132,15 +134,23 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
          slider.addEventListener("click", (e) => {
             if (!slider.main.classList.contains("active")) {
-               //when it is clicked, set main to active for this, and remove for others
-               for(let s of this._sliderElements) {
+               // This sliderEl is active, the rest are inactive
+               for (let s of this._sliderElements) {
                   s.main.classList.remove("active");
-                  const inactiveEvent = new Event("slider-inactive");
-                  s.dispatchEvent(inactiveEvent);
+                  s.dispatchEvent(new Event("slider-inactive"));
                }
+
                slider.main.classList.add("active");
-               const activeEvent = new CustomEvent("slider-active", { detail: { target: e.target } });
-               slider.dispatchEvent(activeEvent);
+               slider.dispatchEvent(new Event("slider-active"));
+
+               slider.scrollIntoView({
+                  behavior: "smooth",
+                  block: "end",
+                  inline: "nearest"
+               });
+
+               this.analyticsSettings.setAttribute("selectedState", state.id);
+               //window.history.pushState({}, "", this.analyticsSettings.getURL());
             }
             // } else { 
             //       
@@ -179,10 +189,48 @@ class CollectionsGallery extends EntityCardSlideGallery {
                      counter++;
                   }
                }
-            }    
+            }
+
          }
-     
+         if (this.analyticsSettings.hasAttribute("selectedState")) {
+            console.log("Has selected state ........ !");
+            //for (let s of this._sliderElements) {
+            let settingsState = Number(this.analyticsSettings.getAttribute("selectedState"));
+            let sliderId = Number(slider.getAttribute("id"));
+            if (settingsState == sliderId) {
+               //this._makeSliderActive(slider, sliderId)
+               console.log("Found the selected state slider!");
+               // This sliderEl is active, the rest are inactive
+               slider.main.classList.add("active");
+               slider.dispatchEvent(new Event("slider-active"));
+               slider.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "nearest"
+               });
+            }
+            //}
+
+         }
+
       }
+
+
+   }
+
+   _makeSliderActive(sliderEl, stateId) {
+      // This sliderEl is active, the rest are inactive
+      sliderEl.main.classList.add("active");
+      sliderEl.dispatchEvent(new Event("slider-active"));
+
+      for (let s of this._sliderElements) {
+         s.main.classList.remove("active");
+         s.dispatchEvent(new Event("slider-inactive"));
+      }
+
+      this.analyticsSettings.setAttribute("selectedState", stateId);
+
+      return sliderEl.scrollIntoView(true);
    }
 
    entityFormChange(e) {

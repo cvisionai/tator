@@ -31,12 +31,15 @@ class AnalyticsSettings extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["filterConditions", "pageSize", "page"];
+    return ["filterConditions", "pageSize", "page", "selectedState", "lock"];
   }
 
   _queryParams(params) {
     if (params == undefined) {
       params = new URLSearchParams(window.location.search)
+    }
+    if (this.hasAttribute("selectedState")) {
+      params.set("selectedState", this.getAttribute("selectedState"));
     }
     if (this.hasAttribute("filterConditions")) {
       params.set("filterConditions", this.getAttribute("filterConditions"));
@@ -47,11 +50,10 @@ class AnalyticsSettings extends TatorElement {
     if (this.hasAttribute("page")) {
       params.set("page", this.getAttribute("page"));
     }
-    if (this._lock._pathLocked.style.display == "block") {
-      params.set("lock", 1);
-    } else {
-      params.set("lock", 0);
+    if (this.hasAttribute("lock")) {
+      params.set("lock", this.getAttribute("lock"));
     }
+
     return params;
   }
 
@@ -82,6 +84,15 @@ class AnalyticsSettings extends TatorElement {
     }
   }
 
+  getLock() {
+    if (this.hasAttribute("lock")) {
+      return Number(this.getAttribute("lock"));
+    }
+    else {
+      return NaN;
+    }
+  }
+
   getURL() {
     const searchParams = new URLSearchParams(window.location.search);
     var url = window.location.origin + window.location.pathname;
@@ -99,6 +110,13 @@ class AnalyticsSettings extends TatorElement {
     }
     if (searchParams.has("page")) {
       this.setAttribute("page", searchParams.get("page"));
+    }
+    if (searchParams.has("lock")) {
+      console.log("Search params has lock with value : " + searchParams.get("lock"));
+      this.setAttribute("lock", searchParams.get("lock"));
+    }
+    if (searchParams.has("selectedState")) {
+      this.setAttribute("selectedState", searchParams.get("selectedState"));
     }
   }
 }

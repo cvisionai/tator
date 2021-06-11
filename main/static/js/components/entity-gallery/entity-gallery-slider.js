@@ -48,20 +48,20 @@ class EntityGallerySlider extends TatorElement {
       this.modelData = modelData;
       this.slideCardData = slideCardData;
 
-      // console.log("::::::::::::::::::slideCardData");
-      // console.log(slideCardData);
-      this.addEventListener("slider-active", (e) => {
-         //console.log("Slider chosen, show first card");
+      this.addEventListener("slider-active", () => {
+         this.styleDiv.classList.add("open");
          this._ul.classList.add("open");
 
          for (let idx = 0; idx < this._cardElements.length; idx++) {
             // if they directly chose a card, that's great stop there....
             let listEl = this._cardElements[idx].card._li;
+            console.log(listEl);
+            console.log(listEl.classList.contains("is-selected"));
             if (listEl.classList.contains("is-selected")) {
                return false;
             }
-
          }
+
          // if you got here, they just clicked the slider box, select the first card
          if (this._cardElements[0] && this._cardElements[0].card) {
             return this._cardElements[0].card.click();
@@ -107,15 +107,15 @@ static get observedAttributes() {
   }
 
    /* Init function to show and populate gallery w/ pagination */
-   show(sliderData) {
-      // Hide all cards' panels and de-select
-      for (let idx = 0; idx < this._cardElements.length; idx++) {
-         this._cardElements[idx].card._deselectedCardAndPanel();
-      }
+   // show(sliderData) {
+   //    // Hide all cards' panels and de-select
+   //    for (let idx = 0; idx < this._cardElements.length; idx++) {
+   //       this._cardElements[idx].card._deselectedCardAndPanel();
+   //    }
 
-      // Append the cardList
-      this.makeCards(cardList.cards)
-   }
+   //    // Append the cardList
+   //    this.makeCards(cardList.cards)
+   // }
 
    /**
     * Updates the specific card's thumbnail image
@@ -206,6 +206,13 @@ static get observedAttributes() {
             annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
             annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
+            if (this.panelContainer.hasAttribute("permissionValue")) {
+               let permissionVal = this.panelContainer.getAttribute("permissionValue");
+               annotationPanel.entityData.setAttribute("permission", permissionVal);
+               annotationPanel.stateData.setAttribute("permission", permissionVal);
+               annotationPanel.mediaData.setAttribute("permission", permissionVal);
+            }
+
             // when lock changes set attribute on forms to "View Only" / "Can Edit"
             this.panelContainer.addEventListener("permission-update", (e) => {
                annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
@@ -285,8 +292,6 @@ static get observedAttributes() {
             this._ul.appendChild(card);
          }
    }
-
-
 
 }
 

@@ -259,7 +259,6 @@ FILES = \
     components/success-light.js \
     components/warning-light.js \
     components/name-dialog.js \
-    components/filter-history-management.js \
     components/filter-data-button.js \
     components/filter-condition.js \
     components/filter-condition-group.js \

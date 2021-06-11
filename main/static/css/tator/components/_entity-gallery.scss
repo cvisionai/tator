@@ -216,7 +216,11 @@ collections-card {
 }
 
 .entity-gallery-slider__ul-container {
-  overflow: hidden;
+  overflow: auto;
+
+  &.open {
+    overflow: hidden;
+  }
 }
 
 
@@ -227,13 +231,6 @@ collections-card {
   grid-template-columns: minmax(272px, 1fr);
   width: max-content;
   overflow: hidden;
-  // background-image: linear-gradient(
-  //   to left,
-  //   $color-charcoal--light 5px,
-  //   transparent 5px
-  // );
-
-  
 
   &.open {
     display: grid;
