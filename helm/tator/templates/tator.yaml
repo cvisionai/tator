@@ -48,6 +48,9 @@
 {{- $expireAnnouncementSettings := dict "Values" .Values "name" "expire-announcements-cron" "app" "expire-announcements" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"expireannouncements\"]" "schedule" "50 3 * * *" }}
 {{include "tatorCron.template" $expireAnnouncementSettings }}
 ---
+{{- $expirePasswordResetSettings := dict "Values" .Values "name" "expire-password-resets-cron" "app" "expire-password-resets" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"expirepasswordresets\"]" "schedule" "40 * * * *" }}
+{{include "tatorCron.template" $expirePasswordResetSettings }}
+---
 {{- end }}
 {{- if .Values.requireHttps }}
 {{- if .Values.certCron.enabled }}
