@@ -597,6 +597,8 @@ class Algorithm(Model):
         default=1,
         validators=[MinValueValidator(1),]
     )
+    categories = ArrayField(CharField(max_length=128), default=list, null=True)
+    parameters = JSONField(default=list, null=True, blank=True)
 
     def __str__(self):
         return self.name
