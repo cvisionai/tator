@@ -2521,6 +2521,12 @@ class VideoCanvas extends AnnotationCanvas {
 
   onDemandDownloadPrefetch()
   {
+    if (this._onDemandDownloadTimeout)
+    {
+      clearTimeout(this._onDemandDownloadTimeout);
+      this._onDemandDownloadTimeout=null;
+      this._dlWorker.postMessage({"type": "onDemandShutdown"});
+    }
     // Prefetch ondemand download data so it's ready to go.
     this._onDemandInit = false;
     this._onDemandInitSent = false;
