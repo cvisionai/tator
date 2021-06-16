@@ -429,7 +429,9 @@ class AnnotationMulti extends TatorElement {
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
         video.seekFrame(this_frame, video.drawFrame)
-          .then(this._lastScrub = Date.now());
+              .then(() => {
+		  this._lastScrub = Date.now();
+	      });
       }
     }
   }
@@ -467,16 +469,19 @@ class AnnotationMulti extends TatorElement {
       let primeFrame = this._videos[this._longest_idx].currentFrame();
       let prime_fps = this._fps[this._longest_idx];
       this._lastScrub = Date.now();
-      for (const video of that._videos)
+      for (let idx = 0; idx < this._videos.length; idx++)
       {
-        let idx = 0; idx < this._videos.length; idx++
         let video = this._videos[idx];
         let this_frame = Math.round(primeFrame * (this._fps[idx]/prime_fps));
         if (this_frame != video.currentFrame())
         {
-          video.seekFrame(this_frame, video.drawFrame, true).then(this._lastScrub = Date.now());
+            video.seekFrame(this_frame, video.drawFrame, true).then(() => {
+		this._lastScrub = Date.now();
+	    });
         }
+	      video.onDemandDownloadPrefetch(true);
       };
+      this.handleNotReadyEvent();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     })
     .catch(() => {
@@ -510,6 +515,7 @@ class AnnotationMulti extends TatorElement {
     this._currentFrameInput.classList.remove("has-border");
     this._currentFrameInput.classList.remove("is-invalid");
     this.goToFrame(frame);
+    this.checkAllReady();
   }
 
   /**
@@ -558,6 +564,7 @@ class AnnotationMulti extends TatorElement {
     this._currentTimeInput.classList.remove("has-border");
     this._currentTimeInput.classList.remove("is-invalid");
     this.goToFrame(frame);
+    this.checkAllReady();
   }
 
   set permission(val) {
@@ -775,23 +782,6 @@ class AnnotationMulti extends TatorElement {
       wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
 
-      roi_vid.addEventListener("playbackReady", (evt) =>
-      {
-        if (evt.detail.playbackReadyId == this._playbackReadyId)
-        {
-          console.log(`waitPlayback Rx'd IDs - ${vid_id} ${this._playbackReadyId}`);
-          this._playbackReadyCount += 1;
-          if (this._playbackReadyCount == this._numVideos)
-          {
-            console.log(`disabling waitPlayback ID - ${this._playbackReadyId}`);
-            for (var video of this._videos)
-            {
-              video.waitPlayback(false, this._playbackReadyId);
-            }
-          }
-        }
-      });
-
       // Setup addons for multi-menu and initialize the gridview
       this.assignToGrid(false);
       this.setupMultiMenu(vid_id);
@@ -833,6 +823,7 @@ class AnnotationMulti extends TatorElement {
         {
           setup_video(idx, info[idx]);
         }
+        this.handleNotReadyEvent();
         this._fps_of_max = fps_of_max;
         this._totalTime.textContent = "/ " + this._frameToTime(max_frames);
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
@@ -1252,6 +1243,63 @@ class AnnotationMulti extends TatorElement {
                                   500);
   }
 
+  checkAllReady()
+  {
+    for (let idx = 0; idx < this._videos.length; idx++)
+    {
+	    if (this._videos[idx]._onDemandPlaybackReady != true)
+	    {
+        this.handleNotReadyEvent();
+        return;
+	    }
+    }
+  }
+
+  handleNotReadyEvent()
+  {
+    if (this._handleNotReadyTimeout != null)
+    {
+      console.log("Already handling a not ready event");
+      return;
+    }
+    this._play._button.setAttribute("disabled","");
+    // Use some spaces because the tooltip z-index is wrong
+    this._play.setAttribute("tooltip", "    Video is buffering");
+    this._rewind.setAttribute("disabled","")
+    this._fastForward.setAttribute("disabled","");
+
+    let check_ready = () => {
+      this._handleNotReadyTimeout = null;
+      let not_ready = false;
+      for (let idx = 0; idx < this._videos.length; idx++)
+      {
+	      if (this._videos[idx]._onDemandPlaybackReady != true)
+	      {
+          this._videos[idx].onDemandDownloadPrefetch(true);
+	        not_ready = true;
+	      }
+      }
+      if (not_ready == true)
+      {
+        this._handleNotReadyTimeout = setTimeout(() => {
+          this._handleNotReadyTimeout = null;
+          this.handleNotReadyEvent();
+        }, 1500);
+      }
+      if (not_ready == false)
+      {
+        this._play._button.removeAttribute("disabled");
+        this._rewind.removeAttribute("disabled")
+        this._fastForward.removeAttribute("disabled");
+        this._play.removeAttribute("tooltip");
+      }
+    };
+
+    this._handleNotReadyTimeout = setTimeout(check_ready,
+                                             1500);
+
+  }
+
   play()
   {
     if (this._rate > 4.0)
@@ -1283,6 +1331,15 @@ class AnnotationMulti extends TatorElement {
       }
     }
 
+    for (let idx = 0; idx < this._videos.length; idx++)
+    {
+	    if (this._videos[idx]._onDemandPlaybackReady != true)
+	    {
+	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
+	      this.handleNotReadyEvent();
+	      return;
+	    }
+    }
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
@@ -1292,21 +1349,17 @@ class AnnotationMulti extends TatorElement {
       let playing = false;
       this._playbackReadyId += 1;
       this._playbackReadyCount = 0;
-      console.log(`waitPlayback (playForward) - ${this._playbackReadyId}`);
-      this.goToFrame(this._videos[this._longest_idx].currentFrame()).then(() => {
-        let prime_fps = this._fps[this._longest_idx];
-        for (let idx = 0; idx < this._videos.length; idx++)
-        {
-          let video = this._videos[idx];
-          video.waitPlayback(true, this._playbackReadyId);
-          video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
-          playing |= video.play();
-        }
-        if (playing)
-        {
-          this._play.removeAttribute("is-paused");
-        }
-      });
+      let prime_fps = this._fps[this._longest_idx];
+      for (let idx = 0; idx < this._videos.length; idx++)
+      {
+	let video = this._videos[idx];
+	video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
+	playing |= video.play();
+      }
+      if (playing)
+      {
+	this._play.removeAttribute("is-paused");
+      }
       this.syncCheck();
     }
   }
@@ -1342,6 +1395,15 @@ class AnnotationMulti extends TatorElement {
       }
     }
 
+    for (let idx = 0; idx < this._videos.length; idx++)
+    {
+	    if (this._videos[idx]._onDemandPlaybackReady != true)
+	    {
+	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
+        this.handleNotReadyEvent();
+        return;
+	    }
+    }
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
@@ -1352,22 +1414,18 @@ class AnnotationMulti extends TatorElement {
       this._playbackReadyId += 1;
       this._playbackReadyCount = 0;
       this._pauseId = this._playbackReadyId;
-      console.log(`waitPlayback (playBackwards) - ${this._playbackReadyId}`);
-      this.goToFrame(this._videos[this._longest_idx].currentFrame()).then(() => {
-        let prime_fps = this._fps[this._longest_idx];
-        for (let idx = 0; idx < this._videos.length; idx++)
-        {
-          let video = this._videos[idx];
-          video.waitPlayback(true, this._playbackReadyId);
-          video.pause();
-          video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
-          playing |= video.playBackwards();
-          if (playing)
-          {
-            this._play.removeAttribute("is-paused");
-          }
-        }
-      });
+      let prime_fps = this._fps[this._longest_idx];
+      for (let idx = 0; idx < this._videos.length; idx++)
+      {
+	let video = this._videos[idx];
+	video.pause();
+	video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
+	playing |= video.playBackwards();
+	if (playing)
+	{
+	  this._play.removeAttribute("is-paused");
+	}
+      }
       this.syncCheck();
     }
   }
@@ -1387,6 +1445,7 @@ class AnnotationMulti extends TatorElement {
       this._play.setAttribute("is-paused", "");
     }
     clearTimeout(this._syncThread);
+    this.goToFrame(this._videos[this._longest_idx].currentFrame());
   }
 
   refresh() {
@@ -1442,7 +1501,7 @@ class AnnotationMulti extends TatorElement {
 
   /**
    * Expected to be set by something like annotation-page.
-   * @param {tator.Media object} val 
+   * @param {tator.Media object} val
    */
   setAvailableQualities(val) {
     if (val.media_files && 'streaming' in val.media_files)
@@ -1528,7 +1587,13 @@ class AnnotationMulti extends TatorElement {
       p_list.push(video.gotoFrame(Math.min(this_frame,video._numFrames-1), true));
       idx++;
     }
-    return Promise.all(p_list);
+    let coupled_promise = new Promise((resolve,_) => {
+      Promise.all(p_list).then(() =>{
+        this.handleNotReadyEvent();
+        resolve();
+      });
+    });
+    return coupled_promise;
   }
 
   selectNone() {
