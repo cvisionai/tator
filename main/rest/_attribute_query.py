@@ -110,7 +110,8 @@ def get_attribute_es_query(query_params, query, bools, project,
 
         annotation_search = query_params.get('annotation_search')
         if annotation_search is not None:
-            annotation_search_query = {'has_child': {'query_string': {'query': annotation_search}}}
+            annotation_search_query = {'has_child': {'type': 'annotation',
+                                                     'query': {'query_string': {'query': annotation_search}}}}
             query['query']['bool']['filter'].append(annotation_search_query)
 
     else:
@@ -150,7 +151,8 @@ def get_attribute_es_query(query_params, query, bools, project,
 
         media_search = query_params.get('media_search')
         if media_search is not None:
-            media_search_query = {'has_parent': {'query_string': {'query': media_search}}}
+            media_search_query = {'has_parent': {'parent_type': 'media',
+                                                 'query': {'query_string': {'query': media_search}}}}
             query['query']['bool']['filter'].append(media_search_query)
 
         if modified is not None:
