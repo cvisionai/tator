@@ -334,7 +334,16 @@ class CollectionsGallery extends EntityCardSlideGallery {
          values: { attributes: e.detail.values },
          type: "State"
       }).then((data) => {
-         //#TODO
+         console.log(data);
+
+         // Find the right slider
+         for (let s of this._sliderElements) {
+            if (s.id == e.detail.id) {
+               for (let c of s._cardElements) {
+                  c.annotationPanel.stateData.updateValues({ newValues: data });
+               }
+            }
+         }
       });
    }
 

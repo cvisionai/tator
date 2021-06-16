@@ -2,7 +2,7 @@ class EntityGalleryPanel extends TatorElement {
     constructor() {
       super();
 
-      // Panel Container
+      // Panel 
       this._main = document.createElement("div");
       this._main.setAttribute("class", "entity-panel px-3");
       this._main.style.marginTop = "-20px"
@@ -64,8 +64,7 @@ class EntityGalleryPanel extends TatorElement {
     }
 
   async init( {
-    cardObj,
-    includeStateData = false
+    cardObj
   }){
     this.cardObj = cardObj;
   

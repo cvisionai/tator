@@ -65,6 +65,10 @@ class EntityGalleryPanelForm extends TatorElement {
       this.dispatchEvent(new CustomEvent("save", detail));
     }
   }
+
+  updateValues({ newValues }) {
+    this._attributes.setValues(newValues);
+  }
 }
 
 customElements.define("entity-gallery-panel-form", EntityGalleryPanelForm);
