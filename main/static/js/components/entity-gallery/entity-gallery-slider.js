@@ -55,8 +55,8 @@ class EntityGallerySlider extends TatorElement {
          for (let idx = 0; idx < this._cardElements.length; idx++) {
             // if they directly chose a card, that's great stop there....
             let listEl = this._cardElements[idx].card._li;
-            console.log(listEl);
-            console.log(listEl.classList.contains("is-selected"));
+            //console.log(listEl);
+            //console.log(listEl.classList.contains("is-selected"));
             if (listEl.classList.contains("is-selected")) {
                return false;
             }
@@ -78,8 +78,8 @@ class EntityGallerySlider extends TatorElement {
       });
 
       this.addEventListener("new-card", (e) => {
-         console.log("New card event triggered! Index "+e.detail.cardIndex+" Data:");
-         console.log(e.detail.cardData[0]);
+         //console.log("New card event triggered! Index "+e.detail.cardIndex+" Data:");
+         //console.log(e.detail.cardData[0]);
          this._addCard(e.detail.cardIndex, e.detail.cardData[0], cardType);
       });
 

@@ -17,8 +17,8 @@ class CollectionsCard extends EntityCard {
   
 
   init({obj, panelContainer, annotationPanelDiv}){
-    console.log("collections card")
-    console.log(obj);
+    // console.log("collections card")
+    // console.log(obj);
     this._styledDiv.classList.add("dark-card");
     this._styledDiv.classList.remove("py-2");
     // ID is title
@@ -126,7 +126,7 @@ class CollectionsCard extends EntityCard {
   }
 
   setImageStatic(image) {
-    console.log("setImageStatic");
+    //console.log("setImageStatic");
     this.setAttribute("thumb", image);
   }
 

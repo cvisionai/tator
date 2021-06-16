@@ -162,7 +162,7 @@ class CollectionSlideCardData extends HTMLElement {
             haveSlideCardShells();
 
             this._modelData.getLocalizationGraphic(l.id).then((image) => {
-               console.log("getLocalizationGraphic for this Loc resolved, id: "+l.id);
+               //console.log("getLocalizationGraphic for this Loc resolved, id: "+l.id);
                this.dispatchEvent(new CustomEvent("setSlideCardImage", {
                   composed: true,
                   detail: {

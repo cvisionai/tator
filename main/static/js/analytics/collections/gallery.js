@@ -28,6 +28,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._numFiles.setAttribute("class", "text-gray px-2");
       header.appendChild(this._numFiles);
 
+      this._panginationLinks = document.createElement("span");
+      this._panginationLinks.setAttribute("class", "");
+      header.appendChild(this._numFiles);
+
       // Count text
       //this._p.classList.add("col-3");
       //this._p.classList.add("px-2");
@@ -35,6 +39,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this.panelContainer = null;
 
       this.sliderList = document.createElement("div");
+      this.sliderList.setAttribute("class", "slider-list");
+      this.sliderList.setAttribute("page", 1);
+
+      this._sliderLists = [];
+      this._sliderLists.push(this.sliderList);
+
       this._sliderContainer.appendChild(this.sliderList);
 
       this.slideCardData = document.createElement("collection-slide-card-data");
@@ -74,28 +84,91 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
 
       // Init slider, which inits inner cards
-      if(this.modelData._states){
-         if (this.modelData._states.total >= this.modelData.getMaxFetchCount()) {
+      if (this.modelData._states && this.modelData._states.states) {
+         console.log("STATES ThhHERE!!!");
+         console.log(this.modelData._states);
+         const statesInfo = this.modelData._states;
+         const states = this.modelData._states.states;
+         if (statesInfo.total >= this.modelData.getMaxFetchCount()) {
             this._numFiles.textContent = `Too many results to preview. Displaying the first ${this.modelData._states.total} results.`
          } else {
-            const total = this.modelData._states.total;
-            let totalText = "";
+            const total = statesInfo.total;
+            let totalText = `Showing ${total} Collections`;
 
-            if(total > (this.modelData._states.paginationStop - this.modelData._states.paginationStart) ){
-               totalText = `Showing ${this.modelData._states.paginationStart} to ${this.modelData._states.paginationStop} of ${total} of  Collections`
-            } else {
-               totalText = `Showing ${total} Collections`
+            if (statesInfo.paginationState && total > statesInfo.paginationState.pageSize) {
+               totalText = `Showing ${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${total} of  Collections`
+
+               // Top settings
+               this._paginator_top.hidden = false;
+               this._paginator_top._pageSize = statesInfo.paginationState.pageSize;
+               this._paginator_top.init(total, statesInfo.paginationState);
+               this._paginator_top.addEventListener("selectPage", this._paginateGallery.bind(this));
+
+               // Bottom settings
+               this._paginator.hidden = false;
+               this._paginator._pageSize = statesInfo.paginationState.pageSize;
+               this._paginator.init(total, statesInfo.paginationState);
+               this._paginator.addEventListener("selectPage", this._paginateGallery.bind(this));
             }
+
             this._numFiles.textContent = totalText;
 
-             if(this.modelData._states.length > 0){
-                this._addSliders({ states: this.modelData._states });
-             }
-         }         
-      }    
+            if (states.length > 0) {
+               this._addSliders({ sliderList: this.sliderList, states });
+            }
+         }
+      }
    }
 
-   async _addSliders({ states }) {
+   _paginateGallery(evt) {
+      console.log(evt.detail)
+      const statesInfo = this.modelData._states;
+
+      // set state
+      statesInfo.paginationState.start = evt.detail.start;
+      statesInfo.paginationState.stop = evt.detail.stop;
+      statesInfo.paginationState.page = evt.detail.page;
+      statesInfo.paginationState.pageSize = evt.detail.pgsize;
+      statesInfo.paginationState.init = false;
+
+      this._paginationUpdate(statesInfo);
+
+      this.analyticsSettings.setAttribute("pagesize", statesInfo.paginationState.pageSize);
+      this.analyticsSettings.setAttribute("page", statesInfo.paginationState.page);
+      window.history.pushState({}, "", this.analyticsSettings.getURL());
+   }
+
+   async _paginationUpdate(statesInfo) {
+      const newSliderIndex = statesInfo.paginationState.page - 1;
+      // update paginator
+      this._paginator_top.setValues(statesInfo.paginationState);
+      this._paginator.setValues(statesInfo.paginationState);
+
+      // Add new states
+      if (this._sliderLists[newSliderIndex]) {
+         for (let list of this._sliderLists) {
+            list.hidden = true;
+         }
+         this._sliderLists[newSliderIndex].hidden = false;
+      } else {
+         const newStates = await this.modelData._paginateStatesFetch();
+
+         for (let list of this._sliderLists) {
+            list.hidden = true;
+         }
+
+         let newSliderList = document.createElement("div");
+         newSliderList.setAttribute("class", "slider-list");
+         newSliderList.setAttribute("page", statesInfo.paginationState.page);
+         this._sliderLists.push(newSliderList);
+
+         this._addSliders({ sliderList: newSliderList, states: newStates });
+         this._sliderContainer.appendChild(newSliderList);
+      }
+      this._numFiles.textContent = `Showing ${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${statesInfo.total} of  Collections`;
+   }
+
+   async _addSliders({ sliderList, states }) {
       
       // Append the sliders
       for (let state of states) {
@@ -124,11 +197,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.appendChild(cardCount);
 
          this._sliderElements.push(slider);
-         this.sliderList.appendChild(slider);
+         sliderList.appendChild(slider);
 
          // tell the panel about these cards
          // this.panelContainer._panelTop.panelNav.pushNavData({
-         //    sliderIndex: (this.sliderList.length - 1),
+         //    sliderIndex: (sliderList.length - 1),
          //    entityList: slider._cardElements
          // });
 

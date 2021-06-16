@@ -92,6 +92,7 @@ class AnalyticsCollections extends TatorPage {
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then( () => {
       this._modelData.collectionsInit(this.acceptedTypes).then(() => {
+
         // Init panel side behavior
         this._panelContainer.init({ 
             main: this.main, 
@@ -110,21 +111,6 @@ class AnalyticsCollections extends TatorPage {
           analyticsSettings: this._settings
         });
 
-        // Init Card Gallery and Right Panel
-        // this._cardGallery({
-        //   filterState: this._filterState,
-        //   paginationState: this._paginationState
-        // });
-
-        // // Listen for pagination events
-        // this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-        // this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-
-        // this._filterResults._paginator.setValues(this._paginationState);
-        // this._filterResults._paginator_top.setValues(this._paginationState);
-
-
-
         // Settings lock value
         this._settings._lock.addEventListener("click", evt => {
           const locked = this._settings._lock._pathLocked.style.display != "none";
@@ -140,8 +126,6 @@ class AnalyticsCollections extends TatorPage {
           //window.history.pushState({}, "", this._settings.getURL());
         });
 
-        // // Listen for filter events
-        // this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
         this.loading.hideSpinner();
         this.hideDimmer();
 
@@ -165,6 +149,8 @@ class AnalyticsCollections extends TatorPage {
   static get observedAttributes() {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
+
+
 
 
   // Page dimmer handler

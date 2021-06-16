@@ -14,8 +14,8 @@ class TatorData {
     this._versions = [];
     this._sections = [];
     this._algorithms = [];
-
-    this._states = [];
+    this._stateTypes = []
+    this._states = {};
 
     this._maxFetchCount = 10000;
   }
@@ -1116,55 +1116,90 @@ class TatorData {
    * - Current endpoints default to pagination to 25 #todo allow pagination param
   */
   async collectionsInit(acceptedAssoc) {
-    const stateTypes = await this.getStateTypes();
-    const typeData = {};
-    let searchMeta = "";
-    const typeIds = stateTypes.filter(type => acceptedAssoc.includes(type.association)).map(type => {
-      typeData[type.id] = type;
+    this._stateTypes = await this.getStateTypes();
+    this._states.total = 0;
+    this.stateTypeData = {};
+    let searchParam = "";
+    // NA #todo
+    const pageSize = 3;
+    this._states.paginationState = {
+      pageSize,
+      page: 1,
+      start: 0,
+      stop: pageSize,
+      init: true
+    };
+
+    const typeIds = this._stateTypes.filter(type => acceptedAssoc.includes(type.association)).map(type => {
+      this.stateTypeData[type.id] = type;
       return type.id;
     });
 
     //console.log(typeIds);
     if(typeIds && typeIds.length > 1){
-      searchMeta = `_meta:(${typeIds.join(" OR ")})`;
+      let esQuery = `_meta:(${typeIds.join(" OR ")})`;
+      searchParam = `?search=${encodeURIComponent(esQuery)}`
     } else if(typeIds && typeIds.length == 1) {
-      searchMeta = `_meta:(${typeIds[0]})`;
+      searchParam = `?type=${typeIds[0]}`;
     }
 
-    this._states = {};
-    this._states.total = 0
+    // If we have type ids, and search meta created
+    if (searchParam !== "") {
+      // save this if we need to paginate this state list
+      this._states.searchParam = searchParam;
 
-    if(searchMeta !== "") {
-      let stateCount = 0;
-      
+      // Get state count #todo- "search" not working so adding by type
       for(let t of typeIds){
-        stateCount += await this.getStateCount({
+        this._states.total += await this.getStateCount({
           params: `?type=${t}`
         });
       }
 
-      this._states = await this.getStates({
-        params: `?search=${encodeURIComponent(searchMeta)}`
+      // get relevant states
+      this._states.states = await this.getStates({
+        params: this._states.searchParam,
+        dataStart: this._states.paginationState.start,
+        dataStop: this._states.paginationState.stop
       });
 
-      this._states.map(state => {
+      console.log("STATES HERE!!!");
+      console.log(this._states);
+
+      // add accessible type data to the state
+      this._states.states.map(state => {
         // pass along some data we already fetch about the association, and state name to view with the state
-        state.typeData = typeData[state.meta];
+        state.typeData = this.stateTypeData[state.meta];
         return state;
       });
-
-      this._states.total = stateCount;
-      this._states.paginationStart = 0;
-      this._states.paginationStop = 25;
     }
 
     return this._states;
   }
 
+  async _paginateStatesFetch() {
+    // get relevant states
+    let newStates = await this.getStates({
+      params: this._states.searchParam,
+      dataStart: this._states.paginationState.start,
+      dataStop: this._states.paginationState.stop
+    });
+
+    // add accessible type data to the state
+    newStates.map(state => {
+      // pass along some data we already fetch about the association, and state name to view with the state
+      state.typeData = this.stateTypeData[state.meta];
+      return state;
+    });
+
+    this._states.states = [...this._states.states, ...newStates];
+
+    return newStates;
+  }
+
   /**
    * Retrieves state types
    */
-  async getStateTypes({ params = "?", dataStart = 0, dataStop = 25  } = {}) {
+  async getStateTypes({ params = "?", dataStart = 0, dataStop = 1000 } = {}) {
     const response = await fetch(`/rest/StateTypes/${this._project}${params}&start=${dataStart}&stop=${dataStop}`, {
       method: "GET",
       mode: "cors",
@@ -1200,7 +1235,8 @@ class TatorData {
   }
 
   /**
-   * Retrieves states (start and stop) 
+   * Retrieves states (start and stop)
+   * # todo - endpoint bug this works better always sending start and stop for now
    */
   async getStates({ params = "?", dataStart = 0, dataStop = 25 } = {}) {
     const response = await fetch(`/rest/States/${this._project}${params}&start=${dataStart}&stop=${dataStop}`, {
