@@ -1437,7 +1437,8 @@ class VideoCanvas extends AnnotationCanvas {
           }
 
           var playCallback = function () {
-            console.log("******* restarting onDemand: Playing");
+              console.log("******* restarting onDemand: Playing");
+	    that.onDemandDownloadPrefetch();
             that._playGenericOnDemand(that._direction)
           };
 
