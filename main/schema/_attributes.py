@@ -15,8 +15,8 @@ attribute_filter_parameter_schema = [
         'schema': {'type': 'string'},
         'examples': {
             'no_search': {
-                'summary': 'No filter',
-                'value': '*',
+                'summary': 'No search',
+                'value': '',
             },
             'basic': {
                 'summary': 'Generic search',

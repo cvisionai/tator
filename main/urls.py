@@ -7,12 +7,15 @@ from django.conf import settings
 from django.contrib.auth.views import PasswordChangeView
 from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LoginView
 
 from rest_framework.schemas import get_schema_view
 
 from .views import APIBrowserView
 from .views import MainRedirect
 from .views import RegistrationView
+from .views import PasswordResetRequestView
+from .views import PasswordResetView
 from .views import ProjectsView
 from .views import AccountProfileView
 from .views import TokenView
@@ -65,18 +68,21 @@ urlpatterns = [
          name='anonymous-gateway'),
     path('registration', RegistrationView.as_view(), name='registration'),
     path('token', TokenView.as_view(), name='token'),
+    path('accounts/password_change/', PasswordChangeView.as_view()),
+    path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
+         name='password_change_done'),
+    path('accounts/logout/', LogoutView.as_view()),
+    path('accounts/login/', LoginView.as_view(extra_context={'email_enabled': settings.TATOR_EMAIL_ENABLED}), name='login'),
 ]
 
 if settings.COGNITO_ENABLED:
     urlpatterns += [
-        path('accounts/password_change/', PasswordChangeView.as_view()),
-        path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
-             name='password_change_done'),
-        path('accounts/logout/', LogoutView.as_view()),
         path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
-else:
+
+if settings.TATOR_EMAIL_ENABLED:
     urlpatterns += [
-        path('accounts/', include('django.contrib.auth.urls'))]
+        path('password-reset-request', PasswordResetRequestView.as_view(), name='password-reset-request'),
+        path('password-reset', PasswordResetView.as_view(), name='password-reset')]
 
 # This is used for REST calls
 urlpatterns += [
@@ -316,6 +322,10 @@ urlpatterns += [
     path(
         'rest/Organization/<int:id>',
         OrganizationDetailAPI.as_view(),
+    ),
+    path(
+        'rest/PasswordReset',
+        PasswordResetListAPI.as_view(),
     ),
     path(
         'rest/Permalink/<int:id>',
