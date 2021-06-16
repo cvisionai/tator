@@ -779,23 +779,6 @@ class AnnotationMulti extends TatorElement {
       wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
 
-      roi_vid.addEventListener("playbackReady", (evt) =>
-      {
-        if (evt.detail.playbackReadyId == this._playbackReadyId)
-        {
-          console.log(`waitPlayback Rx'd IDs - ${vid_id} ${this._playbackReadyId}`);
-          this._playbackReadyCount += 1;
-          if (this._playbackReadyCount == this._numVideos)
-          {
-            console.log(`disabling waitPlayback ID - ${this._playbackReadyId}`);
-            for (var video of this._videos)
-            {
-              video.waitPlayback(false, this._playbackReadyId);
-            }
-          }
-        }
-      });
-
       // Setup addons for multi-menu and initialize the gridview
       this.assignToGrid(false);
       this.setupMultiMenu(vid_id);
@@ -1287,6 +1270,14 @@ class AnnotationMulti extends TatorElement {
       }
     }
 
+    for (let idx = 0; idx < this._videos.length; idx++)
+    {
+	if (this._videos[idx]._onDemandPlaybackReady != true)
+	{
+	    console.info(`Video ${idx} not yet ready, ignoring play request.`);
+	    return;
+	}
+    }
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
@@ -1300,7 +1291,6 @@ class AnnotationMulti extends TatorElement {
       for (let idx = 0; idx < this._videos.length; idx++)
       {
 	let video = this._videos[idx];
-	video.waitPlayback(true, this._playbackReadyId);
 	video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
 	playing |= video.play();
       }
@@ -1343,6 +1333,14 @@ class AnnotationMulti extends TatorElement {
       }
     }
 
+    for (let idx = 0; idx < this._videos.length; idx++)
+    {
+	if (this._videos[idx]._onDemandPlaybackReady != true)
+	{
+	    console.info(`Video ${idx} not yet ready, ignoring play request.`);
+	    return;
+	}
+    }
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
@@ -1353,12 +1351,10 @@ class AnnotationMulti extends TatorElement {
       this._playbackReadyId += 1;
       this._playbackReadyCount = 0;
       this._pauseId = this._playbackReadyId;
-      console.log(`waitPlayback (playBackwards) - ${this._playbackReadyId}`);
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++)
       {
 	let video = this._videos[idx];
-	video.waitPlayback(true, this._playbackReadyId);
 	video.pause();
 	video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
 	playing |= video.playBackwards();
