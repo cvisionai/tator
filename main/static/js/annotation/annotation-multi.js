@@ -515,6 +515,7 @@ class AnnotationMulti extends TatorElement {
     this._currentFrameInput.classList.remove("has-border");
     this._currentFrameInput.classList.remove("is-invalid");
     this.goToFrame(frame);
+    this.checkAllReady();
   }
 
   /**
@@ -563,6 +564,7 @@ class AnnotationMulti extends TatorElement {
     this._currentTimeInput.classList.remove("has-border");
     this._currentTimeInput.classList.remove("is-invalid");
     this.goToFrame(frame);
+    this.checkAllReady();
   }
 
   set permission(val) {
