@@ -858,7 +858,7 @@ class MotionComp {
     for (const canidate of mode.keys())
     {
       let occurance = mode.get(canidate)
-      if (occurance > maxOccurance)
+      if (canidate > 0 && occurance > maxOccurance)
       {
         maxOccurance = occurance;
         this._monitorFps = canidate;
