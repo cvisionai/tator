@@ -2295,6 +2295,17 @@ class VideoCanvas extends AnnotationCanvas {
     console.log(`_playGenericOnDemand (ID:${this._videoObject.id}) Setting direction ${direction}`);
     this._direction=direction;
 
+    // If we are going backwards re-init the buffers
+    // as we are optimized for forward playback on pause.
+    if (this._direction == Direction.BACKWARDS)
+    {
+      this._onDemandInit = false;
+      this._onDemandInitSent = false;
+      this._onDemandPlaybackReady = false;
+      this._onDemandFinished = false;
+      this._videoElement[this._play_idx].resetOnDemandBuffer();
+      this.onDemandDownload(true);
+    }
     // Reset the GPU buffer on a new play action
     this._draw.clear();
 
