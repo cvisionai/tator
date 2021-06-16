@@ -105,7 +105,6 @@ class DateTimeInput extends TatorElement {
          let date = new Date(val);
          let minuteWithOffset = (date.getMinutes() + date.getTimezoneOffset());
          date.setMinutes(minuteWithOffset);
-         console.log(date.toString());
 
          let year = date.getFullYear();
          let month = (Number(date.getMonth()) + 1).toLocaleString('en-US', {
@@ -137,7 +136,6 @@ class DateTimeInput extends TatorElement {
 
          val = dateToString;
       }
-      console.log(val);
       this._input.value = val;
    }
 
