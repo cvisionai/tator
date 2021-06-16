@@ -676,7 +676,7 @@ class AnnotationPlayer extends TatorElement {
 
   checkReady()
   {
-    if (this._video.onDemandPlaybackReady != true)
+    if (this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
     }
@@ -737,7 +737,7 @@ class AnnotationPlayer extends TatorElement {
       }
     }
 
-    if (this._video.onDemandPlaybackReady != true)
+    if (this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
       return;
@@ -770,7 +770,7 @@ class AnnotationPlayer extends TatorElement {
       }
     }
 
-    if (this._video.onDemandPlaybackReady != true)
+    if (this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
       return;
