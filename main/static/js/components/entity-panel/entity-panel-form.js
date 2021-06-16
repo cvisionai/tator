@@ -38,9 +38,8 @@ class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    * @param {Media/Localization} attributePanelData
    */
-  _init(data, attributePanelData, associatedMedia) {
-
-    data.entityType.isTrack = false;
+  _init({ data, attributePanelData, associatedMedia }) {
+    if (data.entityType) data.entityType.isTrack = false;
     this._attributes.dataType = data.entityType;
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);

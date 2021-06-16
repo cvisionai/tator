@@ -306,72 +306,94 @@ class CollectionsGallery extends EntityCardSlideGallery {
       return sliderEl.scrollIntoView(true);
    }
 
+   updateCardData(newCardData) {
+      for (let s of this._sliderElements) {
+         if (newCardData.id in s._currentCardIndexes) {
+            const index = s._currentCardIndexes[newCardData.id];
+            const card = s._cardElements[index].card;
+            s.slideData.updateLocalizationAttributes(card.cardObj).then(() => {
+               card.displayAttributes();
+            });
+         }
+      }
+   }
+
    entityFormChange(e) {
-    console.log(e.detail);
-
-    // @TODO get accurate entity type (other than localization??)
-    return this.formChange({
-      id: e.detail.id,
-      values: { attributes: e.detail.values },
-      type: "Localization"
-    });
-  }
-
-
-   stateFormChange(e) {
-      console.log(e.detail);
-
-      // @TODO get accurate entity type (other than localization??)
-      return this.formChange({
+      this.formChange({
          id: e.detail.id,
          values: { attributes: e.detail.values },
-         type: "State"
+         type: "Localization"
+      }).then((data) => {
+         this.updateCardData(data);
       });
    }
 
-  mediaFormChange(e) {
-    console.log(e.detail);
+   stateFormChange(e) {
+      this.formChange({
+         id: e.detail.id,
+         values: { attributes: e.detail.values },
+         type: "State"
+      }).then((data) => {
+         //#TODO
+      });
+   }
 
-    return this.formChange({
-      id: e.detail.id,
-      values: { attributes: e.detail.values },
-      type: "Media"
-    });
-  }
+   mediaFormChange(e) {
+      this.formChange({
+         id: e.detail.id,
+         values: { attributes: e.detail.values },
+         type: "Media"
+      }).then((data) => {
+        //#TODO
+      });
+   }
 
-  async formChange({ type, id, values } = {}) {
-    const result = await fetch(`/rest/${type}/${id}`, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(values)
-    });
+   async formChange({ type, id, values } = {}) {
+      var result = await fetch(`/rest/${type}/${id}`, {
+         method: "PATCH",
+         mode: "cors",
+         credentials: "include",
+         headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+         },
+         body: JSON.stringify(values)
+      });
 
-    const data = await result.json();
-    let msg = "";
-    if (result.ok) {  
-      if (data.details && data.details.contains("Exception")) {
-        msg = `Error: ${data.message}`
-        Utilities.warningAlert(msg);
+      var data = await result.json();
+      let msg = "";
+      if (result.ok) {
+         if (data.details && data.details.contains("Exception")) {
+            msg = `Error: ${data.message}`
+            Utilities.warningAlert(msg);
+         } else {
+            msg = `${data.message}`
+            Utilities.showSuccessIcon(msg);
+         }
+
       } else {
-        msg = `${data.message}`
-        Utilities.showSuccessIcon(msg);
+         if (data.message) {
+            msg = `Error: ${data.message}`
+         } else {
+            msg = `Error saving ${type}.`
+         }
+         Utilities.warningAlert(msg, "#ff3e1d", false);
       }
 
-    } else {
-      if (data.message) {
-        msg = `Error: ${data.message}`
-      } else {
-        msg = `Error saving ${type}.`
-      }
-      Utilities.warningAlert(msg, "#ff3e1d", false);
-    }
-  }
+      result = await fetch(`/rest/${type}/${id}`, {
+         method: "GET",
+         mode: "cors",
+         credentials: "include",
+         headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+         },
+      });
+      data = await result.json();
+      return data;
+   }
 
 
 }
