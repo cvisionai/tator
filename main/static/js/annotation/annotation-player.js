@@ -459,7 +459,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   /**
-   * Callback used when user clicks on one of the seek bar sliders 
+   * Callback used when user clicks on one of the seek bar sliders
    */
   handleSliderInput(evt) {
     // Along allow a scrub display as the user is going slow
@@ -475,7 +475,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   /**
-   * Callback used when user slides one of the seek bars 
+   * Callback used when user slides one of the seek bars
    */
   handleSliderChange(evt) {
     this._play.setAttribute("is-paused","");
@@ -723,7 +723,7 @@ class AnnotationPlayer extends TatorElement {
                                              750);
 
   }
-  
+
   play()
   {
     if (this._rate > 4.0)
@@ -735,6 +735,12 @@ class AnnotationPlayer extends TatorElement {
         window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
         return;
       }
+    }
+
+    if (this._video.onDemandPlaybackReady != true)
+    {
+      this.handleNotReadyEvent();
+      return;
     }
 
     this.dispatchEvent(new Event("playing", {composed: true}));
@@ -762,6 +768,12 @@ class AnnotationPlayer extends TatorElement {
         window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
         return;
       }
+    }
+
+    if (this._video.onDemandPlaybackReady != true)
+    {
+      this.handleNotReadyEvent();
+      return;
     }
 
     this.dispatchEvent(new Event("playing", {composed: true}));
