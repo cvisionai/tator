@@ -160,6 +160,7 @@ class UserDetailAPI(BaseDetailView):
                 raise ValueError("Reset token is expired or invalid!")
             else:
                 user.set_password(params['password'])
+                user.failed_login_count = 0
         user.save()
         return {'message': f'Updated user {params["id"]} successfully!'}
 
