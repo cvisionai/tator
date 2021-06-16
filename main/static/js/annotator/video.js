@@ -2392,7 +2392,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       // Done playing, clear playback.
-      if (audioEligible && this._audioPlayer.paused)
+      if (this._audioEligible && this._audioPlayer.paused)
       {
         this._audioPlayer.pause();
       }
@@ -2452,7 +2452,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         if (this._allowSafeMode) {
           console.warn(`(ID:${this._videoObject.id}) Detected slow performance, entering safe mode.`);
-  
+
           this.dispatchEvent(new Event("safeMode"));
           this._motionComp.safeMode();
           this.rateChange(this._playbackRate);
@@ -2709,7 +2709,7 @@ class VideoCanvas extends AnnotationCanvas {
               // Since we are requesting more data, trim the buffer
               needMoreData = true;
 
-              if (this._direction == Direction.FORWARD)
+              if (this._direction == Direction.FORWARD || this._direction == Direction.STOPPED)
               {
                 var trimEnd = currentTime - 2;
                 if (trimEnd > start && this._playing)
@@ -2756,9 +2756,11 @@ class VideoCanvas extends AnnotationCanvas {
         }
       }
 
-      if (needMoreData && !this._onDemandFinished)
+      if (needMoreData && !this._onDemandFinished && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
       {
         // Kick of the download worker to get the next onDemand segments
+	// Only do this if we are actually playing, if we are stopped but ready
+	// we can wait until the user hits play.
         console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data`);
         this._onDemandPendingDownloads += 1;
         this._dlWorker.postMessage({"type": "onDemandDownload"});
@@ -2780,13 +2782,13 @@ class VideoCanvas extends AnnotationCanvas {
     // This period is quicker when we have not begun playback
     if (!this._onDemandPlaybackReady)
     {
-      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 100);
+      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 50);
     }
     else
     {
       if (!this._onDemandFinished && !inhibited)
       {
-        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 100);
+        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 50);
       }
     }
   }
