@@ -46,6 +46,7 @@ class AnnotationMulti extends TatorElement {
     const timelineDiv = document.createElement("div");
     timelineDiv.setAttribute("class", "scrub__bar d-flex flex-items-center flex-grow px-4");
     playerDiv.appendChild(timelineDiv);
+    this._timelineDiv = timelineDiv;
 
     const timeDiv = document.createElement("div");
     timeDiv.setAttribute("class", "d-flex flex-items-center flex-justify-between");
@@ -82,6 +83,15 @@ class AnnotationMulti extends TatorElement {
     this._domParents = []; //handle defered loading of video element
     seekDiv.appendChild(this._slider);
     outerDiv.appendChild(seekDiv);
+
+    this._zoomSliderDiv = document.createElement("div");
+    this._zoomSliderDiv.style.marginTop = "10px";
+    outerDiv.appendChild(this._zoomSliderDiv);
+
+    this._zoomSlider = document.createElement("seek-bar");
+    this._zoomSlider.changeVisualType("zoom");
+    this._zoomSliderDiv.hidden = true;
+    this._zoomSliderDiv.appendChild(this._zoomSlider);
 
     var innerDiv = document.createElement("div");
     this._timelineD3 = document.createElement("timeline-d3");
@@ -145,75 +155,24 @@ class AnnotationMulti extends TatorElement {
     this._timelineMore.addEventListener("click", () => {
       this._displayTimelineLabels = !this._displayTimelineLabels;
       this._timelineD3.showFocus(this._displayTimelineLabels);
-      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight;
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
       window.dispatchEvent(new Event("resize"));
     });
 
     this._slider.addEventListener("input", evt => {
-      // Along allow a scrub display as the user is going
-      // slow
-      const now = Date.now();
-      const frame = Number(evt.target.value);
-      const waitOk = now - this._lastScrub > this._scrubInterval;
-      if (waitOk) {
-        play.setAttribute("is-paused","");
-        let prime_fps = this._fps[this._longest_idx];
-        for (let idx = 0; idx < this._videos.length; idx++)
-        {
-          let video = this._videos[idx];
-          let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
-          video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
-          video.seekFrame(this_frame, video.drawFrame)
-            .then(this._lastScrub = Date.now());
-        }
-      }
+      this.handleSliderInput(evt);
     });
 
     this._slider.addEventListener("change", evt => {
-      play.setAttribute("is-paused","");
-      this.dispatchEvent(new Event("displayLoading", {composed: true}));
+      this.handleSliderChange(evt);
+    });
 
-      // Only use the current frame to prevent glitches
-      let frame = this._videos[this._longest_idx].currentFrame();
-      if (evt.detail)
-      {
-        frame = evt.detail.frame;
-      }
+    this._zoomSlider.addEventListener("input", evt => {
+      this.handleSliderInput(evt);
+    });
 
-      var seekPromiseList = [];
-      let prime_fps = this._fps[this._longest_idx];
-      for (let idx = 0; idx < this._videos.length; idx++)
-      {
-        let video = this._videos[idx];
-        let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
-        video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
-        const seekPromise = video.seekFrame(this_frame, video.drawFrame, true);
-        seekPromiseList.push(seekPromise);
-      }
-
-      // It's possible that the prime video will be out of sync with other videos if
-      // there are network seek expired. Until that's addressed, this will verify
-      // the videos are the same frame and if not, it'll attempt to seek to the
-      // prime video's location. This essentially is only a +1 retry.
-      Promise.allSettled(seekPromiseList).then(() => {
-        let primeFrame = this._videos[this._longest_idx].currentFrame();
-        let prime_fps = this._fps[this._longest_idx];
-        this._lastScrub = Date.now();
-        for (const video of that._videos)
-        {
-          let idx = 0; idx < this._videos.length; idx++
-          let video = this._videos[idx];
-          let this_frame = Math.round(primeFrame * (this._fps[idx]/prime_fps));
-          if (this_frame != video.currentFrame())
-          {
-            video.seekFrame(this_frame, video.drawFrame, true).then(this._lastScrub = Date.now());
-          }
-        };
-        this.dispatchEvent(new Event("hideLoading", {composed: true}));
-      })
-      .catch(() => {
-        this.dispatchEvent(new Event("hideLoading", {composed: true}));
-      });
+    this._zoomSlider.addEventListener("change", evt => {
+      this.handleSliderChange(evt);
     });
 
     play.addEventListener("click", () => {
@@ -280,6 +239,21 @@ class AnnotationMulti extends TatorElement {
       }
     });
 
+    this._timelineD3.addEventListener("zoomedTimeline", evt => {
+      if (evt.detail.minFrame < 1 || evt.detail.maxFrame < 1) {
+        // Reset the slider
+        this._zoomSliderDiv.hidden = true;
+        this._zoomSlider.setAttribute("min", 0);
+        this._zoomSlider.setAttribute("max", this._maxFrameNumber);
+      }
+      else {
+        this._zoomSliderDiv.hidden = false;
+        this._zoomSlider.setAttribute("min", evt.detail.minFrame);
+        this._zoomSlider.setAttribute("max", evt.detail.maxFrame);
+        this._zoomSlider.value = Number(this._currentFrameText.textContent);
+      }
+    });
+
     this._timelineD3.addEventListener("graphData", evt => {
       if (evt.detail.numericalData.length > 0 || evt.detail.stateData.length > 0) {
         this._timelineMore.style.display = "block";
@@ -287,6 +261,8 @@ class AnnotationMulti extends TatorElement {
       else {
         this._timelineMore.style.display = "none";
       }
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
     });
 
     this._timelineD3.addEventListener("select", evt => {
@@ -433,6 +409,79 @@ class AnnotationMulti extends TatorElement {
   disableRateChange()
   {
     this._rateControl.setAttribute("disabled", "");
+  }
+
+  /**
+   * Callback used when user clicks on one of the seek bar sliders
+   */
+  handleSliderInput(evt) {
+    // Along allow a scrub display as the user is going
+    // slow
+    const now = Date.now();
+    const frame = Number(evt.target.value);
+    const waitOk = now - this._lastScrub > this._scrubInterval;
+    if (waitOk) {
+      this._play.setAttribute("is-paused","");
+      let prime_fps = this._fps[this._longest_idx];
+      for (let idx = 0; idx < this._videos.length; idx++)
+      {
+        let video = this._videos[idx];
+        let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
+        video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
+        video.seekFrame(this_frame, video.drawFrame)
+          .then(this._lastScrub = Date.now());
+      }
+    }
+  }
+
+  /**
+   * Callback used when user slides one of the seek bars
+   */
+  handleSliderChange(evt) {
+    this._play.setAttribute("is-paused","");
+    this.dispatchEvent(new Event("displayLoading", {composed: true}));
+
+    // Only use the current frame to prevent glitches
+    let frame = this._videos[this._longest_idx].currentFrame();
+    if (evt.detail)
+    {
+      frame = evt.detail.frame;
+    }
+
+    var seekPromiseList = [];
+    let prime_fps = this._fps[this._longest_idx];
+    for (let idx = 0; idx < this._videos.length; idx++)
+    {
+      let video = this._videos[idx];
+      let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
+      video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
+      const seekPromise = video.seekFrame(this_frame, video.drawFrame, true);
+      seekPromiseList.push(seekPromise);
+    }
+
+    // It's possible that the prime video will be out of sync with other videos if
+    // there are network seek expired. Until that's addressed, this will verify
+    // the videos are the same frame and if not, it'll attempt to seek to the
+    // prime video's location. This essentially is only a +1 retry.
+    Promise.allSettled(seekPromiseList).then(() => {
+      let primeFrame = this._videos[this._longest_idx].currentFrame();
+      let prime_fps = this._fps[this._longest_idx];
+      this._lastScrub = Date.now();
+      for (const video of that._videos)
+      {
+        let idx = 0; idx < this._videos.length; idx++
+        let video = this._videos[idx];
+        let this_frame = Math.round(primeFrame * (this._fps[idx]/prime_fps));
+        if (this_frame != video.currentFrame())
+        {
+          video.seekFrame(this_frame, video.drawFrame, true).then(this._lastScrub = Date.now());
+        }
+      };
+      this.dispatchEvent(new Event("hideLoading", {composed: true}));
+    })
+    .catch(() => {
+      this.dispatchEvent(new Event("hideLoading", {composed: true}));
+    });
   }
 
   /**
@@ -589,6 +638,9 @@ class AnnotationMulti extends TatorElement {
             }
           };
           this._slider.onBufferLoaded(fakeEvt);
+
+          let frame = Math.round(fakeEvt.detail.percent_complete * this._maxFrameNumber);
+          this._zoomSlider.setLoadProgress(frame);
         };
     let setup_video = (idx, video_info) => {
       this._slider.setAttribute("min", 0);
@@ -602,6 +654,7 @@ class AnnotationMulti extends TatorElement {
         prime.addEventListener("frameChange", evt => {
              const frame = evt.detail.frame;
              this._slider.value = frame;
+             this._zoomSlider.value = frame;
              const time = this._frameToTime(frame);
              this._currentTimeText.textContent = time;
              this._currentFrameText.textContent = frame;
@@ -1581,6 +1634,12 @@ class AnnotationMulti extends TatorElement {
     for (let video of this._videos)
     {
       video.updateVideoDiagnosticOverlay(display);
+    }
+  }
+
+  allowSafeMode(allow) {
+    for (let video of this._videos) {
+      video.allowSafeMode = allow;
     }
   }
 

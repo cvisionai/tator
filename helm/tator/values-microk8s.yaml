@@ -167,6 +167,8 @@ minio:
     name: tator
 kube-prometheus-stack:
   enabled: false
+prometheus-adapter:
+  enabled: false
 remoteTranscodes:
   # Typically for dev processing is done on the same machine.
   enabled: false

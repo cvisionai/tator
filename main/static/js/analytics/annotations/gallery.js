@@ -71,11 +71,13 @@ class AnnotationsGallery extends EntityCardGallery {
   _initPanel({
     panelContainer,
     pageModal,
+    cardData,
     modelData
   }){
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
+    this.cardData = cardData;
     this.modelData = modelData;
 
 
@@ -266,29 +268,38 @@ class AnnotationsGallery extends EntityCardGallery {
     }
   }
 
-  entityFormChange(e) {
-    console.log(e.detail);
+  updateCardData(newCardData) {
+    if (newCardData.id in this._currentCardIndexes) {
+      const index = this._currentCardIndexes[newCardData.id];
+      const card = this._cardElements[index].card;
+      this.cardData.updateLocalizationAttributes(card.cardObj).then(() => {
+        card.displayAttributes();
+      });
+    }
+  }
 
-    // @TODO get accurate entity type (other than localization??)
-    return this.formChange({
+  entityFormChange(e) {
+    this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
       type: "Localization"
+    }).then((data) => {
+        this.updateCardData(data);
     });
   }
 
   mediaFormChange(e) {
-    console.log(e.detail);
-
-    return this.formChange({
+    this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
       type: "Media"
+    }).then((data) => {
+      //#TODO
     });
   }
 
   async formChange({ type, id, values } = {}) {
-    const result = await fetch(`/rest/${type}/${id}`, {
+    var result = await fetch(`/rest/${type}/${id}`, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
@@ -300,7 +311,7 @@ class AnnotationsGallery extends EntityCardGallery {
       body: JSON.stringify(values)
     });
 
-    const data = await result.json();
+    var data = await result.json();
     let msg = "";
     if (result.ok) {  
       if (data.details && data.details.contains("Exception")) {
@@ -319,6 +330,19 @@ class AnnotationsGallery extends EntityCardGallery {
       }
       Utilities.warningAlert(msg, "#ff3e1d", false);
     }
+
+    result = await fetch(`/rest/${type}/${id}`, {
+      method: "GET",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    });
+    data = await result.json();
+    return data;
   }
 
   openClosedPanel(e){

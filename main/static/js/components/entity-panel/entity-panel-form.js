@@ -9,11 +9,6 @@ class EntityGalleryPanelForm extends TatorElement {
     this._div = document.createElement("div");
     this._shadow.appendChild(this._div);
 
-    // This object will have properties of the attributeType IDs
-    // Each property will link to the attribute panel itself.
-    this._attributeTypes = {};
-
-
     // #TODO This is a band-aid. We need to modify attribute-panel to not include
     // specific REST calls or utilize a modified form of the SettingsHelper
     this._attributes = document.createElement("attribute-panel");
@@ -21,6 +16,8 @@ class EntityGalleryPanelForm extends TatorElement {
     this._attributes.enableHiddenAttributes = true;
     this._attributes.permission = "View Only"; // start as view only - controlled by lock
     this._div.appendChild(this._attributes);
+
+    this._attributes.addEventListener("change", this._emitChangedData.bind(this));
   }
 
   static get observedAttributes() {
@@ -41,45 +38,33 @@ class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    * @param {Media/Localization} attributePanelData
    */
-  _init({data, attributePanelData, associatedMedia}) {
-    // Hide all of the attribute panels, and then show the one we care about.
-    for (const attrTypeId in this._attributeTypes) {
-      this._attributeTypes[attrTypeId].style.display = "none";
-    }
+  _init(data, attributePanelData, associatedMedia) {
 
-    // Haven't seen this attribute type yet
-    if (data.entityType && !(data.entityType.id in this._attributeTypes)) {
-      data.entityType.isTrack = false;
-      this._attributes.dataType = data.entityType;
-      this._attributes.displaySlider(false);
-      this._attributes.displayGoToTrack(false);
-      this._attributeTypes[data.entityType.id] = this._attributes;
-
-      this._attributes.addEventListener("change", () => {
-        this._values = this._attributes.getValues();
-
-        if (this._values !== null) {
-          const detail = {
-            detail: {
-              id: data.id,
-              values: this._values
-            }
-          };
-          //console.log(detail);
-          this.dispatchEvent(new CustomEvent("save", detail));
-        }
-      });
-
-    } else {
-      this._attributes = this._attributeTypes[data.entityType.id];
-    }
+    data.entityType.isTrack = false;
+    this._attributes.dataType = data.entityType;
+    this._attributes.displaySlider(false);
+    this._attributes.displayGoToTrack(false);
 
     if (associatedMedia) {
       this._attributes.associatedMedia = associatedMedia;
     }
 
+    this._data = data;
     this._attributes.setValues(attributePanelData);
     this._attributes.style.display = "block";
+  }
+
+  _emitChangedData() {
+    var values = this._attributes.getValues();
+    if (values !== null) {
+      const detail = {
+        detail: {
+          id: this._data.id,
+          values: values
+        }
+      };
+      this.dispatchEvent(new CustomEvent("save", detail));
+    }
   }
 }
 

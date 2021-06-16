@@ -177,34 +177,41 @@ body.analysis-annotations-body {
 
 .analysis__filter {
   box-sizing: border-box;
-  height: 100px;
-  width: 100%;
 }
 
 .analysis__filter_interface {
   display: flex;
+  flex-direction: column;
   flex-grow: 1;
+  align-items: stretch;
+  background: $color-charcoal--medium;
+}
+
+.analysis__filter_main {
+  display: flex;
   align-items: center;
-  height: 50px; // Slightly taller than the 46px height of the button
-  border: 2px solid $color-charcoal--medium;
+  justify-content: flex-start;
+}
+
+.analysis__filter_nav {
+  display: flex;
+  align-items: center;
 }
 
 .analysis__filter_string {
   display: flex;
-  overflow: hidden;
-  flex-grow: 1;
-  height: 100%;
-  //border: 1px solid $color-gray--dark50;
-  background: $color-charcoal--medium-dark;
+  flex-wrap: wrap;
 }
 
 .analysis__filter_string div {
   display: flex;
-  border: 1px solid transparent;
-  opacity: 0.6;
-  pointer-events: none;
+  flex-wrap: wrap;
   white-space: nowrap;
   align-items: center;
+}
+
+.analysis__filter_conditions_interface {
+  background: $color-charcoal--medium;
 }
 
 .analysis__filter_condition_group {

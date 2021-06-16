@@ -310,6 +310,12 @@ def user_save(sender, instance, created, **kwargs):
                                        user=instance,
                                        permission='Admin')
 
+class PasswordReset(Model):
+    user = ForeignKey(User, on_delete=CASCADE)
+    reset_token = UUIDField(primary_key=False, db_index=True, editable=False,
+                            default=uuid.uuid1)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+
 class Invitation(Model):
     email = EmailField()
     organization = ForeignKey(Organization, on_delete=CASCADE)
@@ -591,6 +597,8 @@ class Algorithm(Model):
         default=1,
         validators=[MinValueValidator(1),]
     )
+    categories = ArrayField(CharField(max_length=128), default=list, null=True)
+    parameters = JSONField(default=list, null=True, blank=True)
 
     def __str__(self):
         return self.name

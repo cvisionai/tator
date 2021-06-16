@@ -296,11 +296,10 @@ class VideoBufferDemux
    */
   forTime(time, buffer, direction, maxTime)
   {
-    // #TODO This needs to be revisited
-    //if (this._compat)
-    //{
-    //  return this._vidBuffers[0];
-    //}
+    if (this._compat == true)
+    {
+      return this._vidBuffers[0];
+    }
 
     if (buffer == "play")
     {
@@ -1127,6 +1126,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._addVideoDiagnosticOverlay();
     this._ftypInfo = {};
     this._disableScrubBuffer = false;
+    this._allowSafeMode = true;
   }
 
   /**
@@ -1135,6 +1135,10 @@ class VideoCanvas extends AnnotationCanvas {
    */
   disableScrubBuffer() {
     this._disableScrubBuffer = true;
+  }
+
+  set allowSafeMode(val) {
+    this._allowSafeMode = val;
   }
 
   // #TODO Refactor this so that it uses internal variables?
@@ -2196,6 +2200,10 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    // In the event some out of band drawing has happened, make sure to clear any latent
+    // draw buffers.
+    this._draw.beginDraw();
+
     var finalPromise = new Promise((resolve, reject) => {
       var promise = this.seekFrame(parseInt(frameIdx), this.drawFrame, forceSeekBuffer);
       promise.then(() =>
@@ -2444,10 +2452,12 @@ class VideoCanvas extends AnnotationCanvas {
 
           if (that._fpsScore == 0)
           {
-            console.warn("Detected slow performance, entering safe mode.");
-            that.dispatchEvent(new Event("safeMode"));
-            that._motionComp.safeMode();
-            that.rateChange(that._playbackRate);
+            if (this._allowSafeMode) {
+              console.warn("Detected slow performance, entering safe mode.");
+              that.dispatchEvent(new Event("safeMode"));
+              that._motionComp.safeMode();
+              that.rateChange(that._playbackRate);
+            }
           }
         }
 
@@ -2686,11 +2696,13 @@ class VideoCanvas extends AnnotationCanvas {
 
         if (that._fpsScore == 0)
         {
-          console.warn(`(ID:${that._videoObject.id}) Detected slow performance, entering safe mode.`);
+          if (this._allowSafeMode) {
+            console.warn(`(ID:${that._videoObject.id}) Detected slow performance, entering safe mode.`);
 
-          that.dispatchEvent(new Event("safeMode"));
-          that._motionComp.safeMode();
-          that.rateChange(that._playbackRate);
+            that.dispatchEvent(new Event("safeMode"));
+            that._motionComp.safeMode();
+            that.rateChange(that._playbackRate);
+          }
         }
       }
 

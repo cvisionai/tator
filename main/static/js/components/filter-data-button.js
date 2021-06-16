@@ -3,12 +3,15 @@ class FilterDataButton extends TatorElement {
     super();
 
     const label = document.createElement("label");
-    label.setAttribute("class", "btn btn-clear btn-charcoal text-gray");
+    label.setAttribute("class", "btn btn-clear btn-outline f2 px-1");
     this._shadow.appendChild(label);
 
+    label.style.height = "32px";
+    label.style.width = "75px";
+
     const svg = document.createElementNS(svgNamespace, "svg");
-    svg.setAttribute("width", "24");
-    svg.setAttribute("height", "24");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("fill", "none");
     svg.style.fill = "none";

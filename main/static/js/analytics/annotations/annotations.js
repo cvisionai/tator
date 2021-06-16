@@ -1,7 +1,7 @@
 /**
  * Page that displays a grid view of selected annotations
  */
- class AnalyticsAnnotations extends TatorPage {
+class AnalyticsAnnotations extends TatorPage {
   constructor() {
     super();
 
@@ -44,7 +44,6 @@
     this.main.appendChild(filterDiv);
 
     this._filterView = document.createElement("filter-interface");
-    this._filterView.setDialogParent(this._shadow);
     filterDiv.appendChild(this._filterView);
 
     // Respond to events from the filter interface
@@ -82,7 +81,7 @@
 
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
-    this._shadow.appendChild( this.modal );
+    this._shadow.appendChild(this.modal);
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
   }
@@ -152,24 +151,25 @@
       });
 
       // Init panel side behavior
-      this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal, modelData : this._modelData, panelName: "Annotation" });
+      this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData, panelName: "Annotation" });
 
       // Update the card with the localization's associated media
       this.cardData.addEventListener("setMedia", (evt) => {
         this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
       });
-      
+
       // Pass panel and localization types to gallery
-      this._filterResults._initPanel( {
-        panelContainer : this._panelContainer,
-        pageModal : this.modal,
-        modelData : this._modelData
-      } );
+      this._filterResults._initPanel({
+        panelContainer: this._panelContainer,
+        pageModal: this.modal,
+        modelData: this._modelData,
+        cardData: this.cardData
+      });
 
       // Init Card Gallery and Right Panel
-      this._cardGallery({ 
-        filterState : this._filterState, 
-        paginationState : this._paginationState
+      this._cardGallery({
+        filterState: this._filterState,
+        paginationState: this._paginationState
       });
 
       // Listen for pagination events
@@ -215,23 +215,23 @@
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-  _cardGallery({ filterState, paginationState}) {
+  _cardGallery({ filterState, paginationState }) {
     this.loading.showSpinner();
     this.showDimmer();
 
     // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList({filterState, paginationState})
+    this.cardData.makeCardList({ filterState, paginationState })
 
-    .then((cardList) => {
-      // CardList inits Gallery component with cards & pagination on page
-      this._filterResults.show(cardList);
-      this.loading.hideSpinner();
-      this.hideDimmer();
-    });
+      .then((cardList) => {
+        // CardList inits Gallery component with cards & pagination on page
+        this._filterResults.show(cardList);
+        this.loading.hideSpinner();
+        this.hideDimmer();
+      });
   }
 
   // Reset the pagination back to page 0
-  _updateFilterResults(evt){
+  _updateFilterResults(evt) {
     this._filterState.conditionsObject = evt.detail.conditions;
 
     var filterURIString = encodeURIComponent(JSON.stringify(this._filterState.conditionsObject));
@@ -242,11 +242,11 @@
     this._paginationState.start = 0;
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
-    
+
     // updated the card gallery
-    this._cardGallery({ 
-      filterState : this._filterState, 
-      paginationState : this._paginationState
+    this._cardGallery({
+      filterState: this._filterState,
+      paginationState: this._paginationState
     });
 
     this._settings.setAttribute("filterConditions", filterURIString);
@@ -256,7 +256,7 @@
   }
 
   // Handler for pagination click
-  _paginateFilterResults(evt){
+  _paginateFilterResults(evt) {
     // set state
     this._paginationState.start = evt.detail.start;
     this._paginationState.stop = evt.detail.stop;
@@ -265,9 +265,9 @@
     this._paginationState.init = false;
 
     // get the gallery
-    this._cardGallery({ 
-      filterState : this._filterState, 
-      paginationState : this._paginationState
+    this._cardGallery({
+      filterState: this._filterState,
+      paginationState: this._paginationState
     });
 
     // make sure view lined up top and bottom
@@ -280,11 +280,11 @@
   }
 
   // Page dimmer handler
-  showDimmer(){
+  showDimmer() {
     return this.setAttribute("has-open-modal", "");
   }
 
-  hideDimmer(){
+  hideDimmer() {
     return this.removeAttribute("has-open-modal");
   }
 }

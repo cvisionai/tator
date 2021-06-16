@@ -110,6 +110,7 @@ class CustomGenerator(SchemaGenerator):
                 'NotifySpec': notify_spec,
                 'OrganizationSpec': organization_spec,
                 'Organization': organization,
+                'PasswordResetSpec': password_reset_spec,
                 'ProjectSpec': project_spec,
                 'ProjectUpdate': project_update,
                 'Project': project,
