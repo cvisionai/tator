@@ -356,7 +356,7 @@ class TatorData {
    async _getAfterParameter(start, stop, afterMap, url) {
     let afterPromise = Promise.resolve(null);
     var pageParameters;
-    if (stop >= 10000) {
+    if ((start + stop) >= 10000) {
       const afterIndex = 5000 * Math.floor(start / 5000);
       const newStart = start % afterIndex;
       let newStop = stop % afterIndex;
