@@ -243,7 +243,7 @@ class AnnotationsCard extends EntityCard {
 
   cardClickEvent(openFlag = false){
     /* @ "card-click"*/
-    console.log("Card click event triggered (from card.js)");
+    //console.log("Card click event triggered (from card.js)");
     // Send event to panel to hide the localization canvas & title
     let cardClickEvent = new CustomEvent("card-click", { detail : { openFlag, cardObj : this.cardObj } });
     this.dispatchEvent( cardClickEvent );

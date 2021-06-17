@@ -345,7 +345,7 @@ class TatorData {
    * Note: Much of this code has been copied from media-section.js
    *       The constants chosen are based on the Tator endpoint restrictions
    *
-   * The "list" the pagination is operating on is based on the endpointType/endpointQuery.
+   * The "list" the pagination is operating on is based on the url
    *
    * @param {integer} start Desired start index in list
    * @param {integer} stop Desired stop index in list
@@ -355,7 +355,7 @@ class TatorData {
    */
    async _getAfterParameter(start, stop, afterMap, url) {
     let afterPromise = Promise.resolve(null);
-    var afterParameter;
+    var pageParameters;
     if (stop >= 10000) {
       const afterIndex = 5000 * Math.floor(start / 5000);
       const newStart = start % afterIndex;
@@ -364,9 +364,13 @@ class TatorData {
         newStop += 5000;
       }
       afterPromise = this._getAfter(afterIndex, afterMap, url);
+      var afterParameter = await afterPromise;
+      pageParameters = {after: afterParameter, start: newStart, stop: newStop};
     }
-    afterParameter = await afterPromise;
-    return afterParameter;
+    else {
+      pageParameters = {after: null, start: start, stop: stop};
+    }
+    return pageParameters;
   }
 
 
@@ -381,7 +385,7 @@ class TatorData {
    * @param {string} url Tator REST endpoint list call with query but no pagination
    */
   _getAfter(index, afterMap, url) {
-    const recursiveFetch = (params, current) => {
+    const recursiveFetch = (current) => {
       let after = "";
       if (afterMap.has(current - 5000)) {
         after = `&after=${afterMap.get(current - 5000)}`;
@@ -399,15 +403,15 @@ class TatorData {
       .then(data => {
         afterMap.set(current, data[0].id);
         if (current < index) {
-          return recursiveFetch(params, current + 5000);
+          return recursiveFetch(current + 5000);
         }
-        return Promise.resolve(data[0]['id']);
+        return Promise.resolve(data[0].id);
       });
     }
     if (afterMap.has(index)) {
       return Promise.resolve(afterMap.get(index));
     } else {
-      return recursiveFetch(params, 5000);
+      return recursiveFetch(5000);
     }
   }
 
@@ -530,10 +534,10 @@ class TatorData {
     url += `${this._project}?${paramString}`;
     if (!isNaN(listStart) && !isNaN(listStop) && afterMap != null) {
       // Note: & into paramString is taken care of by paramString itself
-      var afterValue = await this._getAfterParameter(listStart, listStop, afterMap, url);
-      url += `&start=${listStart}&stop=${listStop}`;
-      if (afterValue != undefined) {
-        url += `&after=${afterValue}`;
+      var pageValues = await this._getAfterParameter(listStart, listStop, afterMap, url);
+      url += `&start=${pageValues.start}&stop=${pageValues.stop}`;
+      if (pageValues.after != undefined) {
+        url += `&after=${pageValues.after}`;
       }
     }
 
