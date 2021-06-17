@@ -149,8 +149,6 @@ class EntityGalleryPaginator extends TatorElement {
     // Use number of files to update the rest
     this._paginationState = paginationState;
     this._numFiles = numFiles;
-    this._numPages = Math.ceil(this._numFiles / this._pageSize);
-    this._last.textContent = this._numPages;
 
     // Set page based on given start/stop
     const pageNumber = Math.floor(paginationState.start / this._pageSize);
@@ -158,6 +156,8 @@ class EntityGalleryPaginator extends TatorElement {
   }
 
   _setPage(page) {
+    this._numPages = Math.ceil(this._numFiles / this._pageSize);
+    this._last.textContent = this._numPages;
     this._page = page;
     console.log(page);
 
