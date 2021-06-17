@@ -15,7 +15,7 @@ class TatorData {
     this._sections = [];
     this._algorithms = [];
 
-    this._maxFetchCount = 10000;
+    this._maxFetchCount = 100000;
   }
 
   getMaxFetchCount() {
@@ -303,46 +303,6 @@ class TatorData {
     return data;
   }
 
-
-  /**
-   * Returns a data for user with user ID
-   */
-  async getLocalizationCount({params = ""} = {}){
-    const response = await fetch(`/rest/LocalizationCount/${this._project}${params}`, {
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const data = await response.json();
-
-    return data;
-  }
-
-
-  /**
-    * Returns localizations list
-   */
-  async getLocalizations({ params = "", start = 0, stop = 20} = {}){
-    const response = await fetch(`/rest/Localizations/${this._project}?start=${start}&stop=${stop}${params}`, {
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const data = await response.json();
-
-    return data;
-  }
-
   /**
    * Returns a Media data
    */
@@ -382,13 +342,92 @@ class TatorData {
   }
 
   /**
+   * Note: Much of this code has been copied from media-section.js
+   *       The constants chosen are based on the Tator endpoint restrictions
+   *
+   * The "list" the pagination is operating on is based on the endpointType/endpointQuery.
+   *
+   * @param {integer} start Desired start index in list
+   * @param {integer} stop Desired stop index in list
+   * @param {Map} afterMap Specific to the endpoint and search criteria combination. Modified here.
+   * @param {string} url Tator REST endpoint list call with query but no pagination
+   * @returns {integer} Undefined if after parameter is not needed.
+   */
+   async _getAfterParameter(start, stop, afterMap, url) {
+    let afterPromise = Promise.resolve(null);
+    var afterParameter;
+    if (stop >= 10000) {
+      const afterIndex = 5000 * Math.floor(start / 5000);
+      const newStart = start % afterIndex;
+      let newStop = stop % afterIndex;
+      if (newStop < newStart) {
+        newStop += 5000;
+      }
+      afterPromise = this._getAfter(afterIndex, afterMap, url);
+    }
+    afterParameter = await afterPromise;
+    return afterParameter;
+  }
+
+
+  /**
+   * Note: Much of this code has been copied from media-section.js
+   *       The constants chosen are based on the Tator endpoint restrictions
+   *       Constants match up with _getAfterParameter()
+   *
+   * @param {integer} index
+   * @param {string} endpointQuery URL safe query string
+   * @param {Map} afterMap . Modified here.
+   * @param {string} url Tator REST endpoint list call with query but no pagination
+   */
+  _getAfter(index, afterMap, url) {
+    const recursiveFetch = (params, current) => {
+      let after = "";
+      if (afterMap.has(current - 5000)) {
+        after = `&after=${afterMap.get(current - 5000)}`;
+      }
+      return fetch(`${url}&start=4999&stop=5000${after}&presigned=28800`, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        afterMap.set(current, data[0].id);
+        if (current < index) {
+          return recursiveFetch(params, current + 5000);
+        }
+        return Promise.resolve(data[0]['id']);
+      });
+    }
+    if (afterMap.has(index)) {
+      return Promise.resolve(afterMap.get(index));
+    } else {
+      return recursiveFetch(params, 5000);
+    }
+  }
+
+  /**
+   * @param {integer} sectionId - Section ID to convert into the user attribute form for searching
+   * @returns {string} tator_user_section value associated with given section ID
+   */
+   _getTatorUserSection(sectionId) {
+    for (const section of this._sections) {
+      if (section.id == sectionId) {
+        return section.tator_user_sections;
+      }
+    }
+  }
+
+  /**
    * @param {FilterConditionData} filter - Filter to convert
    * @returns {string} Tator REST compliant parameter string
    */
-   _convertFilterForTator(filter) {
-
-    // #TODO This will just assume we are using the user-defined attributes. Allow built-in
-    //       but that will require a specific conversion table
+  _convertFilterForTator(filter) {
 
     // Adjust the modifier to be lucene compliant
     var modifier = filter.modifier;
@@ -416,99 +455,53 @@ class TatorData {
   }
 
   /**
-   * Retrieves the data for a given entity
-   * @param {integer} id
-   * @param {string} entityType - media|localization
+   * @param {string} outputType ids|objects|count
+   * @param {array of FilterConditionData} locFilterData
+   * @param {array of FilterConditionData} mediaFilterData
+   * @param {integer} listStart
+   * @param {integer} listStop
+   * @param {Map} afterMap
+   * @param {array} versionIds
+   * @param {integer} dtype
    */
-  async getDataById(id, entityType) {
+  async _getLocalizationData(
+    outputType,
+    locFilterData,
+    mediaFilterData,
+    listStart,
+    listStop,
+    afterMap,
+    versionIds,
+    dtype) {
 
-    let url = "/rest";
-
-    if (entityType == "localization") {
-      url += "/Localization/";
-    }
-    else if (entityType == "media") {
-      url += "/Media/";
-    }
-
-    url += id;
-
-    var dataPromise = (fetchRetry(url, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    }));
-
-    var outData = await dataPromise.then((response) => {return response.json()});
-    return outData;
-  }
-
-  /**
-   * Gets data from the corresponding Tator REST endpoint
-   * #TODO Currently, this will search through all of a given entity type
-   *
-   * @param {string} outputType -
-   *  ids|objects|count
-   *
-   * @param {array of objects} filterData -
-   *   Objects must have the following:
-   *     .filters {array of FilterConditionData}
-   *     .entityType {object} - media|localization
-   *
-   * @param {integer} dataStart -
-   *   Used in conjunction with dataStop and pagination of data.
-   *   If null, pagination is ignored.
-   *
-   * @param {integer} dataStop -
-   *   Used in conjunction with dataStart and pagination of data.
-   *   If null, pagination is ignored.
-   *
-   * @param #TODO mediaIds
-   *
-   * @param #TODO versionIds
-   *
-   * @param #TODO sectionIds
-   *
-   * @param {integer} dtype - Optional
-   *
-   * @returns {array}
-   *   Results based on outputType and given filterData
-   */
-  async _getData(outputType, filterData, dataStart, dataStop, mediaIds, versionIds, sectionIds, dtype) {
-
-    // #TODO In the future, this may turn into promises per meta/dtype
     var promises = [];
 
-    var entityType;
-    var mediaIds;
     var paramString = "";
-    var paramSearch = "";
-    for (const name in filterData) {
-      entityType = filterData[name].entityType;
-      for (let idx = 0; idx < filterData[name].filters.length; idx++) {
-        paramSearch += encodeURIComponent(this._convertFilterForTator(filterData[name].filters[idx]));
-        if (idx < filterData[name].filters.length - 1) {
-          paramSearch += encodeURIComponent(" AND ");
-        }
+
+    var locSearch = "";
+    for (let idx = 0; idx < locFilterData.length; idx++) {
+      var filter = locFilterData[idx];
+      locSearch += encodeURIComponent(this._convertFilterForTator(filter));
+      if (idx < locFilterData.length - 1) {
+        locSearch += encodeURIComponent(" AND ");
       }
     }
 
-    if (paramSearch) {
-      paramString = "&search=" + paramSearch;
+    if (locSearch) {
+      paramString += "&search=" + locSearch;
     }
 
-    if (mediaIds != undefined && mediaIds.length > 0) {
-      paramString += "&media_id=";
-      for (let idx = 0; idx < mediaIds.length; idx++) {
-        paramString += mediaIds[idx];
-        if (idx < mediaIds.length - 1) {
-          paramString += ","
-        }
+    var mediaSearch = "";
+    for (let idx = 0; idx < mediaFilterData.length; idx++) {
+      var filter = mediaFilterData[idx];
+      mediaSearch += encodeURIComponent(this._convertFilterForTator(filter));
+      if (idx < mediaFilterData.length - 1) {
+        mediaSearch += encodeURIComponent(" AND ");
       }
+    }
+
+    if (mediaSearch) {
+      paramString += "&media_search=" + mediaSearch;
     }
 
     if (versionIds != undefined && versionIds.length > 0) {
@@ -521,168 +514,40 @@ class TatorData {
       }
     }
 
-    if (sectionIds != undefined && sectionIds.length > 0) {
-      paramString += "&section=";
-      for (let idx = 0; idx < sectionIds.length; idx++) {
-        paramString += sectionIds[idx];
-        if (idx < sectionIds.length - 1) {
-          paramString += ","
-        }
-      }
-    }
-
     if (dtype != undefined) {
       paramString += `&type=${dtype}`
     }
 
-    if (paramString === "") {
-      // Note: This is required for a performance boost.
-      paramString += `&search=%2A`
-    }
-
     let url = "/rest";
-    let non_count_url = "/rest";
 
-    if (this._localizationTypes.indexOf(entityType) >= 0) {
-      if (outputType == "count") {
-        url += "/LocalizationCount/";
-        non_count_url += "/Localizations/";
-      }
-      else {
-        url += "/Localizations/";
-      }
-    }
-    else if (this._mediaTypes.indexOf(entityType) >= 0) {
-      if (outputType == "count") {
-        url += "/MediaCount/";
-        non_count_url += "/Medias/";
-      }
-      else {
-        url += "/Medias/";
-      }
-    }
-
-    if (!isNaN(dataStart) && !isNaN(dataStop)) {
-      // Note: & into paramString is taken care of by paramString itself
-      url += `${this._project}?start=${dataStart}&stop=${dataStop}${paramString}`;
-
-      console.log("Getting data with URL: " + url);
-      promises.push(fetchRetry(url, {
-          method: "GET",
-          credentials: "same-origin",
-          headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-          },
-      }));
+    if (outputType == "count") {
+      url += "/LocalizationCount/";
     }
     else {
-      url += `${this._project}?`;
-      non_count_url += `${this._project}?`;
+      url += "/Localizations/";
+    }
 
-      if (outputType == "count") {
-        // Force paginate the counts for speed with many thousands of entries
-
-        let thisStart = 0;
-        let thisAfter = 0;
-        let thisPageSize = 4500; // Error with endpoint when start + stop > 10000
-        let currentCount = 0;
-        let currentUrl;
-
-        var that = this;
-        async function getCount() {
-
-          let countDone = false;
-          let phase = "getEntity";
-
-          while (!countDone) {
-
-            if (phase == "getCount") {
-              phase = "wait";
-
-              currentUrl = url + `start=${thisStart}&stop=${thisPageSize}&after=${thisAfter}${paramString}`;
-              console.log("Getting count data with URL: " + currentUrl);
-              fetchRetry(currentUrl, {
-                method: "GET",
-                credentials: "same-origin",
-                headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-                },
-              }).then((response) => {
-                return response.json();
-              }).then((data) => {
-                currentCount += data;
-                console.log(`count: ${data} totalCount: ${currentCount}`);
-                if (data < thisPageSize || currentCount > that._maxFetchCount) {
-                  countDone = true;
-                }
-                else {
-                  phase = "getEntity";
-                }
-              });
-            }
-            else if (phase == "getEntity") {
-              phase = "wait";
-
-              if (currentCount == 0) {
-                currentUrl = non_count_url + `start=0&stop=1${paramString}`;
-              }
-              else {
-                currentUrl = non_count_url + `start=${thisPageSize - 1}&stop=${thisPageSize}&after=${thisAfter}${paramString}`;
-              }
-              console.log("Getting entity data with URL: " + currentUrl);
-              fetchRetry(currentUrl, {
-                method: "GET",
-                credentials: "same-origin",
-                headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-                },
-              }).then((response) => {
-                return response.json();
-              }).then((data) => {
-
-                if (data.length > 0) {
-                  thisAfter = data[0].id;
-                  phase = "getCount";
-                }
-                else {
-                  countDone = true;
-                }
-              });
-            }
-            else {
-              await new Promise(resolve => {
-                setTimeout(resolve, 100)
-              });
-            }
-          }
-
-          const blob = new Blob([JSON.stringify(currentCount, null, 2)], {type : 'application/json'});
-          return new Response(blob);
-        }
-
-        var thisCountPromise = getCount();
-        promises.push(thisCountPromise);
-      }
-      else {
-        url += `${paramString}`
-        console.log("Getting data with URL: " + url);
-        promises.push(fetchRetry(url, {
-            method: "GET",
-            credentials: "same-origin",
-            headers: {
-              "X-CSRFToken": getCookie("csrftoken"),
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            },
-        }));
+    url += `${this._project}?${paramString}`;
+    if (!isNaN(listStart) && !isNaN(listStop) && afterMap != null) {
+      // Note: & into paramString is taken care of by paramString itself
+      var afterValue = await this._getAfterParameter(listStart, listStop, afterMap, url);
+      url += `&start=${listStart}&stop=${listStop}`;
+      if (afterValue != undefined) {
+        url += `&after=${afterValue}`;
       }
     }
+
+    console.log("Getting data with URL: " + url);
+    promises.push(fetchRetry(url, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+    }));
+
     let resultsJson = [];
     await Promise.all(promises).then((responses) => {
       for (let response of responses) {
@@ -708,228 +573,93 @@ class TatorData {
 
   /**
    * Retrieves a list of localization data matching the filter criteria
-   * #TODO Currently, this will search through all localization types.
    *
    * @param {string} outputType -
-   *  ids|objects|count
+   *    ids|objects|count
    *
    * @param {array of FilterConditionData objects} filters -
    *    List of FilterConditionData to apply
    *    Only conditions associated with media and localizations will be applied.
    *
-   * @param {integer} dataStart -
-   *   Used in conjunction with dataStop and pagination of data.
+   * @param {integer} listStart -
+   *   Used in conjunction with listStop and pagination of data.
    *   If null, pagination is ignored.
    *
-   * @param {integer} dataStop =
-   *   Used in conjunction with dataStart and pagination of data.
+   * @param {integer} listStop =
+   *   Used in conjunction with listStart and pagination of data.
+   *   If null, pagination is ignored.
+   *
+   * @param {Map} afterMap -
+   *   Used in conjunction with the other pagination. Modified here.
    *   If null, pagination is ignored.
    *
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-  async getFilteredLocalizations(outputType, filters, dataStart, dataStop) {
+  async getFilteredLocalizations(outputType, filters, listStart, listStop, afterMap) {
 
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
-    var typeFilters = [];
-    var versionFilters = [];
-    var locGroups = {};
-      this._localizationTypes.forEach(locType => {
-        locGroups[locType.name] = {filters: [], entityType: locType};
-      });
+    var dtypeIds = [];
+    var versionIds = [];
+    var typePromises = [];
 
+    // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
       filters.forEach(filter => {
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
-          mediaFilters.push(filter);
+          if (filter.field == "_section") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "tator_user_sections";
+            newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
+            mediaFilters.push(newFilter);
+          }
+          else {
+            mediaFilters.push(filter);
+          }
         }
         else {
           if (filter.field == "_version") {
-            versionFilters.push(filter);
+            versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
           else if (filter.field == "_dtype") {
-            typeFilters.push(filter);
+            dtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
           else {
             localizationFilters.push(filter);
           }
         }
       });
+    }
 
-      // First, grab the media IDs we care about if there are media filters. Otherwise, ignore.
-      var mediaIds = [];
-      var mediaIdChunks = [];
-      if (mediaFilters.length > 0) {
-        mediaIds = await this.getFilteredMedia("ids", mediaFilters);
-        //console.log("matching mediaIds: " + mediaIds);
-
-        if (mediaIds.length == 0) {
-          // Found no matching media, so bail
-          return [];
-        }
-        else {
-          let idx, idx2;
-          let chunkSize = 400;
-          for (idx = 0, idx2 = mediaIds.length; idx < idx2; idx += chunkSize) {
-            mediaIdChunks.push(mediaIds.slice(idx, idx + chunkSize));
-          }
-        }
-      }
-
-      var versionIds = [];
-      if (versionFilters.length > 0) {
-        for (let idx = 0; idx < versionFilters.length; idx++) {
-          // Expected format (Name (ID:#))
-          // #TODO Maybe this should be moved elsewhere to remove this dependency
-          versionIds.push(Number(versionFilters[idx].value.split('(ID:')[1].replace(")","")));
-        }
-      }
-
-      var dtypeIds = [];
-      if (typeFilters.length > 0) {
-        for (let idx = 0; idx < typeFilters.length; idx++) {
-          // Expected format (type_ID)
-          // #TODO Same comment as versions
-          dtypeIds.push(Number(typeFilters[idx].value.split('(ID:')[1].replace(")","")));
-        }
-      }
-
-      localizationFilters.forEach(filter => {
-        if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
-          locGroups[filter.category].filters.push(filter);
-        }
+    if (dtypeIds.length > 0) {
+      dtypeIds.forEach(dtypeId => {
+        typePromises.push(this._getLocalizationData(
+          outputType,
+          localizationFilters,
+          mediaFilters,
+          listStart,
+          listStop,
+          afterMap,
+          versionIds,
+          dtypeId
+        ));
       });
     }
-
-    // #TODO This process of filtering by dtype list and media id list needs to move into the
-    //       endpoint itself because more data will be obtained here than needed.
-    //
-    //       dataStart/dataStop is used to support pagination.
-
-    var outData = [];
-    var typePromises = [];
-    if (mediaIdChunks.length > 0) {
-
-      if (isNaN(dataStart) || isNaN(dataStop)) {
-        for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
-          if (dtypeIds.length > 0) {
-            dtypeIds.forEach(dtypeId => {
-              typePromises.push(this._getData(outputType, locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds, undefined, dtypeId));
-            });
-          }
-          else {
-            typePromises.push(this._getData(outputType, locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds));
-          }
-        }
-      }
-      else {
-        // Need to find out how many localizations there are per chunk.
-        var locCountPromisesArray = [];
-        for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
-          if (dtypeIds.length > 0) {
-            dtypeIds.forEach(dtypeId => {
-              locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds, undefined, dtypeId));
-            });
-          }
-          else {
-            locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, mediaIdChunks[chunkIdx], versionIds));
-          }
-        }
-        var locCountResults = await Promise.all(locCountPromisesArray);
-
-        // Finally, get the correct set of data now that we know all of the counts.
-        var currentStart = 0;
-        var currentSize;
-        var currentStop;
-        var locCountResultsIdx = 0;
-
-        for (let chunkIdx = 0; chunkIdx < mediaIdChunks.length; chunkIdx++) {
-          if (dtypeIds.length > 0) {
-            dtypeIds.forEach(dtypeId => {
-              currentSize = Number(locCountResults[locCountResultsIdx]);
-              currentStop = currentStart + currentSize;
-              locCountResultsIdx += 1;
-
-              if (dataStop < currentStop || ((dataStart < currentStop) && (dataStop - currentStart >= 0))) {
-                let chunkPageStart = dataStart - currentStart;
-                let chunkPageStop = dataStop - currentStart;
-                if (chunkPageStart < 0) {chunkPageStart = 0;}
-                if (chunkPageStop > 0) {
-                  typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, mediaIdChunks[chunkIdx], versionIds, undefined, dtypeId));
-                }
-              }
-
-              currentStart = currentStop;
-            });
-          }
-          else {
-            currentSize = Number(locCountResults[locCountResultsIdx]);
-            currentStop = currentStart + currentSize;
-            locCountResultsIdx += 1;
-
-            if (dataStop < currentStop || ((dataStart < currentStop) && (dataStop - currentStart >= 0))) {
-              let chunkPageStart = dataStart - currentStart;
-              let chunkPageStop = dataStop - currentStart;
-              if (chunkPageStart < 0) {chunkPageStart = 0;}
-              if (chunkPageStop > 0) {
-                typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, mediaIdChunks[chunkIdx], versionIds));
-              }
-            }
-            else if (isNaN(dataStart) && isNaN(dataStop)) {
-              typePromises.push(this._getData(outputType, locGroups, undefined, undefined, [], versionIds, undefined, dtypeId));
-            }
-
-            currentStart = currentStop;
-          }
-        }
-      }
-    }
     else {
-
-      var locCountPromisesArray = [];
-      if (dtypeIds.length > 0) {
-        dtypeIds.forEach(dtypeId => {
-          locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, [], versionIds, undefined, dtypeId));
-        });
-      }
-      else {
-        locCountPromisesArray.push(this._getData("count", locGroups, undefined, undefined, [], versionIds));
-      }
-      var locCountResults = await Promise.all(locCountPromisesArray);
-
-      if (dtypeIds.length > 0) {
-
-        var currentStart = 0;
-        var currentSize;
-        var currentStop;
-        var locCountResultsIdx = 0;
-        dtypeIds.forEach(dtypeId => {
-          currentSize = Number(locCountResults[locCountResultsIdx]);
-          currentStop = currentStart + currentSize;
-          locCountResultsIdx += 1;
-
-          if (dataStop < currentStop || ((dataStart < currentStop) && (dataStop - currentStart >= 0))) {
-            let chunkPageStart = dataStart - currentStart;
-            let chunkPageStop = dataStop - currentStart;
-            if (chunkPageStart < 0) {chunkPageStart = 0;}
-            if (chunkPageStop > 0) {
-              typePromises.push(this._getData(outputType, locGroups, chunkPageStart, chunkPageStop, [], versionIds, undefined, dtypeId));
-            }
-          }
-          else if (isNaN(dataStart) && isNaN(dataStop)) {
-            typePromises.push(this._getData(outputType, locGroups, undefined, undefined, [], versionIds, undefined, dtypeId));
-          }
-
-          currentStart = currentStop;
-        });
-      }
-      else {
-        typePromises.push(this._getData(outputType, locGroups, dataStart, dataStop, [], versionIds));
-      }
+      typePromises.push(this._getLocalizationData(
+        outputType,
+        localizationFilters,
+        mediaFilters,
+        listStart,
+        listStop,
+        afterMap,
+        versionIds
+      ));
     }
 
+    // Wait for all the data requests to complete. Once complete, return the appropriate data.
     var typeResults = await Promise.all(typePromises);
     var outData;
     if (outputType == "count") {
@@ -951,63 +681,6 @@ class TatorData {
   }
 
   /**
-   * Retrieves a list of media data based on the given filters.
-   * #TODO Currently, this will search through all media types.
-   *
-   * @param {string} outputType -
-   *  ids|objects|count
-   *
-   * @param {array of FilterConditionData} filters -
-   *   List of FilterConditionData to apply
-   *   Only conditions associated with media will be applied
-   *   If there are no filters, this will just return
-   *
-   * @param {integer} dataStart -
-   *   Used in conjunction with dataStop and pagination of data.
-   *   If null, pagination is ignored.
-   *
-   * @param {integer} dataStop =
-   *   Used in conjunction with dataStart and pagination of data.
-   *   If null, pagination is ignored.
-   *
-   * @returns {array of integers} List of media IDs matching the filter criteria
-   */
-  async getFilteredMedia(outputType, filters, dataStart, dataStop) {
-
-    let mediaGroups = {};
-    var sectionFilters = [];
-
-    this._mediaTypes.forEach(mediaType => {
-      mediaGroups[mediaType.name] = {entityType: mediaType, filters: []};
-    });
-
-    if (filters != undefined) {
-      filters.forEach(filter => {
-        if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
-          if (filter.field == "_section") {
-            sectionFilters.push(filter);
-          }
-          else {
-            mediaGroups[filter.category].filters.push(filter);
-          }
-        }
-      });
-    }
-
-    var sectionIds = [];
-    if (sectionFilters.length > 0) {
-      for (let idx = 0; idx < sectionFilters.length; idx++) {
-          // Expected format (Name (ID:#))
-          // #TODO Maybe this should be moved elsewhere to remove this dependency
-          sectionIds.push(Number(sectionFilters[idx].value.split('(ID:')[1].replace(")","")));
-      }
-    }
-
-    var outData = await this._getData(outputType, mediaGroups, dataStart, dataStop, null, null, sectionIds);
-    return outData;
-  }
-
-  /**
    * Launches the given algorithm with the provided parameters
    * @param {string} algorithmName - Name of registered algorithm to launch
    * @param {array} parameters - Array of {name:..., value:...} objects
@@ -1016,14 +689,10 @@ class TatorData {
    */
   async launchAlgorithm(algorithmName, parameters) {
 
-    // #TODO Launching an algorithm requires sending at least one valid media ID.
-    //       Let's just query and grab the first one.
-    var mediaIds = await this.getFilteredMedia("ids", null, 0, 1);
-
     let body = {
       "algorithm_name": algorithmName,
       "extra_params": parameters,
-      "media_ids": mediaIds
+      "media_ids": []
     }
 
     var launched = false;

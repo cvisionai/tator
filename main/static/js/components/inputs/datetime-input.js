@@ -93,7 +93,6 @@ class DateTimeInput extends TatorElement {
 
          val = date.toISOString();
       }
-      console.log(val);
       return val;
    }
 

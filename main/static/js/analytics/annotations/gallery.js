@@ -96,21 +96,12 @@ class AnnotationsGallery extends EntityCardGallery {
   /* Init function to show and populate gallery w/ pagination */
   show(cardList) {
 
-    // Update Heading
-    // if(cardList.filterState.filtered == true) {
-    //   this._ul.innerHTML = "";
-    //   this._h3Text = document.createTextNode("Filtered Annotations");
-    // } else {
-    //   this._ul.innerHTML = "";
-    //   this._h3Text = document.createTextNode("All Annotations");
-    // }
-
-    if (cardList.total >= this.modelData.getMaxFetchCount()) {
-      this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
-    }
-    else {
-      this._numFiles.textContent = `${cardList.total} Results`;
-    }
+   //if (cardList.total >= this.modelData.getMaxFetchCount()) {
+   //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
+   //}
+   //else {
+   this._numFiles.textContent = `${cardList.total} Results`;
+   //}
 
     // Only populate the pagination when the dataset has changed (and therefore the pagination
     // needs to be reinitialized)

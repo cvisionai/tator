@@ -107,9 +107,7 @@
     this._modelData.init().then(() => {
 
       // Init vars for filter state
-      this._filterState = {
-        conditionsObject: this._settings.getFilterConditionsObject()
-      };
+      this._filterConditions = this._settings.getFilterConditionsObject();
 
       // Init vars for pagination state
       let pageSize = this._settings.getPageSize();
@@ -136,7 +134,7 @@
       this._filterDataView = new FilterData(this._modelData);
       this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
-      this._filterView.setFilterConditions(this._filterState.conditionsObject);
+      this._filterView.setFilterConditions(this._filterConditions);
 
       // Card Data class collects raw model and parses into view-model format
       this.cardData = document.createElement("annotation-card-data");
@@ -163,12 +161,12 @@
       } );
 
       // Init history & check if state is stored in URL, update default states
-      this.history = new FilterHistoryManagement({ _paginationState : this._paginationState, _filterState : this._filterState });
+      //this.history = new FilterHistoryManagement({ _paginationState : this._paginationState, _filterState : this._filterState });
       //this._checkHistoryState();
 
       // Init Card Gallery and Right Panel
       this._cardGallery({
-        filterState : this._filterState,
+        filterConditions : this._filterConditions,
         paginationState : this._paginationState
       });
 
@@ -201,30 +199,12 @@
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-
-  _checkHistoryState(){
-    // If there was a param string, these objects would not be empty
-    const statesObj = this.history._readQueryParams();
-    console.log(statesObj);
-    // If the history returns non-empty objects, update our local state
-    if(statesObj.filtState !== {} && statesObj.filtState !== null)
-    {
-      this._filterState = statesObj.filtState;
-    }
-    if(statesObj.pagState !== {} && statesObj.pagState !== null)
-    {
-      this._paginationState = statesObj.pagState;
-    }
-  }
-
-  _cardGallery({ filterState, paginationState}) {
+  _cardGallery({ filterConditions, paginationState}) {
     this.loading.showSpinner();
     this.showDimmer();
 
     // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList({filterState, paginationState})
-
-    .then((cardList) => {
+    this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {
       // CardList inits Gallery component with cards & pagination on page
       this._filterResults.show(cardList);
       this.loading.hideSpinner();
@@ -234,9 +214,9 @@
 
   // Reset the pagination back to page 0
   _updateFilterResults(evt){
-    this._filterState.conditionsObject = evt.detail.conditions;
+    this._filterConditions = evt.detail.conditions;
 
-    var filterURIString = encodeURIComponent(JSON.stringify(this._filterState.conditionsObject));
+    var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
     this._paginationState.init = true;
 
     // @TODO reset to default page size? or keep if something was chosen?
@@ -247,7 +227,7 @@
 
     // updated the card gallery
     this._cardGallery({
-      filterState : this._filterState,
+      filterConditions : this._filterConditions,
       paginationState : this._paginationState
     });
 
@@ -268,7 +248,7 @@
 
     // get the gallery
     this._cardGallery({
-      filterState : this._filterState,
+      filterConditions : this._filterConditions,
       paginationState : this._paginationState
     });
 
