@@ -450,6 +450,15 @@ class AttributePanel extends TatorElement {
           widget.autocomplete = column.autocomplete;
         }
         //widget.autocomplete = column.autocomplete; #TODO can this use autocomplete?
+        if (column.style) {
+          const style_options = column.style.split(' ');
+          if (style_options.includes("disabled")) {
+            widget.permission = "View Only";
+            widget.disabled = true;
+            ignorePermission = true;
+          }
+        }
+
       } else if (column.style) {
         const style_options = column.style.split(' ');
         if (column.dtype == "string" && style_options.includes("long_string")) {

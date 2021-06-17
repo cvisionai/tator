@@ -380,6 +380,12 @@ annotation-player {
       display: block;
     }
   }
+
+  &:disabled,
+  [disabled] {
+    color: $color-gray--dark;
+    cursor: not-allowed;
+  }
 }
 
 .video__pause {

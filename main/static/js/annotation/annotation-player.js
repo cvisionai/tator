@@ -459,7 +459,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   /**
-   * Callback used when user clicks on one of the seek bar sliders 
+   * Callback used when user clicks on one of the seek bar sliders
    */
   handleSliderInput(evt) {
     // Along allow a scrub display as the user is going slow
@@ -475,7 +475,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   /**
-   * Callback used when user slides one of the seek bars 
+   * Callback used when user slides one of the seek bars
    */
   handleSliderChange(evt) {
     this._play.setAttribute("is-paused","");
@@ -491,8 +491,11 @@ class AnnotationPlayer extends TatorElement {
     // Use the hq buffer when the input is finalized
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
+      this._video.onDemandDownloadPrefetch();
+      this.handleNotReadyEvent();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
-    }).catch(() => {
+    }).catch((e) => {
+      console.error(`"ERROR: ${e}`)
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     });
   }
@@ -523,6 +526,7 @@ class AnnotationPlayer extends TatorElement {
     this._currentFrameInput.classList.remove("has-border");
     this._currentFrameInput.classList.remove("is-invalid");
     this.goToFrame(frame);
+    this.checkReady();
   }
 
   /**
@@ -571,6 +575,7 @@ class AnnotationPlayer extends TatorElement {
     this._currentTimeInput.classList.remove("has-border");
     this._currentTimeInput.classList.remove("is-invalid");
     this.goToFrame(frame);
+    this.checkReady();
   }
 
   set permission(val) {
@@ -601,6 +606,7 @@ class AnnotationPlayer extends TatorElement {
         const seekInfo = this._video.getQuality("seek");
         const scrubInfo = this._video.getQuality("scrub");
         const playInfo = this._video.getQuality("play");
+        this.checkReady();
 
         this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
           composed: true,
@@ -668,6 +674,56 @@ class AnnotationPlayer extends TatorElement {
     return this._play.hasAttribute("is-paused");
   }
 
+  checkReady()
+  {
+    if (this._video._onDemandPlaybackReady != true)
+    {
+      this.handleNotReadyEvent();
+    }
+  }
+  handleNotReadyEvent()
+  {
+    if (this._handleNotReadyTimeout != null)
+    {
+      console.log("Already handling a not ready event");
+      return;
+    }
+    this._play._button.setAttribute("disabled","");
+    // Use some spaces because the tooltip z-index is wrong
+    this._play.setAttribute("tooltip", "    Video is buffering");
+    this._rewind.setAttribute("disabled","")
+    this._fastForward.setAttribute("disabled","");
+
+    let check_ready = () => {
+      this._handleNotReadyTimeout = null;
+      let not_ready = false;
+      if (this._video._onDemandPlaybackReady != true)
+      {
+        this._video.onDemandDownloadPrefetch(true);
+        not_ready = true;
+      }
+      if (not_ready == true)
+      {
+        this._handleNotReadyTimeout = setTimeout(() => {
+          this._handleNotReadyTimeout = null;
+          this.handleNotReadyEvent();
+        }, 1500);
+      }
+      if (not_ready == false)
+      {
+        this._play._button.removeAttribute("disabled");
+        this._rewind.removeAttribute("disabled")
+        this._fastForward.removeAttribute("disabled");
+        this._play.removeAttribute("tooltip");
+      }
+    };
+
+    // We can be faster in single play mode
+    this._handleNotReadyTimeout = setTimeout(check_ready,
+                                             750);
+
+  }
+
   play()
   {
     if (this._rate > 4.0)
@@ -679,6 +735,12 @@ class AnnotationPlayer extends TatorElement {
         window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
         return;
       }
+    }
+
+    if (this._video._onDemandPlaybackReady != true)
+    {
+      this.handleNotReadyEvent();
+      return;
     }
 
     this.dispatchEvent(new Event("playing", {composed: true}));
@@ -708,6 +770,12 @@ class AnnotationPlayer extends TatorElement {
       }
     }
 
+    if (this._video._onDemandPlaybackReady != true)
+    {
+      this.handleNotReadyEvent();
+      return;
+    }
+
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
@@ -733,6 +801,7 @@ class AnnotationPlayer extends TatorElement {
       this._video.pause();
       this._play.setAttribute("is-paused", "")
     }
+    this.checkReady();
   }
 
   refresh() {

@@ -704,26 +704,12 @@ onmessage = function(e)
   {
     if (ref.specificBufferInitialized(msg.buf_idx))
     {
-      if (ref.inOnDemandMode())
-      {
-        ref.saveDownloadNextSegmentRequest(msg.buf_idx);
-      }
-      else
-      {
         ref.downloadNextSegment(msg.buf_idx);
-      }
     }
   }
   else if (type == 'seek')
   {
-    if (ref.inOnDemandMode())
-    {
-      ref.saveSeekRequest(msg.buf_idx, msg['frame'], msg['time'])
-    }
-    else
-    {
       ref.downloadForFrame(msg.buf_idx, msg['frame'], msg['time']);
-    }
   }
   else if (type == 'onDemandInit')
   {
