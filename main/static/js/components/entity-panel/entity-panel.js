@@ -14,7 +14,7 @@ class EntityGalleryPanel extends TatorElement {
       this._mediaLinkEl.setAttribute("class", "text-gray hover-text-white f3 clickable float-right");
       this._mediaLinkEl.setAttribute("href", "#");
       this._mediaLinkEl.setAttribute("target", "_blank");
-      this._main.appendChild(this._mediaLinkEl);            
+      this._main.appendChild(this._mediaLinkEl);
 
       // Entity Data heading
       const entityHeading = document.createElement("h3");
@@ -39,26 +39,31 @@ class EntityGalleryPanel extends TatorElement {
       mediaHeading.appendChild(this.goToFrameButton);
       mediaHeading.appendChild(document.createTextNode("Associated Media"));
       this._main.appendChild(mediaHeading)
-      
+
       this.mediaData = document.createElement("entity-gallery-panel-form");
       this._main.appendChild(this.mediaData);
     }
 
-  async init( {
-    cardObj
-  }){
+  /**
+   * Updates both the entity and the media data with the given card object
+   * @param {Object} cardObj
+   */
+  init(cardObj){
     this.cardObj = cardObj;
-  
+
     // Setup linkout and the entity data for panel here
     this._mediaLink = this.cardObj.mediaLink;
     this._mediaLinkEl.setAttribute("href", this._mediaLink );
     this.goToFrameButton.button.setAttribute("href", this._mediaLink);
-    
-    // Init the forms with data
+
     this.entityData._init(this.cardObj, this.cardObj.localization, this.cardObj.mediaInfo.media);
     this.mediaData._init(this.cardObj.mediaInfo, this.cardObj.mediaInfo.media);
   }
 
+  setMediaData(cardObj) {
+    this.cardObj = cardObj;
+    this.mediaData.setValues(this.cardObj.mediaInfo);
+  }
 }
 
 customElements.define("entity-gallery-panel", EntityGalleryPanel);

@@ -54,7 +54,7 @@ class AnnotationCardData extends HTMLElement {
    * @param {array} localizations Localizations to displays in the annotation gallery
    * @returns {Promise}
    */
-   _getCardList(localizations){
+  _getCardList(localizations, medias){
     return new Promise((resolve, reject) => {
 
       let counter = localizations.length;
@@ -79,9 +79,9 @@ class AnnotationCardData extends HTMLElement {
         let posText = `${position + 1} of ${this.cardList.total}`;
 
         let media;
-        for (let idx = 0; idx < this.medias.length; idx++) {
-          if (this.medias[idx].id == mediaId) {
-            media = this.medias[idx];
+        for (let idx = 0; idx < medias.length; idx++) {
+          if (medias[idx].id == mediaId) {
+            media = medias[idx];
             break;
           }
         }
@@ -136,7 +136,7 @@ class AnnotationCardData extends HTMLElement {
     this.cardList.paginationState = paginationState;
 
     // Get the localizations for the current page
-    this.localizations = await this._modelData.getFilteredLocalizations(
+    var localizations = await this._modelData.getFilteredLocalizations(
       "objects",
       filterConditions,
       paginationState.start,
@@ -146,9 +146,9 @@ class AnnotationCardData extends HTMLElement {
     // Query the media data associated with each localization
     var mediaPromises = [];
     var mediaList = [];
-    for (let idx = 0; idx < this.localizations.length; idx++) {
-      if (!mediaList.includes(this.localizations[idx].media)) {
-        mediaList.push(this.localizations[idx].media);
+    for (let idx = 0; idx < localizations.length; idx++) {
+      if (!mediaList.includes(localizations[idx].media)) {
+        mediaList.push(localizations[idx].media);
       }
     }
 
@@ -157,10 +157,10 @@ class AnnotationCardData extends HTMLElement {
     for (let idx = 0; idx < mediaList.length; idx++) {
       mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
     }
-    this.medias = await Promise.all(mediaPromises);
+    var medias = await Promise.all(mediaPromises);
 
     // Now gather all the card information
-    await this._getCardList(this.localizations);
+    await this._getCardList(localizations, medias);
     return this.cardList;
   }
 
@@ -174,6 +174,28 @@ class AnnotationCardData extends HTMLElement {
     cardObj.attributes = locData.attributes;
     cardObj.created = new Date(locData.created_datetime);
     cardObj.modified = new Date(locData.modified_datetime);
+  }
+
+  /**
+   * Updates the media attributes for all cards with the same media ID
+   * @param {integer} mediaId - Media ID to retrieve and update cards with
+   */
+  async updateMediaAttributes(mediaId) {
+
+    var media = await this._modelData.getMedia(mediaId);
+
+    let mediaInfo = {
+      id: mediaId,
+      entityType: this.mediaTypeMap.get(media.meta),
+      attributes: media.attributes,
+      media: media,
+    }
+
+    for (let card of this.cardList.cards) {
+      if (card.mediaId == mediaId) {
+        card.mediaInfo = mediaInfo;
+      }
+    }
   }
 }
 

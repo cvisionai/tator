@@ -133,20 +133,6 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   /**
-   * Updates the specific card's panel's media
-   * @param {integer} id
-   * @param {entityObject} media
-   */
-  updateCardMedia(id, media) {
-    if (id in this._currentCardIndexes) {
-      var info = this._cardElements[this._currentCardIndexes[id]];
-      //#TODO Entity gallery panel needs to be updated so that it can display multiple
-      //      entity attributes (e.g. media associated with the localization)
-      //info.annotationPanel.setMedia(media);
-    }
-  }
-
-  /**
    * Creates the card display in the gallery portion of the page using the provided
    * localization information
    *
@@ -229,10 +215,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
       // Initialize the card panel
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this._cardElements[index].annotationPanel.init({
-        cardObj
-      } );
-      
+      this._cardElements[index].annotationPanel.init(cardObj);
       
       // Initialize Card
       card.init({
@@ -269,6 +252,7 @@ class AnnotationsGallery extends EntityCardGallery {
     }
   }
 
+
   entityFormChange(e) {
     this.formChange({
       id: e.detail.id,
@@ -280,12 +264,20 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   mediaFormChange(e) {
+    var mediaId = e.detail.id;
     this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
       type: "Media"
-    }).then((data) => {
-      //#TODO
+    }).then(() => {
+      this.cardData.updateMediaAttributes(mediaId).then(() => {
+        for (let idx = 0; idx < this._cardElements.length; idx++) {
+          const card = this._cardElements[idx].card.cardObj;
+          if (card.mediaId == mediaId) {
+            this._cardElements[idx].annotationPanel.setMediaData(card);
+          }
+        }
+      });
     });
   }
 

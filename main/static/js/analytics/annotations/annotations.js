@@ -147,11 +147,6 @@
       // Init panel side behavior
       this._panelContainer.init({ main: this.main, aside : this.aside, pageModal : this.modal, modelData : this._modelData });
 
-      // Update the card with the localization's associated media
-      this.cardData.addEventListener("setMedia", (evt) => {
-        this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
-      });
-
       // Pass panel and localization types to gallery
       this._filterResults._initPanel( {
         panelContainer : this._panelContainer,

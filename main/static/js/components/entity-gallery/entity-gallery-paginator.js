@@ -159,7 +159,6 @@ class EntityGalleryPaginator extends TatorElement {
     this._numPages = Math.ceil(this._numFiles / this._pageSize);
     this._last.textContent = this._numPages;
     this._page = page;
-    console.log(page);
 
     // Update appearance to reflect new page.
     if (this._numPages == 1) {
