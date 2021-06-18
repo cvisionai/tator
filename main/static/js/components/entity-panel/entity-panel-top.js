@@ -115,7 +115,7 @@ class EntityGalleryPanelTop extends TatorElement {
   }
 
   headingHandler(evtDetail){
-    console.log("Heading handler");
+    //console.log("Heading handler");
     if(evtDetail.openFlag){
       // We're opening the panel with new card click
       this._headingText.innerHTML = this.panelName;

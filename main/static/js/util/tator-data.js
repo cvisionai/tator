@@ -1126,19 +1126,18 @@ class TatorData {
     return outStr;
   }
 
-  /* 
+  /**
    * Collections 
-   * @param acceptedAssoc {array} of association types to INCLUDE
+   * @param {acceptedAssoc} {array} of association types to INCLUDE
+   * @param {pageSize} {array} of association types to INCLUDE
    * - Returns states and total information to be processed
-   * - Current endpoints default to pagination to 25 #todo allow pagination param
   */
-  async collectionsInit(acceptedAssoc) {
+  async collectionsInit({ acceptedAssoc, pageSize = 5 }) {
     this._stateTypes = await this.getStateTypes();
     this._states.total = 0;
     this.stateTypeData = {};
     let searchParam = "";
-    // NA #todo
-    const pageSize = 3;
+
     this._states.paginationState = {
       pageSize,
       page: 1,
@@ -1178,9 +1177,6 @@ class TatorData {
         dataStart: this._states.paginationState.start,
         dataStop: this._states.paginationState.stop
       });
-
-      console.log("STATES HERE!!!");
-      console.log(this._states);
 
       // add accessible type data to the state
       this._states.states.map(state => {
@@ -1233,8 +1229,9 @@ class TatorData {
   }
 
   /**
-     * Retrieves state count
-     */
+   * Retrieves state count
+   * @param {params} optional list of query parameter should start with "?"
+   */
   async getStateCount({ params = "" } = {}) {
     const response = await fetch(`/rest/StateCount/${this._project}${params}`, {
       method: "GET",
@@ -1253,7 +1250,10 @@ class TatorData {
 
   /**
    * Retrieves states (start and stop)
-   * # todo - endpoint bug this works better always sending start and stop for now
+   * @param {params}
+   * @param {dataStart}
+   * @param {dataStop}
+   * #todo - better checking about when to add params/ etc. working around endpoint bug sending start and stop for now
    */
   async getStates({ params = "?", dataStart = 0, dataStop = 25 } = {}) {
     const response = await fetch(`/rest/States/${this._project}${params}&start=${dataStart}&stop=${dataStop}`, {

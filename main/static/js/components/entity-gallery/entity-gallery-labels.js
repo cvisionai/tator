@@ -8,73 +8,54 @@ class EntityGalleryLabels extends TatorElement {
 
       //
       this._title = document.createElement("summary");
-      let text = document.createTextNode("Labels")
-      this._title.appendChild(text);
       this._main.appendChild(this._title);
-
-      // use input helper
-      this.inputHelper = new SettingsInput();
-
     }
 
-    /*
-     * @localization-type - object {type : [@attribute-name, @attribute-name, @attribute-name] ... }
-     * @gallery - element
-     * 
-    */
-    async init( {gallery, localizationTypes} ){
-      this._gallery = gallery;
-      console.log("label init");
+  /**
+   * @param {typeData} - object
+   * @param {gallery} - element
+   *
+  */
+  async init({ gallery, typeData }) {
+    this._gallery = gallery;
 
-      // Stop here if we aren't ok after init
-      if (gallery === null || typeof localizationTypes == "undefined") return console.log("Error in label init");;
+    let text = typeData.name ? typeData.name : "";
+    this._title.appendChild(document.createTextNode(text));
 
-      // If ok, create the checkbox list for each Localization
-      for(let [key, val] of Object.entries(localizationTypes) ) {
-          console.log(`Loc att map output key ${key} and val ${val}`);
-          let checkboxList = this.makeListFrom(val, key);
-          let selectionBox = this.inputHelper.multipleCheckboxes({
-            labelText : key,
-            name : 'gallery-labels',
-            checkboxList
-          });
+    console.log("label init");
+    console.log(typeData);
 
-          // Append to main box
-          this._main.appendChild(selectionBox)
-      }
+    // Stop here if we aren't ok after init
+    if (gallery === null || typeof typeData == "undefined") return console.log("Error in label init");;
 
-      let checkboxes = this._shadow.querySelectorAll("input");
-      for(let c in checkboxes){
-        console.log(c);
-          // c.addEventListener("change", () => {
-          //   if(c.checked == true){
-          //       let showAttr = new  CustomEvent("labels-changed", { detail : { "class" : c.val }})
-          //       this._gallery.dispatchEvent(showAttr);
-          //   }
-          // });
-      }
+    // If ok, create the checkbox list
+    const checkboxList = this.makeListFrom(typeData);
+    const selectionBoxes = document.createElement("checkbox-set");
+    selectionBoxes.setValue(checkboxList);
 
+    // Append to main box
+    this._main.appendChild(selectionBoxes);
+
+    selectionBoxes.addEventListener("change", (e) => {
+      this.dispatchEvent(new CustomEvent("labels-update", { detail: { value: e.target.getValue() } }));
+    });
           
-      return this._shadow.appendChild(this._main);
-    }
+    return this._shadow.appendChild(this._main);
+  }
 
     /*
-    * Accepts attributes objects with ID, and Name:
-    * @id created for checkbox value using attribute name
-    * @name used for checkbox label
-    * And String for parent name which is the localization name (not type)
     */
-    makeListFrom( attributes, parentName ){
-        let newList = [];
-        console.log(attributes);
-        for (attr in attributes){
-            let name = attr.name;
-            let id = `${encodeURI(parentName)}_${encodeURI(attr.name)}`;
-            newList.push({ id, name });
-        }
-        return newList;
+  makeListFrom(typeData) {
+    let newList = [];
+    for (let attr of typeData.attribute_types) {
+      newList.push({
+        id: encodeURI(attr.name),
+        name: attr.name,
+        checked: false
+      });
     }
-   
+    return newList;
   }
+}
   
-  customElements.define("entity-gallery-labels", EntityGalleryLabels);  
+customElements.define("entity-gallery-labels", EntityGalleryLabels);

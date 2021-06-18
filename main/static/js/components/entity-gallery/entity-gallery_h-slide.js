@@ -7,10 +7,17 @@ class EntityCardSlideGallery extends TatorElement {
       this._main.setAttribute("class", "enitity-gallery_h-slide px-2 mx-6 pb-3 mt-6 rounded-1");
       this._shadow.appendChild(this._main);
 
+      // Labels Picker
+      this._attributeLabelsDiv = document.createElement("div");
+      this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels d-flex flex-items-center flex-row");
+      this._main.appendChild(this._attributeLabelsDiv);
+
       // Gallery Top Tools and info
       this._tools = document.createElement("div");
       this._tools.setAttribute("class", "enitity-gallery__tools py-2 d-flex flex-items-center");
       this._main.appendChild(this._tools);
+
+      this._attributeLabelsDiv.appendChild(document.createTextNode("Choose Labels: "));
 
       // Gallery Heading
       this._h3 = document.createElement("div");
@@ -46,17 +53,17 @@ class EntityCardSlideGallery extends TatorElement {
       this._main.appendChild(this._paginator);
    }
 
-   init(cardList) {
-      for (let card of cardList) {
-         this._ul.appendChild(card);
-      }
-      return this._ul;
-   }
+   // init(cardList) {
+   //    for (let card of cardList) {
+   //       this._ul.appendChild(card);
+   //    }
+   //    return this._ul;
+   // }
 
-   updateCards(cardList) {
-      this._ul.innerHTML = "";
-      return this.init(cardList);
-   }
+   // updateCards(cardList) {
+   //    this._ul.innerHTML = "";
+   //    return this.init(cardList);
+   // }
 
 }
 

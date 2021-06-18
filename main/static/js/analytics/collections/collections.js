@@ -91,8 +91,10 @@ class AnalyticsCollections extends TatorPage {
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then( () => {
-      this._modelData.collectionsInit(this.acceptedTypes).then(() => {
-
+      this._modelData.collectionsInit({
+        acceptedAssoc: this.acceptedTypes,
+        pageSize: 10
+      }).then(() => {
         // Init panel side behavior
         this._panelContainer.init({ 
             main: this.main, 

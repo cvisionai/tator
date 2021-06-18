@@ -6,12 +6,21 @@ class EntityGallerySlider extends TatorElement {
       this.main.setAttribute("class", "entity-gallery-slider clickable");
       this._shadow.appendChild(this.main);
 
+
+      this.topDiv = document.createElement("div");
+      this.topDiv.setAttribute("class", "d-flex flex-row flex-items-center");
+      this.main.appendChild(this.topDiv);
+
       this._title = document.createElement("h2");
       this._title.setAttribute("class", "h2 entity-gallery-slider--title text-gray py-2");
-      this.main.appendChild(this._title);
+      this.topDiv.appendChild(this._title);
 
-      this._count = document.createElement("p");
-      this.main.appendChild(this._count);
+      this._labels = document.createElement("div");
+      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row h3 text-normal text-gray px-2 py-2");
+      this.topDiv.appendChild(this._labels);
+
+      // this._count = document.createElement("p");
+      // this.topDiv.appendChild(this._count);
 
       // Property IDs are the entity IDs (which are expected to be unique)
       // Each property (ID) points to the index of the card information stored in _cardElements
@@ -33,6 +42,8 @@ class EntityGallerySlider extends TatorElement {
 
       this.numberOfDisplayedCards = 0;
 
+      // labels 
+      this.attributeLabelEls = [];
    }
 
    init({
@@ -40,13 +51,15 @@ class EntityGallerySlider extends TatorElement {
       pageModal,
       modelData,
       slideCardData,
-      cardType
+      cardType,
+      attributes
    }) {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
       this.pageModal = pageModal;
       this.modelData = modelData;
       this.slideCardData = slideCardData;
+
 
       this.addEventListener("slider-active", () => {
          this.styleDiv.classList.add("open");
@@ -89,6 +102,25 @@ class EntityGallerySlider extends TatorElement {
       this.slideCardData.addEventListener("setSlideMedia", (evt) => {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
+
+      for (let attr in attributes) {
+         console.log(`Adding ${attr} tp ${this.id}`)
+         let attributeLabel = document.createElement("div");
+         attributeLabel.setAttribute("class", "hidden");
+         attributeLabel.setAttribute("id", encodeURI(attr));
+
+         let seperator = document.createElement("span");
+         seperator.setAttribute("class", "px-2")
+         let sep = document.createTextNode("|");
+         seperator.appendChild(sep);
+         attributeLabel.appendChild(seperator)
+
+         let text = document.createTextNode(`${attr}: ${attributes[attr]}`);
+         attributeLabel.appendChild(text);
+
+         this._labels.appendChild(attributeLabel);
+         this.attributeLabelEls.push(attributeLabel);
+      }
    }
 
 static get observedAttributes() {
@@ -173,7 +205,7 @@ static get observedAttributes() {
    }
 
    openClosedPanel(e) {
-      console.log(e.detail)
+      //console.log(e.detail)
       if (!this.panelContainer.open) this.panelContainer._toggleOpen();
       this.panelControls.openHandler(e.detail);
    }
@@ -259,9 +291,6 @@ static get observedAttributes() {
                   card.setImageStatic(cardObj.image);
                }
             }
-
-
-
             this._cardElements.push(cardInfo);
 
          } else {
@@ -291,6 +320,18 @@ static get observedAttributes() {
          if (newCard) {
             this._ul.appendChild(card);
          }
+   }
+
+   showLabels(selectedLabels) {
+      console.log(selectedLabels);
+      for (let el of this.attributeLabelEls) {
+         console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
+         if (selectedLabels.includes(el.id)) {
+            el.classList.remove("hidden");
+         } else {
+            el.classList.add("hidden");
+         }
+      }
    }
 
 }

@@ -85,8 +85,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       // Init slider, which inits inner cards
       if (this.modelData._states && this.modelData._states.states) {
-         console.log("STATES ThhHERE!!!");
-         console.log(this.modelData._states);
          const statesInfo = this.modelData._states;
          const states = this.modelData._states.states;
          if (statesInfo.total >= this.modelData.getMaxFetchCount()) {
@@ -116,6 +114,36 @@ class CollectionsGallery extends EntityCardSlideGallery {
             if (states.length > 0) {
                this._addSliders({ sliderList: this.sliderList, states });
             }
+         }
+
+         // Setup the label picker
+         if (this.modelData.stateTypeData) {
+            for (let type in this.modelData.stateTypeData) {
+               console.log(type);
+               let labels = document.createElement("entity-gallery-labels");
+
+               // Provide labels and access to the sliders
+               labels.init({ typeData: this.modelData.stateTypeData[type], gallery: this });
+
+               this._attributeLabelsDiv.appendChild(labels);
+
+               // listen for changes
+               labels.addEventListener("labels-update", (e) => {
+                  this.labelsUpdate({ typeId: type, labelValues: e.detail.value });
+               });
+            }
+
+         }
+      }
+   }
+
+   labelsUpdate({ typeId, labelValues }) {
+      // find the slider, and show it's values
+      for (let s of this._sliderElements) {
+         console.log(`Updating for ${typeId} -- this smeta is ${s.getAttribute("meta")} for slider id ${s.id}`)
+         if (s.getAttribute("meta") == typeId) {
+            //show the Labels (which are there but hidden)
+            s.showLabels(labelValues);
          }
       }
    }
@@ -172,12 +200,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
       
       // Append the sliders
       for (let state of states) {
-         //this._currentSliderIndexes = {}; // Clear the mapping from entity ID to card index
+         console.log(state);
          state.cards = [];
          let counter = 0;
 
          const slider = document.createElement("entity-gallery-slider");
          slider.setAttribute("id", state.id);
+         slider.setAttribute("meta", state.meta);
          slider.entityFormChange = this.entityFormChange.bind(this);
          slider.stateFormChange = this.stateFormChange.bind(this);
          slider.mediaFormChange = this.mediaFormChange.bind(this);
@@ -187,7 +216,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
             pageModal: this.pageModal,
             modelData: this.modelData,
             slideCardData: this.slideCardData,
-            cardType: "collections-card"
+            cardType: "collections-card",
+            attributes: state.attributes
          });
 
          const stateName = `ID ${state.id}`
