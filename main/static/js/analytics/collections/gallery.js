@@ -116,15 +116,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   // Label sort changes
 
                   // Hide / Show type changes
-                  if (Object.keys(this.modelData.stateTypeData).length > 1) {
-                     // #todo - this works, but is showing count for all results, not just page which is confusing....
-                     labels.addEventListener("hide-type-update", (e) => {
-                        this.hideThisType({ typeId, hidden: e.detail.off });
+                  // if (Object.keys(this.modelData.stateTypeData).length > 1) {
+                  //    // #todo - this works, but is showing count for all results, not just page which is confusing....
+                  //    labels.addEventListener("hide-type-update", (e) => {
+                  //       this.hideThisType({ typeId, hidden: e.detail.off });
 
-                     });
-                  } else {
-                     labels._count.hidden = true;
-                  }
+                  //    });
+                  // } else {
+                  //    labels._count.hidden = true;
+                  // }
                }
 
 

@@ -10,9 +10,9 @@ class EntityGalleryLabels extends TatorElement {
       this._title.setAttribute("class", "entity-gallery-labels--title px-2 py-1 text-gray col-3");
       this._main.appendChild(this._title);
 
-      this._count = document.createElement("span");
-      this._count.setAttribute("class", "gallery-label-count clickable pr-2")
-      this._title.appendChild(this._count);
+      // this._count = document.createElement("span");
+      // this._count.setAttribute("class", "gallery-label-count clickable pr-2")
+      // this._title.appendChild(this._count);
 
       // Labels chooser
       this._labelDetails = document.createElement("details");
@@ -61,8 +61,8 @@ class EntityGalleryLabels extends TatorElement {
     let text = typeData.name ? typeData.name : "";
     this._title.appendChild(document.createTextNode(text));
 
-    let count = typeData.total ? typeData.total : "";
-    this._count.appendChild(document.createTextNode(count));
+    // let count = typeData.total ? typeData.total : "";
+    // this._count.appendChild(document.createTextNode(count));
 
     // Stop here if we aren't ok after init
     if (gallery === null || typeof typeData == "undefined") return console.log("Error in label init");;
@@ -90,11 +90,11 @@ class EntityGalleryLabels extends TatorElement {
     /**
      * Hide/Show
      */
-    this._count.addEventListener("click", (e) => {
-      let off = !this._count.classList.contains("off");
-      this._count.classList.toggle("off");
-      this.dispatchEvent(new CustomEvent("hide-type-update", { detail: { off: off } }));
-    });
+    // this._count.addEventListener("click", (e) => {
+    //   let off = !this._count.classList.contains("off");
+    //   this._count.classList.toggle("off");
+    //   this.dispatchEvent(new CustomEvent("hide-type-update", { detail: { off: off } }));
+    // });
 
     return this._shadow.appendChild(this._main);
   }
