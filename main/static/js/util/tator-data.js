@@ -1137,13 +1137,13 @@ class TatorData {
     this._states.total = 0;
     this.stateTypeData = {};
     let searchParam = "";
-    let start = ((page * pageSize) - 1);
+    let start = page > 1 ? pageSize * page : 0;
 
     this._states.paginationState = {
       pageSize,
       page,
       start,
-      stop: (start + 1) + pageSize,
+      stop: start + pageSize,
       init: true
     };
 

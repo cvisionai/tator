@@ -89,9 +89,11 @@ class AnalyticsCollections extends TatorPage {
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
-    let page = this._settings.getPage();
-    if (Number.isNaN(page)) {
-      page = 1;
+    let page = 1;
+
+    if (this._settings.getPage()) {
+      page = this._settings.getPage();
+      console.log("SETTINGS PAGE IS " + page);
     }
 
     this._modelData = new TatorData(this.projectId);
