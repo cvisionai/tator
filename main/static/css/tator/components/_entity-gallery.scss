@@ -16,11 +16,6 @@
   grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
 }
 
-.entity-gallery-labels {
-  border: 1px solid $color-charcoal--medium;
-  width: 300px;
-}
-
 .entity-resize {
   //border: 1px solid $color-charcoal--medium;
   //padding: $spacing-2 $spacing-4;
@@ -197,12 +192,7 @@ entity-gallery-aspect-ratio {
   }
 }
 
-.entity-gallery-slider__ul-container {
-  // display: flex;
-  // align-items: center;
-  // justify-content: space-between;
-  // flex-flow: column nowrap;
-}
+
 collections-card {
   display: block;
 }
@@ -216,10 +206,11 @@ collections-card {
 }
 
 .entity-gallery-slider__ul-container {
-  overflow: auto;
+  overflow: hidden;
+  overflow-x: auto;
 
   &.open {
-    overflow: hidden;
+    overflow-x: hidden;
   }
 }
 
@@ -272,4 +263,70 @@ collections-card {
 
 .collections-gallery--main .entity-panel--container {
   border-left: 10px solid $color-charcoal--light;
+}
+
+.gallery-label-count {
+  background: $color-purple;
+  color: $color-white;
+  width: $spacing-2;
+  height: $spacing-2;
+  padding: 3px 8px;;
+  font-size: .8em;
+  border-radius: 30px;
+  margin: 0 $spacing-2;
+
+  &.off {
+    background-color: $color-gray--medium;
+    color: $color-charcoal--light;
+  }
+}
+
+.entity-gallery-labels {
+  border: 1px solid $color-charcoal--medium;
+  border-radius: 10px;
+  background: $color-charcoal--medium;
+
+  .label-tag {
+    padding: 0 $spacing-2;
+  }
+
+  summary {
+    float: left;
+  }
+
+  svg {
+    //float: right;
+    margin: 0 $spacing-2;
+  }
+
+  .entity-gallery-labels--checkbox-div {
+    transition: padding 300ms linear;
+  }
+
+  details[open] {
+    
+    svg {
+      stroke: $color-charcoal--light;
+      fill: $color-white;
+    }
+    .entity-gallery-labels--checkbox-div {
+      padding-top: $spacing-1;
+    }
+  }
+
+}
+
+
+/* SVG */
+svg {
+  &.open-eye,
+  &.closed-eye,
+  &.triangle,
+  &.label-tag {
+    fill: $color-gray--medium;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    transition: fill 300ms linear;
+  }
 }

@@ -1166,9 +1166,11 @@ class TatorData {
 
       // Get state count #todo- "search" not working so adding by type
       for(let t of typeIds){
-        this._states.total += await this.getStateCount({
+        let typeTotal = await this.getStateCount({
           params: `?type=${t}`
         });
+        this.stateTypeData[t].total = typeTotal
+        this._states.total += typeTotal;
       }
 
       // get relevant states

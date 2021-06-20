@@ -5,37 +5,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
       * Add tools, headings and pagination for gallery here
       *
       */
-
-      // // Custom width for annotations gallery
-      // this.colSize = 4000;
-      // this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
-
-      // Heading
-      this._h3.hidden = true;
-      //this._h3Text = document.createTextNode("All Annotations")
-      //this._h3.appendChild( this._h3Text );
-
-      const header = document.createElement("div");
-      header.setAttribute("class", "project__header d-flex flex-items-center px-2");
-      this._p.appendChild(header);
-
-      // this._name = document.createElement("h2");
-      // this._name.setAttribute("class", "h3 text-white"); //not a typo
-      // this._name.textContent = "Collections";
-      // header.appendChild(this._name);
-
-      this._numFiles = document.createElement("span");
-      this._numFiles.setAttribute("class", "text-gray px-2");
-      header.appendChild(this._numFiles);
-
-      this._panginationLinks = document.createElement("span");
-      this._panginationLinks.setAttribute("class", "");
-      header.appendChild(this._numFiles);
-
-      // Count text
-      //this._p.classList.add("col-3");
-      //this._p.classList.add("px-2");
-
       this.panelContainer = null;
 
       this.sliderList = document.createElement("div");
@@ -91,10 +60,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
             this._numFiles.textContent = `Too many results to preview. Displaying the first ${this.modelData._states.total} results.`
          } else {
             const total = statesInfo.total;
-            let totalText = `Showing ${total} Collections`;
+            let totalText = `${total} Results`;
 
             if (statesInfo.paginationState && total > statesInfo.paginationState.pageSize) {
-               totalText = `Showing ${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${total} of  Collections`
+               totalText = `${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${total} of Results`
 
                // Top settings
                this._paginator_top.hidden = false;
@@ -119,20 +88,35 @@ class CollectionsGallery extends EntityCardSlideGallery {
          // Setup the label picker
          if (this.modelData.stateTypeData) {
             for (let type in this.modelData.stateTypeData) {
-               console.log(type);
                let labels = document.createElement("entity-gallery-labels");
 
                // Provide labels and access to the sliders
                labels.init({ typeData: this.modelData.stateTypeData[type], gallery: this });
-
                this._attributeLabelsDiv.appendChild(labels);
 
-               // listen for changes
+               // Label display changes
                labels.addEventListener("labels-update", (e) => {
                   this.labelsUpdate({ typeId: type, labelValues: e.detail.value });
                });
+               // Label sort changes
+
+               // Hide / Show type changes
+               labels.addEventListener("hide-type-update", (e) => {
+                  this.hideThisType({ typeId: type, hidden: e.detail.off });
+               });
             }
 
+         }
+      }
+   }
+
+   hideThisType({ typeId, hidden }) {
+      // find the slider, and show it's values
+      for (let s of this._sliderElements) {
+         if (s.getAttribute("meta") == typeId) {
+            //show the Labels (which are there but hidden)
+            if (hidden) s.classList.add("hidden");
+            if (!hidden) s.classList.remove("hidden");
          }
       }
    }
@@ -193,7 +177,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          this._addSliders({ sliderList: newSliderList, states: newStates });
          this._sliderContainer.appendChild(newSliderList);
       }
-      this._numFiles.textContent = `Showing ${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${statesInfo.total} of  Collections`;
+      this._numFiles.textContent = `${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${statesInfo.total} of Results`;
    }
 
    async _addSliders({ sliderList, states }) {
@@ -217,10 +201,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
             modelData: this.modelData,
             slideCardData: this.slideCardData,
             cardType: "collections-card",
-            attributes: state.attributes
+            attributes: state.attributes,
+            state
          });
 
-         const stateName = `ID ${state.id}`
+         const stateName = `${state.typeData.name} ID ${state.id}`
          slider.setAttribute("title", stateName);
 
          const cardCount = document.createElement("p");

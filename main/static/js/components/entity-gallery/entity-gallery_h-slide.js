@@ -7,22 +7,32 @@ class EntityCardSlideGallery extends TatorElement {
       this._main.setAttribute("class", "enitity-gallery_h-slide px-2 mx-6 pb-3 mt-6 rounded-1");
       this._shadow.appendChild(this._main);
 
-      // Labels Picker
-      this._attributeLabelsDiv = document.createElement("div");
-      this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels d-flex flex-items-center flex-row");
-      this._main.appendChild(this._attributeLabelsDiv);
-
       // Gallery Top Tools and info
       this._tools = document.createElement("div");
       this._tools.setAttribute("class", "enitity-gallery__tools py-2 d-flex flex-items-center");
       this._main.appendChild(this._tools);
 
-      this._attributeLabelsDiv.appendChild(document.createTextNode("Choose Labels: "));
+      // const header = document.createElement("div");
+      // header.setAttribute("class", "project__header d-flex flex-items-center px-2");
+      // this._tools.appendChild(header);
+
+      // Labels Picker
+      this._attributeLabelsDiv = document.createElement("div");
+      this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels-div px-2 py1");
+      this._main.appendChild(this._attributeLabelsDiv);
+
+      //this._attributeLabelsDiv.appendChild(document.createTextNode("Choose Labels: "));
 
       // Gallery Heading
       this._h3 = document.createElement("div");
+      this._h3Text = document.createTextNode("Collections")
+      this._h3.appendChild(this._h3Text);
       this._h3.setAttribute("class", "enitity-gallery__heading h3 mr-3");
       this._tools.appendChild(this._h3);
+
+      this._numFiles = document.createElement("span");
+      this._numFiles.setAttribute("class", "text-gray text-normal px-2");
+      this._h3.appendChild(this._numFiles);
 
       // Gallery count / info
       this._p = document.createElement("p");

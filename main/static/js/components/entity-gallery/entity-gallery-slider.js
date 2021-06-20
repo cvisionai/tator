@@ -11,13 +11,13 @@ class EntityGallerySlider extends TatorElement {
       this.topDiv.setAttribute("class", "d-flex flex-row flex-items-center");
       this.main.appendChild(this.topDiv);
 
-      this._title = document.createElement("h2");
-      this._title.setAttribute("class", "h2 entity-gallery-slider--title text-gray py-2");
-      this.topDiv.appendChild(this._title);
-
       this._labels = document.createElement("div");
       this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row h3 text-normal text-gray px-2 py-2");
       this.topDiv.appendChild(this._labels);
+
+      this._title = document.createElement("h2");
+      this._title.setAttribute("class", "h3 entity-gallery-slider--title text-gray pb-3");
+      this._labels.appendChild(this._title);
 
       // this._count = document.createElement("p");
       // this.topDiv.appendChild(this._count);
@@ -29,6 +29,7 @@ class EntityGallerySlider extends TatorElement {
       // Entity cards aren't deleted. They are reused and hidden if not used.
       this._cardElements = [];
 
+      // Div to contain slider cards styling
       this.styleDiv = document.createElement("div");
       this.styleDiv.setAttribute("class", "entity-gallery-slider__ul-container");
       this.main.appendChild(this.styleDiv);
@@ -41,8 +42,6 @@ class EntityGallerySlider extends TatorElement {
       this.styleDiv.appendChild(this._ul);
 
       this.numberOfDisplayedCards = 0;
-
-      // labels 
       this.attributeLabelEls = [];
    }
 
@@ -52,14 +51,15 @@ class EntityGallerySlider extends TatorElement {
       modelData,
       slideCardData,
       cardType,
-      attributes
+      attributes,
+      state
    }) {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
       this.pageModal = pageModal;
       this.modelData = modelData;
       this.slideCardData = slideCardData;
-
+      this.state = state;
 
       this.addEventListener("slider-active", () => {
          this.styleDiv.classList.add("open");
@@ -103,8 +103,15 @@ class EntityGallerySlider extends TatorElement {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
 
+      const compareAttr = this.state.typeData.attribute_types.length == attributes.length ? false : [...this.state.typeData.attribute_types];
+
       for (let attr in attributes) {
-         console.log(`Adding ${attr} tp ${this.id}`)
+         console.log(`Adding ${attr} to ${this.id}`)
+         console.log(compareAttr);
+         if (compareAttr) {
+            compareAttr.pop(attr);
+            console.log(compareAttr);
+         }
          let attributeLabel = document.createElement("div");
          attributeLabel.setAttribute("class", "hidden");
          attributeLabel.setAttribute("id", encodeURI(attr));
@@ -120,6 +127,27 @@ class EntityGallerySlider extends TatorElement {
 
          this._labels.appendChild(attributeLabel);
          this.attributeLabelEls.push(attributeLabel);
+      }
+      if (compareAttr && compareAttr.length > 0) {
+         for (let attr in compareAttr) {
+            console.log(`Adding (compared) ${attr} to ${this.id}`)
+
+            let attributeLabel = document.createElement("div");
+            attributeLabel.setAttribute("class", "hidden");
+            attributeLabel.setAttribute("id", encodeURI(attr));
+
+            let seperator = document.createElement("span");
+            seperator.setAttribute("class", "px-2")
+            let sep = document.createTextNode("|");
+            seperator.appendChild(sep);
+            attributeLabel.appendChild(seperator)
+
+            let text = document.createTextNode(`${attr}: (not set)`);
+            attributeLabel.appendChild(text);
+
+            this._labels.appendChild(attributeLabel);
+            this.attributeLabelEls.push(attributeLabel);
+         }
       }
    }
 
