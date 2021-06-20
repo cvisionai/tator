@@ -288,26 +288,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
                //window.history.pushState({}, "", this.analyticsSettings.getURL());
 
                // cards
-               let loadMoreCounter = 10;
+
                if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
-                  for (let cardDetail of slider.unshownCards) {
-                     console.log(cardDetail)
-                     let newCardEvent = new CustomEvent('new-card', cardDetail);
-                     slider.dispatchEvent(newCardEvent);
-                     slider.unshownCards.pop();
-                     loadMoreCounter--;
-
-                     console.log("UnshownCards.length: " + slider.unshownCards.length);
-
-                     if (slider.unshownCards.length === 0) {
-                        slider._fullCardsAdded === true;
-                        slider.loadAllTeaser.remove();
-                        return false;
-                     }
-                     if (loadMoreCounter === 0) {
-                        return false;
-                     }
+                  let loadMoreCounter = 10;
+                  for (var i = 1; i <= loadMoreCounter; i++) {
+                     this._addUnshownCards(slider);
                   }
+               } else {
+                  slider._fullCardsAdded === true;
+                  slider.loadAllTeaser.remove();
                }
             }
             // } else { 
@@ -318,6 +307,20 @@ class CollectionsGallery extends EntityCardSlideGallery {
             //    slider.dispatchEvent(inactiveEvent);
 
             // }
+         });
+
+         slider.loadAllTeaser.addEventListener("click", (e) => {
+            console.log("clicked loadAll link!")
+
+            if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
+               let loadMoreCounter = 10;
+               for (var i = 1; i <= loadMoreCounter; i++) {
+                  this._addUnshownCards(slider);
+               }
+            } else {
+               slider._fullCardsAdded === true;
+               slider.loadAllTeaser.remove();
+            }
          });
 
          // create the cards
@@ -369,32 +372,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
          }
 
 
-         slider.loadAllTeaser.addEventListener("click", (e) => {
-            console.log("clicked loadAll link!")
-            let loadMoreCounter = 10;
-            if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
-               for (let cardDetail of slider.unshownCards) {
-                  let newCardEvent = new CustomEvent('new-card', cardDetail);
-                  slider.dispatchEvent(newCardEvent);
-                  slider.unshownCards.pop();
-                  loadMoreCounter--;
-
-                  if (slider.unshownCards.length === 0) {
-                     slider._fullCardsAdded === true;
-                     slider.loadAllTeaser.remove();
-                     return false;
-                  }
-                  if (loadMoreCounter === 0) {
-                     return false;
-                  }
-               }
-            } else {
-               slider._fullCardsAdded === true;
-               slider.loadAllTeaser.remove();
-            }
-         });
-
-
          // Bookmarking of state
          // if (this.analyticsSettings.hasAttribute("selectedState")) {
          //    //for (let s of this._sliderElements) {
@@ -419,6 +396,18 @@ class CollectionsGallery extends EntityCardSlideGallery {
       }
 
 
+   }
+
+   _addUnshownCards(slider) {
+      let newCardEvent = new CustomEvent('new-card', slider.unshownCards.shift());
+      slider.dispatchEvent(newCardEvent);
+
+      //If this is the last card, update flags, and remove link
+      if (slider.unshownCards.length === 0) {
+         slider._fullCardsAdded === true;
+         slider.loadAllTeaser.remove();
+         return false;
+      }
    }
 
    _makeSliderActive(sliderEl, stateId) {

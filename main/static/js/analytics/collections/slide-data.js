@@ -118,7 +118,7 @@ class CollectionSlideCardData extends HTMLElement {
         });
     }
 
-    getSlideCardList(localization){
+    getSlideCardList(localization) {
         return new Promise((resolve, reject) => {
             var haveSlideCardShells = function () {
                 if (counter <= 0) {
@@ -127,7 +127,7 @@ class CollectionSlideCardData extends HTMLElement {
             }
 
             let counter = 1;
-            //console.log("Processing " + counter + " localizations in gallery.");
+                //console.log("Processing " + counter + " localizations in gallery.");
 
             // Handle the case where we get nothing back
             haveSlideCardShells();
@@ -143,44 +143,44 @@ class CollectionSlideCardData extends HTMLElement {
 
             let media;
             for (let idx = 0; idx < this.medias.length; idx++) {
-               if (this.medias[idx].id == mediaId) {
-                  media = this.medias[idx];
-                  break;
-               }
+                if (this.medias[idx].id == mediaId) {
+                    media = this.medias[idx];
+                    break;
+                }
             }
 
             let mediaInfo = {
-               id: mediaId,
-               entityType: this.findMediaMetaDetails(media.meta),
-               attributes: media.attributes,
-               media: media,
+                id: mediaId,
+                entityType: this.findMediaMetaDetails(media.meta),
+                attributes: media.attributes,
+                media: media,
             }
 
             let slideCard = {
-               id,
-               localization : l,
-               entityType,
-               mediaId,
-               mediaInfo,
-               mediaLink,
-               attributes,
-               created,
-               modified
-            };
+                id,
+                    localization: l,
+                    entityType,
+                    mediaId,
+                    mediaInfo,
+                    mediaLink,
+                    attributes,
+                    created,
+                    modified
+                };
 
             this.slideCardList.slideCards.push(slideCard);
             counter--;
             haveSlideCardShells();
 
             this._modelData.getLocalizationGraphic(l.id).then((image) => {
-               //console.log("getLocalizationGraphic for this Loc resolved, id: "+l.id);
-               this.dispatchEvent(new CustomEvent("setSlideCardImage", {
-                  composed: true,
-                  detail: {
+                //console.log("getLocalizationGraphic for this Loc resolved, id: "+l.id);
+                this.dispatchEvent(new CustomEvent("setSlideCardImage", {
+                    composed: true,
+                    detail: {
                         id: l.id,
                         image: image
-                  }
-               }));
+                    }
+                }));
             });
         });
     }
