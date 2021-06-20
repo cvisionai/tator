@@ -89,11 +89,17 @@ class AnalyticsCollections extends TatorPage {
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
+    let page = this._settings.getPage();
+    if (Number.isNaN(page)) {
+      page = 1;
+    }
+
     this._modelData = new TatorData(this.projectId);
-    this._modelData.init().then( () => {
+    this._modelData.init().then(() => {
       this._modelData.collectionsInit({
         acceptedAssoc: this.acceptedTypes,
-        pageSize: 1
+        pageSize: 5,
+        page
       }).then(() => {
         // Init panel side behavior
         this._panelContainer.init({ 

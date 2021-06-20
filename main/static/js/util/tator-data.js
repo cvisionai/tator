@@ -1132,17 +1132,18 @@ class TatorData {
    * @param {pageSize} {array} of association types to INCLUDE
    * - Returns states and total information to be processed
   */
-  async collectionsInit({ acceptedAssoc, pageSize = 5 }) {
+  async collectionsInit({ acceptedAssoc, pageSize = 5, page = 1 }) {
     this._stateTypes = await this.getStateTypes();
     this._states.total = 0;
     this.stateTypeData = {};
     let searchParam = "";
+    let start = ((page * pageSize) - 1);
 
     this._states.paginationState = {
       pageSize,
-      page: 1,
-      start: 0,
-      stop: pageSize,
+      page,
+      start,
+      stop: (start + 1) + pageSize,
       init: true
     };
 

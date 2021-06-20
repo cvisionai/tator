@@ -121,12 +121,11 @@ class CollectionsCard extends EntityCard {
     this.reader.addEventListener("load", this._setImgSrc.bind(this));
   }
 
-  _setImgSrc (e) {
+  _setImgSrc(e) {
     this.setAttribute("thumb", this.reader.result);
   }
 
   setImageStatic(image) {
-    //console.log("setImageStatic");
     this.setAttribute("thumb", image);
   }
 

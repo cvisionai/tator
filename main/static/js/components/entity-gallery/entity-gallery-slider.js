@@ -12,15 +12,16 @@ class EntityGallerySlider extends TatorElement {
       this.main.appendChild(this.topDiv);
 
       this._labels = document.createElement("div");
-      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row h3 text-normal text-gray px-2 py-2");
+      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row h3 text-normal text-gray py-2");
       this.topDiv.appendChild(this._labels);
 
       this._title = document.createElement("h2");
-      this._title.setAttribute("class", "h3 entity-gallery-slider--title text-gray pb-3");
+      this._title.setAttribute("class", "h3 entity-gallery-slider--title text-gray");
       this._labels.appendChild(this._title);
 
-      // this._count = document.createElement("p");
-      // this.topDiv.appendChild(this._count);
+      this._count = document.createElement("p");
+      this._count.setAttribute("class", "text-gray py-1 pb-2")
+      this.main.appendChild(this._count);
 
       // Property IDs are the entity IDs (which are expected to be unique)
       // Each property (ID) points to the index of the card information stored in _cardElements
@@ -50,6 +51,7 @@ class EntityGallerySlider extends TatorElement {
 
       this.numberOfDisplayedCards = 0;
       this.attributeLabelEls = [];
+      this._preloadedImages = [];
    }
 
    init({
@@ -227,6 +229,10 @@ static get observedAttributes() {
       if (typeof this._currentCardIndexes[id] !== "undefined" && typeof info !== "undefined") {
          const image = e.detail.image;
          info.card.setImage(image);
+      } else {
+         // If the card hasn't been added yet -- save it here (we'll check for it when new cards are added)
+         console.log("Saving image for card ID " + id)
+         this._preloadedImages[id] = e.detail.image;
       }
    }
 
@@ -383,6 +389,13 @@ static get observedAttributes() {
          // Add new card to the gallery div
          if (newCard) {
             this._ul.appendChild(card);
+            console.log("A (NEW) New Card!!!!!!!!!!! id " + cardObj.id);
+            if (this._preloadedImages[cardObj.id]) {
+               const image = this._preloadedImages[cardObj.id];
+               this._cardElements[index].card.setImage(image);
+            }
+
+
          }
    }
 
@@ -402,10 +415,12 @@ static get observedAttributes() {
       console.log("NEW LABEL VALUES!!!")
       console.log(newValues);
       for (let el of this.attributeLabelEls) {
-         console.log(`ID ${el.id} is included in the update????`);
-         // if (selectedLabels.includes(el.id)) {
-         //    el.innerHTML = `${attr}`:
-         // }
+         //const [key, value] of Object.entries(object1)
+         for (const [key, value] of Object.entries(newValues.attributes)) {
+            if (encodeURI(key) == el.id) {
+               el.innerHTML = `<span class="px-2">|</span> ${key}: ${value}`;
+            }
+         }
       }
    }
 }

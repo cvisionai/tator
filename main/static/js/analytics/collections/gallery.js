@@ -9,7 +9,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       this.sliderList = document.createElement("div");
       this.sliderList.setAttribute("class", "slider-list");
-      this.sliderList.setAttribute("page", 1);
+
 
       this._sliderLists = [];
       this._sliderLists.push(this.sliderList);
@@ -26,7 +26,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._sliderElements = [];
 
       // First group and total cards
-      this._previewCardCount = 16;
+      this._previewCardCount = 10;
    }
 
    // Provide access to side panel for events
@@ -44,6 +44,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this.galleryContainer = galleryContainer;
       this.analyticsSettings = analyticsSettings;
 
+      this.sliderList.setAttribute("page", this.modelData._states.paginationState.page);
+
       // Possibly remove this so we can have navigation controls
       // this.panelContainer._panelTop._topBarArrow.hidden = true;
       // this.panelContainer._panelTop.panelNav.init();
@@ -57,7 +59,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
          console.log(e.description);
       }
 
-
       // Init slider, which inits inner cards
       if (this.modelData._states && this.modelData._states.states) {
          const statesInfo = this.modelData._states;
@@ -69,7 +70,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
             let totalText = `${total} Results`;
 
             if (statesInfo.paginationState && total > statesInfo.paginationState.pageSize) {
-               totalText = `${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${total} of Results`
+               let startText = statesInfo.paginationState.start == 0 ? 1 : statesInfo.paginationState.start;
+               totalText = `${startText} to ${statesInfo.paginationState.stop} of ${total} of Results`
 
                // Top settings
                this._paginator_top.hidden = false;
@@ -214,11 +216,19 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
          this._addSliders({ sliderList: newSliderList, states: newStates });
          this._sliderContainer.appendChild(newSliderList);
+
+         // Update new slider panel permission
+         const locked = this.analyticsSettings._lock._pathLocked.style.display != "none";
+         const permissionValue = locked ? "View Only" : "Can Edit";
+         const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+         this.panelContainer.dispatchEvent(panelPermissionEvt);
       }
       this._numFiles.textContent = `${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${statesInfo.total} of Results`;
    }
 
    async _addSliders({ sliderList, states }) {
+      console.log("ADDING SLIDERS!");
+      console.log(states);
       // Append the sliders
       for (let state of states) {
          console.log(state);
@@ -248,9 +258,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
          const stateName = `${state.typeData.name} ID ${state.id}`
          slider.setAttribute("title", stateName);
 
-         const cardCount = document.createElement("p");
-         slider.appendChild(cardCount);
-
          this._sliderElements.push(slider);
          sliderList.appendChild(slider);
 
@@ -277,14 +284,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   inline: "nearest"
                });
 
-               this.analyticsSettings.setAttribute("selectedState", state.id);
+               //this.analyticsSettings.setAttribute("selectedState", state.id);
                //window.history.pushState({}, "", this.analyticsSettings.getURL());
 
-
                // cards
-               console.log("slider.unshownCards full cards added --> " + slider._fullCardsAdded);
-               console.log(slider.unshownCards);
-               const loadMoreCounter = 20;
+               let loadMoreCounter = 10;
                if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
                   for (let cardDetail of slider.unshownCards) {
                      console.log(cardDetail)
@@ -320,8 +324,9 @@ class CollectionsGallery extends EntityCardSlideGallery {
          const galleryList = state.typeData.association === "Localization" ? state.localizations : state.media;
          if (galleryList) {
             const totalList = galleryList.length;
-            const cardCountText = document.createTextNode(`${totalList} Tracks`)
-            cardCount.appendChild(cardCountText);
+            const trackOrTracks = totalList > 1 ? "Tracks" : "Track";
+            const cardCountText = document.createTextNode(`(${totalList} ${trackOrTracks})`)
+            slider._count.appendChild(cardCountText);
 
             // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
             if (totalList > 0) {
@@ -352,10 +357,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   }
 
                }
-               if (counter < 5) {
-                  if (counter > 3) {
-                     slider.loadAllTeaser.innerHTML = "See All";
-                  } else {
+
+               if (totalList <= this._previewCardCount) {
+                  slider.loadAllTeaser.innerHTML = "See All";
+                  if (totalList < 4) {
                      slider.loadAllTeaser.remove();
                   }
                }
@@ -365,18 +370,21 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
 
          slider.loadAllTeaser.addEventListener("click", (e) => {
-            console.log("click")
-            let loadMoreCounter = 20;
+            console.log("clicked loadAll link!")
+            let loadMoreCounter = 10;
             if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
                for (let cardDetail of slider.unshownCards) {
                   let newCardEvent = new CustomEvent('new-card', cardDetail);
                   slider.dispatchEvent(newCardEvent);
+                  slider.unshownCards.pop();
                   loadMoreCounter--;
-                  if (loadMoreCounter === 0 && slider.unshownCards.length === 0) {
+
+                  if (slider.unshownCards.length === 0) {
                      slider._fullCardsAdded === true;
                      slider.loadAllTeaser.remove();
                      return false;
-                  } else if (loadMoreCounter === 0) {
+                  }
+                  if (loadMoreCounter === 0) {
                      return false;
                   }
                }
@@ -388,25 +396,25 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
 
          // Bookmarking of state
-         if (this.analyticsSettings.hasAttribute("selectedState")) {
-            //for (let s of this._sliderElements) {
-            let settingsState = Number(this.analyticsSettings.getAttribute("selectedState"));
-            let sliderId = Number(slider.getAttribute("id"));
-            if (settingsState == sliderId) {
-               //this._makeSliderActive(slider, sliderId)
-               //console.log("Found the selected state slider!");
-               // This sliderEl is active, the rest are inactive
-               slider.main.classList.add("active");
-               slider.dispatchEvent(new Event("slider-active"));
-               slider.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "nearest"
-               });
-            }
-            //}
+         // if (this.analyticsSettings.hasAttribute("selectedState")) {
+         //    //for (let s of this._sliderElements) {
+         //    let settingsState = Number(this.analyticsSettings.getAttribute("selectedState"));
+         //    let sliderId = Number(slider.getAttribute("id"));
+         //    if (settingsState == sliderId) {
+         //       //this._makeSliderActive(slider, sliderId)
+         //       //console.log("Found the selected state slider!");
+         //       // This sliderEl is active, the rest are inactive
+         //       slider.main.classList.add("active");
+         //       slider.dispatchEvent(new Event("slider-active"));
+         //       slider.scrollIntoView({
+         //          behavior: "smooth",
+         //          block: "nearest",
+         //          inline: "nearest"
+         //       });
+         //    }
+         //    //}
 
-         }
+         // }
 
       }
 
@@ -423,7 +431,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          s.dispatchEvent(new Event("slider-inactive"));
       }
 
-      this.analyticsSettings.setAttribute("selectedState", stateId);
+      //this.analyticsSettings.setAttribute("selectedState", stateId);
 
       return sliderEl.scrollIntoView(true);
    }
