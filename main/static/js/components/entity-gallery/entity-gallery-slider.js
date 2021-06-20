@@ -41,6 +41,13 @@ class EntityGallerySlider extends TatorElement {
       //this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
       this.styleDiv.appendChild(this._ul);
 
+      this.loadAllTeaser = document.createElement("span");
+      this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more"); //
+      let text = document.createTextNode("Load More...");
+      this.loadAllTeaser.appendChild(text);
+
+      this.styleDiv.appendChild(this.loadAllTeaser);
+
       this.numberOfDisplayedCards = 0;
       this.attributeLabelEls = [];
    }
@@ -103,18 +110,45 @@ class EntityGallerySlider extends TatorElement {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
 
-      const compareAttr = this.state.typeData.attribute_types.length == attributes.length ? false : [...this.state.typeData.attribute_types];
 
+      if (this.modelData.currenHiddenType.includes[state.meta]) {
+         let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
+         var helper = document.createElement('div');
+         helper.innerHTML = hiddenHTML;
+         this.classList.add("hidden");
+         this.after(helper);
+      }
+
+
+      const compareAttr = [...this.state.typeData.attribute_types];
+      console.log(compareAttr);
       for (let attr in attributes) {
          console.log(`Adding ${attr} to ${this.id}`)
-         console.log(compareAttr);
+
          if (compareAttr) {
-            compareAttr.pop(attr);
+            let index = compareAttr.indexOf(attr);
+            compareAttr.splice(index, 1); // test
             console.log(compareAttr);
          }
+
          let attributeLabel = document.createElement("div");
-         attributeLabel.setAttribute("class", "hidden");
          attributeLabel.setAttribute("id", encodeURI(attr));
+
+         // reapply any label preferences
+         if (this.modelData.currenLabelValues && this.modelData.currenLabelValues[state.meta]) {
+            const currentLabels = this.modelData.currenLabelValues[state.meta];
+            if (currentLabels.length === 0 || !currentLabels.includes(attr)) {
+               attributeLabel.setAttribute("class", "hidden");
+            }
+         } else {
+            attributeLabel.setAttribute("class", "hidden");
+         }
+
+         // let typeId = statesInfo.meta;
+         // this.labelsUpdate({ typeId, labelValues: });
+         // if(this.currenHiddenType.includes(typeId) ){
+         //      this.hideThisType({typeId, hidden: true});
+         // }
 
          let seperator = document.createElement("span");
          seperator.setAttribute("class", "px-2")
@@ -128,6 +162,8 @@ class EntityGallerySlider extends TatorElement {
          this._labels.appendChild(attributeLabel);
          this.attributeLabelEls.push(attributeLabel);
       }
+
+      // #todo test
       if (compareAttr && compareAttr.length > 0) {
          for (let attr in compareAttr) {
             console.log(`Adding (compared) ${attr} to ${this.id}`)
@@ -157,8 +193,8 @@ static get observedAttributes() {
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
-      case "title":
-        this._title.textContent = newValue;
+       case "title":
+          this._title.textContent = newValue;
         break;
       case "count":
          this._count.textContent = newValue;
@@ -238,7 +274,7 @@ static get observedAttributes() {
       this.panelControls.openHandler(e.detail);
    }
 
-   _addCard(index, cardObj, cardType){
+   _addCard(index, cardObj, cardType) {
          const newCard = index >= this._cardElements.length;
          let card;
          if (newCard) {
@@ -261,7 +297,7 @@ static get observedAttributes() {
             annotationPanelDiv.appendChild(annotationPanel);
 
             // Listen for attribute changes
-            // #todo needs to be componentized? 
+            // #todo needs to be componentized?
             annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
             annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
             annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
@@ -362,6 +398,16 @@ static get observedAttributes() {
       }
    }
 
+   _updateLabelValues({ newValues }) {
+      console.log("NEW LABEL VALUES!!!")
+      console.log(newValues);
+      for (let el of this.attributeLabelEls) {
+         console.log(`ID ${el.id} is included in the update????`);
+         // if (selectedLabels.includes(el.id)) {
+         //    el.innerHTML = `${attr}`:
+         // }
+      }
+   }
 }
 
 customElements.define("entity-gallery-slider", EntityGallerySlider);

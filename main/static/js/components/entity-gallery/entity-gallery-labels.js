@@ -72,6 +72,8 @@ class EntityGalleryLabels extends TatorElement {
      */
     // If ok, create the checkbox list
     const checkboxList = this.makeListFrom(typeData);
+    console.log(this.newList);
+
     const selectionBoxes = document.createElement("checkbox-set");
     selectionBoxes._colSize = "py-1 pr-2";
     selectionBoxes._inputDiv.setAttribute("class", "col-12");
@@ -101,7 +103,8 @@ class EntityGalleryLabels extends TatorElement {
     */
   makeListFrom(typeData) {
     this.newList = [];
-    for (let attr of typeData.attribute_types) {
+    let tmpArray = [...typeData.attribute_types];
+    for (let attr of tmpArray) {
       this.newList.push({
         id: encodeURI(attr.name),
         name: attr.name,

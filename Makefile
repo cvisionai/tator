@@ -234,6 +234,7 @@ FILES = \
     components/entity-gallery/entity-gallery-aspect-ratio.js \
     components/entity-gallery/entity-gallery-paginator.js \
     components/entity-gallery/entity-gallery-labels.js \
+    components/entity-gallery/entity-gallery-sort.js \
     components/entity-gallery/entity-gallery-slider.js \
     components/entity-gallery/entity-gallery_h-slide.js \
     components/entity-gallery/entity-gallery_grid.js \

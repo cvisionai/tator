@@ -43,7 +43,7 @@ class EntityCardSlideGallery extends TatorElement {
 
       // // Gallery Pagination Bottom
       this._paginator_top = document.createElement("entity-gallery-paginator");
-      this._paginator_top.div.classList.add("pb-3");
+      this._paginator_top.div.classList.add("py-2");
       this._paginator_top.pageSizeEl.hidden = true;
       this._paginator_top.pageSizeText.hidden = true;
       this._paginator_top.hidden = true;

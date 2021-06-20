@@ -1171,6 +1171,11 @@ class TatorData {
         });
         this.stateTypeData[t].total = typeTotal
         this._states.total += typeTotal;
+
+        if (typeTotal == 0) {
+          // Remove this data type as a reference to avoid evel downstream
+          delete this.stateTypeData[t];
+        }
       }
 
       // get relevant states
@@ -1183,7 +1188,9 @@ class TatorData {
       // add accessible type data to the state
       this._states.states.map(state => {
         // pass along some data we already fetch about the association, and state name to view with the state
-        state.typeData = this.stateTypeData[state.meta];
+        if (this.stateTypeData[state.meta]) {
+          state.typeData = this.stateTypeData[state.meta];
+        }
         return state;
       });
     }

@@ -207,7 +207,7 @@ collections-card {
 
 .entity-gallery-slider__ul-container {
   overflow: hidden;
-  overflow-x: auto;
+  overflow-x: hidden;
 
   &.open {
     overflow-x: hidden;
@@ -329,4 +329,11 @@ svg {
     height: 20px;
     transition: fill 300ms linear;
   }
+}
+
+.entity-gallery-slider--load-more {
+  display: block;
+  padding: $spacing-1 $spacing-4;
+  position: sticky;
+  float: right;
 }

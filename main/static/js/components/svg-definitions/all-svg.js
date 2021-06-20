@@ -50,7 +50,6 @@ class SvgDefinition {
             svg.appendChild(circle);
          }
          if (this._iconName == "label-tag") {
-            console.log("label-tag");
             svg.setAttribute("linecap", "round");
             svg.setAttribute("stroke-linejoin", "round");
             svg.setAttribute("stroke-width", "2");
@@ -58,7 +57,7 @@ class SvgDefinition {
             const line = document.createElementNS(svgNamespace, "line");
             line.setAttribute("x1", "7");
             line.setAttribute("y1", "7");
-            line.setAttribute("x2", "7.1");
+            line.setAttribute("x2", "7.01");
             line.setAttribute("y2", "7");
             svg.appendChild(line);
          }

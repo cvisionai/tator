@@ -93,7 +93,7 @@ class AnalyticsCollections extends TatorPage {
     this._modelData.init().then( () => {
       this._modelData.collectionsInit({
         acceptedAssoc: this.acceptedTypes,
-        pageSize: 10
+        pageSize: 1
       }).then(() => {
         // Init panel side behavior
         this._panelContainer.init({ 
