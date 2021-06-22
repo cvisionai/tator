@@ -5,13 +5,17 @@
  * #TODO Convert this to a TatorElement so that events can be dispatched
  */
 class FilterData {
-  constructor (modelData) {
+  constructor (modelData, algorithmCategories) {
 
     this._modelData = modelData;
 
     // #TODO Add more types
     this.localizationTypes = [];
     this.mediaTypes = [];
+
+    if (algorithmCategories != undefined) {
+      this.algorithmCategories = algorithmCategories;
+    }
   }
 
   /**
@@ -24,8 +28,25 @@ class FilterData {
     this.versions = this._modelData.getStoredVersions();
     this.sections = this._modelData.getStoredSections();
 
-    // #TODO Eventually this wil lbe filtered
-    this.algorithms = this._modelData.getStoredAlgorithms();
+    this.algorithms = [];
+    var algorithms = this._modelData.getStoredAlgorithms();
+
+    if (this.algorithmCategories != undefined) {
+      for (const algo of algorithms) {
+        if (algo.categories != undefined) {
+          for (const algoCategory of algo.categories) {
+            if (this.algorithmCategories.some(elem => algoCategory == elem)) {
+              this.algorithms.push(algo);
+              break;
+            }
+          }
+        }
+      }
+    }
+    else {
+      this.algorithms = algorithms;
+    }
+
 
     // Want to be able to filter based on localization dtypes. Package up the localization types
     // and add it as an attribute

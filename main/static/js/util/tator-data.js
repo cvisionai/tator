@@ -693,10 +693,11 @@ class TatorData {
    */
   async launchAlgorithm(algorithmName, parameters) {
 
+    // Have to provide a valid media ID list or query for now. #TODO revisit
     let body = {
       "algorithm_name": algorithmName,
       "extra_params": parameters,
-      "media_ids": []
+      "media_query": `?project=${this._project}&start=0&stop=1`
     }
 
     var launched = false;

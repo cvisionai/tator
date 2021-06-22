@@ -82,7 +82,6 @@
     //
     /* Other */
     // Class to hide and showing loading spinner
-    // @TODO what is standard use?
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
 
@@ -131,7 +130,7 @@
       };
 
       // Filter interface
-      this._filterDataView = new FilterData(this._modelData);
+      this._filterDataView = new FilterData(this._modelData, ["annotation-analytics-view"]);
       this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
       this._filterView.setFilterConditions(this._filterConditions);
@@ -154,10 +153,6 @@
         modelData : this._modelData,
         cardData: this.cardData
       } );
-
-      // Init history & check if state is stored in URL, update default states
-      //this.history = new FilterHistoryManagement({ _paginationState : this._paginationState, _filterState : this._filterState });
-      //this._checkHistoryState();
 
       // Init Card Gallery and Right Panel
       this._cardGallery({
