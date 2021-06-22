@@ -215,7 +215,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
       // Initialize the card panel
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this._cardElements[index].annotationPanel.init(cardObj);
+      this._cardElements[index].annotationPanel.init({ cardObj });
       
       // Initialize Card
       card.init({

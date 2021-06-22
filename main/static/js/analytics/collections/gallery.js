@@ -12,7 +12,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
 
       this._sliderLists = [];
-      this._sliderLists.push(this.sliderList);
+
 
       this._sliderContainer.appendChild(this.sliderList);
 
@@ -169,48 +169,54 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    _paginateGallery(evt) {
-      //(evt.detail)
-      const statesInfo = this.modelData._states;
+      console.log(evt.detail);
 
       // set state
-      statesInfo.paginationState.start = evt.detail.start;
-      statesInfo.paginationState.stop = evt.detail.stop;
-      statesInfo.paginationState.page = evt.detail.page;
-      statesInfo.paginationState.pageSize = evt.detail.pgsize;
-      statesInfo.paginationState.init = false;
+      this.modelData._states.paginationState.start = evt.detail.start;
+      this.modelData._states.paginationState.stop = evt.detail.stop;
+      this.modelData._states.paginationState.page = evt.detail.page;
+      this.modelData._states.paginationState.pageSize = evt.detail.pgsize;
+      this.modelData._states.paginationState.init = false;
 
-      this._paginationUpdate(statesInfo);
 
-      this.analyticsSettings.setAttribute("pagesize", statesInfo.paginationState.pageSize);
-      this.analyticsSettings.setAttribute("page", statesInfo.paginationState.page);
+      this._paginationUpdate();
+
+      this.analyticsSettings.setAttribute("pagesize", this.modelData._states.paginationState.pageSize);
+      this.analyticsSettings.setAttribute("page", this.modelData._states.paginationState.page);
       window.history.pushState({}, "", this.analyticsSettings.getURL());
    }
 
-   async _paginationUpdate(statesInfo) {
-      const newSliderIndex = statesInfo.paginationState.page - 1;
+   async _paginationUpdate() {
+      const newSliderPage = this.modelData._states.paginationState.page;
+
       // update paginator
-      this._paginator_top.setValues(statesInfo.paginationState);
-      this._paginator.setValues(statesInfo.paginationState);
+      this._paginator_top.setValues(this.modelData._states.paginationState);
+      this._paginator.setValues(this.modelData._states.paginationState);
 
       // Add new states
       // If the slider already exists, we're hiding and showing
-      if (this._sliderLists[newSliderIndex]) {
-         for (let list of this._sliderLists) {
-            list.hidden = true;
+      if (this._sliderLists[newSliderPage]) {
+         console.log(newSliderPage);
+         console.log(this._sliderLists);
+         console.log(this._sliderLists[newSliderPage]);
+         for (let a in this._sliderLists) {
+            console.log(this._sliderLists[a]);
+            this._sliderLists[a].hidden = true;
          }
-         this._sliderLists[newSliderIndex].hidden = false;
+         this._sliderLists[newSliderPage].hidden = false;
       } else {
          // If we haven't made this page, we need to fetch the next page
          const newStates = await this.modelData._paginateStatesFetch();
 
-         for (let list of this._sliderLists) {
-            list.hidden = true;
+         for (let a in this._sliderLists) {
+            console.log(this._sliderLists[a]);
+            this._sliderLists[a].hidden = true;
          }
 
          let newSliderList = document.createElement("div");
          newSliderList.setAttribute("class", "slider-list");
-         newSliderList.setAttribute("page", statesInfo.paginationState.page);
-         this._sliderLists.push(newSliderList);
+         newSliderList.setAttribute("page", this.modelData._states.paginationState.page);
+         //this._sliderLists[this.modelData._states.paginationState.page] = newSliderList;
 
          this._addSliders({ sliderList: newSliderList, states: newStates });
          this._sliderContainer.appendChild(newSliderList);
@@ -221,10 +227,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
          const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
          this.panelContainer.dispatchEvent(panelPermissionEvt);
       }
-      this._numFiles.textContent = `${statesInfo.paginationState.start} to ${statesInfo.paginationState.stop} of ${statesInfo.total} of Results`;
+
+      let startText = this.modelData._states.paginationState.start + 1;
+      this._numFiles.textContent = `${startText} to ${this.modelData._states.paginationState.stop} of ${this.modelData._states.total} of Results`;
    }
 
    async _addSliders({ sliderList, states }) {
+      let sliderPage = this.modelData._states.paginationState.page;
+      this._sliderLists[sliderPage] = sliderList;
+
       // Append the sliders
       for (let state of states) {
          state.cards = [];
