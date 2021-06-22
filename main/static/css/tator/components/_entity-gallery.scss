@@ -207,7 +207,7 @@ collections-card {
 
 .entity-gallery-slider__ul-container {
   overflow: hidden;
-  overflow-x: hidden;
+  overflow-x: scroll;
 
   &.open {
     overflow-x: hidden;
@@ -234,6 +234,8 @@ collections-card {
 
     .entity-slider-card {
       margin: 0;
+      position:relative;
+      z-index:100;
     }
   }
 }

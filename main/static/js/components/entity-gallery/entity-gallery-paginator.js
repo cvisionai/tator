@@ -34,7 +34,7 @@ class EntityGalleryPaginator extends TatorElement {
       this._pages[idx].addEventListener("click", evt => {
         evt.preventDefault();
         this._setPage(Number(evt.target.textContent) - 1);
-        console.log("Clicked "+  evt.target.textContent );
+        //console.log("Clicked "+  evt.target.textContent );
         this._emit();
       });
       this._pages[idx].style.cursor = "pointer";
@@ -159,7 +159,7 @@ class EntityGalleryPaginator extends TatorElement {
 
   _setPage(page) {
     this._page = page;
-    console.log(page);
+    //console.log(page);
 
     // Update appearance to reflect new page.
     if (this._numPages == 1) {

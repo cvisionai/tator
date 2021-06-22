@@ -72,7 +72,6 @@ class EntityGalleryLabels extends TatorElement {
      */
     // If ok, create the checkbox list
     const checkboxList = this.makeListFrom(typeData);
-    console.log(this.newList);
 
     const selectionBoxes = document.createElement("checkbox-set");
     selectionBoxes._colSize = "py-1 pr-2";

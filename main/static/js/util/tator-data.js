@@ -1137,7 +1137,7 @@ class TatorData {
     this._states.total = 0;
     this.stateTypeData = {};
     let searchParam = "";
-    let start = page > 1 ? pageSize * page : 0;
+    let start = page > 1 ? (pageSize * page - pageSize) : 0;
 
     this._states.paginationState = {
       pageSize,
@@ -1179,6 +1179,8 @@ class TatorData {
         }
       }
 
+
+
       // get relevant states
       this._states.states = await this.getStates({
         params: this._states.searchParam,
@@ -1194,6 +1196,10 @@ class TatorData {
         }
         return state;
       });
+    }
+
+    if (this._states.paginationState.stop > this._states.total) {
+      this._states.paginationState.stop = this._states.total;
     }
 
     return this._states;

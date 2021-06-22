@@ -81,7 +81,7 @@ class AnalyticsCollections extends TatorPage {
       let settingsLock = this._settings.getAttribute("lock");
 
       if (settingsLock === "1") {
-        console.log("open the lock");
+        //console.log("open the lock");
         this._settings._lock.unlock();
         this._panelContainer.setAttribute("permissionValue", "Can Edit");
       }
@@ -93,7 +93,6 @@ class AnalyticsCollections extends TatorPage {
 
     if (this._settings.getPage()) {
       page = this._settings.getPage();
-      console.log("SETTINGS PAGE IS " + page);
     }
 
     this._modelData = new TatorData(this.projectId);

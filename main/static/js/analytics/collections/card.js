@@ -176,7 +176,7 @@ class CollectionsCard extends EntityCard {
 
   togglePanel(e){
     e.preventDefault();
-    //console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
+    console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
     // If they click while in preview, don't do this
     // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
     // if(isInPreview) {

@@ -88,7 +88,7 @@ class EntityCardResize extends TatorElement {
   }
 
   setGalleryTo(size){
-    console.log("Gallery resized");
+    //console.log("Gallery resized");
     return this._gallery.style.gridTemplateColumns = `repeat(auto-fill,minmax(${size}px,1fr))`;
   }
 

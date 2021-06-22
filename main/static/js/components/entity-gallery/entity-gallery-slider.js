@@ -71,14 +71,15 @@ class EntityGallerySlider extends TatorElement {
       this.state = state;
 
       this.addEventListener("slider-active", () => {
+         this.main.classList.add("active");
          this.styleDiv.classList.add("open");
          this._ul.classList.add("open");
 
          for (let idx = 0; idx < this._cardElements.length; idx++) {
             // if they directly chose a card, that's great stop there....
             let listEl = this._cardElements[idx].card._li;
-            //console.log(listEl);
-            //console.log(listEl.classList.contains("is-selected"));
+            console.log(listEl);
+            console.log(listEl.classList.contains("is-selected"));
             if (listEl.classList.contains("is-selected")) {
                return false;
             }
@@ -91,12 +92,9 @@ class EntityGallerySlider extends TatorElement {
       });
 
       this.addEventListener("slider-inactive", (e) => {
-         //console.log("Slider inactive hide cards");
+         this.main.classList.remove("active");
+         this.styleDiv.classList.remove("open");
          this._ul.classList.remove("open");
-         // Hide all cards' panels and de-select
-         for (let idx = 0; idx < this._cardElements.length; idx++) {
-            this._cardElements[idx].card._deselectedCardAndPanel();
-         }
       });
 
       this.addEventListener("new-card", (e) => {
@@ -123,14 +121,13 @@ class EntityGallerySlider extends TatorElement {
 
 
       const compareAttr = [...this.state.typeData.attribute_types];
-      console.log(compareAttr);
+
       for (let attr in attributes) {
-         console.log(`Adding ${attr} to ${this.id}`)
+         //console.log(`Adding ${attr} to ${this.id}`)
 
          if (compareAttr) {
             let index = compareAttr.indexOf(attr);
             compareAttr.splice(index, 1); // test
-            console.log(compareAttr);
          }
 
          let attributeLabel = document.createElement("div");
@@ -168,7 +165,7 @@ class EntityGallerySlider extends TatorElement {
       // #todo test
       if (compareAttr && compareAttr.length > 0) {
          for (let attr in compareAttr) {
-            console.log(`Adding (compared) ${attr} to ${this.id}`)
+            //console.log(`Adding (compared) ${attr} to ${this.id}`)
 
             let attributeLabel = document.createElement("div");
             attributeLabel.setAttribute("class", "hidden");
@@ -231,7 +228,7 @@ static get observedAttributes() {
          info.card.setImage(image);
       } else {
          // If the card hasn't been added yet -- save it here (we'll check for it when new cards are added)
-         console.log("Saving image for card ID " + id)
+         //console.log("Saving image for card ID " + id)
          this._preloadedImages[id] = e.detail.image;
       }
    }
@@ -389,7 +386,7 @@ static get observedAttributes() {
          // Add new card to the gallery div
          if (newCard) {
             this._ul.appendChild(card);
-            console.log("A (NEW) New Card!!!!!!!!!!! id " + cardObj.id);
+            //console.log("A (NEW) New Card!!!!!!!!!!! id " + cardObj.id);
             if (this._preloadedImages[cardObj.id]) {
                const image = this._preloadedImages[cardObj.id];
                this._cardElements[index].card.setImage(image);
@@ -400,9 +397,9 @@ static get observedAttributes() {
    }
 
    showLabels(selectedLabels) {
-      console.log(selectedLabels);
+      //console.log(selectedLabels);
       for (let el of this.attributeLabelEls) {
-         console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
+         //console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
          if (selectedLabels.includes(el.id)) {
             el.classList.remove("hidden");
          } else {
@@ -412,8 +409,6 @@ static get observedAttributes() {
    }
 
    _updateLabelValues({ newValues }) {
-      console.log("NEW LABEL VALUES!!!")
-      console.log(newValues);
       for (let el of this.attributeLabelEls) {
          //const [key, value] of Object.entries(object1)
          for (const [key, value] of Object.entries(newValues.attributes)) {

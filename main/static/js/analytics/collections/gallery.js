@@ -70,7 +70,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             let totalText = `${total} Results`;
 
             if (statesInfo.paginationState && total > statesInfo.paginationState.pageSize) {
-               let startText = statesInfo.paginationState.start == 0 ? 1 : statesInfo.paginationState.start;
+               let startText = statesInfo.paginationState.start + 1;
                totalText = `${startText} to ${statesInfo.paginationState.stop} of ${total} of Results`
 
                // Top settings
@@ -96,7 +96,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          // Setup the label picker
          if (this.modelData.stateTypeData) {
             for (let typeId in this.modelData.stateTypeData) {
-               console.log(`Gallery creation of labels for typeId ${typeId}`);
+               //console.log(`Gallery creation of labels for typeId ${typeId}`);
                if (this.modelData.stateTypeData[typeId].total > 0) {
                   let labels = document.createElement("entity-gallery-labels");
                   let labelValues = [];
@@ -111,7 +111,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
                      labelValues = e.detail.value;
                      this.labelsUpdate({ typeId, labelValues });
                      this.modelData.currenLabelValues[typeId] = labelValues;
-                     console.log(this.modelData.currenLabelValues[typeId]);
+                     //console.log(this.modelData.currenLabelValues[typeId]);
                   });
                   // Label sort changes
 
@@ -160,7 +160,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
    labelsUpdate({ typeId, labelValues }) {
       // find the slider, and show it's values
       for (let s of this._sliderElements) {
-         console.log(`Updating for ${typeId} -- this smeta is ${s.getAttribute("meta")} for slider id ${s.id}`)
+         //console.log(`Updating for ${typeId} -- this smeta is ${s.getAttribute("meta")} for slider id ${s.id}`)
          if (s.getAttribute("meta") == typeId) {
             //show the Labels (which are there but hidden)
             s.showLabels(labelValues);
@@ -169,7 +169,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    _paginateGallery(evt) {
-      console.log(evt.detail)
+      //(evt.detail)
       const statesInfo = this.modelData._states;
 
       // set state
@@ -179,8 +179,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
       statesInfo.paginationState.pageSize = evt.detail.pgsize;
       statesInfo.paginationState.init = false;
 
-      console.log(this.modelData);
-      console.log(statesInfo);
       this._paginationUpdate(statesInfo);
 
       this.analyticsSettings.setAttribute("pagesize", statesInfo.paginationState.pageSize);
@@ -227,11 +225,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    async _addSliders({ sliderList, states }) {
-      console.log("ADDING SLIDERS!");
-      console.log(states);
       // Append the sliders
       for (let state of states) {
-         console.log(state);
          state.cards = [];
          let counter = 0;
 
@@ -269,14 +264,14 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
          slider.addEventListener("click", (e) => {
             if (!slider.main.classList.contains("active")) {
+               slider.dispatchEvent(new Event("slider-active"));
+
                // This sliderEl is active, the rest are inactive
                for (let s of this._sliderElements) {
-                  s.main.classList.remove("active");
-                  s.dispatchEvent(new Event("slider-inactive"));
+                  if (s.id !== slider.id) {
+                     s.dispatchEvent(new Event("slider-inactive"));
+                  }
                }
-
-               slider.main.classList.add("active");
-               slider.dispatchEvent(new Event("slider-active"));
 
                slider.scrollIntoView({
                   behavior: "smooth",
@@ -453,7 +448,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          values: { attributes: e.detail.values },
          type: "State"
       }).then((data) => {
-         console.log(data);
+         //console.log(data);
 
          // Find the right slider
          for (let s of this._sliderElements) {
