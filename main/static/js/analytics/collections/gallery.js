@@ -26,7 +26,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._sliderElements = [];
 
       // First group and total cards
-      this._previewCardCount = 10;
+      this._previewCardCount = 1000;
    }
 
    // Provide access to side panel for events

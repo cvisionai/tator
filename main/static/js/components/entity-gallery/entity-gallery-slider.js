@@ -47,7 +47,7 @@ class EntityGallerySlider extends TatorElement {
       let text = document.createTextNode("Load More...");
       this.loadAllTeaser.appendChild(text);
 
-      this.styleDiv.appendChild(this.loadAllTeaser);
+      //this.styleDiv.appendChild(this.loadAllTeaser);
 
       this.numberOfDisplayedCards = 0;
       this.attributeLabelEls = [];
