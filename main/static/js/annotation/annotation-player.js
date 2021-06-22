@@ -412,8 +412,8 @@ class AnnotationPlayer extends TatorElement {
     }
   }
 
-  disableScrubBuffer() {
-    this._video.disableScrubBuffer();
+  disableAutoDownloads() {
+    this._video.disableAutoDownloads();
   }
 
   enableShortcuts() {

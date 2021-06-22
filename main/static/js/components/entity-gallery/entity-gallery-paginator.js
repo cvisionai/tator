@@ -78,7 +78,7 @@ class EntityGalleryPaginator extends TatorElement {
     for (const pageOption of [10, 25, 50]) { // #TODO Fix
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
-      if(this._pageSize == pageOption) option.selected = true;
+      if (this._pageSize == pageOption) option.selected = true;
       option.textContent = pageOption;
       this.pageSizeEl.appendChild(option);
     }
@@ -134,7 +134,7 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-    
+
   }
 
   getPageSize() {
@@ -149,8 +149,6 @@ class EntityGalleryPaginator extends TatorElement {
     // Use number of files to update the rest
     this._paginationState = paginationState;
     this._numFiles = numFiles;
-    this._numPages = Math.ceil(this._numFiles / this._pageSize);
-    this._last.textContent = this._numPages;
 
     // Set page based on given start/stop
     const pageNumber = Math.floor(paginationState.start / this._pageSize);
@@ -158,8 +156,9 @@ class EntityGalleryPaginator extends TatorElement {
   }
 
   _setPage(page) {
+    this._numPages = Math.ceil(this._numFiles / this._pageSize);
+    this._last.textContent = this._numPages;
     this._page = page;
-    //console.log(page);
 
     // Update appearance to reflect new page.
     if (this._numPages == 1) {
@@ -255,18 +254,18 @@ class EntityGalleryPaginator extends TatorElement {
     }));
   }
 
-  setValues(pagObj){
+  setValues(pagObj) {
     let newValBool = false;
-    if(this._pageSize !== pagObj.pageSize){
+    if (this._pageSize !== pagObj.pageSize) {
       this._pageSize = pagObj.pageSize;
       this.pageSizeEl.value = pagObj.pageSize;
       newValBool = true;
     }
     let pageVal = pagObj.page - 1;
-    if (this.page !== pageVal){
+    if (this.page !== pageVal) {
       newValBool = true;
     }
-    if(newValBool === true) return this._setPage( pageVal );
+    if (newValBool === true) return this._setPage(pageVal);
   }
 }
 

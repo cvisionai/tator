@@ -111,9 +111,7 @@ class AnalyticsAnnotations extends TatorPage {
     this._modelData.init().then(() => {
 
       // Init vars for filter state
-      this._filterState = {
-        conditionsObject: this._settings.getFilterConditionsObject()
-      };
+      this._filterConditions = this._settings.getFilterConditionsObject();
 
       // Init vars for pagination state
       let pageSize = this._settings.getPageSize();
@@ -140,7 +138,7 @@ class AnalyticsAnnotations extends TatorPage {
       this._filterDataView = new FilterData(this._modelData);
       this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
-      this._filterView.setFilterConditions(this._filterState.conditionsObject);
+      this._filterView.setFilterConditions(this._filterConditions);
 
       // Card Data class collects raw model and parses into view-model format
       this.cardData = document.createElement("annotation-card-data");
@@ -152,11 +150,6 @@ class AnalyticsAnnotations extends TatorPage {
 
       // Init panel side behavior
       this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData, panelName: "Annotation" });
-
-      // Update the card with the localization's associated media
-      this.cardData.addEventListener("setMedia", (evt) => {
-        this._filterResults.updateCardMedia(evt.detail.id, evt.detail.media);
-      });
 
       // Pass panel and localization types to gallery
       this._filterResults._initPanel({
@@ -215,26 +208,24 @@ class AnalyticsAnnotations extends TatorPage {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-  _cardGallery({ filterState, paginationState }) {
+  _cardGallery({ filterConditions, paginationState }) {
     this.loading.showSpinner();
     this.showDimmer();
 
     // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList({ filterState, paginationState })
-
-      .then((cardList) => {
-        // CardList inits Gallery component with cards & pagination on page
-        this._filterResults.show(cardList);
-        this.loading.hideSpinner();
-        this.hideDimmer();
-      });
+    this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {
+      // CardList inits Gallery component with cards & pagination on page
+      this._filterResults.show(cardList);
+      this.loading.hideSpinner();
+      this.hideDimmer();
+    });
   }
 
   // Reset the pagination back to page 0
   _updateFilterResults(evt) {
-    this._filterState.conditionsObject = evt.detail.conditions;
+    this._filterConditions = evt.detail.conditions;
 
-    var filterURIString = encodeURIComponent(JSON.stringify(this._filterState.conditionsObject));
+    var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
     this._paginationState.init = true;
 
     // @TODO reset to default page size? or keep if something was chosen?
@@ -245,7 +236,7 @@ class AnalyticsAnnotations extends TatorPage {
 
     // updated the card gallery
     this._cardGallery({
-      filterState: this._filterState,
+      filterConditions: this._filterConditions,
       paginationState: this._paginationState
     });
 
@@ -266,7 +257,7 @@ class AnalyticsAnnotations extends TatorPage {
 
     // get the gallery
     this._cardGallery({
-      filterState: this._filterState,
+      filterConditions: this._filterConditions,
       paginationState: this._paginationState
     });
 

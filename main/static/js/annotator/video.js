@@ -1125,7 +1125,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     this._addVideoDiagnosticOverlay();
     this._ftypInfo = {};
-    this._disableScrubBuffer = false;
+    this._disableAutoDownloads = false;
     this._allowSafeMode = true;
 
     // Set the onDemand watchdog download thread
@@ -1140,8 +1140,8 @@ class VideoCanvas extends AnnotationCanvas {
    * Permanently disable downloading the scrub buffer.
    * #TODO Allow some ability to re-enable downloading the scrub buffer.
    */
-  disableScrubBuffer() {
-    this._disableScrubBuffer = true;
+   disableAutoDownloads() {
+    this._disableAutoDownloads = true;
   }
 
   set allowSafeMode(val) {
@@ -1353,7 +1353,7 @@ class VideoCanvas extends AnnotationCanvas {
                                                   detail: {"percent_complete":e.data["percent_complete"]}
                                                 }));
 
-              if (that._disableScrubBuffer && that._scrubDownloadCount >= 2) {
+              if (that._disableAutoDownloads && that._scrubDownloadCount >= 2) {
                 return;
               }
               that._scrubDownloadCount += 1
@@ -1405,6 +1405,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
+        that._onDemandPlaybackReady = true; //if we reached the end, we are done.
       }
       else if (type == "onDemand")
       {
@@ -2571,6 +2572,10 @@ class VideoCanvas extends AnnotationCanvas {
   }
   onDemandDownload(inhibited)
   {
+    if (this._disableAutoDownloads) {
+      return;
+    }
+
     if (inhibited == undefined)
     {
       inhibited = false;

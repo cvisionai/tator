@@ -96,21 +96,12 @@ class AnnotationsGallery extends EntityCardGallery {
   /* Init function to show and populate gallery w/ pagination */
   show(cardList) {
 
-    // Update Heading
-    // if(cardList.filterState.filtered == true) {
-    //   this._ul.innerHTML = "";
-    //   this._h3Text = document.createTextNode("Filtered Annotations");
-    // } else {
-    //   this._ul.innerHTML = "";
-    //   this._h3Text = document.createTextNode("All Annotations");
-    // }
-
-    if (cardList.total >= this.modelData.getMaxFetchCount()) {
-      this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
-    }
-    else {
-      this._numFiles.textContent = `${cardList.total} Results`;
-    }
+   //if (cardList.total >= this.modelData.getMaxFetchCount()) {
+   //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
+   //}
+   //else {
+   this._numFiles.textContent = `${cardList.total} Results`;
+   //}
 
     // Only populate the pagination when the dataset has changed (and therefore the pagination
     // needs to be reinitialized)
@@ -138,20 +129,6 @@ class AnnotationsGallery extends EntityCardGallery {
       var info = this._cardElements[this._currentCardIndexes[id]];
       info.card.setImage(image);
       // info.annotationPanel.setImage(image);
-    }
-  }
-
-  /**
-   * Updates the specific card's panel's media
-   * @param {integer} id
-   * @param {entityObject} media
-   */
-  updateCardMedia(id, media) {
-    if (id in this._currentCardIndexes) {
-      var info = this._cardElements[this._currentCardIndexes[id]];
-      //#TODO Entity gallery panel needs to be updated so that it can display multiple
-      //      entity attributes (e.g. media associated with the localization)
-      //info.annotationPanel.setMedia(media);
     }
   }
 
@@ -238,10 +215,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
       // Initialize the card panel
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this._cardElements[index].annotationPanel.init({
-        cardObj
-      } );
-      
+      this._cardElements[index].annotationPanel.init(cardObj);
       
       // Initialize Card
       card.init({
@@ -278,6 +252,7 @@ class AnnotationsGallery extends EntityCardGallery {
     }
   }
 
+
   entityFormChange(e) {
     this.formChange({
       id: e.detail.id,
@@ -289,12 +264,20 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   mediaFormChange(e) {
+    var mediaId = e.detail.id;
     this.formChange({
       id: e.detail.id,
       values: { attributes: e.detail.values },
       type: "Media"
-    }).then((data) => {
-      //#TODO
+    }).then(() => {
+      this.cardData.updateMediaAttributes(mediaId).then(() => {
+        for (let idx = 0; idx < this._cardElements.length; idx++) {
+          const card = this._cardElements[idx].card.cardObj;
+          if (card.mediaId == mediaId) {
+            this._cardElements[idx].annotationPanel.setMediaData(card);
+          }
+        }
+      });
     });
   }
 

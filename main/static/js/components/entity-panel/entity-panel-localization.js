@@ -91,7 +91,7 @@ class GalleryPanelLocalization extends TatorElement {
     this._clearExistingCanvas();
 
     this._videoCanvas = document.createElement("annotation-player");
-    this._videoCanvas.disableScrubBuffer();
+    this._videoCanvas.disableAutoDownloads();
     this._videoCanvas.hideVideoControls();
     this._videoCanvas.hideVideoText();
     this._videoCanvas.disableShortcuts();

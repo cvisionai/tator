@@ -1,145 +1,202 @@
+/**
+ * Class that contains the data about the annotation analytics gallery.
+ * This provides an interface between the UI elements to the underlying data calls.
+ */
 class AnnotationCardData extends HTMLElement {
-    constructor(){
-        super();
+  constructor() {
+    super();
+  }
+
+  /**
+   * @precondition The provided modelData must have been initialized
+   * @param {TatorData} modelData
+   */
+  init(modelData) {
+    this._modelData = modelData;
+
+    this.mediaTypes = this._modelData.getStoredMediaTypes();
+    this.mediaTypeMap = new Map();
+    for (const mediaType of this.mediaTypes) {
+      this.mediaTypeMap.set(mediaType.id, mediaType);
     }
 
-    init(modelData) {
-        this._modelData = modelData;
-        this.localizationTypes = this._modelData.getStoredLocalizationTypes();
-        this.mediaTypes = this._modelData.getStoredMediaTypes();
-        this.projectId = this._modelData.getProjectId();
+    this.localizationTypes = this._modelData.getStoredLocalizationTypes();
+    this.localizationTypeMap = new Map();
+    for (const locType of this.localizationTypes) {
+      this.localizationTypeMap.set(locType.id, locType);
     }
 
-    async makeCardList({filterState, paginationState}) {
-        this.cardList = {};
-        this.cardList.cards = [];
-        this.cardList.filterState = filterState;
-        this.cardList.paginationState = paginationState;
+    this.projectId = this._modelData.getProjectId();
+    this.filterConditions = "";
+  }
 
-        this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterState.conditionsObject);
-        if (this.cardList.total > this._modelData.getMaxFetchCount()) {
-            this.cardList.total = this._modelData.getMaxFetchCount();
+  /**
+   * @param {array} filterConditions array of FilterConditionData objects
+   */
+  async _reload(filterConditions) {
+    this.filterConditions = filterConditions;
+    this.cardList = {};
+    this.cardList.cards = [];
+    this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
+    this.afterMap = new Map();
+  }
+
+  /**
+   * Note: If the filters are in a different order, this will return with True still.
+   * @param {array} filterConditions array of FilterConditionData objects
+   * @returns True if reload() needs to be called
+   */
+  _needReload(filterConditions) {
+    return JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions);
+  }
+
+  /**
+   * @param {array} localizations Localizations to displays in the annotation gallery
+   * @returns {Promise}
+   */
+  _getCardList(localizations, medias) {
+    return new Promise((resolve, reject) => {
+
+      let counter = localizations.length;
+      var haveCardShells = function () {
+        if (counter <= 0) { resolve(); }
+      }
+
+      // Handle the case where we get nothing back
+      haveCardShells();
+
+      for (let [i, l] of localizations.entries()) {
+        let id = l.id;
+        let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.meta, l.version);
+        let entityType = this.localizationTypeMap.get(l.meta);
+
+        let attributes = l.attributes;
+        let created = new Date(l.created_datetime);
+        let modified = new Date(l.modified_datetime);
+        let mediaId = l.media;
+
+        let position = i + this.cardList.paginationState.start;
+        let posText = `${position + 1} of ${this.cardList.total}`;
+
+        let media;
+        for (let idx = 0; idx < medias.length; idx++) {
+          if (medias[idx].id == mediaId) {
+            media = medias[idx];
+            break;
+          }
         }
-        this.localizations = await this._modelData.getFilteredLocalizations("objects", filterState.conditionsObject, paginationState.start, paginationState.stop);
-        //this.mediaTypes = this._modelData.getStoredMediaTypes();
-        //this.projectId = this._modelData.getProjectId();
 
-        var mediaPromises = [];
-        var mediaList = [];
-        for (let idx = 0; idx < this.localizations.length; idx++) {
-            if (!mediaList.includes(this.localizations[idx].media)) {
-                mediaList.push(this.localizations[idx].media);
-            }
+        let mediaInfo = {
+          id: mediaId,
+          entityType: this.mediaTypeMap.get(media.meta),
+          attributes: media.attributes,
+          media: media,
         }
-        for (let idx = 0; idx < mediaList.length; idx++) {
-            mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
-        }
-        this.medias = await Promise.all(mediaPromises);
 
-        await this.getCardList(this.localizations);
+        let card = {
+          id,
+          localization: l,
+          entityType,
+          mediaId,
+          mediaInfo,
+          mediaLink,
+          attributes,
+          created,
+          modified,
+          posText
+        };
 
-        return this.cardList;
-    }
+        this.cardList.cards.push(card);
+        counter--;
+        haveCardShells();
 
-    /**
-     * Updates the provided localization card's attributes
-     */
-    async updateLocalizationAttributes(cardObj) {
-        var locData = await this._modelData.getLocalization(cardObj.id);
-        cardObj.localization = locData;
-        cardObj.attributes = locData.attributes;
-        cardObj.created = new Date(locData.created_datetime);
-        cardObj.modified = new Date(locData.modified_datetime);
-    }
-
-    getCardList(localizations){
-        return new Promise((resolve, reject) => {
-            var haveCardShells = function () {
-                if (counter <= 0) {
-                    resolve();
-                }
+        this._modelData.getLocalizationGraphic(l.id).then((image) => {
+          this.dispatchEvent(new CustomEvent("setCardImage", {
+            composed: true,
+            detail: {
+              id: l.id,
+              image: image
             }
-
-            let counter = localizations.length;
-            console.log("Processing " + counter + " localizations in gallery.");
-
-            // Handle the case where we get nothing back
-            haveCardShells();
-
-            for(let [i, l] of localizations.entries()){
-                let id = l.id;
-                let mediaLink = this._modelData.generateMediaLink(l.media, l.frame, l.id, l.meta, l.version);
-                let entityType = this.findMetaDetails(l.meta);
-
-                let attributes = l.attributes;
-                let created = new Date(l.created_datetime);
-                let modified = new Date(l.modified_datetime);
-                let mediaId = l.media;
-
-                let position = i + this.cardList.paginationState.start;
-                let posText = `${position + 1} of ${this.cardList.total}`;
-
-                let media;
-                for (let idx = 0; idx < this.medias.length; idx++) {
-                    if (this.medias[idx].id == mediaId) {
-                        media = this.medias[idx];
-                        break;
-                    }
-                }
-
-                let mediaInfo = {
-                    id: mediaId,
-                    entityType: this.findMediaMetaDetails(media.meta),
-                    attributes: media.attributes,
-                    media: media,
-                }
-
-                let card = {
-                    id,
-                    localization : l,
-                    entityType,
-                    mediaId,
-                    mediaInfo,
-                    mediaLink,
-                    attributes,
-                    created,
-                    modified,
-                    posText
-                };
-
-                this.cardList.cards.push(card);
-                counter--;
-                haveCardShells();
-
-                this._modelData.getLocalizationGraphic(l.id).then((image) => {
-                    this.dispatchEvent(new CustomEvent("setCardImage", {
-                        composed: true,
-                        detail: {
-                            id: l.id,
-                            image: image
-                        }
-                    }));
-                });
-            }
+          }));
         });
+      }
+    });
+  }
+
+  /**
+   * @param {array} filterConditions array of FilterConditionData objects
+   * @param {object} paginationState
+   * @returns {object}
+   */
+  async makeCardList(filterConditions, paginationState) {
+    if (this._needReload(filterConditions)) {
+      await this._reload(filterConditions);
+    }
+    this.cardList.cards = [];
+    this.cardList.paginationState = paginationState;
+
+    // Get the localizations for the current page
+    var localizations = await this._modelData.getFilteredLocalizations(
+      "objects",
+      filterConditions,
+      paginationState.start,
+      paginationState.stop,
+      this.afterMap);
+
+    // Query the media data associated with each localization
+    var mediaPromises = [];
+    var mediaList = [];
+    for (let idx = 0; idx < localizations.length; idx++) {
+      if (!mediaList.includes(localizations[idx].media)) {
+        mediaList.push(localizations[idx].media);
+      }
     }
 
-    findMetaDetails(id){
-        for(let lt of this.localizationTypes){
-            if(lt.id == id){
-                return lt;
-            }
-        }
+    // #TODO change this to the put command to get the object list
+    //       this potentially could move to a separate async pathway
+    for (let idx = 0; idx < mediaList.length; idx++) {
+      mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
+    }
+    var medias = await Promise.all(mediaPromises);
+
+    // Now gather all the card information
+    await this._getCardList(localizations, medias);
+    return this.cardList;
+  }
+
+  /**
+   * Updates the provided localization card's attributes
+   * @param {} cardObj Modified by this function
+   */
+  async updateLocalizationAttributes(cardObj) {
+    var locData = await this._modelData.getLocalization(cardObj.id);
+    cardObj.localization = locData;
+    cardObj.attributes = locData.attributes;
+    cardObj.created = new Date(locData.created_datetime);
+    cardObj.modified = new Date(locData.modified_datetime);
+  }
+
+  /**
+   * Updates the media attributes for all cards with the same media ID
+   * @param {integer} mediaId - Media ID to retrieve and update cards with
+   */
+  async updateMediaAttributes(mediaId) {
+
+    var media = await this._modelData.getMedia(mediaId);
+
+    let mediaInfo = {
+      id: mediaId,
+      entityType: this.mediaTypeMap.get(media.meta),
+      attributes: media.attributes,
+      media: media,
     }
 
-    findMediaMetaDetails(id) {
-        for (let mediaType of this.mediaTypes) {
-            if (mediaType.id == id) {
-                return mediaType;
-            }
-        }
+    for (let card of this.cardList.cards) {
+      if (card.mediaId == mediaId) {
+        card.mediaInfo = mediaInfo;
+      }
     }
-
+  }
 }
 
 customElements.define("annotation-card-data", AnnotationCardData);

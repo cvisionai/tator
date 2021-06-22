@@ -27,7 +27,6 @@ class EntityGalleryPanelForm extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "permission":
-        //console.log(`Form permission updated from ${oldValue} to ${newValue}`);
         this._attributes.permission = newValue; // start as view only - controlled by lock
         break;
     }
@@ -68,6 +67,10 @@ class EntityGalleryPanelForm extends TatorElement {
 
   updateValues({ newValues }) {
     this._attributes.setValues(newValues);
+  }
+
+  setValues(data) {
+    this._attributes.setValues(data);
   }
 }
 
