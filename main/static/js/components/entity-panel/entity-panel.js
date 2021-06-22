@@ -67,7 +67,7 @@ class EntityGalleryPanel extends TatorElement {
    * Updates both the entity and the media data with the given card object
    * @param {Object} cardObj
    */
-  init(cardObj) {
+  async init({ cardObj }) {
     this.cardObj = cardObj;
 
     // Setup linkout and the entity data for panel here
