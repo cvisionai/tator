@@ -52,6 +52,7 @@ class EntityCardSlideGallery extends TatorElement {
       // Gallery List is a list of sliders***
       this._sliderContainer = document.createElement("div");
       this._sliderContainer.setAttribute("class", "enitity-gallery__slider-container px-2 mb-2 rounded-1");
+      this._sliderContainer.style.marginTop = "-22px";
       this._main.appendChild(this._sliderContainer);
 
       // // Gallery Pagination Bottom
