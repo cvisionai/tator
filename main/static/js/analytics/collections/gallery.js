@@ -284,11 +284,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   }
                }
 
-               slider.scrollIntoView({
-                  behavior: "smooth",
-                  block: "end",
-                  inline: "nearest"
-               });
+               // slider.scrollIntoView({
+               //    behavior: "smooth",
+               //    block: "end",
+               //    inline: "nearest"
+               // });
 
                //this.analyticsSettings.setAttribute("selectedState", state.id);
                //window.history.pushState({}, "", this.analyticsSettings.getURL());
@@ -428,7 +428,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       //this.analyticsSettings.setAttribute("selectedState", stateId);
 
-      return sliderEl.scrollIntoView(true);
+      //return sliderEl.scrollIntoView(true);
    }
 
    updateCardData(newCardData) {

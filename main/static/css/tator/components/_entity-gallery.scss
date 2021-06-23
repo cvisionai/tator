@@ -197,7 +197,7 @@ collections-card {
   display: block;
 }
 .entity-slider-card {
-  width: 272px;
+  // width: 272px;
   display: block;
 
   &:first-child{
@@ -242,7 +242,6 @@ collections-card {
 
 .entity-gallery-slider {
   background: $color-charcoal--medium-dark70;
-  margin: 30px 0 60px;
   padding: 30px;
   transition: 300ms linear all;
   border: 2px solid $color-charcoal--medium;
@@ -260,6 +259,10 @@ collections-card {
     .entity-gallery-slider--title {
       color: $color-white !important;
     }
+  }
+  &:not(.active) .entity-card-resize {
+    transition: display 500ms cubic-bezier(0.075, 0.82, 0.165, 1);
+    display: none;
   }
 }
 

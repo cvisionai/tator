@@ -18,10 +18,8 @@ class EntityCardSlideGallery extends TatorElement {
 
       // Labels Picker
       this._attributeLabelsDiv = document.createElement("div");
-      this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels-div px-2 py1");
+      this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels-div py-1");
       this._main.appendChild(this._attributeLabelsDiv);
-
-      //this._attributeLabelsDiv.appendChild(document.createTextNode("Choose Labels: "));
 
       // Gallery Heading
       this._h3 = document.createElement("div");
@@ -51,13 +49,13 @@ class EntityCardSlideGallery extends TatorElement {
 
       // Gallery List is a list of sliders***
       this._sliderContainer = document.createElement("div");
-      this._sliderContainer.setAttribute("class", "enitity-gallery__slider-container px-2 mb-2 rounded-1");
-      this._sliderContainer.style.marginTop = "-22px";
+      this._sliderContainer.setAttribute("class", "enitity-gallery__slider-container mt-3 mb-2 rounded-1");
+      //this._sliderContainer.style.marginTop = "-22px";
       this._main.appendChild(this._sliderContainer);
 
       // // Gallery Pagination Bottom
       this._paginator = document.createElement("entity-gallery-paginator");
-      this._paginator.div.classList.add("py-5");
+      //this._paginator.div.classList.add("py-5");
       this._paginator.pageSizeEl.hidden = true;
       this._paginator.pageSizeText.hidden = true;
       this._paginator.hidden = true;

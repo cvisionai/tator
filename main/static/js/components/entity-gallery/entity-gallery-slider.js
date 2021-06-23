@@ -3,7 +3,7 @@ class EntityGallerySlider extends TatorElement {
       super();
 
       this.main = document.createElement("div");
-      this.main.setAttribute("class", "entity-gallery-slider clickable");
+      this.main.setAttribute("class", "entity-gallery-slider mb-4 clickable");
       this._shadow.appendChild(this.main);
 
 
@@ -19,9 +19,31 @@ class EntityGallerySlider extends TatorElement {
       this._title.setAttribute("class", "h3 entity-gallery-slider--title text-gray");
       this._labels.appendChild(this._title);
 
+      // Gallery Top Tools and info
+      this._tools = document.createElement("div");
+      this._tools.setAttribute("class", "enitity-gallery__tools py-2 d-flex flex-justify-between");
+      this.main.appendChild(this._tools);
+
       this._count = document.createElement("p");
       this._count.setAttribute("class", "text-gray py-1 pb-2")
-      this.main.appendChild(this._count);
+      this._tools.appendChild(this._count);
+
+      // Sort
+      // this._attributeSortDiv = document.createElement("div");
+      // this._attributeSortDiv.setAttribute("class", "enitity-gallery__sort-div py-1");
+      // this._tools.appendChild(this._attributeSortDiv);
+
+      // Labels Picker
+      // this._attributeLabelsDiv = document.createElement("div");
+      // this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels-div py-1");
+      // this._tools.appendChild(this._attributeLabelsDiv);
+
+      // Tools: Slider to resize images
+      this.sliderContainer = document.createElement("div");
+      this.sliderContainer.setAttribute("class", "entity-card-resize col-4")
+      this._resizeCards = document.createElement('entity-card-resize');
+      this.sliderContainer.appendChild(this._resizeCards);
+      this._tools.appendChild(this.sliderContainer);
 
       // Property IDs are the entity IDs (which are expected to be unique)
       // Each property (ID) points to the index of the card information stored in _cardElements
@@ -36,11 +58,13 @@ class EntityGallerySlider extends TatorElement {
       this.main.appendChild(this.styleDiv);
 
       // card columns inside slider #todo finish styling
-      //this.colSize = 150;
+      this.colSize = 150;
       this._ul = document.createElement("ul");
       this._ul.setAttribute("class", "enitity-gallery-slider__ul py-1")
       //this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
       this.styleDiv.appendChild(this._ul);
+
+      this._resizeCards._initGallery(this._ul, this.colSize);
 
       this.loadAllTeaser = document.createElement("span");
       this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more"); //
@@ -196,7 +220,7 @@ static get observedAttributes() {
           this._title.textContent = newValue;
         break;
       case "count":
-         this._count.textContent = newValue;
+          this._count.textContent = newValue;
         break;
     }
   }
@@ -284,11 +308,11 @@ static get observedAttributes() {
             card = document.createElement(cardType);
 
             // // Resize Tool needs to change style within card on change
-            // this._resizeCards._slideInput.addEventListener("change", (evt) => {
-            //    let resizeValue = evt.target.value;
-            //    let resizeValuePerc = parseFloat(resizeValue / 100);
-            //    return card._img.style.height = `${130 * resizeValuePerc}px`;
-            // });
+            this._resizeCards._slideInput.addEventListener("change", (evt) => {
+               let resizeValue = evt.target.value;
+               let resizeValuePerc = parseFloat(resizeValue / 100);
+               return card._img.style.height = `${130 * resizeValuePerc}px`;
+            });
 
             // Inner div of side panel
             let annotationPanelDiv = document.createElement("div");
