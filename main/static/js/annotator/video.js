@@ -1405,6 +1405,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
+        that._onDemandPlaybackReady = true; //if we reached the end, we are done.
       }
       else if (type == "onDemand")
       {
