@@ -75,7 +75,6 @@ class AnalyticsAnnotations extends TatorPage {
     //
     /* Other */
     // Class to hide and showing loading spinner
-    // @TODO what is standard use?
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
 
@@ -135,7 +134,7 @@ class AnalyticsAnnotations extends TatorPage {
       };
 
       // Filter interface
-      this._filterDataView = new FilterData(this._modelData);
+      this._filterDataView = new FilterData(this._modelData, ["annotation-analytics-view"]);
       this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
       this._filterView.setFilterConditions(this._filterConditions);
