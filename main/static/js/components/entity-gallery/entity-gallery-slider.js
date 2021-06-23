@@ -323,7 +323,13 @@ class EntityGallerySlider extends TatorElement {
    }
 
    _addCard(index, cardObj, cardType) {
-      const newCard = index >= this._cardElements.length;
+      let newCard = false;
+      let location = this._currentCardIndexes[cardObj.id];
+
+      if (!location && typeof location == "undefined") {
+         newCard = true;
+      }
+
       let card;
       if (newCard) {
          card = document.createElement(cardType);
@@ -462,28 +468,39 @@ class EntityGallerySlider extends TatorElement {
       }
    }
 
+   _updateLocalizationAttribute({newValues}){
+      for (let i = 0; i < this._cardElements.length; i++) {
+         let cardAttr = this._cardElements[i].card.cardObj.attributes;
+         cardAttr = newValues.attributes;
+
+         for (let attrType of this.state.entityType.attribute_types) {
+            if (attrType.order == 0) {
+               if (cardAttr[attrType.name] != undefined) {
+                  this._cardElements[i].card._name.textContent = cardAttr[attrType.name];
+               }
+               break;
+            }
+         }
+      }
+   }
+
    async _handleCardPagination(evt) {
-      console.log(evt.detail);
       const start = evt.detail.start;
       const stop = evt.detail.stop;
-      console.log(this.unshownCards);
 
       // Hide all the cards, and figure out which ones we need to show
-      for (let i = 0; i < this.numberOfDisplayedCards; i++) {
+      for (let i = 0; i < this._cardElements.length; i++) {
          this._cardElements[i].card.style.display = "none";
       }
 
       //if (evt.detail.start >= this._cardElements.length) {
-      for (let i = start; i < stop; i++) {   
-         console.log(i);
-         console.log(this.unshownCards[i])     
+      for (let i = start; i < stop; i++) {
          let initData = this.unshownCards[i]; //type, id, totalList
-         let index = this._currentCardIndexes[initData.id];
 
-         if (index && this._cardElements[index] && this._cardElements[index].card) {
-            console.log(`Preparing id ${initData.id} in card index ${index} with i equal to ${i}`);
-            this._cardElements[index].card.style.display = "block";
+         if (typeof initData == "undefined") {
+            this._cardElements[i].card.style.display = "block";
          } else {
+            delete this.unshownCards[i];
             console.log(`Preparing new card for id ${initData.id} where i is equal to ${i}`);
             // start is further than we have gotten cards
             const card = await this.slideCardData.makeCardList(initData);

@@ -4,7 +4,7 @@ class EntityGalleryLabels extends TatorElement {
     
       // clickable bar
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "entity-gallery-labels mb-3 py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
+      this._main.setAttribute("class", "entity-gallery-labels py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
       this._title = document.createElement("div");
       this._title.setAttribute("class", "entity-gallery-labels--title px-1 py-1 text-gray");

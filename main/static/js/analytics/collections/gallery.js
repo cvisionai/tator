@@ -162,7 +162,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       //show the Labels (which are there but hidden)
       if (hidden) {
          if (!s.helper) {
-            let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
+            let hiddenHTML = `<div class="hidden-type-html col-12 py-3 mb-2">[ ${s.title} Hidden ]</div>`;
             s.helper = document.createElement('div');
             s.helper.innerHTML = hiddenHTML;
             s._shadow.appendChild(s.helper);
@@ -390,8 +390,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   const cardInitData = { type: state.typeData.association, id, totalList };
                   // const card = await this.slideCardData.makeCardList(cardInitData);
                   slider.unshownCards[counter] = cardInitData;
-                  console.log("Updating unshown cards")
-                  console.log(slider.unshownCards[counter]);
                }
 
                counter++;
@@ -430,6 +428,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
                bottomNav.goToPage.hidden = true;
                bottomNav.goToPageText.hidden = true;
 
+               slider._cancelLoading = false;
                topNav.addEventListener("selectPage", (evt) => {
                   slider._handleCardPagination(evt);
                   let paginationState = {
@@ -496,9 +495,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          if (newCardData.id in s._currentCardIndexes) {
             const index = s._currentCardIndexes[newCardData.id];
             const card = s._cardElements[index].card;
-            s.slideData.updateLocalizationAttributes(card.cardObj).then(() => {
-               card.displayAttributes();
-            });
+            s._updateLocalizationAttribute(newCardData);
          }
       }
    }
@@ -510,6 +507,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          type: "Localization"
       }).then((data) => {
          this.updateCardData(data);
+         
       });
    }
 
