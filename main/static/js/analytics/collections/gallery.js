@@ -116,12 +116,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   // Label sort changes
 
                   // Hide / Show type changes
-                  // if (Object.keys(this.modelData.stateTypeData).length > 1) {
-                  //    // #todo - this works, but is showing count for all results, not just page which is confusing....
-                  //    labels.addEventListener("hide-type-update", (e) => {
-                  //       this.hideThisType({ typeId, hidden: e.detail.off });
+                  //if (Object.keys(this.modelData.stateTypeData).length > 1) {
+                  // #todo - this works, but is showing count for all results, not just page which is confusing....
+                  labels.addEventListener("hide-type-update", (e) => {
+                     this.hideThisType({ typeId, hidden: e.detail.off });
 
-                  //    });
+                  });
                   // } else {
                   //    labels._count.hidden = true;
                   // }
@@ -135,24 +135,47 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    hideThisType({ typeId, hidden }) {
+      if (hidden) {
+         this.modelData.currenHiddenType.push(typeId);
+      } else {
+         console.log(this.modelData.currenHiddenType.includes(typeId));
+         if (this.modelData.currenHiddenType.includes(typeId)) {
+            let index = this.modelData.currenHiddenType.indexOf(typeId);
+            console.log(index);
+            this.modelData.currenHiddenType.splice(index, 1);
+            console.log(this.modelData.currenHiddenType);
+            console.log(this.modelData.currenHiddenType.includes(typeId));
+         }
+      }
+
       // find the slider, and show it's values
       for (let s of this._sliderElements) {
          if (s.getAttribute("meta") == typeId) {
+            this._hiddenSlider(s, typeId, hidden);
+         }
+      }
+   }
+
+   _hiddenSlider(s, typeId, hidden) {
+      console.log("Hide a type.... ");
+      console.log(this.modelData.currenHiddenType);
+      //show the Labels (which are there but hidden)
+      if (hidden) {
+         if (!s.helper) {
             let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
-            var helper = document.createElement('div');
-            helper.innerHTML = hiddenHTML;
-            //show the Labels (which are there but hidden)
-            if (hidden) {
-               s.classList.add("hidden");
-               s.after(helper);
-               this.modelData.currenHiddenType.push(typeId);
-            } else if (!hidden) {
-               s.classList.remove("hidden");
-               helper.hidden = true;
-               helper.remove();
-               let index = this.modelData.currenHiddenType.indexOf(typeId);
-               this.currenHiddenType.splice(index, 1);
-            }
+            s.helper = document.createElement('div');
+            s.helper.innerHTML = hiddenHTML;
+            s._shadow.appendChild(s.helper);
+         } else {
+            s.helper.hidden = false;
+         }
+
+         s.main.classList.add("hidden")
+
+      } else {
+         s.main.classList.remove("hidden");
+         if (s.helper) {
+            s.helper.hidden = true;
          }
       }
    }
@@ -196,9 +219,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // Add new states
       // If the slider already exists, we're hiding and showing
       if (this._sliderLists[newSliderPage]) {
-         console.log(newSliderPage);
-         console.log(this._sliderLists);
-         console.log(this._sliderLists[newSliderPage]);
          for (let a in this._sliderLists) {
             console.log(this._sliderLists[a]);
             this._sliderLists[a].hidden = true;
@@ -328,6 +348,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
                slider.loadAllTeaser.remove();
             }
          });
+
+         // Current hidden status
+         if (this.modelData.currenHiddenType.includes(String(state.meta))) {
+            this._hiddenSlider(slider, state.meta, true);
+         }
 
          // create the cards
          const galleryList = state.typeData.association === "Localization" ? state.localizations : state.media;

@@ -7,37 +7,44 @@ class EntityGalleryLabels extends TatorElement {
       this._main.setAttribute("class", "entity-gallery-labels mb-3 py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
       this._title = document.createElement("div");
-      this._title.setAttribute("class", "entity-gallery-labels--title px-4 py-1 text-gray col-3");
+      this._title.setAttribute("class", "entity-gallery-labels--title px-1 py-1 text-gray");
       this._main.appendChild(this._title);
 
       // this._count = document.createElement("span");
-      // this._count.setAttribute("class", "gallery-label-count clickable pr-2")
-      // this._title.appendChild(this._count);
+      this._count = document.createElement("span");
+      this._count.setAttribute("class", "gallery-label-count  pr-2 clickable"); //clickable
+      this._title.appendChild(this._count);
 
       // Labels chooser
-      this._labelDetails = document.createElement("details");
-      this._labelDetails.setAttribute("class", "col-12");
-      this._main.appendChild(this._labelDetails);
+      this._labelDetails = document.createElement("div");
+      this._labelDetails.setAttribute("class", "float-right");
+      this._title.appendChild(this._labelDetails);
 
-      this._clickableTitle = document.createElement("summary");
-      this._clickableTitle.setAttribute("tooltip", "Labels");
+      this._clickableTitle = document.createElement("div");
+      //this._clickableTitle.setAttribute("tooltip", "Labels");
       let labelIcon = new SvgDefinition({ iconName: "label-tag" });
       this._clickableTitle.appendChild(labelIcon);
       this._labelDetails.appendChild(this._clickableTitle);
 
       this.styleDiv = document.createElement("div");
-      this.styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div");
+      this.styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2 hidden");
       this._labelDetails.appendChild(this.styleDiv);
 
       let innerText = document.createTextNode("Choose Labels:");
       this.styleDiv.appendChild(innerText);
 
-      this._details = document.createElement("div");
-      this._details.setAttribute("class", "py-3");
-      this._labelDetails.appendChild(this._details);
+
+      this._clickableTitle.addEventListener("click", (e) => {
+        this.styleDiv.classList.toggle("hidden");
+        this._clickableTitle.classList.toggle("active");
+      });
+
+      // this._details = document.createElement("div");
+      // this._details.setAttribute("class", "py-3");
+      // this._labelDetails.appendChild(this._details);
 
       // Hide this type
-      // this._eyeHolder = document.createElement("div");
+      // this._eyeHolder = 
       // this._eyeHolder.setAttribute("tooltip", "Hide/Show");
       // this._eyeHolder.setAttribute("class", "col-4");
       // this._main.appendChild(this._eyeHolder);
@@ -61,8 +68,8 @@ class EntityGalleryLabels extends TatorElement {
     let text = typeData.name ? typeData.name : "";
     this._title.appendChild(document.createTextNode(text));
 
-    // let count = typeData.total ? typeData.total : "";
-    // this._count.appendChild(document.createTextNode(count));
+    let count = typeData.total ? typeData.total : "";
+    this._count.appendChild(document.createTextNode(count));
 
     // Stop here if we aren't ok after init
     if (gallery === null || typeof typeData == "undefined") return console.log("Error in label init");;
@@ -89,11 +96,11 @@ class EntityGalleryLabels extends TatorElement {
     /**
      * Hide/Show
      */
-    // this._count.addEventListener("click", (e) => {
-    //   let off = !this._count.classList.contains("off");
-    //   this._count.classList.toggle("off");
-    //   this.dispatchEvent(new CustomEvent("hide-type-update", { detail: { off: off } }));
-    // });
+    this._count.addEventListener("click", (e) => {
+      let off = !this._count.classList.contains("off");
+      this._count.classList.toggle("off");
+      this.dispatchEvent(new CustomEvent("hide-type-update", { detail: { off: off } }));
+    });
 
     return this._shadow.appendChild(this._main);
   }

@@ -169,8 +169,8 @@ class EntityGallerySlider extends TatorElement {
 
          // let typeId = statesInfo.meta;
          // this.labelsUpdate({ typeId, labelValues: });
-         // if(this.currenHiddenType.includes(typeId) ){
-         //      this.hideThisType({typeId, hidden: true});
+         // if (this.modelData.currenHiddenType.includes(typeId)) {
+         //    this.hideThisType({ typeId, hidden: true });
          // }
 
          let seperator = document.createElement("span");
@@ -308,9 +308,11 @@ static get observedAttributes() {
             card = document.createElement(cardType);
 
             // // Resize Tool needs to change style within card on change
+            card.style.width = "272px";
             this._resizeCards._slideInput.addEventListener("change", (evt) => {
                let resizeValue = evt.target.value;
                let resizeValuePerc = parseFloat(resizeValue / 100);
+               card.style.width = "auto";
                return card._img.style.height = `${130 * resizeValuePerc}px`;
             });
 
