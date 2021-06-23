@@ -26,7 +26,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._sliderElements = [];
 
       // First group and total cards
-      this._previewCardCount = 1000;
+      this._previewCardCount = 11;
    }
 
    // Provide access to side panel for events
@@ -192,7 +192,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    _paginateGallery(evt) {
-      console.log(evt.detail);
+      //console.log(evt.detail);
 
       // set state
       this.modelData._states.paginationState.start = evt.detail.start;
@@ -253,13 +253,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    async _addSliders({ sliderList, states }) {
+      const currentSliderEls = [];
       let sliderPage = this.modelData._states.paginationState.page;
       this._sliderLists[sliderPage] = sliderList;
 
       // Append the sliders
       for (let state of states) {
          state.cards = [];
-         let counter = 0;
 
          const slider = document.createElement("entity-gallery-slider");
          slider.setAttribute("id", state.id);
@@ -267,6 +267,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.entityFormChange = this.entityFormChange.bind(this);
          slider.stateFormChange = this.stateFormChange.bind(this);
          slider.mediaFormChange = this.mediaFormChange.bind(this);
+         sliderList.appendChild(slider);
 
          slider.init({
             panelContainer: this.panelContainer,
@@ -278,20 +279,14 @@ class CollectionsGallery extends EntityCardSlideGallery {
             state
          });
 
-         slider.unshownCards = [];
+         slider.unshownCards = {};
          slider._fullCardsAdded = false;
 
          const stateName = `${state.typeData.name} ID ${state.id}`
          slider.setAttribute("title", stateName);
 
          this._sliderElements.push(slider);
-         sliderList.appendChild(slider);
-
-         // tell the panel about these cards
-         // this.panelContainer._panelTop.panelNav.pushNavData({
-         //    sliderIndex: (sliderList.length - 1),
-         //    entityList: slider._cardElements
-         // });
+         currentSliderEls.push(slider);
 
          slider.addEventListener("click", (e) => {
             if (!slider.main.classList.contains("active")) {
@@ -304,26 +299,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   }
                }
 
-               // slider.scrollIntoView({
-               //    behavior: "smooth",
-               //    block: "end",
-               //    inline: "nearest"
-               // });
-
                //this.analyticsSettings.setAttribute("selectedState", state.id);
                //window.history.pushState({}, "", this.analyticsSettings.getURL());
-
-               // cards
-
-               if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
-                  let loadMoreCounter = 10;
-                  for (var i = 1; i <= loadMoreCounter; i++) {
-                     this._addUnshownCards(slider);
-                  }
-               } else {
-                  slider._fullCardsAdded === true;
-                  slider.loadAllTeaser.remove();
-               }
             }
             // } else { 
             //       
@@ -335,19 +312,20 @@ class CollectionsGallery extends EntityCardSlideGallery {
             // }
          });
 
-         slider.loadAllTeaser.addEventListener("click", (e) => {
-            console.log("clicked loadAll link!")
+         // slider.loadAllTeaser.addEventListener("click", (e) => {
+         //    console.log("clicked loadAll link!")
 
-            if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
-               let loadMoreCounter = 10;
-               for (var i = 1; i <= loadMoreCounter; i++) {
-                  this._addUnshownCards(slider);
-               }
-            } else {
-               slider._fullCardsAdded === true;
-               slider.loadAllTeaser.remove();
-            }
-         });
+         //    if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
+         //       let loadMoreCounter = 10;
+         //       for (var i = 1; i <= loadMoreCounter; i++) {
+         //          this._addNextUnshownCard(slider);
+         //       }
+         //    } else {
+         //       console.log("All Cards are loaded.")
+         //       slider._fullCardsAdded === true;
+         //       slider.loadAllTeaser.remove();
+         //    }
+         // });
 
          // Current hidden status
          if (this.modelData.currenHiddenType.includes(String(state.meta))) {
@@ -361,11 +339,32 @@ class CollectionsGallery extends EntityCardSlideGallery {
             const trackOrTracks = totalList > 1 ? "Tracks" : "Track";
             const cardCountText = document.createTextNode(`(${totalList} ${trackOrTracks})`)
             slider._count.appendChild(cardCountText);
+         }
 
-            // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
-            if (totalList > 0) {
-               // Otherwise, get the localizations & make cards with slideCard
-               for (let id of galleryList) {
+
+      }
+
+      for (let i in currentSliderEls) {
+         await this._addSliderCards({ slider: currentSliderEls[i], state: states[i] });
+      }
+
+
+   }
+
+   async _addSliderCards({ slider, state }) {
+      const association = state.typeData.association;
+      const galleryList = association === "Localization" ? state.localizations : state.media;
+
+      let counter = 0;
+
+      if (galleryList) {
+         const totalList = galleryList.length;
+
+         // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
+         if (totalList > 0) {
+            // Otherwise, get the localizations & make cards with slideCard
+            for (let id of galleryList) {
+               if ((counter + 1) < this._previewCardCount) {
                   const cardInitData = { type: state.typeData.association, id };
                   const card = await this.slideCardData.makeCardList(cardInitData);
 
@@ -380,57 +379,93 @@ class CollectionsGallery extends EntityCardSlideGallery {
                      }
                      //states.cards.push(card);
                      const detail = { detail: { cardData: card, cardIndex: counter } };
-                     if ((counter + 1) < this._previewCardCount) {
-                        let newCardEvent = new CustomEvent('new-card', detail);
-                        slider.dispatchEvent(newCardEvent);
-                     } else {
-                        slider.unshownCards.push(detail);
-                     }
-
-                     counter++;
+                     // if ((counter + 1) < this._previewCardCount) {
+                     let newCardEvent = new CustomEvent('new-card', detail);
+                     slider.dispatchEvent(newCardEvent);
+                     // } else {
+                     //    slider.unshownCards.push(detail);
+                     // }
                   }
-
+               } else {
+                  const cardInitData = { type: state.typeData.association, id, totalList };
+                  // const card = await this.slideCardData.makeCardList(cardInitData);
+                  slider.unshownCards[counter] = cardInitData;
+                  console.log("Updating unshown cards")
+                  console.log(slider.unshownCards[counter]);
                }
 
-               if (totalList <= this._previewCardCount) {
-                  slider.loadAllTeaser.innerHTML = "See All";
-                  if (totalList < 4) {
-                     slider.loadAllTeaser.remove();
-                  }
-               }
+               counter++;
+
             }
 
+            if (totalList <= this._previewCardCount) {
+               // slider.loadAllTeaser.innerHTML = "See All";
+               // if (totalList < 4) {
+               slider.loadAllTeaser.remove();
+               //}
+            } else {
+               slider.loadAllTeaser.remove();
+
+               // setup navigation within this slider
+               let topNav = document.createElement("entity-gallery-paginator");
+               let bottomNav = document.createElement("entity-gallery-paginator");
+               slider._cardPaginationState = {
+                  page: 1,
+                  start: 0,
+                  stop: 10,
+                  pgsize: 10
+               };
+
+               topNav.init(totalList, slider._cardPaginationState);
+
+               bottomNav.init(totalList, slider._cardPaginationState);
+
+               topNav.pageSizeEl.hidden = true;
+               topNav.pageSizeText.hidden = true;
+               topNav.goToPage.hidden = true;
+               topNav.goToPageText.hidden = true;
+
+               bottomNav.pageSizeEl.hidden = true;
+               bottomNav.pageSizeText.hidden = true;
+               bottomNav.goToPage.hidden = true;
+               bottomNav.goToPageText.hidden = true;
+
+               topNav.addEventListener("selectPage", (evt) => {
+                  slider._handleCardPagination(evt);
+                  let paginationState = {
+                     page: evt.detail.page,
+                     start: evt.detail.start,
+                     stop: evt.detail.stop,
+                     pageSize: evt.detail.pageSize
+                  };
+                  topNav.setValues(paginationState);
+                  bottomNav.setValues(paginationState);
+               });
+               bottomNav.addEventListener("selectPage", (evt) => {
+                  slider._handleCardPagination(evt);
+                  let paginationState = {
+                     page: evt.detail.page,
+                     start: evt.detail.start,
+                     stop: evt.detail.stop,
+                     pageSize: evt.detail.pageSize
+                  };
+                  topNav.setValues(paginationState);
+                  bottomNav.setValues(paginationState);
+               });
+
+               slider._topNav.appendChild(topNav);
+               slider._bottomNav.appendChild(bottomNav);
+            }
          }
-
-
-         // Bookmarking of state
-         // if (this.analyticsSettings.hasAttribute("selectedState")) {
-         //    //for (let s of this._sliderElements) {
-         //    let settingsState = Number(this.analyticsSettings.getAttribute("selectedState"));
-         //    let sliderId = Number(slider.getAttribute("id"));
-         //    if (settingsState == sliderId) {
-         //       //this._makeSliderActive(slider, sliderId)
-         //       //console.log("Found the selected state slider!");
-         //       // This sliderEl is active, the rest are inactive
-         //       slider.main.classList.add("active");
-         //       slider.dispatchEvent(new Event("slider-active"));
-         //       slider.scrollIntoView({
-         //          behavior: "smooth",
-         //          block: "nearest",
-         //          inline: "nearest"
-         //       });
-         //    }
-         //    //}
-
-         // }
-
       }
-
-
    }
 
-   _addUnshownCards(slider) {
-      let newCardEvent = new CustomEvent('new-card', slider.unshownCards.shift());
+   async _addNextUnshownCard(slider) {
+      let cardInitData = slider.unshownCards.shift();
+      let card = await this.slideCardData.makeCardList(cardInitData);
+
+      const detail = { detail: { cardData: card, cardIndex: counter } };
+      let newCardEvent = new CustomEvent('new-card',);
       slider.dispatchEvent(newCardEvent);
 
       //If this is the last card, update flags, and remove link

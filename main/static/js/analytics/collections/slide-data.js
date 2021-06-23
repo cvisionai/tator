@@ -141,19 +141,22 @@ class CollectionSlideCardData extends HTMLElement {
             let modified = new Date(l.modified_datetime);
             let mediaId = l.media;
 
-            let media;
-            for (let idx = 0; idx < this.medias.length; idx++) {
-                if (this.medias[idx].id == mediaId) {
-                    media = this.medias[idx];
-                    break;
+            let media = this.medias[0];
+            // console.log(mediaId);
+            // for (let idx = 0; idx < this.medias.length; idx++) {
+            //     if (this.medias[idx].id == mediaId) {
+            //         media = this.medias[idx];
+            //         break;
+            //     }
+            // }
+            let mediaInfo = {};
+            if (media !== {}) {
+                mediaInfo = {
+                    id: mediaId,
+                    entityType: this.findMediaMetaDetails(media.meta),
+                    attributes: media.attributes,
+                    media: media,
                 }
-            }
-
-            let mediaInfo = {
-                id: mediaId,
-                entityType: this.findMediaMetaDetails(media.meta),
-                attributes: media.attributes,
-                media: media,
             }
 
             let slideCard = {

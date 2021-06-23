@@ -28,6 +28,13 @@ class EntityGallerySlider extends TatorElement {
       this._count.setAttribute("class", "text-gray py-1 pb-2")
       this._tools.appendChild(this._count);
 
+      this.loadAllTeaser = document.createElement("span");
+      this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more text-gray"); //
+      let text = document.createTextNode("Loading...");
+      this.loadAllTeaser.appendChild(text);
+
+      this._tools.appendChild(this.loadAllTeaser);
+
       // Sort
       // this._attributeSortDiv = document.createElement("div");
       // this._attributeSortDiv.setAttribute("class", "enitity-gallery__sort-div py-1");
@@ -52,10 +59,25 @@ class EntityGallerySlider extends TatorElement {
       // Entity cards aren't deleted. They are reused and hidden if not used.
       this._cardElements = [];
 
+      // Gallery Top Pagination Holder
+      this._topNav = document.createElement("div");
+      this._topNav.setAttribute("class", "enitity-gallery-slider__nav py-2 d-flex flex-justify-center");
+      this.main.appendChild(this._topNav);
+
       // Div to contain slider cards styling
       this.styleDiv = document.createElement("div");
       this.styleDiv.setAttribute("class", "entity-gallery-slider__ul-container");
       this.main.appendChild(this.styleDiv);
+
+      // Gallery Bottom Pagination Holder
+      this._bottomNav = document.createElement("div");
+      this._bottomNav.setAttribute("class", "enitity-gallery-slider__nav py-2 d-flex flex-justify-center");
+      this.main.appendChild(this._bottomNav);
+
+
+
+
+
 
       // card columns inside slider #todo finish styling
       this.colSize = 150;
@@ -66,12 +88,13 @@ class EntityGallerySlider extends TatorElement {
 
       this._resizeCards._initGallery(this._ul, this.colSize);
 
-      this.loadAllTeaser = document.createElement("span");
-      this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more"); //
-      let text = document.createTextNode("Load More...");
-      this.loadAllTeaser.appendChild(text);
 
-      //this.styleDiv.appendChild(this.loadAllTeaser);
+
+      // this.loadingText = document.createElement("span");
+      // this.loadingText.setAttribute("class", "entity-gallery-slider--loading"); //
+      // let text2 = document.createTextNode("More Tracks Loading...");
+      // this.loadingText.appendChild(text2);
+      // this._shadow.appendChild(this.loadingText);
 
       this.numberOfDisplayedCards = 0;
       this.attributeLabelEls = [];
@@ -102,8 +125,6 @@ class EntityGallerySlider extends TatorElement {
          for (let idx = 0; idx < this._cardElements.length; idx++) {
             // if they directly chose a card, that's great stop there....
             let listEl = this._cardElements[idx].card._li;
-            console.log(listEl);
-            console.log(listEl.classList.contains("is-selected"));
             if (listEl.classList.contains("is-selected")) {
                return false;
             }
@@ -112,7 +133,7 @@ class EntityGallerySlider extends TatorElement {
          // if you got here, they just clicked the slider box, select the first card
          if (this._cardElements[0] && this._cardElements[0].card) {
             return this._cardElements[0].card.click();
-         }    
+         }
       });
 
       this.addEventListener("slider-inactive", (e) => {
@@ -210,20 +231,20 @@ class EntityGallerySlider extends TatorElement {
       }
    }
 
-static get observedAttributes() {
-    return ["title", "count"];
-  }
+   static get observedAttributes() {
+      return ["title", "count"];
+   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-       case "title":
-          this._title.textContent = newValue;
-        break;
-      case "count":
-          this._count.textContent = newValue;
-        break;
-    }
-  }
+   attributeChangedCallback(name, oldValue, newValue) {
+      switch (name) {
+         case "title":
+            this._title.textContent = newValue;
+            break;
+         case "count":
+            this._count.textContent = newValue;
+            break;
+      }
+   }
 
    /* Init function to show and populate gallery w/ pagination */
    // show(sliderData) {
@@ -279,11 +300,11 @@ static get observedAttributes() {
     */
    makeCards(cardInfo) {
       this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
-      
+
       // Loop through all of the card entries and create a new card if needed. Otherwise
       // apply the card entry to an existing card.
       //for (const [index, cardObj] of cardInfo.entries()) {
-         this._addCard(index, cardObj);
+      this._addCard(index, cardObj);
       //}
 
       // Hide unused cards
@@ -302,124 +323,120 @@ static get observedAttributes() {
    }
 
    _addCard(index, cardObj, cardType) {
-         const newCard = index >= this._cardElements.length;
-         let card;
-         if (newCard) {
-            card = document.createElement(cardType);
+      const newCard = index >= this._cardElements.length;
+      let card;
+      if (newCard) {
+         card = document.createElement(cardType);
 
-            // // Resize Tool needs to change style within card on change
-            card.style.width = "272px";
-            this._resizeCards._slideInput.addEventListener("change", (evt) => {
-               let resizeValue = evt.target.value;
-               let resizeValuePerc = parseFloat(resizeValue / 100);
-               card.style.width = "auto";
-               return card._img.style.height = `${130 * resizeValuePerc}px`;
-            });
-
-            // Inner div of side panel
-            let annotationPanelDiv = document.createElement("div");
-            annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
-            this.panelContainer._shadow.appendChild(annotationPanelDiv);
-
-            // Init a side panel that can be triggered from card
-            let annotationPanel = document.createElement("entity-gallery-panel");
-            annotationPanelDiv.appendChild(annotationPanel);
-
-            // Listen for attribute changes
-            // #todo needs to be componentized?
-            annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
-            annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
-            annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
-
-            if (this.panelContainer.hasAttribute("permissionValue")) {
-               let permissionVal = this.panelContainer.getAttribute("permissionValue");
-               annotationPanel.entityData.setAttribute("permission", permissionVal);
-               annotationPanel.stateData.setAttribute("permission", permissionVal);
-               annotationPanel.mediaData.setAttribute("permission", permissionVal);
-            }
-
-            // when lock changes set attribute on forms to "View Only" / "Can Edit"
-            this.panelContainer.addEventListener("permission-update", (e) => {
-               annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
-               annotationPanel.stateData.setAttribute("permission", e.detail.permissionValue);
-               annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
-            });
-
-            // Update view unselected card panel
-            annotationPanelDiv.addEventListener("unselected", () => {
-               card._li.classList.remove("is-selected");
-               annotationPanelDiv.classList.remove("is-selected");
-               annotationPanelDiv.classList.add("hidden");
-            });
-
-            // Listen for all clicks on the document
-            document.addEventListener('click', function (evt) {
-               if (evt.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
-                  card._li.click();
-               }
-            }, false);
-
-            // Open panel if a card is clicked
-            card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
-
-            // // Update view
-            // card._li.classList.toggle("aspect-true");
-            // this.addEventListener("view-change", () => {
-            //    card._li.classList.toggle("aspect-true");
-            // });
-
-            let cardInfo = {
-               card: card,
-               annotationPanel: annotationPanel,
-               annotationPanelDiv: annotationPanelDiv
-            };
-
-
-            if(cardObj.image) {
-               annotationPanel.localizationType = false;
-               annotationPanel.setImage(cardObj.image);
-               if(cardObj.thumbnail) {
-                  card.setImageStatic(cardObj.thumbnail);
-               } else {
-                  card.setImageStatic(cardObj.image);
-               }
-            }
-            this._cardElements.push(cardInfo);
-
-         } else {
-            card = this._cardElements[index].card;
-         }
-
-         this._currentCardIndexes[cardObj.id] = index;
-
-         // Initialize the card panel
-         this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-         this._cardElements[index].annotationPanel.init({
-            cardObj
+         // // Resize Tool needs to change style within card on change
+         card.style.width = "272px";
+         this._resizeCards._slideInput.addEventListener("change", (evt) => {
+            let resizeValue = evt.target.value;
+            let resizeValuePerc = parseFloat(resizeValue / 100);
+            card.style.width = "auto";
+            return card._img.style.height = `${130 * resizeValuePerc}px`;
          });
 
+         // Inner div of side panel
+         let annotationPanelDiv = document.createElement("div");
+         annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
+         this.panelContainer._shadow.appendChild(annotationPanelDiv);
 
-         // Initialize Card
-         card.init({
-            obj: cardObj,
-            panelContainer: this.panelContainer,
-            annotationPanelDiv: this._cardElements[index].annotationPanelDiv
+         // Init a side panel that can be triggered from card
+         let annotationPanel = document.createElement("entity-gallery-panel");
+         annotationPanelDiv.appendChild(annotationPanel);
+
+         // Listen for attribute changes
+         // #todo needs to be componentized?
+         annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
+         annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
+         annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
+
+         if (this.panelContainer.hasAttribute("permissionValue")) {
+            let permissionVal = this.panelContainer.getAttribute("permissionValue");
+            annotationPanel.entityData.setAttribute("permission", permissionVal);
+            annotationPanel.stateData.setAttribute("permission", permissionVal);
+            annotationPanel.mediaData.setAttribute("permission", permissionVal);
+         }
+
+         // when lock changes set attribute on forms to "View Only" / "Can Edit"
+         this.panelContainer.addEventListener("permission-update", (e) => {
+            annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
+            annotationPanel.stateData.setAttribute("permission", e.detail.permissionValue);
+            annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
          });
 
-         card.style.display = "block";
-         this.numberOfDisplayedCards += 1;
+         // Update view unselected card panel
+         annotationPanelDiv.addEventListener("unselected", () => {
+            card._li.classList.remove("is-selected");
+            annotationPanelDiv.classList.remove("is-selected");
+            annotationPanelDiv.classList.add("hidden");
+         });
 
-         // Add new card to the gallery div
-         if (newCard) {
-            this._ul.appendChild(card);
-            //console.log("A (NEW) New Card!!!!!!!!!!! id " + cardObj.id);
-            if (this._preloadedImages[cardObj.id]) {
-               const image = this._preloadedImages[cardObj.id];
-               this._cardElements[index].card.setImage(image);
+         // Listen for all clicks on the document
+         document.addEventListener('click', function (evt) {
+            if (evt.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
+               card._li.click();
             }
+         }, false);
+
+         // Open panel if a card is clicked
+         card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
+
+         // // Update view
+         // card._li.classList.toggle("aspect-true");
+         // this.addEventListener("view-change", () => {
+         //    card._li.classList.toggle("aspect-true");
+         // });
+
+         let cardInfo = {
+            card: card,
+            annotationPanel: annotationPanel,
+            annotationPanelDiv: annotationPanelDiv
+         };
 
 
+         if (cardObj.image) {
+            annotationPanel.localizationType = false;
+            annotationPanel.setImage(cardObj.image);
+            if (cardObj.thumbnail) {
+               card.setImageStatic(cardObj.thumbnail);
+            } else {
+               card.setImageStatic(cardObj.image);
+            }
          }
+         this._ul.appendChild(card);
+
+         //console.log("A (NEW) New Card!!!!!!!!!!! id " + cardObj.id);
+         if (this._preloadedImages[cardObj.id]) {
+            const image = this._preloadedImages[cardObj.id];
+            this._cardElements[index].card.setImage(image);
+         }
+
+         this._cardElements.push(cardInfo);
+
+      } else {
+         card = this._cardElements[index].card;
+      }
+
+      this._currentCardIndexes[cardObj.id] = index;
+
+      // Initialize the card panel
+      this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+      this._cardElements[index].annotationPanel.init({
+         cardObj
+      });
+
+
+      // Initialize Card
+      card.init({
+         obj: cardObj,
+         panelContainer: this.panelContainer,
+         annotationPanelDiv: this._cardElements[index].annotationPanelDiv
+      });
+
+      card.style.display = "block";
+      this.numberOfDisplayedCards += 1;
    }
 
    showLabels(selectedLabels) {
@@ -443,6 +460,52 @@ static get observedAttributes() {
             }
          }
       }
+   }
+
+   async _handleCardPagination(evt) {
+      console.log(evt.detail);
+      const start = evt.detail.start;
+      const stop = evt.detail.stop;
+      console.log(this.unshownCards);
+
+      // Hide all the cards, and figure out which ones we need to show
+      for (let i = 0; i < this.numberOfDisplayedCards; i++) {
+         this._cardElements[i].card.style.display = "none";
+      }
+
+      //if (evt.detail.start >= this._cardElements.length) {
+      for (let i = start; i < stop; i++) {   
+         console.log(i);
+         console.log(this.unshownCards[i])     
+         let initData = this.unshownCards[i]; //type, id, totalList
+         let index = this._currentCardIndexes[initData.id];
+
+         if (index && this._cardElements[index] && this._cardElements[index].card) {
+            console.log(`Preparing id ${initData.id} in card index ${index} with i equal to ${i}`);
+            this._cardElements[index].card.style.display = "block";
+         } else {
+            console.log(`Preparing new card for id ${initData.id} where i is equal to ${i}`);
+            // start is further than we have gotten cards
+            const card = await this.slideCardData.makeCardList(initData);
+
+            if (card) {
+               card[0].posText = `${i + 1} of ${initData.totalList}`;
+               card[0].stateType = this.state.typeData.association;
+               card[0].stateInfo = {
+                  id: this.state.id,
+                  attributes: this.state.attributes,
+                  entityType: this.state.typeData,
+                  state: this.state
+               }
+               //states.cards.push(card);
+               const detail = { detail: { cardData: card, cardIndex: i } };
+               // if ((counter + 1) < this._previewCardCount) {
+               let newCardEvent = new CustomEvent('new-card', detail);
+               this.dispatchEvent(newCardEvent);
+            }
+         } 
+      }
+
    }
 }
 

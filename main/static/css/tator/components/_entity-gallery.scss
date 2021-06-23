@@ -212,6 +212,13 @@ collections-card {
   &.open {
     overflow-x: hidden;
   }
+
+  &:not(.open) {
+    .enitity-gallery-slider__nav {
+      transition: display 500ms cubic-bezier(0.075, 0.82, 0.165, 1);
+      display: none;
+    }
+  }
 }
 
 
@@ -238,6 +245,8 @@ collections-card {
       z-index:100;
     }
   }
+
+
 }
 
 .entity-gallery-slider {
@@ -260,9 +269,11 @@ collections-card {
       color: $color-white !important;
     }
   }
-  &:not(.active) .entity-card-resize {
-    transition: display 500ms cubic-bezier(0.075, 0.82, 0.165, 1);
-    display: none;
+  &:not(.active) {
+    .entity-card-resize {
+      transition: display 500ms cubic-bezier(0.075, 0.82, 0.165, 1);
+      display: none;
+    }
   }
 }
 
