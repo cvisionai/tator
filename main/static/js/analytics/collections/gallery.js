@@ -123,15 +123,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
       }
    }
 
-   updateFilterResults(evt) {
-      this._filterConditions = evt.detail.conditions;
-      var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
-      this.analyticsSettings.setAttribute("filterConditions", filterURIString);
+   updateFilterResults(filterConditions, page, pageSize) {
+
+      this._filterConditions = filterConditions;
 
       // Set the pagination state based on either defaults of this gallery
       // or by the settings. This must be done prior to collecting data
-      var page;// = this.analyticsSettings.getPage();
-      var pageSize;// = this.analyticsSettings.getPageSize();
       if (isNaN(page) || isNaN(pageSize)) {
          page = 1;
          pageSize = 5;
@@ -159,9 +156,9 @@ class CollectionsGallery extends EntityCardSlideGallery {
          }
 
          this._numFiles.textContent = `${totalCount} Results`;
-      });
 
-      this._paginationUpdate(paginationState);
+         this._paginationUpdate(paginationState);
+      });
    }
 
    /**
