@@ -35,6 +35,13 @@ class AnalyticsCollections extends TatorPage {
       this.main.setAttribute("class", "collections-gallery--main col-12");
       this.mainWrapper.appendChild(this.main);
 
+      const filterDiv = document.createElement("div");
+      filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
+      this.main.appendChild(filterDiv);
+
+      this._filterView = document.createElement("filter-interface");
+      filterDiv.appendChild(this._filterView);
+
       //
       /* Slider w/ Cards Gallery */
       // Gallery of horizontal bars to view collections
@@ -89,25 +96,34 @@ class AnalyticsCollections extends TatorPage {
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
-    let page = 1;
-
-    if (this._settings.getPage()) {
-      page = this._settings.getPage();
-    }
 
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then(() => {
-      this._modelData.collectionsInit({
-        acceptedAssoc: this.acceptedTypes,
-        pageSize: 5,
-        page
-      }).then(() => {
+
+        // Collections data view
+        this._collectionsData = document.createElement("collections-data");
+        this._collectionsData.init(this._modelData);
+
+        // Filter interface
+        this._filterConditions = this._settings.getFilterConditionsObject();
+
+        this._filterDataView = new FilterData(
+          this._modelData, ["collections-analytics-view"], ["localizations"]);
+        this._filterDataView.init();
+        this._filterView.dataView = this._filterDataView;
+        this._filterView.setFilterConditions(this._filterConditions);
+
+        // Listen for filter events
+        this._filterView.addEventListener(
+            "filterParameters",
+            this._collectionsGallery.updateFilterResults.bind(this._collectionsGallery));
+
         // Init panel side behavior
-        this._panelContainer.init({ 
-            main: this.main, 
-            aside: this.aside, 
-            pageModal: this.modal, 
-            modelData: this._modelData, 
+        this._panelContainer.init({
+            main: this.main,
+            aside: this.aside,
+            pageModal: this.modal,
+            modelData: this._modelData,
             panelName: "Entity"
           });
 
@@ -116,6 +132,7 @@ class AnalyticsCollections extends TatorPage {
           panelContainer: this._panelContainer,
           pageModal: this.modal,
           modelData: this._modelData,
+          collectionsData: this._collectionsData,
           galleryContainer: this._collectionsGallery,
           analyticsSettings: this._settings
         });
@@ -137,9 +154,6 @@ class AnalyticsCollections extends TatorPage {
 
         this.loading.hideSpinner();
         this.hideDimmer();
-
-      });
-
     });
   }
 
@@ -159,9 +173,6 @@ class AnalyticsCollections extends TatorPage {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-
-
-
   // Page dimmer handler
   showDimmer() {
     return this.setAttribute("has-open-modal", "");
@@ -171,5 +182,5 @@ class AnalyticsCollections extends TatorPage {
     return this.removeAttribute("has-open-modal");
   }
 }
-  
+
 customElements.define("analytics-collections", AnalyticsCollections);

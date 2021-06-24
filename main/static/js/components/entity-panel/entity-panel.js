@@ -36,7 +36,7 @@ class EntityGalleryPanel extends TatorElement {
     // State Data heading (if state)
     this.stateHeading = document.createElement("h3");
     this.stateHeading.setAttribute("class", "py-3 text-semibold");
-    this.stateHeading.appendChild(document.createTextNode("State Data"));
+    this.stateHeading.appendChild(document.createTextNode("Entity Data"));
     this.stateHeading.hidden = true;
     this._main.appendChild(this.stateHeading);
 

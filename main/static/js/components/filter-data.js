@@ -5,16 +5,27 @@
  * #TODO Convert this to a TatorElement so that events can be dispatched
  */
 class FilterData {
-  constructor (modelData, algorithmCategories) {
+
+  /**
+   * @param {TatorData} modelData
+   *    Class that will be initialized as the interface to the Tator compliant interface
+   * @param {array} algorithmCategories
+   *    List of categories to display in run algorithm option
+   * @param {array} excludeTypesList
+   *    List of types to exclude from creating filter options for
+   *    Available options: Medias|Localizations|MediaStates|TrackStates
+   */
+  constructor (modelData, algorithmCategories, excludeTypesList) {
 
     this._modelData = modelData;
 
-    // #TODO Add more types
-    this.localizationTypes = [];
-    this.mediaTypes = [];
-
     if (algorithmCategories != undefined) {
       this.algorithmCategories = algorithmCategories;
+    }
+
+    this.excludeTypesList = [];
+    if (excludeTypesList) {
+      this.excludeTypesList = excludeTypesList;
     }
   }
 
@@ -23,6 +34,8 @@ class FilterData {
    */
   init()
   {
+    this.mediaStateTypes = this._modelData.getStoredMediaStateTypes();
+    this.localizationStateTypes = this._modelData.getStoredLocalizationStateTypes();
     this.localizationTypes = this._modelData.getStoredLocalizationTypes();
     this.mediaTypes = this._modelData.getStoredMediaTypes();
     this.versions = this._modelData.getStoredVersions();
@@ -35,7 +48,7 @@ class FilterData {
       for (const algo of algorithms) {
         if (algo.categories != undefined) {
           for (const algoCategory of algo.categories) {
-            if (this.algorithmCategories.some(elem => algoCategory == elem)) {
+            if (this.algorithmCategories.indexOf(algoCategory) >= 0) {
               this.algorithms.push(algo);
               break;
             }
@@ -46,7 +59,6 @@ class FilterData {
     else {
       this.algorithms = algorithms;
     }
-
 
     // Want to be able to filter based on localization dtypes. Package up the localization types
     // and add it as an attribute
@@ -74,39 +86,78 @@ class FilterData {
       sectionNames.push(`${section.name} (ID:${section.id})`);
     }
 
+    // Create the filter options
     this._allTypes = [];
-    for (let idx = 0; idx < this.mediaTypes.length; idx++) {
-      let entityType = JSON.parse(JSON.stringify(this.mediaTypes[idx]));
-      entityType.typeGroupName = "Media";
 
-      var sectionAttribute = {
-        choices: sectionNames,
-        name: "_section",
-        dtype: "enum"
-      };
-      entityType.attribute_types.push(sectionAttribute);
+    if (this.excludeTypesList.indexOf("Medias") < 0) {
+      for (let idx = 0; idx < this.mediaTypes.length; idx++) {
+        let entityType = JSON.parse(JSON.stringify(this.mediaTypes[idx]));
+        entityType.typeGroupName = "Media";
 
-      this._allTypes.push(entityType);
-    }
-    for (let idx = 0; idx < this.localizationTypes.length; idx++) {
-      let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
-      entityType.typeGroupName = "Annotation";
+        var sectionAttribute = {
+          choices: sectionNames,
+          name: "_section",
+          dtype: "enum"
+        };
+        entityType.attribute_types.push(sectionAttribute);
 
-      var versionAttribute = {
-        choices: versionNames,
-        name: "_version",
-        dtype: "enum"
-      };
-      entityType.attribute_types.push(versionAttribute);
-
-      var dtypeAttribute = {
-        choices: localizationTypeOptions,
-        name: "_dtype",
-        dtype: "enum"
+        this._allTypes.push(entityType);
       }
-      entityType.attribute_types.push(dtypeAttribute);
+    }
 
-      this._allTypes.push(entityType);
+    if (this.excludeTypesList.indexOf("Localizations") < 0) {
+      for (let idx = 0; idx < this.localizationTypes.length; idx++) {
+        let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
+        entityType.typeGroupName = "Annotation";
+
+        var versionAttribute = {
+          choices: versionNames,
+          name: "_version",
+          dtype: "enum"
+        };
+        entityType.attribute_types.push(versionAttribute);
+
+        var dtypeAttribute = {
+          choices: localizationTypeOptions,
+          name: "_dtype",
+          dtype: "enum"
+        }
+        entityType.attribute_types.push(dtypeAttribute);
+
+        this._allTypes.push(entityType);
+      }
+    }
+
+    if (this.excludeTypesList.indexOf("MediaStates") < 0) {
+      for (let idx=0; idx < this.mediaStateTypes.length; idx++) {
+        let entityType = JSON.parse(JSON.stringify(this.mediaStateTypes[idx]));
+        entityType.typeGroupName = "Collection";
+
+        var versionAttribute = {
+          choices: versionNames,
+          name: "_version",
+          dtype: "enum"
+        };
+        entityType.attribute_types.push(versionAttribute);
+
+        this._allTypes.push(entityType);
+      }
+    }
+
+    if (this.excludeTypesList.indexOf("LocalizationStates") < 0) {
+      for (let idx=0; idx < this.localizationStateTypes.length; idx++) {
+        let entityType = JSON.parse(JSON.stringify(this.localizationStateTypes[idx]));
+        entityType.typeGroupName = "Collection";
+
+        var versionAttribute = {
+          choices: versionNames,
+          name: "_version",
+          dtype: "enum"
+        };
+        entityType.attribute_types.push(versionAttribute);
+
+        this._allTypes.push(entityType);
+      }
     }
   }
 

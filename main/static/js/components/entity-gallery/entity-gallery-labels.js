@@ -7,7 +7,7 @@ class EntityGalleryLabels extends TatorElement {
       this._main.setAttribute("class", "entity-gallery-labels my-2 py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
       this._title = document.createElement("div");
-      this._title.setAttribute("class", "entity-gallery-labels--title px-2 py-1 text-gray col-3");
+      this._title.setAttribute("class", "entity-gallery-labels--title px-2 py-1 text-gray");
       this._main.appendChild(this._title);
 
       // this._count = document.createElement("span");

@@ -426,6 +426,7 @@ FILES = \
     analytics/collections/card.js \
     analytics/collections/gallery.js \
     analytics/collections/collections.js \
+    analytics/collections/collections-data.js \
     analytics/visualization/visualization.js \
     analytics/reports/reports.js \
     third_party/autocomplete.js \

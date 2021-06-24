@@ -57,7 +57,8 @@ class EntityGallerySlider extends TatorElement {
    init({
       panelContainer,
       pageModal,
-      modelData,
+      currenLabelValues,
+      currenHiddenTypes,
       slideCardData,
       cardType,
       attributes,
@@ -66,7 +67,6 @@ class EntityGallerySlider extends TatorElement {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
       this.pageModal = pageModal;
-      this.modelData = modelData;
       this.slideCardData = slideCardData;
       this.state = state;
 
@@ -111,16 +111,19 @@ class EntityGallerySlider extends TatorElement {
       });
 
 
-      if (this.modelData.currenHiddenType.includes[state.meta]) {
+      /*
+      if (currenHiddenTypes.includes[state.meta]) {
          let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
          var helper = document.createElement('div');
          helper.innerHTML = hiddenHTML;
          this.classList.add("hidden");
          this.after(helper);
       }
+      */
 
 
-      const compareAttr = [...this.state.typeData.attribute_types];
+      //const compareAttr = [...this.state.typeData.attribute_types];
+      var compareAttr = null;
 
       for (let attr in attributes) {
          //console.log(`Adding ${attr} to ${this.id}`)
@@ -134,8 +137,8 @@ class EntityGallerySlider extends TatorElement {
          attributeLabel.setAttribute("id", encodeURI(attr));
 
          // reapply any label preferences
-         if (this.modelData.currenLabelValues && this.modelData.currenLabelValues[state.meta]) {
-            const currentLabels = this.modelData.currenLabelValues[state.meta];
+         if (currenLabelValues && currenLabelValues[state.meta]) {
+            const currentLabels = currenLabelValues[state.meta];
             if (currentLabels.length === 0 || !currentLabels.includes(attr)) {
                attributeLabel.setAttribute("class", "hidden");
             }

@@ -27,25 +27,25 @@ class AnalyticsDashboard extends TatorPage {
 
       // Annotations
       const annotationsBox = this._getDashboardBox({
-          name : "Annotations", 
-          href : `/${this.projectId}/analytics/annotations`, 
+          name : "Annotations",
+          href : `/${this.projectId}/analytics/annotations`,
           iconName: "grid-icon"
         });
       this.main.appendChild(annotationsBox);
 
       // Collections
       const collectionsBox = this._getDashboardBox({
-          name : "Collections", 
-          href : `/${this.projectId}/analytics/collections`, 
+          name : "Collections",
+          href : `/${this.projectId}/analytics/collections`,
           iconName: "layers-icon"
         });
       this.main.appendChild(collectionsBox);
 
-      // Reports #TODO 
+      // Reports #TODO
       /*
       const visualizationBox = this._getDashboardBox({
-          name : "Data Visualization", 
-          href : `/${this.projectId}/analytics/visualization`, 
+          name : "Data Visualization",
+          href : `/${this.projectId}/analytics/visualization`,
           iconName: "bar-chart-icon"
         });
       this.main.appendChild(visualizationBox);
@@ -53,8 +53,8 @@ class AnalyticsDashboard extends TatorPage {
 
       // Reports
       const reportsBox = this._getDashboardBox({
-          name : "Reports", 
-          href : `/${this.projectId}/analytics/reports`, 
+          name : "Reports",
+          href : ``,
           iconName: "file-text-icon"
         });
       this.main.appendChild(reportsBox);
@@ -110,5 +110,5 @@ class AnalyticsDashboard extends TatorPage {
     }
 
   }
-  
+
 customElements.define("analytics-dashboard", AnalyticsDashboard);
