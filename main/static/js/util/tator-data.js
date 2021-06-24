@@ -886,10 +886,26 @@ class TatorData {
   async launchAlgorithm(algorithmName, parameters) {
 
     // Have to provide a valid media ID list or query for now. #TODO revisit
+
+    var media_id;
+    await fetchRetry(`/rest/Medias/${this._project}?start=0&stop=1`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    }).then((response) => {
+      return response.json()
+    }).then((results) => {
+      media_id = results[0].id;
+    });
+
     let body = {
       "algorithm_name": algorithmName,
       "extra_params": parameters,
-      "media_query": `?project=${this._project}&start=0&stop=1`
+      "media_ids": [media_id]
     }
 
     var launched = false;
@@ -907,6 +923,10 @@ class TatorData {
       if (response.status == 201) {
         launched = true;
       }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
     });
 
     return launched;
