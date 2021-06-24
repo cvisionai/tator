@@ -135,6 +135,7 @@ class EntityGallerySlider extends TatorElement {
          // reapply any label preferences
          if (currenLabelValues && currenLabelValues[state.meta]) {
             const currentLabels = currenLabelValues[state.meta];
+            this.showLabels(currentLabels);
             if (currentLabels.length === 0 || !currentLabels.includes(attr)) {
                attributeLabel.setAttribute("class", "hidden");
             }
