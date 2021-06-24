@@ -66,7 +66,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       for (let idx = 0; idx < stateTypes.length; idx++) {
          var stateType = stateTypes[idx];
-         var typeId = stateType.id;
+         let typeId = stateType.id;
          let labels = document.createElement("entity-gallery-labels");
          let labelValues = [];
          this.currenLabelValues[typeId] = labelValues;
