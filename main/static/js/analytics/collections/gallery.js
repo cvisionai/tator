@@ -134,7 +134,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       var pageSize;// = this.analyticsSettings.getPageSize();
       if (isNaN(page) || isNaN(pageSize)) {
          page = 1;
-         pageSize = 10;
+         pageSize = 5;
       }
       var paginationState = {
          start: (page - 1) * pageSize,
@@ -187,6 +187,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._paginator_top.setValues(this.collectionsData.getPaginationState());
       this._paginator.setValues(this.collectionsData.getPaginationState());
 
+      while (this._sliderContainer.firstChild) {
+         this._sliderContainer.removeChild(this._sliderContainer.firstChild);
+         }
+      this._sliderLists = [];
+
       // Add new states
       // If the slider already exists, we're hiding and showing
       if (this._sliderLists[newSliderPage]) {
@@ -214,6 +219,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          //this._sliderLists[this.collectionsData._states.paginationState.page] = newSliderList;
 
          this._addSliders({ sliderList: newSliderList, states: states });
+         console.log(states);
          this._sliderContainer.appendChild(newSliderList);
 
          // Update new slider panel permission
@@ -234,7 +240,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._sliderLists[sliderPage] = sliderList;
 
       // Append the sliders
-      for (let state of states) {
+      for (let idx = 0; idx < states.length; idx++) {
+         let state = states[idx];
          state.cards = [];
          let counter = 0;
 
@@ -259,8 +266,9 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.unshownCards = [];
          slider._fullCardsAdded = false;
 
-         const stateName = `${state.typeData.name} ID ${state.id}`
-         slider.setAttribute("title", stateName);
+         let currentCount = (sliderPage - 1) * this.collectionsData.getPageSize() + idx + 1;
+         slider.setAttribute("title", `${state.typeData.name} ID: ${state.id}`);
+         slider.setAttribute("count", `${currentCount} of ${this.collectionsData.getNumberOfResults()}`);
 
          this._sliderElements.push(slider);
          sliderList.appendChild(slider);

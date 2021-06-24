@@ -135,7 +135,7 @@ class AnalyticsAnnotations extends TatorPage {
 
       // Filter interface
       this._filterDataView = new FilterData(
-        this._modelData, ["annotation-analytics-view"], ["mediaStates", "localizationStates"]);
+        this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
       this._filterDataView.init();
       this._filterView.dataView = this._filterDataView;
       this._filterView.setFilterConditions(this._filterConditions);

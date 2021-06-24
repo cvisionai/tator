@@ -20,7 +20,7 @@ class EntityGallerySlider extends TatorElement {
       this._labels.appendChild(this._title);
 
       this._count = document.createElement("p");
-      this._count.setAttribute("class", "text-gray py-1 pb-2")
+      this._count.setAttribute("class", "text-gray py-1 pb-2 f3")
       this.main.appendChild(this._count);
 
       // Property IDs are the entity IDs (which are expected to be unique)

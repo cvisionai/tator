@@ -17,8 +17,6 @@ class TatorData {
     this._stateTypes = [];
     this._stateTypeNames = [];
     this._stateTypeAssociations = {media: [], frame: [], localization: []};
-    this._state
-    this._states = {};
 
     this._maxFetchCount = 100000;
   }
@@ -396,25 +394,6 @@ class TatorData {
    */
   async getMediaType( mediaId ){
     const response = await fetch(`/rest/MediaType/${mediaId}`, {
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const data = await response.json();
-
-    return data;
-  }
-
-    /**
-    * Returns localizations list
-   */
-  async getLocalization({ id = ""} = {}){
-    const response = await fetch(`/rest/Localization/${id}`, {
       method: "GET",
       mode: "cors",
       credentials: "include",
@@ -816,7 +795,7 @@ class TatorData {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var stateFilters = [];
-    var dtypeIds = [];
+    var typeIds = [];
     var versionIds = [];
     var typePromises = [];
 
@@ -838,8 +817,8 @@ class TatorData {
           if (filter.field == "_version") {
             versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
-          else if (filter.field == "_dtype") {
-            dtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
+          else if (filter.field == "_type") {
+            typeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
           else {
             stateFilters.push(filter);
@@ -848,8 +827,8 @@ class TatorData {
       });
     }
 
-    if (dtypeIds.length > 0) {
-      dtypeIds.forEach(dtypeId => {
+    if (typeIds.length > 0) {
+      typeIds.forEach(dtypeId => {
         typePromises.push(this._getAnnotationData(
           outputType,
           "States",
@@ -992,6 +971,3 @@ class TatorData {
     return outStr;
   }
 }
-
-
-

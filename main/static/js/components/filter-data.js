@@ -60,6 +60,16 @@ class FilterData {
       this.algorithms = algorithms;
     }
 
+    var stateTypeOptions = [];
+    for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
+      let stateType = this.mediaStateTypes[idx];
+      stateTypeOptions.push(`${stateType.name} (ID:${stateType.id})`);
+    }
+    for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
+      let stateType = this.localizationStateTypes[idx];
+      stateTypeOptions.push(`${stateType.name} (ID:${stateType.id})`);
+    }
+
     // Want to be able to filter based on localization dtypes. Package up the localization types
     // and add it as an attribute
     var localizationTypeOptions = [];
@@ -140,6 +150,13 @@ class FilterData {
         };
         entityType.attribute_types.push(versionAttribute);
 
+        var typeAttribute = {
+          choices: stateTypeOptions,
+          name: "_type",
+          dtype: "enum"
+        }
+        entityType.attribute_types.push(typeAttribute);
+
         this._allTypes.push(entityType);
       }
     }
@@ -155,6 +172,13 @@ class FilterData {
           dtype: "enum"
         };
         entityType.attribute_types.push(versionAttribute);
+
+        var typeAttribute = {
+          choices: stateTypeOptions,
+          name: "_type",
+          dtype: "enum"
+        }
+        entityType.attribute_types.push(typeAttribute);
 
         this._allTypes.push(entityType);
       }

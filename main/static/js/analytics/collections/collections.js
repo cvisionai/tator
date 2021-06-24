@@ -108,7 +108,7 @@ class AnalyticsCollections extends TatorPage {
         this._filterConditions = this._settings.getFilterConditionsObject();
 
         this._filterDataView = new FilterData(
-          this._modelData, ["collections-analytics-view"], ["localizations"]);
+          this._modelData, ["collections-analytics-view"], ["Localizations"]);
         this._filterDataView.init();
         this._filterView.dataView = this._filterDataView;
         this._filterView.setFilterConditions(this._filterConditions);
