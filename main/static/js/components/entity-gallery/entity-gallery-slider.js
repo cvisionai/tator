@@ -12,11 +12,11 @@ class EntityGallerySlider extends TatorElement {
       this.main.appendChild(this.topDiv);
 
       this._labels = document.createElement("div");
-      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row h3 text-normal text-gray py-2");
+      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row f2 text-normal text-gray py-2");
       this.topDiv.appendChild(this._labels);
 
-      this._title = document.createElement("h2");
-      this._title.setAttribute("class", "h3 entity-gallery-slider--title text-gray");
+      this._title = document.createElement("div");
+      this._title.setAttribute("class", "entity-gallery-slider--title text-gray");
       this._labels.appendChild(this._title);
 
       this._count = document.createElement("p");
@@ -58,7 +58,7 @@ class EntityGallerySlider extends TatorElement {
       panelContainer,
       pageModal,
       currenLabelValues,
-      currenHiddenTypes,
+      currenHiddenType,
       slideCardData,
       cardType,
       attributes,
@@ -110,20 +110,16 @@ class EntityGallerySlider extends TatorElement {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
 
-
-      /*
-      if (currenHiddenTypes.includes[state.meta]) {
+      if (currenHiddenType.includes[state.meta]) {
          let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
          var helper = document.createElement('div');
          helper.innerHTML = hiddenHTML;
          this.classList.add("hidden");
          this.after(helper);
       }
-      */
 
 
-      //const compareAttr = [...this.state.typeData.attribute_types];
-      var compareAttr = null;
+      const compareAttr = [...this.state.typeData.attribute_types];
 
       for (let attr in attributes) {
          //console.log(`Adding ${attr} to ${this.id}`)
@@ -145,12 +141,6 @@ class EntityGallerySlider extends TatorElement {
          } else {
             attributeLabel.setAttribute("class", "hidden");
          }
-
-         // let typeId = statesInfo.meta;
-         // this.labelsUpdate({ typeId, labelValues: });
-         // if(this.currenHiddenType.includes(typeId) ){
-         //      this.hideThisType({typeId, hidden: true});
-         // }
 
          let seperator = document.createElement("span");
          seperator.setAttribute("class", "px-2")

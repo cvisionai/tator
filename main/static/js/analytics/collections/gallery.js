@@ -66,10 +66,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       for (let idx = 0; idx < stateTypes.length; idx++) {
          var stateType = stateTypes[idx];
-         var stateTypeId = stateType.id;
+         var typeId = stateType.id;
          let labels = document.createElement("entity-gallery-labels");
          let labelValues = [];
-         this.currenLabelValues[stateTypeId] = labelValues;
+         this.currenLabelValues[typeId] = labelValues;
 
          // Provide labels and access to the sliders
          labels.init({ typeData: stateType, gallery: this });
@@ -78,8 +78,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
          // Label display changes
          labels.addEventListener("labels-update", (e) => {
             labelValues = e.detail.value;
-            this.labelsUpdate({stateTypeId, labelValues});
-            this.currenLabelValues[stateTypeId] = labelValues;
+            this.labelsUpdate({typeId, labelValues});
+            this.currenLabelValues[typeId] = labelValues;
+         });
+
+         // Hide / Show type changes
+         labels.addEventListener("hide-type-update", (e) => {
+            this.hideThisType({ typeId, hidden: e.detail.off });
          });
       }
    }
@@ -244,7 +249,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             panelContainer: this.panelContainer,
             pageModal: this.pageModal,
             currenLabelValues: this.currenLabelValues,
-            currenHiddenTypes: this.currenHiddenTypes,
+            currenHiddenType: this.currenHiddenType,
             slideCardData: this.slideCardData,
             cardType: "collections-card",
             attributes: state.attributes,
