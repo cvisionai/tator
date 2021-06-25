@@ -70,7 +70,7 @@ class VideoBufferDemux
   {
     // By default use 100 megabytes
     this._bufferSize = 100*1024*1024;
-    this._numBuffers = 30; // Technically +1 to this value for onDemand
+    this._numBuffers = 60; // Technically +1 to this value for onDemand
 
     this._totalBufferSize = this._bufferSize*this._numBuffers;
     this._vidBuffers=[];
