@@ -388,6 +388,21 @@ class VideoBufferDemux
       let end = video.buffered.end(rangeIdx);
       this.deletePendingOnDemand([start, end]);
     }
+
+    let promise = new Promise((resolve,_) => {
+      let checkBuffer = () => {
+        if (!this.isOnDemandBufferCleared()) {
+          setTimeout(checkBuffer, 100);
+        }
+        else {
+          resolve();
+        }
+      };
+
+      checkBuffer();
+    });
+
+    return promise;
   }
 
   /**
@@ -1134,6 +1149,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._onDemandInitSent = false;
     this._onDemandPlaybackReady = false;
     this._onDemandFinished = false;
+    this._onDemandId = 0;
   }
 
   /**
@@ -1438,8 +1454,8 @@ class VideoCanvas extends AnnotationCanvas {
           }
 
           var playCallback = function () {
-              console.log("******* restarting onDemand: Playing");
-	    that.onDemandDownloadPrefetch();
+            console.log("******* restarting onDemand: Playing");
+	          that.onDemandDownloadPrefetch();
             that._playGenericOnDemand(that._direction)
           };
 
@@ -1524,7 +1540,9 @@ class VideoCanvas extends AnnotationCanvas {
           }
         }
 
-        appendBuffer(afterUpdate);
+        if (e.data["id"] == that._onDemandId) {
+          appendBuffer(afterUpdate);
+        }
       }
     };
 
@@ -1768,6 +1786,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._play_idx = play_idx;
     this._scrub_idx = scrub_idx;
     this._seek_idx = hq_idx;
+    console.log(`video buffer indexes: ${play_idx} ${scrub_idx} ${hq_idx}`);
 
     this._videoElement = [];
     for (let idx = 0; idx < streaming_files.length; idx++)
@@ -2305,8 +2324,10 @@ class VideoCanvas extends AnnotationCanvas {
       this._onDemandInitSent = false;
       this._onDemandPlaybackReady = false;
       this._onDemandFinished = false;
-      this._videoElement[this._play_idx].resetOnDemandBuffer();
-      this.onDemandDownload(true);
+      var that = this;
+      this._videoElement[this._play_idx].resetOnDemandBuffer().then(() => {
+        that.onDemandDownload(true);
+      });
     }
     // Reset the GPU buffer on a new play action
     this._draw.clear();
@@ -2567,8 +2588,10 @@ class VideoCanvas extends AnnotationCanvas {
     this._onDemandInitSent = false;
     this._onDemandPlaybackReady = false;
     this._onDemandFinished = false;
-    this._videoElement[this._play_idx].resetOnDemandBuffer();
-    this.onDemandDownload(true);
+    var that = this;
+    this._videoElement[this._play_idx].resetOnDemandBuffer().then(() => {
+      that.onDemandDownload(true);
+    });
   }
   onDemandDownload(inhibited)
   {
@@ -2611,6 +2634,8 @@ class VideoCanvas extends AnnotationCanvas {
           this._onDemandInitStartFrame = this._dispFrame;
           currentFrame = this._dispFrame;
 
+          this._onDemandId += 1;
+
           this._dlWorker.postMessage(
             {
               "type": "onDemandInit",
@@ -2618,7 +2643,8 @@ class VideoCanvas extends AnnotationCanvas {
               "fps": this._fps,
               "maxFrame": this._numFrames - 1,
               "direction": downloadDirection,
-              "mediaFileIndex": this._play_idx
+              "mediaFileIndex": this._play_idx,
+              "id": this._onDemandId
             }
           );
         }
@@ -2645,7 +2671,7 @@ class VideoCanvas extends AnnotationCanvas {
       // Look at how much time is stored in the buffer and where we currently are.
       // If we are within X seconds of the end of the buffer, drop the frames before
       // the current one and start downloading again.
-      //console.log(`Pending onDemand downloads: ${this._onDemandPendingDownloads}`);
+      //console.log(`Pending onDemand downloads: ${this._onDemandPendingDownloads} ranges.length: ${ranges.length}`);
 
       var needMoreData = false;
       if (ranges.length == 0 && this._onDemandPendingDownloads < 1)
@@ -2692,6 +2718,8 @@ class VideoCanvas extends AnnotationCanvas {
             foundMatchingRange = true;
             if (timeToEnd > playbackReadyThreshold)
             {
+              //#TODO This block can probably be removed since this was here to support sync'ing
+              //      when hitting play
               if (this._waitPlayback)
               {
                 if (!this._sentPlaybackReady)
@@ -2715,8 +2743,14 @@ class VideoCanvas extends AnnotationCanvas {
                 if (!this._onDemandPlaybackReady)
                 {
                   console.log(`(ID:${this._videoObject.id}) onDemandPlaybackReady (start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`);
+                  this._onDemandPlaybackReady = true;
+                  this.dispatchEvent(new CustomEvent(
+                    "playbackReady",
+                    {
+                      composed: true,
+                      detail: {playbackReadyId: this._waitId},
+                    }));
                 }
-                this._onDemandPlaybackReady = true;
               }
             }
 
@@ -2773,12 +2807,10 @@ class VideoCanvas extends AnnotationCanvas {
         }
       }
 
-      if (needMoreData && !this._onDemandFinished && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
+      if (needMoreData && !this._onDemandFinished)// && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
       {
         // Kick of the download worker to get the next onDemand segments
-	// Only do this if we are actually playing, if we are stopped but ready
-	// we can wait until the user hits play.
-        console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data`);
+        console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady}`);
         this._onDemandPendingDownloads += 1;
         this._dlWorker.postMessage({"type": "onDemandDownload"});
       }
@@ -2796,7 +2828,6 @@ class VideoCanvas extends AnnotationCanvas {
     }
 
     // Sleep for a period before checking the onDemand buffer again
-    // This period is quicker when we have not begun playback
     if (!this._onDemandPlaybackReady)
     {
       this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 50);
