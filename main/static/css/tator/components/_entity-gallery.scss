@@ -249,7 +249,8 @@ collections-card {
 
 .entity-gallery-slider {
   background: $color-charcoal--medium-dark70;
-  padding: 30px;
+  margin: 10px 0 20px;
+  padding: 10px;
   transition: 300ms linear all;
   border: 2px solid $color-charcoal--medium;
   &:hover {

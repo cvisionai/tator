@@ -28,7 +28,6 @@ class FilterInterface extends TatorElement {
     this._algoButton = document.createElement("algorithm-button");
     this._filterNavDiv.appendChild(this._algoButton);
 
-
     /**
      * Filter condition interface
      */
@@ -94,6 +93,7 @@ class FilterInterface extends TatorElement {
     // Respond to user requesting to run an algorithm
     this._algoButton.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));
     this._confirmRunAlgorithm.addEventListener("close", this._closeConfirmRunAlgoModal.bind(this));
+    this._currentFilterConditions = "";
   }
 
   _notify(title, message, error_or_ok) {
@@ -108,7 +108,14 @@ class FilterInterface extends TatorElement {
    */
    _openConfirmRunAlgoModal(evt) {
 
-    this._confirmRunAlgorithm.init(evt.detail.algorithmName, evt.detail.projectId, null, null, []);
+    var extraParameters = [
+      {
+        name: "encoded_filters",
+        value: encodeURIComponent(encodeURIComponent(JSON.stringify(this._filterConditions))),
+      }
+    ]
+    console.log(extraParameters);
+    this._confirmRunAlgorithm.init(evt.detail.algorithmName, evt.detail.projectId, [], null, extraParameters);
     this._confirmRunAlgorithm.setAttribute("is-open","");
     this.setAttribute("has-open-modal", "");
     document.body.classList.add("shortcuts-disabled");
@@ -150,10 +157,11 @@ class FilterInterface extends TatorElement {
     this.setFilterBar();
 
     // Send out an event to anyone listening that there's a new filter applied
+    this._currentFilterConditions = this._filterConditionGroup.getConditions();
     this.dispatchEvent(new CustomEvent("filterParameters", {
       composed: true,
       detail: {
-        conditions: this._filterConditionGroup.getConditions()
+        conditions: this._currentFilterConditions
       }
     }));
   }

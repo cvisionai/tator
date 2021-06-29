@@ -694,9 +694,20 @@ class AnnotationPlayer extends TatorElement {
     this._rewind.setAttribute("disabled","")
     this._fastForward.setAttribute("disabled","");
 
-    let check_ready = () => {
+    const timeouts = [1000, 2000, 4000, 8000, 16000];
+    let timeoutIndex = 0;
+
+    let check_ready = (checkFrame) => {
       this._handleNotReadyTimeout = null;
       let not_ready = false;
+      if (checkFrame != this._video.currentFrame()) {
+        console.log(`check_ready frame ${checkFrame} and current frame ${this._video.currentFrame()} do not match. restarting check_ready`)
+        timeoutIndex = 0;
+        this._handleNotReadyTimeout = setTimeout(() => {
+          this._handleNotReadyTimeout = null;
+          check_ready(this._video.currentFrame())}, timeouts[timeoutIndex]);
+        return;
+      }
       if (this._video._onDemandPlaybackReady != true)
       {
         this._video.onDemandDownloadPrefetch(true);
@@ -704,13 +715,22 @@ class AnnotationPlayer extends TatorElement {
       }
       if (not_ready == true)
       {
-        this._handleNotReadyTimeout = setTimeout(() => {
-          this._handleNotReadyTimeout = null;
-          this.handleNotReadyEvent();
-        }, 1500);
+        timeoutIndex += 1;
+        if (timeoutIndex < timeouts.length) {
+          console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
+          this._handleNotReadyTimeout = setTimeout(() => {
+            this._handleNotReadyTimeout = null;
+            check_ready(checkFrame);
+          }, timeouts[timeoutIndex]);
+        }
+        else {
+          Utilities.warningAlert("Video player unable to reach ready state.", "#ff3e1d", false);
+          console.error(`Video player unable to reach ready state`);
+        }
       }
       if (not_ready == false)
       {
+        console.log(`Video playback check - Ready [Now: ${new Date().toISOString()}]`);
         this._play._button.removeAttribute("disabled");
         this._rewind.removeAttribute("disabled")
         this._fastForward.removeAttribute("disabled");
@@ -719,8 +739,8 @@ class AnnotationPlayer extends TatorElement {
     };
 
     // We can be faster in single play mode
-    this._handleNotReadyTimeout = setTimeout(check_ready,
-                                             750);
+    console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
+    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), timeouts[timeoutIndex]);
 
   }
 

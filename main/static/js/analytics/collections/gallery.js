@@ -34,103 +34,58 @@ class CollectionsGallery extends EntityCardSlideGallery {
       panelContainer,
       pageModal,
       modelData,
+      collectionsData,
       galleryContainer,
       analyticsSettings
    }) {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
       this.pageModal = pageModal;
-      this.modelData = modelData;
+      this.collectionsData = collectionsData;
       this.galleryContainer = galleryContainer;
       this.analyticsSettings = analyticsSettings;
-
-      this.sliderList.setAttribute("page", this.modelData._states.paginationState.page);
 
       // Possibly remove this so we can have navigation controls
       // this.panelContainer._panelTop._topBarArrow.hidden = true;
       // this.panelContainer._panelTop.panelNav.init();
 
-      this.modelData.currenLabelValues = {};
-      this.modelData.currenHiddenType = [];
-
       try {
-         this.slideCardData.init(this.modelData);
+         this.slideCardData.init(modelData);
       } catch (e) {
          console.log(e.description);
       }
 
-      // Init slider, which inits inner cards
-      if (this.modelData._states && this.modelData._states.states) {
-         const statesInfo = this.modelData._states;
-         const states = this.modelData._states.states;
-         if (statesInfo.total >= this.modelData.getMaxFetchCount()) {
-            this._numFiles.textContent = `Too many results to preview. Displaying the first ${this.modelData._states.total} results.`
-         } else {
-            const total = statesInfo.total;
-            let totalText = `${total} Results`;
+      this._paginator_top.addEventListener("selectPage", this._paginateGallery.bind(this));
+      this._paginator.addEventListener("selectPage", this._paginateGallery.bind(this));
 
-            if (statesInfo.paginationState && total > statesInfo.paginationState.pageSize) {
-               let startText = statesInfo.paginationState.start + 1;
-               totalText = `${startText} to ${statesInfo.paginationState.stop} of ${total} of Results`
+      // Setup the label picker
+      var stateTypes = this.collectionsData.getStateTypes();
 
-               // Top settings
-               this._paginator_top.hidden = false;
-               this._paginator_top._pageSize = statesInfo.paginationState.pageSize;
-               this._paginator_top.init(total, statesInfo.paginationState);
-               this._paginator_top.addEventListener("selectPage", this._paginateGallery.bind(this));
+      this.currenLabelValues = {};
+      this.currenHiddenType = [];
 
-               // Bottom settings
-               this._paginator.hidden = false;
-               this._paginator._pageSize = statesInfo.paginationState.pageSize;
-               this._paginator.init(total, statesInfo.paginationState);
-               this._paginator.addEventListener("selectPage", this._paginateGallery.bind(this));
-            }
+      for (let idx = 0; idx < stateTypes.length; idx++) {
+         var stateType = stateTypes[idx];
+         let typeId = stateType.id;
+         let labels = document.createElement("entity-gallery-labels");
+         let labelValues = [];
+         this.currenLabelValues[typeId] = labelValues;
 
-            this._numFiles.textContent = totalText;
+         // Provide labels and access to the sliders
+         labels.init({ typeData: stateType, gallery: this });
+         this._attributeLabelsDiv.appendChild(labels);
 
-            if (states.length > 0) {
-               this._addSliders({ sliderList: this.sliderList, states });
-            }
-         }
+         // Label display changes
+         labels.addEventListener("labels-update", (e) => {
+            labelValues = e.detail.value;
+            this.labelsUpdate({ typeId, labelValues });
+            this.currenLabelValues[typeId] = labelValues;
+         });
 
-         // Setup the label picker
-         if (this.modelData.stateTypeData) {
-            for (let typeId in this.modelData.stateTypeData) {
-               //console.log(`Gallery creation of labels for typeId ${typeId}`);
-               if (this.modelData.stateTypeData[typeId].total > 0) {
-                  let labels = document.createElement("entity-gallery-labels");
-                  let labelValues = [];
-                  this.modelData.currenLabelValues[typeId] = labelValues;
-
-                  // Provide labels and access to the sliders
-                  labels.init({ typeData: this.modelData.stateTypeData[typeId], gallery: this });
-                  this._attributeLabelsDiv.appendChild(labels);
-
-                  // Label display changes
-                  labels.addEventListener("labels-update", (e) => {
-                     labelValues = e.detail.value;
-                     this.labelsUpdate({ typeId, labelValues });
-                     this.modelData.currenLabelValues[typeId] = labelValues;
-                     //console.log(this.modelData.currenLabelValues[typeId]);
-                  });
-                  // Label sort changes
-
-                  // Hide / Show type changes
-                  //if (Object.keys(this.modelData.stateTypeData).length > 1) {
-                  // #todo - this works, but is showing count for all results, not just page which is confusing....
-                  labels.addEventListener("hide-type-update", (e) => {
-                     this.hideThisType({ typeId, hidden: e.detail.off });
-
-                  });
-                  // } else {
-                  //    labels._count.hidden = true;
-                  // }
-               }
-
-
-            }
-
-         }
+         // Hide / Show type changes
+         labels.addEventListener("hide-type-update", (e) => {
+            this.hideThisType({ typeId, hidden: e.detail.off });
+         });
       }
    }
 
@@ -149,36 +104,36 @@ class CollectionsGallery extends EntityCardSlideGallery {
       }
 
       // find the slider, and show it's values
-      for (let s of this._sliderElements) {
-         if (s.getAttribute("meta") == typeId) {
-            this._hiddenSlider(s, typeId, hidden);
-         }
-      }
+      // for (let s of this._sliderElements) {
+      //    if (s.getAttribute("meta") == typeId) {
+      //       this._hiddenSlider(s, typeId, hidden);
+      //    }
+      // }
    }
 
-   _hiddenSlider(s, typeId, hidden) {
-      console.log("Hide a type.... ");
-      console.log(this.modelData.currenHiddenType);
-      //show the Labels (which are there but hidden)
-      if (hidden) {
-         if (!s.helper) {
-            let hiddenHTML = `<div class="hidden-type-html col-12 py-3 mb-2">[ ${s.title} Hidden ]</div>`;
-            s.helper = document.createElement('div');
-            s.helper.innerHTML = hiddenHTML;
-            s._shadow.appendChild(s.helper);
-         } else {
-            s.helper.hidden = false;
-         }
+   // _hiddenSlider(s, typeId, hidden) {
+   //    console.log("Hide a type.... ");
+   //    console.log(this.modelData.currenHiddenType);
+   //    //show the Labels (which are there but hidden)
+   //    if (hidden) {
+   //       if (!s.helper) {
+   //          let hiddenHTML = `<div class="hidden-type-html col-12 py-3 mb-2">[ ${s.title} Hidden ]</div>`;
+   //          s.helper = document.createElement('div');
+   //          s.helper.innerHTML = hiddenHTML;
+   //          s._shadow.appendChild(s.helper);
+   //       } else {
+   //          s.helper.hidden = false;
+   //       }
 
-         s.main.classList.add("hidden")
+   //       s.main.classList.add("hidden")
 
-      } else {
-         s.main.classList.remove("hidden");
-         if (s.helper) {
-            s.helper.hidden = true;
-         }
-      }
-   }
+   //    } else {
+   //       s.main.classList.remove("hidden");
+   //       if (s.helper) {
+   //          s.helper.hidden = true;
+   //       }
+   //    }
+   // }
 
    labelsUpdate({ typeId, labelValues }) {
       // find the slider, and show it's values
@@ -191,54 +146,98 @@ class CollectionsGallery extends EntityCardSlideGallery {
       }
    }
 
-   _paginateGallery(evt) {
-      //console.log(evt.detail);
+   updateFilterResults(filterConditions, page, pageSize) {
 
-      // set state
-      this.modelData._states.paginationState.start = evt.detail.start;
-      this.modelData._states.paginationState.stop = evt.detail.stop;
-      this.modelData._states.paginationState.page = evt.detail.page;
-      this.modelData._states.paginationState.pageSize = evt.detail.pgsize;
-      this.modelData._states.paginationState.init = false;
+      this._filterConditions = filterConditions;
 
+      // Set the pagination state based on either defaults of this gallery
+      // or by the settings. This must be done prior to collecting data
+      if (isNaN(page) || isNaN(pageSize)) {
+         page = 1;
+         pageSize = 5;
+      }
+      var paginationState = {
+         start: (page - 1) * pageSize,
+         stop: page * pageSize,
+         page: page,
+         pageSize: pageSize,
+         init: true
+      }
+      this.collectionsData.setPaginationState(paginationState);
+      this.collectionsData.updateData(this._filterConditions).then(() => {
+         var totalCount = this.collectionsData.getNumberOfResults();
+         if (totalCount > 0) {
+            // Top page selector
+            this._paginator_top.hidden = false;
+            this._paginator_top._pageSize = this.collectionsData.getPageSize();
+            this._paginator_top.init(totalCount, this.collectionsData.getPaginationState());
 
-      this._paginationUpdate();
+            // Bottom page selector
+            this._paginator.hidden = false;
+            this._paginator._pageSize = this.collectionsData.getPageSize();
+            this._paginator.init(totalCount, this.collectionsData.getPaginationState());
+         }
 
-      this.analyticsSettings.setAttribute("pagesize", this.modelData._states.paginationState.pageSize);
-      this.analyticsSettings.setAttribute("page", this.modelData._states.paginationState.page);
-      window.history.pushState({}, "", this.analyticsSettings.getURL());
+         this._numFiles.textContent = `${totalCount} Results`;
+
+         this._paginationUpdate(paginationState);
+      });
    }
 
-   async _paginationUpdate() {
-      const newSliderPage = this.modelData._states.paginationState.page;
+   /**
+    * Callback when one of the paginators have an event (e.g. page)
+    * @param {object} evt
+    */
+   _paginateGallery(evt) {
+      var paginationState = {
+         start: evt.detail.start,
+         stop: evt.detail.stop,
+         page: evt.detail.page,
+         pageSize: evt.detail.pgsize,
+         init: false
+      }
+      this._paginationUpdate(paginationState);
+   }
+
+   async _paginationUpdate(paginationState) {
+
+      this.collectionsData.setPaginationState(paginationState);
+      const newSliderPage = this.collectionsData.getPage();
 
       // update paginator
-      this._paginator_top.setValues(this.modelData._states.paginationState);
-      this._paginator.setValues(this.modelData._states.paginationState);
+      this._paginator_top.setValues(this.collectionsData.getPaginationState());
+      this._paginator.setValues(this.collectionsData.getPaginationState());
+
+      while (this._sliderContainer.firstChild) {
+         this._sliderContainer.removeChild(this._sliderContainer.firstChild);
+      }
+      this._sliderLists = [];
 
       // Add new states
       // If the slider already exists, we're hiding and showing
       if (this._sliderLists[newSliderPage]) {
          for (let a in this._sliderLists) {
-            console.log(this._sliderLists[a]);
+            //console.log(this._sliderLists[a]);
             this._sliderLists[a].hidden = true;
          }
          this._sliderLists[newSliderPage].hidden = false;
       } else {
          // If we haven't made this page, we need to fetch the next page
-         const newStates = await this.modelData._paginateStatesFetch();
+         await this.collectionsData.updateData(this._filterConditions);
+         var states = this.collectionsData.getStates();
 
          for (let a in this._sliderLists) {
-            console.log(this._sliderLists[a]);
+            //console.log(this._sliderLists[a]);
             this._sliderLists[a].hidden = true;
          }
 
          let newSliderList = document.createElement("div");
          newSliderList.setAttribute("class", "slider-list");
-         newSliderList.setAttribute("page", this.modelData._states.paginationState.page);
-         //this._sliderLists[this.modelData._states.paginationState.page] = newSliderList;
+         newSliderList.setAttribute("page", this.collectionsData.getPaginationState());
+         //this._sliderLists[this.collectionsData._states.paginationState.page] = newSliderList;
 
-         this._addSliders({ sliderList: newSliderList, states: newStates });
+         this._addSliders({ sliderList: newSliderList, states: states });
+         console.log(states);
          this._sliderContainer.appendChild(newSliderList);
 
          // Update new slider panel permission
@@ -248,8 +247,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
          this.panelContainer.dispatchEvent(panelPermissionEvt);
       }
 
-      let startText = this.modelData._states.paginationState.start + 1;
-      this._numFiles.textContent = `${startText} to ${this.modelData._states.paginationState.stop} of ${this.modelData._states.total} of Results`;
+      this._numFiles.textContent = `${this.collectionsData.getNumberOfResults()} Results`;
+      this.analyticsSettings.setAttribute("pagesize", this.collectionsData.getPageSize());
+      this.analyticsSettings.setAttribute("page", this.collectionsData.getPage());
+      window.history.pushState({}, "", this.analyticsSettings.getURL());
    }
 
    async _addSliders({ sliderList, states }) {
@@ -258,7 +259,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._sliderLists[sliderPage] = sliderList;
 
       // Append the sliders
-      for (let state of states) {
+      for (let idx = 0; idx < states.length; idx++) {
+         let state = states[idx];
          state.cards = [];
 
          const slider = document.createElement("entity-gallery-slider");
@@ -272,7 +274,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.init({
             panelContainer: this.panelContainer,
             pageModal: this.pageModal,
-            modelData: this.modelData,
+            currenLabelValues: this.currenLabelValues,
+            currenHiddenType: this.currenHiddenType,
             slideCardData: this.slideCardData,
             cardType: "collections-card",
             attributes: state.attributes,
@@ -282,8 +285,9 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.unshownCards = {};
          slider._fullCardsAdded = false;
 
-         const stateName = `${state.typeData.name} ID ${state.id}`
-         slider.setAttribute("title", stateName);
+         let currentCount = (sliderPage - 1) * this.collectionsData.getPageSize() + idx + 1;
+         slider.setAttribute("title", `${state.typeData.name} ID: ${state.id}`);
+         slider.setAttribute("count", `${currentCount} of ${this.collectionsData.getNumberOfResults()}`);
 
          this._sliderElements.push(slider);
          currentSliderEls.push(slider);
@@ -302,8 +306,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
                //this.analyticsSettings.setAttribute("selectedState", state.id);
                //window.history.pushState({}, "", this.analyticsSettings.getURL());
             }
-            // } else { 
-            //       
+            // } else {
+            //
             //    console.log("This is already open!")
             //    //toggle it shut
             //    const inactiveEvent = new Event("slider-inactive");
@@ -507,7 +511,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          type: "Localization"
       }).then((data) => {
          this.updateCardData(data);
-         
+
       });
    }
 

@@ -14,8 +14,9 @@ class TatorData {
     this._versions = [];
     this._sections = [];
     this._algorithms = [];
-    this._stateTypes = []
-    this._states = {};
+    this._stateTypes = [];
+    this._stateTypeNames = [];
+    this._stateTypeAssociations = {media: [], frame: [], localization: []};
 
     this._maxFetchCount = 100000;
   }
@@ -30,6 +31,18 @@ class TatorData {
 
   getStoredLocalizationTypes() {
     return this._localizationTypes;
+  }
+
+  getStoredStateTypes() {
+    return this._stateTypes;
+  }
+
+  getStoredMediaStateTypes() {
+    return this._stateTypeAssociations.media;
+  }
+
+  getStoredLocalizationStateTypes() {
+    return this._stateTypeAssociations.localization;
   }
 
   getStoredMediaTypes() {
@@ -59,6 +72,58 @@ class TatorData {
     await this.getAllVersions();
     await this.getAllSections();
     await this.getAllAlgorithms();
+    await this.getAllStateTypes();
+  }
+
+  /**
+   * Saves the list of localization types associated with this project
+   */
+   async getAllStateTypes() {
+
+    var donePromise = new Promise(resolve => {
+
+      const restUrl = "/rest/StateTypes/" + this._project;
+      const dataPromise = fetchRetry(restUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      Promise.all([dataPromise])
+        .then(([dataResponse]) => {
+          const dataJson = dataResponse.json();
+          Promise.all([dataJson])
+        .then(([stateTypes]) => {
+          this._stateTypes = [...stateTypes];
+          this._stateTypeNames = [];
+          this._stateTypes.forEach(typeElem => this._stateTypeNames.push(typeElem.name));
+
+          // Also separate out the state types into the different association types
+          this._stateTypeAssociations = {media: [], frame: [], localization: []};
+          for (let idx=0; idx < this._stateTypes.length; idx++) {
+            const stateType = this._stateTypes[idx];
+            if (stateType.association == "Media") {
+              this._stateTypeAssociations.media.push(stateType);
+            }
+            else if (stateType.association == "Localization") {
+              this._stateTypeAssociations.localization.push(stateType);
+            }
+            else if (stateType.association == "Frame") {
+              this._stateTypeAssociations.frame.push(stateType);
+            }
+          }
+
+          resolve();
+        });
+      });
+
+    });
+
+    await donePromise;
   }
 
   /**
@@ -343,25 +408,6 @@ class TatorData {
     return data;
   }
 
-    /**
-    * Returns localizations list
-   */
-  async getLocalization({ id = ""} = {}){
-    const response = await fetch(`/rest/Localization/${id}`, {
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const data = await response.json();
-
-    return data;
-  }
-
   /**
    * Note: Much of this code has been copied from media-section.js
    *       The constants chosen are based on the Tator endpoint restrictions
@@ -481,7 +527,8 @@ class TatorData {
 
   /**
    * @param {string} outputType ids|objects|count
-   * @param {array of FilterConditionData} locFilterData
+   * @param {string} annotationType Localizations|States
+   * @param {array of FilterConditionData} annotationFilterData
    * @param {array of FilterConditionData} mediaFilterData
    * @param {integer} listStart
    * @param {integer} listStop
@@ -489,9 +536,10 @@ class TatorData {
    * @param {array} versionIds
    * @param {integer} dtype
    */
-  async _getLocalizationData(
+  async _getAnnotationData(
     outputType,
-    locFilterData,
+    annotationType,
+    annotationFilterData,
     mediaFilterData,
     listStart,
     listStop,
@@ -503,17 +551,17 @@ class TatorData {
 
     var paramString = "";
 
-    var locSearch = "";
-    for (let idx = 0; idx < locFilterData.length; idx++) {
-      var filter = locFilterData[idx];
-      locSearch += encodeURIComponent(this._convertFilterForTator(filter));
-      if (idx < locFilterData.length - 1) {
-        locSearch += encodeURIComponent(" AND ");
+    var annotationSearch = "";
+    for (let idx = 0; idx < annotationFilterData.length; idx++) {
+      var filter = annotationFilterData[idx];
+      annotationSearch += encodeURIComponent(this._convertFilterForTator(filter));
+      if (idx < annotationFilterData.length - 1) {
+        annotationSearch += encodeURIComponent(" AND ");
       }
     }
 
-    if (locSearch) {
-      paramString += "&search=" + locSearch;
+    if (annotationSearch) {
+      paramString += "&search=" + annotationSearch;
     }
 
     var mediaSearch = "";
@@ -545,11 +593,21 @@ class TatorData {
 
     let url = "/rest";
 
-    if (outputType == "count") {
-      url += "/LocalizationCount/";
+    if (annotationType == "Localizations") {
+      if (outputType == "count") {
+        url += "/LocalizationCount/";
+      }
+      else {
+        url += "/Localizations/";
+      }
     }
-    else {
-      url += "/Localizations/";
+    else if (annotationType == "States") {
+      if (outputType == "count") {
+        url += "/StateCount/";
+      }
+      else {
+        url += "/States/";
+      }
     }
 
     url += `${this._project}?${paramString}`;
@@ -644,7 +702,7 @@ class TatorData {
             mediaFilters.push(filter);
           }
         }
-        else {
+        else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_version") {
             versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
@@ -660,8 +718,9 @@ class TatorData {
 
     if (dtypeIds.length > 0) {
       dtypeIds.forEach(dtypeId => {
-        typePromises.push(this._getLocalizationData(
+        typePromises.push(this._getAnnotationData(
           outputType,
+          "Localizations",
           localizationFilters,
           mediaFilters,
           listStart,
@@ -673,9 +732,121 @@ class TatorData {
       });
     }
     else {
-      typePromises.push(this._getLocalizationData(
+      typePromises.push(this._getAnnotationData(
         outputType,
+        "Localizations",
         localizationFilters,
+        mediaFilters,
+        listStart,
+        listStop,
+        afterMap,
+        versionIds
+      ));
+    }
+
+    // Wait for all the data requests to complete. Once complete, return the appropriate data.
+    var typeResults = await Promise.all(typePromises);
+    var outData;
+    if (outputType == "count") {
+      outData = 0;
+    }
+    else {
+      outData = [];
+    }
+
+    for (let idx = 0; idx < typeResults.length; idx++) {
+      if (outputType == "count") {
+        outData += Number(typeResults[idx]);
+      }
+      else {
+        outData.push(...typeResults[idx]);
+      }
+    }
+    return outData;
+  }
+
+  /**
+   * Retrieves a list of state data matching the filter criteria
+   *
+   * @param {string} outputType -
+   *    objects|count
+   *
+   * @param {array of FilterConditionData objects} filters -
+   *    List of FilterConditionData to apply
+   *    Only conditions associated with media and states will be applied.
+   *
+   * @param {integer} listStart -
+   *   Used in conjunction with listStop and pagination of data.
+   *   If null, pagination is ignored.
+   *
+   * @param {integer} listStop =
+   *   Used in conjunction with listStart and pagination of data.
+   *   If null, pagination is ignored.
+   *
+   * @param {Map} afterMap -
+   *   Used in conjunction with the other pagination. Modified here.
+   *   If null, pagination is ignored.
+   *
+   * @returns {array of integers}
+   *    List of localization IDs matching the filter criteria
+   */
+   async getFilteredStates(outputType, filters, listStart, listStop, afterMap) {
+
+    // Loop through the filters, if there are any media specific ones
+    var mediaFilters = [];
+    var stateFilters = [];
+    var typeIds = [];
+    var versionIds = [];
+    var typePromises = [];
+
+    // Separate out the filter conditions into their groups
+    if (Array.isArray(filters)) {
+      filters.forEach(filter => {
+        if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
+          if (filter.field == "_section") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "tator_user_sections";
+            newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
+            mediaFilters.push(newFilter);
+          }
+          else {
+            mediaFilters.push(filter);
+          }
+        }
+        else if (this._stateTypeNames.indexOf(filter.category) >= 0) {
+          if (filter.field == "_version") {
+            versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
+          }
+          else if (filter.field == "_type") {
+            typeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
+          }
+          else {
+            stateFilters.push(filter);
+          }
+        }
+      });
+    }
+
+    if (typeIds.length > 0) {
+      typeIds.forEach(dtypeId => {
+        typePromises.push(this._getAnnotationData(
+          outputType,
+          "States",
+          stateFilters,
+          mediaFilters,
+          listStart,
+          listStop,
+          afterMap,
+          versionIds,
+          dtypeId
+        ));
+      });
+    }
+    else {
+      typePromises.push(this._getAnnotationData(
+        outputType,
+        "States",
+        stateFilters,
         mediaFilters,
         listStart,
         listStop,
@@ -714,10 +885,27 @@ class TatorData {
    */
   async launchAlgorithm(algorithmName, parameters) {
 
+    // Have to provide a valid media ID list or query for now. #TODO revisit
+
+    var media_id;
+    await fetchRetry(`/rest/Medias/${this._project}?start=0&stop=1`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    }).then((response) => {
+      return response.json()
+    }).then((results) => {
+      media_id = results[0].id;
+    });
+
     let body = {
       "algorithm_name": algorithmName,
       "extra_params": parameters,
-      "media_ids": []
+      "media_ids": [media_id]
     }
 
     var launched = false;
@@ -735,6 +923,10 @@ class TatorData {
       if (response.status == 201) {
         launched = true;
       }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
     });
 
     return launched;
@@ -798,169 +990,4 @@ class TatorData {
 
     return outStr;
   }
-
-  /**
-   * Collections 
-   * @param {acceptedAssoc} {array} of association types to INCLUDE
-   * @param {pageSize} {array} of association types to INCLUDE
-   * - Returns states and total information to be processed
-  */
-  async collectionsInit({ acceptedAssoc, pageSize = 5, page = 1 }) {
-    this._stateTypes = await this.getStateTypes();
-    this._states.total = 0;
-    this.stateTypeData = {};
-    let searchParam = "";
-    let start = page > 1 ? (pageSize * page - pageSize) : 0;
-
-    this._states.paginationState = {
-      pageSize,
-      page,
-      start,
-      stop: start + pageSize,
-      init: true
-    };
-
-    const typeIds = this._stateTypes.filter(type => acceptedAssoc.includes(type.association)).map(type => {
-      this.stateTypeData[type.id] = type;
-      return type.id;
-    });
-
-    //console.log(typeIds);
-    if(typeIds && typeIds.length > 1){
-      let esQuery = `_meta:(${typeIds.join(" OR ")})`;
-      searchParam = `?search=${encodeURIComponent(esQuery)}`
-    } else if(typeIds && typeIds.length == 1) {
-      searchParam = `?type=${typeIds[0]}`;
-    }
-
-    // If we have type ids, and search meta created
-    if (searchParam !== "") {
-      // save this if we need to paginate this state list
-      this._states.searchParam = searchParam;
-
-      // Get state count #todo- "search" not working so adding by type
-      for(let t of typeIds){
-        let typeTotal = await this.getStateCount({
-          params: `?type=${t}`
-        });
-        this.stateTypeData[t].total = typeTotal
-        this._states.total += typeTotal;
-
-        if (typeTotal == 0) {
-          // Remove this data type as a reference to avoid evel downstream
-          delete this.stateTypeData[t];
-        }
-      }
-
-
-
-      // get relevant states
-      this._states.states = await this.getStates({
-        params: this._states.searchParam,
-        dataStart: this._states.paginationState.start,
-        dataStop: this._states.paginationState.stop
-      });
-
-      // add accessible type data to the state
-      this._states.states.map(state => {
-        // pass along some data we already fetch about the association, and state name to view with the state
-        if (this.stateTypeData[state.meta]) {
-          state.typeData = this.stateTypeData[state.meta];
-        }
-        return state;
-      });
-    }
-
-    if (this._states.paginationState.stop > this._states.total) {
-      this._states.paginationState.stop = this._states.total;
-    }
-
-    return this._states;
-  }
-
-  async _paginateStatesFetch() {
-    // get relevant states
-    let newStates = await this.getStates({
-      params: this._states.searchParam,
-      dataStart: this._states.paginationState.start,
-      dataStop: this._states.paginationState.stop
-    });
-
-    // add accessible type data to the state
-    newStates.map(state => {
-      // pass along some data we already fetch about the association, and state name to view with the state
-      state.typeData = this.stateTypeData[state.meta];
-      return state;
-    });
-
-    this._states.states = [...this._states.states, ...newStates];
-
-    return newStates;
-  }
-
-  /**
-   * Retrieves state types
-   */
-  async getStateTypes({ params = "?", dataStart = 0, dataStop = 1000 } = {}) {
-    const response = await fetch(`/rest/StateTypes/${this._project}${params}&start=${dataStart}&stop=${dataStop}`, {
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const data = await response.json();
-
-    return data;
-  }
-
-  /**
-   * Retrieves state count
-   * @param {params} optional list of query parameter should start with "?"
-   */
-  async getStateCount({ params = "" } = {}) {
-    const response = await fetch(`/rest/StateCount/${this._project}${params}`, {
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const data = await response.json();
-
-    return data;
-  }
-
-  /**
-   * Retrieves states (start and stop)
-   * @param {params}
-   * @param {dataStart}
-   * @param {dataStop}
-   * #todo - better checking about when to add params/ etc. working around endpoint bug sending start and stop for now
-   */
-  async getStates({ params = "?", dataStart = 0, dataStop = 25 } = {}) {
-    const response = await fetch(`/rest/States/${this._project}${params}&start=${dataStart}&stop=${dataStop}`, {
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    const data = await response.json();
-
-    return data;
-  }
-
 }
-
-
-

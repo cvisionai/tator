@@ -1,61 +1,61 @@
 class EntityGalleryLabels extends TatorElement {
-    constructor() {
-      super();
-    
-      // clickable bar
-      this._main = document.createElement("div");
-      this._main.setAttribute("class", "entity-gallery-labels py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
+  constructor() {
+    super();
 
-      this._title = document.createElement("div");
-      this._title.setAttribute("class", "entity-gallery-labels--title px-1 py-1 text-gray");
-      this._main.appendChild(this._title);
+    // clickable bar
+    this._main = document.createElement("div");
+    this._main.setAttribute("class", "entity-gallery-labels py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
-      // this._count = document.createElement("span");
-      this._count = document.createElement("span");
-      this._count.setAttribute("class", "gallery-label-count  pr-2 clickable"); //clickable
-      this._title.appendChild(this._count);
+    this._title = document.createElement("div");
+    this._title.setAttribute("class", "entity-gallery-labels--title px-2 py-1 text-gray");
+    this._main.appendChild(this._title);
 
-      // Labels chooser
-      this._labelDetails = document.createElement("div");
-      this._labelDetails.setAttribute("class", "float-right");
-      this._title.appendChild(this._labelDetails);
+    // this._count = document.createElement("span");
+    this._count = document.createElement("span");
+    this._count.setAttribute("class", "gallery-label-count  pr-2 clickable"); //clickable
+    this._title.appendChild(this._count);
 
-      this._clickableTitle = document.createElement("div");
-      //this._clickableTitle.setAttribute("tooltip", "Labels");
-      let labelIcon = new SvgDefinition({ iconName: "label-tag" });
-      this._clickableTitle.appendChild(labelIcon);
-      this._labelDetails.appendChild(this._clickableTitle);
+    // Labels chooser
+    this._labelDetails = document.createElement("div");
+    this._labelDetails.setAttribute("class", "float-right");
+    this._title.appendChild(this._labelDetails);
 
-      this.styleDiv = document.createElement("div");
-      this.styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2 hidden");
-      this._labelDetails.appendChild(this.styleDiv);
+    this._clickableTitle = document.createElement("div");
+    //this._clickableTitle.setAttribute("tooltip", "Labels");
+    let labelIcon = new SvgDefinition({ iconName: "label-tag" });
+    this._clickableTitle.appendChild(labelIcon);
+    this._labelDetails.appendChild(this._clickableTitle);
 
-      let innerText = document.createTextNode("Choose Labels:");
-      this.styleDiv.appendChild(innerText);
+    this.styleDiv = document.createElement("div");
+    this.styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2 hidden");
+    this._labelDetails.appendChild(this.styleDiv);
+
+    let innerText = document.createTextNode("Choose Labels:");
+    this.styleDiv.appendChild(innerText);
 
 
-      this._clickableTitle.addEventListener("click", (e) => {
-        this.styleDiv.classList.toggle("hidden");
-        this._clickableTitle.classList.toggle("active");
-      });
+    this._clickableTitle.addEventListener("click", (e) => {
+      this.styleDiv.classList.toggle("hidden");
+      this._clickableTitle.classList.toggle("active");
+    });
 
-      // this._details = document.createElement("div");
-      // this._details.setAttribute("class", "py-3");
-      // this._labelDetails.appendChild(this._details);
+    // this._details = document.createElement("div");
+    // this._details.setAttribute("class", "py-3");
+    // this._labelDetails.appendChild(this._details);
 
-      // Hide this type
-      // this._eyeHolder = 
-      // this._eyeHolder.setAttribute("tooltip", "Hide/Show");
-      // this._eyeHolder.setAttribute("class", "col-4");
-      // this._main.appendChild(this._eyeHolder);
+    // Hide this type
+    // this._eyeHolder = 
+    // this._eyeHolder.setAttribute("tooltip", "Hide/Show");
+    // this._eyeHolder.setAttribute("class", "col-4");
+    // this._main.appendChild(this._eyeHolder);
 
-      // this.openEyeIcon = new SvgDefinition({ iconName: "open-eye" });
-      // this._eyeHolder.appendChild(this.openEyeIcon);
+    // this.openEyeIcon = new SvgDefinition({ iconName: "open-eye" });
+    // this._eyeHolder.appendChild(this.openEyeIcon);
 
-      // this.closedEyeIcon = new SvgDefinition({ iconName: "closed-eye" });
-      // this.closedEyeIcon.setAttribute("class", "hidden");
-      // this._eyeHolder.appendChild(this.closedEyeIcon);
-    }
+    // this.closedEyeIcon = new SvgDefinition({ iconName: "closed-eye" });
+    // this.closedEyeIcon.setAttribute("class", "hidden");
+    // this._eyeHolder.appendChild(this.closedEyeIcon);
+  }
 
   /**
    * @param {typeData} - object
@@ -105,8 +105,8 @@ class EntityGalleryLabels extends TatorElement {
     return this._shadow.appendChild(this._main);
   }
 
-    /*
-    */
+  /*
+  */
   makeListFrom(typeData) {
     this.newList = [];
     let tmpArray = [...typeData.attribute_types];
@@ -120,5 +120,5 @@ class EntityGalleryLabels extends TatorElement {
     return this.newList;
   }
 }
-  
+
 customElements.define("entity-gallery-labels", EntityGalleryLabels);

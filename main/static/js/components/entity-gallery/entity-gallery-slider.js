@@ -12,11 +12,11 @@ class EntityGallerySlider extends TatorElement {
       this.main.appendChild(this.topDiv);
 
       this._labels = document.createElement("div");
-      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row h3 text-normal text-gray py-2");
+      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row f2 text-normal text-gray py-2");
       this.topDiv.appendChild(this._labels);
 
-      this._title = document.createElement("h2");
-      this._title.setAttribute("class", "h3 entity-gallery-slider--title text-gray");
+      this._title = document.createElement("div");
+      this._title.setAttribute("class", "entity-gallery-slider--title text-gray");
       this._labels.appendChild(this._title);
 
       // Gallery Top Tools and info
@@ -25,7 +25,7 @@ class EntityGallerySlider extends TatorElement {
       this.main.appendChild(this._tools);
 
       this._count = document.createElement("p");
-      this._count.setAttribute("class", "text-gray py-1 pb-2")
+      this._count.setAttribute("class", "text-gray py-1 pb-2 f3")
       this._tools.appendChild(this._count);
 
       this.loadAllTeaser = document.createElement("span");
@@ -104,7 +104,8 @@ class EntityGallerySlider extends TatorElement {
    init({
       panelContainer,
       pageModal,
-      modelData,
+      currenLabelValues,
+      currenHiddenType,
       slideCardData,
       cardType,
       attributes,
@@ -113,7 +114,6 @@ class EntityGallerySlider extends TatorElement {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
       this.pageModal = pageModal;
-      this.modelData = modelData;
       this.slideCardData = slideCardData;
       this.state = state;
 
@@ -155,8 +155,7 @@ class EntityGallerySlider extends TatorElement {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
 
-
-      if (this.modelData.currenHiddenType.includes[state.meta]) {
+      if (currenHiddenType.includes[state.meta]) {
          let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
          var helper = document.createElement('div');
          helper.innerHTML = hiddenHTML;
@@ -179,20 +178,15 @@ class EntityGallerySlider extends TatorElement {
          attributeLabel.setAttribute("id", encodeURI(attr));
 
          // reapply any label preferences
-         if (this.modelData.currenLabelValues && this.modelData.currenLabelValues[state.meta]) {
-            const currentLabels = this.modelData.currenLabelValues[state.meta];
+         if (currenLabelValues && currenLabelValues[state.meta]) {
+            const currentLabels = currenLabelValues[state.meta];
+            this.showLabels(currentLabels);
             if (currentLabels.length === 0 || !currentLabels.includes(attr)) {
                attributeLabel.setAttribute("class", "hidden");
             }
          } else {
             attributeLabel.setAttribute("class", "hidden");
          }
-
-         // let typeId = statesInfo.meta;
-         // this.labelsUpdate({ typeId, labelValues: });
-         // if (this.modelData.currenHiddenType.includes(typeId)) {
-         //    this.hideThisType({ typeId, hidden: true });
-         // }
 
          let seperator = document.createElement("span");
          seperator.setAttribute("class", "px-2")
@@ -468,7 +462,7 @@ class EntityGallerySlider extends TatorElement {
       }
    }
 
-   _updateLocalizationAttribute({newValues}){
+   _updateLocalizationAttribute({ newValues }) {
       for (let i = 0; i < this._cardElements.length; i++) {
          let cardAttr = this._cardElements[i].card.cardObj.attributes;
          cardAttr = newValues.attributes;
@@ -520,7 +514,7 @@ class EntityGallerySlider extends TatorElement {
                let newCardEvent = new CustomEvent('new-card', detail);
                this.dispatchEvent(newCardEvent);
             }
-         } 
+         }
       }
 
    }
