@@ -710,6 +710,9 @@ class AnnotationMulti extends TatorElement {
       .then(() => {
         this.setDefaultVideoSettings(idx);
         this.handleNotReadyEvent(idx);
+        if (idx == 0) {
+          this.dispatchEvent(new CustomEvent("primaryVideoLoaded", {composed: true}));
+        }
       });
 
       // #TODO This should be changed to dispatched events vs. calling the parent directly.

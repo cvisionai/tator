@@ -211,48 +211,51 @@ class AnnotationPage extends TatorPage {
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
+              this._player.addEventListener(
+                "primaryVideoLoaded", () => {
 
-              var mediaIdCount = 0;
-              for (const index of data.media_files.ids.keys()) {
-                this._mediaIds.push(data.media_files.ids[index]);
-                mediaIdCount += 1;
-              }
-              this._numberOfMedia = mediaIdCount;
-              this._settings._capture.addEventListener(
-                'captureFrame',
-                (e) =>
-                  {
-                    player._video.captureFrame(e.detail.localizations);
+                  var mediaIdCount = 0;
+                  for (const index of data.media_files.ids.keys()) {
+                    this._mediaIds.push(data.media_files.ids[index]);
+                    mediaIdCount += 1;
+                  }
+                  this._numberOfMedia = mediaIdCount;
+                  this._settings._capture.addEventListener(
+                    'captureFrame',
+                    (e) =>
+                      {
+                        player._video.captureFrame(e.detail.localizations);
+                      });
+
+                  // Set the quality control based on the prime video
+                  fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                      "X-CSRFToken": getCookie("csrftoken"),
+                      "Accept": "application/json",
+                      "Content-Type": "application/json"
+                    }
+                  })
+                  .then(response => response.json())
+                  .then(primeMediaData => {
+                    this._videoSettingsDialog.mode("multiview", [primeMediaData]);
+                    this._settings.mediaInfo = primeMediaData;
+                    var playbackQuality = data.media_files.quality;
+                    if (playbackQuality == undefined)
+                    {
+                      playbackQuality = 360; // Default to something sensible
+                    }
+                    if (searchParams.has("quality"))
+                    {
+                      playbackQuality = Number(searchParams.get("quality"));
+                    }
+                    this._settings.quality = playbackQuality;
+                    this._player.setQuality(playbackQuality, null, true);
+                    this._player.setAvailableQualities(primeMediaData);
                   });
-
-              // Set the quality control based on the prime video
-              fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
-                method: "GET",
-                credentials: "same-origin",
-                headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
                 }
-              })
-              .then(response => response.json())
-              .then(primeMediaData => {
-                this._videoSettingsDialog.mode("multiview", [primeMediaData]);
-                this._settings.mediaInfo = primeMediaData;
-                var playbackQuality = data.media_files.quality;
-                if (playbackQuality == undefined)
-                {
-                  playbackQuality = 360; // Default to something sensible
-                }
-                if (searchParams.has("quality"))
-                {
-                  playbackQuality = Number(searchParams.get("quality"));
-                }
-                this._settings.quality = playbackQuality;
-                this._player.setQuality(playbackQuality, null, true);
-                this._player.setAvailableQualities(primeMediaData);
-              });
-
+              );
             } else {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
@@ -1530,7 +1533,7 @@ class AnnotationPage extends TatorPage {
         });
       }
     });
-      
+
   }
 }
 
