@@ -220,12 +220,15 @@ class AnnotationPage extends TatorPage {
                     mediaIdCount += 1;
                   }
                   this._numberOfMedia = mediaIdCount;
+                  /* #TODO Figure out a capture frame capability for multiview
                   this._settings._capture.addEventListener(
                     'captureFrame',
                     (e) =>
                       {
                         player._video.captureFrame(e.detail.localizations);
                       });
+                  */
+                  this._settings._capture.setAttribute("disabled", "");
 
                   // Set the quality control based on the prime video
                   fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
