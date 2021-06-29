@@ -203,46 +203,58 @@ class AttributePanel extends TatorElement {
         widget.setValue(values.modified_datetime);
       }
       else if (name == "x") {
-        let val = `${values.x.toFixed(4)}`;
-        if (this._associatedMedia) {
-          val += ` | ${Math.round(values.x*this._associatedMedia.width)} px`;
+        if (values.x != undefined) {
+          let val = `${values.x.toFixed(4)}`;
+          if (this._associatedMedia) {
+            val += ` | ${Math.round(values.x*this._associatedMedia.width)} px`;
+          }
+          widget.setValue(val);
         }
-        widget.setValue(val);
       }
       else if (name == "y") {
-        let val = `${values.y.toFixed(4)}`;
-        if (this._associatedMedia) {
-          val += ` | ${Math.round(values.y*this._associatedMedia.height)} px`;
+        if (values.y != undefined) {
+          let val = `${values.y.toFixed(4)}`;
+          if (this._associatedMedia) {
+            val += ` | ${Math.round(values.y*this._associatedMedia.height)} px`;
+          }
+          widget.setValue(val);
         }
-        widget.setValue(val);
       }
       else if (name == "u") {
-        let val = `${values.u.toFixed(4)}`;
-        if (this._associatedMedia) {
-          val += ` | ${Math.round(values.u*this._associatedMedia.width)} px`;
+        if (values.u != undefined) {
+          let val = `${values.u.toFixed(4)}`;
+          if (this._associatedMedia) {
+            val += ` | ${Math.round(values.u*this._associatedMedia.width)} px`;
+          }
+          widget.setValue(val);
         }
-        widget.setValue(val);
       }
       else if (name == "v") {
-        let val = `${values.v.toFixed(4)}`;
-        if (this._associatedMedia) {
-          val += ` | ${Math.round(values.v*this._associatedMedia.height)} px`;
+        if (values.v != undefined) {
+          let val = `${values.v.toFixed(4)}`;
+          if (this._associatedMedia) {
+            val += ` | ${Math.round(values.v*this._associatedMedia.height)} px`;
+          }
+          widget.setValue(val);
         }
-        widget.setValue(val);
       }
       else if (name == "width") {
-        let val = `${values.width.toFixed(4)}`;
-        if (this._associatedMedia) {
-          val += ` | ${Math.round(values.width*this._associatedMedia.width)} px`;
+        if (values.width != undefined) {
+          let val = `${values.width.toFixed(4)}`;
+          if (this._associatedMedia) {
+            val += ` | ${Math.round(values.width*this._associatedMedia.width)} px`;
+          }
+          widget.setValue(val);
         }
-        widget.setValue(val);
       }
       else if (name == "height") {
-        let val = `${values.height.toFixed(4)}`;
-        if (this._associatedMedia) {
-          val += ` | ${Math.round(values.height*this._associatedMedia.height)} px`;
+        if (values.height != undefined) {
+          let val = `${values.height.toFixed(4)}`;
+          if (this._associatedMedia) {
+            val += ` | ${Math.round(values.height*this._associatedMedia.height)} px`;
+          }
+          widget.setValue(val);
         }
-        widget.setValue(val);
       }
     }
   }
