@@ -413,6 +413,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   disableAutoDownloads() {
+    this._playerDownloadDisabled = true;
     this._video.disableAutoDownloads();
   }
 
@@ -683,6 +684,11 @@ class AnnotationPlayer extends TatorElement {
   }
   handleNotReadyEvent()
   {
+    if (this._playerDownloadDisabled) {
+      // Don't bother attempting to check if playback is ready if downloads have been disabled.
+      return;
+    }
+
     if (this._handleNotReadyTimeout != null)
     {
       console.log("Already handling a not ready event");
