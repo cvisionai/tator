@@ -2542,6 +2542,7 @@ class AnnotationCanvas extends TatorElement
     return this.refresh();
   }
 
+  // Note: skipAnimation is ignored for now.
   selectLocalization(localization, skipAnimation, muteOthers, skipGoToFrame)
   {
     // Seek to a frame if we aren't actually there but trying to display
@@ -2592,14 +2593,19 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      this.highlightLocalization(localization, 250,
-                                 {cycles: 1,
-                                  initColor: color.blend(color.WHITE,emphasisColor(localization),0.50)}).
-        then(
-          () =>
-            {
-              that.refresh();
-            });
+      this.emphasizeLocalization(localization,
+                                 color.WHITE,
+                                 muteOthers);
+      // #TODO Revisit. This causes problems when selecting a localization and there are many
+      //       refreshes occuring simultaneously.
+      //this.highlightLocalization(localization, 250,
+      //                           {cycles: 1,
+      //                            initColor: color.blend(color.WHITE,emphasisColor(localization),0.50)}).
+      //  then(
+      //    () =>
+      //      {
+      //        that.refresh();
+      //      });
     }
     // Handle case when localization is in a track
     if (localization.id in this._data._trackDb)
