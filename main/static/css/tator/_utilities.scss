@@ -174,8 +174,19 @@
 }
 
 // Margins R, L, X, Y, Top, Bottom
+.mr-1 {
+  margin-right: $spacing-1;
+}
 .mr-3 {
   margin-right: $spacing-3;
+}
+
+.mr-6 {
+  margin-right: $spacing-6;
+}
+
+.ml-1 {
+  margin-left: $spacing-1;
 }
 
 .ml-3 {

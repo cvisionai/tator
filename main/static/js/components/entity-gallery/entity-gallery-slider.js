@@ -24,10 +24,6 @@ class EntityGallerySlider extends TatorElement {
       this._tools.setAttribute("class", "enitity-gallery__tools py-2 d-flex flex-justify-between");
       this.main.appendChild(this._tools);
 
-      this._count = document.createElement("p");
-      this._count.setAttribute("class", "text-gray py-1 pb-2 f3")
-      this._tools.appendChild(this._count);
-
       this.loadAllTeaser = document.createElement("span");
       this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more text-gray"); //
       let text = document.createTextNode("Loading...");
@@ -48,8 +44,8 @@ class EntityGallerySlider extends TatorElement {
       // Tools: Slider to resize images
       this.sliderContainer = document.createElement("div");
       this.sliderContainer.setAttribute("class", "entity-card-resize col-4")
-      this._resizeCards = document.createElement('entity-card-resize');
-      this.sliderContainer.appendChild(this._resizeCards);
+      // this._resizeCards = document.createElement('entity-card-resize');
+      // this.sliderContainer.appendChild(this._resizeCards);
       this._tools.appendChild(this.sliderContainer);
 
       // Property IDs are the entity IDs (which are expected to be unique)
@@ -86,7 +82,7 @@ class EntityGallerySlider extends TatorElement {
       //this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
       this.styleDiv.appendChild(this._ul);
 
-      this._resizeCards._initGallery(this._ul, this.colSize);
+      // this._resizeCards._initGallery(this._ul, this.colSize);
 
 
 
@@ -104,8 +100,7 @@ class EntityGallerySlider extends TatorElement {
    init({
       panelContainer,
       pageModal,
-      currenLabelValues,
-      currenHiddenType,
+      currentLabelValues,
       slideCardData,
       cardType,
       attributes,
@@ -155,14 +150,6 @@ class EntityGallerySlider extends TatorElement {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
 
-      if (currenHiddenType.includes[state.meta]) {
-         let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
-         var helper = document.createElement('div');
-         helper.innerHTML = hiddenHTML;
-         this.classList.add("hidden");
-         this.after(helper);
-      }
-
 
       const compareAttr = [...this.state.typeData.attribute_types];
 
@@ -178,8 +165,8 @@ class EntityGallerySlider extends TatorElement {
          attributeLabel.setAttribute("id", encodeURI(attr));
 
          // reapply any label preferences
-         if (currenLabelValues && currenLabelValues[state.meta]) {
-            const currentLabels = currenLabelValues[state.meta];
+         if (currentLabelValues && currentLabelValues[state.meta]) {
+            const currentLabels = currentLabelValues[state.meta];
             this.showLabels(currentLabels);
             if (currentLabels.length === 0 || !currentLabels.includes(attr)) {
                attributeLabel.setAttribute("class", "hidden");
@@ -233,9 +220,6 @@ class EntityGallerySlider extends TatorElement {
       switch (name) {
          case "title":
             this._title.textContent = newValue;
-            break;
-         case "count":
-            this._count.textContent = newValue;
             break;
       }
    }
@@ -330,12 +314,12 @@ class EntityGallerySlider extends TatorElement {
 
          // // Resize Tool needs to change style within card on change
          card.style.width = "272px";
-         this._resizeCards._slideInput.addEventListener("change", (evt) => {
-            let resizeValue = evt.target.value;
-            let resizeValuePerc = parseFloat(resizeValue / 100);
-            card.style.width = "auto";
-            return card._img.style.height = `${130 * resizeValuePerc}px`;
-         });
+         // this._resizeCards._slideInput.addEventListener("change", (evt) => {
+         //    let resizeValue = evt.target.value;
+         //    let resizeValuePerc = parseFloat(resizeValue / 100);
+         //    card.style.width = "auto";
+         //    return card._img.style.height = `${130 * resizeValuePerc}px`;
+         // });
 
          // Inner div of side panel
          let annotationPanelDiv = document.createElement("div");

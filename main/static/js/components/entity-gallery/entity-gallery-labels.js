@@ -4,57 +4,35 @@ class EntityGalleryLabels extends TatorElement {
 
     // clickable bar
     this._main = document.createElement("div");
-    this._main.setAttribute("class", "entity-gallery-labels py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
+    this._main.setAttribute("class", "entity-gallery-labels my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
     this._title = document.createElement("div");
-    this._title.setAttribute("class", "entity-gallery-labels--title px-2 py-1 text-gray");
+    this._title.setAttribute("class", "entity-gallery-labels--title py-2 px-2 col-2");
     this._main.appendChild(this._title);
-
-    // this._count = document.createElement("span");
-    this._count = document.createElement("span");
-    this._count.setAttribute("class", "gallery-label-count  pr-2 clickable"); //clickable
-    this._title.appendChild(this._count);
 
     // Labels chooser
     this._labelDetails = document.createElement("div");
-    this._labelDetails.setAttribute("class", "float-right");
-    this._title.appendChild(this._labelDetails);
+    this._labelDetails.setAttribute("class", "float-right col-10");
+    this._main.appendChild(this._labelDetails);
 
-    this._clickableTitle = document.createElement("div");
-    //this._clickableTitle.setAttribute("tooltip", "Labels");
-    let labelIcon = new SvgDefinition({ iconName: "label-tag" });
-    this._clickableTitle.appendChild(labelIcon);
-    this._labelDetails.appendChild(this._clickableTitle);
+    // this._clickableTitle = document.createElement("div");
+    // //this._clickableTitle.setAttribute("tooltip", "Labels");
+    // let labelIcon = new SvgDefinition({ iconName: "label-tag" });
+    // this._clickableTitle.appendChild(labelIcon);
+    // this._labelDetails.appendChild(this._clickableTitle);
 
     this.styleDiv = document.createElement("div");
-    this.styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2 hidden");
+    this.styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
     this._labelDetails.appendChild(this.styleDiv);
 
-    let innerText = document.createTextNode("Choose Labels:");
-    this.styleDiv.appendChild(innerText);
+    // let innerText = document.createTextNode("Choose Labels:");
+    // this.styleDiv.appendChild(innerText);
 
 
-    this._clickableTitle.addEventListener("click", (e) => {
-      this.styleDiv.classList.toggle("hidden");
-      this._clickableTitle.classList.toggle("active");
-    });
-
-    // this._details = document.createElement("div");
-    // this._details.setAttribute("class", "py-3");
-    // this._labelDetails.appendChild(this._details);
-
-    // Hide this type
-    // this._eyeHolder = 
-    // this._eyeHolder.setAttribute("tooltip", "Hide/Show");
-    // this._eyeHolder.setAttribute("class", "col-4");
-    // this._main.appendChild(this._eyeHolder);
-
-    // this.openEyeIcon = new SvgDefinition({ iconName: "open-eye" });
-    // this._eyeHolder.appendChild(this.openEyeIcon);
-
-    // this.closedEyeIcon = new SvgDefinition({ iconName: "closed-eye" });
-    // this.closedEyeIcon.setAttribute("class", "hidden");
-    // this._eyeHolder.appendChild(this.closedEyeIcon);
+    // this._clickableTitle.addEventListener("click", (e) => {
+    //   this.styleDiv.classList.toggle("hidden");
+    //   this._clickableTitle.classList.toggle("active");
+    // });
   }
 
   /**
@@ -68,9 +46,6 @@ class EntityGalleryLabels extends TatorElement {
     let text = typeData.name ? typeData.name : "";
     this._title.appendChild(document.createTextNode(text));
 
-    let count = typeData.total ? typeData.total : "";
-    this._count.appendChild(document.createTextNode(count));
-
     // Stop here if we aren't ok after init
     if (gallery === null || typeof typeData == "undefined") return console.log("Error in label init");;
 
@@ -81,8 +56,8 @@ class EntityGalleryLabels extends TatorElement {
     const checkboxList = this.makeListFrom(typeData);
 
     const selectionBoxes = document.createElement("checkbox-set");
-    selectionBoxes._colSize = "py-1 pr-2";
-    selectionBoxes._inputDiv.setAttribute("class", "col-12");
+    selectionBoxes._colSize = "col-4 py-1 pr-2";
+    //selectionBoxes._inputDiv.setAttribute("class", "col-12");
 
     selectionBoxes.setValue(checkboxList);
 
@@ -91,15 +66,6 @@ class EntityGalleryLabels extends TatorElement {
 
     selectionBoxes.addEventListener("change", (e) => {
       this.dispatchEvent(new CustomEvent("labels-update", { detail: { value: e.target.getValue() } }));
-    });
-
-    /**
-     * Hide/Show
-     */
-    this._count.addEventListener("click", (e) => {
-      let off = !this._count.classList.contains("off");
-      this._count.classList.toggle("off");
-      this.dispatchEvent(new CustomEvent("hide-type-update", { detail: { off: off } }));
     });
 
     return this._shadow.appendChild(this._main);

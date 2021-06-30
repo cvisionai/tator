@@ -35,18 +35,18 @@ class AnalyticsCollections extends TatorPage {
       this.main.setAttribute("class", "collections-gallery--main col-12");
       this.mainWrapper.appendChild(this.main);
 
-      const filterDiv = document.createElement("div");
-      filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
-      this.main.appendChild(filterDiv);
-
-      this._filterView = document.createElement("filter-interface");
-      filterDiv.appendChild(this._filterView);
-
       //
       /* Slider w/ Cards Gallery */
       // Gallery of horizontal bars to view collections
       this._collectionsGallery = document.createElement("collections-gallery");
       this.main.appendChild(this._collectionsGallery);
+
+      /* Collections Filter */
+      this._filterView = document.createElement("filter-interface");
+      this._collectionsGallery._filterDiv.appendChild(this._filterView);
+
+      // More menu with display options
+      this._filterView._filterNavDiv.appendChild(this._collectionsGallery._moreMenu);
 
       //
       /* Right Navigation Pane - Annotation Detail Viewer */

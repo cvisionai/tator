@@ -10,10 +10,6 @@ class EntityGallerySort extends TatorElement {
     this._title.setAttribute("class", "entity-gallery-sort--title py-1 px-1 text-gray col-3");
     this._main.appendChild(this._title);
 
-    this._count = document.createElement("span");
-    this._count.setAttribute("class", "gallery-sort-count")
-    this._title.appendChild(this._count);
-
     // Sort chooser
     this._sortDetails = document.createElement("details");
     this._sortDetails.setAttribute("class", "col-12 py-3");
@@ -31,19 +27,6 @@ class EntityGallerySort extends TatorElement {
     this._details = document.createElement("div");
     this._details.setAttribute("class", "py-3");
     this._sortDetails.appendChild(this._details);
-
-    // Hide this type
-    // this._eyeHolder = document.createElement("div");
-    // this._eyeHolder.setAttribute("tooltip", "Hide/Show");
-    // this._eyeHolder.setAttribute("class", "col-4");
-    // this._main.appendChild(this._eyeHolder);
-
-    // this.openEyeIcon = new SvgDefinition({ iconName: "open-eye" });
-    // this._eyeHolder.appendChild(this.openEyeIcon);
-
-    // this.closedEyeIcon = new SvgDefinition({ iconName: "closed-eye" });
-    // this.closedEyeIcon.setAttribute("class", "hidden");
-    // this._eyeHolder.appendChild(this.closedEyeIcon);
   }
 
   /**
@@ -56,9 +39,6 @@ class EntityGallerySort extends TatorElement {
 
     let text = typeData.name ? typeData.name : "";
     this._title.appendChild(document.createTextNode(text));
-
-    let count = typeData.total ? typeData.total : "";
-    this._count.appendChild(document.createTextNode(count));
 
     // Stop here if we aren't ok after init
     if (gallery === null || typeof typeData == "undefined") return console.log("Error in sort init");;
