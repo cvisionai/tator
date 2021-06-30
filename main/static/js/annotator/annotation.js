@@ -2941,9 +2941,7 @@ class AnnotationCanvas extends TatorElement
           }
           that._draw.dispImage(true);
         }
-        that.refresh().then(() => {
-          animator();
-        });
+        animator();
       });
     return promise;
   }
@@ -4017,7 +4015,6 @@ class AnnotationCanvas extends TatorElement
   onPlay()
   {
     this._clipboard.clear();
-    this.activeLocalization = null;
     this._emphasis = null;
     this._mouseMode = MouseMode.QUERY;
   }

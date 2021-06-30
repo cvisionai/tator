@@ -1455,7 +1455,7 @@ class VideoCanvas extends AnnotationCanvas {
 
           var playCallback = function () {
             console.log("******* restarting onDemand: Playing");
-	          that.onDemandDownloadPrefetch();
+	          that.onDemandDownloadPrefetch(true);
             that._playGenericOnDemand(that._direction)
           };
 
@@ -2575,8 +2575,13 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  onDemandDownloadPrefetch()
+  onDemandDownloadPrefetch(reset)
   {
+    // Only prefetch if the frame is different or if there's an explicit reset.
+    if (this._onDemandInitStartFrame == this.currentFrame() && reset != true) {
+      return;
+    }
+
     if (this._onDemandDownloadTimeout)
     {
       clearTimeout(this._onDemandDownloadTimeout);

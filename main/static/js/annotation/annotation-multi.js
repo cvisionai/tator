@@ -1346,6 +1346,27 @@ class AnnotationMulti extends TatorElement {
       if (not_ready == false)
       {
         console.log(`Video ${videoIndex} playback check - Ready [Now: ${new Date().toISOString()}]`);
+
+        // Check if all videos are ready, if so then enable playback
+        // This primary captures the case where this function is invoked by the frame itself hasn't
+        // changed. The callback in the init function above primarily deals with the normal use
+        // case where a user jumps a frame.
+        let allVideosReady = true;
+        for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
+        {
+          if (this._videos[vidIdx]._onDemandPlaybackReady != true)
+          {
+            allVideosReady = false;
+          }
+        }
+
+        if (allVideosReady) {
+          console.log("allVideosReady");
+          this._play._button.removeAttribute("disabled");
+          this._rewind.removeAttribute("disabled")
+          this._fastForward.removeAttribute("disabled");
+          this._play.removeAttribute("tooltip");
+        }
       }
     };
 
@@ -1668,6 +1689,9 @@ class AnnotationMulti extends TatorElement {
       {
         video.selectLocalization(loc, skipAnimation, muteOthers, skipGoToFrame);
       }
+      else {
+        video.selectNone();
+      }
     }
   }
 
@@ -1678,6 +1702,9 @@ class AnnotationMulti extends TatorElement {
           video.video_id() == track.media_id)
       {
         video.selectTrack(track, frameHint, skipGoToFrame);
+      }
+      else {
+        video.selectNone();
       }
     }
   }

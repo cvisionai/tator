@@ -492,7 +492,7 @@ class AnnotationPlayer extends TatorElement {
     // Use the hq buffer when the input is finalized
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
-      this._video.onDemandDownloadPrefetch();
+      this._video.onDemandDownloadPrefetch(true);
       this.handleNotReadyEvent();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
