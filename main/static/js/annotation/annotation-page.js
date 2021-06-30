@@ -130,7 +130,8 @@ class AnnotationPage extends TatorPage {
               (data.media_files &&
                !('streaming' in data.media_files) &&
                !('layout' in data.media_files) &&
-               !('image' in data.media_files)))
+               !('image' in data.media_files) &&
+               !('live' in data.media_files)))
           {
             this._loading.style.display = "none";
             Utilities.sendNotification(`Unplayable file ${data.id}`);
@@ -259,7 +260,32 @@ class AnnotationPage extends TatorPage {
                   });
                 }
               );
-            } else {
+            } else if (type_data.dtype == "live") {
+              player = document.createElement("annotation-live");
+              this._player = player;
+              this._player.mediaType = type_data;
+              player.addDomParent({"object": this._headerDiv,
+                                   "alignTo":  this._browser});
+              this._setupInitHandlers(player);
+              player.mediaInfo = data;
+              this._main.insertBefore(player, this._browser);
+
+              for (let live of player._videos)
+              {
+                this._getMetadataTypes(player, live._canvas);
+              }
+              //this._browser.canvas = player._video;
+              this._videoSettingsDialog.mode("live", [data]);
+              this._settings._capture.addEventListener(
+                'captureFrame',
+                (e) =>
+                  {
+                    player._video.captureFrame(e.detail.localizations);
+                  });
+              this._videoSettingsDialog.addEventListener("apply", (evt) => {
+                player.apply
+              });
+              } else {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
           });
@@ -521,7 +547,9 @@ class AnnotationPage extends TatorPage {
           canvas.setRate(evt.detail.rate);
         }
       });
+    }
 
+    if (this._player._qualityControl) {
       this._player._qualityControl.addEventListener("qualityChange", evt => {
         if ("setQuality" in canvas) {
           canvas.setQuality(evt.detail.quality);
