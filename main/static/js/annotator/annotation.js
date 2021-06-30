@@ -2593,20 +2593,14 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
-      this.emphasizeLocalization(localization,
-                                 color.WHITE,
-                                 muteOthers);
-      this.refresh();
-      // #TODO Revisit. This causes problems when selecting a localization and there are many
-      //       refreshes occuring simultaneously.
-      //this.highlightLocalization(localization, 250,
-      //                           {cycles: 1,
-      //                            initColor: color.blend(color.WHITE,emphasisColor(localization),0.50)}).
-      //  then(
-      //    () =>
-      //      {
-      //        that.refresh();
-      //      });
+      this.highlightLocalization(localization, 250,
+                                 {cycles: 1,
+                                  initColor: color.blend(color.WHITE,emphasisColor(localization),0.50)}).
+        then(
+          () =>
+            {
+              that.refresh();
+            });
     }
     // Handle case when localization is in a track
     if (localization.id in this._data._trackDb)
