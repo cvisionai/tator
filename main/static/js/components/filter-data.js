@@ -93,7 +93,9 @@ class FilterData {
     var sectionNames = [];
     for (let idx = 0; idx < this.sections.length; idx++) {
       let section = this.sections[idx];
-      sectionNames.push(`${section.name} (ID:${section.id})`);
+      if (section.tator_user_sections != null) {
+        sectionNames.push(`${section.name} (ID:${section.id})`);
+      }
     }
 
     // Create the filter options
