@@ -39,6 +39,15 @@ Media management
 * [Retrieve localization images and track animations](https://www.tator.io/tutorials/2021-03-19-retrieve-localization-images-and-track-animations/)
 * [Attach files to media](https://www.tator.io/tutorials/2021-05-19-attach-files-to-media/)
 
+Annotation
+* [Video playback](https://www.tator.io/tutorials/2021-06-27-video-playback/)
+* [Multi-stream video playback](https://www.tator.io/tutorials/2021-06-28-multi-stream-video-playback/)
+* [Draw localizations](https://www.tator.io/tutorials/2021-06-29-draw-localizations/)
+* [Pan and zoom](https://www.tator.io/tutorials/2021-06-29-pan-and-zoom/)
+* [Create tracks](https://www.tator.io/tutorials/2021-04-27-create-tracks/)
+* [Speed up annotation with favorites](https://www.tator.io/tutorials/2021-06-29-speed-up-annotation-with-favorites/)
+* [Pick up where you left off with bookmarks](https://www.tator.io/tutorials/2021-06-29-pick-up-where-you-left-off-with-bookmarks/)
+
 API Reference
 =============
 * [REST API documentation](https://www.tatorapp.com/anonymous-gateway?redirect=/rest)
