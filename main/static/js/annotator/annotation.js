@@ -2596,6 +2596,7 @@ class AnnotationCanvas extends TatorElement
       this.emphasizeLocalization(localization,
                                  color.WHITE,
                                  muteOthers);
+      this.refresh();
       // #TODO Revisit. This causes problems when selecting a localization and there are many
       //       refreshes occuring simultaneously.
       //this.highlightLocalization(localization, 250,
