@@ -57,6 +57,12 @@ def _get_mapping_values(entity_type, attributes):
     """
     mapping_values = {}
 
+    # Handle tator_user_sections
+    name = "tator_user_sections"
+    value = attributes.get(name)
+    if value is not None:
+        mapping_values[name] = str(value).replace("\\", "\\\\")
+
     if entity_type.attribute_types is None:
         return mapping_values
 
@@ -64,7 +70,6 @@ def _get_mapping_values(entity_type, attributes):
         name = attribute_type['name']
         value = attributes.get(name)
         if value is not None:
-            dtype = attribute_type['dtype']
             uuid = entity_type.project.attribute_type_uuids[name]
             mapping_type = _get_alias_type(attribute_type)
             mapping_name = f'{uuid}_{mapping_type}'
