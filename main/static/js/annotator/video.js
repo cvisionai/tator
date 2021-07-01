@@ -1154,6 +1154,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._onDemandPlaybackReady = false;
     this._onDemandFinished = false;
     this._onDemandId = 0;
+    this._playbackNextFrame = null;
   }
 
   /**
@@ -2538,6 +2539,10 @@ class VideoCanvas extends AnnotationCanvas {
 
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
     var nextFrame = this._loadFrame + (this._direction * frameIncrement);
+    if (this._playbackNextFrame != null) {
+      nextFrame = this._playbackNextFrame;
+      this._playbackNextFrame = null;
+    }
 
     // Callback function that pushes the given frame/image to the drawGL buffer
     // and then schedules the next frame to be loaded
@@ -2577,6 +2582,10 @@ class VideoCanvas extends AnnotationCanvas {
     {
       this._playerTimeout = setTimeout(()=>{this.playerThread();}, bufferWaitTime);
     }
+  }
+
+  setPlaybackNextFrame(frame) {
+    this._playbackNextFrame = frame;
   }
 
   onDemandDownloadPrefetch(reset)
