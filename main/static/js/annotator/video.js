@@ -857,7 +857,11 @@ class MotionComp {
     // Calculate the mode of the delta over the calls ignoring the first few.
     for (let idx = 2; idx < this._TRIALS-1; idx++)
     {
-      let fps = Math.round(1000.0/(this._times[idx+1]-this._times[idx]));
+      let delta = this._times[idx+1]-this._times[idx]
+      if (delta < 4.1666) { // Cap out at 240Hz
+        delta = 4.1666;
+      }
+      let fps = Math.round(1000.0/(delta));
       if (mode.has(fps))
       {
         mode.set(fps, mode.get(fps) + 1);
