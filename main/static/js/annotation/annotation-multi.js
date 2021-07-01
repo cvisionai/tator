@@ -137,6 +137,7 @@ class AnnotationMulti extends TatorElement {
     this._scrubInterval = 1000.0/Math.min(guiFPS,30);
     this._lastScrub = Date.now();
     this._rate = 1;
+    this._playbackDisabled = false;
 
     // Magic number matching standard header + footer
     // #TODO This should be re-thought and more flexible initially
@@ -331,12 +332,16 @@ class AnnotationMulti extends TatorElement {
         return;
       }
 
+      evt.preventDefault();
+      if (this._playbackDisabled) {
+        return;
+      }
+
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
       }
       else if (evt.code == "Space")
       {
-        evt.preventDefault();
         if (this.is_paused())
         {
           this.play();
@@ -806,6 +811,7 @@ class AnnotationMulti extends TatorElement {
           this._rewind.removeAttribute("disabled")
           this._fastForward.removeAttribute("disabled");
           this._play.removeAttribute("tooltip");
+          this._playbackDisabled = false;
         }
       });
 
@@ -1295,11 +1301,7 @@ class AnnotationMulti extends TatorElement {
       console.log("Already handling a not ready event");
       return;
     }
-    this._play._button.setAttribute("disabled","");
-    // Use some spaces because the tooltip z-index is wrong
-    this._play.setAttribute("tooltip", "    Video is buffering");
-    this._rewind.setAttribute("disabled","")
-    this._fastForward.setAttribute("disabled","");
+    this.disablePlayUI();
 
     const timeouts = [4000, 8000, 16000];
     var timeoutIndex = 0;
@@ -1366,6 +1368,7 @@ class AnnotationMulti extends TatorElement {
           this._rewind.removeAttribute("disabled")
           this._fastForward.removeAttribute("disabled");
           this._play.removeAttribute("tooltip");
+          this._playbackDisabled = false;
         }
       }
     };
@@ -1511,8 +1514,7 @@ class AnnotationMulti extends TatorElement {
   pause()
   {
     this.dispatchEvent(new Event("paused", {composed: true}));
-    this._fastForward.removeAttribute("disabled");
-    this._rewind.removeAttribute("disabled");
+    this.disablePlayUI(); // Wait for playbackReady checks to enable play
 
     const paused = this.is_paused();
     if (paused == false) {
@@ -1524,6 +1526,15 @@ class AnnotationMulti extends TatorElement {
     }
     clearTimeout(this._syncThread);
     this.goToFrame(this._videos[this._longest_idx].currentFrame());
+  }
+
+  disablePlayUI() {
+    this._play._button.setAttribute("disabled","");
+    // Use some spaces because the tooltip z-index is wrong
+    this._play.setAttribute("tooltip", "    Video is buffering");
+    this._rewind.setAttribute("disabled","")
+    this._fastForward.setAttribute("disabled","");
+    this._playbackDisabled = true;
   }
 
   refresh() {
