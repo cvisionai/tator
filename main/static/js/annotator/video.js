@@ -1930,7 +1930,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     let ended = false;
     if (this._direction == Direction.FORWARD &&
-        this._dispFrame >= (this._numFrames - 1))
+        this._dispFrame >= (this._numFrames - 2))
     {
       ended = true;
     }
@@ -2664,7 +2664,8 @@ class VideoCanvas extends AnnotationCanvas {
       // Stop if we've reached the end
       if (this._direction == Direction.FORWARD)
       {
-        if (this._numFrames == this._dispFrame)
+        // #TODO This needs to be relooked at
+        if ((this._numFrames - 2) == this._dispFrame)
         {
           return;
         }
@@ -2899,7 +2900,7 @@ class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    if (this._dispFrame >= (this._numFrames - 1))
+    if (this._dispFrame >= (this._numFrames - 2))
     {
       return false;
     }
