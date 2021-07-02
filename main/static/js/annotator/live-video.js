@@ -283,13 +283,13 @@ class LiveCanvas extends AnnotationCanvas
 
   reloadFeeds()
   {
-    let keys = Object.keys(this._feeds);
-    for (let idx = 0; idx < keys.length; idx++)
+    let idx = 0;
+    for (let feed of this._feeds)
     {
-        let feed = keys[idx];
         let streamer = this._streamers[idx];
         streamer.disconnect();
-        streamer.connect(feed, feed);
+        streamer.connect(feed.name, feed.name);
+        idx++;
     }
     this._connectTime = Date.now();
   }
