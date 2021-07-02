@@ -289,7 +289,7 @@ class LiveCanvas extends AnnotationCanvas
         let feed = keys[idx];
         let streamer = this._streamers[idx];
         streamer.disconnect();
-        streamer.connect(feed, feed);
+        streamer.connect(feed.name, feed.name);
     }
     this._connectTime = Date.now();
   }
