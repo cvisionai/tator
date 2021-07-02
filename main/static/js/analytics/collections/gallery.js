@@ -9,47 +9,32 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       this.sliderList = document.createElement("div");
       this.sliderList.setAttribute("class", "slider-list");
+      this._sliderContainer.appendChild(this.sliderList);
 
       // Filter toolbar
       this._filterDiv = document.createElement("div");
-      this._filterDiv.setAttribute("class", "analysis__filter py-1 ml-1 mr-6");
+      this._filterDiv.setAttribute("class", "analysis__filter");
+      
+      // Tools setup
       this._tools.before(this._filterDiv)
+      this._tools.setAttribute("class", "");
 
+
+      // Display options in more menu
       this._moreMenu = document.createElement("entity-gallery-more-menu");
-      this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more btn btn-clear btn-outline f2 px-1");
+      this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
 
-      // Labels trigger
-      // A button that hides and shows _attributeLabelsDiv
-      this._labelsTrigger = document.createElement("div");
-      this._labelsTrigger.setAttribute("class", "clickable py-2 px-2");
-      let labelsTriggerText = document.createTextNode("Choose Labels");
-      this._labelsTrigger.appendChild(labelsTriggerText);
-      this._moreMenu._menu.appendChild(this._labelsTrigger);
+      // Labels 
+      this._attributeLabels = document.createElement("entity-gallery-labels");
+      this._tools.appendChild(this._attributeLabels);
 
-      // Labels selection will be inside here
-      this._attributeLabelsDiv = document.createElement("div");
-      this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels-div rounded-1 py-1 hidden");
-      this._tools.appendChild(this._attributeLabelsDiv);
-
-      let xClose = document.createElement("span");
-      xClose.setAttribute("class", "clickable float-right px-2 py-2");
-      xClose.innerHTML = "X"
-      this._attributeLabelsDiv.appendChild(xClose);
-
-      this._labelsTrigger.addEventListener("click", () => {
-         this._attributeLabelsDiv.classList.toggle("hidden");
-      });
-
-      xClose.addEventListener("click", () => {
-         this._attributeLabelsDiv.classList.add("hidden");
-      });
+      this._moreMenu._menu.appendChild(this._attributeLabels.menuLink);
 
       /* Slider information */
       this._sliderLists = [];
-      this._sliderContainer.appendChild(this.sliderList);
-      this.slideCardData = document.createElement("collection-slide-card-data");
       this._sliderElements = [];
-
+      this.slideCardData = document.createElement("collection-slide-card-data");
+      
       // First group and total cards
       this._previewCardCount = 11;
    }
@@ -83,42 +68,42 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // Setup the label picker
       var stateTypes = this.collectionsData.getStateTypes();
 
+
+      // Label Values
       this.currentLabelValues = {};
-
+      const labelValues = [];
       for (let idx = 0; idx < stateTypes.length; idx++) {
-         var stateType = stateTypes[idx];
+         let stateType = stateTypes[idx];
          let typeId = stateType.id;
-         let labels = document.createElement("entity-gallery-labels");
-         let labelValues = [];
-         this.currentLabelValues[typeId] = labelValues;
 
+         this.currentLabelValues[typeId] = labelValues;
+         
          // Provide labels and access to the sliders
-         labels.init({ typeData: stateType, gallery: this });
-         this._attributeLabelsDiv.appendChild(labels);
+         let labels = this._attributeLabels.add({ 
+               typeData: stateType, 
+               gallery: this 
+            });
 
          // Label display changes
-         labels.addEventListener("labels-update", (e) => {
-            labelValues = e.detail.value;
-            this.labelsUpdate({ typeId, labelValues });
-            this.currentLabelValues[typeId] = labelValues;
-         });
+         this._attributeLabels.addEventListener("labels-update", this.labelsUpdate.bind(this));
       }
    }
 
 
-   labelsUpdate({ typeId, labelValues }) {
-      // find the slider, and show it's values
+   labelsUpdate(evt) {
+      console.log(evt);
+      let typeId = evt.detail.typeId;
+      let labelValues = evt.detail.value;
+
+      // find the slider, and pass labelvalues)
       for (let s of this._sliderElements) {
-         //console.log(`Updating for ${typeId} -- this smeta is ${s.getAttribute("meta")} for slider id ${s.id}`)
          if (s.getAttribute("meta") == typeId) {
-            //show the Labels (which are there but hidden)
             s.showLabels(labelValues);
          }
       }
    }
 
    updateFilterResults(filterConditions, page, pageSize) {
-
       this._filterConditions = filterConditions;
 
       // Set the pagination state based on either defaults of this gallery
@@ -387,8 +372,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
                bottomNav.goToPage.hidden = true;
                bottomNav.goToPageText.hidden = true;
 
+               // # todo need to stop last event before this one
                slider._cancelLoading = false;
                topNav.addEventListener("selectPage", (evt) => {
+                  evt.stopPropagation();
                   slider._handleCardPagination(evt);
                   let paginationState = {
                      page: evt.detail.page,
@@ -400,6 +387,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   bottomNav.setValues(paginationState);
                });
                bottomNav.addEventListener("selectPage", (evt) => {
+                  evt.stopPropagation();
                   slider._handleCardPagination(evt);
                   let paginationState = {
                      page: evt.detail.page,

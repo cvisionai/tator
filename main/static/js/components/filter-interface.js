@@ -61,7 +61,7 @@ class FilterInterface extends TatorElement {
      * Filter condition pill boxes
      */
     this._filterStringDiv = document.createElement("div");
-    this._filterStringDiv.setAttribute("class", "analysis__filter_string");
+    this._filterStringDiv.setAttribute("class", "analysis__filter_string col-10");
     this._filterStringDiv.style.paddingLeft = "16px";
     this._topNav.appendChild(this._filterStringDiv);
 
@@ -89,6 +89,11 @@ class FilterInterface extends TatorElement {
       this._filterNavDiv.style.display = "flex";
       this._filterStringDiv.style.display = "flex";
     });
+
+    // Optional more menu unique to filter location
+    this._moreNavDiv = document.createElement("div");
+    this._moreNavDiv.setAttribute("class", "analysis__more_nav");
+    this._topNav.appendChild(this._moreNavDiv);
 
     // Respond to user requesting to run an algorithm
     this._algoButton.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));

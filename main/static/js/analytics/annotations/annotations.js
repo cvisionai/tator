@@ -149,7 +149,13 @@ class AnalyticsAnnotations extends TatorPage {
       });
 
       // Init panel side behavior
-      this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData, panelName: "Annotation" });
+      this._panelContainer.init({ 
+          main: this.main, 
+          aside: this.aside, 
+          pageModal: this.modal, 
+          modelData: this._modelData 
+          // panelName: "Annotation" 
+        });
 
       // Pass panel and localization types to gallery
       this._filterResults._initPanel({

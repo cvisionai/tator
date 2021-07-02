@@ -24,12 +24,20 @@ class EntityGallerySlider extends TatorElement {
       this._tools.setAttribute("class", "enitity-gallery__tools py-2 d-flex flex-justify-between");
       this.main.appendChild(this._tools);
 
-      this.loadAllTeaser = document.createElement("span");
-      this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more text-gray"); //
-      let text = document.createTextNode("Loading...");
-      this.loadAllTeaser.appendChild(text);
+      
 
-      this._tools.appendChild(this.loadAllTeaser);
+      // this._moreMenu = document.createElement("entity-gallery-more-menu");
+      // this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
+      // this.main.appendChild(this._moreMenu);
+
+      // Labels selection will be inside here
+      // this._attributeLabelsDiv = document.createElement("entity-gallery-labels");
+      // this._tools.appendChild(this._attributeLabelsDiv);
+
+      // // Labels trigger
+      // // A button that hides and shows _attributeLabelsDiv
+      // this._labelsTrigger = this._attributeLabelsDiv.menuLink;
+      // this._moreMenu._menu.appendChild(this._labelsTrigger);    
 
       // Sort
       // this._attributeSortDiv = document.createElement("div");
@@ -47,6 +55,13 @@ class EntityGallerySlider extends TatorElement {
       // this._resizeCards = document.createElement('entity-card-resize');
       // this.sliderContainer.appendChild(this._resizeCards);
       this._tools.appendChild(this.sliderContainer);
+
+      this.loadAllTeaser = document.createElement("span");
+      this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more text-gray"); //
+      let text = document.createTextNode("Loading...");
+      this.loadAllTeaser.appendChild(text);
+
+      this.sliderContainer.appendChild(this.loadAllTeaser);
 
       // Property IDs are the entity IDs (which are expected to be unique)
       // Each property (ID) points to the index of the card information stored in _cardElements
@@ -70,11 +85,6 @@ class EntityGallerySlider extends TatorElement {
       this._bottomNav.setAttribute("class", "enitity-gallery-slider__nav py-2 d-flex flex-justify-center");
       this.main.appendChild(this._bottomNav);
 
-
-
-
-
-
       // card columns inside slider #todo finish styling
       this.colSize = 150;
       this._ul = document.createElement("ul");
@@ -83,9 +93,6 @@ class EntityGallerySlider extends TatorElement {
       this.styleDiv.appendChild(this._ul);
 
       // this._resizeCards._initGallery(this._ul, this.colSize);
-
-
-
       // this.loadingText = document.createElement("span");
       // this.loadingText.setAttribute("class", "entity-gallery-slider--loading"); //
       // let text2 = document.createTextNode("More Tracks Loading...");
@@ -111,38 +118,42 @@ class EntityGallerySlider extends TatorElement {
       this.pageModal = pageModal;
       this.slideCardData = slideCardData;
       this.state = state;
+      this.currentLabelValues;
+      this.attributeValues = attributes;
 
+      // Slider active listener
       this.addEventListener("slider-active", () => {
          this.main.classList.add("active");
          this.styleDiv.classList.add("open");
          this._ul.classList.add("open");
 
+         // Go to selected card
          for (let idx = 0; idx < this._cardElements.length; idx++) {
-            // if they directly chose a card, that's great stop there....
             let listEl = this._cardElements[idx].card._li;
             if (listEl.classList.contains("is-selected")) {
                return false;
             }
          }
 
-         // if you got here, they just clicked the slider box, select the first card
+         // Open first card if no selected card found
          if (this._cardElements[0] && this._cardElements[0].card) {
             return this._cardElements[0].card.click();
          }
       });
 
+      // Slider inactive listener
       this.addEventListener("slider-inactive", (e) => {
          this.main.classList.remove("active");
          this.styleDiv.classList.remove("open");
          this._ul.classList.remove("open");
       });
 
+      // New card listener
       this.addEventListener("new-card", (e) => {
-         //console.log("New card event triggered! Index "+e.detail.cardIndex+" Data:");
-         //console.log(e.detail.cardData[0]);
          this._addCard(e.detail.cardIndex, e.detail.cardData[0], cardType);
       });
 
+      // New image listener
       this.slideCardData.addEventListener("setSlideCardImage", this.updateCardImage.bind(this));
 
       // Update the card with the localization's associated media
@@ -150,66 +161,70 @@ class EntityGallerySlider extends TatorElement {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
 
-
-      const compareAttr = [...this.state.typeData.attribute_types];
-
-      for (let attr in attributes) {
-         //console.log(`Adding ${attr} to ${this.id}`)
-
-         if (compareAttr) {
-            let index = compareAttr.indexOf(attr);
-            compareAttr.splice(index, 1); // test
-         }
-
-         let attributeLabel = document.createElement("div");
-         attributeLabel.setAttribute("id", encodeURI(attr));
-
-         // reapply any label preferences
-         if (currentLabelValues && currentLabelValues[state.meta]) {
-            const currentLabels = currentLabelValues[state.meta];
-            this.showLabels(currentLabels);
-            if (currentLabels.length === 0 || !currentLabels.includes(attr)) {
-               attributeLabel.setAttribute("class", "hidden");
-            }
-         } else {
-            attributeLabel.setAttribute("class", "hidden");
-         }
-
-         let seperator = document.createElement("span");
-         seperator.setAttribute("class", "px-2")
-         let sep = document.createTextNode("|");
-         seperator.appendChild(sep);
-         attributeLabel.appendChild(seperator)
-
-         let text = document.createTextNode(`${attr}: ${attributes[attr]}`);
-         attributeLabel.appendChild(text);
-
-         this._labels.appendChild(attributeLabel);
-         this.attributeLabelEls.push(attributeLabel);
+      let definedAttributes = [];
+      if(this.state.typeData && this.state.typeData.attribute_types){
+         const tmpDefinedAttributes = [...this.state.typeData.attribute_types];
+         definedAttributes = tmpDefinedAttributes.sort((a, b) => {
+            return a.order - b.order || a.name - b.name;
+         });
       }
 
-      // #todo test
-      if (compareAttr && compareAttr.length > 0) {
-         for (let attr in compareAttr) {
-            //console.log(`Adding (compared) ${attr} to ${this.id}`)
-
-            let attributeLabel = document.createElement("div");
-            attributeLabel.setAttribute("class", "hidden");
-            attributeLabel.setAttribute("id", encodeURI(attr));
-
-            let seperator = document.createElement("span");
-            seperator.setAttribute("class", "px-2")
-            let sep = document.createTextNode("|");
-            seperator.appendChild(sep);
-            attributeLabel.appendChild(seperator)
-
-            let text = document.createTextNode(`${attr}: (not set)`);
-            attributeLabel.appendChild(text);
-
-            this._labels.appendChild(attributeLabel);
-            this.attributeLabelEls.push(attributeLabel);
+      if(typeof definedAttributes !== "undefined" && definedAttributes.length > 0){
+         // Display Labels as defined attribute order
+         for(let a1 of definedAttributes){
+               for (let attr in this.attributeValues) {
+                  console.log(`a1.name == attr ${a1.name} and ${attr}`)
+                  if(a1.name == attr){
+                     this._displayAttributes({ attr });
+                  } else {
+                     // Add placeholder
+                     this._displayAttributes({attr: a1.name, value: false});
+                  }
+               }       
+         }
+      } else {
+         // Display attributes values in returned order
+         for (let attr in this.attributeValues) {
+            console.log(attr);
+            // Add to display w/ value
+            this._displayAttributes({attr});
          }
       }
+   }
+
+   _displayAttributes({ attr, value = true }){    
+      let attributeLabel = document.createElement("div");
+      attributeLabel.setAttribute("id", encodeURI(attr));
+
+      // reapply any label preferences
+      if (this.currentLabelValues && this.currentLabelValues[state.meta]) {
+         const currentLabels = this.currentLabelValues[state.meta];
+         this.showLabels(currentLabels);
+
+         if (this.currentLabels.length === 0 || !this.currentLabels.includes(attr)) {
+            attributeLabel.setAttribute("class", "hidden");
+         }
+      } else {
+         attributeLabel.setAttribute("class", "hidden");
+      }
+
+      let seperator = document.createElement("span");
+      seperator.setAttribute("class", "px-2");
+      attributeLabel.appendChild(seperator)
+
+      let sep = document.createTextNode("|");
+      seperator.appendChild(sep);
+      
+      let text = "";
+      if(value){
+         text = document.createTextNode(`${attr}: `);
+      } else {
+         text = document.createTextNode(`${attr}: ${this.attributeValues[attr]}`);
+      }
+      attributeLabel.appendChild(text);
+
+      this._labels.appendChild(attributeLabel);
+      this.attributeLabelEls.push(attributeLabel);
    }
 
    static get observedAttributes() {

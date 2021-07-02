@@ -42,11 +42,12 @@ class AnalyticsCollections extends TatorPage {
       this.main.appendChild(this._collectionsGallery);
 
       /* Collections Filter */
+      // add filter into the gallery (to place under gallery heading)
       this._filterView = document.createElement("filter-interface");
       this._collectionsGallery._filterDiv.appendChild(this._filterView);
 
-      // More menu with display options
-      this._filterView._filterNavDiv.appendChild(this._collectionsGallery._moreMenu);
+      // Custom gallery more menu added into filter interface tools ares
+      this._filterView._moreNavDiv.appendChild(this._collectionsGallery._moreMenu);
 
       //
       /* Right Navigation Pane - Annotation Detail Viewer */
@@ -109,8 +110,8 @@ class AnalyticsCollections extends TatorPage {
           main: this.main,
           aside: this.aside,
           pageModal: this.modal,
-          modelData: this._modelData,
-          panelName: "Entity"
+          modelData: this._modelData
+          // panelName: "Entity"
         });
 
         // Pass panel and localization types to gallery
@@ -125,9 +126,8 @@ class AnalyticsCollections extends TatorPage {
 
         // Filter interface
         this._filterConditions = this._settings.getFilterConditionsObject();
-
         this._filterDataView = new FilterData(
-          this._modelData, ["collections-analytics-view"], ["Localizations"]);
+        this._modelData, ["collections-analytics-view"], ["Localizations"]);
         this._filterDataView.init();
         this._filterView.dataView = this._filterDataView;
         this._filterView.setFilterConditions(this._filterConditions);

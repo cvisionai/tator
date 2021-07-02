@@ -13,12 +13,12 @@ class EntityPanelContainer extends TatorElement {
       this.el = null;
    }
 
-   init({ main, aside, pageModal, modelData, panelName }) {
+   init({ main, aside, pageModal, modelData }) {
       this.lside = main;
       this.rside = aside;
 
       // listener to close panelContainer
-      this._panelTop.init({ pageModal, modelData, panelContainer: this, panelName });
+      this._panelTop.init({ pageModal, modelData, panelContainer: this });
       this._panelTop._topBarArrow.addEventListener("click", this._toggleRightOnClick.bind(this));
    }
 

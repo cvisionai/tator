@@ -22,11 +22,10 @@ class EntityGalleryPanel extends TatorElement {
     this._main.appendChild(this._mediaLinkEl);
 
     // Entity Data heading
-    this.entityHeading = document.createElement("h3");
-    this.entityHeading.setAttribute("class", "py-3 text-semibold");
-    this.entityHeading.appendChild(document.createTextNode("Entity Data"));
-    this.entityHeading.hidden = true;
-    this._main.appendChild(this.entityHeading);
+    this._entityHeading = document.createElement("h3");
+    this._entityHeading.setAttribute("class", "py-3 text-semibold");
+    this._entityHeading.hidden = true;
+    this._main.appendChild(this._entityHeading);
 
     // Entity Data in Form
     this.entityData = document.createElement("entity-gallery-panel-form");
@@ -34,11 +33,10 @@ class EntityGalleryPanel extends TatorElement {
     this._main.appendChild(this.entityData);
 
     // State Data heading (if state)
-    this.stateHeading = document.createElement("h3");
-    this.stateHeading.setAttribute("class", "py-3 text-semibold");
-    this.stateHeading.appendChild(document.createTextNode("Entity Data"));
-    this.stateHeading.hidden = true;
-    this._main.appendChild(this.stateHeading);
+    this._stateHeading = document.createElement("h3");
+    this._stateHeading.setAttribute("class", "py-3 text-semibold");
+    this._stateHeading.hidden = true;
+    this._main.appendChild(this._stateHeading);
 
     // State Data in Form
     this.stateData = document.createElement("entity-gallery-panel-form");
@@ -49,15 +47,19 @@ class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton = document.createElement("entity-frame-link-button");
     this.goToFrameButton.button.setAttribute("tooltip", "View In Annotator");
     this.goToFrameButton.button.setAttribute("target", "_blank");
-    this.goToFrameButton.style.marginRight = "16px";
+    this.goToFrameButton.style.marginLeft = "8px";
 
     // #TODO Encapsulate this class into a LocalizationGalleryPanel
-    const mediaHeading = document.createElement("h3");
-    mediaHeading.setAttribute("class", "py-3 text-semibold");
-    mediaHeading.style.margintop = "10px";
-    mediaHeading.appendChild(this.goToFrameButton);
-    mediaHeading.appendChild(document.createTextNode("Associated Media"));
-    this._main.appendChild(mediaHeading)
+    this._mediaHeading = document.createElement("h3");
+    this._mediaHeading.setAttribute("class", "py-3 text-semibold");
+    this._mediaHeading.style.margintop = "10px";
+    this._main.appendChild(this._mediaHeading)
+
+    const mediaSubHeading = document.createElement("h2");
+    mediaSubHeading.setAttribute("class", "f2 text-gray");
+    mediaSubHeading.appendChild(document.createTextNode("Go To Frame"));
+    mediaSubHeading.appendChild(this.goToFrameButton);
+    this._main.appendChild(mediaSubHeading)
 
     this.mediaData = document.createElement("entity-gallery-panel-form");
     this._main.appendChild(this.mediaData);
@@ -76,8 +78,13 @@ class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton.button.setAttribute("href", this._mediaLink);
 
     // Init the forms with data
-    if (!(this.cardObj.stateInfo && this.cardObj.stateType == "Media")) {
-      // Show localization entity data
+    if (!(this.cardObj.stateInfo && this.cardObj.stateType && this.cardObj.stateType == "Media")) {
+      /* Panel heading with type name */
+      let typeName = this.cardObj.entityType.name
+      let typeNameText = document.createTextNode(typeName);
+      this._entityHeading.appendChild(typeNameText);
+
+      /* Unhide & Init panel form */
       this.showEntityData();
       this.entityData._init({
         data: this.cardObj,
@@ -88,6 +95,12 @@ class EntityGalleryPanel extends TatorElement {
 
     // Any card with state information
     if (this.cardObj.stateInfo) {
+      /* Panel heading with type name */
+      let typeName = this.cardObj.stateInfo.entityType.name
+      let typeNameText = document.createTextNode(typeName);
+      this._stateHeading.appendChild(typeNameText);
+
+      /* Unhide & Init panel form */
       this.showStateData();
       this.stateData._init({
         data: this.cardObj.stateInfo,
@@ -97,6 +110,12 @@ class EntityGalleryPanel extends TatorElement {
 
     // Any card with media information
     if (this.cardObj.mediaInfo) {
+      /* Panel heading with type name */
+      let typeName = this.cardObj.mediaInfo.entityType.name;
+      let typeNameText = document.createTextNode(typeName);
+      this._mediaHeading.appendChild(typeNameText);
+
+      /* Init panel form */
       this.mediaData._init({
         data: this.cardObj.mediaInfo,
         attributePanelData: this.cardObj.mediaInfo.media
@@ -109,12 +128,12 @@ class EntityGalleryPanel extends TatorElement {
   }
 
   showStateData() {
-    this.stateHeading.hidden = false;
+    this._stateHeading.hidden = false;
     this.stateData.hidden = false;
   }
 
   showEntityData() {
-    this.entityHeading.hidden = false;
+    this._entityHeading.hidden = false;
     this.entityData.hidden = false;
   }
 

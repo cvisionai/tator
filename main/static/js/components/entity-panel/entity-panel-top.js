@@ -89,12 +89,10 @@ class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  init({ pageModal, modelData, panelContainer, panelName }) {
+  init({ pageModal, modelData, panelContainer }) {
     if (this.localizationType) {
       this._locImage.init({ pageModal, modelData, panelContainer });
     }
-
-    this.panelName = panelName;
   }
 
   openHandler(evtDetail) {
@@ -118,7 +116,16 @@ class EntityGalleryPanelTop extends TatorElement {
     //console.log("Heading handler");
     if (evtDetail.openFlag) {
       // We're opening the panel with new card click
-      this._headingText.innerHTML = this.panelName;
+      let cardObj = evtDetail.cardObj
+      /* Get panel name */
+      let panelName = "";
+      // Localization or Media Type name
+      if(cardObj.stateType && cardObj.stateType == "Media"){
+        panelName = evtDetail.cardObj.mediaInfo.entityType.name;
+      } else {
+        panelName = evtDetail.cardObj.entityType.name;
+      }
+      this._headingText.innerHTML = panelName;
       this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
     } else {
       this._headingText.innerHTML = `No selection.`;
