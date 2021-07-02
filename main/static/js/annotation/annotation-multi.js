@@ -1245,6 +1245,11 @@ class AnnotationMulti extends TatorElement {
 
   syncCheck()
   {
+    return;
+
+    /* #TODO Revisit this in the future. This may be mostly OBE for forward playing now that
+             we are downloading video on pause.
+
     // Find the average frame so we can speed up or slow down videos appropriately
     let primeFrame = 0;
     for (let video of this._videos) {
@@ -1274,6 +1279,7 @@ class AnnotationMulti extends TatorElement {
     // Re-enter sync check at interval
     this._syncThread = setTimeout(() => {this.syncCheck()},
                                   500);
+    */
   }
 
   checkAllReady()
