@@ -172,15 +172,18 @@ class EntityGallerySlider extends TatorElement {
       if(typeof definedAttributes !== "undefined" && definedAttributes.length > 0){
          // Display Labels as defined attribute order
          for(let a1 of definedAttributes){
-               for (let attr in this.attributeValues) {
-                  console.log(`a1.name == attr ${a1.name} and ${attr}`)
-                  if(a1.name == attr){
-                     this._displayAttributes({ attr });
-                  } else {
-                     // Add placeholder
-                     this._displayAttributes({attr: a1.name, value: false});
-                  }
-               }       
+            let foundValue = false;
+            for (let attr in this.attributeValues) {
+               console.log(`a1.name == attr ${a1.name} and ${attr}`)
+               if(a1.name == attr){
+                  this._displayAttributes({ attr });
+                  foundValue = true;
+               } 
+            }
+            if(!foundValue) {
+            // Add placeholder
+            this._displayAttributes({attr: a1.name, value: false});
+         }
          }
       } else {
          // Display attributes values in returned order
