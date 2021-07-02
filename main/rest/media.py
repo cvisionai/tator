@@ -607,7 +607,7 @@ class MediaDetailAPI(BaseDetailView):
                 media_files = qs[0].media_files
                 # If this object already contains non-multi media definitions, raise an exception.
                 if media_files:
-                    for role in ['streaming', 'archival', 'image']:
+                    for role in ['streaming', 'archival', 'image', 'live']:
                         items = media_files.get(role, [])
                         if len(items) > 0:
                             raise ValueError(f"Cannot set a multi definition on a Media that contains "
@@ -622,6 +622,21 @@ class MediaDetailAPI(BaseDetailView):
                 for key in ['ids', 'layout', 'quality']:
                     if params['multi'].get(key):
                         media_files[key] = params['multi'][key]
+                qs.update(media_files=media_files)
+
+            if 'live' in params:
+                media_files = qs[0].media_files
+                # If this object already contains non-live media definitions, raise an exception.
+                if media_files:
+                    for role in ['streaming', 'archival', 'image', 'ids']:
+                        items = media_files.get(role, [])
+                        if len(items) > 0:
+                            raise ValueError(f"Cannot set a multi definition on a Media that contains "
+                                              "individual media!")
+                if media_files is None:
+                    media_files = {}
+                media_files['layout'] = params['live']['layout']
+                media_files['live'] = params['live']['streams']
                 qs.update(media_files=media_files)
 
             if "archive_state" in params:

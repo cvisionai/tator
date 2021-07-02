@@ -198,6 +198,17 @@ live_definition = {
     },
 }
 
+live_update_definition = {
+    'type': 'object',
+    'required': ['streams', 'layout'],
+    'properties': {
+        'streams': {'type': 'array', 'items': {'$ref': '#/components/schemas/LiveDefinition'}},
+        'layout': {'type': 'array',
+                   'description': '2-element array to define rxc layout',
+                   'items': {'type': 'integer'}}
+    },
+}
+
 feed_definition = {
     'type': 'object',
     'required': ['name', 'resolution'],

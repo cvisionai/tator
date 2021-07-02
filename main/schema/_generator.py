@@ -68,6 +68,7 @@ class CustomGenerator(SchemaGenerator):
                 'FeedDefinition': feed_definition,
                 'FileDefinition': file_definition,
                 'LiveDefinition': live_definition,
+                'LiveUpdateDefinition': live_update_definition,
                 'ImageDefinition': image_definition,
                 'InvitationSpec': invitation_spec,
                 'InvitationUpdate': invitation_update,
