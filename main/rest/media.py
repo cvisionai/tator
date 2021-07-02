@@ -195,6 +195,10 @@ class MediaListAPI(BaseListView):
             media_types = MediaType.objects.filter(project=project)
             if media_types.count() > 0:
                 mime, _ = mimetypes.guess_type(name)
+                if mime is None:
+                    ext = os.path.splitext(name)[1].lower()
+                    if ext in ['.mts', '.m2ts']:
+                        mime = 'video/MP2T'
                 if mime.startswith('image'):
                     for media_type in media_types:
                         if media_type.dtype == 'image':
