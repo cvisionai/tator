@@ -1243,37 +1243,37 @@ class AnnotationMulti extends TatorElement {
   }
 
 
-  syncCheck(direction)
+  syncCheck()
   {
     // Find the average frame so we can speed up or slow down videos appropriately
-    let minFrame = 0;
-    let maxFrame = 0;
+    let primeFrame = 0;
     for (let video of this._videos) {
-      let frame = video.currentFrame();
-      if (frame < minFrame) {
-        minFrame = frame;
-      }
-      else if (frame > maxFrame) {
-        maxFrame = frame;
-      }
+      primeFrame += video.currentFrame();
     }
+    primeFrame = Math.floor(primeFrame / this._videos.length);
 
-    let delta = maxFrame - minFrame;
-    let threshold = this._fps_of_max * 2
-    if (maxFrame - minFrame > threshold) {
-      var directionFactor = 1;
-      if (direction == "backward") {
-        directionFactor = -1;
+
+    let idx = 0;
+    for (let video of this._videos) {
+      let expected_time = (primeFrame / this._fps[idx]);
+      if (expected_time <= this._lengthTimes[idx])
+      {
+        // Convert to global frame space prior to conversion
+        let delta = (video.currentFrame()*(this._fps[idx]/this._fps[this._longest_idx]))-primeFrame;
+        if (Math.abs(delta) > Math.floor(this._fps[idx]/2))
+        {
+          const correction = 1.0 - (delta/100);
+          const swag = Math.max(0.95,Math.min(1.05,correction));
+          console.log(`syncCheck idx: ${idx} swag: ${swag} delta: ${delta} expectedTime: ${expected_time} primeFrame: ${primeFrame} currentFrame: ${video.currentFrame()} fps_ratio: ${this._fps[idx]/this._fps[this._longest_idx]} id: ${video._videoObject.id}`)
+          video.rateChange(this._rate*swag);
+        }
       }
-      const syncFrame = maxFrame + this._fps_of_max * 1 * this._rate * directionFactor;
-      console.log(`Syncing videos (delta) (threshold) (syncFrame) ${delta} ${threshold} ${syncFrame}`);
-      for (let video of this._videos) {
-        video.setPlaybackNextFrame(syncFrame);
-      }
+      idx++;
     }
 
     // Re-enter sync check at interval
-    this._syncThread = setTimeout(() => {this.syncCheck(direction)}, 5000);
+    this._syncThread = setTimeout(() => {this.syncCheck()},
+                                  500);
   }
 
   checkAllReady()
@@ -1407,7 +1407,8 @@ class AnnotationMulti extends TatorElement {
       if (playing)
       {
         this._play.removeAttribute("is-paused");
-        this._syncThread = setTimeout(() => {this.syncCheck("forward")}, 5000);
+        this._syncThread = setTimeout(() => {this.syncCheck()},
+                                      500);
       }
     }
 
@@ -1440,7 +1441,7 @@ class AnnotationMulti extends TatorElement {
       {
 	this._play.removeAttribute("is-paused");
       }
-      this.syncCheck("forward");
+      this.syncCheck();
     }
   }
 
@@ -1470,7 +1471,8 @@ class AnnotationMulti extends TatorElement {
       if (playing)
       {
         this._play.removeAttribute("is-paused");
-        this._syncThread = setTimeout(() => {this.syncCheck("backward")}, 5000);
+        this._syncThread = setTimeout(() => {this.syncCheck()},
+                                      500);
       }
     }
 
@@ -1505,7 +1507,7 @@ class AnnotationMulti extends TatorElement {
 	  this._play.removeAttribute("is-paused");
 	}
       }
-      this.syncCheck("backward");
+      this.syncCheck();
     }
   }
 
