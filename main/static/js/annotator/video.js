@@ -2535,14 +2535,15 @@ class VideoCanvas extends AnnotationCanvas {
     if (initialize)
     {
       this._loadFrame = this._dispFrame;
+      if (this._playbackNextFrame != null) {
+        this._loadFrame = this._playbackNextFrame;
+        this._dispFrame = this._playbackNextFrame;
+        this._playbackNextFrame = null;
+      }
     }
 
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
     var nextFrame = this._loadFrame + (this._direction * frameIncrement);
-    if (this._playbackNextFrame != null) {
-      nextFrame = this._playbackNextFrame;
-      this._playbackNextFrame = null;
-    }
 
     // Callback function that pushes the given frame/image to the drawGL buffer
     // and then schedules the next frame to be loaded

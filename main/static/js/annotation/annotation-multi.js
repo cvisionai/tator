@@ -332,7 +332,6 @@ class AnnotationMulti extends TatorElement {
         return;
       }
 
-      evt.preventDefault();
       if (this._playbackDisabled) {
         return;
       }
@@ -342,6 +341,7 @@ class AnnotationMulti extends TatorElement {
       }
       else if (evt.code == "Space")
       {
+        evt.preventDefault();
         if (this.is_paused())
         {
           this.play();
@@ -1246,14 +1246,14 @@ class AnnotationMulti extends TatorElement {
   syncCheck(direction)
   {
     // Find the average frame so we can speed up or slow down videos appropriately
-    let minFrame = 0;
+    let minFrame = Infinity;
     let maxFrame = 0;
     for (let video of this._videos) {
       let frame = video.currentFrame();
       if (frame < minFrame) {
         minFrame = frame;
       }
-      else if (frame > maxFrame) {
+      if (frame > maxFrame) {
         maxFrame = frame;
       }
     }
@@ -1265,7 +1265,7 @@ class AnnotationMulti extends TatorElement {
       if (direction == "backward") {
         directionFactor = -1;
       }
-      const syncFrame = maxFrame + this._fps_of_max * 1 * this._rate * directionFactor;
+      const syncFrame = minFrame + this._fps_of_max * 1 * this._rate * directionFactor;
       console.log(`Syncing videos (delta) (threshold) (syncFrame) ${delta} ${threshold} ${syncFrame}`);
       for (let video of this._videos) {
         video.setPlaybackNextFrame(syncFrame);
@@ -1440,7 +1440,7 @@ class AnnotationMulti extends TatorElement {
       {
 	this._play.removeAttribute("is-paused");
       }
-      this.syncCheck("forward");
+      this._syncThread = setTimeout(() => {this.syncCheck("forward")}, 5000);
     }
   }
 
@@ -1505,7 +1505,7 @@ class AnnotationMulti extends TatorElement {
 	  this._play.removeAttribute("is-paused");
 	}
       }
-      this.syncCheck("backward");
+      this._syncThread = setTimeout(() => {this.syncCheck("backward")}, 5000);
     }
   }
 
