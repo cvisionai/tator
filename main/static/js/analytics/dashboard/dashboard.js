@@ -34,7 +34,6 @@ class AnalyticsDashboard extends TatorPage {
     this.main.appendChild(annotationsBox);
 
     // Collections
-    /*
     const collectionsBox = this._getDashboardBox({
         name : "Collections",
         href : `/${this.projectId}/analytics/collections`,
@@ -42,7 +41,6 @@ class AnalyticsDashboard extends TatorPage {
         disabled: true,
       });
     this.main.appendChild(collectionsBox);
-    */
 
     // Visualization
     /*
