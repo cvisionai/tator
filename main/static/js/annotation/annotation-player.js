@@ -515,9 +515,9 @@ class AnnotationPlayer extends TatorElement {
     }
 
     const maxFrame = this._mediaInfo.num_frames - 1;
-    if (frame > maxFrame)
+    if (frame > maxFrame - 1)  // #TODO Fix in the future once video.js has been sorted out.
     {
-      frame = maxFrame;
+      frame = maxFrame - 1;
     }
     else if (frame < 0)
     {
@@ -758,7 +758,7 @@ class AnnotationPlayer extends TatorElement {
       // at the current frame. If not, inform the user.
       if (!this._video.canPlayRate(this._rate))
       {
-        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
       }
     }
@@ -791,7 +791,7 @@ class AnnotationPlayer extends TatorElement {
       // at the current frame. If not, inform the user.
       if (!this._video.canPlayRate(this._rate))
       {
-        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
       }
     }
