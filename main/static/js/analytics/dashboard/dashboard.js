@@ -98,13 +98,7 @@ class AnalyticsDashboard extends TatorPage {
   }
 
   _newRoundedBox(iconDiv, dashboardText, href, disabled){
-    var roundedBox;
-    if (disabled) {
-      roundedBox = document.createElement("button");
-    }
-    else {
-      roundedBox = document.createElement("a");
-    }
+    var roundedBox = document.createElement("a");
     roundedBox.setAttribute("class", "analysis__dashboard-box d-flex flex-items-center rounded-2");
     roundedBox.setAttribute("href", href);
 
