@@ -807,11 +807,13 @@ class AnnotationMulti extends TatorElement {
 
         if (allVideosReady) {
           console.log("allVideosReady");
-          this._play._button.removeAttribute("disabled");
-          this._rewind.removeAttribute("disabled")
-          this._fastForward.removeAttribute("disabled");
-          this._play.removeAttribute("tooltip");
-          this._playbackDisabled = false;
+          if (this.is_paused()) {
+            this._play._button.removeAttribute("disabled");
+            this._rewind.removeAttribute("disabled")
+            this._fastForward.removeAttribute("disabled");
+            this._play.removeAttribute("tooltip");
+            this._playbackDisabled = false;
+          }
         }
       });
 
