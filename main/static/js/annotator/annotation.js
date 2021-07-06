@@ -2542,6 +2542,7 @@ class AnnotationCanvas extends TatorElement
     return this.refresh();
   }
 
+  // Note: skipAnimation is ignored for now.
   selectLocalization(localization, skipAnimation, muteOthers, skipGoToFrame)
   {
     // Seek to a frame if we aren't actually there but trying to display
@@ -2940,9 +2941,7 @@ class AnnotationCanvas extends TatorElement
           }
           that._draw.dispImage(true);
         }
-        that.refresh().then(() => {
-          animator();
-        });
+        animator();
       });
     return promise;
   }
@@ -4016,7 +4015,6 @@ class AnnotationCanvas extends TatorElement
   onPlay()
   {
     this._clipboard.clear();
-    this.activeLocalization = null;
     this._emphasis = null;
     this._mouseMode = MouseMode.QUERY;
   }

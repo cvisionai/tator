@@ -857,7 +857,11 @@ class MotionComp {
     // Calculate the mode of the delta over the calls ignoring the first few.
     for (let idx = 2; idx < this._TRIALS-1; idx++)
     {
-      let fps = Math.round(1000.0/(this._times[idx+1]-this._times[idx]));
+      let delta = this._times[idx+1]-this._times[idx]
+      if (delta < 4.1666) { // Cap out at 240Hz
+        delta = 4.1666;
+      }
+      let fps = Math.round(1000.0/(delta));
       if (mode.has(fps))
       {
         mode.set(fps, mode.get(fps) + 1);
@@ -1455,7 +1459,7 @@ class VideoCanvas extends AnnotationCanvas {
 
           var playCallback = function () {
             console.log("******* restarting onDemand: Playing");
-	          that.onDemandDownloadPrefetch();
+	          that.onDemandDownloadPrefetch(true);
             that._playGenericOnDemand(that._direction)
           };
 
@@ -1926,7 +1930,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     let ended = false;
     if (this._direction == Direction.FORWARD &&
-        this._dispFrame >= (this._numFrames - 1))
+        this._dispFrame >= (this._numFrames - 2))
     {
       ended = true;
     }
@@ -2575,8 +2579,13 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  onDemandDownloadPrefetch()
+  onDemandDownloadPrefetch(reset)
   {
+    // Only prefetch if the frame is different or if there's an explicit reset.
+    if (this._onDemandInitStartFrame == this.currentFrame() && reset != true) {
+      return;
+    }
+
     if (this._onDemandDownloadTimeout)
     {
       clearTimeout(this._onDemandDownloadTimeout);
@@ -2655,7 +2664,8 @@ class VideoCanvas extends AnnotationCanvas {
       // Stop if we've reached the end
       if (this._direction == Direction.FORWARD)
       {
-        if (this._numFrames == this._dispFrame)
+        // #TODO This needs to be relooked at
+        if ((this._numFrames - 2) == this._dispFrame)
         {
           return;
         }
@@ -2890,7 +2900,7 @@ class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    if (this._dispFrame >= (this._numFrames - 1))
+    if (this._dispFrame >= (this._numFrames - 2))
     {
       return false;
     }

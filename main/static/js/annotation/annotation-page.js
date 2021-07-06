@@ -130,7 +130,8 @@ class AnnotationPage extends TatorPage {
               (data.media_files &&
                !('streaming' in data.media_files) &&
                !('layout' in data.media_files) &&
-               !('image' in data.media_files)))
+               !('image' in data.media_files) &&
+               !('live' in data.media_files)))
           {
             this._loading.style.display = "none";
             Utilities.sendNotification(`Unplayable file ${data.id}`);
@@ -211,49 +212,80 @@ class AnnotationPage extends TatorPage {
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
+              this._player.addEventListener(
+                "primaryVideoLoaded", () => {
 
-              var mediaIdCount = 0;
-              for (const index of data.media_files.ids.keys()) {
-                this._mediaIds.push(data.media_files.ids[index]);
-                mediaIdCount += 1;
+                  var mediaIdCount = 0;
+                  for (const index of data.media_files.ids.keys()) {
+                    this._mediaIds.push(data.media_files.ids[index]);
+                    mediaIdCount += 1;
+                  }
+                  this._numberOfMedia = mediaIdCount;
+                  /* #TODO Figure out a capture frame capability for multiview
+                  this._settings._capture.addEventListener(
+                    'captureFrame',
+                    (e) =>
+                      {
+                        player._video.captureFrame(e.detail.localizations);
+                      });
+                  */
+                  this._settings._capture.setAttribute("disabled", "");
+
+                  // Set the quality control based on the prime video
+                  fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: {
+                      "X-CSRFToken": getCookie("csrftoken"),
+                      "Accept": "application/json",
+                      "Content-Type": "application/json"
+                    }
+                  })
+                  .then(response => response.json())
+                  .then(primeMediaData => {
+                    this._videoSettingsDialog.mode("multiview", [primeMediaData]);
+                    this._settings.mediaInfo = primeMediaData;
+                    var playbackQuality = data.media_files.quality;
+                    if (playbackQuality == undefined)
+                    {
+                      playbackQuality = 360; // Default to something sensible
+                    }
+                    if (searchParams.has("quality"))
+                    {
+                      playbackQuality = Number(searchParams.get("quality"));
+                    }
+                    this._settings.quality = playbackQuality;
+                    this._player.setQuality(playbackQuality, null, true);
+                    this._player.setAvailableQualities(primeMediaData);
+                  });
+                }
+              );
+            } else if (type_data.dtype == "live") {
+              player = document.createElement("annotation-live");
+              this._player = player;
+              this._player.mediaType = type_data;
+              player.addDomParent({"object": this._headerDiv,
+                                   "alignTo":  this._browser});
+              this._setupInitHandlers(player);
+              player.mediaInfo = data;
+              this._main.insertBefore(player, this._browser);
+
+              for (let live of player._videos)
+              {
+                this._getMetadataTypes(player, live._canvas);
               }
-              this._numberOfMedia = mediaIdCount;
+              //this._browser.canvas = player._video;
+              this._videoSettingsDialog.mode("live", [data]);
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
                   {
                     player._video.captureFrame(e.detail.localizations);
                   });
-
-              // Set the quality control based on the prime video
-              fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
-                method: "GET",
-                credentials: "same-origin",
-                headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-                }
-              })
-              .then(response => response.json())
-              .then(primeMediaData => {
-                this._videoSettingsDialog.mode("multiview", [primeMediaData]);
-                this._settings.mediaInfo = primeMediaData;
-                var playbackQuality = data.media_files.quality;
-                if (playbackQuality == undefined)
-                {
-                  playbackQuality = 360; // Default to something sensible
-                }
-                if (searchParams.has("quality"))
-                {
-                  playbackQuality = Number(searchParams.get("quality"));
-                }
-                this._settings.quality = playbackQuality;
-                this._player.setQuality(playbackQuality, null, true);
-                this._player.setAvailableQualities(primeMediaData);
+              this._videoSettingsDialog.addEventListener("apply", (evt) => {
+                player.apply
               });
-
-            } else {
+              } else {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
           });
@@ -515,7 +547,9 @@ class AnnotationPage extends TatorPage {
           canvas.setRate(evt.detail.rate);
         }
       });
+    }
 
+    if (this._player._qualityControl) {
       this._player._qualityControl.addEventListener("qualityChange", evt => {
         if ("setQuality" in canvas) {
           canvas.setQuality(evt.detail.quality);
@@ -1530,7 +1564,7 @@ class AnnotationPage extends TatorPage {
         });
       }
     });
-      
+
   }
 }
 

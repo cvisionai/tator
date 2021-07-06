@@ -413,6 +413,7 @@ class AnnotationPlayer extends TatorElement {
   }
 
   disableAutoDownloads() {
+    this._playerDownloadDisabled = true;
     this._video.disableAutoDownloads();
   }
 
@@ -491,7 +492,7 @@ class AnnotationPlayer extends TatorElement {
     // Use the hq buffer when the input is finalized
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
-      this._video.onDemandDownloadPrefetch();
+      this._video.onDemandDownloadPrefetch(true);
       this.handleNotReadyEvent();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
@@ -514,9 +515,9 @@ class AnnotationPlayer extends TatorElement {
     }
 
     const maxFrame = this._mediaInfo.num_frames - 1;
-    if (frame > maxFrame)
+    if (frame > maxFrame - 1)  // #TODO Fix in the future once video.js has been sorted out.
     {
-      frame = maxFrame;
+      frame = maxFrame - 1;
     }
     else if (frame < 0)
     {
@@ -683,6 +684,11 @@ class AnnotationPlayer extends TatorElement {
   }
   handleNotReadyEvent()
   {
+    if (this._playerDownloadDisabled) {
+      // Don't bother attempting to check if playback is ready if downloads have been disabled.
+      return;
+    }
+
     if (this._handleNotReadyTimeout != null)
     {
       console.log("Already handling a not ready event");
@@ -752,7 +758,7 @@ class AnnotationPlayer extends TatorElement {
       // at the current frame. If not, inform the user.
       if (!this._video.canPlayRate(this._rate))
       {
-        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
       }
     }
@@ -785,7 +791,7 @@ class AnnotationPlayer extends TatorElement {
       // at the current frame. If not, inform the user.
       if (!this._video.canPlayRate(this._rate))
       {
-        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 1x require the video to be buffered.")
+        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
       }
     }
@@ -849,6 +855,7 @@ class AnnotationPlayer extends TatorElement {
       this.pause();
       this._video.setQuality(quality, buffer);
     }
+    this._video.onDemandDownloadPrefetch(true);
     this._video.refresh(true);
   }
 
