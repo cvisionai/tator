@@ -1415,6 +1415,11 @@ class VideoCanvas extends AnnotationCanvas {
                                            {composed: true,
                                             detail: {"percent_complete":1.00}
                                            }));
+        that.dispatchEvent(new CustomEvent("playbackReady",
+                                          {composed: true,
+                                           detail: {playbackReadyId: this._waitId},
+                                           }));
+        that._onDemandPlaybackReady = true; // fake it
       }
       else if (type == "onDemandInit")
       {
@@ -1850,6 +1855,11 @@ class VideoCanvas extends AnnotationCanvas {
 
     // On load seek to frame 0
     return promise;
+  }
+
+  isInCompatibilityMode()
+  {
+    return this._videoElement[0]._compat;
   }
 
   clearFrame()
@@ -2583,6 +2593,12 @@ class VideoCanvas extends AnnotationCanvas {
   {
     // Only prefetch if the frame is different or if there's an explicit reset.
     if (this._onDemandInitStartFrame == this.currentFrame() && reset != true) {
+      return;
+    }
+
+    // Don't use on-demand downloading for legacy videos.
+    if (this.isInCompatibilityMode() == true)
+    {
       return;
     }
 
