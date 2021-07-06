@@ -39,6 +39,9 @@ class EntityGalleryLabels extends TatorElement {
       console.log("Menu link clicked!")
       this.div.classList.toggle("hidden");
     });
+
+    // Dont dupe the types
+    this._shownTypes = {};
   }
 
   /*
@@ -67,10 +70,17 @@ class EntityGalleryLabels extends TatorElement {
   /**
    * Add a section of labels to main label div
    * @param {typeData} - object
-   * @param {gallery} - element
    *
   */
-  async add({ gallery, typeData, hideTypeName = false }){
+  async add({ typeData, hideTypeName = false }){
+    let typeName = typeData.name ? typeData.name : "";
+    if(this._shownTypes[typeName]) {
+      // don't re-add this type...
+      return false;
+    } else {
+      this._shownTypes[typeName] = true;
+    }
+
     // Main labels box
     let labelsMain = document.createElement("div");
     labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
@@ -80,8 +90,8 @@ class EntityGalleryLabels extends TatorElement {
       _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-2");
       labelsMain.appendChild(_title);
 
-      let typeName = typeData.name ? typeData.name : "";
-      _title.appendChild(document.createTextNode(typeName));
+      
+      _title.appendChild(document.createTextNode(`Labels for ${typeName}`));
     }
 
 
@@ -94,13 +104,6 @@ class EntityGalleryLabels extends TatorElement {
     let styleDiv = document.createElement("div");
     styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
     _labelDetails.appendChild(styleDiv);
-
-
-
-    // Stop here if we aren't ok after init
-    if (gallery === null || typeof typeData == "undefined") {
-      return console.log("Error in label init");
-    }
 
     /**
      * Label Choice

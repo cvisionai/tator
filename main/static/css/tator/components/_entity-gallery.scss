@@ -328,6 +328,12 @@ collections-card {
   div {
     padding: 5px 10px;
   }
+
+  .triangle {
+    transform: rotate(180deg);
+  }
+
+  .triangle,
   .label-tag {
     margin: 0 $spacing-2;
     fill: $color-charcoal--light;
@@ -336,6 +342,7 @@ collections-card {
 
   .hover-text-white {
     &:hover {
+      .triangle,
       .label-tag {
         stroke: $color-white;
       }
@@ -356,4 +363,11 @@ collections-card {
   text-align: center;
   width: 100%;
   position: absolute;
+}
+
+.entity-gallery-card__attribute {
+  border-right: 1px solid $color-gray--light;
+  &:last-child {
+    border-right: none;
+  }
 }

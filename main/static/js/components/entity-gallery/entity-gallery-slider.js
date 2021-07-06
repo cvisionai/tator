@@ -25,13 +25,6 @@ class EntityGallerySlider extends TatorElement {
       this._labels.appendChild(this._title);
 
       /**
-       * Placeholder for more menu placement styling
-       */
-      this._moreNavDiv = document.createElement("div");
-      this._moreNavDiv.setAttribute("class", "slider__more_nav col-2 d-flex flex-justify-right");
-      this.topDiv.appendChild(this._moreNavDiv);
-
-      /**
        * Placeholder for tools
        */
       this._tools = document.createElement("div");
@@ -82,16 +75,10 @@ class EntityGallerySlider extends TatorElement {
       //this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
       this.styleDiv.appendChild(this._ul);
 
-      // this._resizeCards._initGallery(this._ul, this.colSize);
-      // this.loadingText = document.createElement("span");
-      // this.loadingText.setAttribute("class", "entity-gallery-slider--loading"); //
-      // let text2 = document.createTextNode("More Tracks Loading...");
-      // this.loadingText.appendChild(text2);
-      // this._shadow.appendChild(this.loadingText);
-
       this.numberOfDisplayedCards = 0;
       this.attributeLabelEls = [];
       this._preloadedImages = [];
+      this.labelInit = false;
    }
 
    init({
@@ -101,7 +88,8 @@ class EntityGallerySlider extends TatorElement {
       slideCardData,
       cardType,
       attributes,
-      state
+      state,
+      gallery
    }) {
       this.panelContainer = panelContainer;
       this.panelControls = this.panelContainer._panelTop;
@@ -110,6 +98,7 @@ class EntityGallerySlider extends TatorElement {
       this.state = state;
       this.currentLabelValues;
       this._sliderAttributeValues = attributes;
+      this.gallery = gallery;
 
       // Slider active listener
       this.addEventListener("slider-active", () => {
@@ -311,9 +300,18 @@ class EntityGallerySlider extends TatorElement {
       this.panelControls.openHandler(e.detail);
    }
 
+   _updateCardLabels(evt){
+
+   }
+
    _addCard(index, cardObj, cardType) { 
       let newCard = false;
       let location = this._currentCardIndexes[cardObj.id];
+      let association = cardObj.stateType;
+      let entityType = (association == "Localization") ? cardObj.entityType : cardObj.mediaInfo.entityType;
+
+      console.log("Entity type for association "+association);
+      console.log(entityType);
 
       if (!location && typeof location == "undefined") {
          newCard = true;
@@ -321,42 +319,34 @@ class EntityGallerySlider extends TatorElement {
 
       let card;
       if (newCard) {
+         // create a new card
          card = document.createElement(cardType);
 
          /**
          * Card labels / attributes of localization or media type
          * #todo componentize (remove state refs)
          */
-         if(this._cardLabelOptions && this._cardLabelOptions.length == 0){
-            console.log("CARD OBJECT INCOMING!");
-            console.log(cardObj);
+         if(!this.labelInit){
             //only do this once, cards within slider share a type
-            if(this.state.typeData && this.state.typeData.association){
-               let type = this.state.typeData.association;
-               if(type == "Localization"){
-                  for(let at in cardObj.entityType.atrribute_types){
-                     this._cardLabelOptions.push(cardObj.entityType.atrribute_types[at].name);
-                  }
-                  
-                  this._cardAtributeLabels.add({ 
-                        gallery: card,
-                        typeData: cardObj.entityType,
-                        hideTypeName: true
-                     });
-               } else if (type == "Media"){
+            this.labelInit = true;   
+            this._cardAtributeLabels.add({ 
+               typeData: entityType
+            });
 
-               }
-            }     
+            // Setup label options
+            this._cardLabelOptions = entityType.attribute_types;
+            this._cardLabelOptions.sort((a, b) => {
+               return a.order - b.order || a.name - b.name;
+            });
+      
          }
 
          this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
             card.updateLabels(evt);
          });
 
-         card.attributeOrder = this._cardLabelOptions;
-
          // // Resize Tool needs to change style within card on change
-         card.style.width = "272px";
+         // card.style.width = "272px";
          // this._resizeCards._slideInput.addEventListener("change", (evt) => {
          //    let resizeValue = evt.target.value;
          //    let resizeValuePerc = parseFloat(resizeValue / 100);
@@ -445,6 +435,8 @@ class EntityGallerySlider extends TatorElement {
          card = this._cardElements[index].card;
       }
 
+      cardObj.attributeOrder = this._cardLabelOptions;
+
       this._currentCardIndexes[cardObj.id] = index;
 
       // Initialize the card panel
@@ -452,7 +444,6 @@ class EntityGallerySlider extends TatorElement {
       this._cardElements[index].annotationPanel.init({
          cardObj
       });
-
 
       // Initialize Card
       card.init({
@@ -509,8 +500,8 @@ class EntityGallerySlider extends TatorElement {
       const stop = evt.detail.stop;
 
       // Hide all the cards, and figure out which ones we need to show
-      for (let i = 0; i < this._cardElements.length; i++) {
-         this._cardElements[i].card.style.display = "none";
+      for (let el of this._cardElements) {
+         el.card.style.display = "none";
       }
 
       //if (evt.detail.start >= this._cardElements.length) {
@@ -543,6 +534,49 @@ class EntityGallerySlider extends TatorElement {
          }
       }
 
+   }
+
+   updateCardData(newCardData) {
+      for (let s of this._sliderElements) {
+         if (newCardData.id in s._currentCardIndexes) {
+            const index = s._currentCardIndexes[newCardData.id];
+            const card = s._cardElements[index].card;
+            s._updateLocalizationAttribute(newCardData);
+         }
+      }
+   }
+
+   _cardSortUpdate(evt){
+      // go through all cards, and sort them..
+      let property = evt.detail.sortProperty;
+      let sortType = evt.detail.sortType;
+
+      if(evt.detail.sortType == "Ascending"){
+         return this._sortCardsAscending(property)
+      } else {
+         return this._sortCardsDescending(property);
+      }
+
+     
+   }
+
+   _sortCardsDescending(property){
+       // #todo handle pagination
+      this._cardElements.sort((el1, el2) => {
+         console.log(el1);
+         console.log(el2);
+         
+         return el2[property] - el1[property];
+      });
+   }
+   _sortCardsAscending(property){
+       // #todo handle pagination
+      this._cardElements.sort((el1, el2) => {
+         console.log(el1);
+         console.log(el2);
+         
+         return el1[property] - el2[property];
+      });
    }
 }
 

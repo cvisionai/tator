@@ -14,6 +14,7 @@ class CollectionsCard extends EntityCard {
     // prep this var
     this._tmpHidden = null;
     this.attributeDivs = [];
+    this._currentShownAttributes = "";
   }
   
 
@@ -52,60 +53,52 @@ class CollectionsCard extends EntityCard {
     this.setAttribute("pos-text", obj.posText);
 
     // Display the first 0 order attribute value
-    this.setAttribute("name", "");
-    for (let attrType of obj.entityType.attribute_types) {
-      if (attrType.order == 0) {
-        if (obj.attributes[attrType.name] != undefined) {
-          this._name.textContent = obj.attributes[attrType.name];
-        }
-        break;
-      }
-    }
+    // this.setAttribute("name", "");
+    // for (let attrType of obj.entityType.attribute_types) {
+    //   if (attrType.order == 0) {
+    //     if (obj.attributes[attrType.name] != undefined) {
+    //       this._name.textContent = obj.attributes[attrType.name];
+    //     }
+    //     break;
+    //   }
+    // }
 
     /**
      * Attributes hidden on card are controlled by outer menu 
     */
-    
-    console.log(obj.attributes);
-    console.log(this.attributeOrder);
-    // Create ordered list of attributes
-    if(obj.attributeOrder && obj.attributeOrder.length > 0 && obj.attributes && obj.attributes.lenght > 0){
+    if(obj.attributeOrder && obj.attributeOrder.length > 0){
       this.attributesDiv = document.createElement('div');
       for(const attr of obj.attributeOrder){
         let attrStyleDiv = document.createElement("div");
-        let encodedAttr = encodeURI(attr);
-
-        // styling div that controls hide/show
-        attrStyleDiv.setAttribute("id", encodedAttr);
-        attrStyleDiv.setAttribute("class", `card-attribute`);
-        attrStyleDiv.hidden = true;
-
+        attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
+        
         let attrLabel = document.createElement("span");
-        attrLabel.appendChild( document.createTextNode(`${obj.attributes[attr]}`) );
-        attrLabel.setAttribute("class", "text-bold f3");
+        attrLabel.setAttribute("class", "f3");
         attrStyleDiv.appendChild(attrLabel);
 
-        let attribute = document.createTextNode(value);
-        attrStyleDiv.appendChild(attribute);
+        let key = attr.name
+        if(typeof obj.attributes[key] !== "undefined"){
+          attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
+        } else {
+          attrLabel.innerHTML = `<i class="text-gray text-normal">(${key} not set)</i>`;
+        }
 
         // add to the card & keep a list
-        this.attributeDivs[encodedAttr] = attrStyleDiv;
-        this.attributesDiv.appendChild(attrStyleDiv);
+        this.attributeDivs[key] = {};
+        this.attributeDivs[key].div = attrStyleDiv;
+        this.attributeDivs[key].value = attrLabel;
+
+        attrStyleDiv.hidden =  attr.order == 0 ? false : true;
+
+        this.attributesDiv.appendChild(this.attributeDivs[key].div);
       }
 
-      if(this.attributeDivs && this.attributeDivs.length > 0){
-        // Unhide the first attribute
-        let firstAttrName = obj.attributeOrder[0];
-        let encodedKeyFirstAttr = encodeURI(firstAttrName);
-        this.attributeDivs[encodedKeyFirstAttr].hidden = false; // default first in order is shown
-        
+      if(this.attributeDivs){       
         // Show description div
         this.descDiv.appendChild(this.attributesDiv);
         this.descDiv.hidden = false;
       }
     }
-    
-
   }
 
   /**
@@ -114,21 +107,25 @@ class CollectionsCard extends EntityCard {
   updateLabels(evt){
     let typeId = evt.detail.typeId;
     let labelValues = evt.detail.value;
-
-    console.log(labelValues);
-    console.log(this.attributeDivs);
-
-    // reset display
-    // #todo just check changed, and update those
-    for (let [attr] of Object.entries(this.attributeDivs)) {
-      console.log(attr);
-    }
-
+    
     // show selected
-    for (let attr of labelValues) {
-      let encodedAttrKey = encodeURI(attr);
-      this.attributeDivs[encodedAttrKey].hidden = false;
-    }
+    for (let key of labelValues) {
+      this.attributeDivs[key].div.hidden = false;
+    }   
+  }
+
+  /**
+   * Update Attribute Values
+   */
+   _updateAttributes(evt) {
+     console.log(evt.detail);
+    // let attributes = evt.detail.value;
+    // for (let attr of attributes) {
+    //   console.log(attr);
+    //   if(this.attributeDivs[attr]){
+    //     this.attributeDivs[attr].value.innerHTML = attr;
+    //   }   
+    // }
   }
 
   /**

@@ -29,7 +29,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       */ 
       this._attributeLabels = document.createElement("entity-gallery-labels");
       this._tools.appendChild(this._attributeLabels);
-      this._attributeLabels.labelLinkText.innerHTML = "Collection Labels";
+      this._attributeLabels.menuLinkTextSpan.innerHTML = "Collection Labels";
       this._moreMenu._menu.appendChild(this._attributeLabels.menuLink);
 
       /**
@@ -37,8 +37,16 @@ class CollectionsGallery extends EntityCardSlideGallery {
        */ 
       this._cardAtributeLabels = document.createElement("entity-gallery-labels");
       this._tools.appendChild(this._cardAtributeLabels);
-      this._cardAtributeLabels.labelLinkText.innerHTML = "Entry Labels";
+      this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
       this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
+
+      /**
+       * CARD Sort display options link for menu, and checkbox div
+       */ 
+      this._cardAtributeSort = document.createElement("entity-gallery-sort");
+      this._tools.appendChild(this._cardAtributeSort);
+      this._cardAtributeSort.menuLinkTextSpan.innerHTML = "Sort Entries";
+      this._moreMenu._menu.appendChild(this._cardAtributeSort.menuLink);
 
       /* Slider information */
       this._sliderLists = [];
@@ -90,11 +98,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
          
          // Provide labels and access to the sliders
          let labels = this._attributeLabels.add({ 
-               typeData: stateType, 
-               gallery: this 
+               typeData: stateType 
             });
 
-         // Label display changes
+         // Slider label display changes
          this._attributeLabels.addEventListener("labels-update", this.labelsUpdate.bind(this));
       }
    }
@@ -201,8 +208,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
          newSliderList.setAttribute("page", this.collectionsData.getPaginationState());
          //this._sliderLists[this.collectionsData._states.paginationState.page] = newSliderList;
 
-         this._addSliders({ sliderList: newSliderList, states: states });
-         console.log(states);
+         this._addSliders({ sliderList: newSliderList, states });
+
          this._sliderContainer.appendChild(newSliderList);
 
          // Update new slider panel permission
@@ -222,7 +229,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       const currentSliderEls = [];
       let sliderPage = this.collectionsData.getPage();
       this._sliderLists[sliderPage] = sliderList;
-
+      
       // Append the sliders
       for (let idx = 0; idx < states.length; idx++) {
          let state = states[idx];
@@ -244,11 +251,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
             slideCardData: this.slideCardData,
             cardType: "collections-card",
             attributes: state.attributes,
-            state
+            state,
+            gallery: this
          });
 
          slider.unshownCards = {};
-         slider._fullCardsAdded = false;
+         slider._fullCardsAdded = false;  
 
          let currentCount = (sliderPage - 1) * this.collectionsData.getPageSize() + idx + 1;
          slider.setAttribute("title", `${state.typeData.name} ID: ${state.id}`);
@@ -267,35 +275,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
                      s.dispatchEvent(new Event("slider-inactive"));
                   }
                }
-
-               //this.analyticsSettings.setAttribute("selectedState", state.id);
-               //window.history.pushState({}, "", this.analyticsSettings.getURL());
             }
-            // } else {
-            //
-            //    console.log("This is already open!")
-            //    //toggle it shut
-            //    const inactiveEvent = new Event("slider-inactive");
-            //    slider.dispatchEvent(inactiveEvent);
-
-            // }
          });
 
-         // slider.loadAllTeaser.addEventListener("click", (e) => {
-         //    console.log("clicked loadAll link!")
-
-         //    if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
-         //       let loadMoreCounter = 10;
-         //       for (var i = 1; i <= loadMoreCounter; i++) {
-         //          this._addNextUnshownCard(slider);
-         //       }
-         //    } else {
-         //       console.log("All Cards are loaded.")
-         //       slider._fullCardsAdded === true;
-         //       slider.loadAllTeaser.remove();
-         //    }
-         // });
-
+         // Slider Card Sort display changes
+         this._cardAtributeSort.addEventListener("sort-update", slider._cardSortUpdate.bind(this));
       }
 
       for (let i in currentSliderEls) {
@@ -447,23 +431,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
       //return sliderEl.scrollIntoView(true);
    }
 
-   updateCardData(newCardData) {
-      for (let s of this._sliderElements) {
-         if (newCardData.id in s._currentCardIndexes) {
-            const index = s._currentCardIndexes[newCardData.id];
-            const card = s._cardElements[index].card;
-            s._updateLocalizationAttribute(newCardData);
-         }
-      }
-   }
-
    entityFormChange(e) {
       this.formChange({
          id: e.detail.id,
          values: { attributes: e.detail.values },
          type: "Localization"
       }).then((data) => {
-         this.updateCardData(data);
+         for (let s of this._sliderElements) {
+            s.updateCardData(data);
+         }
 
       });
    }
@@ -474,8 +450,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
          values: { attributes: e.detail.values },
          type: "State"
       }).then((data) => {
-         //console.log(data);
-
          // Find the right slider
          for (let s of this._sliderElements) {
             if (s.id == e.detail.id) {
@@ -491,14 +465,24 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    mediaFormChange(e) {
-      this.formChange({
-         id: e.detail.id,
-         values: { attributes: e.detail.values },
-         type: "Media"
-      }).then((data) => {
-         //#TODO
+    var mediaId = e.detail.id;
+    this.formChange({
+      id: e.detail.id,
+      values: { attributes: e.detail.values },
+      type: "Media"
+    }).then(() => {
+      this.slideCardData.updateMediaAttributes(mediaId).then(() => {
+         for (let s of this._sliderElements) {
+            for (let idx = 0; idx < s._cardElements.length; idx++) {
+               const card = this._cardElements[idx].card.cardObj;
+               if (card.mediaId == mediaId) {
+                  this._cardElements[idx].annotationPanel.setMediaData(card);
+               }
+            }
+         }
       });
-   }
+    });
+   }   
 
    async formChange({ type, id, values } = {}) {
       var result = await fetch(`/rest/${type}/${id}`, {
