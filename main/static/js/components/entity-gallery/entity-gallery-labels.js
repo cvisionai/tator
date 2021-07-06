@@ -13,8 +13,8 @@ class EntityGalleryLabels extends TatorElement {
     this.menuLinkTextSpan = document.createElement("span");
     this.menuLinkTextSpan.setAttribute("class", "px-2");
 
-    let labelLinkText = document.createTextNode("Choose Labels");
-    this.menuLinkTextSpan.appendChild(labelLinkText);
+    this.labelLinkText = document.createTextNode("Choose Labels");
+    this.menuLinkTextSpan.appendChild(this.labelLinkText);
  
     this.menuLink.appendChild(labelIcon);
     this.menuLink.appendChild(this.menuLinkTextSpan);
@@ -70,14 +70,20 @@ class EntityGalleryLabels extends TatorElement {
    * @param {gallery} - element
    *
   */
-  async add({ gallery, typeData }){
+  async add({ gallery, typeData, hideTypeName = false }){
     // Main labels box
     let labelsMain = document.createElement("div");
     labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
-    let _title = document.createElement("div");
-    _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-2");
-    labelsMain.appendChild(_title);
+    if(!hideTypeName){
+      let _title = document.createElement("div");
+      _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-2");
+      labelsMain.appendChild(_title);
+
+      let typeName = typeData.name ? typeData.name : "";
+      _title.appendChild(document.createTextNode(typeName));
+    }
+
 
     // Labels details with checkboxes
     let _labelDetails = document.createElement("div");
@@ -89,8 +95,7 @@ class EntityGalleryLabels extends TatorElement {
     styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
     _labelDetails.appendChild(styleDiv);
 
-    let typeName = typeData.name ? typeData.name : "";
-    _title.appendChild(document.createTextNode(typeName));
+
 
     // Stop here if we aren't ok after init
     if (gallery === null || typeof typeData == "undefined") {

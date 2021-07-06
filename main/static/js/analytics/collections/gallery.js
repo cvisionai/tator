@@ -13,22 +13,32 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       // Filter toolbar
       this._filterDiv = document.createElement("div");
-      this._filterDiv.setAttribute("class", "analysis__filter");
+      this._filterDiv.setAttribute("class", "analysis__filter py-3");
       
       // Tools setup
       this._tools.before(this._filterDiv)
       this._tools.setAttribute("class", "");
 
-
       // Display options in more menu
+      // Note: this is appended to filter nav in collections.js
       this._moreMenu = document.createElement("entity-gallery-more-menu");
       this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
 
-      // Labels 
+      /**
+       * SLIDER Label display options link for menu, and checkbox div
+      */ 
       this._attributeLabels = document.createElement("entity-gallery-labels");
       this._tools.appendChild(this._attributeLabels);
-
+      this._attributeLabels.labelLinkText.innerHTML = "Collection Labels";
       this._moreMenu._menu.appendChild(this._attributeLabels.menuLink);
+
+      /**
+       * CARD Label display options link for menu, and checkbox div
+       */ 
+      this._cardAtributeLabels = document.createElement("entity-gallery-labels");
+      this._tools.appendChild(this._cardAtributeLabels);
+      this._cardAtributeLabels.labelLinkText.innerHTML = "Entry Labels";
+      this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
 
       /* Slider information */
       this._sliderLists = [];
@@ -91,7 +101,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
 
    labelsUpdate(evt) {
-      console.log(evt);
       let typeId = evt.detail.typeId;
       let labelValues = evt.detail.value;
 
@@ -225,6 +234,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.entityFormChange = this.entityFormChange.bind(this);
          slider.stateFormChange = this.stateFormChange.bind(this);
          slider.mediaFormChange = this.mediaFormChange.bind(this);
+         slider._cardAtributeLabels = this._cardAtributeLabels;
          sliderList.appendChild(slider);
 
          slider.init({

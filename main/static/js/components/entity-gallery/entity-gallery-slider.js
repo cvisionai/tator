@@ -6,61 +6,50 @@ class EntityGallerySlider extends TatorElement {
       this.main.setAttribute("class", "entity-gallery-slider mb-4 clickable");
       this._shadow.appendChild(this.main);
 
-
       this.topDiv = document.createElement("div");
-      this.topDiv.setAttribute("class", "d-flex flex-row flex-items-center");
+      this.topDiv.setAttribute("class", "d-flex flex-row flex-items-center col-12");
       this.main.appendChild(this.topDiv);
 
+      /**
+       * Placeholder for label data to be added on init
+       */
       this._labels = document.createElement("div");
-      this._labels.setAttribute("class", "entity-gallery-slider--labels  d-flex d-row f2 text-normal text-gray py-2");
+      this._labels.setAttribute("class", "entity-gallery-slider--labels flex-wrap col-10 d-flex d-row f2 text-normal text-gray py-2");
       this.topDiv.appendChild(this._labels);
 
+      /**
+       * Placeholder for slider title
+       */
       this._title = document.createElement("div");
       this._title.setAttribute("class", "entity-gallery-slider--title text-gray");
       this._labels.appendChild(this._title);
 
-      // Gallery Top Tools and info
+      /**
+       * Placeholder for more menu placement styling
+       */
+      this._moreNavDiv = document.createElement("div");
+      this._moreNavDiv.setAttribute("class", "slider__more_nav col-2 d-flex flex-justify-right");
+      this.topDiv.appendChild(this._moreNavDiv);
+
+      /**
+       * Placeholder for tools
+       */
       this._tools = document.createElement("div");
-      this._tools.setAttribute("class", "enitity-gallery__tools py-2 d-flex flex-justify-between");
+      this._tools.setAttribute("class", "enitity-gallery__tools");
       this.main.appendChild(this._tools);
 
-      
+      // Card label display #todo
+      this._cardLabelOptions = [];   
 
-      // this._moreMenu = document.createElement("entity-gallery-more-menu");
-      // this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
-      // this.main.appendChild(this._moreMenu);
-
-      // Labels selection will be inside here
-      // this._attributeLabelsDiv = document.createElement("entity-gallery-labels");
-      // this._tools.appendChild(this._attributeLabelsDiv);
-
-      // // Labels trigger
-      // // A button that hides and shows _attributeLabelsDiv
-      // this._labelsTrigger = this._attributeLabelsDiv.menuLink;
-      // this._moreMenu._menu.appendChild(this._labelsTrigger);    
-
-      // Sort
-      // this._attributeSortDiv = document.createElement("div");
-      // this._attributeSortDiv.setAttribute("class", "enitity-gallery__sort-div py-1");
-      // this._tools.appendChild(this._attributeSortDiv);
-
-      // Labels Picker
-      // this._attributeLabelsDiv = document.createElement("div");
-      // this._attributeLabelsDiv.setAttribute("class", "enitity-gallery__labels-div py-1");
-      // this._tools.appendChild(this._attributeLabelsDiv);
-
-      // Tools: Slider to resize images
+      // Tools container
       this.sliderContainer = document.createElement("div");
       this.sliderContainer.setAttribute("class", "entity-card-resize col-4")
-      // this._resizeCards = document.createElement('entity-card-resize');
-      // this.sliderContainer.appendChild(this._resizeCards);
       this._tools.appendChild(this.sliderContainer);
 
+      // Loading text
       this.loadAllTeaser = document.createElement("span");
       this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more text-gray"); //
-      let text = document.createTextNode("Loading...");
-      this.loadAllTeaser.appendChild(text);
-
+      this.loadAllTeaser.appendChild(document.createTextNode("Loading..."));
       this.sliderContainer.appendChild(this.loadAllTeaser);
 
       // Property IDs are the entity IDs (which are expected to be unique)
@@ -71,6 +60,7 @@ class EntityGallerySlider extends TatorElement {
       this._cardElements = [];
 
       // Gallery Top Pagination Holder
+      // #todo customize in-slider pagination feel
       this._topNav = document.createElement("div");
       this._topNav.setAttribute("class", "enitity-gallery-slider__nav py-2 d-flex flex-justify-center");
       this.main.appendChild(this._topNav);
@@ -119,7 +109,7 @@ class EntityGallerySlider extends TatorElement {
       this.slideCardData = slideCardData;
       this.state = state;
       this.currentLabelValues;
-      this.attributeValues = attributes;
+      this._sliderAttributeValues = attributes;
 
       // Slider active listener
       this.addEventListener("slider-active", () => {
@@ -161,6 +151,10 @@ class EntityGallerySlider extends TatorElement {
          this.updateCardMedia(evt.detail.id, evt.detail.media);
       });
 
+      /**
+       * Slider labels / attributes of slider type
+       * #todo componentize (remove state refs)
+      */
       let definedAttributes = [];
       if(this.state.typeData && this.state.typeData.attribute_types){
          const tmpDefinedAttributes = [...this.state.typeData.attribute_types];
@@ -173,21 +167,20 @@ class EntityGallerySlider extends TatorElement {
          // Display Labels as defined attribute order
          for(let a1 of definedAttributes){
             let foundValue = false;
-            for (let attr in this.attributeValues) {
-               console.log(`a1.name == attr ${a1.name} and ${attr}`)
+            for (let attr in this._sliderAttributeValues) {
                if(a1.name == attr){
                   this._displayAttributes({ attr });
                   foundValue = true;
                } 
             }
             if(!foundValue) {
-            // Add placeholder
-            this._displayAttributes({attr: a1.name, value: false});
-         }
+               // if there is no value, still add a placeholder in this order
+               this._displayAttributes({attr: a1.name, value: false});
+            }
          }
       } else {
          // Display attributes values in returned order
-         for (let attr in this.attributeValues) {
+         for (let attr in this._sliderAttributeValues) {
             console.log(attr);
             // Add to display w/ value
             this._displayAttributes({attr});
@@ -222,7 +215,7 @@ class EntityGallerySlider extends TatorElement {
       if(value){
          text = document.createTextNode(`${attr}: `);
       } else {
-         text = document.createTextNode(`${attr}: ${this.attributeValues[attr]}`);
+         text = document.createTextNode(`${attr}: ${this._sliderAttributeValues[attr]}`);
       }
       attributeLabel.appendChild(text);
 
@@ -318,17 +311,49 @@ class EntityGallerySlider extends TatorElement {
       this.panelControls.openHandler(e.detail);
    }
 
-   _addCard(index, cardObj, cardType) {
+   _addCard(index, cardObj, cardType) { 
       let newCard = false;
       let location = this._currentCardIndexes[cardObj.id];
 
       if (!location && typeof location == "undefined") {
          newCard = true;
-      }
+      }      
 
       let card;
       if (newCard) {
          card = document.createElement(cardType);
+
+         /**
+         * Card labels / attributes of localization or media type
+         * #todo componentize (remove state refs)
+         */
+         if(this._cardLabelOptions && this._cardLabelOptions.length == 0){
+            console.log("CARD OBJECT INCOMING!");
+            console.log(cardObj);
+            //only do this once, cards within slider share a type
+            if(this.state.typeData && this.state.typeData.association){
+               let type = this.state.typeData.association;
+               if(type == "Localization"){
+                  for(let at in cardObj.entityType.atrribute_types){
+                     this._cardLabelOptions.push(cardObj.entityType.atrribute_types[at].name);
+                  }
+                  
+                  this._cardAtributeLabels.add({ 
+                        gallery: card,
+                        typeData: cardObj.entityType,
+                        hideTypeName: true
+                     });
+               } else if (type == "Media"){
+
+               }
+            }     
+         }
+
+         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+            card.updateLabels(evt);
+         });
+
+         card.attributeOrder = this._cardLabelOptions;
 
          // // Resize Tool needs to change style within card on change
          card.style.width = "272px";
@@ -409,7 +434,6 @@ class EntityGallerySlider extends TatorElement {
          }
          this._ul.appendChild(card);
 
-         //console.log("A (NEW) New Card!!!!!!!!!!! id " + cardObj.id);
          if (this._preloadedImages[cardObj.id]) {
             const image = this._preloadedImages[cardObj.id];
             this._cardElements[index].card.setImage(image);

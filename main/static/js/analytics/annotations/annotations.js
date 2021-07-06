@@ -40,7 +40,7 @@ class AnalyticsAnnotations extends TatorPage {
     this.mainWrapper.appendChild(this.main);
 
     const filterDiv = document.createElement("div");
-    filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
+    filterDiv.setAttribute("class", "analysis__filter my-3");
     this.main.appendChild(filterDiv);
 
     this._filterView = document.createElement("filter-interface");

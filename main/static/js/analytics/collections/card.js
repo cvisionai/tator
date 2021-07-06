@@ -13,6 +13,7 @@ class CollectionsCard extends EntityCard {
 
     // prep this var
     this._tmpHidden = null;
+    this.attributeDivs = [];
   }
   
 
@@ -49,12 +50,6 @@ class CollectionsCard extends EntityCard {
 
     // Add position text related to pagination
     this.setAttribute("pos-text", obj.posText);
-    //this._pos_text.hidden = true; //#TODO
-
-    // Link to the media @TODO
-    // this.mediaLink = document.createElement('div');
-    // this.mediaLink.innerHTML = `Media ID ${obj.mediaLink}`;
-    // this.descDiv.appendChild(this.mediaLink);
 
     // Display the first 0 order attribute value
     this.setAttribute("name", "");
@@ -67,48 +62,73 @@ class CollectionsCard extends EntityCard {
       }
     }
 
-    /*
-    this.attributesDiv = document.createElement('div');
-    let i = 0;
-    for(const [attr, value] of Object.entries(obj.attributes)){
-      let attrDiv = document.createElement("div");
-      attrDiv.setAttribute("class", `card-attribute ${encodeURI(obj.localizationType.name)}_${encodeURI(attr)}`)
-      if(i != 0) attrDiv.classList.add("hidden")
-      i++;
-      let attrLabel = document.createElement("span");
-      attrLabel.appendChild( document.createTextNode(`${attr}: `) );
-      attrLabel.setAttribute("class", "text-bold f3");
-      attrDiv.appendChild(attrLabel);
-
-      let attribute = document.createTextNode(value);
-      attrDiv.appendChild(attribute);
-
-      this.attributesDiv.appendChild(attrDiv);
-    }
-    this.descDiv.appendChild(this.attributesDiv);
+    /**
+     * Attributes hidden on card are controlled by outer menu 
     */
+    
+    console.log(obj.attributes);
+    console.log(this.attributeOrder);
+    // Create ordered list of attributes
+    if(obj.attributeOrder && obj.attributeOrder.length > 0 && obj.attributes && obj.attributes.lenght > 0){
+      this.attributesDiv = document.createElement('div');
+      for(const attr of obj.attributeOrder){
+        let attrStyleDiv = document.createElement("div");
+        let encodedAttr = encodeURI(attr);
 
-    // // Create Date
-    // this.created = document.createElement('div');
-    // this.created.innerHTML = `Created: ${obj.created}`;
-    // this.descDiv.appendChild(this.created);
+        // styling div that controls hide/show
+        attrStyleDiv.setAttribute("id", encodedAttr);
+        attrStyleDiv.setAttribute("class", `card-attribute`);
+        attrStyleDiv.hidden = true;
 
-    // // Modified Date
-    // this.modified = document.createElement('div');
-    // this.modified.innerHTML = `Modified: ${obj.modified}`;
-    // this.descDiv.appendChild(this.modified);
+        let attrLabel = document.createElement("span");
+        attrLabel.appendChild( document.createTextNode(`${obj.attributes[attr]}`) );
+        attrLabel.setAttribute("class", "text-bold f3");
+        attrStyleDiv.appendChild(attrLabel);
 
-    // // Modified By
-    // this.modifiedby = document.createElement('div');
-    // this.modifiedby.innerHTML = `By: ${obj.userName}`;
-    // this.descDiv.appendChild(this.modifiedby);
+        let attribute = document.createTextNode(value);
+        attrStyleDiv.appendChild(attribute);
 
-    // Show description div
-    this.descDiv.hidden = false;
+        // add to the card & keep a list
+        this.attributeDivs[encodedAttr] = attrStyleDiv;
+        this.attributesDiv.appendChild(attrStyleDiv);
+      }
 
-    // More actions
-    // this._more.hidden = false;
-    // Add more ... > labels, swap views?
+      if(this.attributeDivs && this.attributeDivs.length > 0){
+        // Unhide the first attribute
+        let firstAttrName = obj.attributeOrder[0];
+        let encodedKeyFirstAttr = encodeURI(firstAttrName);
+        this.attributeDivs[encodedKeyFirstAttr].hidden = false; // default first in order is shown
+        
+        // Show description div
+        this.descDiv.appendChild(this.attributesDiv);
+        this.descDiv.hidden = false;
+      }
+    }
+    
+
+  }
+
+  /**
+  * Custom label display update
+  */
+  updateLabels(evt){
+    let typeId = evt.detail.typeId;
+    let labelValues = evt.detail.value;
+
+    console.log(labelValues);
+    console.log(this.attributeDivs);
+
+    // reset display
+    // #todo just check changed, and update those
+    for (let [attr] of Object.entries(this.attributeDivs)) {
+      console.log(attr);
+    }
+
+    // show selected
+    for (let attr of labelValues) {
+      let encodedAttrKey = encodeURI(attr);
+      this.attributeDivs[encodedAttrKey].hidden = false;
+    }
   }
 
   /**
