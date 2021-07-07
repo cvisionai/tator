@@ -6,6 +6,12 @@ class AnnotationsGallery extends EntityCardGallery {
     *
     */
 
+
+    // * hook to add filter interface
+    this._filterDiv = document.createElement("div");
+    this._filterDiv.setAttribute("class", "analysis__filter");
+    this._mainTop.appendChild(this._filterDiv)
+
     // Custom width for annotations gallery
     this.colSize = 272;
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`

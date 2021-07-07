@@ -310,9 +310,6 @@ class EntityGallerySlider extends TatorElement {
       let association = cardObj.stateType;
       let entityType = (association == "Localization") ? cardObj.entityType : cardObj.mediaInfo.entityType;
 
-      console.log("Entity type for association "+association);
-      console.log(entityType);
-
       if (!location && typeof location == "undefined") {
          newCard = true;
       }      
@@ -346,7 +343,7 @@ class EntityGallerySlider extends TatorElement {
          });
 
          // // Resize Tool needs to change style within card on change
-         // card.style.width = "272px";
+         card.style.width = "272px";
          // this._resizeCards._slideInput.addEventListener("change", (evt) => {
          //    let resizeValue = evt.target.value;
          //    let resizeValuePerc = parseFloat(resizeValue / 100);

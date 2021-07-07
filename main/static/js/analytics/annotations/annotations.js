@@ -39,12 +39,16 @@ class AnalyticsAnnotations extends TatorPage {
     this.main.setAttribute("class", "enitity-gallery--main col-12");
     this.mainWrapper.appendChild(this.main);
 
-    const filterDiv = document.createElement("div");
-    filterDiv.setAttribute("class", "analysis__filter my-3");
-    this.main.appendChild(filterDiv);
+    //
+    /* Card Gallery */
+    // Gallery of cards showing filter results
+    this._filterResults = document.createElement("annotations-gallery");
+    this.main.appendChild(this._filterResults);
 
+    //
+    /* Filter interface part of gallery */
     this._filterView = document.createElement("filter-interface");
-    filterDiv.appendChild(this._filterView);
+    this._filterResults._filterDiv.appendChild(this._filterView);
 
     // Respond to events from the filter interface
     this._filterView.addEventListener("openedFilterDialog", () => {
@@ -55,12 +59,6 @@ class AnalyticsAnnotations extends TatorPage {
     });
 
     //
-    /* Card Gallery */
-    // Gallery of cards showing filter results
-    this._filterResults = document.createElement("annotations-gallery");
-    this.main.appendChild(this._filterResults);
-
-    //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
     this.aside.setAttribute("class", "entity-panel--container slide-close col-3")
@@ -69,8 +67,6 @@ class AnalyticsAnnotations extends TatorPage {
     // Gallery navigation panel
     this._panelContainer = document.createElement("entity-panel-container");
     this.aside.appendChild(this._panelContainer);
-
-
 
     //
     /* Other */
@@ -98,7 +94,6 @@ class AnalyticsAnnotations extends TatorPage {
       let settingsLock = this._settings.getAttribute("lock");
 
       if (settingsLock === "1") {
-        console.log("open the lock");
         this._settings._lock.unlock();
         this._panelContainer.setAttribute("permissionValue", "Can Edit");
       }
@@ -153,8 +148,8 @@ class AnalyticsAnnotations extends TatorPage {
           main: this.main, 
           aside: this.aside, 
           pageModal: this.modal, 
-          modelData: this._modelData 
-          // panelName: "Annotation" 
+          modelData: this._modelData,
+          gallery: this._filterResults 
         });
 
       // Pass panel and localization types to gallery

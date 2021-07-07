@@ -36,13 +36,6 @@ entity-gallery-aspect-ratio {
   }
 }
 
-.enitity-gallery__tools,
-.entity-gallery__paginator {
-  //background-color: $color-charcoal--light;
-  padding: $spacing-1;
-  margin: $spacing-1 0;
-}
-
 .entity-card {
   background-color: $color-charcoal--light;
   padding: 6px;
@@ -110,7 +103,7 @@ entity-gallery-aspect-ratio {
   transition: 500ms ease all;
   background: $color-charcoal--dark;
   //padding-left: 5px;
-  border-left: 10px solid $color-purple;
+  border-left: 5px solid $color-purple;
   -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   padding-bottom: 50px;
@@ -123,13 +116,13 @@ entity-gallery-aspect-ratio {
   // &::-webkit-scrollbar-thumb {
   //   background: $color-purple !important;
   // }
-  &.gray-panel {
-     border-left: 5px solid $color-charcoal--light;
+  // &.gray-panel {
+  //    border-left: 5px solid $color-charcoal--light;
 
-     .top-bar-arrow {
-       color: $color-charcoal--light;
-     }
-  }
+  //    .top-bar-arrow {
+  //      color: $color-charcoal--light;
+  //    }
+  // }
 
   &.slide-close {
     right: -23%;
@@ -202,6 +195,10 @@ collections-card {
 
   &:first-child{
     margin-left: 0;
+  }
+
+  &:hover {
+    border-color: $color-gray--light;
   }
 }
 
@@ -350,8 +347,6 @@ collections-card {
   }
 }
 
-
-
 .entity-gallery-tools--details.more {
   position: relative;
   box-shadow: none;
@@ -365,9 +360,19 @@ collections-card {
   position: absolute;
 }
 
-.entity-gallery-card__attribute {
-  border-right: 1px solid $color-gray--light;
-  &:last-child {
-    border-right: none;
+// .entity-gallery-card__attribute:not(.hidden) {
+//   border-right: 1px solid $color-gray--light;
+//   padding-right: $spacing-1;
+//   &:last-child {
+//     border-right: none;
+//     padding-right: 0;
+//   }
+// }
+
+.collections-gallery--main.col-9 {
+  .enitity-gallery-header.mr-6,
+  .enitity-gallery.mr-6,
+  .enitity-gallery_h-slide.mr-6 {
+    margin-right: $spacing-1;
   }
 }

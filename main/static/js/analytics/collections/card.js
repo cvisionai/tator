@@ -68,19 +68,22 @@ class CollectionsCard extends EntityCard {
     */
     if(obj.attributeOrder && obj.attributeOrder.length > 0){
       this.attributesDiv = document.createElement('div');
+      this.attributesDiv.setAttribute("class", ""); //d-flex flex-wrap
+      let firstShown = false;
       for(const attr of obj.attributeOrder){
         let attrStyleDiv = document.createElement("div");
         attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
         
         let attrLabel = document.createElement("span");
-        attrLabel.setAttribute("class", "f3");
+        attrLabel.setAttribute("class", "f3 text-gray text-normal");
         attrStyleDiv.appendChild(attrLabel);
 
         let key = attr.name
         if(typeof obj.attributes[key] !== "undefined"){
-          attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
+          attrLabel.appendChild( document.createTextNode(` ${obj.attributes[key]} `) );
         } else {
-          attrLabel.innerHTML = `<i class="text-gray text-normal">(${key} not set)</i>`;
+          attrLabel.appendChild( document.createTextNode(``) );
+          attrLabel.style.visibility = "hidden"; // keeps spacing
         }
 
         // add to the card & keep a list
@@ -88,7 +91,12 @@ class CollectionsCard extends EntityCard {
         this.attributeDivs[key].div = attrStyleDiv;
         this.attributeDivs[key].value = attrLabel;
 
-        attrStyleDiv.hidden =  attr.order == 0 ? false : true;
+        if(!firstShown && attr.order == 0){ 
+          firstShown = true;
+        } else {
+          attrStyleDiv.classList.add("hidden");
+        }
+        
 
         this.attributesDiv.appendChild(this.attributeDivs[key].div);
       }
@@ -109,16 +117,19 @@ class CollectionsCard extends EntityCard {
     let labelValues = evt.detail.value;
     
     // show selected
-    for (let key of labelValues) {
-      this.attributeDivs[key].div.hidden = false;
+    for (let key of this.attributeDivs) {
+      if(labelValues.includes(key)){
+        this.attributeDivs[key].div.classList.remove("hidden");
+      }
     }   
   }
 
   /**
    * Update Attribute Values
+   * - If side panel is edited the card needs to update attributes
    */
    _updateAttributes(evt) {
-     console.log(evt.detail);
+    console.log(evt.detail);
     // let attributes = evt.detail.value;
     // for (let attr of attributes) {
     //   console.log(attr);

@@ -12,6 +12,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._sliderContainer.appendChild(this.sliderList);
 
       // Filter toolbar
+      // * hook to add filter interface
       this._filterDiv = document.createElement("div");
       this._filterDiv.setAttribute("class", "analysis__filter py-3");
       

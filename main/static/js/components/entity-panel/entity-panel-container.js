@@ -13,9 +13,10 @@ class EntityPanelContainer extends TatorElement {
       this.el = null;
    }
 
-   init({ main, aside, pageModal, modelData }) {
+   init({ main, aside, pageModal, modelData, gallery }) {
       this.lside = main;
       this.rside = aside;
+      this.gallery = gallery;
 
       // listener to close panelContainer
       this._panelTop.init({ pageModal, modelData, panelContainer: this });
@@ -41,21 +42,34 @@ class EntityPanelContainer extends TatorElement {
 
    _toggleOpen() {
       this.rside.classList.remove("slide-close");
+      
       this.lside.classList.add("col-9");
       this.lside.classList.remove("col-12");
       this.lside.style.marginRight = "0";
+      
+      this.gallery._main.classList.remove("mr-6");
+      this.gallery._main.classList.add("mr-3");
+
       this._panelTop._topBarArrow.style.transform = "scaleX(1)";
       this.open = true;
+      
       return this.open;
    }
 
    _toggleShut() {
       this.lside.classList.add("col-12");
+      
       this.rside.classList.add("slide-close");
+      
       this.lside.classList.remove("col-9");
       this.lside.style.marginRight = "2%";
+
+      this.gallery._main.classList.add("mr-6");
+      this.gallery._main.classList.remove("mr-3");
+      
       this.open = false;
       this._panelTop._topBarArrow.style.transform = "scaleX(-1)";
+
       return this.open;
    }
 }

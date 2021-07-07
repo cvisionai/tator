@@ -112,7 +112,6 @@ class AnalyticsSettings extends TatorElement {
       this.setAttribute("page", searchParams.get("page"));
     }
     if (searchParams.has("lock")) {
-      console.log("Search params has lock with value : " + searchParams.get("lock"));
       this.setAttribute("lock", searchParams.get("lock"));
     }
     if (searchParams.has("selectedState")) {

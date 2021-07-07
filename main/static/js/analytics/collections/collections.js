@@ -110,8 +110,8 @@ class AnalyticsCollections extends TatorPage {
           main: this.main,
           aside: this.aside,
           pageModal: this.modal,
-          modelData: this._modelData
-          // panelName: "Entity"
+          modelData: this._modelData,
+          gallery: this._collectionsGallery 
         });
 
         // Pass panel and localization types to gallery
