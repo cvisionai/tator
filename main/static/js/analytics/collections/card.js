@@ -13,16 +13,17 @@ class CollectionsCard extends EntityCard {
 
     // prep this var
     this._tmpHidden = null;
-    this.attributeDivs = [];
+    this.attributeDivs = {};
     this._currentShownAttributes = "";
   }
   
 
-  init({obj, panelContainer, annotationPanelDiv}){
+  init({obj, panelContainer, annotationPanelDiv, cardLabelsChosen}){
     // console.log("collections card")
     // console.log(obj);
     this._styledDiv.classList.add("dark-card");
     this._styledDiv.classList.remove("py-2");
+
     // ID is title
     this._id_text.innerHTML = `ID: ${obj.id}`;
 
@@ -78,12 +79,13 @@ class CollectionsCard extends EntityCard {
         attrLabel.setAttribute("class", "f3 text-gray text-normal");
         attrStyleDiv.appendChild(attrLabel);
 
-        let key = attr.name
-        if(typeof obj.attributes[key] !== "undefined"){
-          attrLabel.appendChild( document.createTextNode(` ${obj.attributes[key]} `) );
+        let key = attr.name;
+        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key]){
+          attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
         } else {
-          attrLabel.appendChild( document.createTextNode(``) );
-          attrLabel.style.visibility = "hidden"; // keeps spacing
+          // attrLabel.innerHTML = "&nbsp;";
+          // attrLabel.style.visibility = "hidden"; // keeps spacing
+          attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
         }
 
         // add to the card & keep a list
@@ -91,14 +93,20 @@ class CollectionsCard extends EntityCard {
         this.attributeDivs[key].div = attrStyleDiv;
         this.attributeDivs[key].value = attrLabel;
 
-        if(!firstShown && attr.order == 0){ 
-          firstShown = true;
-        } else {
-          attrStyleDiv.classList.add("hidden");
-        }
-        
+        //console.log(key)
+        //console.log(cardLabelsChosen);
 
-        this.attributesDiv.appendChild(this.attributeDivs[key].div);
+        if(cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0){
+          console.log("Checking against list")
+          // If we have any preferences saved check against it
+          if(cardLabelsChosen.indexOf(key) > -1) {     
+            //console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
+          } else {
+            attrStyleDiv.classList.add("hidden");
+          }
+        }       
+
+        this.attributesDiv.appendChild(attrStyleDiv);
       }
 
       if(this.attributeDivs){       
@@ -112,31 +120,39 @@ class CollectionsCard extends EntityCard {
   /**
   * Custom label display update
   */
-  updateLabels(evt){
+  _updateShownAttributes(evt){
+    //console.log(evt);
+    //console.log(this.attributeDivs);
     let typeId = evt.detail.typeId;
     let labelValues = evt.detail.value;
     
-    // show selected
-    for (let key of this.attributeDivs) {
-      if(labelValues.includes(key)){
-        this.attributeDivs[key].div.classList.remove("hidden");
-      }
-    }   
+    if(this.attributeDivs){
+      // show selected
+      for (let [key, value] of Object.entries(this.attributeDivs)) {
+        //console.log(key);
+        if(labelValues.includes(key)){
+          value.div.classList.remove("hidden");
+        } else {
+          value.div.classList.add("hidden");
+        }
+      } 
+    }
   }
 
   /**
    * Update Attribute Values
    * - If side panel is edited the card needs to update attributes
    */
-   _updateAttributes(evt) {
-    console.log(evt.detail);
-    // let attributes = evt.detail.value;
-    // for (let attr of attributes) {
-    //   console.log(attr);
-    //   if(this.attributeDivs[attr]){
-    //     this.attributeDivs[attr].value.innerHTML = attr;
-    //   }   
-    // }
+   _updateAttributeValues(data) {
+     console.log(data);
+    for (let [attr, value] of Object.entries(data.attributes)) {
+      console.log(attr);
+      if(this.attributeDivs[attr] != null){
+        this.attributeDivs[attr].value.innerHTML = value;
+      } else {
+        attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+      }
+    }
   }
 
   /**

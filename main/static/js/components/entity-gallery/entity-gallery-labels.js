@@ -25,9 +25,9 @@ class EntityGalleryLabels extends TatorElement {
     this._shadow.appendChild(this.div);
 
     // Hide and showing the attribute div
-    let xClose = document.createElement("span");
-    xClose.setAttribute("class", "clickable float-right px-2 py-2");
-    xClose.innerHTML = "X";
+    let xClose = document.createElement("nav-close");
+    xClose.setAttribute("class", "float-right");
+    xClose.style.height = "40px";
     this.div.appendChild(xClose);
 
     // Listeners
@@ -42,29 +42,9 @@ class EntityGalleryLabels extends TatorElement {
 
     // Dont dupe the types
     this._shownTypes = {};
-  }
 
-  /*
-  */
-  makeListFrom(typeData) {
-    this.newList = [];
-    let tmpArray = [...typeData.attribute_types];
-
-    // Show array by order, or alpha
-    const sorted = tmpArray.sort((a, b) => {
-      return a.order - b.order || a.name - b.name;
-    });
-
-    // Create an array for checkbox set el
-    for (let attr of sorted) {
-      this.newList.push({
-        id: encodeURI(attr.name),
-        name: attr.name,
-        checked: false
-      });
-    }
-
-    return this.newList;
+    // Keep track of values by TypeId
+    this._selectionValues = {};
   }
 
   /**
@@ -72,7 +52,7 @@ class EntityGalleryLabels extends TatorElement {
    * @param {typeData} - object
    *
   */
-  async add({ typeData, hideTypeName = false }){
+  async add({ typeData, hideTypeName = false, checkedFirst = null }){
     let typeName = typeData.name ? typeData.name : "";
     if(this._shownTypes[typeName]) {
       // don't re-add this type...
@@ -88,12 +68,9 @@ class EntityGalleryLabels extends TatorElement {
     if(!hideTypeName){
       let _title = document.createElement("div");
       _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-2");
-      labelsMain.appendChild(_title);
-
-      
       _title.appendChild(document.createTextNode(`Labels for ${typeName}`));
+      labelsMain.appendChild(_title);
     }
-
 
     // Labels details with checkboxes
     let _labelDetails = document.createElement("div");
@@ -109,13 +86,15 @@ class EntityGalleryLabels extends TatorElement {
      * Label Choice
      */
     // If ok, create the checkbox list
-    const checkboxList = this.makeListFrom(typeData);
+    const checkboxList = this.makeListFrom(typeData, checkedFirst);
 
     const selectionBoxes = document.createElement("checkbox-set");
     selectionBoxes._colSize = "col-4 py-1 pr-2";
     selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-8");
-
     selectionBoxes.setValue(checkboxList);
+
+    // Save to refer to in get/set later
+    this._selectionValues[typeData.id] = selectionBoxes;
 
     // Append to main box
     styleDiv.appendChild(selectionBoxes);
@@ -133,6 +112,55 @@ class EntityGalleryLabels extends TatorElement {
     this.div.appendChild(labelsMain)
 
     return labelsMain;
+  }
+
+  _getValue(typeId){
+    return this._selectionValues[typeId].getValue();
+  }
+
+  _setValue({ typeId, values }){
+    // # assumes values are in the accepted format for checkbox set
+    //
+    let valuesList = this._getValue(typeId);
+    for(let box in valuesList){
+      if(values.contains(box.name)){
+        box.checked = true;
+      }
+    }
+    return this._selectionValues[typeId].setValue(valuesList);
+  }
+
+  /*
+   * Created a list based on attribute properties
+   * - sorts, then saves as Array
+   * - allows for "first checked" functionality #todo to use set in future
+   * - Array is usable by checkbox set which requires:
+   * - - @param id : string, attr.name
+   * - - @param name : string, attr.name
+   * - - @param checked : boolean
+  */
+  makeListFrom(typeData, checkedFirst) {
+    this.newList = [];
+    let tmpArray = [...typeData.attribute_types];
+
+    // Show array by order, or alpha
+    const sorted = tmpArray.sort((a, b) => {
+      return a.order - b.order || a.name - b.name;
+    });
+
+    // Create an array for checkbox set el
+    let checked = checkedFirst == null ? false : checkedFirst;
+    for (let attr of sorted) {
+      this.newList.push({
+        id: encodeURI(attr.name),
+        name: attr.name,
+        checked
+      });
+      
+      // reset checked - only check the first one
+      if(checked) checked = false;
+    }
+    return this.newList;
   }
 }
 

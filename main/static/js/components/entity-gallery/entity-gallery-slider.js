@@ -81,6 +81,9 @@ class EntityGallerySlider extends TatorElement {
       this.labelInit = false;
    }
 
+   /**
+    * Initialize slider with access to outer components and data
+    */
    init({
       panelContainer,
       pageModal,
@@ -96,9 +99,10 @@ class EntityGallerySlider extends TatorElement {
       this.pageModal = pageModal;
       this.slideCardData = slideCardData;
       this.state = state;
-      this.currentLabelValues;
+      this.currentLabelValues = currentLabelValues;
       this._sliderAttributeValues = attributes;
       this.gallery = gallery;
+      this.association = this.state.typeData.association;
 
       // Slider active listener
       this.addEventListener("slider-active", () => {
@@ -160,6 +164,7 @@ class EntityGallerySlider extends TatorElement {
                if(a1.name == attr){
                   this._displayAttributes({ attr });
                   foundValue = true;
+                  break;
                } 
             }
             if(!foundValue) {
@@ -177,21 +182,14 @@ class EntityGallerySlider extends TatorElement {
       }
    }
 
+   /**
+    * Dispay SLIDER Attributes
+    * Takes an attribute and creates a name: value pair for display
+    * Uses references saved at higher level to determine to hide/show
+    */
    _displayAttributes({ attr, value = true }){    
       let attributeLabel = document.createElement("div");
       attributeLabel.setAttribute("id", encodeURI(attr));
-
-      // reapply any label preferences
-      if (this.currentLabelValues && this.currentLabelValues[state.meta]) {
-         const currentLabels = this.currentLabelValues[state.meta];
-         this.showLabels(currentLabels);
-
-         if (this.currentLabels.length === 0 || !this.currentLabels.includes(attr)) {
-            attributeLabel.setAttribute("class", "hidden");
-         }
-      } else {
-         attributeLabel.setAttribute("class", "hidden");
-      }
 
       let seperator = document.createElement("span");
       seperator.setAttribute("class", "px-2");
@@ -201,7 +199,7 @@ class EntityGallerySlider extends TatorElement {
       seperator.appendChild(sep);
       
       let text = "";
-      if(value){
+      if(!value){
          text = document.createTextNode(`${attr}: `);
       } else {
          text = document.createTextNode(`${attr}: ${this._sliderAttributeValues[attr]}`);
@@ -210,6 +208,13 @@ class EntityGallerySlider extends TatorElement {
 
       this._labels.appendChild(attributeLabel);
       this.attributeLabelEls.push(attributeLabel);
+
+      // Apply preference to newly created Label
+      // Or default to hidden
+      const currentLabels = this.currentLabelValues[this.state.meta];
+      if (currentLabels && !currentLabels.includes(encodeURI(attr))) {
+         attributeLabel.setAttribute("class", "hidden");
+      }
    }
 
    static get observedAttributes() {
@@ -307,39 +312,44 @@ class EntityGallerySlider extends TatorElement {
    _addCard(index, cardObj, cardType) { 
       let newCard = false;
       let location = this._currentCardIndexes[cardObj.id];
-      let association = cardObj.stateType;
-      let entityType = (association == "Localization") ? cardObj.entityType : cardObj.mediaInfo.entityType;
 
       if (!location && typeof location == "undefined") {
          newCard = true;
-      }      
+      }
+      
+      /**
+      * Card labels / attributes of localization or media type
+      */
+      this.entityType = (this.association == "Localization") ? cardObj.entityType : cardObj.mediaInfo.entityType;
+      let typeId = this.entityType.id;
+      this._cardAtributeLabels.add({ 
+         typeData: this.entityType,
+         checkedFirst: true
+      });
+
+      this.gallery.cardLabelsChosenByType[typeId] = this._cardAtributeLabels._getValue(typeId);
+      
+      this._cardAtributeSort.add({ 
+         typeData: this.entityType
+      });
+      
+      this._cardLabelOptions = this.entityType.attribute_types;
+      this._cardLabelOptions.sort((a, b) => {
+         return a.order - b.order || a.name - b.name;
+      });
+
+
 
       let card;
       if (newCard) {
          // create a new card
          card = document.createElement(cardType);
 
-         /**
-         * Card labels / attributes of localization or media type
-         * #todo componentize (remove state refs)
-         */
-         if(!this.labelInit){
-            //only do this once, cards within slider share a type
-            this.labelInit = true;   
-            this._cardAtributeLabels.add({ 
-               typeData: entityType
-            });
-
-            // Setup label options
-            this._cardLabelOptions = entityType.attribute_types;
-            this._cardLabelOptions.sort((a, b) => {
-               return a.order - b.order || a.name - b.name;
-            });
-      
-         }
-
          this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
-            card.updateLabels(evt);
+            card._updateShownAttributes(evt);
+            this.gallery.cardLabelsChosenByType[typeId] =  evt.detail.value;
+            let msg = `Entry labels updated`;
+            Utilities.showSuccessIcon(msg);
          });
 
          // // Resize Tool needs to change style within card on change
@@ -421,12 +431,14 @@ class EntityGallerySlider extends TatorElement {
          }
          this._ul.appendChild(card);
 
+         this._cardElements.push(cardInfo);
+
          if (this._preloadedImages[cardObj.id]) {
             const image = this._preloadedImages[cardObj.id];
-            this._cardElements[index].card.setImage(image);
+            if(this._cardElements[index]){
+               this._cardElements[index].card.setImage(image);
+            }           
          }
-
-         this._cardElements.push(cardInfo);
 
       } else {
          card = this._cardElements[index].card;
@@ -442,11 +454,15 @@ class EntityGallerySlider extends TatorElement {
          cardObj
       });
 
+      
+      let cardLabelsChosen = this.gallery.cardLabelsChosenByType[typeId] ?  this.gallery.cardLabelsChosenByType[typeId] : [];
+
       // Initialize Card
       card.init({
          obj: cardObj,
          panelContainer: this.panelContainer,
-         annotationPanelDiv: this._cardElements[index].annotationPanelDiv
+         annotationPanelDiv: this._cardElements[index].annotationPanelDiv,
+         cardLabelsChosen
       });
 
       card.style.display = "block";
@@ -454,9 +470,9 @@ class EntityGallerySlider extends TatorElement {
    }
 
    showLabels(selectedLabels) {
-      //console.log(selectedLabels);
+      console.log(selectedLabels);
       for (let el of this.attributeLabelEls) {
-         //console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
+         console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
          if (selectedLabels.includes(el.id)) {
             el.classList.remove("hidden");
          } else {
@@ -476,21 +492,21 @@ class EntityGallerySlider extends TatorElement {
       }
    }
 
-   _updateLocalizationAttribute({ newValues }) {
-      for (let i = 0; i < this._cardElements.length; i++) {
-         let cardAttr = this._cardElements[i].card.cardObj.attributes;
-         cardAttr = newValues.attributes;
+   // _updateLocalizationAttribute({ newValues }) {
+   //    for (let i = 0; i < this._cardElements.length; i++) {
+   //       let cardAttr = this._cardElements[i].card.cardObj.attributes;
+   //       cardAttr = newValues.attributes;
 
-         for (let attrType of this.state.entityType.attribute_types) {
-            if (attrType.order == 0) {
-               if (cardAttr[attrType.name] != undefined) {
-                  this._cardElements[i].card._name.textContent = cardAttr[attrType.name];
-               }
-               break;
-            }
-         }
-      }
-   }
+   //       for (let attrType of this.state.entityType.attribute_types) {
+   //          if (attrType.order == 0) {
+   //             if (cardAttr[attrType.name] != undefined) {
+   //                this._cardElements[i].card._name.textContent = cardAttr[attrType.name];
+   //             }
+   //             break;
+   //          }
+   //       }
+   //    }
+   // }
 
    async _handleCardPagination(evt) {
       const start = evt.detail.start;
@@ -534,47 +550,44 @@ class EntityGallerySlider extends TatorElement {
    }
 
    updateCardData(newCardData) {
-      for (let s of this._sliderElements) {
-         if (newCardData.id in s._currentCardIndexes) {
-            const index = s._currentCardIndexes[newCardData.id];
-            const card = s._cardElements[index].card;
-            s._updateLocalizationAttribute(newCardData);
-         }
+      const index = this._currentCardIndexes[newCardData.id];
+      const card = this._cardElements[index].card;
+      //console.log(card);
+
+      if(card){
+         card._updateAttributeValues(newCardData);
       }
+      
    }
 
-   _cardSortUpdate(evt){
-      // go through all cards, and sort them..
-      let property = evt.detail.sortProperty;
-      let sortType = evt.detail.sortType;
+   // _cardSortUpdate(evt){
+   //    // go through all cards, and sort them..
+   //    let property = evt.detail.sortProperty;
+   //    let sortType = evt.detail.sortType;
 
-      if(evt.detail.sortType == "Ascending"){
-         return this._sortCardsAscending(property)
-      } else {
-         return this._sortCardsDescending(property);
-      }
-
-     
-   }
-
-   _sortCardsDescending(property){
-       // #todo handle pagination
-      this._cardElements.sort((el1, el2) => {
-         console.log(el1);
-         console.log(el2);
+   //    if(evt.detail.sortType){ // true is == "Ascending"
+   //           // #todo handle pagination
+   //    this._cardElements.sort((el1, el2) => {
+   //       console.log(el1);
+   //       console.log(el2);
          
-         return el2[property] - el1[property];
-      });
-   }
-   _sortCardsAscending(property){
-       // #todo handle pagination
-      this._cardElements.sort((el1, el2) => {
-         console.log(el1);
-         console.log(el2);
+   //       return el1[property] - el2[property];
+   //    });
+   //    } else {
          
-         return el1[property] - el2[property];
-      });
-   }
+   //       // #todo handle pagination
+   //       this._cardElements.sort((el1, el2) => {
+   //          console.log(el1);
+   //          console.log(el2);
+            
+   //          return el2[property] - el1[property];
+   //       });
+   //    }
+
+   //    let msg = `Entry sort complete`
+   //    Utilities.showSuccessIcon(msg);
+   // }
+
 }
 
 customElements.define("entity-gallery-slider", EntityGallerySlider);

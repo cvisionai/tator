@@ -361,11 +361,9 @@ collections-card {
 }
 
 // .entity-gallery-card__attribute:not(.hidden) {
-//   border-right: 1px solid $color-gray--light;
-//   padding-right: $spacing-1;
-//   &:last-child {
-//     border-right: none;
-//     padding-right: 0;
+//   &:first-child span:not(.text-italics) {
+//     font-weight: $weight-semibold;
+//     color: $color-white;
 //   }
 // }
 

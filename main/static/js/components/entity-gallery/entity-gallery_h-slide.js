@@ -4,15 +4,17 @@ class EntityCardSlideGallery extends TatorElement {
 
       // Gallery Container
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "enitity-gallery_h-slide ml-1 mr-6 pb-3 mt-3 rounded-1");
+      this._main.setAttribute("class", "enitity-gallery_h-slide ml-1 mr-6 pb-3 rounded-1");
       this._shadow.appendChild(this._main);
 
       // Gallery Heading
       this._h3 = document.createElement("div");
-      this._h3Text = document.createTextNode("Collections")
-      this._h3.appendChild(this._h3Text);
-      this._h3.setAttribute("class", "enitity-gallery__heading h3 mr-3");
+      this._h3.setAttribute("class", "project__header d-flex flex-items-center px-2");
       this._main.appendChild(this._h3);
+
+      this.h2 = document.createElement("h2");
+      this.h2.setAttribute("class", "h3 text-white");
+      this._h3.appendChild(this.h2);
 
       this._numFiles = document.createElement("span");
       this._numFiles.setAttribute("class", "text-gray text-normal px-2");
@@ -25,7 +27,8 @@ class EntityCardSlideGallery extends TatorElement {
 
       // // Gallery Pagination Bottom
       this._paginator_top = document.createElement("entity-gallery-paginator");
-      this._paginator_top.div.classList.add("py-1");
+      this._paginator_top.div.classList.add("mt-3");
+      this._paginator_top.div.classList.add("pb-2");
       this._paginator_top.pageSizeEl.hidden = true;
       this._paginator_top.pageSizeText.hidden = true;
       this._paginator_top.hidden = true;
@@ -33,7 +36,7 @@ class EntityCardSlideGallery extends TatorElement {
 
       // Gallery List is a list of sliders***
       this._sliderContainer = document.createElement("div");
-      this._sliderContainer.setAttribute("class", "enitity-gallery__slider-container mt-3 mb-2 rounded-1");
+      this._sliderContainer.setAttribute("class", "enitity-gallery__slider-container rounded-1");
       //this._sliderContainer.style.marginTop = "-22px";
       this._main.appendChild(this._sliderContainer);
 

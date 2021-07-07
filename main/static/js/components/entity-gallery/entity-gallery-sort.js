@@ -25,9 +25,9 @@ class EntityGallerySort extends TatorElement {
     this._shadow.appendChild(this.div);
 
     // Hide and showing the attribute div
-    let xClose = document.createElement("span");
-    xClose.setAttribute("class", "clickable float-right px-2 py-2");
-    xClose.innerHTML = "X";
+    let xClose = document.createElement("nav-close");
+    xClose.setAttribute("class", "float-right");
+    xClose.style.height = "40px";
     this.div.appendChild(xClose);
 
     // Listeners
@@ -41,30 +41,13 @@ class EntityGallerySort extends TatorElement {
 
     // Dont dupe the types
     this._shownTypes = {};
+
+    // Keep track of values by TypeId
+    this._selectionValues = {};
+    this._sortOrderValues = {};
   }
 
-  /*
-  */
-  makeListFrom(typeData) {
-    this.newList = [];
-    let tmpArray = [...typeData.attribute_types];
-
-    // Show array by order, or alpha
-    const sorted = tmpArray.sort((a, b) => {
-      return a.order - b.order || a.name - b.name;
-    });
-
-    // Create an array for checkbox set el
-    for (let attr of sorted) {
-      this.newList.push({
-        id: encodeURI(attr.name),
-        name: attr.name,
-        checked: false
-      });
-    }
-
-    return this.newList;
-  }
+ 
 
   /**
    * Add a section of labels to main label div
@@ -84,16 +67,6 @@ class EntityGallerySort extends TatorElement {
     let labelsMain = document.createElement("div");
     labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
-    if(!hideTypeName){
-      let _title = document.createElement("div");
-      _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-2");
-      labelsMain.appendChild(_title);
-
-      
-      _title.appendChild(document.createTextNode(`Sort ${typeName} By`));
-    }
-
-
     // Labels details with checkboxes
     let _labelDetails = document.createElement("div");
     _labelDetails.setAttribute("class", "float-right col-10");
@@ -111,22 +84,38 @@ class EntityGallerySort extends TatorElement {
     const labelsList = this.makeListFrom(typeData);
 
     const labelSelectionBox = document.createElement("enum-input");
-    labelSelectionBox.choices(labelsList);
+    labelSelectionBox.setAttribute("name", `Sort ${typeName} By`);
+    labelSelectionBox.choices = labelsList;
     styleDiv.appendChild(labelSelectionBox);
 
     const ascendingBool = document.createElement("bool-input");
-    this._enableDownloads.setAttribute("name", "Sort Order");
-    this._enableDownloads.setAttribute("on-text", "Asc");
-    this._enableDownloads.setAttribute("off-text", "Desc");
-    this._enableDownloads.setValue(true);
+    ascendingBool.setAttribute("name", "Sort Order");
+    ascendingBool.setAttribute("on-text", "Asc");
+    ascendingBool.setAttribute("off-text", "Desc");
+    ascendingBool.setValue(true);
     styleDiv.appendChild(ascendingBool);
+
+    this._selectionValues[typeData.id] = labelSelectionBox;
+    this._sortOrderValues[typeData.id] = ascendingBool;
 
     labelSelectionBox.addEventListener("change", (e) => {
       console.log("Update sort!");
       console.log(e);
       this.dispatchEvent(new CustomEvent("sort-update", { 
           detail: { 
-              value: e.target.getValue(),
+              sortType: this._getSortValue(typeData.id),
+              property: e.target.getValue(),
+              typeId: typeData.id
+            }
+        }));
+    });
+
+    ascendingBool.addEventListener("change", (e) => {
+      console.log("Update sort <order> !");
+      this.dispatchEvent(new CustomEvent("sort-update", { 
+          detail: { 
+              sortType: e.target.getValue(),
+              property: this._getValue(typeData.id),
               typeId: typeData.id
             }
         }));
@@ -135,6 +124,58 @@ class EntityGallerySort extends TatorElement {
     this.div.appendChild(labelsMain)
 
     return labelsMain;
+  }
+
+  _getValue(typeId){
+    return this._selectionValues[typeId].getValue();
+  }
+
+  _setValue({ typeId, values }){
+    // # assumes values are in the accepted format for checkbox set
+    //
+    let valuesList = this._getValue(typeId);
+    for(let box in valuesList){
+      if(values.contains(box.name)){
+        box.checked = true;
+      }
+    }
+    return this._selectionValues[typeId].setValue(valuesList);
+  }
+
+   _getSortValue(typeId){
+    return this._sortOrderValues[typeId].getValue();
+  }
+
+  _setSortValue({ typeId, value }){
+    return this._sortOrderValues[typeId].setValue(value);
+  }
+
+   /*
+  */
+  makeListFrom(typeData) {
+    this.newList = [];
+    let tmpArray = [...typeData.attribute_types];
+
+    // Show array by order, or alpha
+    const sorted = tmpArray.sort((a, b) => {
+      return a.order - b.order || a.name - b.name;
+    });
+
+    // Default sort is always by asc ID
+    this.newList.push({
+      value: "ID",
+      label: "ID"
+    });
+
+    // Create an array for checkbox set el
+    for (let attr of sorted) {
+      this.newList.push({
+        value: attr.name,
+        label: attr.name
+      });
+    }
+
+    return this.newList;
   }
 }
 
