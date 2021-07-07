@@ -255,6 +255,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider._cardAtributeSort = this._cardAtributeSort;
          sliderList.appendChild(slider);
 
+         // # todo some of above and below can be inferred from gallery
+         // # #todo labels and sort state part of collections data
          slider.init({
             panelContainer: this.panelContainer,
             pageModal: this.pageModal,
@@ -263,7 +265,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             cardType: "collections-card",
             attributes: state.attributes,
             state,
-            gallery: this
+            gallery: this 
          });
 
          slider.unshownCards = {};
@@ -543,42 +545,72 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
     _cardSortUpdate(evt){
-       for (let s of this._sliderElements) {
-         
-         // go through all cards, and sort them..
-         let property = evt.detail.sortProperty;
-         let sortType = evt.detail.sortType;
-         
+      // try{
+         for (let s of this._sliderElements) {
+            // go through all cards, and sort them..
+            let property = evt.detail.sortProperty;
+            let sortType = evt.detail.sortType;
+            console.log(`Sorting ${property} in Asc? ${sortType}`);
 
-         if(evt.detail.sortType){ // true is == "Ascending"
+            let ascCheck = (val1, val2) => {
+               if(val1 < val2) return 1;
+               if(val1 > val2) return -1;
+               return 0;
+            };
+
+            let dscCheck = (val1, val2) => {
+               if(val1 > val2) return 1;
+               if(val1 < val2) return -1;
+               return 0;
+            };
+
+            let fnCheck = sortType ? ascCheck : dscCheck;
+
             // #todo handle pagination
             s._cardElements.sort((el1, el2) => {
+               //console.log(el1.card.cardObj.attributes);
                let el1Value = "";
-               let el2Value
-               if(property !== "ID"){
-                  el1Value = el1.card.cardObj.attributes[property];
-                  el2Value = el2.card.cardObj.attributes[property];
-               } else {
+               let el2Value = "";
+               if(property !== "ID" ){
+                  //if(el1.card.cardObj.attributes != {}) {
+                  el1Value = typeof el1.card.cardObj.attributes[property] !=  undefined ? el1.card.cardObj.attributes[property] : "not set";
+                  el2Value = el2.card.cardObj.attributes[property] !=  undefined ? el2.card.cardObj.attributes[property] : "not set";
+                  //}
+               } else if(property == "ID") {
                   el1Value = el1.card.cardObj.id;
                   el2Value = el2.card.cardObj.id;
                }
                
-               if(el1Value > el2Value) return 1;
-               if(el1Value < el2Value) return -1;
-               return 0;
+               //console.log(`el1Value ${el1Value} > el2Value ${el2Value} ... ${el1Value > el2Value}`);
+               return fnCheck(el1Value, el2Value);
             });
-         } else {     
-            // #todo handle pagination
-            s._cardElements.sort((el1, el2) => {
-               return el2[property] - el1[property];
-            });
+            
+            // copy our new list
+            let newList = [];
+            for(let idx in s._cardElements){
+               newList.push(s._cardElements[idx]);
+            }
+
+            // clear gallery
+            s._cardElements = [];
+            s._currentCardIndexes = {}
+            s._ul.innerHTML = "";
+               
+            // add cards back
+            for(let idx in newList){
+               const cardInfo = { cardIndex: idx, cardData: newList[idx].card.cardObj, cardType: "collections-card" };
+               const cardNewOrder = new CustomEvent("new-card", {detail : cardInfo})
+               s.dispatchEvent(cardNewOrder);
+            }
+
+            let msg = `Entry sort complete`
+            Utilities.showSuccessIcon(msg);
          }
-
-         let msg = `Entry sort complete`
-         Utilities.showSuccessIcon(msg);
-      }
-    }
-
+      // } catch(e) {
+      //    let msg = `Entry sort error`
+      //    Utilities.warningAlert(msg, "#ff3e1d", false); 
+      // }
+   }
 }
 
 customElements.define("collections-gallery", CollectionsGallery);

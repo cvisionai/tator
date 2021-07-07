@@ -104,7 +104,7 @@ class EntityGallerySort extends TatorElement {
       this.dispatchEvent(new CustomEvent("sort-update", { 
           detail: { 
               sortType: this._getSortValue(typeData.id),
-              property: e.target.getValue(),
+              sortProperty: e.target.getValue(),
               typeId: typeData.id
             }
         }));
@@ -115,7 +115,7 @@ class EntityGallerySort extends TatorElement {
       this.dispatchEvent(new CustomEvent("sort-update", { 
           detail: { 
               sortType: e.target.getValue(),
-              property: this._getValue(typeData.id),
+              sortProperty: this._getValue(typeData.id),
               typeId: typeData.id
             }
         }));
