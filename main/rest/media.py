@@ -565,7 +565,6 @@ class MediaDetailAPI(BaseDetailView):
             _presign(presigned, response_data)
         return response_data[0]
 
-    @transaction.atomic
     def _patch(self, params):
         """ Update individual media.
 
