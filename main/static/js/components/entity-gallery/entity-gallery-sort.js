@@ -187,6 +187,10 @@ class EntityGallerySort extends TatorElement {
       return 0;
    };
 
+   getFnCheck(sortType){
+     return sortType ? this.ascCheck : this.dscCheck;
+   }
+
    _sortCards({cards, slider, fnCheck, property}){
      console.log(slider._cardElements[0].card.cardObj.id);
       cards.sort((el1, el2) => {
@@ -208,27 +212,6 @@ class EntityGallerySort extends TatorElement {
 
          return fnCheck(el1Value, el2Value);
       });
-
-      console.log(slider._cardElements[0].card.cardObj.id);
-
-      let total = cards.length;
-      for(let [idx, obj] of Object.entries(cards)){
-         // Update position text
-         let pos = Number(idx) + 1;
-         obj.card.posText = `${pos} of ${total}`;
-
-         // Get index of one and the other
-         let id = obj.card.cardObj.id;
-         slider._currentCardIndexes[id] = idx;
-
-         // Place them in those indexes in card array
-         slider._cardElements[idx] = obj;
-         console.log(obj);
-
-         // Add back in order and make sure visibility stays...
-         slider._ul.appendChild(obj.card);
-         obj.card.style.visibility = "visible";
-      }
 
       console.log(slider._cardElements[0].card.cardObj.id);
 

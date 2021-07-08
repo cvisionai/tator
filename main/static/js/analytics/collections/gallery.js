@@ -311,38 +311,18 @@ class CollectionsGallery extends EntityCardSlideGallery {
          const totalList = galleryList.length;
 
          // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
-         if (totalList > 0) {
-            // Otherwise, get the localizations & make cards with slideCard
+         if (totalList > 0) {        
+            // Get the localizations & make cards with slideCard
+            let cardsTmp = [];
+
             for (let id of galleryList) {
                if ((counter + 1) < this._previewCardCount) {
                   const cardInitData = { type: state.typeData.association, id };
                   const card = await this.slideCardData.makeCardList(cardInitData);
+                  card.counter = counter;
 
                   if (card) {
-                     if(this._cardAtributeLabels._selectionValues[state.typeData.id]){
-                       this._cardAtributeLabels._getValue(state.typeData.id);
-                     }
-                     card[0].posText = `${counter + 1} of ${totalList}`;
-                     card[0].stateType = state.typeData.association;
-                     card[0].stateInfo = {
-                        id: state.id,
-                        attributes: state.attributes,
-                        entityType: state.typeData,
-                        state: state
-                     }
-                     if( (Number(counter) + 1) === Number(totalList) ) {
-                        card[0].lastCard = true;
-                     } else {
-                        card[0].lastCard = false;
-                     }
-                     //states.cards.push(card);
-                     const detail = { detail: { cardData: card, cardIndex: counter } };
-                     // if ((counter + 1) < this._previewCardCount) {
-                     let newCardEvent = new CustomEvent('new-card', detail);
-                     slider.dispatchEvent(newCardEvent);
-                     // } else {
-                     //    slider.unshownCards.push(detail);
-                     // }
+                     cardsTmp.push(card);                     
                   }
                } else {
                   const cardInitData = { type: state.typeData.association, id, totalList };
@@ -351,7 +331,45 @@ class CollectionsGallery extends EntityCardSlideGallery {
                }
 
                counter++;
+            }
 
+            // This will dupe check if it already exists for this type, or add
+            let entityTypeData = cardsTmp[0][0].entityType;
+            this._cardAtributeSort.add({ 
+               typeData: entityTypeData
+            });
+
+            //Check if we want these sorted, sort before adding new cards
+            var sortProperty = this._cardAtributeSort._selectionValues[entityTypeData.id];
+            var sortOrder = this._cardAtributeSort._sortOrderValues[entityTypeData.id];
+            let usingDefault = false;
+            if(typeof sortProperty !== "undefined" && typeof sortOrder !== "undefined" && sortProperty.getValue() !== null && sortOrder.getValue() !== null){
+               usingDefault = (sortProperty.getValue() == "ID" && sortOrder.getValue() == "true");
+            } else {
+               usingDefault = null; // also means default, but bc nothing has been set yet
+            }
+
+            if(usingDefault != null && !usingDefault){
+               let order = sortOrder.getValue()
+               let fnCheck = this._cardAtributeSort.getFnCheck(order);
+               let prop = sortProperty.getValue();
+               console.log(`Not using default sort, applying saved sort... Asc ${sortOrder} on ${order}`)
+
+               cardsTmp.sort( (a,b) => {
+                  let aVal = a[0].attributes[prop];
+                  let bVal = b[0].attributes[prop];
+
+                  return fnCheck(aVal, bVal);
+               });
+
+               for(let [idx, obj] of Object.entries(cardsTmp)){
+                  // update counter used for card placement
+                  obj.counter = Number(idx);
+               }
+            }
+
+            for(let card of cardsTmp){
+               this._dispatchCardData({slider, card, counter: card.counter, totalList, state})
             }
 
             if (totalList <= this._previewCardCount) {
@@ -361,63 +379,87 @@ class CollectionsGallery extends EntityCardSlideGallery {
                //}
             } else {
                slider.loadAllTeaser.remove();
+               this._setupSliderPgn();
 
-               // setup navigation within this slider
-               let topNav = document.createElement("entity-gallery-paginator");
-               let bottomNav = document.createElement("entity-gallery-paginator");
-               slider._cardPaginationState = {
-                  page: 1,
-                  start: 0,
-                  stop: 10,
-                  pgsize: 10
-               };
-
-               topNav.init(totalList, slider._cardPaginationState);
-
-               bottomNav.init(totalList, slider._cardPaginationState);
-
-               topNav.pageSizeEl.hidden = true;
-               topNav.pageSizeText.hidden = true;
-               topNav.goToPage.hidden = true;
-               topNav.goToPageText.hidden = true;
-
-               bottomNav.pageSizeEl.hidden = true;
-               bottomNav.pageSizeText.hidden = true;
-               bottomNav.goToPage.hidden = true;
-               bottomNav.goToPageText.hidden = true;
-
-               // # todo need to stop last event before this one
-               slider._cancelLoading = false;
-               topNav.addEventListener("selectPage", (evt) => {
-                  evt.stopPropagation();
-                  slider._handleCardPagination(evt);
-                  let paginationState = {
-                     page: evt.detail.page,
-                     start: evt.detail.start,
-                     stop: evt.detail.stop,
-                     pageSize: evt.detail.pageSize
-                  };
-                  topNav.setValues(paginationState);
-                  bottomNav.setValues(paginationState);
-               });
-               bottomNav.addEventListener("selectPage", (evt) => {
-                  evt.stopPropagation();
-                  slider._handleCardPagination(evt);
-                  let paginationState = {
-                     page: evt.detail.page,
-                     start: evt.detail.start,
-                     stop: evt.detail.stop,
-                     pageSize: evt.detail.pageSize
-                  };
-                  topNav.setValues(paginationState);
-                  bottomNav.setValues(paginationState);
-               });
-
-               slider._topNav.appendChild(topNav);
-               slider._bottomNav.appendChild(bottomNav);
             }
          }
       }
+   }
+
+   _dispatchCardData({slider, card, counter, totalList, state}){
+      card[0].posText = `${counter + 1} of ${totalList}`;
+      card[0].stateType = state.typeData.association;
+      card[0].stateInfo = {
+         id: state.id,
+         attributes: state.attributes,
+         entityType: state.typeData,
+         state: state
+      }
+
+      //states.cards.push(card);
+      const detail = { detail: { cardData: card, cardIndex: counter } };
+      // if ((counter + 1) < this._previewCardCount) {
+      let newCardEvent = new CustomEvent('new-card', detail);
+      slider.dispatchEvent(newCardEvent);
+      // } else {
+      //    slider.unshownCards.push(detail);
+      // }
+   }
+
+   _setupSliderPgn({slider, totalList}){
+      // setup navigation within this slider
+      let topNav = document.createElement("entity-gallery-paginator");
+      let bottomNav = document.createElement("entity-gallery-paginator");
+      slider._cardPaginationState = {
+         page: 1,
+         start: 0,
+         stop: 10,
+         pgsize: 10
+      };
+
+      topNav.init(totalList, slider._cardPaginationState);
+      bottomNav.init(totalList, slider._cardPaginationState);
+
+      // Init Values for nav
+      topNav.pageSizeEl.hidden = true;
+      topNav.pageSizeText.hidden = true;
+      topNav.goToPage.hidden = true;
+      topNav.goToPageText.hidden = true;
+
+      bottomNav.pageSizeEl.hidden = true;
+      bottomNav.pageSizeText.hidden = true;
+      bottomNav.goToPage.hidden = true;
+      bottomNav.goToPageText.hidden = true;
+
+      // # todo need to stop last event before this one
+      slider._cancelLoading = false;
+      topNav.addEventListener("selectPage", (evt) => {
+         evt.stopPropagation();
+         slider._handleCardPagination(evt);
+         let paginationState = {
+            page: evt.detail.page,
+            start: evt.detail.start,
+            stop: evt.detail.stop,
+            pageSize: evt.detail.pageSize
+         };
+         topNav.setValues(paginationState);
+         bottomNav.setValues(paginationState);
+      });
+      bottomNav.addEventListener("selectPage", (evt) => {
+         evt.stopPropagation();
+         slider._handleCardPagination(evt);
+         let paginationState = {
+            page: evt.detail.page,
+            start: evt.detail.start,
+            stop: evt.detail.stop,
+            pageSize: evt.detail.pageSize
+         };
+         topNav.setValues(paginationState);
+         bottomNav.setValues(paginationState);
+      });
+
+      slider._topNav.appendChild(topNav);
+      slider._bottomNav.appendChild(bottomNav);
    }
 
    async _addNextUnshownCard(slider) {
@@ -457,7 +499,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          values: { attributes: e.detail.values },
          type: "Localization"
       }).then((data) => {   
-         console.log("Localization form change.....") 
+         //console.log("Localization form change.....") 
          for (let s of this._sliderElements) {
             if(s.state.typeData.association == "Localization"){
                s.updateCardData(data);
@@ -494,7 +536,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
       type: "Media"
     }).then(() => {
       for (let s of this._sliderElements) {
-         console.log(s.state);
          if(s.state.typeData.association == "Media"){
             s.updateCardData(data);
          }
@@ -552,7 +593,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
     _cardSortUpdate(evt){
       let property = evt.detail.sortProperty;
       let sortType = evt.detail.sortType;
-      console.log(`Sorting ${property} in Asc? ${sortType}`);
+      //console.log(`Sorting ${property} in Asc? ${sortType}`);
 
       try{
          for (let s of this._sliderElements) {
@@ -560,18 +601,23 @@ class CollectionsGallery extends EntityCardSlideGallery {
             let fnCheck = sortType ? this._cardAtributeSort.ascCheck : this._cardAtributeSort.dscCheck;
 
             // #todo handle pagination
-            this._cardAtributeSort._sortCards({ 
+            let cards = this._cardAtributeSort._sortCards({ 
                cards: s._cardElements, 
                slider: s, 
                fnCheck, 
                property
             });
 
-            let msg = `Entry sort complete`
-            Utilities.showSuccessIcon(msg);
+            // #todo look into reuse of slider.makeCards
+            s.updateCardOrder(cards);
+            
          }
+
+         let msg = `Entry sort complete`
+         Utilities.showSuccessIcon(msg);
       } catch(e) {
-         let msg = `Entry sort error`
+         let msg = `Entry sort error`;
+         console.log(e);
          Utilities.warningAlert(msg, "#ff3e1d", false); 
       }
    }
