@@ -25,7 +25,7 @@ from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
 from .views import AnalyticsDashboardView
-from .views import AnalyticsAnnotationsView
+from .views import AnalyticsLocalizationsView
 from .views import AnalyticsCollectionsView
 from .views import AnalyticsVisualizationView
 from .views import AnalyticsReportsView
@@ -50,8 +50,8 @@ urlpatterns = [
          AccountProfileView.as_view(), name='account-profile'),
     path('<int:project_id>/analytics/',
          AnalyticsDashboardView.as_view(), name='analytics-dashboard'),
-    path('<int:project_id>/analytics/annotations',
-         AnalyticsAnnotationsView.as_view(), name='analytics-annotations'),
+    path('<int:project_id>/analytics/localizations',
+         AnalyticsLocalizationsView.as_view(), name='analytics-localizations'),
     path('<int:project_id>/analytics/collections',
          AnalyticsCollectionsView.as_view(), name='analytics-collections'),
     path('<int:project_id>/analytics/visualization',

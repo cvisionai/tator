@@ -420,11 +420,11 @@ FILES = \
     analytics/analytics-breadcrumbs.js \
     analytics/analytics-settings.js \
     analytics/dashboard/dashboard.js \
-    analytics/annotations/card.js \
-    analytics/annotations/gallery.js \
-    analytics/annotations/panel-data.js \
-    analytics/annotations/card-data.js \
-    analytics/annotations/annotations.js \
+    analytics/localizations/card.js \
+    analytics/localizations/gallery.js \
+    analytics/localizations/panel-data.js \
+    analytics/localizations/card-data.js \
+    analytics/localizations/localizations.js \
     analytics/collections/slide-data.js \
     analytics/collections/card.js \
     analytics/collections/gallery.js \

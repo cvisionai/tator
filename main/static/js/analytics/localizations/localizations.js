@@ -1,7 +1,7 @@
 /**
  * Page that displays a grid view of selected annotations
  */
-class AnalyticsAnnotations extends TatorPage {
+class AnalyticsLocalizations extends TatorPage {
   constructor() {
     super();
 
@@ -20,7 +20,7 @@ class AnalyticsAnnotations extends TatorPage {
 
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
     div.appendChild(this._breadcrumbs);
-    this._breadcrumbs.setAttribute("analytics-name", "Annotation Gallery");
+    this._breadcrumbs.setAttribute("analytics-name", "Localization Gallery");
 
     this._settings = document.createElement("analytics-settings");
     this._settings.style.marginLeft = "50px";
@@ -281,4 +281,4 @@ class AnalyticsAnnotations extends TatorPage {
   }
 }
 
-customElements.define("analytics-annotations", AnalyticsAnnotations);
+customElements.define("analytics-localizations", AnalyticsLocalizations);
