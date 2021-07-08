@@ -405,6 +405,7 @@ FILES = \
     annotation/entity-redraw-button.js \
     annotation/entity-frame-button.js \
     annotation/entity-track-button.js \
+    annotation/entity-detection-button.js \
     annotation/entity-more.js \
     annotation/entity-selector.js \
     annotation/annotation-browser.js \
