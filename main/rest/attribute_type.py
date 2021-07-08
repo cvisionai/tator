@@ -1,5 +1,6 @@
 from typing import Dict
 from django.db import transaction
+import logging
 
 from ..models import (
     MediaType,
@@ -24,6 +25,7 @@ from ._attributes import (
 )
 from ._permissions import ProjectFullControlPermission
 
+logger = logging.getLogger(__name__)
 
 ENTITY_TYPES = {
     "MediaType": (MediaType, Media),
@@ -75,7 +77,7 @@ class AttributeTypeListAPI(BaseListView):
         """
         parent_id = params["id"]
         models = AttributeTypeListAPI._get_models(params["entity_type"])
-        entity_type = models[0].objects.select_for_update().get(pk=parent_id)
+        entity_type = models[0].objects.select_for_update(nowait=True).get(pk=parent_id)
         model = models[1]
         obj_qs = model.objects.filter(meta=parent_id)
         return entity_type, obj_qs
@@ -101,7 +103,8 @@ class AttributeTypeListAPI(BaseListView):
                     and instance.id not in id_set
                 ):
                     id_set.add(instance.id)
-                    objects.append((instance, entity.objects.select_for_update().filter(meta=instance.id)))
+                    objects.append((instance, entity.objects.select_for_update(nowait=True)\
+                                                            .filter(meta=instance.id)))
 
         return objects
 
