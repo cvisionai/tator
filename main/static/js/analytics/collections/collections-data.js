@@ -54,7 +54,6 @@ class CollectionsData extends HTMLElement {
    *   getState
    */
   async updateData(filterConditions) {
-
     if (this._needReload(filterConditions)) {
       await this._reload(filterConditions);
     }

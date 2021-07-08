@@ -155,6 +155,10 @@ class CollectionsCard extends EntityCard {
     }
   }
 
+  set posText(val){
+    this.setAttribute("pos-text", val);
+  }
+
   /**
    * Set the card's main image thumbnail
    * @param {image} image

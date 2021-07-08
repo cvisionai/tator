@@ -112,6 +112,7 @@ class EntityGallerySlider extends TatorElement {
 
          // Go to selected card
          for (let idx = 0; idx < this._cardElements.length; idx++) {
+            console.log(this._cardElements[idx]);
             let listEl = this._cardElements[idx].card._li;
             if (listEl.classList.contains("is-selected")) {
                return false;
@@ -345,13 +346,6 @@ class EntityGallerySlider extends TatorElement {
          // create a new card
          card = document.createElement(cardType);
 
-         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
-            card._updateShownAttributes(evt);
-            this.gallery.cardLabelsChosenByType[typeId] =  evt.detail.value;
-            let msg = `Entry labels updated`;
-            Utilities.showSuccessIcon(msg);
-         });
-
          // // Resize Tool needs to change style within card on change
          card.style.width = "272px";
          // this._resizeCards._slideInput.addEventListener("change", (evt) => {
@@ -390,6 +384,13 @@ class EntityGallerySlider extends TatorElement {
             annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
          });
 
+         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+            card._updateShownAttributes(evt);
+            this.gallery.cardLabelsChosenByType[typeId] =  evt.detail.value;
+            let msg = `Entry labels updated`;
+            Utilities.showSuccessIcon(msg);
+         });
+
          // Update view unselected card panel
          annotationPanelDiv.addEventListener("unselected", () => {
             card._li.classList.remove("is-selected");
@@ -419,7 +420,6 @@ class EntityGallerySlider extends TatorElement {
             annotationPanelDiv: annotationPanelDiv
          };
 
-
          if (cardObj.image) {
             annotationPanel.localizationType = false;
             annotationPanel.setImage(cardObj.image);
@@ -445,7 +445,6 @@ class EntityGallerySlider extends TatorElement {
       }
 
       cardObj.attributeOrder = this._cardLabelOptions;
-
       this._currentCardIndexes[cardObj.id] = index;
 
       // Initialize the card panel
@@ -454,23 +453,46 @@ class EntityGallerySlider extends TatorElement {
          cardObj
       });
 
-      
-      let cardLabelsChosen = this.gallery.cardLabelsChosenByType[typeId] ?  this.gallery.cardLabelsChosenByType[typeId] : [];
-
       // Initialize Card
       card.init({
          obj: cardObj,
          panelContainer: this.panelContainer,
          annotationPanelDiv: this._cardElements[index].annotationPanelDiv,
-         cardLabelsChosen
+         cardLabelsChosen: this.gallery.cardLabelsChosenByType[typeId] ?  this.gallery.cardLabelsChosenByType[typeId] : []
       });
 
       card.style.display = "block";
       this.numberOfDisplayedCards += 1;
+
+      /* Sort Check */
+      if(cardObj.lastCard === true){
+         console.log("Last card, checking sort....." + cardObj.id);
+         // The last card for this slider is there
+         // Check for sort
+         let property = this._cardAtributeSort._selectionValues[typeId];
+         let sortOrder = this._cardAtributeSort._sortOrderValues[typeId];
+         console.log(property);
+         console.log(sortOrder);
+         if(typeof property !== "undefined" && typeof sortOrder !== "undefined" 
+               && property.getValue() !== null && sortOrder.getValue() !== null){
+
+            let usingDefault = (property.getValue() == "ID" && sortOrder.getValue() == "true");
+            console.log("Property and sort found value is....." + property.getValue() + " " + sortOrder.getValue());
+            if(!usingDefault) {
+               this._cardAtributeSort._sortCards({
+                  cards: this._cardElements, 
+                  slider: this, 
+                  fnCheck: sortOrder.getValue() ? this._cardAtributeSort.ascCheck :  this._cardAtributeSort.dscCheck,
+                  property: property.getValue()
+               });
+            } else {
+               console.log("Using default sort, no probs.");
+            }
+         }
+      }
    }
 
    showLabels(selectedLabels) {
-      console.log(selectedLabels);
       for (let el of this.attributeLabelEls) {
          console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
          if (selectedLabels.includes(el.id)) {
@@ -491,22 +513,6 @@ class EntityGallerySlider extends TatorElement {
          }
       }
    }
-
-   // _updateLocalizationAttribute({ newValues }) {
-   //    for (let i = 0; i < this._cardElements.length; i++) {
-   //       let cardAttr = this._cardElements[i].card.cardObj.attributes;
-   //       cardAttr = newValues.attributes;
-
-   //       for (let attrType of this.state.entityType.attribute_types) {
-   //          if (attrType.order == 0) {
-   //             if (cardAttr[attrType.name] != undefined) {
-   //                this._cardElements[i].card._name.textContent = cardAttr[attrType.name];
-   //             }
-   //             break;
-   //          }
-   //       }
-   //    }
-   // }
 
    async _handleCardPagination(evt) {
       const start = evt.detail.start;
@@ -559,34 +565,6 @@ class EntityGallerySlider extends TatorElement {
       }
       
    }
-
-   // _cardSortUpdate(evt){
-   //    // go through all cards, and sort them..
-   //    let property = evt.detail.sortProperty;
-   //    let sortType = evt.detail.sortType;
-
-   //    if(evt.detail.sortType){ // true is == "Ascending"
-   //           // #todo handle pagination
-   //    this._cardElements.sort((el1, el2) => {
-   //       console.log(el1);
-   //       console.log(el2);
-         
-   //       return el1[property] - el2[property];
-   //    });
-   //    } else {
-         
-   //       // #todo handle pagination
-   //       this._cardElements.sort((el1, el2) => {
-   //          console.log(el1);
-   //          console.log(el2);
-            
-   //          return el2[property] - el1[property];
-   //       });
-   //    }
-
-   //    let msg = `Entry sort complete`
-   //    Utilities.showSuccessIcon(msg);
-   // }
 
 }
 

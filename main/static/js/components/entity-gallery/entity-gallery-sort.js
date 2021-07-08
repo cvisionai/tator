@@ -99,8 +99,6 @@ class EntityGallerySort extends TatorElement {
     this._sortOrderValues[typeData.id] = ascendingBool;
 
     labelSelectionBox.addEventListener("change", (e) => {
-      console.log("Update sort!");
-      console.log(e);
       this.dispatchEvent(new CustomEvent("sort-update", { 
           detail: { 
               sortType: this._getSortValue(typeData.id),
@@ -111,7 +109,6 @@ class EntityGallerySort extends TatorElement {
     });
 
     ascendingBool.addEventListener("change", (e) => {
-      console.log("Update sort <order> !");
       this.dispatchEvent(new CustomEvent("sort-update", { 
           detail: { 
               sortType: e.target.getValue(),
@@ -177,6 +174,66 @@ class EntityGallerySort extends TatorElement {
 
     return this.newList;
   }
+
+  ascCheck(val1, val2) {
+      if(val1 > val2) return 1;
+      if(val1 < val2) return -1;
+      return 0;
+   };
+
+   dscCheck(val1, val2) {
+      if(val1 < val2) return 1;
+      if(val1 > val2) return -1;
+      return 0;
+   };
+
+   _sortCards({cards, slider, fnCheck, property}){
+     console.log(slider._cardElements[0].card.cardObj.id);
+      cards.sort((el1, el2) => {
+         //console.log(el1.card.cardObj.attributes);
+         let el1Value = "";
+         let el2Value = "";
+         let el1Id = el1.card.cardObj.id;
+         let el2Id = el2.card.cardObj.id;
+
+         if(property !== "ID" ){
+            //if(el1.card.cardObj.attributes != {}) {
+            el1Value = typeof el1.card.cardObj.attributes[property] !=  undefined ? el1.card.cardObj.attributes[property] : "not set";
+            el2Value = el2.card.cardObj.attributes[property] !=  undefined ? el2.card.cardObj.attributes[property] : "not set";
+            //}
+         } else if(property == "ID") {
+            el1Value = el1Id;
+            el2Value = el2Id;
+         }
+
+         return fnCheck(el1Value, el2Value);
+      });
+
+      console.log(slider._cardElements[0].card.cardObj.id);
+
+      let total = cards.length;
+      for(let [idx, obj] of Object.entries(cards)){
+         // Update position text
+         let pos = Number(idx) + 1;
+         obj.card.posText = `${pos} of ${total}`;
+
+         // Get index of one and the other
+         let id = obj.card.cardObj.id;
+         slider._currentCardIndexes[id] = idx;
+
+         // Place them in those indexes in card array
+         slider._cardElements[idx] = obj;
+         console.log(obj);
+
+         // Add back in order and make sure visibility stays...
+         slider._ul.appendChild(obj.card);
+         obj.card.style.visibility = "visible";
+      }
+
+      console.log(slider._cardElements[0].card.cardObj.id);
+
+      return cards;
+   }
 }
 
 customElements.define("entity-gallery-sort", EntityGallerySort);
