@@ -695,13 +695,21 @@ class TatorSearch:
             ids = ids[:count]
             self.es.clear_scroll(scroll_id=scroll_id)
         else:
-            # TODO: This will NOT return the requested number of results if there are
-            # duplicates in the dataset.
             result = self.search_raw(project, query)
             result = result['hits']
             data = result['hits']
             count = result['total']['value']
             ids = drop_dupes([int(obj['_id'].split('_')[1]) & id_mask for obj in data])
+            if len(ids) != count:
+                # We must have dupes + pagination. Do the search again without pagination, 
+                # and return a slice.
+                offset = query.get('from', 0)
+                limit = query.get('size', 10000)
+                query['size'] = 10000
+                query['from'] = 0
+                ids, count = self.search(project, query)
+                ids = ids[offset:(offset+limit)]
+                count = len(ids)
         return ids, count
 
     def count(self, project, query):
