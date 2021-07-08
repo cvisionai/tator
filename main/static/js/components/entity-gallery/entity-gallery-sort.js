@@ -192,7 +192,7 @@ class EntityGallerySort extends TatorElement {
    }
 
    _sortCards({cards, slider, fnCheck, property}){
-     console.log(slider._cardElements[0].card.cardObj.id);
+    //  console.log(slider._cardElements[0].card.cardObj.id);
       cards.sort((el1, el2) => {
          //console.log(el1.card.cardObj.attributes);
          let el1Value = "";
@@ -213,7 +213,7 @@ class EntityGallerySort extends TatorElement {
          return fnCheck(el1Value, el2Value);
       });
 
-      console.log(slider._cardElements[0].card.cardObj.id);
+      // console.log(slider._cardElements[0].card.cardObj.id);
 
       return cards;
    }

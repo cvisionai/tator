@@ -80,7 +80,7 @@ class CollectionsCard extends EntityCard {
         attrStyleDiv.appendChild(attrLabel);
 
         let key = attr.name;
-        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key]){
+        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null){
           attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
         } else {
           // attrLabel.innerHTML = "&nbsp;";
@@ -97,7 +97,6 @@ class CollectionsCard extends EntityCard {
         //console.log(cardLabelsChosen);
 
         if(cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0){
-          console.log("Checking against list")
           // If we have any preferences saved check against it
           if(cardLabelsChosen.indexOf(key) > -1) {     
             //console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
@@ -144,9 +143,9 @@ class CollectionsCard extends EntityCard {
    * - If side panel is edited the card needs to update attributes
    */
    _updateAttributeValues(data) {
-     console.log(data);
+     //console.log(data);
     for (let [attr, value] of Object.entries(data.attributes)) {
-      console.log(attr);
+      //console.log(attr);
       if(this.attributeDivs[attr] != null){
         this.attributeDivs[attr].value.innerHTML = value;
       } else {
@@ -224,7 +223,7 @@ class CollectionsCard extends EntityCard {
 
   togglePanel(e){
     e.preventDefault();
-    console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
+    //console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
     // If they click while in preview, don't do this
     // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
     // if(isInPreview) {

@@ -342,18 +342,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
             //Check if we want these sorted, sort before adding new cards
             var sortProperty = this._cardAtributeSort._selectionValues[entityTypeData.id];
             var sortOrder = this._cardAtributeSort._sortOrderValues[entityTypeData.id];
-            let usingDefault = false;
-            if(typeof sortProperty !== "undefined" && typeof sortOrder !== "undefined" && sortProperty.getValue() !== null && sortOrder.getValue() !== null){
-               usingDefault = (sortProperty.getValue() == "ID" && sortOrder.getValue() == "true");
-            } else {
-               usingDefault = null; // also means default, but bc nothing has been set yet
-            }
 
-            if(usingDefault != null && !usingDefault){
-               let order = sortOrder.getValue()
-               let fnCheck = this._cardAtributeSort.getFnCheck(order);
-               let prop = sortProperty.getValue();
-               console.log(`Not using default sort, applying saved sort... Asc ${sortOrder} on ${order}`)
+            let order = sortOrder.getValue()
+            let fnCheck = this._cardAtributeSort.getFnCheck(order);
+            let prop = sortProperty.getValue();
+            if(!(order == "true" && prop == "ID")){
+               console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
 
                cardsTmp.sort( (a,b) => {
                   let aVal = a[0].attributes[prop];
