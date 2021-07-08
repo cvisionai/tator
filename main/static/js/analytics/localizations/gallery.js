@@ -21,7 +21,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     this._name = document.createElement("h2");
     this._name.setAttribute("class", "h3 text-white"); //not a typo
-    this._name.textContent = "Annotations";
+    this._name.textContent = "Localizations";
     header.appendChild(this._name);
 
     this._numFiles = document.createElement("span");
