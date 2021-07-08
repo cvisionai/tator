@@ -80,7 +80,7 @@ class CollectionsCard extends EntityCard {
         attrStyleDiv.appendChild(attrLabel);
 
         let key = attr.name;
-        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null){
+        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== ""){
           attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
         } else {
           // attrLabel.innerHTML = "&nbsp;";
