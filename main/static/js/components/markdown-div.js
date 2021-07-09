@@ -14,7 +14,7 @@ class MarkdownDiv extends HTMLElement {
     const linkRenderer = renderer.link;
     renderer.link = (href, title, text) => {
         const html = linkRenderer.call(renderer, href, title, text);
-        return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+        return html.replace(/^<a /, '<a target="_blank" rel="nofollow" style="color:#a2afcd"');
     };
     this._div.innerHTML = marked(text, { renderer });
   }
