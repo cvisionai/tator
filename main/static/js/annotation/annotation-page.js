@@ -32,6 +32,16 @@ class AnnotationPage extends TatorPage {
     settingsDiv.setAttribute("class", "d-flex");
     header.appendChild(settingsDiv);
 
+    this._lightSpacer = document.createElement("span");
+    this._lightSpacer.style.width = "32px";
+    settingsDiv.appendChild(this._lightSpacer);
+
+    this._success = document.createElement("success-light");
+    this._lightSpacer.appendChild(this._success);
+
+    this._warning = document.createElement("warning-light");
+    this._lightSpacer.appendChild(this._warning);
+
     this._versionButton = document.createElement("version-button");
     settingsDiv.appendChild(this._versionButton);
 
