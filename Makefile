@@ -321,6 +321,7 @@ FILES = \
     project-detail/new-algorithm-form.js \
     project-detail/project-detail.js \
     components/loading-spinner.js \
+    project-settings/settings-breadcrumbs.js \
     project-settings/type-form-validation.js \
     project-settings/settings-input-helpers.js \
     project-settings/settings-box-helpers.js \
