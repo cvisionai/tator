@@ -213,30 +213,26 @@ class AnnotationsGallery extends EntityCardGallery {
         };
         this._cardElements.push(cardInfo);
 
+        // Initialize the card panel
+        this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+        this._cardElements[index].annotationPanel.init({ cardObj });
+
+        // Initialize Card
+        card.init({
+          obj : cardObj, 
+          panelContainer : this.panelContainer, 
+          annotationPanelDiv : this._cardElements[index].annotationPanelDiv
+        });
+
+        this._currentCardIndexes[cardObj.id] = index;
+
+        this._ul.appendChild(card);
       } else {
         card = this._cardElements[index].card;
       }
-      
-      this._currentCardIndexes[cardObj.id] = index;   
-
-      // Initialize the card panel
-      this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this._cardElements[index].annotationPanel.init({ cardObj });
-      
-      // Initialize Card
-      card.init({
-        obj : cardObj, 
-        panelContainer : this.panelContainer, 
-        annotationPanelDiv : this._cardElements[index].annotationPanelDiv
-      });
-
+    
       card.style.display = "block";
       numberOfDisplayedCards += 1;
-
-      // Add new card to the gallery div
-      if (newCard) {
-        this._ul.appendChild(card);
-      }
     }
 
     // Hide unused cards
@@ -257,7 +253,6 @@ class AnnotationsGallery extends EntityCardGallery {
       });
     }
   }
-
 
   entityFormChange(e) {
     this.formChange({

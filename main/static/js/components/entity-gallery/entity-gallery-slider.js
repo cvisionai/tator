@@ -436,26 +436,26 @@ class EntityGallerySlider extends TatorElement {
             }           
          }
 
+         cardObj.attributeOrder = this._cardLabelOptions;
+         this._currentCardIndexes[cardObj.id] = index;
+
+         // Initialize the card panel
+         this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+         this._cardElements[index].annotationPanel.init({
+            cardObj
+         });
+
+         // Initialize Card
+         card.init({
+            obj: cardObj,
+            panelContainer: this.panelContainer,
+            annotationPanelDiv: this._cardElements[index].annotationPanelDiv,
+            cardLabelsChosen: this.gallery.cardLabelsChosenByType[this.entityTypeId] ?  this.gallery.cardLabelsChosenByType[this.entityTypeId] : []
+         });
+
       } else {
          card = this._cardElements[index].card;
       }
-
-      cardObj.attributeOrder = this._cardLabelOptions;
-      this._currentCardIndexes[cardObj.id] = index;
-
-      // Initialize the card panel
-      this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this._cardElements[index].annotationPanel.init({
-         cardObj
-      });
-
-      // Initialize Card
-      card.init({
-         obj: cardObj,
-         panelContainer: this.panelContainer,
-         annotationPanelDiv: this._cardElements[index].annotationPanelDiv,
-         cardLabelsChosen: this.gallery.cardLabelsChosenByType[this.entityTypeId] ?  this.gallery.cardLabelsChosenByType[this.entityTypeId] : []
-      });
 
       card.style.display = "block";
       this.numberOfDisplayedCards += 1;
