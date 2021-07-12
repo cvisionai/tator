@@ -28,7 +28,7 @@ class EntityGalleryPanel extends TatorElement {
     this._main.appendChild(this._entityHeading);
 
     // Entity Data in Form
-    this.entityData = document.createElement("entity-gallery-panel-form");
+    this.entityData = document.createElement("entity-panel-form");
     this.entityData.hidden = true;
     this._main.appendChild(this.entityData);
 
@@ -39,7 +39,7 @@ class EntityGalleryPanel extends TatorElement {
     this._main.appendChild(this._stateHeading);
 
     // State Data in Form
-    this.stateData = document.createElement("entity-gallery-panel-form");
+    this.stateData = document.createElement("entity-panel-form");
     this.stateData.hidden = true;
     this._main.appendChild(this.stateData);
 
@@ -61,7 +61,7 @@ class EntityGalleryPanel extends TatorElement {
     mediaSubHeading.appendChild(this.goToFrameButton);
     this._main.appendChild(mediaSubHeading)
 
-    this.mediaData = document.createElement("entity-gallery-panel-form");
+    this.mediaData = document.createElement("entity-panel-form");
     this._main.appendChild(this.mediaData);
   }
 
