@@ -42,6 +42,7 @@ class EntityGalleryPanelForm extends TatorElement {
     this._attributes.dataType = data.entityType;
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);
+    this._attributes.displayGoToLocalization(false);
 
     if (associatedMedia) {
       this._attributes.associatedMedia = associatedMedia;

@@ -330,6 +330,32 @@ class AttributePanel extends TatorElement {
           }));
         }
       });
+      this.displaySlider(false);
+
+      var goToLocalizationDiv = document.createElement("div");
+      goToLocalizationDiv.setAttribute("class", "d-flex flex-items-center py-1");
+      goToLocalizationDiv.style.marginTop = "16px";
+      div.appendChild(goToLocalizationDiv);
+      this._goToLocalization = goToLocalizationDiv;
+
+      var label = document.createElement("legend");
+      this._goToLocalizationLabel = label;
+      goToLocalizationDiv.append(label);
+
+      var goToLocalizationButton = document.createElement("entity-detection-button");
+      goToLocalizationButton.style.marginLeft = "16px";
+      goToLocalizationDiv.appendChild(goToLocalizationButton);
+      goToLocalizationButton.addEventListener("click", () => {
+        this.dispatchEvent(new CustomEvent("goToLocalization", {
+          detail: {
+              track: this._track,
+              frame: this._frames[this._slider.value]
+            },
+          composed: true
+        }
+        ));
+      });
+      this.displayGoToLocalization(false);
 
       this._currentFrame = 0;
     }
@@ -571,12 +597,26 @@ class AttributePanel extends TatorElement {
   }
 
   /**
-   * @param {boolean} display - True if it's displayed. False to hide it.
+   * @param {boolean} display - True to display it. False to hide it.
+   */
+  displayGoToLocalization(display) {
+    if (this._goToLocalization) {
+      if (display) {
+        this._goToLocalization.style.display = "flex";
+      }
+      else {
+        this._goToLocalization.style.display = "none";
+      }
+    }
+  }
+
+  /**
+   * @param {boolean} display - True to display it. False to hide it.
    */
   displayGoToTrack(display) {
     if (this._goToTrack) {
       if (display) {
-        this._goToTrack.style.display = "block";
+        this._goToTrack.style.display = "flex";
       }
       else {
         this._goToTrack.style.display = "none";
@@ -634,6 +674,8 @@ class AttributePanel extends TatorElement {
     else {
       this._slider.value = 0;
     }
+
+    this.displaySlider(true);
   }
 
   _getUsername(userId, widget) {
@@ -762,15 +804,16 @@ class AttributePanel extends TatorElement {
 
     // If the provided values contain a track association ID, then display
     // the go to track button. Otherwise, hide it.
-    if (associatedTrack != undefined && associatedTrackType != undefined)
-    {
+    this.displayGoToTrack(false);
+    this.displayGoToLocalization(false);
+    if (associatedTrack != undefined && associatedTrackType != undefined) {
       this._goToTrackLabel.textContent = "View Associated " + associatedTrackType.name;
       this._associatedTrack = associatedTrack;
       this.displayGoToTrack(true);
     }
-    else
-    {
-      this.displayGoToTrack(false);
+    else if (this._dataType.isTrack) {
+      this._goToLocalizationLabel.textContent = "View Associated Localization";
+      this.displayGoToLocalization(true);
     }
 
     for (const widget of this._div.children) {

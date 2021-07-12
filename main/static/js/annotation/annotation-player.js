@@ -497,6 +497,7 @@ class AnnotationPlayer extends TatorElement {
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
       console.error(`"ERROR: ${e}`)
+      throw e;
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     });
   }
@@ -686,6 +687,12 @@ class AnnotationPlayer extends TatorElement {
   {
     if (this._playerDownloadDisabled) {
       // Don't bother attempting to check if playback is ready if downloads have been disabled.
+      return;
+    }
+
+    if (this._video.isInCompatibilityMode() == true)
+    {
+      // Compatibility videos are always ready to play.
       return;
     }
 

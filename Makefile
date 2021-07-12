@@ -405,6 +405,7 @@ FILES = \
     annotation/entity-redraw-button.js \
     annotation/entity-frame-button.js \
     annotation/entity-track-button.js \
+    annotation/entity-detection-button.js \
     annotation/entity-more.js \
     annotation/entity-selector.js \
     annotation/annotation-browser.js \
@@ -420,11 +421,11 @@ FILES = \
     analytics/analytics-breadcrumbs.js \
     analytics/analytics-settings.js \
     analytics/dashboard/dashboard.js \
-    analytics/annotations/card.js \
-    analytics/annotations/gallery.js \
-    analytics/annotations/panel-data.js \
-    analytics/annotations/card-data.js \
-    analytics/annotations/annotations.js \
+    analytics/localizations/card.js \
+    analytics/localizations/gallery.js \
+    analytics/localizations/panel-data.js \
+    analytics/localizations/card-data.js \
+    analytics/localizations/localizations.js \
     analytics/collections/slide-data.js \
     analytics/collections/card.js \
     analytics/collections/gallery.js \

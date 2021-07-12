@@ -26,12 +26,12 @@ class AnalyticsDashboard extends TatorPage {
     this._shadow.appendChild(this.main);;
 
     // Annotations
-    const annotationsBox = this._getDashboardBox({
-        name : "Annotations",
-        href : `/${this.projectId}/analytics/annotations`,
+    const localizationsBox = this._getDashboardBox({
+        name : "Localizations",
+        href : `/${this.projectId}/analytics/localizations`,
         iconName: "grid-icon"
       });
-    this.main.appendChild(annotationsBox);
+    this.main.appendChild(localizationsBox);
 
     // Collections
     const collectionsBox = this._getDashboardBox({
