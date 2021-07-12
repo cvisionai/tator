@@ -4,7 +4,7 @@ class EntityCardGallery extends TatorElement {
       
       // Gallery Container
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "enitity-gallery--main ml-1 mr-6 rounded-1");
+      this._main.setAttribute("class", "enitity-gallery--main ml-1 mr-6 px-5 rounded-1");
       this._shadow.appendChild(this._main);
 
       // Gallery Container
