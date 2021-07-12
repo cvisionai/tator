@@ -1535,6 +1535,7 @@ class VideoCanvas extends AnnotationCanvas {
           {
             // Done processing the downloaded segment.
             // Watchdog will kick off the next segment to download.
+            console.log(`Requesting more onDemand data: done.`);
             that._onDemandPendingDownloads -= 1;
             return;
           }
@@ -2591,6 +2592,11 @@ class VideoCanvas extends AnnotationCanvas {
 
   onDemandDownloadPrefetch(reset)
   {
+
+    if (this.videoBuffer(this.currentFrame(), "play") != null) {
+      return;
+    }
+
     // Only prefetch if the frame is different or if there's an explicit reset.
     if (this._onDemandInitStartFrame == this.currentFrame() && reset != true) {
       return;
@@ -2660,6 +2666,7 @@ class VideoCanvas extends AnnotationCanvas {
           currentFrame = this._dispFrame;
 
           this._onDemandId += 1;
+          console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: onDemandInit`);
 
           this._dlWorker.postMessage(
             {
@@ -2996,10 +3003,23 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._diagTimeout);
       this._diagTimeout=null;
     }
+    /*
     if (this._onDemandDownloadTimeout)
     {
       clearTimeout(this._onDemandDownloadTimeout);
       this._onDemandDownloadTimeout=null;
+      console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: shutdown`);
+      this._dlWorker.postMessage({"type": "onDemandShutdown"});
+    }
+    */
+  }
+
+  shutdownOnDemandDownload() {
+    if (this._onDemandDownloadTimeout)
+    {
+      clearTimeout(this._onDemandDownloadTimeout);
+      this._onDemandDownloadTimeout=null;
+      console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: shutdown`);
       this._dlWorker.postMessage({"type": "onDemandShutdown"});
     }
   }
