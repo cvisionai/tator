@@ -217,19 +217,20 @@ class AnnotationsGallery extends EntityCardGallery {
         this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
         this._cardElements[index].annotationPanel.init({ cardObj });
 
-        // Initialize Card
-        card.init({
-          obj : cardObj, 
-          panelContainer : this.panelContainer, 
-          annotationPanelDiv : this._cardElements[index].annotationPanelDiv
-        });
-
-        this._currentCardIndexes[cardObj.id] = index;
-
         this._ul.appendChild(card);
       } else {
         card = this._cardElements[index].card;
       }
+
+      // Initialize Card
+      card.init({
+        obj : cardObj, 
+        panelContainer : this.panelContainer, 
+        annotationPanelDiv : this._cardElements[index].annotationPanelDiv
+      });
+
+      this._currentCardIndexes[cardObj.id] = index;
+      
     
       card.style.display = "block";
       numberOfDisplayedCards += 1;
