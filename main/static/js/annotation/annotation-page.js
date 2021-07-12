@@ -568,16 +568,16 @@ class AnnotationPage extends TatorPage {
     }
 
     canvas.addEventListener("zoomChange", evt => {
-      this._player.setAttribute("zoom", evt.detail.zoom);
+      this._settings.setAttribute("zoom", evt.detail.zoom);
     });
 
-    this._player.addEventListener("zoomPlus", () => {
+    this._settings.addEventListener("zoomPlus", () => {
       if ("zoomPlus" in canvas) {
         canvas.zoomPlus();
       }
     });
 
-    this._player.addEventListener("zoomMinus", () => {
+    this._settings.addEventListener("zoomMinus", () => {
       if ("zoomMinus" in canvas) {
         canvas.zoomMinus();
       }
