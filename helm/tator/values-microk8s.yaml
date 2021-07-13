@@ -35,8 +35,8 @@ objectStorageHost: "minio-master"
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
 dockerPassword: "test"
-dockerRegistry: "localhost:32000"
-systemImageRepo: "localhost:32000"
+dockerRegistry: "127.0.0.1:32000"
+systemImageRepo: "127.0.0.1:32000"
 #podGCStrategy: "OnWorkflowCompletion"
 #slackToken: "<Your slack API token>" # Optional, for slack notifications
 #slackChannel: "<Your slack channel ID>" # Optional, for slack notifications
