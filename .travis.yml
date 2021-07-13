@@ -33,7 +33,7 @@ install:
         end
   ')
 # Set tator host.
-- export HOST_IP=$(ip addr show $($HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
+- export HOST_IP=$(ip addr show $(echo $HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb metrics-server registry storage
 # Install argo.
