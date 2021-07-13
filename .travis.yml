@@ -21,7 +21,7 @@ before_install:
 install:
 - pip install sphinx-rtd-theme recommonmark mako progressbar2
 # Turn on microk8s add-ons.
-- yes $(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}') | microk8s enable dns metallb metrics-server registry storage
+- yes $(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}') | sudo microk8s enable dns metallb metrics-server registry storage
 # Install argo.
 - kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 # Configure local storage.
