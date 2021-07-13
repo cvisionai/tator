@@ -57,7 +57,10 @@ class AnalyticsCollections extends TatorPage {
 
       // Gallery navigation panel
       this._panelContainer = document.createElement("entity-panel-container");
-      this.aside.appendChild(this._panelContainer);
+      //this.aside.appendChild(this._panelContainer);
+      
+      // Use in panel navigation
+      this._panelContainer._panelTop._navigation.init();
 
       //
       /* Other */

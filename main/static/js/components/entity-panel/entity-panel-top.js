@@ -51,11 +51,20 @@ class EntityGalleryPanelTop extends TatorElement {
     // this._topBarP.appendChild( document.createTextNode("Hover over localizations in gallery to preview annotations. Click to pin in the viewer.") );
     // this._box.appendChild(this._topBarP);
 
-
-
     // Panel Img Canvas
     this._locImage = document.createElement("entity-panel-localization");
     this._box.appendChild(this._locImage);
+
+    // Optional static image
+    this._staticImage = document.createElement("img");
+    this._staticImage.hidden = true;
+    this._box.appendChild(this._staticImage);
+
+    /* Media Prev/Next and Go To Frame*/
+    // Hidden until initialized
+    this._navigation = document.createElement("entity-panel-navigation");
+    this._navigation.hidden = true;
+    this._box.appendChild(this._navigation);
 
     // Image modal link container @TODO styling
     const modalLinkDiv = document.createElement("div");
@@ -74,6 +83,12 @@ class EntityGalleryPanelTop extends TatorElement {
 
     // If the panel is showing a localization default is true
     this.localizationType = true;
+
+    /* #TODO
+     * Create 1 panel, and init it / reuse it from card sending it cardObj data (currently done on card creation) 
+     */
+    // this._panel = document.createElement("entity-gallery-panel");
+    // this._box.appendChild(this._panel);
   }
 
   static get observedAttributes() {
@@ -95,11 +110,30 @@ class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  openHandler(evtDetail) {
+  setImage(imageSource) {
+    this._staticImage.setAttribute("src", imageSource);
+    //this._staticImage.hidden = false;
+  }
+
+  openHandler(evtDetail, cardElements, cardIndexes) {
+    console.log(evtDetail)
+    if(this._navigation.getInit()){
+      this._navigation.handle({
+          cardElements, 
+          cardIndexes, 
+          cardObj: evtDetail.cardObj
+        });
+    }
+    //this.panelDataHandler(evtDetail);
     if (this.localizationType) {
       this.locDataHandler(evtDetail);
     }
     this.headingHandler(evtDetail);
+  }
+
+  panelDataHandler(evtDetail){
+    let cardObj = evtDetail.cardObj
+    this._panel.init({cardObj});
   }
 
   locDataHandler(evtDetail) {

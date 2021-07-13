@@ -46,24 +46,6 @@ class EntityPanelNavigation extends TatorElement {
       this.next = document.createElement("entity-next-button");
       this.controls.appendChild(this.next);
 
-      this.panelGroups = [];
-
-   }
-
-   init() {
-      this.controls.hidden = false; 
-   }
-
-   _emitSelection() {
-      //console.log("emit selection fn in entity navigation");
-   }
-
-   pushNavData({slideIndex, entityList}){
-      // Create a nav for a particular list and save it by index #todo
-      this.panelGroups.push(entityList); // should match slideIndex
-
-      //console.log(`entityList length ${entityList.length}`)
-
       this.prev.addEventListener("click", () => {
          const index = parseInt(this._current.textContent) - 1;
          if (index > 0) {
@@ -80,10 +62,39 @@ class EntityPanelNavigation extends TatorElement {
          this._emitSelection();
       });
 
-      this._slider.addEventListener("input", () => {
-         this._current.textContent = String(Number(this._slider.value) + 1);
-         this._emitSelection();
-      });
+
+      this._goToFrameButton = document.createElement("entity-frame-button");
+      this._goToFrameButton.style.marginLeft = "8px";
+      this.controls.appendChild(this._goToFrameButton);
+
+      this._data = null;
+
+   }
+
+   init() {
+      this.hidden = false; 
+   }
+
+   _emitSelection(e) {
+      console.log("emit selection fn in entity navigation");
+      this._data.dispatchEvent(new Event("next-card"));
+   }
+
+   getInit(){
+      return this.controls.hidden;
+   }
+
+   handle({cardElements, cardIndexes, cardObj, gallery}){
+      this._data = cardElements;
+      this.gallery = gallery;
+
+      let index = cardIndexes[cardObj.id];
+      this._current.textContent = String(index);
+
+      this._slider.setAttribute("value", Number(index)+1);
+      this._slider.setAttribute("max", this._data.length);
+
+      
    }
 
    showSelectedNav(){

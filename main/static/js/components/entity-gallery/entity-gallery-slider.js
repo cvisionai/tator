@@ -302,9 +302,9 @@ class EntityGallerySlider extends TatorElement {
    }
 
    openClosedPanel(e) {
-      //console.log(e.detail)
+      console.log(e.target)
       if (!this.panelContainer.open) this.panelContainer._toggleOpen();
-      this.panelControls.openHandler(e.detail);
+      this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
    }
 
    _addCard(index, cardObj, cardType) { 
@@ -355,11 +355,13 @@ class EntityGallerySlider extends TatorElement {
          annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
          this.panelContainer._shadow.appendChild(annotationPanelDiv);
 
-         // Init a side panel that can be triggered from card
+         // // Init a side panel that can be triggered from card
+         // let annotationPanel = this.panelContainer._panelTop._panel;
          let annotationPanel = document.createElement("entity-gallery-panel");
          annotationPanelDiv.appendChild(annotationPanel);
 
          // Listen for attribute changes
+         
          // #todo needs to be componentized?
          annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
          annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
@@ -417,7 +419,7 @@ class EntityGallerySlider extends TatorElement {
 
          if (cardObj.image) {
             annotationPanel.localizationType = false;
-            annotationPanel.setImage(cardObj.image);
+            //annotationPanel.setImage(cardObj.image);
             if (cardObj.thumbnail) {
                card.setImageStatic(cardObj.thumbnail);
             } else {

@@ -8,11 +8,6 @@ class EntityGalleryPanel extends TatorElement {
     this._main.style.marginTop = "-20px"
     this._shadow.appendChild(this._main);
 
-    // Optional static image
-    this._staticImage = document.createElement("img");
-    this._staticImage.hidden = true;
-    this._main.appendChild(this._staticImage);
-
     // View in media
     this._mediaLinkEl = document.createElement("a");
     this._mediaLinkEl.appendChild(document.createTextNode("View In Annotator"));
@@ -80,9 +75,7 @@ class EntityGalleryPanel extends TatorElement {
     // Init the forms with data
     if (!(this.cardObj.stateInfo && this.cardObj.stateType && this.cardObj.stateType == "Media")) {
       /* Panel heading with type name */
-      let typeName = this.cardObj.entityType.name
-      let typeNameText = document.createTextNode(typeName);
-      this._entityHeading.appendChild(typeNameText);
+      this._entityHeading.innerHTML = this.cardObj.entityType.name;
 
       /* Unhide & Init panel form */
       this.showEntityData();
@@ -96,9 +89,7 @@ class EntityGalleryPanel extends TatorElement {
     // Any card with state information
     if (this.cardObj.stateInfo) {
       /* Panel heading with type name */
-      let typeName = this.cardObj.stateInfo.entityType.name
-      let typeNameText = document.createTextNode(typeName);
-      this._stateHeading.appendChild(typeNameText);
+      this._stateHeading.innerHTML = this.cardObj.stateInfo.entityType.name;
 
       /* Unhide & Init panel form */
       this.showStateData();
@@ -111,9 +102,7 @@ class EntityGalleryPanel extends TatorElement {
     // Any card with media information
     if (this.cardObj.mediaInfo) {
       /* Panel heading with type name */
-      let typeName = this.cardObj.mediaInfo.entityType.name;
-      let typeNameText = document.createTextNode(typeName);
-      this._mediaHeading.appendChild(typeNameText);
+      this._mediaHeading.innerHTML = this.cardObj.mediaInfo.entityType.name;;
 
       /* Init panel form */
       this.mediaData._init({
@@ -123,9 +112,9 @@ class EntityGalleryPanel extends TatorElement {
     }
   }
 
-  setImage(imageSource) {
-    this._staticImage.setAttribute("src", imageSource);
-  }
+  // setImage(imageSource) {
+  //   this._staticImage.setAttribute("src", imageSource);
+  // }
 
   showStateData() {
     this._stateHeading.hidden = false;

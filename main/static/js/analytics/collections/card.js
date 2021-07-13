@@ -179,6 +179,7 @@ class CollectionsCard extends EntityCard {
   setImageStatic(image) {
     //this.setAttribute("thumb", image);
     this._img.setAttribute("src", image);
+    this.cardObj.image = image;
     this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
   }
 
@@ -294,6 +295,12 @@ class CollectionsCard extends EntityCard {
     this.annotationPanelDiv.classList.add("is-selected");
     this.annotationPanelDiv.classList.remove("hidden");
     this.annotationPanelDiv.classList.remove("preview");
+
+    // Handles swapping src in panel top's still image holder
+    if(typeof this.cardObj.image !== "undefined"){
+      this.panelContainer._panelTop.setImage(this.cardObj.image);
+    }
+    
 
     //remove preview listener
     this.removeEventListener("mouseenter", this._mouseEnterHandler.bind(this) );

@@ -407,8 +407,9 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   openClosedPanel(e){
+    console.log(e.target);
     if(!this.panelContainer.open) this.panelContainer._toggleOpen();
-    this.panelControls.openHandler( e.detail );
+    this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
   }
 
   _cardSortUpdate(evt){
