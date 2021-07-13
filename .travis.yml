@@ -3,9 +3,9 @@ dist: focal
 addons:
   snaps:
   - name: helm
-    classic: true
+    confinement: classic
   - name: microk8s
-    classic: true
+    confinement: classic
     channel: 1.19
   apt:
     packages:
