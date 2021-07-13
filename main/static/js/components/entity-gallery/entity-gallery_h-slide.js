@@ -7,10 +7,20 @@ class EntityCardSlideGallery extends TatorElement {
       this._main.setAttribute("class", "enitity-gallery_h-slide ml-1 mr-6 mt-6 px-5 pb-3 rounded-1");
       this._shadow.appendChild(this._main);
 
+      // Gallery Container
+      this._mainTop = document.createElement("div");
+      this._mainTop.setAttribute("class", "enitity-gallery--main-top rounded-1");
+      this._main.appendChild(this._mainTop);
+
+      // Gallery Top Tools and info
+      this._tools = document.createElement("div");
+      this._tools.setAttribute("class", "enitity-gallery__tools d-flex flex-items-center");
+      this._mainTop.appendChild(this._tools);
+
       // Gallery Heading
       this._h3 = document.createElement("div");
       this._h3.setAttribute("class", "project__header d-flex flex-items-center px-2");
-      this._main.appendChild(this._h3);
+      this._tools.appendChild(this._h3);
 
       this.h2 = document.createElement("h2");
       this.h2.setAttribute("class", "h3 text-white");
@@ -19,11 +29,6 @@ class EntityCardSlideGallery extends TatorElement {
       this._numFiles = document.createElement("span");
       this._numFiles.setAttribute("class", "text-gray text-normal px-2");
       this._h3.appendChild(this._numFiles);
-
-      // Gallery Top Tools and info
-      this._tools = document.createElement("div");
-      this._tools.setAttribute("class", "enitity-gallery__tools py-2 d-flex flex-items-center");
-      this._main.appendChild(this._tools);
 
       // // Gallery Pagination Bottom
       this._paginator_top = document.createElement("entity-gallery-paginator");

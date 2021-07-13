@@ -7,20 +7,28 @@ class CollectionsGallery extends EntityCardSlideGallery {
       */
       this.panelContainer = null;
 
-      this.h2.appendChild( document.createTextNode("Collections"));
+      this.h2.appendChild( document.createTextNode("Collections") );
 
       this.sliderList = document.createElement("div");
       this.sliderList.setAttribute("class", "slider-list");
       this._sliderContainer.appendChild(this.sliderList);
 
+
       // Filter toolbar
       // * hook to add filter interface
       this._filterDiv = document.createElement("div");
       this._filterDiv.setAttribute("class", "analysis__filter");
-      
-      // Tools setup
-      this._tools.before(this._filterDiv)
-      this._tools.setAttribute("class", "");
+      this._mainTop.appendChild(this._filterDiv);
+
+
+      // Tools: Resize Slider to resize images      
+      this.sliderContainer = document.createElement("div");
+      this.sliderContainer.setAttribute("class", "col-10")
+      this._resizeCards = document.createElement('entity-card-resize');
+      this.colSize = 272;
+      this._resizeCards._initGallery(null, this.colSize);
+      this.sliderContainer.appendChild( this._resizeCards );
+      this._tools.appendChild( this.sliderContainer );
 
       // Display options in more menu
       // Note: this is appended to filter nav in collections.js
@@ -31,7 +39,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
        * SLIDER Label display options link for menu, and checkbox div
       */ 
       this._attributeLabels = document.createElement("entity-gallery-labels");
-      this._tools.appendChild(this._attributeLabels);
+      this._mainTop.appendChild(this._attributeLabels);
       this._attributeLabels.menuLinkTextSpan.innerHTML = "Collection Labels";
       this._moreMenu._menu.appendChild(this._attributeLabels.menuLink);
 
@@ -39,7 +47,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
        * CARD Label display options link for menu, and checkbox div
        */ 
       this._cardAtributeLabels = document.createElement("entity-gallery-labels");
-      this._tools.appendChild(this._cardAtributeLabels);
+      this._mainTop.appendChild(this._cardAtributeLabels);
       this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
       this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
 
@@ -47,7 +55,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
        * CARD Sort display options link for menu, and checkbox div
        */ 
       this._cardAtributeSort = document.createElement("entity-gallery-sort");
-      this._tools.appendChild(this._cardAtributeSort);
+      this._mainTop.appendChild(this._cardAtributeSort);
       this._cardAtributeSort.menuLinkTextSpan.innerHTML = "Sort Entries";
       this._moreMenu._menu.appendChild(this._cardAtributeSort.menuLink);
 
@@ -253,6 +261,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.mediaFormChange = this.mediaFormChange.bind(this);
          slider._cardAtributeLabels = this._cardAtributeLabels;
          slider._cardAtributeSort = this._cardAtributeSort;
+         slider._resizeCards = this._resizeCards;
          sliderList.appendChild(slider);
 
          // # todo some of above and below can be inferred from gallery
@@ -347,7 +356,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             let fnCheck = this._cardAtributeSort.getFnCheck(order);
             let prop = sortProperty.getValue();
             if(!(order == "true" && prop == "ID")){
-               console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
+               //console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
 
                cardsTmp.sort( (a,b) => {
                   let aVal = a[0].attributes[prop];
@@ -611,7 +620,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          Utilities.showSuccessIcon(msg);
       } catch(e) {
          let msg = `Entry sort error`;
-         console.log(e);
+         console.error(e);
          Utilities.warningAlert(msg, "#ff3e1d", false); 
       }
    }

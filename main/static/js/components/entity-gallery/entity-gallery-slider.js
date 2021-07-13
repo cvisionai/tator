@@ -69,10 +69,10 @@ class EntityGallerySlider extends TatorElement {
       this.main.appendChild(this._bottomNav);
 
       // card columns inside slider #todo finish styling
-      this.colSize = 150;
+      this.colSize = 272;
       this._ul = document.createElement("ul");
       this._ul.setAttribute("class", "enitity-gallery-slider__ul py-1")
-      //this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
+      this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`;
       this.styleDiv.appendChild(this._ul);
 
       this.numberOfDisplayedCards = 0;
@@ -340,14 +340,15 @@ class EntityGallerySlider extends TatorElement {
          // create a new card
          card = document.createElement(cardType);
 
-         // // Resize Tool needs to change style within card on change
-         card.style.width = "272px";
-         // this._resizeCards._slideInput.addEventListener("change", (evt) => {
-         //    let resizeValue = evt.target.value;
-         //    let resizeValuePerc = parseFloat(resizeValue / 100);
-         //    card.style.width = "auto";
-         //    return card._img.style.height = `${130 * resizeValuePerc}px`;
-         // });
+         // Resize Tool needs to change style within card on change
+         // card.style.width = "272px";
+         this._resizeCards._slideInput.addEventListener("change", (evt) => {
+            let resizeValue = evt.target.value;
+            let resizeValuePerc = parseFloat(resizeValue / 100);
+            //card.style.width = "auto";
+            card._img.style.height = `${130 * resizeValuePerc}px`
+            this._resizeCards._rangeHandler(resizeValue, this._ul);
+         });
 
          // Inner div of side panel
          let annotationPanelDiv = document.createElement("div");
@@ -558,8 +559,7 @@ class EntityGallerySlider extends TatorElement {
             card.cardObj = newCardData;
          }
       } catch(e){
-         console.log("Cards updated due to error: ");
-         console.log(e);
+         console.error("Cards not updated due to error: " + e);
       }
       
    }

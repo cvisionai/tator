@@ -36,7 +36,7 @@ class EntityGalleryLabels extends TatorElement {
     });
 
     this.menuLink.addEventListener("click", () => {
-      console.log("Menu link clicked!")
+      // console.log("Menu link clicked!")
       this.div.classList.toggle("hidden");
     });
 
@@ -100,7 +100,7 @@ class EntityGalleryLabels extends TatorElement {
     styleDiv.appendChild(selectionBoxes);
 
     selectionBoxes.addEventListener("change", (e) => {
-      console.log("Update labels!");
+      // console.log("Update labels!");
       this.dispatchEvent(new CustomEvent("labels-update", { 
           detail: { 
               value: e.target.getValue(),

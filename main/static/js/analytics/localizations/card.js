@@ -13,10 +13,16 @@ class AnnotationsCard extends EntityCard {
 
     // prep this var
     this._tmpHidden = null;
+    this.attributeDivs = {};
+    this._currentShownAttributes = "";
+
+    /* Holds attributes for the card */
+    this.attributesDiv = document.createElement('div');
+    this.attributesDiv.setAttribute("class", ""); //d-flex flex-wrap
   }
   
 
-  init({obj, panelContainer, annotationPanelDiv}){
+  init({obj, panelContainer, annotationPanelDiv, cardLabelsChosen}){
     // ID is title
     //this.titleDiv.innerHTML = `ID ${obj.id}`;
     this._id_text.innerHTML = `ID: ${obj.id}`;
@@ -32,15 +38,17 @@ class AnnotationsCard extends EntityCard {
     //this.typeInfo.innerHTML = `${obj.localizationType.name} (${obj.localizationType.type})`;
     //this.titleDiv.appendChild(this.typeInfo);
 
-
     // Graphic
-    if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
+    if(typeof obj.image !== "undefined" && obj.image !== null) {
+      //this.setAttribute("thumb", obj.image);
+      this.setImageStatic(obj.image);
+    } else if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
       this.reader = new FileReader();
       this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
       this.reader.addEventListener("load", this._setImgSrc.bind(this));
-    }
-    else {
-      this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+    } else {
+      //this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+      this.setImageStatic("/static/images/spinner-transparent.svg");
     }
 
     // Add position text related to pagination
@@ -52,28 +60,7 @@ class AnnotationsCard extends EntityCard {
     // this.descDiv.appendChild(this.mediaLink);
 
     // Display the first 0 order attribute value
-    this.displayAttributes();
-
-    /*
-    this.attributesDiv = document.createElement('div');
-    let i = 0;
-    for(const [attr, value] of Object.entries(obj.attributes)){
-      let attrDiv = document.createElement("div");
-      attrDiv.setAttribute("class", `card-attribute ${encodeURI(obj.localizationType.name)}_${encodeURI(attr)}`)
-      if(i != 0) attrDiv.classList.add("hidden")
-      i++;
-      let attrLabel = document.createElement("span");
-      attrLabel.appendChild( document.createTextNode(`${attr}: `) );
-      attrLabel.setAttribute("class", "text-bold f3");
-      attrDiv.appendChild(attrLabel);
-
-      let attribute = document.createTextNode(value);
-      attrDiv.appendChild(attribute);
-
-      this.attributesDiv.appendChild(attrDiv);
-    }
-    this.descDiv.appendChild(this.attributesDiv);
-    */
+    //this.displayAttributes();
 
     // // Create Date
     // this.created = document.createElement('div');
@@ -91,11 +78,103 @@ class AnnotationsCard extends EntityCard {
     // this.descDiv.appendChild(this.modifiedby);
 
     // Show description div
-    this.descDiv.hidden = false;
+    //this.descDiv.hidden = false;
 
     // More actions
     // this._more.hidden = false;
     // Add more ... > labels, swap views?
+    /**
+     * Attributes hidden on card are controlled by outer menu 
+    */
+    console.log(obj.attributeOrder);
+    if(obj.attributeOrder && obj.attributeOrder.length > 0){
+      this.attributesDiv.innerHTML = "";
+      let firstShown = false;
+      for(const attr of obj.attributeOrder){
+        let attrStyleDiv = document.createElement("div");
+        attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
+        
+        let attrLabel = document.createElement("span");
+        attrLabel.setAttribute("class", "f3 text-gray text-normal");
+        attrStyleDiv.appendChild(attrLabel);
+
+        let key = attr.name;
+        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== ""){
+          attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
+        } else {
+          // attrLabel.innerHTML = "&nbsp;";
+          // attrLabel.style.visibility = "hidden"; // keeps spacing
+          attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+        }
+
+        // add to the card & keep a list
+        this.attributeDivs[key] = {};
+        this.attributeDivs[key].div = attrStyleDiv;
+        this.attributeDivs[key].value = attrLabel;
+
+        //console.log(key)
+        //console.log(cardLabelsChosen);
+
+        if(cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0){
+          // If we have any preferences saved check against it
+          if(cardLabelsChosen.indexOf(key) > -1) {     
+            //console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
+          } else {
+            attrStyleDiv.classList.add("hidden");
+          }
+        }       
+
+        this.attributesDiv.appendChild(attrStyleDiv);
+      }
+
+      if(this.attributeDivs){       
+        // Show description div
+        this.descDiv.appendChild(this.attributesDiv);
+        this.descDiv.hidden = false;
+      }
+    }
+  }
+
+  /**
+  * Custom label display update
+  */
+  _updateShownAttributes(evt){
+    //console.log(evt);
+    //console.log(this.attributeDivs);
+    let typeId = evt.detail.typeId;
+    let labelValues = evt.detail.value;
+    
+    if(this.attributeDivs){
+      // show selected
+      for (let [key, value] of Object.entries(this.attributeDivs)) {
+        //console.log(key);
+        if(labelValues.includes(key)){
+          value.div.classList.remove("hidden");
+        } else {
+          value.div.classList.add("hidden");
+        }
+      } 
+    }
+  }
+
+  /**
+   * Update Attribute Values
+   * - If side panel is edited the card needs to update attributes
+   */
+   _updateAttributeValues(data) {
+     //console.log(data);
+    for (let [attr, value] of Object.entries(data.attributes)) {
+      //console.log(attr);
+      if(this.attributeDivs[attr] != null){
+        this.attributeDivs[attr].value.innerHTML = value;
+      } else {
+        attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+      }
+    }
+  }
+
+  set posText(val){
+    this.setAttribute("pos-text", val);
   }
 
   displayAttributes() {
@@ -117,11 +196,19 @@ class AnnotationsCard extends EntityCard {
   setImage(image) {
     this.reader = new FileReader();
     this.reader.readAsDataURL(image); // converts the blob to base64
-    this.reader.addEventListener("load", this._setImgSrc.bind(this));
+    this.reader.addEventListener("load", this._setImgSrcReader.bind(this));
   }
 
-  _setImgSrc (e) {
-    this.setAttribute("thumb", this.reader.result);
+  _setImgSrcReader () {
+    //this.setAttribute("thumb", this.reader.result);
+    this._img.setAttribute("src", this.reader.result);
+    this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
+  }
+
+  setImageStatic (image) {
+    //this.setAttribute("thumb", this.reader.result);
+    this._img.setAttribute("src", image);
+    this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
   }
 
   _mouseEnterHandler(e){

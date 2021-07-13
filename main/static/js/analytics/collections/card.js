@@ -41,13 +41,15 @@ class CollectionsCard extends EntityCard {
 
     // Graphic
     if(typeof obj.image !== "undefined" && obj.image !== null) {
-      this.setAttribute("thumb", obj.image);
+      //this.setAttribute("thumb", obj.image);
+      this.setImageStatic(obj.image);
     } else if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
       this.reader = new FileReader();
       this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
       this.reader.addEventListener("load", this._setImgSrc.bind(this));
     } else {
-      this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+      //this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+      this.setImageStatic("/static/images/spinner-transparent.svg");
     }
 
     // Add position text related to pagination
@@ -165,15 +167,19 @@ class CollectionsCard extends EntityCard {
   setImage(image) {
     this.reader = new FileReader();
     this.reader.readAsDataURL(image); // converts the blob to base64
-    this.reader.addEventListener("load", this._setImgSrc.bind(this));
+    this.reader.addEventListener("load", this._setImgSrcReader.bind(this));
   }
 
-  _setImgSrc(e) {
-    this.setAttribute("thumb", this.reader.result);
+  _setImgSrcReader() {
+    //this.setAttribute("thumb", this.reader.result);
+    this._img.setAttribute("src", this.reader.result);
+    this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
   }
 
   setImageStatic(image) {
-    this.setAttribute("thumb", image);
+    //this.setAttribute("thumb", image);
+    this._img.setAttribute("src", image);
+    this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
   }
 
   _mouseEnterHandler(e){
