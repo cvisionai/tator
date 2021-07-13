@@ -1,12 +1,15 @@
-sudo: required
+language: python
 dist: focal
 addons:
   snaps:
   - name: helm
-    confinement: classic
+    classic: true
   - name: microk8s
-    confinement: classic
+    classic: true
     channel: 1.19
+  apt:
+    packages:
+    - iproute2
 before_install:
 # Download argo.
 - curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.8.1/argo-linux-amd64 && chmod +x /usr/local/bin/argo
@@ -15,7 +18,23 @@ before_install:
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 install:
-- sphinx-rtd-theme
-- recommonmark
-- mako
-- progressbar2
+- pip install sphinx-rtd-theme recommonmark mako progressbar2
+# Turn on microk8s add-ons.
+- yes $(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}') | microk8s enable dns metallb metrics-server registry storage
+# Install argo.
+- kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
+# Configure local storage.
+- mkdir /media/kubernetes_share && mkdir /media/kubernetes_share/elasticsearch && chown -R nobody:nogroup /media/kubernetes_share && chmod -R 777 /media/kubernetes_share
+# Run npm install.
+- npm install
+# Copy over values.yaml.
+- cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
+# Set IP address to eth0 in values.yaml.
+- ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}' | ( read foo; sed -i "s/<Insert static IP or domain>/$foo/g" helm/tator/values-microk8s.yaml )
+script:
+# Build the application.
+- make cluster
+# Create a super user with credentials travis/travis.
+- kubectl exec -it $(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///') -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py createsuperuser --username travis --email no-reply@cvisionai.com --noinput
+# Install tator-py wheel.
+- cd scripts/packages/tator-py && pip install dist/*.whl
