@@ -12,6 +12,7 @@ addons:
     - iproute2
     - net-tools
     - gzip
+    - jq
 before_install:
 # Download argo.
 - curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
@@ -21,9 +22,18 @@ before_install:
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 install:
 - pip install sphinx-rtd-theme recommonmark mako progressbar2
+# Get physical interface name.
+- |
+  export HOST_INTERFACE=$(ip -details -json link show | jq -r '
+  .[] |
+        if .linkinfo.info_kind // .link_type == "loopback" then
+            empty
+        else
+            .ifname
+        end
+  ')
 # Set tator host.
-- ifconfig
-- export HOST_IP=$(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
+- export HOST_IP=$(ip addr show $($HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb metrics-server registry storage
 # Install argo.
