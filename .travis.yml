@@ -10,9 +10,10 @@ addons:
   apt:
     packages:
     - iproute2
+    - gzip
 before_install:
 # Download argo.
-- curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.8.1/argo-linux-amd64 && chmod +x /usr/local/bin/argo
+- curl -sLO https://github.com/argoproj/argo/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
 # Download and configure kubectl.
 - curl -LO -o /usr/local/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x /usr/local/bin/kubectl && mkdir -p $HOME/.kube && microk8s config > $HOME/.kube/config
 # Label nodes.
