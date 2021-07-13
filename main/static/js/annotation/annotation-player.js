@@ -719,34 +719,42 @@ class AnnotationPlayer extends TatorElement {
     this._rewind.setAttribute("disabled","")
     this._fastForward.setAttribute("disabled","");
 
-    const timeouts = [1000, 2000, 4000, 8000, 16000];
-    let timeoutIndex = 0;
+    const timeouts = [2000, 4000, 8000, 16000];
+    var timeoutIndex = 0;
+    var timeoutCounter = 0;
 
     let check_ready = (checkFrame) => {
+      timeoutCounter += 100;
+
       this._handleNotReadyTimeout = null;
       let not_ready = false;
       if (checkFrame != this._video.currentFrame()) {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._video.currentFrame()} do not match. restarting check_ready`)
         timeoutIndex = 0;
+        timeoutCounter = 0;
         this._handleNotReadyTimeout = setTimeout(() => {
           this._handleNotReadyTimeout = null;
-          check_ready(this._video.currentFrame())}, timeouts[timeoutIndex]);
+          check_ready(this._video.currentFrame())}, 100);
         return;
       }
       if (this._video._onDemandPlaybackReady != true)
       {
-        this._video.onDemandDownloadPrefetch(true);
         not_ready = true;
+        if (timeoutCounter == timeouts[timeoutIndex]) {
+          timeoutCounter = 0;
+          timeoutIndex += 1;
+          console.log(`Video playback check - restart [Now: ${new Date().toISOString()}]`);
+          this._video.onDemandDownloadPrefetch(true);
+        }
       }
       if (not_ready == true)
       {
-        timeoutIndex += 1;
         if (timeoutIndex < timeouts.length) {
-          console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
+          //console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
           this._handleNotReadyTimeout = setTimeout(() => {
             this._handleNotReadyTimeout = null;
             check_ready(checkFrame);
-          }, timeouts[timeoutIndex]);
+          }, 100);
         }
         else {
           Utilities.warningAlert("Video player unable to reach ready state.", "#ff3e1d", false);
@@ -764,9 +772,7 @@ class AnnotationPlayer extends TatorElement {
     };
 
     // We can be faster in single play mode
-    console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
     this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), timeouts[timeoutIndex]);
-
   }
 
   play()
