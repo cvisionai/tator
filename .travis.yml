@@ -21,7 +21,7 @@ before_install:
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 install:
-- pip install sphinx-rtd-theme recommonmark mako progressbar2
+- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
 # Get physical interface name.
 - |
   export HOST_INTERFACE=$(ip -details -json link show | jq -r '
