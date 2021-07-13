@@ -48,8 +48,9 @@ install:
 - sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values-microk8s.yaml
 script:
 # Build the application.
-- make cluster
+- make client-image
+#- make cluster
 # Create a super user with credentials travis/travis.
-- kubectl exec -it $(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///') -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py createsuperuser --username travis --email no-reply@cvisionai.com --noinput
+#- kubectl exec -it $(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///') -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py createsuperuser --username travis --email no-reply@cvisionai.com --noinput
 # Install tator-py wheel.
-- cd scripts/packages/tator-py && pip install dist/*.whl
+#- cd scripts/packages/tator-py && pip install dist/*.whl
