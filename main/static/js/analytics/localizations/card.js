@@ -86,7 +86,7 @@ class AnnotationsCard extends EntityCard {
     /**
      * Attributes hidden on card are controlled by outer menu 
     */
-    console.log(obj.attributeOrder);
+    // console.log(obj.attributeOrder);
     if(obj.attributeOrder && obj.attributeOrder.length > 0){
       this.attributesDiv.innerHTML = "";
       let firstShown = false;

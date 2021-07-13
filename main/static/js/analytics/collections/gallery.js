@@ -23,7 +23,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       // Tools: Resize Slider to resize images      
       this.sliderContainer = document.createElement("div");
-      this.sliderContainer.setAttribute("class", "col-10")
+      this.sliderContainer.setAttribute("class", "col-9")
       this._resizeCards = document.createElement('entity-card-resize');
       this.colSize = 272;
       this._resizeCards._initGallery(null, this.colSize);
