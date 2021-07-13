@@ -21,7 +21,7 @@ before_install:
 install:
 - pip install sphinx-rtd-theme recommonmark mako progressbar2
 # Set tator host.
-- HOST_IP=$(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
+- export HOST_IP=$(ip addr show eth0 | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb metrics-server registry storage
 # Install argo.
