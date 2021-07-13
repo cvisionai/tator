@@ -13,9 +13,9 @@ addons:
     - gzip
 before_install:
 # Download argo.
-- curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
+- curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
 # Download and configure kubectl.
-- curl -LO -o /usr/local/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x /usr/local/bin/kubectl && mkdir -p $HOME/.kube && microk8s config > $HOME/.kube/config
+- sudo curl -LO -o /usr/local/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && sudo chmod +x /usr/local/bin/kubectl && mkdir -p $HOME/.kube && microk8s config > $HOME/.kube/config
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 install:
@@ -25,7 +25,7 @@ install:
 # Install argo.
 - kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo/stable/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 # Configure local storage.
-- mkdir /media/kubernetes_share && mkdir /media/kubernetes_share/elasticsearch && chown -R nobody:nogroup /media/kubernetes_share && chmod -R 777 /media/kubernetes_share
+- sudo mkdir /media/kubernetes_share && sudo mkdir /media/kubernetes_share/elasticsearch && sudo chown -R nobody:nogroup /media/kubernetes_share && sudo chmod -R 777 /media/kubernetes_share
 # Run npm install.
 - npm install
 # Copy over values.yaml.
