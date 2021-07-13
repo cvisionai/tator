@@ -1,0 +1,21 @@
+sudo: required
+dist: focal
+addons:
+  snaps:
+  - name: helm
+    confinement: classic
+  - name: microk8s
+    confinement: classic
+    channel: 1.19
+before_install:
+# Download argo.
+- curl -sSL -o /usr/local/bin/argo https://github.com/argoproj/argo/releases/download/v2.8.1/argo-linux-amd64 && chmod +x /usr/local/bin/argo
+# Download and configure kubectl.
+- curl -LO -o /usr/local/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x /usr/local/bin/kubectl && mkdir -p $HOME/.kube && microk8s config > $HOME/.kube/config
+# Label nodes.
+- kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
+install:
+- sphinx-rtd-theme
+- recommonmark
+- mako
+- progressbar2
