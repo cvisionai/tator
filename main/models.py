@@ -304,7 +304,7 @@ def user_save(sender, instance, created, **kwargs):
             TatorCognito().update_attributes(instance)
     if created:
         invites = Invitation.objects.filter(email=instance.email, status='Pending')
-        if invites.count() == 0:
+        if (invites.count() == 0) and (os.getenv('AUTOCREATE_ORGANIZATIONS')):
             organization = Organization.objects.create(name=f"{instance}'s Team")
             Affiliation.objects.create(organization=organization,
                                        user=instance,

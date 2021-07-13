@@ -32,6 +32,16 @@ class AnnotationPage extends TatorPage {
     settingsDiv.setAttribute("class", "d-flex");
     header.appendChild(settingsDiv);
 
+    this._lightSpacer = document.createElement("span");
+    this._lightSpacer.style.width = "32px";
+    settingsDiv.appendChild(this._lightSpacer);
+
+    this._success = document.createElement("success-light");
+    this._lightSpacer.appendChild(this._success);
+
+    this._warning = document.createElement("warning-light");
+    this._lightSpacer.appendChild(this._warning);
+
     this._versionButton = document.createElement("version-button");
     settingsDiv.appendChild(this._versionButton);
 
@@ -210,17 +220,16 @@ class AnnotationPage extends TatorPage {
 
               // Note: The player itself will set the metadatatypes and canvas info with this
               player.mediaInfo = data;
+              var mediaIdCount = 0;
+              for (const index of data.media_files.ids.keys()) {
+                this._mediaIds.push(data.media_files.ids[index]);
+                mediaIdCount += 1;
+              }
+              this._numberOfMedia = mediaIdCount;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._player.addEventListener(
                 "primaryVideoLoaded", () => {
-
-                  var mediaIdCount = 0;
-                  for (const index of data.media_files.ids.keys()) {
-                    this._mediaIds.push(data.media_files.ids[index]);
-                    mediaIdCount += 1;
-                  }
-                  this._numberOfMedia = mediaIdCount;
                   /* #TODO Figure out a capture frame capability for multiview
                   this._settings._capture.addEventListener(
                     'captureFrame',
@@ -558,16 +567,16 @@ class AnnotationPage extends TatorPage {
     }
 
     canvas.addEventListener("zoomChange", evt => {
-      this._player.setAttribute("zoom", evt.detail.zoom);
+      this._settings.setAttribute("zoom", evt.detail.zoom);
     });
 
-    this._player.addEventListener("zoomPlus", () => {
+    this._settings.addEventListener("zoomPlus", () => {
       if ("zoomPlus" in canvas) {
         canvas.zoomPlus();
       }
     });
 
-    this._player.addEventListener("zoomMinus", () => {
+    this._settings.addEventListener("zoomMinus", () => {
       if ("zoomMinus" in canvas) {
         canvas.zoomMinus();
       }

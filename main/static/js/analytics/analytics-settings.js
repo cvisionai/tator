@@ -9,10 +9,20 @@ class AnalyticsSettings extends TatorElement {
     div.setAttribute("class", "annotation__settings d-flex f2");
     this._shadow.appendChild(div);
 
+    this._lightSpacer = document.createElement("span");
+    this._lightSpacer.style.width = "32px";
+    div.appendChild(this._lightSpacer);
+
+    this._success = document.createElement("success-light");
+    this._lightSpacer.appendChild(this._success);
+
+    this._warning = document.createElement("warning-light");
+    this._lightSpacer.appendChild(this._warning);
+
     this._lock = document.createElement("lock-button");
     this._lock.lock();
     div.appendChild(this._lock);
-    
+
     this._link = document.createElement("media-link-button");
     div.appendChild(this._link);
 

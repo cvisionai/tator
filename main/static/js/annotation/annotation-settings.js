@@ -6,6 +6,9 @@ class AnnotationSettings extends TatorElement {
     div.setAttribute("class", "annotation__settings d-flex f2");
     this._shadow.appendChild(div);
 
+    this._zoom = document.createElement("zoom-control");
+    div.appendChild(this._zoom);
+
     this._lock = document.createElement("lock-button");
     div.appendChild(this._lock);
 
@@ -37,6 +40,18 @@ class AnnotationSettings extends TatorElement {
       document.body.removeChild(text);
     });
 
+  }
+
+  static get observedAttributes() {
+    return ["zoom"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "zoom":
+        this._zoom.setAttribute("zoom", newValue);
+        break;
+    }
   }
 
   _typeParams() {

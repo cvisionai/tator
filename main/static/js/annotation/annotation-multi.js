@@ -332,16 +332,15 @@ class AnnotationMulti extends TatorElement {
         return;
       }
 
-      evt.preventDefault();
-      if (this._playbackDisabled) {
-        return;
-      }
-
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
       }
       else if (evt.code == "Space")
       {
+        evt.preventDefault();
+        if (this._playbackDisabled) {
+          return;
+        }
         if (this.is_paused())
         {
           this.play();
@@ -354,6 +353,9 @@ class AnnotationMulti extends TatorElement {
       else if (evt.key == "r")
       {
         evt.preventDefault();
+        if (this._playbackDisabled) {
+          return;
+        }
         if (this.is_paused())
         {
           this.playBackwards();

@@ -355,12 +355,19 @@ class AnnotationPlayer extends TatorElement {
         return;
       }
 
+
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
       }
       else if (evt.code == "Space")
       {
         evt.preventDefault();
+        if (this._play._button.hasAttribute("disabled")) {
+          return;
+        }
+        if (this._playbackDisabled) {
+          return;
+        }
         if (this.is_paused())
         {
           this.play();
@@ -373,6 +380,9 @@ class AnnotationPlayer extends TatorElement {
       else if (evt.key == "r")
       {
         evt.preventDefault();
+        if (this._play._button.hasAttribute("disabled")) {
+          return;
+        }
         if (this.is_paused())
         {
           this.playBackwards();
