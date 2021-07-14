@@ -35,7 +35,7 @@ before_install:
 # Set tator host.
 - export HOST_IP=$(ip addr show $(echo $HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
 # Download and configure kubectl.
-- curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
+- curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo chmod 777 $HOME/.kube && sudo microk8s config > $HOME/.kube/config
 # Show node descriptions with kubectl.
 - kubectl describe nodes
 # Turn on microk8s add-ons.
