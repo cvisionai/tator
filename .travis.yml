@@ -37,8 +37,9 @@ before_install:
 - curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
-# Turn off kubeflow.
-- sudo microk8s disable kubeflow juju
+# Stop then start microk8s.
+- sudo microk8s stop
+- sudo micork8s start
 # Get docker logs.
 - sudo journalctl -u snap.microk8s.daemon-etcd
 # Inspect microk8s process.
