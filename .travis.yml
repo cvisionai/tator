@@ -8,7 +8,7 @@ addons:
     confinement: classic
   - name: microk8s
     confinement: classic
-    channel: 1.21/stable
+    channel: 1.19/stable
   apt:
     packages:
     - iproute2
@@ -18,6 +18,10 @@ addons:
 vm:
   size: large
 before_install:
+# Wait until microk8s is ready.
+- sudo microk8s status --wait-ready
+# Show node descriptions.
+- sudo microk8s kubectl describe nodes
 # Get physical interface name.
 - |
   export HOST_INTERFACE=$(ip -details -json link show | jq -r '
@@ -30,42 +34,14 @@ before_install:
   ')
 # Set tator host.
 - export HOST_IP=$(ip addr show $(echo $HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
-# Add registry to insecure list and restart docker.
-- sudo cp examples/docker/daemon.json /etc/docker/daemon.json
-- sudo systemctl restart docker
 # Make kube directory so it isn't owned by root.
 - mkdir -p ~/.kube
 # Download and configure kubectl.
 - curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
-# Show nodes in kubectl.
-- sudo microk8s kubectl config view
-- sudo microk8s kubectl get all --all-namespaces
-- sudo microk8s kubectl get nodes
-- sudo microk8s kubectl describe nodes
-# Get docker logs.
-- sudo journalctl -u snap.microk8s.daemon-etcd
-- sudo journalctl -u snap.microk8s.daemon-containerd
-- sudo journalctl -u snap.microk8s.daemon-kubelet
+# Show node descriptions with kubectl.
+- kubectl describe nodes
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
-# Show nodes in kubectl.
-- sudo microk8s kubectl config view
-- sudo microk8s kubectl get all --all-namespaces
-- sudo microk8s kubectl get nodes
-- sudo microk8s kubectl describe nodes
-# Stop then start microk8s.
-- sudo microk8s stop
-- sudo microk8s start
-# Get docker logs.
-- sudo journalctl -u snap.microk8s.daemon-etcd
-- sudo journalctl -u snap.microk8s.daemon-containerd
-- sudo journalctl -u snap.microk8s.daemon-kubelet
-# Inspect microk8s process.
-- sudo microk8s inspect
-# Check status.
-- sudo microk8s status
-# Wait until microk8s is ready.
-- sudo microk8s status --wait-ready
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 # Download argo CLI client.
@@ -73,32 +49,26 @@ before_install:
 install:
 - echo "Host interface is $HOST_INTERFACE"
 - echo "Host IP address is $HOST_IP"
-#- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
+- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
 # Install argo controller.
 - kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 # Configure local storage.
 - sudo mkdir /media/kubernetes_share && sudo mkdir /media/kubernetes_share/elasticsearch && sudo chown -R nobody:nogroup /media/kubernetes_share && sudo chmod -R 777 /media/kubernetes_share
 # Copy over values.yaml.
-#- cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
+- cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
 # Set IP address in values.yaml.
-#- sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
-#- cat helm/tator/values.yaml
+- sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
+- cat helm/tator/values.yaml
 # Run npm install.
-#- npm install
+- npm install
 script:
-- kubectl get pods --all-namespaces
-- export METALLB_POD=$(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
-- kubectl describe pod -n metallb-system $METALLB_POD
-- kubectl logs -n metallb-system $(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
-- kubectl get pvc
-- kubectl get pv
 # Build the application.
-#- make cluster
+- make cluster
 # Run REST tests.
-#- make test
+- make test
 # Get gunicorn pod.
-#- export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
+- export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
 # Create a super user with credentials travis/travis.
-#- kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py createsuperuser --username travis --email no-reply@cvisionai.com --noinput
+- kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py createsuperuser --username travis --email no-reply@cvisionai.com --noinput
 # Install tator-py wheel and run tator-py tests.
-#- cd scripts/packages/tator-py && pip install dist/*.whl && pytest test --host=http://$HOST_IP --token=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from rest_framework.authtoken.models import Token; print(Token.objects.first())")
+- cd scripts/packages/tator-py && pip install dist/*.whl && pytest test --host=http://$HOST_IP --token=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from rest_framework.authtoken.models import Token; print(Token.objects.first())")
