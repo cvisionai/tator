@@ -74,7 +74,7 @@ class FilterInterface extends TatorElement {
       * - modal notify
     */
     this._moreNavDiv = document.createElement("div");
-    this._moreNavDiv.setAttribute("class", "analysis__more_nav");
+    this._moreNavDiv.setAttribute("class", "analysis__more_nav px-1");
     this._topNav.appendChild(this._moreNavDiv);
 
     this._confirmRunAlgorithm = document.createElement("confirm-run-algorithm");

@@ -22,13 +22,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
 
       // Tools: Resize Slider to resize images      
-      this.sliderContainer = document.createElement("div");
-      this.sliderContainer.setAttribute("class", "col-9")
+      this.resizeContainer = document.createElement("div");
+      this.resizeContainer.setAttribute("class", "col-4")
       this._resizeCards = document.createElement('entity-card-resize');
       this.colSize = 272;
       this._resizeCards._initGallery(null, this.colSize);
-      this.sliderContainer.appendChild( this._resizeCards );
-      this._tools.appendChild( this.sliderContainer );
+      this.resizeContainer.appendChild( this._resizeCards );
+      this._tools.appendChild( this.resizeContainer );
 
       // Display options in more menu
       // Note: this is appended to filter nav in collections.js

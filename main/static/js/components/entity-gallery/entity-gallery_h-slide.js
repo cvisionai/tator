@@ -14,7 +14,7 @@ class EntityCardSlideGallery extends TatorElement {
 
       // Gallery Top Tools and info
       this._tools = document.createElement("div");
-      this._tools.setAttribute("class", "enitity-gallery__tools d-flex flex-items-center");
+      this._tools.setAttribute("class", "enitity-gallery__tools d-flex flex-items-center flex-justify-between");
       this._mainTop.appendChild(this._tools);
 
       // Gallery Heading

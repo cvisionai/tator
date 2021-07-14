@@ -371,3 +371,21 @@ collections-card {
     margin-right: $spacing-1;
   }
 }
+
+.entity-gallery-sortable {
+  transition: display 300ms linear !important;
+  transition: opacity 500ms ease-in !important;
+  perspective: 1000;
+  -ms-transform: perspective(1000px);
+  -moz-transform: perspective(1000px);
+  -ms-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+  opacity: 1;
+
+  .reorder-progress {
+    transition: opacity 500ms ease-in !important;
+    display: none !important;
+    opacity: 0;
+  }
+
+}

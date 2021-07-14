@@ -569,6 +569,8 @@ class EntityGallerySlider extends TatorElement {
    updateCardOrder(cards) {
       let total = cards.length;
       for(let [idx, obj] of Object.entries(cards)){
+         obj.card._li.classList.add("entity-gallery-sortable");
+         obj.card._li.classList.add("reorder-progress");
          // Update position text
          let pos = Number(idx) + 1;
          obj.card.posText = `${pos} of ${total}`;
@@ -584,7 +586,16 @@ class EntityGallerySlider extends TatorElement {
 
          // Add back in order and make sure visibility stays...
          this._ul.appendChild(obj.card);
+
+         // Add visibility back (auto behavior to go hidden)
+         // Use classes to add back with specific animation, remove animation class
          obj.card.style.visibility = "visible";
+
+         setTimeout(() => {
+            obj.card._li.classList.remove("reorder-progress");
+            obj.card._li.classList.remove("entity-gallery-sortable");
+         }, 500);
+         
       }
    }
 

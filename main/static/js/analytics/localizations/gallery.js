@@ -35,12 +35,12 @@ class AnnotationsGallery extends EntityCardGallery {
     header.appendChild(this._numFiles);
 
     // Tools: Resize Slider to resize images
-    this.sliderContainer = document.createElement("div");
-    this.sliderContainer.setAttribute("class", "col-12")
+    this.resizeContainer = document.createElement("div");
+    this.resizeContainer.setAttribute("class", "col-4")
     this._resizeCards = document.createElement('entity-card-resize');
     this._resizeCards._initGallery(this._ul, this.colSize);
-    this.sliderContainer.appendChild( this._resizeCards );
-    this._tools.appendChild( this.sliderContainer );
+    this.resizeContainer.appendChild( this._resizeCards );
+    this._tools.appendChild( this.resizeContainer );
 
     // Tools: Show @aspect ratio
     this.aspectToolContainer = document.createElement("div");
@@ -448,6 +448,7 @@ class AnnotationsGallery extends EntityCardGallery {
       let start = this._paginator._page * this._paginator._pageSize;
       let total = cards.length + start;
       for(let [idx, obj] of Object.entries(cards)){
+        obj.card.classList.add("entity-gallery-sortable");
         //console.log(obj);
          // Update position text
          let pos = Number(idx) + 1 + start;
@@ -456,6 +457,7 @@ class AnnotationsGallery extends EntityCardGallery {
          let usableIndex = Number(obj.counter);
 
         if(updatePosition){  
+          obj.card.classList.add("reorder-progress");
           // Get index of one and the other
           let id = obj.card.cardObj.id;
           //console.log(`Adding id ${id} at idx ${idx}`);
@@ -466,8 +468,10 @@ class AnnotationsGallery extends EntityCardGallery {
 
           // Add back in order and make sure visibility stays...
           this._ul.appendChild(obj.card);
+          obj.card.classList.remove("reorder-progress");
           obj.card.style.visibility = "visible";
          }
+        obj.card.classList.remove("entity-gallery-sortable");
       }
    }
 
