@@ -32,17 +32,20 @@ before_install:
 - sudo microk8s status --wait-ready
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
-# Download argo.
+# Download argo CLI client.
 - curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
 # Download and configure kubectl.
 - curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
+# Show nodes in kubectl.
+- kubectl get nodes
+- kubectl describe nodes
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 install:
 - echo "Host interface is $HOST_INTERFACE"
 - echo "Host IP address is $HOST_IP"
 #- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
-# Install argo.
+# Install argo controller.
 - kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 # Configure local storage.
 - sudo mkdir /media/kubernetes_share && sudo mkdir /media/kubernetes_share/elasticsearch && sudo chown -R nobody:nogroup /media/kubernetes_share && sudo chmod -R 777 /media/kubernetes_share
@@ -54,8 +57,6 @@ install:
 # Run npm install.
 #- npm install
 script:
-- kubectl get nodes
-- kubectl describe nodes
 - kubectl get pods --all-namespaces
 - export METALLB_POD=$(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
 - kubectl describe pod -n metallb-system $METALLB_POD
