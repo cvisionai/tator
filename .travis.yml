@@ -28,13 +28,17 @@ before_install:
   ')
 # Set tator host.
 - export HOST_IP=$(ip addr show $(echo $HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
-# Make kube directory so it isn't owned by root.
-- mkdir -p ~/.kube
 # Add registry to insecure list and restart docker.
 - sudo cp examples/docker/daemon.json /etc/docker/daemon.json
 - sudo systemctl restart docker
+# Make kube directory so it isn't owned by root.
+- mkdir -p ~/.kube
+# Download and configure kubectl.
+- curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
+# Turn off kubeflow.
+- sudo microk8s disable kubeflow juju
 # Get docker logs.
 - sudo journalctl -u snap.microk8s.daemon-etcd
 # Inspect microk8s process.
@@ -43,15 +47,13 @@ before_install:
 - sudo microk8s status
 # Wait until microk8s is ready.
 - sudo microk8s status --wait-ready
-# Download argo CLI client.
-- curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
-# Download and configure kubectl.
-- curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
 # Show nodes in kubectl.
 - kubectl get nodes
 - kubectl describe nodes
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
+# Download argo CLI client.
+- curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
 install:
 - echo "Host interface is $HOST_INTERFACE"
 - echo "Host IP address is $HOST_IP"
