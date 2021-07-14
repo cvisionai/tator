@@ -33,6 +33,8 @@ before_install:
 # Add registry to insecure list and restart docker.
 - sudo cp examples/docker/daemon.json /etc/docker/daemon.json
 - sudo systemctl restart docker
+# Turn on microk8s add-ons.
+- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
 # Get docker logs.
 - sudo journalctl -u snap.microk8s.daemon-etcd
 # Inspect microk8s process.
@@ -41,8 +43,6 @@ before_install:
 - sudo microk8s status
 # Wait until microk8s is ready.
 - sudo microk8s status --wait-ready
-# Turn on microk8s add-ons.
-- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
 # Download argo CLI client.
 - curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
 # Download and configure kubectl.
