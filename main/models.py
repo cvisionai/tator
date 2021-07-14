@@ -2,6 +2,7 @@ import json
 import os
 import traceback
 
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
@@ -1377,7 +1378,9 @@ class Favorite(Model):
     """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
-    meta = ForeignKey(LocalizationType, on_delete=CASCADE, db_column='meta')
+    localization_meta = ForeignKey(LocalizationType, on_delete=CASCADE, null=True, blank=True)
+    state_meta = ForeignKey(StateType, on_delete=CASCADE, null=True, blank=True)
+    meta = PositiveIntegerField()
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()
