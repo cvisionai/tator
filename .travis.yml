@@ -56,6 +56,8 @@ install:
 # Run npm install.
 #- npm install
 script:
+- kubectl get nodes
+- kubectl describe nodes
 - kubectl get pods --all-namespaces
 - export METALLB_POD=$(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
 - kubectl describe pod -n metallb-system $METALLB_POD
