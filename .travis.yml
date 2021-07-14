@@ -1,6 +1,14 @@
 language: python
 dist: focal
+services:
+- docker
 addons:
+  snaps:
+  - name: helm
+    confinement: classic
+  - name: microk8s
+    confinement: classic
+    channel: 1.19
   apt:
     packages:
     - iproute2
@@ -8,13 +16,6 @@ addons:
     - gzip
     - jq
 before_install:
-# Stop docker service.
-- sudo systemctl stop docker
-# Install microk8s and helm.
-- sudo snap install helm --classic
-- sudo snap install microk8s --classic --channel=1.19
-# Start docker service.
-- sudo systemctl start docker
 # Get physical interface name.
 - |
   export HOST_INTERFACE=$(ip -details -json link show | jq -r '
@@ -27,6 +28,10 @@ before_install:
   ')
 # Set tator host.
 - export HOST_IP=$(ip addr show $(echo $HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
+# Wait until microk8s is ready.
+- sudo microk8s status --wait-ready
+# Turn on microk8s add-ons.
+- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
 # Download argo.
 - curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
 # Download and configure kubectl.
@@ -37,8 +42,6 @@ install:
 - echo "Host interface is $HOST_INTERFACE"
 - echo "Host IP address is $HOST_IP"
 #- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
-# Turn on microk8s add-ons.
-- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
 # Install argo.
 - kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 # Configure local storage.
