@@ -55,7 +55,7 @@ install:
 - cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
 script:
 # Build the application.
-- make tator-image
+- make postgis-image
 #- make cluster
 # Create a super user with credentials travis/travis.
 #- kubectl exec -it $(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///') -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py createsuperuser --username travis --email no-reply@cvisionai.com --noinput
