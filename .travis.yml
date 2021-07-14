@@ -31,6 +31,8 @@ before_install:
 # Add registry to insecure list and restart docker.
 - sudo cp examples/docker/daemon.json /etc/docker/daemon.json
 - sudo systemctl restart docker
+# Wait for a bit before showing logs.
+- sleep 300
 # Get docker logs.
 - sudo journalctl -u snap.microk8s.daemon-etcd
 # Inspect microk8s process.
