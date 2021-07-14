@@ -39,8 +39,8 @@ before_install:
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 install:
-- echo "Host interface is: $HOST_INTERFACE"
-- echo "Host IP address is: $HOST_IP"
+- echo "Host interface is $HOST_INTERFACE"
+- echo "Host IP address is $HOST_IP"
 - pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb storage
