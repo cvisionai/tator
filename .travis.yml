@@ -35,8 +35,16 @@ before_install:
 - mkdir -p ~/.kube
 # Download and configure kubectl.
 - curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
+# Show nodes in kubectl.
+- kubectl get all --all-namespaces
+- kubectl get nodes
+- kubectl describe nodes
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
+# Show nodes in kubectl.
+- kubectl get all --all-namespaces
+- kubectl get nodes
+- kubectl describe nodes
 # Stop then start microk8s.
 - sudo microk8s stop
 - sudo microk8s start
@@ -48,9 +56,6 @@ before_install:
 - sudo microk8s status
 # Wait until microk8s is ready.
 - sudo microk8s status --wait-ready
-# Show nodes in kubectl.
-- kubectl get nodes
-- kubectl describe nodes
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 # Download argo CLI client.
