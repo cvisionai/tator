@@ -60,6 +60,8 @@ script:
 - kubectl apply -f nginx-service-test.yaml
 - sleep 60
 - kubectl get pods --all-namespaces
+- export METALLB_POD=$(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
+- kubectl describe pod $METALLB_POD
 - kubectl logs -n metallb-system $(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
 - kubectl logs -n metallb-system $(kubectl get pod -n metallb-system -l "app=metallb,component=speaker" -o name | head -n 1 |sed 's/pod\///')
 # Build the application.
