@@ -1,7 +1,5 @@
 language: python
 dist: focal
-services:
-- docker
 addons:
   snaps:
   - name: helm
@@ -16,10 +14,9 @@ addons:
     - gzip
     - jq
 before_install:
-# Run local docker registry.
-- docker run -d -p 5000:5000 --restart always --name registry registry:2
-# Use port 5000 in values.yaml.
-- sed -i "s/32000/5000/g" helm/tator/values-microk8s.yaml
+# Get the latest docker.
+- curl -fsSL https://get.docker.com -o get-docker.sh
+- sudo sh get-docker.sh
 # Get physical interface name.
 - |
   export HOST_INTERFACE=$(ip -details -json link show | jq -r '
@@ -43,7 +40,7 @@ install:
 - echo "Host IP address is $HOST_IP"
 #- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
 # Turn on microk8s add-ons.
-- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb storage
+- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
 # Install argo.
 - kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 # Configure local storage.
