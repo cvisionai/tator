@@ -154,9 +154,6 @@ spec:
               value: {{ .Values.email.aws_access_key_id }}
             - name: TATOR_EMAIL_AWS_SECRET_ACCESS_KEY
               value: {{ .Values.email.aws_secret_access_key }}
-            {{- else }}
-            - name: TATOR_EMAIL_ENABLED
-              value: "false"
             {{- end }}
             {{- if .Values.remoteTranscodes.enabled }}
             - name: REMOTE_TRANSCODE_HOST

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 TEST_IMAGE = 'https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png'
 
-def create_test_user():
+def create_test_user(is_staff=False):
     return User.objects.create(
         username=random.choices(string.ascii_lowercase, k=10),
         password="jsnow",
@@ -35,6 +35,7 @@ def create_test_user():
         email="jon.snow@gmail.com",
         middle_initial="A",
         initials="JAS",
+        is_staff=is_staff,
     )
 
 def create_test_organization():
@@ -2175,7 +2176,7 @@ class OrganizationTestCase(
         APITestCase,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
-        self.user = create_test_user()
+        self.user = create_test_user(is_staff=True)
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
