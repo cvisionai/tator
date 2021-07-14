@@ -1,5 +1,5 @@
 language: python
-dist: focal
+dist: bionic
 services:
 - docker
 addons:
@@ -8,7 +8,7 @@ addons:
     confinement: classic
   - name: microk8s
     confinement: classic
-    channel: 1.19/stable
+    channel: 1.17/stable
   apt:
     packages:
     - iproute2
