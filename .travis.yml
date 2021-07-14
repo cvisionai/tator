@@ -41,7 +41,7 @@ before_install:
 install:
 - echo "Host interface is $HOST_INTERFACE"
 - echo "Host IP address is $HOST_IP"
-- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
+#- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb storage
 # Install argo.
@@ -49,21 +49,19 @@ install:
 # Configure local storage.
 - sudo mkdir /media/kubernetes_share && sudo mkdir /media/kubernetes_share/elasticsearch && sudo chown -R nobody:nogroup /media/kubernetes_share && sudo chmod -R 777 /media/kubernetes_share
 # Copy over values.yaml.
-- cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
+#- cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
 # Set IP address in values.yaml.
-- sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
-- cat helm/tator/values.yaml
+#- sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
+#- cat helm/tator/values.yaml
 # Run npm install.
-- npm install
+#- npm install
 script:
-# Make a test service.
-- kubectl apply -f nginx-service-test.yaml
-- sleep 60
 - kubectl get pods --all-namespaces
 - export METALLB_POD=$(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
-- kubectl describe pod $METALLB_POD
+- kubectl describe pod -n metallb-system $METALLB_POD
 - kubectl logs -n metallb-system $(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
-- kubectl logs -n metallb-system $(kubectl get pod -n metallb-system -l "app=metallb,component=speaker" -o name | head -n 1 |sed 's/pod\///')
+- kubectl get pvc
+- kubectl get pv
 # Build the application.
 #- make cluster
 # Run REST tests.
