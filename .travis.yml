@@ -7,7 +7,6 @@ addons:
     - net-tools
     - gzip
     - jq
-    - docker-ce
 before_install:
 # Stop docker service.
 - sudo systemctl stop docker
