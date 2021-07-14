@@ -39,7 +39,7 @@ before_install:
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
 # Stop then start microk8s.
 - sudo microk8s stop
-- sudo micork8s start
+- sudo microk8s start
 # Get docker logs.
 - sudo journalctl -u snap.microk8s.daemon-etcd
 # Inspect microk8s process.
