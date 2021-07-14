@@ -16,9 +16,6 @@ addons:
     - gzip
     - jq
 before_install:
-# Add user to microk8s group.
-- sudo usermod -aG microk8s $USER
-- sudo su - $USER
 # Run local docker registry.
 - docker run -d -p 5000:5000 --restart always --name registry registry:2
 # Use port 5000 in values.yaml.
@@ -38,7 +35,7 @@ before_install:
 # Download argo.
 - curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
 # Download and configure kubectl.
-- curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && microk8s config > $HOME/.kube/config
+- curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo microk8s config > $HOME/.kube/config
 # Label nodes.
 - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
 install:
@@ -46,7 +43,7 @@ install:
 - echo "Host IP address is $HOST_IP"
 - pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
 # Turn on microk8s add-ons.
-- yes $HOST_IP-$HOST_IP | microk8s enable dns metallb storage
+- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb storage
 # Install argo.
 - kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 # Configure local storage.
@@ -62,6 +59,7 @@ script:
 # Make a test service.
 - kubectl apply -f nginx-service-test.yaml
 - sleep 60
+- kubectl get pods --all-namespaces
 - kubectl logs -n metallb-system $(kubectl get pod -n metallb-system -l "app=metallb,component=controller" -o name | head -n 1 |sed 's/pod\///')
 - kubectl logs -n metallb-system $(kubectl get pod -n metallb-system -l "app=metallb,component=speaker" -o name | head -n 1 |sed 's/pod\///')
 # Build the application.
