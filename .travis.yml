@@ -1,12 +1,6 @@
 language: python
 dist: focal
 addons:
-  snaps:
-  - name: helm
-    confinement: classic
-  - name: microk8s
-    confinement: classic
-    channel: 1.19
   apt:
     packages:
     - iproute2
@@ -14,9 +8,14 @@ addons:
     - gzip
     - jq
 before_install:
+# Completely uninstall previous docker.
+- sudo apt-get remove docker-ce docker docker-engine docker.io containerd runc
 # Get the latest docker.
 - curl -fsSL https://get.docker.com -o get-docker.sh
 - sudo sh get-docker.sh
+# Install microk8s and helm.
+- sudo snap install helm --classic
+- sudo snap install microk8s --classic --channel=1.19
 # Get physical interface name.
 - |
   export HOST_INTERFACE=$(ip -details -json link show | jq -r '
