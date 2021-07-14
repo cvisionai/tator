@@ -15,7 +15,7 @@ addons:
     - jq
 before_install:
 # Configure docker to trust microk8s registry.
-- sudo echo '{"insecure-registries": ["127.0.0.1:32000"]}' > /etc/docker/daemon.json
+- sudo cp examples/docker/daemon.json /etc/docker/daemon.json
 - sudo systemctl restart docker
 # Download argo.
 - curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
