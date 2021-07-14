@@ -40,6 +40,10 @@ before_install:
 - kubectl get all --all-namespaces
 - kubectl get nodes
 - kubectl describe nodes
+# Get docker logs.
+- sudo journalctl -u snap.microk8s.daemon-etcd
+- sudo journalctl -u snap.microk8s.daemon-containerd
+- sudo journalctl -u snap.microk8s.daemon-kubelet
 # Turn on microk8s add-ons.
 - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
 # Show nodes in kubectl.
@@ -52,6 +56,8 @@ before_install:
 - sudo microk8s start
 # Get docker logs.
 - sudo journalctl -u snap.microk8s.daemon-etcd
+- sudo journalctl -u snap.microk8s.daemon-containerd
+- sudo journalctl -u snap.microk8s.daemon-kubelet
 # Inspect microk8s process.
 - sudo microk8s inspect
 # Check status.
