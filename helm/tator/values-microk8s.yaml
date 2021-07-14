@@ -1,7 +1,6 @@
 # This can be a domain that points to a LAN IP address if you
 # are accessing the site from another machine's browser or you
-# are installing Tator in a VM. Using localhost only works in 
-# a browser running on the same machine running Tator.
+# are installing Tator in a VM.
 domain: &domain <Insert static IP or domain>
 # Requests for these domains will be redirected to the actual domain.
 #redirects:
@@ -35,8 +34,8 @@ objectStorageHost: "minio-master"
 # leave these, otherwise change user/pass to the credentials for your registry.
 dockerUsername: "test"
 dockerPassword: "test"
-dockerRegistry: "127.0.0.1:32000"
-systemImageRepo: "127.0.0.1:32000"
+dockerRegistry: "localhost:32000"
+systemImageRepo: "localhost:32000"
 #podGCStrategy: "OnWorkflowCompletion"
 #slackToken: "<Your slack API token>" # Optional, for slack notifications
 #slackChannel: "<Your slack channel ID>" # Optional, for slack notifications

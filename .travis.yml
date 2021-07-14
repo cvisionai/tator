@@ -49,6 +49,7 @@ install:
 - cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
 # Set IP address to eth0 in values.yaml.
 - sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values-microk8s.yaml
+- sed -i "s/localhost/$HOST_IP/g" helm/tator/values-microk8s.yaml
 script:
 # Build the application.
 - make tator-image
