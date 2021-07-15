@@ -1,7 +1,7 @@
 os: linux
 arch: amd64
 dist: bionic
-language: bash
+language: python
 services:
 - docker
 vm:
@@ -11,17 +11,20 @@ before_install:
 - cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
 - sed -i "s/localhost/$DOCKER_REGISTRY/g" helm/tator/values.yaml
 - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+- pip install pyyaml
 
 jobs:
   include:
   - stage: build docker images
-    install: make images
+    install:
+    - pip install sphinx-rtd-theme recommonmark mako progressbar2
+    script:
+    - make images
   - stage: install and test
     install:
     - sudo snap install microk8s --classic --channel=1.17/stable
     - sudo snap install helm
-    - sudo apt-get install -y iproute2 net-tools gzip jq python3 python3-pip
-    - pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
+    - sudo apt-get install -y iproute2 net-tools gzip jq
     - npm install
     - export DOCKER_TAG=$(git rev-parse HEAD)
     - docker run -it --rm --name sleepy $DOCKER_REGISTRY/tator_client:$DOCKER_TAG sleep 60
@@ -83,4 +86,4 @@ env:
   - ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml"
   - secure: lZib+oe6LM4I3JqW1UVBgFYibWDlL4xMIBNYHZODawe6GUJgDd2LRph0j1AtHTS0O+hwliGM/FawqChTNOQ9SHFu2OrV7qT+NslrsfkX/Sw3vDxhc0/wVav17Vbs71eh8qImIWFcJYAsh7lE+Lxxx0nKwaN+zM0igcJoU6SVflRMYvTOcuxMI8c4SE5YJk5C+xqG0zm0dE1Gn2fU/ovZTzknn6pE9uuvaS/kCTPWcvqu0uKXCubTVtSeNnzw6tpAeW0lVhx3sWhiP42Po28DsCHI2ZC/1ZovabJUrrklkzrH0bl1bfO2/U1Xl2aYoV7rHrlA4NLsCibI9XjdmTf87PF7zF/8mhBK0GccfT44/vnGxbedR8bO1kO2Wtk72em3AT736luYmVrYqKL1ymTVZg3Y0ol30+N6VifrGoedeQ+jUV7c1M9XUjIasKfDsMCoXhIWGe0ImEK/7yXES0PCpQT3bIIyH3dWDkGmcwYK4UdQXMHmIWiWS9Y9YFPVQZlv1vrpAPu5KmXXNTn83k5nM7tt7zYPIG6mopPNN+wW/gRXEEhjyMqu+WLJ+4uEUD7o7Osb9PaXMoTPFuja/kCG34lp4nAyEpRbVlLTDxY6S9jdDf7T49jk6Bu5OAafJVgSgpTeulhvky4R2FFtb2crwJx4/j/Z8ifDiVE1HFYrXc8=
   - secure: qHjsCFpl0trHnyXx6mzqX2yGFN2a4nimWKQafw64CreAEfKW71OajgdTgU0zRuXRM4Yo8wQgg8POXaTdw5o+r6qK9iPDJKMvSs7LHQhkQtz4BJGpKdddRDRRtfQJyx31FwY/zvs5jGCLvGrBC6u8P3Bs75tbnqjNKgJUCb04SMRgpX/l89UuRc9snOdeqYCIXS3RjonIaFnPbReekH7+EB8guc39mRbJWyHYKhQCtkaK/sYvW54E5VcgtwDwg6TyiCpqeSKFz5E5/jhFRRFEGfY8zNQPOj/Aso8XzZxGuKo840zF9pO+j+PUTXtF7DMnEgjYjF/me6GrFW5zaE6Vsl3BBo/H7as2QoVnwlh6PBaDDXVSuUH18aS588c4/VOUT+lPeRDHdPea3wCSYecm85dwm+ED2viZSKGtoeHdEW2NjE/4lqPyIBl92BdpK3+u3s03BFY8B1HvdsMh2glIz9NzXOdSv0GJBG02yw5MwL3DJ6HXrjhPf0RScODnTyqwH0fCnQzoIeOFEM+HdN6qprds3mozYLGJBx5MQxT1BtqLYIS5tbvIo2Dlb2zB3dxJJtVGHkOHDAfkuhXl+bqD3C+qD+8JUAlx3NRAWyHYwPJf1ghltFul4NbXDrxxdDE9aUJQmSu7M8XpmW/0Y2qaRyTXU7hBbyZftskcjgifDDY=
-  - secure: syYwy/10CR8IlwZ5x1JGVw0RzgKqKzcubkkFPwQCZt5mifMJUmeZXWhZpcqslFz9ALtQfn+WNZxUeM2cl53zSBqNSX3HrOcLnh8LbKFkczBf3TnyZecM1z8TTQ6vYiGK1acLpDaLPBKRxROzHrXocclunAkBMApTXXQbxCBbAWzz4gHNVsnDtgiE9vI+n0WvwlobAn4WLIvE804lDUA5ee/Mo8e8uUXPmhm3w86/tA/JKuABlZY8Tzv6FnK39rBtXnALJHgq5rk0yFnp1028htdUC7J58SC3Rv/oE2rYXL3rzMDvDoSGIs18yyTmGx+1TDwU5y1vTD2e25mNCQAoh6eJN7sso3UsnM61/qy47RVizFWpk7khvJrkes0Bnd0Z0EFW2gCPR2g66u4Sp1GW6NcbxD1Go0AMMu4eryF37n8xUHmowc2p1zeJBe3f6LF0T+zcNu0hypdAAkurBAfYemr6M/l4lKTC1cWNcjccTV1clhpnBWmZ8KD3RTVKkccAwPr+f7tH8fhMJHebbbMsft9ap43JB5dKpgs9zTEw5T0l4Z6vIF6vo1HQLuQxRUXJUqaIlQneZbQoCJlv+544ePPENhyp/voLQZkGyZ0Etp6bk1VtDJw5SWn9ZDtQ7SomdsMwbt7H2OhyiLQLdLxkbXzUU+doLm6F1a2mdUildL8=
+  - secure: MNJ3oMT1bR3Io06UupLEOQP++f+it3/HHzTa7b2s3xITVGIOgCmqM0K8jdh5ZZVuZ8vy8sFfFAUEdXU3FRw5zKpwoyM3BTA6yPQFqnZlROBj+dZpg7XL6UEyFJpsNjFv5ipR5sUWF73Hk4n1UunYewIBc694fYg5BwX0DefbfHuj1oNEsCZlUTNOALIBzaa1gCXT28IHywyoOmjPx0YAtfYtO8gEBIq+5/On3sl4h29q5f6PBCk/FYcETfsTJH6leBP+QrqSd7BYh9KSNH0LJ23NTtb86hNLLY1jxAYGCNgo1bwZA9nHBEIRM294alIJDP3Scgg/hs8Ziw0k8FYuNKcvJddQTO20IBlLZVZO0MKt8Qt1Tu5sYfggzl02oPlNz3DERV2YXsw2bw8ERPTBFMBEOWlWSC/L4yK2mEhy6qeP/g4eQnn5A4wLDKD3oHCHO8qVUtvce2iJ+NumaXXatOFEYibo6gXb9o9/MYqGpzPMo4wiwUtgCTar1vu28XwXLsKcaptbDwSfR/KG1uMQt/SaSZxscCnRk5wzSZpMbIQZMEay5WVl7F/XEgXRa1HkNrMEuepwQFokMmzUs5bNBrKin64kwSG9tV4Qv1rIqYGTx4mlvhpeQG1dzftjVw9w3Jc+/R1CPcGYkSABjpi9fKtUInzH5z9lz0xE8qtIcm8=
