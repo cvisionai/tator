@@ -2852,6 +2852,8 @@ class VideoCanvas extends AnnotationCanvas {
               // Since we are requesting more data, trim the buffer
               needMoreData = true;
 
+              // #TODO This block of code is a candidate for removal, but it's here as defensive programming
+              //       if the user somehow gets into this state.
               if (this._onDemandCompletedDownloads > this._onDemandDownloadCheck.lastDownloadCount &&
                     !this._onDemandFinished &&
                     ranges.length > 1 &&
@@ -2925,6 +2927,9 @@ class VideoCanvas extends AnnotationCanvas {
           }
           else
           {
+            // #TODO This block of code is a candidate for removal, but it's here as defensive programming
+            //       if the user somehow gets into this state.
+
             // Did not find a matching range. Have we already downloaded
             if (this._onDemandCompletedDownloads > this._onDemandDownloadCheck.lastDownloadCount &&
                 !this._onDemandFinished &&
@@ -2949,11 +2954,6 @@ class VideoCanvas extends AnnotationCanvas {
                     this.onDemandDownload()}, 50);
                 });
                 return;
-              this._onDemandDownloadCheck.lastEndTime = end;
-              this._onDemandDownloadCheck.lastStartTime = start;
-              this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
-
-              needMoreData = false;
             }
             this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
             // #TODO do we need this?
