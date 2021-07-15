@@ -10,7 +10,8 @@ vm:
 before_install:
 - cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
 - sed -i "s/localhost/$DOCKER_REGISTRY/g" helm/tator/values.yaml
-- docker login -u $DOCKER_USERNAME -P $DOCKER_PASSWORD
+- groups
+- docker login --username=$DOCKER_USERNAME -password=$DOCKER_PASSWORD
 
 jobs:
   include:
