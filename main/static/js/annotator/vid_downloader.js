@@ -36,6 +36,7 @@ class VideoDownloader
     // is in onDemand mode
     this._bufferedSegmentDownloads = [];
     this._bufferedSeeks = null;
+    this._scrubDownloadDisabled = false;
 
     // Used with the initial download to get the initial set of frames quicker to the player
     // (assuming that blockSize is large than this)
@@ -222,6 +223,7 @@ class VideoDownloader
   {
     this._onDemandConfig = null;
 
+    /*
     if (this._bufferedSeek != null)
     {
       this.downloadForFrame(
@@ -235,6 +237,7 @@ class VideoDownloader
       var buf_idx = this._bufferedSegmentDownloads.shift();
       this.downloadNextSegment(buf_idx);
     }
+    */
   }
 
   /**
@@ -686,6 +689,24 @@ class VideoDownloader
                });
            });
   }
+
+  scrubDownloadDisabled() {
+    return this._scrubDownloadDisabled;
+  }
+
+  disableScrubDownload() {
+    this._scrubDownloadDisabled = true;
+  }
+
+  reenableScrubDownload() {
+    this._scrubDownloadDisabled = false;
+
+    while (this._bufferedSegmentDownloads.length > 0)
+    {
+      var stored_buf_idx = this._bufferedSegmentDownloads.shift();
+      this.downloadNextSegment(stored_buf_idx);
+    }
+  }
 }
 
 var ref = null;
@@ -706,7 +727,12 @@ onmessage = function(e)
   {
     if (ref.specificBufferInitialized(msg.buf_idx))
     {
+      if (ref.scrubDownloadDisabled()) {
+        ref.saveDownloadNextSegmentRequest(msg.buf_idx);
+      }
+      else {
         ref.downloadNextSegment(msg.buf_idx);
+      }
     }
   }
   else if (type == 'seek')
@@ -717,15 +743,27 @@ onmessage = function(e)
   {
     ref.setupOnDemandDownload(msg['direction'], msg['frame'], msg['mediaFileIndex'], msg['fps'], msg['maxFrame'], msg['id']);
   }
+  else if (type == 'onDemandPaused')
+  {
+    ref.reenableScrubDownload();
+  }
   else if (type == 'onDemandDownload')
   {
     if (ref.inOnDemandMode())
     {
       ref.downloadNextOnDemandBlock();
     }
+
+    if (msg["playing"]) {
+      ref.disableScrubDownload();
+    }
+    else {
+      ref.reenableScrubDownload();
+    }
   }
   else if (type == 'onDemandShutdown')
   {
     ref.shutdownOnDemandDownload();
+    ref.reenableScrubDownload();
   }
 }

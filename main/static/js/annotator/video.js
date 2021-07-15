@@ -2975,7 +2975,9 @@ class VideoCanvas extends AnnotationCanvas {
           console.log(`    range ${rangeIdx} (start/end/current) - ${start} ${end} ${this.frameToTime(this._dispFrame)}`)
         }
         this._onDemandPendingDownloads += 1;
-        this._dlWorker.postMessage({"type": "onDemandDownload"});
+        this._dlWorker.postMessage({
+          "type": "onDemandDownload",
+          "playing": !this.isPaused()});
       }
 
       // Clear out unecessary parts of the video if there are pending deletes
@@ -3170,7 +3172,9 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._onDemandDownloadTimeout);
       this._onDemandDownloadTimeout=null;
       console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: shutdown`);
-      this._dlWorker.postMessage({"type": "onDemandShutdown"});
+      this._dlWorker.postMessage({
+        "type": "onDemandShutdown"
+      });
     }
   }
 
@@ -3185,6 +3189,10 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Stop the player thread first
     this.stopPlayerThread();
+
+    // Let the downloader know the ondemand is paused.
+    // Doesn't matter if the player was using the scrub buffer for playback
+    this._dlWorker.postMessage({"type": "onDemandPaused"});
 
     // If we weren't already paused send the event
     if (currentDirection != Direction.STOPPED)
