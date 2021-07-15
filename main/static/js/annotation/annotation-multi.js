@@ -435,6 +435,7 @@ class AnnotationMulti extends TatorElement {
         let video = this._videos[idx];
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
+        video.shutdownOnDemandDownload();
         video.seekFrame(this_frame, video.drawFrame)
               .then(() => {
 		  this._lastScrub = Date.now();
@@ -464,6 +465,7 @@ class AnnotationMulti extends TatorElement {
       let video = this._videos[idx];
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
       video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
+      video.shutdownOnDemandDownload();
       const seekPromise = video.seekFrame(this_frame, video.drawFrame, true);
       seekPromiseList.push(seekPromise);
     }
