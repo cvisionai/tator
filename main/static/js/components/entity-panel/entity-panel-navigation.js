@@ -61,6 +61,7 @@ class EntityPanelNavigation extends TatorElement {
 
       this._goToFrameButton = document.createElement("entity-frame-link-button");
       this._goToFrameButton.button.classList.add("ml-3");
+      this._goToFrameButton.button.classList.add("tooltip-left");
       this._goToFrameButton.button.setAttribute("tooltip", "View In Annotator");
       this._goToFrameButton.button.setAttribute("target", "_blank");
       this.controls.appendChild(this._goToFrameButton);

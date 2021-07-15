@@ -1,5 +1,8 @@
 [tooltip] {
   position: relative;
+  &.tooltip-left {
+    margin-left: -100px;
+  }
   &:before {
     background-color: $color-charcoal--medium;
     border-radius: 3px;
