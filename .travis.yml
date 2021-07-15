@@ -31,10 +31,10 @@ before_install:
 jobs:
   include:
   - stage: build docker images
-    install:
-    - pip install sphinx-rtd-theme recommonmark mako progressbar2
-    - npm install
-    script:
+    install: skip
+    #- pip install sphinx-rtd-theme recommonmark mako progressbar2
+    #- npm install
+    script: skip
     #- make main/version.py
     #- make python-bindings
     #- make postgis-image
