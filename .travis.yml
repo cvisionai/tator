@@ -21,6 +21,7 @@ jobs:
     - pip install sphinx-rtd-theme recommonmark mako progressbar2
     - npm install
     script:
+    - docker pull $DOCKER_REGISTRY/tator_online:$(git rev-parse HEAD)
     - docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $DOCKER_REGISTRY/tator_online:$(git rev-parse HEAD) python3 manage.py getschema > scripts/packages/tator-py/schema.yaml
     - cat scripts/packages/tator-py/schema.yaml
   - stage: install and test
