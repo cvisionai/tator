@@ -10,6 +10,7 @@ vm:
 before_install:
 - cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
 - sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
+- cat helm/tator/values.yaml
 - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
 - pip install pyyaml
 
@@ -20,6 +21,7 @@ jobs:
     - pip install sphinx-rtd-theme recommonmark mako progressbar2
     - npm install
     script:
+    - make postgis-image
     - make images
   - stage: install and test
     install:
