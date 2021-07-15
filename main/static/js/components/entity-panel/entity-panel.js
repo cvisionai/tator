@@ -5,16 +5,8 @@ class EntityGalleryPanel extends TatorElement {
     // Panel 
     this._main = document.createElement("div");
     this._main.setAttribute("class", "entity-panel px-3");
-    this._main.style.marginTop = "-20px"
+    // this._main.style.marginTop = "-20px"
     this._shadow.appendChild(this._main);
-
-    // View in media
-    this._mediaLinkEl = document.createElement("a");
-    this._mediaLinkEl.appendChild(document.createTextNode("View In Annotator"));
-    this._mediaLinkEl.setAttribute("class", "text-gray hover-text-white f3 clickable float-right");
-    this._mediaLinkEl.setAttribute("href", "#");
-    this._mediaLinkEl.setAttribute("target", "_blank");
-    this._main.appendChild(this._mediaLinkEl);
 
     // Entity Data heading
     this._entityHeading = document.createElement("h3");
@@ -69,7 +61,7 @@ class EntityGalleryPanel extends TatorElement {
     //console.log(this.cardObj);
     // Setup linkout and the entity data for panel here
     this._mediaLink = this.cardObj.mediaLink;
-    this._mediaLinkEl.setAttribute("href", this._mediaLink);
+    //this._mediaLinkEl.setAttribute("href", this._mediaLink);
     this.goToFrameButton.button.setAttribute("href", this._mediaLink);
 
     // Init the forms with data

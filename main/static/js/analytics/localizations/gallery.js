@@ -44,7 +44,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     // Tools: Show @aspect ratio
     this.aspectToolContainer = document.createElement("div");
-    this.aspectToolContainer.setAttribute("class", "col-3")
+    this.aspectToolContainer.setAttribute("class", "col-2")
     this._aspectToggle = document.createElement('entity-gallery-aspect-ratio');
     this.aspectToolContainer.appendChild( this._aspectToggle );
     this._tools.appendChild( this.aspectToolContainer );

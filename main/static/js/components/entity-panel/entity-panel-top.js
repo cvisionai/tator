@@ -22,11 +22,6 @@ class EntityGalleryPanelTop extends TatorElement {
     svg.appendChild(path);
     this._topBar.appendChild(this._topBarArrow);
 
-    // Optional navigation
-    this.panelNav = document.createElement("entity-panel-navigation");
-    this.panelNav.hidden = true;
-    this._topBar.appendChild(this.panelNav);
-
     // Text box
     this._box = document.createElement("div");
     this._box.setAttribute("class", "px-3 pt-4");
@@ -64,6 +59,7 @@ class EntityGalleryPanelTop extends TatorElement {
     // Hidden until initialized
     this._navigation = document.createElement("entity-panel-navigation");
     this._navigation.hidden = true;
+    this._navigation.controls.marginTop = "-20px"
     this._box.appendChild(this._navigation);
 
     // Image modal link container @TODO styling
@@ -125,12 +121,15 @@ class EntityGalleryPanelTop extends TatorElement {
   }
 
   navigationHandler(evtDetail, cardElements, cardIndexes) {
-    if(this._navigation.getInit()){
+    if (this._navigation.getInit() && evtDetail.openFlag) {
+      this._navigation.classList.remove("hidden");
       this._navigation.handle({
           cardElements, 
           cardIndexes, 
           cardObj: evtDetail.cardObj
         });
+    } else {
+      this._navigation.classList.add("hidden");
     }
   }
 

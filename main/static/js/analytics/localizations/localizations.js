@@ -64,6 +64,9 @@ class AnalyticsLocalizations extends TatorPage {
     this._panelContainer = document.createElement("entity-panel-container");
     this.aside.appendChild(this._panelContainer);
 
+    // Use in panel navigation
+    this._panelContainer._panelTop._navigation.init();
+
     //
     /* Other */
     // Class to hide and showing loading spinner
