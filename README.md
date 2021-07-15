@@ -3,6 +3,8 @@
 What is Tator?
 ==============
 
+[![Join the chat at https://gitter.im/cvisionai/cvisionai-tator](https://badges.gitter.im/cvisionai/cvisionai-tator.svg)](https://gitter.im/cvisionai/cvisionai-tator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 **Tator** is an open-source video analytics web platform that helps researchers explore and analyze colossal amounts of imagery data.
 
 * **Media management** - Centralized storage and organization of video and imagery
