@@ -5,7 +5,7 @@ language: python
 services:
 - docker
 vm:
-  size: x-large
+  size: large
 
 addons:
   snaps:
@@ -32,13 +32,13 @@ jobs:
   include:
   - stage: build docker images
     install: skip
-    #- pip install sphinx-rtd-theme recommonmark mako progressbar2
-    #- npm install
+    - pip install sphinx-rtd-theme recommonmark mako progressbar2
+    - npm install
     script: skip
-    #- make main/version.py
-    #- make python-bindings
-    #- make postgis-image
-    #- make client-image
+    - make main/version.py
+    - make python-bindings
+    - make postgis-image
+    - make client-image
   - stage: install and test
     install:
     - docker pull $DOCKER_REGISTRY/tator_postgis:latest
