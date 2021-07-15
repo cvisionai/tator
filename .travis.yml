@@ -7,6 +7,20 @@ services:
 vm:
   size: large
 
+addons:
+  snaps:
+  - name: helm
+    confinement: classic
+  - name: microk8s
+    confinement: classic
+    channel: 1.17/stable
+  apt:
+    packages:
+    - iproute2
+    - net-tools
+    - gzip
+    - jq
+
 before_install:
 - cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
 - sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
@@ -27,9 +41,6 @@ jobs:
     - make client-image
   - stage: install and test
     install:
-    - sudo snap install microk8s --classic --channel=1.17/stable
-    - sudo snap install helm
-    - sudo apt-get install -y iproute2 net-tools gzip jq
     - export DOCKER_TAG=$(git rev-parse HEAD)
     - docker run -it --rm --name sleepy $DOCKER_REGISTRY/tator_client:$DOCKER_TAG sleep 60
     - docker cp sleepy:/tmp/*.whl scripts/packages/tator-py/dist/.
