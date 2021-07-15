@@ -2372,7 +2372,7 @@ class VideoCanvas extends AnnotationCanvas {
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
     this._fpsLoadDiag = 0;
-    this._fpsScore = 3;
+    this._fpsScore = 7;
     this._networkUpdate = 0;
     this._audioCheck = 0;
 
