@@ -5,7 +5,7 @@ language: python
 services:
 - docker
 vm:
-  size: large
+  size: x-large
 
 addons:
   snaps:
@@ -47,8 +47,8 @@ jobs:
     - docker tag $DOCKER_REGISTRY/tator_postgis:latest $DOCKER_REGISTRY/tator_postgis:$(git rev-parse HEAD)
     - docker tag $DOCKER_REGISTRY/tator_online:latest $DOCKER_REGISTRY/tator_online:$(git rev-parse HEAD)
     - docker tag $DOCKER_REGISTRY/tator_client:latest $DOCKER_REGISTRY/tator_client:$(git rev-parse HEAD)
-    - export DOCKER_TAG=$(git rev-parse HEAD)
-    - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$DOCKER_TAG sleep 60
+    - export GIT_REVISION=$(git rev-parse HEAD)
+    - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
     - docker cp sleepy:/tmp /tmp
     - mkdir -p scripts/packages/tator-py/dist
     - mv /tmp/tmp/*.whl scripts/packages/tator-py/dist/.
