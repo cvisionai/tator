@@ -22,7 +22,9 @@ jobs:
     - npm install
     script:
     - make main/version.py
-    #- make images
+    - make python-bindings
+    - make postgis-image
+    - make client-image
   - stage: install and test
     install:
     - sudo snap install microk8s --classic --channel=1.17/stable
