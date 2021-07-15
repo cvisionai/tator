@@ -132,28 +132,9 @@ elasticsearch:
   nodeSelector: 
     dbServer: "yes"
 filebeat:
-  enabled: true
-  image: docker.elastic.co/beats/filebeat-oss
-  imageTag: 7.4.2
-  filebeatConfig:
-    filebeat.yml: |
-      filebeat.inputs:
-      - type: docker
-        containers.ids:
-        - '*'
-        processors:
-        - add_kubernetes_metadata:
-            in_cluster: true
-      output.elasticsearch:
-        hosts: '${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}'
-      setup.ilm.enabled: false
+  enabled: false
 kibana:
-  enabled: true
-  image: docker.elastic.co/kibana/kibana-oss
-  kibanaConfig:
-    kibana.yml: |
-      server:
-        basePath: /logs
+  enabled: false
 minio:
   enabled: true
   accessKey: "AKIAIOSFODNN7EXAMPLE"
@@ -172,35 +153,10 @@ prometheus-adapter:
 remoteTranscodes:
   # Typically for dev processing is done on the same machine.
   enabled: false
-  # Host/port are obtained via the following (run on the transcode cluster):
-  #   echo $(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
-  host: "your.transcode.domain.org"
-  port: "6443"
-  # Token can be obtained via the following (run on the transcode cluster):
-  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
-  #   TOKEN=$(kubectl describe secret $SECRET_NAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
-  #   echo $TOKEN
-  token: "Bearer <Your token here>"
-  # Certificate can be obtained via the following (run on the transcode cluster):
-  #   SECRET_NAME=$(kubectl get secrets | grep ^default | cut -f1 -d ' ')
-  #   CERT=$(kubectl get secret $SECRET_NAME -o yaml | grep -E '^  ca.crt' | cut -f2 -d':' | tr -d " ")
-  #   echo $CERT | base64 --decode
-  cert: |
-    -----BEGIN CERTIFICATE-----
-    <Insert certificate here>
-    -----END CERTIFICATE-----
 cognito:
   enabled: false
-  config: |
-    aws-region: us-east-2
-    pool-id: <POOL ID HERE>
-    client-id: <ID HERE>
 email:
   enabled: false
-  sender: "<fill in>"
-  aws_region: "<fill in>"
-  aws_access_key_id: "<fill in>"
-  aws_secret_access_key: "<fill in>"
 anonymousRegistration:
   # Enable to allow anyone to register to use the site.
   enabled: true
