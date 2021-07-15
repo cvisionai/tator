@@ -47,54 +47,87 @@ class EntityPanelNavigation extends TatorElement {
       this.controls.appendChild(this.next);
 
       this.prev.addEventListener("click", () => {
-         const index = parseInt(this._current.textContent) - 1;
-         if (index > 0) {
-         this._current.textContent = String(index);
-         }
-         this._emitSelection();
+         this._emitSelection("prev");
       });
 
       this.next.addEventListener("click", () => {
-         const index = parseInt(this._current.textContent) + 1;
-         if (index <= this._data.length) {
-         this._current.textContent = String(index);
-         }
-         this._emitSelection();
+         this._emitSelection("next");
       });
 
-
-      this._goToFrameButton = document.createElement("entity-frame-button");
-      this._goToFrameButton.style.marginLeft = "8px";
-      this.controls.appendChild(this._goToFrameButton);
+      this._slider.addEventListener("input", () => {
+         let newIndex = Number(this._slider.value);
+         this._emitSelection("slider", newIndex);
+      });
 
       this._data = null;
-
+      this._selectedCardEl = null;
    }
 
    init() {
       this.hidden = false; 
    }
 
-   _emitSelection(e) {
-      console.log("emit selection fn in entity navigation");
-      this._data.dispatchEvent(new Event("next-card"));
+   _emitSelection(action, value = null) {
+      let newCardIndex = null;
+      let total = this._data.length;
+
+      // what is the new index
+      if (action == "next") {
+         newCardIndex = this._cardIndex + 1;
+      } else if (action == "prev") {
+         newCardIndex = this._cardIndex - 1;
+      } else if (action == "slider" && value !== null) {
+         newCardIndex = value;
+      }
+
+      console.log(`newCardIndex ${newCardIndex} and current index is this._cardIndex ${this._cardIndex} (displayed should be +1)`);
+
+      if (newCardIndex < 0) {
+         console.log(`But oops we're out of range! [START -1]  setting to end of the line`);
+         newCardIndex = Number(total) - 1;
+      } else if (newCardIndex == total) {
+         console.log(`But oops we're out of range! [END +1] setting to begginning of the line`);
+         newCardIndex = 0;
+      }
+
+      // Select the el, and update the nav
+      if (this._selectedCardEl !== null && newCardIndex !== null) {
+         this._cardIndex = newCardIndex;
+
+         let newCard = this._data[this._cardIndex];
+         this._selectedCardEl = newCard;
+
+         // faking a click also unselects prev card
+         newCard.card.click();
+
+         this._updateCurrentValues();
+      }
+
    }
 
    getInit(){
       return this.controls.hidden;
    }
 
-   handle({cardElements, cardIndexes, cardObj, gallery}){
+   handle({ cardElements, cardIndexes, cardObj }) {
       this._data = cardElements;
-      this.gallery = gallery;
 
-      let index = cardIndexes[cardObj.id];
-      this._current.textContent = String(index);
+      this._cardIndex = cardIndexes[cardObj.id];
+      this._selectedCardEl = this._data[this._cardIndex];
 
-      this._slider.setAttribute("value", Number(index)+1);
-      this._slider.setAttribute("max", this._data.length);
+      this._updateCurrentValues();
+   }
 
-      
+   _updateCurrentValues() {
+      let cardIndex = this._cardIndex;
+      let start = Number(cardIndex) + 1;
+      let total = this._data.length;
+
+      console.log("Navigation Init at card index: " + cardIndex);
+
+      this._current.textContent = start;
+      this._slider.setAttribute("value", start);
+      this._slider.setAttribute("max", total);
    }
 
    showSelectedNav(){

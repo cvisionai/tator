@@ -116,7 +116,15 @@ class EntityGalleryPanelTop extends TatorElement {
   }
 
   openHandler(evtDetail, cardElements, cardIndexes) {
-    console.log(evtDetail)
+    if (this.localizationType) {
+      this.locDataHandler(evtDetail);
+    }
+    this.headingHandler(evtDetail);
+    //this.panelDataHandler(evtDetail);
+    this.navigationHandler(evtDetail, cardElements, cardIndexes);
+  }
+
+  navigationHandler(evtDetail, cardElements, cardIndexes) {
     if(this._navigation.getInit()){
       this._navigation.handle({
           cardElements, 
@@ -124,11 +132,6 @@ class EntityGalleryPanelTop extends TatorElement {
           cardObj: evtDetail.cardObj
         });
     }
-    //this.panelDataHandler(evtDetail);
-    if (this.localizationType) {
-      this.locDataHandler(evtDetail);
-    }
-    this.headingHandler(evtDetail);
   }
 
   panelDataHandler(evtDetail){
