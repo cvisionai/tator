@@ -1,72 +1,86 @@
-language: python
+os: linux
+arch: amd64
 dist: bionic
+language: bash
 services:
 - docker
-addons:
-  snaps:
-  - name: helm
-    confinement: classic
-  - name: microk8s
-    confinement: classic
-    channel: 1.17/stable
-  apt:
-    packages:
-    - iproute2
-    - net-tools
-    - gzip
-    - jq
 vm:
   size: large
+
 before_install:
-# Wait until microk8s is ready.
-- sudo microk8s status --wait-ready
-# Show node descriptions.
-- sudo microk8s kubectl describe nodes
-# Get physical interface name.
-- |
-  export HOST_INTERFACE=$(ip -details -json link show | jq -r '
-  .[] |
-        if .linkinfo.info_kind // .link_type == "loopback" then
-            empty
-        else
-            .ifname
-        end
-  ')
-# Set tator host.
-- export HOST_IP=$(ip addr show $(echo $HOST_INTERFACE | awk '{print $1}') | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2}')
-# Download and configure kubectl.
-- curl -sLO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl" && chmod +x kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && mkdir -p $HOME/.kube && sudo chmod 777 $HOME/.kube && sudo microk8s config > $HOME/.kube/config
-# Show node descriptions with kubectl.
-- kubectl describe nodes
-# Turn on microk8s add-ons.
-- yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
-# Label nodes.
-- kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
-# Download argo CLI client.
-- curl -sLO https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz && gunzip argo-linux-amd64.gz && chmod +x argo-linux-amd64 && sudo mv ./argo-linux-amd64 /usr/local/bin/argo && argo version
-install:
-- echo "Host interface is $HOST_INTERFACE"
-- echo "Host IP address is $HOST_IP"
-- pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
-# Install argo controller.
-- kubectl create namespace argo && kubectl apply -n argo -f https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
-# Configure local storage.
-- sudo mkdir /media/kubernetes_share && sudo mkdir /media/kubernetes_share/elasticsearch && sudo chown -R nobody:nogroup /media/kubernetes_share && sudo chmod -R 777 /media/kubernetes_share
-# Copy over values.yaml.
-- cp ./helm/tator/values-microk8s.yaml ./helm/tator/values.yaml
-# Set IP address in values.yaml.
-- sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
-- cat helm/tator/values.yaml
-# Run npm install.
-- npm install
-script:
-# Build the application.
-- make cluster
-# Run REST tests.
-- make test
-# Get gunicorn pod.
-- export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
-# Create a super user with credentials travis/travis.
-- kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py createsuperuser --username travis --email no-reply@cvisionai.com --noinput
-# Install tator-py wheel and run tator-py tests.
-- cd scripts/packages/tator-py && pip install dist/*.whl && pytest test --host=http://$HOST_IP --token=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from rest_framework.authtoken.models import Token; print(Token.objects.first())")
+- cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
+- sed -i "s/localhost/$DOCKER_REGISTRY/g" helm/tator/values.yaml
+- docker login -u $DOCKER_USERNAME -P $DOCKER_PASSWORD
+
+jobs:
+  include:
+  - stage: build docker images
+    install: make images
+  - stage: install and test
+    install:
+    - sudo snap install microk8s --classic --channel=1.17/stable
+    - sudo snap install helm
+    - sudo apt-get install -y iproute2 net-tools gzip jq python3 python3-pip
+    - pip install sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
+    - npm install
+    - export DOCKER_TAG=$(git rev-parse HEAD)
+    - docker run -it --rm --name sleepy $DOCKER_REGISTRY/tator_client:$DOCKER_TAG sleep 60
+    - docker cp sleepy:/tmp/*.whl scripts/packages/tator-py/dist/.
+    - |
+      export HOST_INTERFACE=$(ip -details -json link show | jq -r '
+      .[] |
+            if .linkinfo.info_kind // .link_type == "loopback" then
+                empty
+            else
+                .ifname
+            end
+      ')
+    - export HOST_IP=$(ip addr show $(echo $HOST_INTERFACE | awk '{print $1}') | awk '$1
+      == "inet" {gsub(/\/.*$/, "", $2); print $2}')
+    - echo "Host interface is $HOST_INTERFACE"
+    - echo "Host IP address is $HOST_IP"
+    - sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
+    - cat helm/tator/values.yaml
+    - sudo mkdir /media/kubernetes_share
+      && sudo mkdir /media/kubernetes_share/elasticsearch
+      && sudo chown -R nobody:nogroup /media/kubernetes_share
+      && sudo chmod -R 777 /media/kubernetes_share
+    - sudo microk8s status --wait-ready
+    - curl -sLO $KUBECTL_URL
+      && chmod +x kubectl
+      && sudo mv ./kubectl /usr/local/bin/kubectl
+      && mkdir -p $HOME/.kube
+      && sudo chmod 777 $HOME/.kube
+      && sudo microk8s config > $HOME/.kube/config
+    - kubectl describe nodes
+    - yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb registry storage
+    - kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
+    - kubectl create namespace argo
+      && kubectl apply -n argo -f $ARGO_MANIFEST_URL
+      && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
+    - curl -sLO $ARGO_CLIENT_URL
+      && gunzip argo-linux-amd64.gz
+      && chmod +x argo-linux-amd64
+      && sudo mv ./argo-linux-amd64 /usr/local/bin/argo
+      && argo version
+    - make main/version.py
+    - make cluster-deps
+    - make cluster-install
+    script:
+    - make test
+    - export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed
+      's/pod\///')
+    - kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py
+      createsuperuser --username travis --email no-reply@cvisionai.com --noinput
+    - cd scripts/packages/tator-py && pip install dist/*.whl && pytest test --host=http://$HOST_IP
+      --token=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from
+      rest_framework.authtoken.models import Token; print(Token.objects.first())")
+
+env:
+  global:
+  - secure: V42Nrwu48FvjM7flMCdzk3KI12lsLbvUZW0SBo1m5faGlvvTmGbkvf/FliszE7lS402xj3tOs+dxW9wCyQc7LqzuRXCP+soQmSy+FOA1k38FaFlXqpoknpMRw8Ssp9I468XpFbpvaK8wdYKIkfIUPc4lMBWEOVOJSDjIfEKtcXdH8L5gHl6BDhfAiudM5JjtrtoUZkR9VRgOokUPvL0OzBJP1wMSKeQVSAl4NrR6Ozok7X8saTRUuH1wu8ERJBEMHAGU60nw98h+J0VTaeU9oZCLny7vsaWp7HtcadyKJOxdWPaf+0wjhPiIw2GBWrM0HFzhypLRWfhkCoZPV5ni04vAlCzTa6/Dr20STumTP0ahL6qDIGjvhJ3J3w3MfmU3wqfz/PZyQCgfeb/gjQhWERzCPhhIi5p0ORGLCunjKrpz4lVhSr/SLyZE2x+kwk8JNTURh60NJOk5IdWBGhHF0xwXrBFtxa4VyY0BL7L5UcDDNepSQZuZ9sAXmGb7SzqgqMZGNj3jhHQ5gxORb0WxMRvqo3HEyDv3QJaXHgssUcX47P1daS+21PhDv7UGXVk0p9TABr3e/XlPFY2FxktVdTFahNTWP/zvgpu3Tz86tGfw115Eccmn5S0UcV0ZA39QsPX4M5/HBp5UEqrDf7PMhG4yhEkbDgVFKw+nfpbJZUE=
+  - secure: iZ3+UYBvESoN1Bw/pQoyYz/4dpEljRqJsC9SGr09MmjaxfMyxKKEmvcnf4iHzOyGeacGEoJhJkTOfZDiYpZZrQ0y94y40PSr1iNDA4rFNLBadYdaPs05g/qi5Sbl6lUeHZY4g53Y7LQdrmTitw6lMGMH+LRTYnjNWII2oycawf6wFNEIBs9XvbvHev7kEDdV1X2An19vTAbSWLnt4JrM8xuVtH1uC4VPx1aO/fP1SKu93qrhha6OlFKpICJaNwzFofJIwATT7ox2Gcr8YJ5C4ruuHR5RmaCxtjaYl2l0GjwUUE97cDT8Hk+LSliiGIAlg+6K4XL+l+QP3r1dvSfPfJPZZIHUP+nZNHXOiy/f/IJ6Gghr7gCdIdvE7ldC4DGwwcs5LHT8phE7UQ1z/BuVIAcS8XWiDAyjgki+ln9mtdgw7JNE71vGB7mWIGNZ/mc7i8hNnz8OkjWf6aWNZEEvZjZHErYb1uo1znalhGpol7rq9LuHFqJ3u0joQWGC1EHm4sfxhC6bzLXV++socdjLJey4vJ/IFuAHXRU3JAH33vcz4J93Qzu7E+gMQr61qLOchkDurGbGKWndNt/+vS3aoPPMyw7PPjd1xTDJM+jhP8+uxHwMYJJd5/5XNg6h026LS7fdNFsYykeO3ZXlBn8RMXd/fPqBweIbtJCByw2soCY=
+  - secure: eik455nRoRRKZbQMrTKzSXNNCGPgoM5O0JniEVdCxB/9uTjNALSBuqmIszxiNEuyq0tcq0C3qBq4d4k1CyaAeN8OA/SaU5NKCzLXquanC8tkOa9xbPwcH8PElQJZ6xZupwC/+wz+A+bfgN2rhG/O/DobLRSaEnHDgjGLb3v6SFbmu1m1UJaVpcxa/SCb03OaWf4IYgawoxzfns710EHk2l3531VmrBUDZF9wx00pGSXSmlVDMeg0/BG10UN23UrDL3jFd07uUU5TGAE/V7zuRCqrKH5rVFK0UAOXyx1kmVQfm5EtqZo6RIk4uan9X+vhijxwrMbP3sSfD9EDp36uJwFdSoJVW9ojqUbV2KE0Xdz8FLV8D5nVWJw132LTguRxL66QCHPqGU0vsR0oXvh4BQ2B+cOSp44pOaiSTKaBtItmgOvJMwbnvW6o1BovjoZtfI2i5XQNDdXNl3S005unaKQf/sqE86zLRFSmmS9Zl//DiSfq1Q+jd5NnR60jOpaHFM6eWtcSgfWIro+K2hnFOdmOwc4utETT9mtWm1N/P5qIiTd1uAVCak706swC8YzDSbxMDDl6EEGaaTnX7/YSMIEotqHQfB4Wz9FIU63G436Z0d5rjYm0UmKj1Zkd1KbdfW59EY4mNX737UkdiIXCMJWUWqEIyj9gJSIo5Dqq7eg=
+  - KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.17.11/bin/linux/amd64/kubectl"
+  - ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz"
+  - ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml"
