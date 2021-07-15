@@ -46,7 +46,7 @@ jobs:
     - docker pull $DOCKER_REGISTRY/tator_client:latest
     - docker tag $DOCKER_REGISTRY/tator_postgis:latest $DOCKER_REGISTRY/tator_postgis:$(git rev-parse HEAD)
     - docker tag $DOCKER_REGISTRY/tator_online:latest $DOCKER_REGISTRY/tator_online:$(git rev-parse HEAD)
-    - docker tag $DOCKER_REGISTRY/tator_client:latest $DOCKER_REGISTRY/tator_latest:$(git rev-parse HEAD)
+    - docker tag $DOCKER_REGISTRY/tator_client:latest $DOCKER_REGISTRY/tator_client:$(git rev-parse HEAD)
     - export DOCKER_TAG=$(git rev-parse HEAD)
     - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$DOCKER_TAG sleep 60
     - docker cp sleepy:/tmp /tmp
