@@ -252,8 +252,17 @@ class AnnotationsGallery extends EntityCardGallery {
         annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
         annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
+        // Check and set current permission level on annotationPanel
+        if (this.panelContainer.hasAttribute("permissionValue")) {
+          let permissionVal = this.panelContainer.getAttribute("permissionValue");
+          annotationPanel.entityData.setAttribute("permission", permissionVal);
+          annotationPanel.stateData.setAttribute("permission", permissionVal);
+          annotationPanel.mediaData.setAttribute("permission", permissionVal);
+        }
+
         // when lock changes set attribute on forms to "View Only" / "Can Edit"
         this.panelContainer.addEventListener("permission-update", (e) => {
+          this.panelContainer.setAttribute("permissionValue", e.detail.permissionValue);
           annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
           annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
         });
