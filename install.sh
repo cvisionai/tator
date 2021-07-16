@@ -7,6 +7,14 @@ KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.19.13/
 ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz"
 ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml"
 
+# Install snaps.
+sudo snap install helm --classic
+sudo snap install microk8s --classic --channel=1.19/stable
+
+# Install apt packages.
+sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
+    iproute2 net-tools gzip wget unzip ffmpeg
+
 # Get IP address if it is not set explicitly.
 if [[ -z "${HOST_INTERFACE}" ]]; then
   HOST_INTERFACE=$(ip -details -json link show | jq -r '
@@ -29,14 +37,6 @@ if [[ -z "${DOCKER_REGISTRY}" ]]; then
   DOCKER_REGISTRY=cvisionai
 fi
 echo "Using docker registry $DOCKER_REGISTRY."
-
-# Install apt packages.
-sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip jq wget unzip ffmpeg
-
-# Install snaps.
-sudo snap install helm --classic
-sudo snap install microk8s --classic --channel=1.19/stable
 
 # Copy out wheel from docker container.
 docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
