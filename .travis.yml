@@ -1,7 +1,7 @@
 os: linux
 arch: amd64
 dist: bionic
-language: python
+language: bash
 services:
 - docker
 vm:
@@ -23,19 +23,21 @@ addons:
     - wget
     - unzip
     - ffmpeg
+    - python3
+    - python3-pip
 
 before_install:
 - cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
 - sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
 - cat helm/tator/values.yaml
 - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
-- pip install pyyaml
+- pip3 install pyyaml
 
 jobs:
   include:
   - stage: build docker images
     install:
-    - pip install sphinx-rtd-theme recommonmark mako progressbar2
+    - pip3 install sphinx-rtd-theme recommonmark mako progressbar2
     - npm install
     script:
     - make main/version.py
@@ -47,7 +49,7 @@ jobs:
     - export GIT_REVISION=$(git rev-parse HEAD)
     - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
     - docker cp sleepy:/tmp /tmp
-    - pip install /tmp/tmp/*.whl pandas opencv-python
+    - pip3 install /tmp/tmp/*.whl pandas opencv-python pytest
     - wget $BENTO4_URL -q -O bento4.zip
       && unzip bento4.zip
       && sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.
