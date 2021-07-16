@@ -1,9 +1,9 @@
 os: linux
 arch: amd64
 dist: bionic
-language: node_js
-node_js:
-- 10
+language: python
+python:
+- "3.8"
 services:
 - docker
 vm:
@@ -25,8 +25,6 @@ addons:
     - wget
     - unzip
     - ffmpeg
-    - python3
-    - python3-pip
 
 before_install:
 - cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
@@ -52,7 +50,6 @@ jobs:
     - export GIT_REVISION=$(git rev-parse HEAD)
     - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
     - docker cp sleepy:/tmp /tmp
-    - pip uninstall pytest
     - pip3 install setuptools
     - pip3 install /tmp/tmp/*.whl pandas opencv-python pytest
     - wget $BENTO4_URL -q -O bento4.zip
