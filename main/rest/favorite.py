@@ -53,6 +53,7 @@ class FavoriteListAPI(BaseListView):
         entityTypeName = params.get("entityTypeName", "")
         if entityTypeName == "Localization":
             metaObj = LocalizationType.objects.get(pk=params['type'])
+
             fave = Favorite.objects.create(
                 name=params['name'],
                 project=Project.objects.get(pk=params['project']),
@@ -61,10 +62,12 @@ class FavoriteListAPI(BaseListView):
                 meta=metaObj.id,
                 page=params['page'],
                 values=params['values'],
+                entityTypeName=entityTypeName
             )
 
         elif entityTypeName == "State":
             metaObj = StateType.objects.get(pk=params['type'])
+
             fave = Favorite.objects.create(
                 name=params['name'],
                 project=Project.objects.get(pk=params['project']),
@@ -73,6 +76,7 @@ class FavoriteListAPI(BaseListView):
                 meta=metaObj.id,
                 page=params['page'],
                 values=params['values'],
+                entityTypeName=entityTypeName
             )
 
         # Save the favorite.
@@ -99,6 +103,18 @@ class FavoriteDetailAPI(BaseDetailView):
         name = params.get('name', None)
         if name is not None:
             obj.name = name
+
+        entityTypeName = params.get('entityTypeName', None)
+        if entityTypeName == "Localization":
+            metaObj = LocalizationType.objects.get(pk=params['meta'])
+            obj.state_meta = None
+            obj.localization_meta = metaObj.id
+
+        elif entityTypeName == "State":
+            metaObj = StateType.objects.get(pk=params['meta'])
+            obj.state_meta = metaObj.id
+            obj.localization_meta = None
+
         obj.save()
         return {'message': f'Favorite {obj.id} updated successfully!'}
 

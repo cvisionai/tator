@@ -1384,6 +1384,7 @@ class Favorite(Model):
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()
+    entityTypeName = CharField(max_length=16, choices=[('Localization', 'Localization'), ('State','State')], null=True, blank=True)
 
 class Bookmark(Model):
     """ Stores a link saved by a user.
