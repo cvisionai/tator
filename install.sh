@@ -63,7 +63,7 @@ sudo mkdir /media/kubernetes_share \
     && sudo chown -R nobody:nogroup /media/kubernetes_share \
     && sudo chmod -R 777 /media/kubernetes_share
 sudo microk8s status --wait-ready
-curl -sLO $KUBECTL_URL
+curl -sLO $KUBECTL_URL \
     && chmod +x kubectl \
     && sudo mv ./kubectl /usr/local/bin/kubectl \
     && mkdir -p $HOME/.kube \
