@@ -1815,7 +1815,7 @@ class VideoCanvas extends AnnotationCanvas {
     // Resize the viewport
     this._draw.resizeViewport(dims[0], dims[1]);
     this._fps=fps;
-    this._numFrames=numFrames;
+    this._numFrames=numFrames-1;
     this._numSeconds=fps*numFrames;
     this._dims=dims;
     this.resetRoi();
@@ -1944,7 +1944,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     let ended = false;
     if (this._direction == Direction.FORWARD &&
-        this._dispFrame >= (this._numFrames - 2))
+        this._dispFrame >= (this._numFrames - 1))
     {
       ended = true;
     }
@@ -2243,6 +2243,10 @@ class VideoCanvas extends AnnotationCanvas {
   {
     if (this._direction != Direction.STOPPED)
     {
+      return;
+    }
+
+    if (frameIdx < 0 || frameIdx >= this._numFrames) {
       return;
     }
 
@@ -2757,7 +2761,7 @@ class VideoCanvas extends AnnotationCanvas {
       if (this._direction == Direction.FORWARD)
       {
         // #TODO This needs to be relooked at
-        if ((this._numFrames - 2) == this._dispFrame)
+        if ((this._numFrames - 1) == this._dispFrame)
         {
           return;
         }
@@ -3076,7 +3080,7 @@ class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    if (this._dispFrame >= (this._numFrames - 2))
+    if (this._dispFrame >= (this._numFrames))
     {
       return false;
     }

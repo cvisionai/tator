@@ -678,10 +678,6 @@ class AnnotationMulti extends TatorElement {
              this._currentFrameText.style.width = (15 * String(frame).length) + "px";
            });
 
-        prime.addEventListener("playbackEnded", evt => {
-          this.pause();
-        });
-
         prime.addPauseListener(() => {
           const prime_frame = prime.currentFrame();
           for (let idx = 1; idx < this._videos.length; idx++)
@@ -693,6 +689,9 @@ class AnnotationMulti extends TatorElement {
         });
       }
 
+      this._videos[idx].addEventListener("playbackEnded", () => {
+        this.pause();
+      });
       this._videos[idx].addEventListener("canvasResized", () => {
         this._timelineD3.redraw();
       });
@@ -1421,6 +1420,7 @@ class AnnotationMulti extends TatorElement {
           return;
         }
       }
+
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++)
       {

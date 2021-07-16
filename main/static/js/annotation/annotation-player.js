@@ -794,6 +794,11 @@ class AnnotationPlayer extends TatorElement {
       return;
     }
 
+    if (this._video.currentFrame() >= this._video._numFrames - 1) {
+      this.pause();
+      return;
+    }
+
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
@@ -824,6 +829,11 @@ class AnnotationPlayer extends TatorElement {
     if (this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
+      return;
+    }
+
+    if (this._video.currentFrame() <= 0) {
+      this.pause();
       return;
     }
 
