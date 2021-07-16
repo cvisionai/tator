@@ -13,7 +13,7 @@ addons:
     confinement: classic
   - name: microk8s
     confinement: classic
-    channel: 1.17/stable
+    channel: 1.19/stable
   apt:
     packages:
     - iproute2
@@ -41,9 +41,10 @@ jobs:
     - make client-image
   - stage: install and test
     install:
-    - echo "--allow-privileged=true" | sudo tee -a /var/snap/microk8s/current/args/kube-apiserver
-    - sudo microk8s stop
-    - sudo microk8s start
+    #- sudo microk8s status --wait-ready
+    #- echo "--allow-privileged=true" | sudo tee -a /var/snap/microk8s/current/args/kube-apiserver
+    #- sudo microk8s stop
+    #- sudo microk8s start
     - export GIT_REVISION=$(git rev-parse HEAD)
     - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
     - docker cp sleepy:/tmp /tmp
