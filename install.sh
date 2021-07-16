@@ -14,7 +14,7 @@ sudo snap install microk8s --classic --channel=1.19/stable
 # Install apt packages.
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip
+    iproute2 net-tools gzip wget unzip ffmpeg python3 python3-pip
 
 # Get IP address if it is not set explicitly.
 if [[ -z "${HOST_INTERFACE}" ]]; then
