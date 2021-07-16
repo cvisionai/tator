@@ -1,9 +1,11 @@
 os: linux
 arch: amd64
 dist: bionic
-language: python
+language: generic
 python:
 - "3.8"
+node_js:
+- "10"
 services:
 - docker
 vm:
