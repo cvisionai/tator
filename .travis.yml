@@ -41,7 +41,7 @@ jobs:
     - make client-image
   - stage: install and test
     install:
-    - echo "--allow-privileged" | sudo tee -a /var/snap/microk8s/current/args/kube-apiserver
+    - echo "--allow-privileged=true" | sudo tee -a /var/snap/microk8s/current/args/kube-apiserver
     - sudo microk8s stop
     - sudo microk8s start
     - export GIT_REVISION=$(git rev-parse HEAD)
