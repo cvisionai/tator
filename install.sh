@@ -74,3 +74,9 @@ curl -sLO $ARGO_CLIENT_URL \
 make main/version.py
 make cluster-deps
 make cluster-install
+GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
+kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=admin \
+    python3 manage.py createsuperuser --username admin --email no-reply@cvisionai.com --noinput
+echo "Installation completed successfully!"
+echo "Open a browser to http://$HOST_IP and enter credentials admin/admin."
+echo "We strongly recommend changing your password immediately!"

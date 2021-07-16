@@ -47,12 +47,10 @@ jobs:
     script:
     - make testinit
     - make test
-    - export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed
-      's/pod\///')
-    - kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py
-      createsuperuser --username travis --email no-reply@cvisionai.com --noinput
     - cp -r scripts/packages/tator-py/test .
     - cp -r scripts/packages/tator-py/examples .
+    - export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed
+      's/pod\///')
     - export TOKEN=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)")
     - export TOKEN=$(echo $TOKEN | tr -d '\r')
     - pytest test --host=http://$HOST_IP --token=$TOKEN
