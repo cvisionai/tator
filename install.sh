@@ -12,8 +12,9 @@ sudo snap install helm --classic
 sudo snap install microk8s --classic --channel=1.19/stable
 
 # Install apt packages.
-sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip ffmpeg
+sudo apt-get update \
+    && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
+    iproute2 net-tools gzip wget unzip jq ffmpeg
 
 # Get IP address if it is not set explicitly.
 if [[ -z "${HOST_INTERFACE}" ]]; then
