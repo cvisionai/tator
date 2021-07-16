@@ -14,7 +14,7 @@ sudo snap install microk8s --classic --channel=1.19/stable
 # Install apt packages.
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip jq ffmpeg
+    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip
 
 # Get IP address if it is not set explicitly.
 if [[ -z "${HOST_INTERFACE}" ]]; then
@@ -44,9 +44,9 @@ docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sle
 docker cp sleepy:/tmp /tmp
 
 # Install pip packages.
-pip install --upgrade pip
-pip install setuptools
-pip install /tmp/tmp/*.whl pandas opencv-python pytest pyyaml
+pip3 install --upgrade pip
+pip3 install setuptools
+pip3 install /tmp/tmp/*.whl pandas opencv-python pytest pyyaml
 
 # Get and install bento4.
 wget $BENTO4_URL -q -O bento4.zip \
