@@ -54,7 +54,7 @@ jobs:
     - pip install /tmp/tmp/*.whl pandas opencv-python
     - wget $BENTO4_URL -O bento4.zip
       && unzip bento4.zip
-      && sudo cp bento4/bin/mp4dump /usr/local/bin/.
+      && sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.
       && sudo chmod +x /usr/local/bin/mp4dump
     - |
       export HOST_INTERFACE=$(ip -details -json link show | jq -r '
@@ -97,15 +97,17 @@ jobs:
     - make cluster-deps
     - make cluster-install
     script:
+    - make testinit
     - make test
     - export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed
       's/pod\///')
     - kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=travis python3 manage.py
       createsuperuser --username travis --email no-reply@cvisionai.com --noinput
     - cp -r scripts/packages/tator-py/test .
-      && pytest test --host=http://$HOST_IP
-      --token=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from
-      rest_framework.authtoken.models import Token; print(Token.objects.first())")
+    - cp -r scripts/packages/tator-py/examples .
+    - export TOKEN=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)")
+    - export TOKEN=$(echo $TOKEN | tr -d '\r')
+    - pytest test --host=http://$HOST_IP --token=$TOKEN
 
 env:
   global:
