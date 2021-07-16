@@ -58,7 +58,7 @@ class FavoriteListAPI(BaseListView):
                 name=params['name'],
                 project=Project.objects.get(pk=params['project']),
                 user=self.request.user,
-                localization_meta=metaObj.id,
+                localization_meta=metaObj,
                 meta=metaObj.id,
                 page=params['page'],
                 values=params['values'],
@@ -72,7 +72,7 @@ class FavoriteListAPI(BaseListView):
                 name=params['name'],
                 project=Project.objects.get(pk=params['project']),
                 user=self.request.user,
-                state_meta=metaObj.id,
+                state_meta=metaObj,
                 meta=metaObj.id,
                 page=params['page'],
                 values=params['values'],
@@ -104,15 +104,17 @@ class FavoriteDetailAPI(BaseDetailView):
         if name is not None:
             obj.name = name
 
+        # Note: The patching of the meta fields using the entityTypeName is here to support
+        #       migrating existing Favorites that only had a single meta field to the new style.
         entityTypeName = params.get('entityTypeName', None)
         if entityTypeName == "Localization":
-            metaObj = LocalizationType.objects.get(pk=params['meta'])
+            metaObj = LocalizationType.objects.get(pk=obj.meta)
             obj.state_meta = None
-            obj.localization_meta = metaObj.id
+            obj.localization_meta = metaObj
 
         elif entityTypeName == "State":
-            metaObj = StateType.objects.get(pk=params['meta'])
-            obj.state_meta = metaObj.id
+            metaObj = StateType.objects.get(pk=obj.meta)
+            obj.state_meta = metaObj
             obj.localization_meta = None
 
         obj.save()

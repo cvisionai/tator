@@ -121,15 +121,37 @@ class FavoritesPanel extends TatorElement {
 
     this._identifier = identifyingAttribute(dataType);
     this._dataType = dataType;
+    this._isState = this._dataType.id.includes("state");
+    if (this._isState) {
+      this._entityTypeName = "State";
+    }
+    else {
+      this._entityTypeName = "Localization";
+    }
+
     this._typeId = Number(this._dataType.id.split("_")[1]);
     this._favorites = new Map(); // Map between page number and list of favorites
     for (let page = 1; page <= this._maxPages; page++) {
       this._favorites.set(page, []);
     }
     for (const favorite of favorites) {
-      if (favorite.meta == this._typeId) {
-        this._favorites.get(favorite.page).push(favorite);
+
+      if (favorite.entityTypeName == null) {
+        // Legacy path
+        if (favorite.meta == this._typeId) {
+          this._favorites.get(favorite.page).push(favorite);
+        }
       }
+      else {
+        // New path supporting multiple entity types
+        if (favorite.entityTypeName == "State" && favorite.meta == this._typeId) {
+          this._favorites.get(favorite.page).push(favorite);
+        }
+        else if (favorite.entityTypeName == "Localization" && favorite.meta == this._typeId) {
+          this._favorites.get(favorite.page).push(favorite);
+        }
+      }
+
     }
     this._updatePage();
   }
@@ -141,6 +163,7 @@ class FavoritesPanel extends TatorElement {
       'page': this._page,
       'type': this._typeId,
       'values': values,
+      'entityTypeName': this._entityTypeName
     };
     fetchRetry("/rest/Favorites/" + this._dataType.project, {
       method: "POST",
