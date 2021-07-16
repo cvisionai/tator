@@ -1,6 +1,6 @@
 os: linux
 arch: amd64
-dist: bionic
+dist: focal
 language: generic
 python:
 - "3.8"
