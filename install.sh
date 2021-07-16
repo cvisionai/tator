@@ -3,7 +3,7 @@
 # Define environment variables.
 BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
 GIT_REVISION=$(git rev-parse HEAD)
-KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.17.11/bin/linux/amd64/kubectl"
+KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.19.13/bin/linux/amd64/kubectl"
 ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz"
 ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml"
 
@@ -29,6 +29,14 @@ if [[ -z "${DOCKER_REGISTRY}" ]]; then
   DOCKER_REGISTRY=cvisionai
 fi
 echo "Using docker registry $DOCKER_REGISTRY."
+
+# Install apt packages.
+sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
+    iproute2 net-tools gzip jq wget unzip ffmpeg
+
+# Install snaps.
+sudo snap install helm --classic
+sudo snap install microk8s --classic --channel=1.19/stable
 
 # Copy out wheel from docker container.
 docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60

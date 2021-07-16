@@ -9,23 +9,6 @@ services:
 vm:
   size: x-large
 
-addons:
-  snaps:
-  - name: helm
-    confinement: classic
-  - name: microk8s
-    confinement: classic
-    channel: 1.19/stable
-  apt:
-    packages:
-    - iproute2
-    - net-tools
-    - gzip
-    - jq
-    - wget
-    - unzip
-    - ffmpeg
-
 jobs:
   include:
   - stage: build docker images
