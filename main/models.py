@@ -841,7 +841,7 @@ class LeafType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    attribute_types = JSONField(null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
