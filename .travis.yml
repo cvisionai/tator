@@ -31,14 +31,14 @@ before_install:
 - sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
 - cat helm/tator/values.yaml
 - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
-- pip3 install --upgrade pip
-- pip3 install pyyaml
+- pip install --upgrade pip
+- pip install pyyaml
 
 jobs:
   include:
   - stage: build docker images
     install:
-    - pip3 install wheel sphinx-rtd-theme recommonmark mako progressbar2
+    - pip install wheel sphinx-rtd-theme recommonmark mako progressbar2
     - npm install
     script:
     - make main/version.py
@@ -50,8 +50,8 @@ jobs:
     - export GIT_REVISION=$(git rev-parse HEAD)
     - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
     - docker cp sleepy:/tmp /tmp
-    - pip3 install setuptools
-    - pip3 install /tmp/tmp/*.whl pandas opencv-python pytest
+    - pip install setuptools
+    - pip install /tmp/tmp/*.whl pandas opencv-python pytest
     - wget $BENTO4_URL -q -O bento4.zip
       && unzip bento4.zip
       && sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.
