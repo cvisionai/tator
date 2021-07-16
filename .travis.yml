@@ -39,7 +39,7 @@ jobs:
   include:
   - stage: build docker images
     install:
-    - pip3 install sphinx-rtd-theme recommonmark mako progressbar2
+    - pip3 install wheel sphinx-rtd-theme recommonmark mako progressbar2
     - npm install
     script:
     - make main/version.py
