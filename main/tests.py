@@ -1101,6 +1101,7 @@ class CurrentUserTestCase(APITestCase):
 
 class ProjectDeleteTestCase(APITestCase):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.project = create_test_project(self.user)
         self.video_type = MediaType.objects.create(
@@ -1145,6 +1146,7 @@ class AlgorithmLaunchTestCase(
         APITestCase,
         PermissionCreateTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1164,6 +1166,7 @@ class AlgorithmTestCase(
         APITestCase,
         PermissionListMembershipTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1186,6 +1189,7 @@ class VideoTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1280,6 +1284,7 @@ class ImageTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1317,6 +1322,7 @@ class LocalizationBoxTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1380,6 +1386,7 @@ class LocalizationLineTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1443,6 +1450,7 @@ class LocalizationDotTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1504,6 +1512,7 @@ class StateTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1571,6 +1580,7 @@ class LeafTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1613,6 +1623,7 @@ class LeafTypeTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1639,6 +1650,7 @@ class StateTypeTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1682,6 +1694,7 @@ class MediaTypeTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1720,6 +1733,7 @@ class LocalizationTypeTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1767,6 +1781,7 @@ class MembershipTestCase(
         PermissionListMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1788,6 +1803,7 @@ class MembershipTestCase(
 
 class ProjectTestCase(APITestCase):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -1892,6 +1908,7 @@ class TranscodeTestCase(
         APITestCase,
         PermissionCreateTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1922,6 +1939,7 @@ class AnalysisCountTestCase(
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1959,6 +1977,7 @@ class VersionTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -1996,6 +2015,7 @@ class SectionTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -2072,6 +2092,7 @@ class FavoriteTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -2112,6 +2133,7 @@ class BookmarkTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -2143,6 +2165,7 @@ class AffiliationTestCase(
         PermissionListAffiliationTestMixin,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2175,6 +2198,7 @@ class OrganizationTestCase(
         APITestCase,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2213,6 +2237,7 @@ class BucketTestCase(
         PermissionListAffiliationTestMixin,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2252,6 +2277,7 @@ class BucketTestCase(
 
 class ImageFileTestCase(APITestCase, FileMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2281,6 +2307,7 @@ class ImageFileTestCase(APITestCase, FileMixin):
 
 class VideoFileTestCase(APITestCase, FileMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2307,6 +2334,7 @@ class VideoFileTestCase(APITestCase, FileMixin):
 
 class AudioFileTestCase(APITestCase, FileMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2330,6 +2358,7 @@ class AudioFileTestCase(APITestCase, FileMixin):
 
 class FileTestCase(APITestCase, FileMixin):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2362,6 +2391,7 @@ class ResourceTestCase(APITestCase):
                    'attachment': 'Files'}
 
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
@@ -2613,6 +2643,7 @@ class ResourceTestCase(APITestCase):
 
 class AttributeTestCase(APITestCase):
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -2733,6 +2764,7 @@ class MutateAliasTestCase(APITestCase):
     """Tests alias mutation in elasticsearch.
     """
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.search = TatorSearch()
@@ -2791,7 +2823,7 @@ class MutateAliasTestCase(APITestCase):
         ids, _ = self.search.search(project.pk, {'query': {'query_string': {'query': query_string}}})
         assert(len(ids) == 1)
         project.delete()
-        print(f"Conversion of {from_dtype} to {to_dtype} success!")
+        logger.info(f"Conversion of {from_dtype} to {to_dtype} success!")
 
     def test_bool_mutations(self):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['bool']):
@@ -2847,6 +2879,7 @@ class JobClusterTestCase(APITestCase):
         return Affiliation.objects.filter(organization=organization, user=user)[0]
 
     def setUp(self):
+        logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()

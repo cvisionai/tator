@@ -557,7 +557,7 @@ class TatorTranscode(JobManagerMixin):
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
                 'command': ['wget',],
-                'args': ['-O', '{{inputs.parameters.original}}'] + headers + \
+                'args': ['-q', '-O', '{{inputs.parameters.original}}'] + headers + \
                         ['{{inputs.parameters.url}}'],
                 'volumeMounts': [{
                     'name': 'transcode-scratch',
