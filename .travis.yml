@@ -51,6 +51,7 @@ jobs:
     - export GIT_REVISION=$(git rev-parse HEAD)
     - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
     - docker cp sleepy:/tmp /tmp
+    - pip3 install setuptools
     - pip3 install /tmp/tmp/*.whl pandas opencv-python pytest
     - wget $BENTO4_URL -q -O bento4.zip
       && unzip bento4.zip
