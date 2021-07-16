@@ -2279,7 +2279,6 @@ class VideoCanvas extends AnnotationCanvas {
 
   _playGenericScrub(direction)
   {
-    var that = this;
     console.log("Setting playback direction " + direction);
     this._direction=direction;
 
@@ -2288,6 +2287,28 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Reset perioidc health check in motion comp
     this._motionComp.clearTimesVector();
+
+    this._playing = false;
+
+    // We are eligible for audio if we are at a supported playback rate
+    // have audio, and are going forward.
+    this._audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= 4.0 &&
+        this._audioPlayer &&
+        direction == Direction.FORWARD)
+    {
+      this._audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+
+    // Diagnostics and audio readjust thread
+    this._fpsDiag = 0;
+    this._fpsLoadDiag = 0;
+    this._fpsScore = 7;
+    this._networkUpdate = 0;
+    this._audioCheck = 0;
+
     this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
 
 
