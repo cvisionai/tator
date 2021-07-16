@@ -20,6 +20,9 @@ addons:
     - net-tools
     - gzip
     - jq
+    - wget
+    - unzip
+    - ffmpeg
 
 before_install:
 - cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
@@ -48,8 +51,11 @@ jobs:
     - export GIT_REVISION=$(git rev-parse HEAD)
     - docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
     - docker cp sleepy:/tmp /tmp
-    - mkdir -p scripts/packages/tator-py/dist
-    - mv /tmp/tmp/*.whl scripts/packages/tator-py/dist/.
+    - pip install /tmp/tmp/*.whl pandas opencv-python
+    - wget $BENTO4_URL -O bento4.zip
+      && unzip bento4.zip
+      && sudo cp bento4/bin/mp4dump /usr/local/bin/.
+      && sudo chmod +x /usr/local/bin/mp4dump
     - |
       export HOST_INTERFACE=$(ip -details -json link show | jq -r '
       .[] |
@@ -105,6 +111,7 @@ env:
   - KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.17.11/bin/linux/amd64/kubectl"
   - ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz"
   - ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml"
+  - BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
   - secure: "S3SgU7Gw3SD5fY68DKPTqiuBK6KzNe11g4R16Sl2MhhyGLZzFEbmJXtSgCihtXE8fHiwuegmAma7qioEyoAN+e1i+4zzc9WepKDGBquQninhuKCDx1gCdlqAk4vEjtv/xu3bgjIO0JUst5CgPBloa5fRUmP6du87xcNzZwJA0lDTXHaMqnjhK8OnS8xQJMu5zeh7I3hPXKHeS8aTvpTI5Eww2O2rzKL+cAKMUyjeBC5KXKFN6pyChmrj73Wi+u6lmhJBGgX7TJ09bScnet+XbvAPuC1rIGx/GKzqaXyqsd1ZgbuIk9LUTY0flqhUkNC1hryAFCyxTXMw45VJAEY6gk+BYmIZDxdMD5y0ZimIgDniiRPPAPL6e1nf6DtLfON2wnoY6YC/X/DY9Pr7CWeLOHCtARnyWiapSIj8XkfyaWxvKR8cDdes1E5m29ogvqWscfTdV3wLpC9M74TtxR4S7JoMGIZrki13A1ykYkqLVwOL8JvEHSeyLlCAaCE83IqreGhXRcPjUY6x/dSOJWdIbCcovLhI5vCr10upmWT+bd7NFXim86Hbm4XC0ICmq0diW8zdk/+zL0bA1J/AB5X8Me5ChGEB+HdCC6ok38wzRnVD7UfSxL2y6GkzMxzoBg5cF//iU9RXhGoacmDQ7k9uPagVmKpRGuTp0Sy4n8mLvYc="
   - secure: "nLr0ULiK2RUfL6AVd1gbvXXbya5tzcaLUlpwoM23vqWfZGORU5MEWoDol/czubbxUIlXPttGMt76yGoFEw+uDZz9M1UtHSz5YiXNHN6EjQZ0PFT9lakkcg3vFMPAe8w4nrCL3+M2YY9BcOnddz1niB0w0KmarOwM8do6DDR8Kr8qRsnO4CVvhqqvNBbKSlFZJdCQu/sgRtWp/3wXA+rWgUJN27P+qh2o8nkDbBo1tcjVmEwZLWq8t3PGckwo23V4KMZIs91w5AcLcuWZolnafuyaWGnoGRKnPhnqRn3Z/fqG9rwNwOnDVd06LOmbaWX7pjUDOEwBnpVu4W6JwG+OVE89BstoGqU/74Y5E/5cTT8YjS9s3+otut5YfFQvtSDVZXW+sPn4ES0LrvjOTjk85U/Gtl2Hup+rqTJaJh38ktt0wA51oGvEWSD+WT2hiq8iFAnGHUClQdjEa4JT3dZN4MJ6qicHe8JKwjWMdn0SqeIYcJos5Qerv1jgfLO/a33rsAU7E+zKeK/+E5n1hXrxU32CP5ZaOIkbuxuZ9ROygAokmIFpw1QIuN3+y+P+/ZO25/lqgLBirQ/YcrBePRCjFbiWSrtEQfOtpPBjr0n2/DAHaWSrnMlkvT7MCobvdzTfOT5NW1ny3VrcnZ8CIuZIw0w53LVVG4U6p2Nbk3+uvo4="
   - secure: "MIj/duh1ERMo0vM7CCCyfLkN2lXbxbwrKfqFXSxKCQmsTECbr13RbxmdQLnVCaTepAp/qMn/kNyoapQAG2nu+BXX11cdjD2dyUE88Zw6MOD3pdvNhrkhpNHBLoXfmYMH/ZKuH6P5/LT3ZPSfq+SCo6Djxy+MUycb47wACVWjLFnjlLZeOMjssBK0XwfN11CS+yHSrGrgAXJ77XQdwlRSFGpbtIovyt95rxFZJwiPl7JcU9vMOk2tE8ZGlslC5Q6jQEJkWJxxRQ7ln1bVtknrqxWqeufrXrcR7mSv/RzEq5HCJrn1uaFJKyI2u6k5mC3BSwbIm/cgRDKOhpClai2bEX0c9RFzNDsnCpp4ESQC1S4ciCPvBpN0e4tl/iJfqYG+vMeT61T/uFPH/fBKtIJ3K7pbm/WoUuqz7NeGVXxh1RgyoauJGVvHdLNg4d953VjStm+jhh/VQJQIzBVN5+e5adP/ZvugJWegPMttWK1IaT0mDhQOSOzrjp8oOpdgSVQIRrwir7uZ6SyXZIR25B+FDrgckZdhU3b95a8ZgY9lqAsCgdlaf9aXxtX/5WwTA9jRbiTXr325s98OynlKXOi0HPYE6HN3LrSDpPv89gaz8uVI9etD6PcsvpBM3rDq+P9RYOXSY7eT4PvLeEwkAK80Jk5hm64g3QPa+vHZbL/xB1M="
