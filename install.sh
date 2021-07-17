@@ -54,7 +54,7 @@ echo "Using docker registry $DOCKER_REGISTRY."
 # Get and install bento4.
 echo "Installing Bento4."
 wget $BENTO4_URL -q -O bento4.zip \
-    && unzip bento4.zip \
+    && unzip -qq -o bento4.zip \
     && sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/. \
     && sudo chmod +x /usr/local/bin/mp4dump
 
@@ -89,11 +89,11 @@ kubectl describe nodes
 # Enable microk8s services.
 echo "Setting up microk8s services."
 yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb storage
-kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
+kubectl label nodes --overwrite --all cpuWorker=yes webServer=yes dbServer=yes
 
 # Set up argo.
 echo "Setting up argo."
-kubectl create namespace argo \
+kubectl create namespace argo --dry-run=client -o yaml | kubectl apply -f - \
     && kubectl apply -n argo -f $ARGO_MANIFEST_URL \
     && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
 curl -sLO $ARGO_CLIENT_URL \
@@ -105,8 +105,9 @@ curl -sLO $ARGO_CLIENT_URL \
 # Copy out wheel from docker container.
 echo "Copying wheel from tator client image."
 kubectl run sleepy --image=$DOCKER_REGISTRY/tator_client:$GIT_REVISION -- sleep 60
-kubectl wait pod/sleepy --for=condition=Ready=true
+kubectl wait pod/sleepy --for=condition=Ready=true --timeout=120s
 kubectl cp sleepy:/tmp /tmp
+kubectl delete pod sleepy
 
 # Install pip packages.
 echo "Installing pip packages."
