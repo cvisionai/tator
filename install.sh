@@ -51,30 +51,33 @@ if [[ -z "${DOCKER_REGISTRY}" ]]; then
 fi
 echo "Using docker registry $DOCKER_REGISTRY."
 
-# Copy out wheel from docker container.
-docker run -d --rm --name sleepy $DOCKER_REGISTRY/tator_client:$GIT_REVISION sleep 60
-docker cp sleepy:/tmp /tmp
-
-# Install pip packages.
-pip3 install --upgrade pip
-pip3 install setuptools
-pip3 install /tmp/tmp/*.whl pandas opencv-python pytest pyyaml
-
 # Get and install bento4.
+echo "Installing Bento4."
 wget $BENTO4_URL -q -O bento4.zip \
     && unzip bento4.zip \
     && sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/. \
     && sudo chmod +x /usr/local/bin/mp4dump
 
 # Copy over values.yaml.
+echo "Configuring values.yaml."
 cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
 sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
 sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
+
+# Configure local storage.
+echo "Configuring local storage."
 sudo mkdir /media/kubernetes_share \
     && sudo mkdir /media/kubernetes_share/elasticsearch \
     && sudo chown -R nobody:nogroup /media/kubernetes_share \
     && sudo chmod -R 777 /media/kubernetes_share
+
+# Wait for microk8s to be ready.
+echo "Waiting for microk8s to be ready..."
 sudo microk8s status --wait-ready
+echo "Ready!"
+
+# Set up kubectl.
+echo "Setting up kubectl."
 curl -sLO $KUBECTL_URL \
     && chmod +x kubectl \
     && sudo mv ./kubectl /usr/local/bin/kubectl \
@@ -82,8 +85,14 @@ curl -sLO $KUBECTL_URL \
     && sudo chmod 777 $HOME/.kube \
     && sudo microk8s config > $HOME/.kube/config
 kubectl describe nodes
+
+# Enable microk8s services.
+echo "Setting up microk8s services."
 yes $HOST_IP-$HOST_IP | sudo microk8s enable dns metallb storage
 kubectl label nodes --all cpuWorker=yes webServer=yes dbServer=yes
+
+# Set up argo.
+echo "Setting up argo."
 kubectl create namespace argo \
     && kubectl apply -n argo -f $ARGO_MANIFEST_URL \
     && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
@@ -92,12 +101,32 @@ curl -sLO $ARGO_CLIENT_URL \
     && chmod +x argo-linux-amd64 \
     && sudo mv ./argo-linux-amd64 /usr/local/bin/argo \
     && argo version
+
+# Copy out wheel from docker container.
+echo "Copying wheel from tator client image."
+kubectl run sleepy --image=$DOCKER_REGISTRY/tator_client:$GIT_REVISION -- sleep 60
+kubectl wait pod/sleepy --for=condition=Ready=true
+kubectl cp sleepy:/tmp /tmp
+
+# Install pip packages.
+echo "Installing pip packages."
+pip3 install --upgrade pip
+pip3 install setuptools
+pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml
+
+# Install tator.
+echo "Installing tator."
 make main/version.py
 make cluster-deps
 make cluster-install
+
+# Create a superuser.
+echo "Creating a superuser."
 GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
 kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=admin \
     python3 manage.py createsuperuser --username admin --email no-reply@cvisionai.com --noinput
+
+# Print success.
 echo "Installation completed successfully!"
 echo "Open a browser to http://$HOST_IP and enter credentials admin/admin."
 echo "We strongly recommend changing your password immediately!"
