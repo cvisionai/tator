@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit on error.
+set -e
+
 # Define environment variables.
 BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
 GIT_REVISION=$(git rev-parse HEAD)
@@ -14,16 +17,25 @@ sudo snap install microk8s --classic --channel=1.19/stable
 # Install apt packages.
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip ffmpeg python3 python3-pip
+    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip build-essential
 
 # Get IP address if it is not set explicitly.
+# Credit to https://serverfault.com/a/1019371
 if [[ -z "${HOST_INTERFACE}" ]]; then
-  HOST_INTERFACE=$(ip -details -json link show | jq -r '
+  HOST_INTERFACE=$(ip -details -json address show | jq --join-output '
     .[] |
           if .linkinfo.info_kind // .link_type == "loopback" then
               empty
           else
-              .ifname
+              .ifname ,
+              ( ."addr_info"[] |
+                  if .family == "inet" then
+                      " " + .local
+                  else
+                      empty
+                  end
+              ),
+              "\n"
           end
     ')
 fi
