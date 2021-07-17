@@ -129,5 +129,7 @@ kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=admin \
 
 # Print success.
 echo "Installation completed successfully!"
-echo "Open a browser to http://$HOST_IP and enter credentials admin/admin."
-echo "We strongly recommend changing your password immediately!"
+echo "Open a browser to http://$HOST_IP and enter credentials:"
+echo "username: admin"
+echo "password: admin"
+echo "If this installation is accessible by others please change your password!"
