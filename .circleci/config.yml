@@ -3,6 +3,7 @@ jobs:
   build-docker-images:
     machine:
       image: ubuntu--2004:202010-01
+      resource_class: xlarge
     steps:
     - run:
         name: Copy helm config
