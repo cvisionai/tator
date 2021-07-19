@@ -1,0 +1,45 @@
+version: 2.1
+jobs:
+  build-docker-images:
+    machine:
+      image: ubuntu--2004:202010-01
+    steps:
+    - run:
+        name: Copy helm config
+        command: cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
+    - run:
+        name: Replace registry
+        command: sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
+    - run:
+        name: Display values.yaml
+        command: cat helm/tator/values.yaml
+    - run:
+        name: Log into Docker Hub
+        command: echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+    - run:
+        name: Install python
+        command: sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential
+    - run:
+        name: Install pip packages
+        command: pip3 install setuptools wheel sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
+    - run:
+        name: Install node packages
+        command: npm install
+    - run:
+        name: Make version.py
+        command: make main/version.py
+    - run:
+        name: Make python bindings
+        command: make python-bindings
+    - run:
+        name: Make postgis image
+        command: make postgis-image
+    - run:
+        name: Make client image
+        command: make client-image
+workflows:
+  version: 2
+  build-docker-images-workflow:
+    jobs:
+    - build:
+        context: cvisionai
