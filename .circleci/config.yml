@@ -7,10 +7,9 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - checkout
-    - run: git submodule update --init
     - run:
-        name: Clone repo
-        command: git clone --recurse
+        name: Clone submodules
+        command: git submodule update --init
     - run:
         name: Copy helm config
         command: cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
