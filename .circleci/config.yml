@@ -1,9 +1,10 @@
 version: 2.1
+orbs:
+  node: circleci/node@4.5.1
 jobs:
   build-docker-images:
     machine:
       image: ubuntu--2004:202010-01
-      resource_class: xlarge
     steps:
     - run:
         name: Copy helm config
@@ -42,5 +43,5 @@ workflows:
   version: 2
   build-docker-images-workflow:
     jobs:
-    - build:
+    - build-docker-images:
         context: cvisionai
