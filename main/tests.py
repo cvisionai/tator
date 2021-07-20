@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 TEST_IMAGE = 'https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png'
 
-def create_test_user():
+def create_test_user(is_staff=False):
     return User.objects.create(
         username=random.choices(string.ascii_lowercase, k=10),
         password="jsnow",
@@ -35,6 +35,7 @@ def create_test_user():
         email="jon.snow@gmail.com",
         middle_initial="A",
         initials="JAS",
+        is_staff=is_staff,
     )
 
 def create_test_organization():
@@ -112,10 +113,19 @@ spec:
 def create_test_section(name, project):
     return Section.objects.create(name=name, project=project)
 
-def create_test_favorite(name, project, user, meta):
-    return Favorite.objects.create(name=name, project=project, user=user,
-                                   meta=meta, values={})
+def create_test_favorite(name, project, user, meta, entityTypeName):
+    if entityTypeName == "Localization":
+        return Favorite.objects.create(
+            name=name, project=project, user=user,
+            meta=meta.id, localization_meta=meta, values={}, entityTypeName=entityTypeName)
 
+    elif entityTypeName == "State":
+        return Favorite.objects.create(
+            name=name, project=project, user=user,
+            meta=meta.id, state_meta=meta, values={}, entityTypeName=entityTypeName)
+
+    else:
+        return None
 def create_test_bookmark(name, project, user):
     return Bookmark.objects.create(name=name, project=project, user=user, uri='/projects')
 
@@ -2065,7 +2075,7 @@ class SectionTestCase(
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.medias[2].pk)
 
-class FavoriteTestCase(
+class FavoriteStateTestCase(
         APITestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
@@ -2076,6 +2086,53 @@ class FavoriteTestCase(
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
+        self.list_uri = 'Favorites'
+        self.detail_uri = 'Favorite'
+        self.edit_permission = Permission.CAN_EDIT
+
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+        )
+        self.state_type = StateType.objects.create(
+            name="states",
+            dtype='state',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.entities = [create_test_favorite(f"Favorite {idx}", self.project,
+                                              self.user, self.state_type, "State")
+                         for idx in range(random.randint(6, 10))]
+        self.create_json = {
+            'name': 'My fave',
+            'page': 1,
+            'type': self.state_type.pk,
+            'values': {'blah': 'asdf'},
+            'entityTypeName': "State",
+        }
+        self.patch_json = {
+            'name': 'New name',
+        }
+
+    def tearDown(self):
+        self.project.delete()
+
+class FavoriteLocalizationTestCase(
+        APITestCase,
+        PermissionCreateTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.list_uri = 'Favorites'
+        self.detail_uri = 'Favorite'
+        self.edit_permission = Permission.CAN_EDIT
+
         self.entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -2087,20 +2144,18 @@ class FavoriteTestCase(
             project=self.project,
         )
         self.entities = [create_test_favorite(f"Favorite {idx}", self.project,
-                                              self.user, self.box_type)
+                                              self.user, self.box_type, "Localization")
                          for idx in range(random.randint(6, 10))]
-        self.list_uri = 'Favorites'
-        self.detail_uri = 'Favorite'
         self.create_json = {
             'name': 'My fave',
             'page': 1,
             'type': self.box_type.pk,
             'values': {'blah': 'asdf'},
+            'entityTypeName': "Localization",
         }
         self.patch_json = {
             'name': 'New name',
         }
-        self.edit_permission = Permission.CAN_EDIT
 
     def tearDown(self):
         self.project.delete()
@@ -2175,7 +2230,7 @@ class OrganizationTestCase(
         APITestCase,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
-        self.user = create_test_user()
+        self.user = create_test_user(is_staff=True)
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)

@@ -2,6 +2,7 @@ import json
 import os
 import traceback
 
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import Model
 from django.contrib.gis.db.models import ForeignKey
@@ -841,7 +842,7 @@ class LeafType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    attribute_types = JSONField(null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
@@ -1377,10 +1378,13 @@ class Favorite(Model):
     """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     user = ForeignKey(User, on_delete=CASCADE, db_column='user')
-    meta = ForeignKey(LocalizationType, on_delete=CASCADE, db_column='meta')
+    localization_meta = ForeignKey(LocalizationType, on_delete=CASCADE, null=True, blank=True)
+    state_meta = ForeignKey(StateType, on_delete=CASCADE, null=True, blank=True)
+    meta = PositiveIntegerField()
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
     values = JSONField()
+    entityTypeName = CharField(max_length=16, choices=[('Localization', 'Localization'), ('State','State')], null=True, blank=True)
 
 class Bookmark(Model):
     """ Stores a link saved by a user.

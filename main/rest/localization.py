@@ -261,7 +261,10 @@ class LocalizationListAPI(BaseListView):
         count = qs.count()
         if count > 0:
             # Get the current representation of the object for comparison
-            original_dict = qs.first().model_dict
+            obj = qs.first()
+            original_dict = obj.model_dict
+            first_id = obj.id
+            entity_type = obj.meta
             new_attrs = validate_attributes(params, qs[0])
             bulk_patch_attributes(new_attrs, qs)
             if patched_version is not None:
@@ -269,12 +272,12 @@ class LocalizationListAPI(BaseListView):
             qs.update(modified_by=self.request.user)
 
             # Get one object from the queryset to create the change log
-            obj = qs.first()
+            obj = Localization.objects.get(pk=first_id)
             change_dict = obj.change_dict(original_dict)
             ref_table = ContentType.objects.get_for_model(obj)
 
             query = get_annotation_es_query(params['project'], params, 'localization')
-            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
+            TatorSearch().update(self.kwargs['project'], entity_type, query, new_attrs)
 
             # Create the ChangeLog entry and associate it with all objects in the queryset
             cl = ChangeLog(

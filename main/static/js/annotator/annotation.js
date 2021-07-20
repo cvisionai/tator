@@ -999,6 +999,10 @@ class AnnotationCanvas extends TatorElement
    */
   addCreateTrackType(stateTypeObj)
   {
+    if (stateTypeObj.visible == false) {
+      return;
+    }
+
     if (stateTypeObj.isTrack) {
       var text = "Create new " + stateTypeObj.name;
       this._contextMenuLoc.addMenuEntry(text, this.contextMenuCallback.bind(this));

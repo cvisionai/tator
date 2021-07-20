@@ -15,13 +15,18 @@ favorite_properties = {
         'minimum': 1,
         'maximum': 10,
     },
+    'entityTypeName': {
+        'description': 'Name of entity type associated with the favorite',
+        'type': 'string',
+        'enum': ['Localization', 'State'],
+    },
 }
 
 favorite_spec = {
     'type': 'object',
     'properties': {
         'type': {
-            'description': 'Unique integer identifying a localization type.',
+            'description': 'Unique integer identifying an entity type.',
             'type': 'integer',
             'minimum': 1,
         },
@@ -33,6 +38,7 @@ favorite_update = {
     'type': 'object',
     'properties': {
         'name': favorite_properties['name'],
+        'entityTypeName': favorite_properties['entityTypeName']
     },
 }
 
@@ -51,7 +57,7 @@ favorite = {
         },
         'meta': {
             'type': 'integer',
-            'description': 'Unique integer identifying entity type of this localization.',
+            'description': 'Unique integer identifying entity type of this entry.',
         },
         **favorite_properties,
     },

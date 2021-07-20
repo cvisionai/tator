@@ -220,17 +220,16 @@ class AnnotationPage extends TatorPage {
 
               // Note: The player itself will set the metadatatypes and canvas info with this
               player.mediaInfo = data;
+              var mediaIdCount = 0;
+              for (const index of data.media_files.ids.keys()) {
+                this._mediaIds.push(data.media_files.ids[index]);
+                mediaIdCount += 1;
+              }
+              this._numberOfMedia = mediaIdCount;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._player.addEventListener(
                 "primaryVideoLoaded", () => {
-
-                  var mediaIdCount = 0;
-                  for (const index of data.media_files.ids.keys()) {
-                    this._mediaIds.push(data.media_files.ids[index]);
-                    mediaIdCount += 1;
-                  }
-                  this._numberOfMedia = mediaIdCount;
                   /* #TODO Figure out a capture frame capability for multiview
                   this._settings._capture.addEventListener(
                     'captureFrame',
