@@ -45,9 +45,47 @@ jobs:
     - run:
         name: Make client image
         command: make client-image
+  install-and-test:
+    machine:
+      image: ubuntu-2004:202010-01
+      resource_class: xlarge
+    environment:
+      DOCKER_REGISTRY: cvisionai
+    steps:
+    - checkout
+    - run:
+        name: Clone submodules
+        command: git submodule update --init
+    - run:
+        name: Install Tator
+        command: ./install.sh 
+    - run:
+        name: Initialize REST tests
+        command: make testinit
+    - run:
+        name: Run REST tests
+        command: make test
+    - run:
+        name: Copy test directories
+        command: cp -r scripts/packages/tator-py/test . && cp -r scripts/packages/tator-py/examples .
+    - run:
+        name: Find gunicorn pod
+        command: export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
+    - run:
+        name: Create API token
+        command: export TOKEN=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)")
+    - run:
+        name: Strip newline from token
+        command: export TOKEN=$(echo $TOKEN | tr -d '\r')
+    - run:
+        name: Run tator-py tests
+        command: pytest test --host=http://$HOST_IP --token=$TOKEN
 workflows:
   version: 2
   build-docker-images-workflow:
     jobs:
     - build-docker-images:
         context: cvisionai
+    - install-and-test:
+        requires:
+        - build-docker-images
