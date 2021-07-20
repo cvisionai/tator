@@ -14,14 +14,9 @@ addons:
       channel: 1.19/stable
 
 script:
-- sudo sleep 120
-- sudo microk8s status --wait-ready --timeout 120
-- sudo microk8s kubectl get all -A
-- sudo microk8s kubectl get no
-- sudo microk8s kubectl describe no
 - sudo microk8s stop
 - sudo hostname localhost
-- sudo echo "--hostname-override=127.0.0.1" >> /var/snap/microk8s/current/args/kubelet
+- sudo sh -c 'echo --hostname-override=127.0.0.1 >> /var/snap/microk8s/current/args/kubelet'
 - sudo microk8s start
 - sudo microk8s status --wait-ready --timeout 120
 - sudo microk8s kubectl get all -A
