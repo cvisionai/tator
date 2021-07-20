@@ -732,7 +732,7 @@ class TatorSearch:
             index=self.index_name(project),
             body=query,
             conflicts='proceed',
-            refresh='wait_for',
+            refresh=True,
         )
 
     def update(self, project, entity_type, query, attrs):
@@ -754,7 +754,7 @@ class TatorSearch:
             index=self.index_name(project),
             body=query,
             conflicts='proceed',
-            refresh='wait_for',
+            refresh=True,
         )
 
 TatorSearch.setup_elasticsearch()
