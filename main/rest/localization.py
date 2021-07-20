@@ -196,7 +196,6 @@ class LocalizationListAPI(BaseListView):
                 ts.bulk_add_documents(documents)
                 documents = []
         ts.bulk_add_documents(documents)
-        ts.refresh(project.id)
 
         # Create ChangeLogs
         objs = (
@@ -254,9 +253,6 @@ class LocalizationListAPI(BaseListView):
             )
             bulk_create_from_generator(objs, ChangeToObject)
 
-            # Refresh ES index.
-            TatorSearch().refresh(params['project'])
-
         return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
@@ -290,9 +286,6 @@ class LocalizationListAPI(BaseListView):
             cl.save()
             objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
             bulk_create_from_generator(objs, ChangeToObject)
-
-            # Refresh ES index.
-            TatorSearch().refresh(params['project'])
 
         return {'message': f'Successfully updated {count} localizations!'}
 
