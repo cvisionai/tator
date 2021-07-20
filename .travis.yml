@@ -6,10 +6,12 @@ vm:
   size: x-large
 
 addons:
+  hosts:
+    - travisdev
   snaps:
     - name: microk8s
       confinement: classic
-      channel: 1.19/stable
+      channel: 1.21/stable
 
 script:
 - sudo sleep 120
