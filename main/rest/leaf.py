@@ -187,9 +187,6 @@ class LeafListAPI(BaseListView):
         )
         bulk_create_from_generator(objs, ChangeToObject)
 
-        # Wait for index refresh.
-        ts.refresh(project.id)
-
         # Return created IDs.
         return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
 
@@ -227,9 +224,6 @@ class LeafListAPI(BaseListView):
             )
             bulk_create_from_generator(objs, ChangeToObject)
 
-            # Wait for index refresh.
-            TatorSearch().refresh(params['project'])
-
         return {'message': f'Successfully deleted {count} leaves!'}
 
     def _patch(self, params):
@@ -256,9 +250,6 @@ class LeafListAPI(BaseListView):
             cl.save()
             objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
             bulk_create_from_generator(objs, ChangeToObject)
-
-            # Wait for index refresh.
-            TatorSearch().refresh(params['project'])
 
         return {'message': f'Successfully updated {count} leaves!'}
 
