@@ -41,7 +41,7 @@ class LiveCanvas extends AnnotationCanvas
       return;
     }
     clearTimeout(this._diagThread);
-    if (this._currentFrame - this._diagLastFrame < 10)
+    if (this._currentFrame - this._diagLastFrame < 10 && document.visibilityState == "visible")
     {
       this.error(null, "Remote Video feed has stopped.");
     }
