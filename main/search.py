@@ -499,7 +499,6 @@ class TatorSearch:
         """ Indicies an element into ES """
         docs = self.build_document(entity, 'single')
         for doc in docs:
-            logger.info(f"Making Doc={doc}")
             res = self.es.index(index=self.index_name(entity.project.pk),
                                 id=doc['_id'],
                                 refresh=wait,

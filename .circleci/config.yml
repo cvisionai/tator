@@ -1,0 +1,89 @@
+version: 2.1
+orbs:
+  node: circleci/node@4.5.1
+  slack: circleci/slack@4.4.2
+jobs:
+  build-docker-images:
+    machine:
+      image: ubuntu-2004:202010-01
+    environment:
+      DOCKER_REGISTRY: cvisionai
+    steps:
+    - checkout
+    - run:
+        name: Clone submodules
+        command: git submodule update --init
+    - run:
+        name: Copy helm config
+        command: cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
+    - run:
+        name: Replace registry
+        command: sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
+    - run:
+        name: Display values.yaml
+        command: cat helm/tator/values.yaml
+    - run:
+        name: Log into Docker Hub
+        command: echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+    - run:
+        name: Install python
+        command: sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential
+    - run:
+        name: Install pip packages
+        command: pip3 install setuptools wheel sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
+    - run:
+        name: Install node packages
+        command: npm install
+    - run:
+        name: Make version.py
+        command: make main/version.py
+    - run:
+        name: Make python bindings
+        command: make python-bindings
+    - run:
+        name: Make postgis image
+        command: make postgis-image
+    - run:
+        name: Make client image
+        command: make client-image
+  install-and-test:
+    machine:
+      image: ubuntu-2004:202010-01
+      resource_class: xlarge
+    environment:
+      DOCKER_REGISTRY: cvisionai
+    steps:
+    - checkout
+    - run:
+        name: Clone submodules
+        command: git submodule update --init
+    - run:
+        name: Install Tator
+        command: ./install.sh 
+    - run:
+        name: Initialize REST tests
+        command: make testinit
+    - run:
+        name: Run REST tests
+        command: make test
+    - run:
+        name: Copy test directories
+        command: cp -r scripts/packages/tator-py/test . && cp -r scripts/packages/tator-py/examples .
+    - run:
+        name: Find gunicorn pod
+        command: echo "export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')" >> $BASH_ENV
+    - run:
+        name: Create API token
+        command: echo "export TOKEN=$(echo $(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command='from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)') | tr -d '^@\r\000')" >> $BASH_ENV
+    - run:
+        name: Run tator-py tests
+        command: pytest test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN
+workflows:
+  version: 2
+  build-docker-images-workflow:
+    jobs:
+    - build-docker-images:
+        context: cvisionai
+    - install-and-test:
+        requires:
+        - build-docker-images
