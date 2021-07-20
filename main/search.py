@@ -495,7 +495,7 @@ class TatorSearch:
     def bulk_add_documents(self, listOfDocs):
         bulk(self.es, listOfDocs, raise_on_error=False, refresh='wait_for')
 
-    def create_document(self, entity, wait='wait_for'):
+    def create_document(self, entity, wait=True):
         """ Indicies an element into ES """
         docs = self.build_document(entity, 'single')
         for doc in docs:
