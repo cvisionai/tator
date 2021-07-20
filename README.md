@@ -1,4 +1,5 @@
 ![logo](https://raw.githubusercontent.com/cvisionai/tator/master/main/static/images/tator-logo.png)
+[![cvisionai](https://circleci.com/gh/cvisionai/tator.svg?style=shield)](https://circleci.com/gh/cvisionai/tator)
 
 What is Tator?
 ==============
