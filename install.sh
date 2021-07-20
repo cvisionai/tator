@@ -46,7 +46,7 @@ echo "Using host interface $HOST_INTERFACE."
 echo "Using host IP address $HOST_IP."
 
 # Export host IP for unit tests.
-export TATOR_UNIT_TEST_HOST_IP=$HOST_IP
+echo "export TATOR_UNIT_TEST_HOST_IP=$HOST_IP" >> $BASH_ENV
 
 # Get docker registry if it is not set explicitly.
 if [[ -z "${DOCKER_REGISTRY}" ]]; then

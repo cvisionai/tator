@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   node: circleci/node@4.5.1
+  slack: circleci/slack@4.4.2
 jobs:
   build-docker-images:
     machine:
@@ -70,13 +71,10 @@ jobs:
         command: cp -r scripts/packages/tator-py/test . && cp -r scripts/packages/tator-py/examples .
     - run:
         name: Find gunicorn pod
-        command: export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
+        command: echo "export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')" >> $BASH_ENV
     - run:
         name: Create API token
-        command: export TOKEN=$(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command="from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)")
-    - run:
-        name: Strip newline from token
-        command: export TOKEN=$(echo $TOKEN | tr -d '\r')
+        command: echo "export TOKEN=$(echo $(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command='from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)') | tr -d '\r')" >> $BASH_ENV
     - run:
         name: Run tator-py tests
         command: pytest test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN
