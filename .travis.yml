@@ -12,10 +12,13 @@ addons:
       channel: 1.19/stable
 
 script:
+- sudo sleep 120
 - sudo microk8s status --wait-ready --timeout 120
 - sudo microk8s kubectl get all -A
 - sudo microk8s kubectl get no
 - sudo microk8s kubectl describe no
+- sudo microk8s stop
+- sudo microk8s start
 - sudo journalctl -n 3000 -u snap.microk8s.daemon-containerd
 - sudo journalctl -n 3000 -u snap.microk8s.daemon-kubelet
 - sudo journalctl -n 3000 -u snap.microk8s.daemon-proxy
