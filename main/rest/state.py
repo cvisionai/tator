@@ -312,6 +312,9 @@ class StateListAPI(BaseListView):
         )
         bulk_create_from_generator(objs, ChangeToObject)
 
+        # Refresh ES index.
+        ts.refresh(project.id)
+
         # Return created IDs.
         ids = [state.id for state in states]
         return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
@@ -348,6 +351,9 @@ class StateListAPI(BaseListView):
             )
             bulk_create_from_generator(objs, ChangeToObject)
 
+            # Refresh ES index.
+            TatorSearch().refresh(params['project'])
+
         return {'message': f'Successfully deleted {count} states!'}
 
     def _patch(self, params):
@@ -375,6 +381,9 @@ class StateListAPI(BaseListView):
             cl.save()
             objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
             bulk_create_from_generator(objs, ChangeToObject)
+
+            # Refresh ES index.
+            TatorSearch().refresh(params['project'])
 
         return {'message': f'Successfully updated {count} states!'}
 
