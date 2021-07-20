@@ -1,6 +1,6 @@
 apiVersion: v2
 name: tator
-version: 0.1.0
+version: 0.1.1
 kubeVersion: ">=1.14.3-r0"
 description: "A web application for video hosting, annotation, and algorithm deployment."
 type: application
