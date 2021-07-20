@@ -79,7 +79,7 @@ jobs:
         command: export TOKEN=$(echo $TOKEN | tr -d '\r')
     - run:
         name: Run tator-py tests
-        command: pytest test --host=http://$HOST_IP --token=$TOKEN
+        command: pytest test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN
 workflows:
   version: 2
   build-docker-images-workflow:
