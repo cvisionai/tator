@@ -74,7 +74,7 @@ jobs:
         command: echo "export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')" >> $BASH_ENV
     - run:
         name: Create API token
-        command: echo "export TOKEN=$(echo $(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command='from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)') | tr -d '\r')" >> $BASH_ENV
+        command: echo "export TOKEN=$(echo $(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command='from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)') | tr -d '\r\000')" >> $BASH_ENV
     - run:
         name: Run tator-py tests
         command: pytest test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN
