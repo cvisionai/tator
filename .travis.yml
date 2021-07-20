@@ -18,3 +18,5 @@ script:
 - sudo microk8s kubectl describe no
 - sudo journalctl -n 3000 -u snap.microk8s.daemon-containerd
 - sudo journalctl -n 3000 -u snap.microk8s.daemon-kubelet
+- sudo journalctl -n 3000 -u snap.microk8s.daemon-proxy
+- sudo microk8s.inspect
