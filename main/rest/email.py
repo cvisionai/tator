@@ -25,7 +25,7 @@ class EmailAPI(BaseListView):
         """ Sends an email message via boto3
         """
 
-        if settings.TATOR_EMAIL_ENABLED != "true":
+        if settings.TATOR_EMAIL_ENABLED:
             raise ValueError("Email not enabled")
 
         # Wrapped code in try/except incase there are security related issues with exceptions
