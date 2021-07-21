@@ -2622,15 +2622,15 @@ class VideoCanvas extends AnnotationCanvas {
 
   onDemandDownloadPrefetch(reset)
   {
-
+    // Skip prefetch if the current frame is already in the buffer
+    // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
     if (this.videoBuffer(this.currentFrame(), "play") != null && reset != true) {
       return;
     }
-
-    // Only prefetch if the frame is different or if there's an explicit reset.
-    //if (this._onDemandInitStartFrame == this.currentFrame() && reset != true) {
-    //  return;
-   // }
+    else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
+      this._onDemandPlaybackReady = true;
+      return;
+    }
 
     // Don't use on-demand downloading for legacy videos.
     if (this.isInCompatibilityMode() == true)
