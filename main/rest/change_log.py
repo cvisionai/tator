@@ -33,7 +33,7 @@ class ChangeLogListAPI(BaseListView):
         entity_id = params.get("entity_id")
         entity_type = params.get("entity_type")
 
-        if all(value is None for value in [user_id, entity_id]):
+        if all(value is None for value in [user_id, entity_id, entity_type]):
             raise ValueError(
                 f"At least one of the following fields need to be set: user_id, entity_id"
             )
