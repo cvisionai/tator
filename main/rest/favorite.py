@@ -4,10 +4,12 @@
 import logging
 
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
 
 from ..models import Project
 from ..models import User
 from ..models import LocalizationType
+from ..models import StateType
 from ..models import Favorite
 from ..models import database_qs
 from ..schema import FavoriteDetailSchema
@@ -47,15 +49,37 @@ class FavoriteListAPI(BaseListView):
     def _post(self, params: dict) -> dict:
         """ Saves a new favorite.
         """
+
+        entityTypeName = params.get("entityTypeName", "")
+        if entityTypeName == "Localization":
+            metaObj = LocalizationType.objects.get(pk=params['type'])
+
+            fave = Favorite.objects.create(
+                name=params['name'],
+                project=Project.objects.get(pk=params['project']),
+                user=self.request.user,
+                localization_meta=metaObj,
+                meta=metaObj.id,
+                page=params['page'],
+                values=params['values'],
+                entityTypeName=entityTypeName
+            )
+
+        elif entityTypeName == "State":
+            metaObj = StateType.objects.get(pk=params['type'])
+
+            fave = Favorite.objects.create(
+                name=params['name'],
+                project=Project.objects.get(pk=params['project']),
+                user=self.request.user,
+                state_meta=metaObj,
+                meta=metaObj.id,
+                page=params['page'],
+                values=params['values'],
+                entityTypeName=entityTypeName
+            )
+
         # Save the favorite.
-        fave = Favorite.objects.create(
-            name=params['name'],
-            project=Project.objects.get(pk=params['project']),
-            user=self.request.user,
-            meta=LocalizationType.objects.get(pk=params['type']),
-            page=params['page'],
-            values=params['values'],
-        )
         return {'message': f'Successfully created favorite {fave.id}!.', 'id': fave.id}
 
 class FavoriteDetailAPI(BaseDetailView):
@@ -79,6 +103,20 @@ class FavoriteDetailAPI(BaseDetailView):
         name = params.get('name', None)
         if name is not None:
             obj.name = name
+
+        # Note: The patching of the meta fields using the entityTypeName is here to support
+        #       migrating existing Favorites that only had a single meta field to the new style.
+        entityTypeName = params.get('entityTypeName', None)
+        if entityTypeName == "Localization":
+            metaObj = LocalizationType.objects.get(pk=obj.meta)
+            obj.state_meta = None
+            obj.localization_meta = metaObj
+
+        elif entityTypeName == "State":
+            metaObj = StateType.objects.get(pk=obj.meta)
+            obj.state_meta = metaObj
+            obj.localization_meta = None
+
         obj.save()
         return {'message': f'Favorite {obj.id} updated successfully!'}
 

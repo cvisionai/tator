@@ -41,7 +41,7 @@ class LiveCanvas extends AnnotationCanvas
       return;
     }
     clearTimeout(this._diagThread);
-    if (this._currentFrame - this._diagLastFrame < 10)
+    if (this._currentFrame - this._diagLastFrame < 10 && document.visibilityState == "visible")
     {
       this.error(null, "Remote Video feed has stopped.");
     }
@@ -288,7 +288,7 @@ class LiveCanvas extends AnnotationCanvas
     {
         let streamer = this._streamers[idx];
         streamer.disconnect();
-        streamer.connect(feed.name, feed.name);
+        streamer.connect(feed.name, feed.name, "rtptransport=tcp&timeout=60");
         idx++;
     }
     this._connectTime = Date.now();
@@ -316,7 +316,7 @@ class LiveCanvas extends AnnotationCanvas
         console.error(msg)
         this.error(error, msg);
       };
-      streamer.connect(feed.name, feed.name);
+      streamer.connect(feed.name, feed.name, "rtptransport=tcp&timeout=60");
       this._streamers.push(streamer);
     }
     this._connectTime = Date.now();

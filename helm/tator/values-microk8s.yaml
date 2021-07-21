@@ -1,7 +1,6 @@
 # This can be a domain that points to a LAN IP address if you
 # are accessing the site from another machine's browser or you
-# are installing Tator in a VM. Using localhost only works in 
-# a browser running on the same machine running Tator.
+# are installing Tator in a VM.
 domain: &domain <Insert static IP or domain>
 # Requests for these domains will be redirected to the actual domain.
 #redirects:
@@ -102,6 +101,7 @@ postgis:
   enabled: true
   persistence:
     size: 10Gi
+  hostPath: "/media/kubernetes_share/postgis"
 redis:
   # Enable this to install the redis helm chart.
   enabled: true
@@ -132,7 +132,7 @@ elasticsearch:
   nodeSelector: 
     dbServer: "yes"
 filebeat:
-  enabled: true
+  enabled: false
   image: docker.elastic.co/beats/filebeat-oss
   imageTag: 7.4.2
   filebeatConfig:
@@ -148,7 +148,7 @@ filebeat:
         hosts: '${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}'
       setup.ilm.enabled: false
 kibana:
-  enabled: true
+  enabled: false
   image: docker.elastic.co/kibana/kibana-oss
   kibanaConfig:
     kibana.yml: |

@@ -345,8 +345,16 @@ class TatorAutoComplete {
       });
     }
 
+    // If config has match_any enabled, prepend a wildcard.
+    let query;
+    if (config.match_any) {
+      query = `*${text}`;
+    } else {
+      query = text;
+    }
+
     // Build up URL
-    var url=`${config.serviceUrl}?query=${text}`;
+    var url=`${config.serviceUrl}?query=${query}`;
     extraParams.forEach((value, key) =>
                         {
                           url += `&${key}=${value}`

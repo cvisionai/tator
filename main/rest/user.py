@@ -78,7 +78,7 @@ class UserListAPI(BaseListView):
                             email=email,
                             username=username)
                 if settings.EMAIL_CONFIRMATION_REQUIRED:
-                    if settings.TATOR_EMAIL_ENABLED == 'true':
+                    if settings.TATOR_EMAIL_ENABLED:
                         user.is_active = False
                         user.confirmation_token = uuid.uuid1()
                         # Send email

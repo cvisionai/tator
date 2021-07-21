@@ -6,6 +6,13 @@ autocomplete_service = {
             'description': 'URL of the autocomplete service.',
             'type': 'string',
         },
+        'match_any': {
+            'description': 'If true, autocomplete will find leaves with any part '
+                           'of name matching the query. Otherwise only leaf names '
+                           'that start with the query are returned.',
+            'type': 'boolean',
+            'default': False,
+        },
     },
 }
 

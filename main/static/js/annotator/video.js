@@ -395,6 +395,7 @@ class VideoBufferDemux
           setTimeout(checkBuffer, 100);
         }
         else {
+          console.log(`resetOnDemandBuffer: length - ${this.playBuffer().buffered.length}`);
           resolve();
         }
       };
@@ -1100,6 +1101,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       this._dispFrame = Number(searchParams.get("frame"));
     }
+    this._lastDirection=Direction.FORWARD;
     this._direction=Direction.STOPPED;
     this._fpsDiag=0;
     this._fpsLoadDiag=0;
@@ -1535,7 +1537,9 @@ class VideoCanvas extends AnnotationCanvas {
           {
             // Done processing the downloaded segment.
             // Watchdog will kick off the next segment to download.
+            console.log(`Requesting more onDemand data: done.`);
             that._onDemandPendingDownloads -= 1;
+            that._onDemandCompletedDownloads += 1;
             return;
           }
           else
@@ -1811,7 +1815,7 @@ class VideoCanvas extends AnnotationCanvas {
     // Resize the viewport
     this._draw.resizeViewport(dims[0], dims[1]);
     this._fps=fps;
-    this._numFrames=numFrames;
+    this._numFrames=numFrames-1;
     this._numSeconds=fps*numFrames;
     this._dims=dims;
     this.resetRoi();
@@ -1940,7 +1944,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     let ended = false;
     if (this._direction == Direction.FORWARD &&
-        this._dispFrame >= (this._numFrames - 2))
+        this._dispFrame >= (this._numFrames - 1))
     {
       ended = true;
     }
@@ -2242,6 +2246,10 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    if (frameIdx < 0 || frameIdx >= this._numFrames) {
+      return;
+    }
+
     // In the event some out of band drawing has happened, make sure to clear any latent
     // draw buffers.
     this._draw.beginDraw();
@@ -2275,7 +2283,6 @@ class VideoCanvas extends AnnotationCanvas {
 
   _playGenericScrub(direction)
   {
-    var that = this;
     console.log("Setting playback direction " + direction);
     this._direction=direction;
 
@@ -2284,6 +2291,28 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Reset perioidc health check in motion comp
     this._motionComp.clearTimesVector();
+
+    this._playing = false;
+
+    // We are eligible for audio if we are at a supported playback rate
+    // have audio, and are going forward.
+    this._audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= 4.0 &&
+        this._audioPlayer &&
+        direction == Direction.FORWARD)
+    {
+      this._audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+
+    // Diagnostics and audio readjust thread
+    this._fpsDiag = 0;
+    this._fpsLoadDiag = 0;
+    this._fpsScore = 7;
+    this._networkUpdate = 0;
+    this._audioCheck = 0;
+
     this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
 
 
@@ -2330,6 +2359,7 @@ class VideoCanvas extends AnnotationCanvas {
     console.log(`_playGenericOnDemand (ID:${this._videoObject.id}) Setting direction ${direction}`);
     this._direction=direction;
 
+    /*
     // If we are going backwards re-init the buffers
     // as we are optimized for forward playback on pause.
     if (this._direction == Direction.BACKWARDS)
@@ -2343,6 +2373,7 @@ class VideoCanvas extends AnnotationCanvas {
         that.onDemandDownload(true);
       });
     }
+    */
     // Reset the GPU buffer on a new play action
     this._draw.clear();
 
@@ -2366,7 +2397,7 @@ class VideoCanvas extends AnnotationCanvas {
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
     this._fpsLoadDiag = 0;
-    this._fpsScore = 3;
+    this._fpsScore = 7;
     this._networkUpdate = 0;
     this._audioCheck = 0;
 
@@ -2591,8 +2622,13 @@ class VideoCanvas extends AnnotationCanvas {
 
   onDemandDownloadPrefetch(reset)
   {
-    // Only prefetch if the frame is different or if there's an explicit reset.
-    if (this._onDemandInitStartFrame == this.currentFrame() && reset != true) {
+    // Skip prefetch if the current frame is already in the buffer
+    // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
+    if (this.videoBuffer(this.currentFrame(), "play") != null && reset != true) {
+      return;
+    }
+    else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
+      this._onDemandPlaybackReady = true;
       return;
     }
 
@@ -2601,22 +2637,55 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return;
     }
+    console.log("******* onDemandDownloadPrefetch");
+    this.stopPlayerThread();
+    this.shutdownOnDemandDownload();
 
-    if (this._onDemandDownloadTimeout)
-    {
-      clearTimeout(this._onDemandDownloadTimeout);
-      this._onDemandDownloadTimeout=null;
-      this._dlWorker.postMessage({"type": "onDemandShutdown"});
-    }
     // Prefetch ondemand download data so it's ready to go.
     this._onDemandInit = false;
     this._onDemandInitSent = false;
     this._onDemandPlaybackReady = false;
     this._onDemandFinished = false;
+
+    // Assumed that you're going forward on seek (when this function is expected to be called)
+    this._lastDirection = Direction.FORWARD;
     var that = this;
+    var restartOnDemand = function () {
+
+      console.log("******* restarting onDemand: Clearing old buffer");
+      that.stopPlayerThread();
+
+      var video = that._videoElement[that._play_idx];
+
+      var setupCallback = function() {
+        console.log("******* restarting onDemand: Setting up new buffer");
+        var offsets2 = that._ftypInfo[that._play_idx]["offsets"];
+        var data2 = that._ftypInfo[that._play_idx]["buffer"];
+        var begin2 = offsets2[0][0];
+        var end2 = offsets2[1][0]+offsets2[1][1];
+        video.appendOnDemandBuffer(data2.slice(begin2, end2), playCallback);
+      }
+
+      var playCallback = function () {
+        that._onDemandInit = false;
+        that._onDemandInitSent = false;
+        that._onDemandPlaybackReady = false;
+        that._onDemandFinished = false;
+        that._videoElement[that._play_idx].resetOnDemandBuffer().then(() => {
+          that.onDemandDownload(true);
+        })
+      };
+
+      video.recreateOnDemandBuffers(setupCallback);
+    }
+    setTimeout(function() {
+      restartOnDemand();
+    },100);
+    /*
     this._videoElement[this._play_idx].resetOnDemandBuffer().then(() => {
       that.onDemandDownload(true);
-    });
+    })
+    */;
   }
   onDemandDownload(inhibited)
   {
@@ -2636,9 +2705,17 @@ class VideoCanvas extends AnnotationCanvas {
     {
       downloadDirection = "forward";
     }
-    else
+    else if (this._direction == Direction.BACKWARDS)
     {
       downloadDirection = "backward";
+    }
+    else {
+      if (this._lastDirection == Direction.FORWARD) {
+        downloadDirection = "forward";
+      }
+      else {
+        downloadDirection = "backward";
+      }
     }
 
     if (!this._onDemandInit)
@@ -2651,6 +2728,8 @@ class VideoCanvas extends AnnotationCanvas {
         if (ranges.length == 0 && !video.isOnDemandBufferBusy())
         {
           this._onDemandPendingDownloads = 0;
+          this._onDemandCompletedDownloads = 0;
+          this._onDemandDownloadCheck = {lastDownloadCount: 0, lastStartTime: 0, lastEndTime: 0, lastDispFrame: -1};
           this._onDemandInitSent = true;
 
           // Note: These are here because it's possible that currentFrame gets out of sync.
@@ -2660,6 +2739,7 @@ class VideoCanvas extends AnnotationCanvas {
           currentFrame = this._dispFrame;
 
           this._onDemandId += 1;
+          console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: onDemandInit`);
 
           this._dlWorker.postMessage(
             {
@@ -2681,7 +2761,7 @@ class VideoCanvas extends AnnotationCanvas {
       if (this._direction == Direction.FORWARD)
       {
         // #TODO This needs to be relooked at
-        if ((this._numFrames - 2) == this._dispFrame)
+        if ((this._numFrames - 1) == this._dispFrame)
         {
           return;
         }
@@ -2729,13 +2809,24 @@ class VideoCanvas extends AnnotationCanvas {
         {
           var end = ranges.end(rangeIdx);
           var start = ranges.start(rangeIdx);
+          var timeToEnd;
 
-          if (this._direction == Direction.FORWARD || this._direction == Direction.STOPPED)
+          if (this._direction == Direction.STOPPED) {
+            if (this._lastDirection == Direction.FORWARD) {
+              timeToEnd = end - currentTime;
+            }
+            else {
+              timeToEnd = currentTime - start;
+            }
+          }
+          else if (this._direction == Direction.FORWARD)
           {
+            this._lastDirection = this._direction;
             var timeToEnd = end - currentTime;
           }
           else
           {
+            this._lastDirection = this._direction;
             var timeToEnd = currentTime - start;
           }
 
@@ -2786,7 +2877,42 @@ class VideoCanvas extends AnnotationCanvas {
               // Since we are requesting more data, trim the buffer
               needMoreData = true;
 
-              if (this._direction == Direction.FORWARD || this._direction == Direction.STOPPED)
+              // #TODO This block of code is a candidate for removal, but it's here as defensive programming
+              //       if the user somehow gets into this state.
+              if (this._onDemandCompletedDownloads > this._onDemandDownloadCheck.lastDownloadCount &&
+                    !this._onDemandFinished &&
+                    ranges.length > 1 &&
+                    this._dispFrame == this._onDemandDownloadCheck.lastDispFrame) {
+
+                this._onDemandDownloadCheck.lastDownloadCount = this._onDemandCompletedDownloads;
+                if (end == this._onDemandDownloadCheck.lastEndTime && start == this._onDemandDownloadCheck.lastStartTime) {
+                  // Subsequent downloads are not increasing this range, which the current timet is a part of.
+                  // Restart the downloader.
+                  console.log("onDemand - fragmented data (matching range) - restarting downloader");
+
+                    for (let innerIdx = 0; innerIdx < ranges.length; innerIdx++) {
+                      video.deletePendingOnDemand([ranges.start(innerIdx), ranges.end(innerIdx)]);
+                    }
+
+                    video.resetOnDemandBuffer().then(() => {
+                      this._onDemandDownloadTimeout = setTimeout(() => {
+                        this._onDemandInit = false;
+                        this._onDemandInitSent = false;
+                        this._onDemandPlaybackReady = false;
+                        this._onDemandFinished = false;
+                        this.onDemandDownload()}, 50);
+                    });
+                    return;
+                }
+                this._onDemandDownloadCheck.lastEndTime = end;
+                this._onDemandDownloadCheck.lastStartTime = start;
+                this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
+                needMoreData = false;
+                break;
+              }
+              this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
+
+              if (this._direction == Direction.FORWARD)
               {
                 var trimEnd = currentTime - 2;
                 if (trimEnd > start && this._playing)
@@ -2795,7 +2921,7 @@ class VideoCanvas extends AnnotationCanvas {
                   video.deletePendingOnDemand([start, trimEnd]);
                 }
               }
-              else
+              else if (this._direction == Direction.BACKWARDS)
               {
                 var trimEnd = currentTime + 2;
                 if (trimEnd < end && this._playing)
@@ -2826,8 +2952,38 @@ class VideoCanvas extends AnnotationCanvas {
           }
           else
           {
+            // #TODO This block of code is a candidate for removal, but it's here as defensive programming
+            //       if the user somehow gets into this state.
+
+            // Did not find a matching range. Have we already downloaded
+            if (this._onDemandCompletedDownloads > this._onDemandDownloadCheck.lastDownloadCount &&
+                !this._onDemandFinished &&
+                ranges.length > 0 &&
+                this._dispFrame == this._onDemandDownloadCheck.lastDispFrame) {
+
+              this._onDemandDownloadCheck.lastDownloadCount = this._onDemandCompletedDownloads;
+
+              // Subsequent downloads are increasing the range but not incorporating the current frame. #TODO maybe accumulate durations instead
+              // Reset the downloader
+              console.log("onDemand - fragmented data (no matching range) - restarting downloader");
+
+                for (let innerIdx = 0; innerIdx < ranges.length; innerIdx++) {
+                  video.deletePendingOnDemand([ranges.start(innerIdx), ranges.end(innerIdx)]);
+                }
+                video.resetOnDemandBuffer().then(() => {
+                  this._onDemandDownloadTimeout = setTimeout(() => {
+                    this._onDemandInit = false;
+                    this._onDemandInitSent = false;
+                    this._onDemandPlaybackReady = false;
+                    this._onDemandFinished = false;
+                    this.onDemandDownload()}, 50);
+                });
+                return;
+            }
+            this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
+            // #TODO do we need this?
             // Request more data, we received a block of data but it's likely on the boundary.
-            console.log(`(ID:${this._videoObject.id}) playback not ready -- downloading additional data`);
+            //console.log(`(ID:${this._videoObject.id}) playback not ready -- downloading additional data`);
             needMoreData = true;
           }
         }
@@ -2836,9 +2992,17 @@ class VideoCanvas extends AnnotationCanvas {
       if (needMoreData && !this._onDemandFinished)// && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
       {
         // Kick of the download worker to get the next onDemand segments
-        console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady}`);
+        console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data (pendingDownloads/playbackReady/ranges.length): ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady} ${ranges.length}`);
+        for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
+        {
+          var end = ranges.end(rangeIdx);
+          var start = ranges.start(rangeIdx);
+          console.log(`    range ${rangeIdx} (start/end/current) - ${start} ${end} ${this.frameToTime(this._dispFrame)}`)
+        }
         this._onDemandPendingDownloads += 1;
-        this._dlWorker.postMessage({"type": "onDemandDownload"});
+        this._dlWorker.postMessage({
+          "type": "onDemandDownload",
+          "playing": !this.isPaused()});
       }
 
       // Clear out unecessary parts of the video if there are pending deletes
@@ -2916,7 +3080,7 @@ class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    if (this._dispFrame >= (this._numFrames - 2))
+    if (this._dispFrame >= (this._numFrames))
     {
       return false;
     }
@@ -2935,6 +3099,16 @@ class VideoCanvas extends AnnotationCanvas {
         }
         else
         {
+          this._dlWorker.postMessage(
+          {
+            "type": "onDemandInit",
+            "frame": this._dispFrame,
+            "fps": this._fps,
+            "maxFrame": this._numFrames - 1,
+            "direction": "forward",
+            "mediaFileIndex": this._play_idx,
+            "id": this._onDemandId
+          });
           this._playGenericOnDemand(Direction.FORWARD);
         }
       }
@@ -2963,6 +3137,16 @@ class VideoCanvas extends AnnotationCanvas {
         }
         else
         {
+          this._dlWorker.postMessage(
+            {
+              "type": "onDemandInit",
+              "frame": this._dispFrame,
+              "fps": this._fps,
+              "maxFrame": this._numFrames - 1,
+              "direction": "backward",
+              "mediaFileIndex": this._play_idx,
+              "id": this._onDemandId
+            });
           this._playGenericOnDemand(Direction.BACKWARDS);
         }
       }
@@ -2996,11 +3180,26 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._diagTimeout);
       this._diagTimeout=null;
     }
+    /*
     if (this._onDemandDownloadTimeout)
     {
       clearTimeout(this._onDemandDownloadTimeout);
       this._onDemandDownloadTimeout=null;
+      console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: shutdown`);
       this._dlWorker.postMessage({"type": "onDemandShutdown"});
+    }
+    */
+  }
+
+  shutdownOnDemandDownload() {
+    if (this._onDemandDownloadTimeout)
+    {
+      clearTimeout(this._onDemandDownloadTimeout);
+      this._onDemandDownloadTimeout=null;
+      console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: shutdown`);
+      this._dlWorker.postMessage({
+        "type": "onDemandShutdown"
+      });
     }
   }
 
@@ -3015,6 +3214,10 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Stop the player thread first
     this.stopPlayerThread();
+
+    // Let the downloader know the ondemand is paused.
+    // Doesn't matter if the player was using the scrub buffer for playback
+    this._dlWorker.postMessage({"type": "onDemandPaused"});
 
     // If we weren't already paused send the event
     if (currentDirection != Direction.STOPPED)
