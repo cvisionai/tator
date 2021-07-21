@@ -33,34 +33,21 @@ class SvgDefinition {
          path.setAttribute("d", this._iconPath);
          svg.appendChild(path);
 
+         if(this._iconName == "label-tag" || this._iconName =="triangle"){
+            svg.setAttribute("stroke-width", "2px");
+         }
 
-         if (this._iconName == "closed-eye") {
-            const line = document.createElementNS(svgNamespace, "line");
-            line.setAttribute("x1", "1");
-            line.setAttribute("y1", "1");
-            line.setAttribute("x2", "23");
-            line.setAttribute("y2", "23");
-            svg.appendChild(line);
-         }
-         if (this._iconName == "open-eye") {
-            const circle = document.createElementNS(svgNamespace, "circle");
-            circle.setAttribute("cx", "12");
-            circle.setAttribute("cy", "12");
-            circle.setAttribute("r", "3");
-            svg.appendChild(circle);
-         }
-         if (this._iconName == "label-tag") {
-            svg.setAttribute("linecap", "round");
-            svg.setAttribute("stroke-linejoin", "round");
-            svg.setAttribute("stroke-width", "2");
+         // if (this._iconName == "label-tag") {
+         //    svg.setAttribute("linecap", "round");
+         //    svg.setAttribute("stroke-linejoin", "round");
 
-            const line = document.createElementNS(svgNamespace, "line");
-            line.setAttribute("x1", "7");
-            line.setAttribute("y1", "7");
-            line.setAttribute("x2", "7.01");
-            line.setAttribute("y2", "7");
-            svg.appendChild(line);
-         }
+         //    const line = document.createElementNS(svgNamespace, "line");
+         //    line.setAttribute("x1", "7");
+         //    line.setAttribute("y1", "7");
+         //    line.setAttribute("x2", "7.01");
+         //    line.setAttribute("y2", "7");
+         //    svg.appendChild(line);
+         // }
 
          return svg;
       } catch (e) {

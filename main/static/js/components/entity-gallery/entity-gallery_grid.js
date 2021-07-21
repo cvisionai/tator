@@ -4,7 +4,7 @@ class EntityCardGallery extends TatorElement {
       
       // Gallery Container
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "enitity-gallery--main ml-1 mr-6 rounded-1");
+      this._main.setAttribute("class", "enitity-gallery--main ml-1 mt-6 mr-6 px-5 rounded-1");
       this._shadow.appendChild(this._main);
 
       // Gallery Container
@@ -14,7 +14,7 @@ class EntityCardGallery extends TatorElement {
 
       // Gallery Top Tools and info
       this._tools = document.createElement("div");
-      this._tools.setAttribute("class", "enitity-gallery__tools d-flex flex-items-center");
+      this._tools.setAttribute("class", "enitity-gallery__tools d-flex flex-items-center flex-justify-between");
       this._mainTop.appendChild(this._tools);
 
       // Gallery Heading

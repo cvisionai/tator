@@ -68,12 +68,14 @@ class EntityCardResize extends TatorElement {
     this.defaultMinMax = colWidth;
 
     // Listen to slide changes on init
-    this._slideInput.addEventListener("change", (e) => {
-      this._rangeHandler(e.target.value);
-    });
+    if(this._gallery != null) {
+      this._slideInput.addEventListener("change", (e) => {        
+        this._rangeHandler(e.target.value);
+      });
+    }
   }
 
-  _rangeHandler(resizeValue) {
+  _rangeHandler(resizeValue, gallery = this._gallery) {
     let resizeValuePerc = parseFloat(resizeValue / 100);
 
     // Gallery UL by default
@@ -84,12 +86,12 @@ class EntityCardResize extends TatorElement {
     // height: 130px - Changed in Gallery
     // handled in GALLERY with access to card element
 
-    return this.setGalleryTo(this.newMinMax);
+    return this.setGalleryTo(this.newMinMax, gallery);
   }
 
-  setGalleryTo(size){
+  setGalleryTo(size, gallery = this._gallery){
     //console.log("Gallery resized");
-    return this._gallery.style.gridTemplateColumns = `repeat(auto-fill,minmax(${size}px,1fr))`;
+    return gallery.style.gridTemplateColumns = `repeat(auto-fill,minmax(${size}px,1fr))`;
   }
 
   handlerMinusClick() {

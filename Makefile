@@ -219,6 +219,7 @@ FILES = \
     components/svg-definitions/modal-warning.js \
     components/svg-definitions/modal-success.js \
     components/svg-definitions/more-icon.js \
+    components/svg-definitions/track-icon.js \
     components/svg-definitions/all-svg.js \
     components/modal-dialog.js \
     components/modal-notify.js \

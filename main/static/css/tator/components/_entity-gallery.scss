@@ -13,7 +13,7 @@
 .enitity-gallery__ul {
   display: grid;
   grid-gap: 20px;
-  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(272px, 272px));
 }
 
 .entity-resize {
@@ -220,16 +220,13 @@ collections-card {
 .enitity-gallery-slider__ul {
   display: grid;
   grid-gap: 15px;
-  grid-auto-flow: column;
-  grid-template-columns: minmax(272px, 1fr);
-  width: max-content;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fill,minmax(272px,1fr));
   overflow: hidden;
 
   &.open {
     display: grid;
     grid-gap: 15px;
-    grid-auto-flow: row;
-    grid-template-columns: repeat(auto-fill, minmax(272px,  1fr));
     width: 100%;
     overflow: hidden;
     background-image: none;
@@ -373,4 +370,22 @@ collections-card {
   .enitity-gallery_h-slide.mr-6 {
     margin-right: $spacing-1;
   }
+}
+
+.entity-gallery-sortable {
+  transition: display 300ms linear !important;
+  transition: opacity 500ms ease-in !important;
+  perspective: 1000;
+  -ms-transform: perspective(1000px);
+  -moz-transform: perspective(1000px);
+  -ms-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+  opacity: 1;
+
+  .reorder-progress {
+    transition: opacity 500ms ease-in !important;
+    display: none !important;
+    opacity: 0;
+  }
+
 }

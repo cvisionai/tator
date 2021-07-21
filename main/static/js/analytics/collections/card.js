@@ -41,13 +41,15 @@ class CollectionsCard extends EntityCard {
 
     // Graphic
     if(typeof obj.image !== "undefined" && obj.image !== null) {
-      this.setAttribute("thumb", obj.image);
+      //this.setAttribute("thumb", obj.image);
+      this.setImageStatic(obj.image);
     } else if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
       this.reader = new FileReader();
       this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
       this.reader.addEventListener("load", this._setImgSrc.bind(this));
     } else {
-      this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+      //this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+      this.setImageStatic("/static/images/spinner-transparent.svg");
     }
 
     // Add position text related to pagination
@@ -80,7 +82,7 @@ class CollectionsCard extends EntityCard {
         attrStyleDiv.appendChild(attrLabel);
 
         let key = attr.name;
-        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key]){
+        if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== ""){
           attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
         } else {
           // attrLabel.innerHTML = "&nbsp;";
@@ -97,7 +99,6 @@ class CollectionsCard extends EntityCard {
         //console.log(cardLabelsChosen);
 
         if(cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0){
-          console.log("Checking against list")
           // If we have any preferences saved check against it
           if(cardLabelsChosen.indexOf(key) > -1) {     
             //console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
@@ -144,15 +145,19 @@ class CollectionsCard extends EntityCard {
    * - If side panel is edited the card needs to update attributes
    */
    _updateAttributeValues(data) {
-     console.log(data);
+     //console.log(data);
     for (let [attr, value] of Object.entries(data.attributes)) {
-      console.log(attr);
+      //console.log(attr);
       if(this.attributeDivs[attr] != null){
         this.attributeDivs[attr].value.innerHTML = value;
       } else {
         attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
       }
     }
+  }
+
+  set posText(val){
+    this.setAttribute("pos-text", val);
   }
 
   /**
@@ -162,15 +167,20 @@ class CollectionsCard extends EntityCard {
   setImage(image) {
     this.reader = new FileReader();
     this.reader.readAsDataURL(image); // converts the blob to base64
-    this.reader.addEventListener("load", this._setImgSrc.bind(this));
+    this.reader.addEventListener("load", this._setImgSrcReader.bind(this));
   }
 
-  _setImgSrc(e) {
-    this.setAttribute("thumb", this.reader.result);
+  _setImgSrcReader() {
+    //this.setAttribute("thumb", this.reader.result);
+    this._img.setAttribute("src", this.reader.result);
+    this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
   }
 
   setImageStatic(image) {
-    this.setAttribute("thumb", image);
+    //this.setAttribute("thumb", image);
+    this._img.setAttribute("src", image);
+    this.cardObj.image = image;
+    this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
   }
 
   _mouseEnterHandler(e){
@@ -220,7 +230,7 @@ class CollectionsCard extends EntityCard {
 
   togglePanel(e){
     e.preventDefault();
-    console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
+    //console.log(`Opening: ${this.annotationPanelDiv.dataset.locId}`);
     // If they click while in preview, don't do this
     // const isInPreview = this.annotationPanelDiv.classList.contains("preview");
     // if(isInPreview) {
@@ -285,6 +295,12 @@ class CollectionsCard extends EntityCard {
     this.annotationPanelDiv.classList.add("is-selected");
     this.annotationPanelDiv.classList.remove("hidden");
     this.annotationPanelDiv.classList.remove("preview");
+
+    // Handles swapping src in panel top's still image holder
+    if(typeof this.cardObj.image !== "undefined"){
+      this.panelContainer._panelTop.setImage(this.cardObj.image);
+    }
+    
 
     //remove preview listener
     this.removeEventListener("mouseenter", this._mouseEnterHandler.bind(this) );

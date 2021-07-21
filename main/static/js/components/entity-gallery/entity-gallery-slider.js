@@ -69,10 +69,10 @@ class EntityGallerySlider extends TatorElement {
       this.main.appendChild(this._bottomNav);
 
       // card columns inside slider #todo finish styling
-      this.colSize = 150;
+      this.colSize = 272;
       this._ul = document.createElement("ul");
       this._ul.setAttribute("class", "enitity-gallery-slider__ul py-1")
-      //this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
+      this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`;
       this.styleDiv.appendChild(this._ul);
 
       this.numberOfDisplayedCards = 0;
@@ -112,6 +112,7 @@ class EntityGallerySlider extends TatorElement {
 
          // Go to selected card
          for (let idx = 0; idx < this._cardElements.length; idx++) {
+            // console.log(this._cardElements[idx]);
             let listEl = this._cardElements[idx].card._li;
             if (listEl.classList.contains("is-selected")) {
                return false;
@@ -175,7 +176,7 @@ class EntityGallerySlider extends TatorElement {
       } else {
          // Display attributes values in returned order
          for (let attr in this._sliderAttributeValues) {
-            console.log(attr);
+            // console.log(attr);
             // Add to display w/ value
             this._displayAttributes({attr});
          }
@@ -245,6 +246,7 @@ class EntityGallerySlider extends TatorElement {
     * @param {integer} id
     * @param {image} image
     */
+    // # todo optimize this - I see it being called multiple times?
    updateCardImage(e) {
       // We need to check if this slider has the card we heard about...
       const id = e.detail.id;
@@ -256,7 +258,7 @@ class EntityGallerySlider extends TatorElement {
          info.card.setImage(image);
       } else {
          // If the card hasn't been added yet -- save it here (we'll check for it when new cards are added)
-         //console.log("Saving image for card ID " + id)
+         // console.log("Saving image for card ID " + id)
          this._preloadedImages[id] = e.detail.image;
       }
    }
@@ -300,20 +302,16 @@ class EntityGallerySlider extends TatorElement {
    }
 
    openClosedPanel(e) {
-      //console.log(e.detail)
+      console.log(e.target)
       if (!this.panelContainer.open) this.panelContainer._toggleOpen();
-      this.panelControls.openHandler(e.detail);
-   }
-
-   _updateCardLabels(evt){
-
+      this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
    }
 
    _addCard(index, cardObj, cardType) { 
       let newCard = false;
       let location = this._currentCardIndexes[cardObj.id];
 
-      if (!location && typeof location == "undefined") {
+      if (typeof location == "undefined") {
          newCard = true;
       }
       
@@ -321,17 +319,13 @@ class EntityGallerySlider extends TatorElement {
       * Card labels / attributes of localization or media type
       */
       this.entityType = (this.association == "Localization") ? cardObj.entityType : cardObj.mediaInfo.entityType;
-      let typeId = this.entityType.id;
+      this.entityTypeId = this.entityType.id;
       this._cardAtributeLabels.add({ 
          typeData: this.entityType,
          checkedFirst: true
       });
 
-      this.gallery.cardLabelsChosenByType[typeId] = this._cardAtributeLabels._getValue(typeId);
-      
-      this._cardAtributeSort.add({ 
-         typeData: this.entityType
-      });
+      this.gallery.cardLabelsChosenByType[this.entityTypeId] = this._cardAtributeLabels._getValue(this.entityTypeId);
       
       this._cardLabelOptions = this.entityType.attribute_types;
       this._cardLabelOptions.sort((a, b) => {
@@ -342,35 +336,32 @@ class EntityGallerySlider extends TatorElement {
 
       let card;
       if (newCard) {
+         //console.log("New card...");
          // create a new card
          card = document.createElement(cardType);
 
-         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
-            card._updateShownAttributes(evt);
-            this.gallery.cardLabelsChosenByType[typeId] =  evt.detail.value;
-            let msg = `Entry labels updated`;
-            Utilities.showSuccessIcon(msg);
+         // Resize Tool needs to change style within card on change
+         // card.style.width = "272px";
+         this._resizeCards._slideInput.addEventListener("change", (evt) => {
+            let resizeValue = evt.target.value;
+            let resizeValuePerc = parseFloat(resizeValue / 100);
+            //card.style.width = "auto";
+            card._img.style.height = `${130 * resizeValuePerc}px`
+            this._resizeCards._rangeHandler(resizeValue, this._ul);
          });
-
-         // // Resize Tool needs to change style within card on change
-         card.style.width = "272px";
-         // this._resizeCards._slideInput.addEventListener("change", (evt) => {
-         //    let resizeValue = evt.target.value;
-         //    let resizeValuePerc = parseFloat(resizeValue / 100);
-         //    card.style.width = "auto";
-         //    return card._img.style.height = `${130 * resizeValuePerc}px`;
-         // });
 
          // Inner div of side panel
          let annotationPanelDiv = document.createElement("div");
          annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
          this.panelContainer._shadow.appendChild(annotationPanelDiv);
 
-         // Init a side panel that can be triggered from card
+         // // Init a side panel that can be triggered from card
+         // let annotationPanel = this.panelContainer._panelTop._panel;
          let annotationPanel = document.createElement("entity-gallery-panel");
          annotationPanelDiv.appendChild(annotationPanel);
 
          // Listen for attribute changes
+         
          // #todo needs to be componentized?
          annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
          annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
@@ -388,6 +379,13 @@ class EntityGallerySlider extends TatorElement {
             annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
             annotationPanel.stateData.setAttribute("permission", e.detail.permissionValue);
             annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
+         });
+
+         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+            card._updateShownAttributes(evt);
+            this.gallery.cardLabelsChosenByType[this.entityTypeId] =  evt.detail.value;
+            let msg = `Entry labels updated`;
+            Utilities.showSuccessIcon(msg);
          });
 
          // Update view unselected card panel
@@ -419,10 +417,9 @@ class EntityGallerySlider extends TatorElement {
             annotationPanelDiv: annotationPanelDiv
          };
 
-
          if (cardObj.image) {
             annotationPanel.localizationType = false;
-            annotationPanel.setImage(cardObj.image);
+            //annotationPanel.setImage(cardObj.image);
             if (cardObj.thumbnail) {
                card.setImageStatic(cardObj.thumbnail);
             } else {
@@ -432,6 +429,8 @@ class EntityGallerySlider extends TatorElement {
          this._ul.appendChild(card);
 
          this._cardElements.push(cardInfo);
+         // console.log(this._cardElements.length);
+         // console.log(index);
 
          if (this._preloadedImages[cardObj.id]) {
             const image = this._preloadedImages[cardObj.id];
@@ -440,39 +439,34 @@ class EntityGallerySlider extends TatorElement {
             }           
          }
 
+         cardObj.attributeOrder = this._cardLabelOptions;
+         this._currentCardIndexes[cardObj.id] = index;
+
+         // Initialize the card panel
+         this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+         this._cardElements[index].annotationPanel.init({
+            cardObj
+         });
+
+         // Initialize Card
+         card.init({
+            obj: cardObj,
+            panelContainer: this.panelContainer,
+            annotationPanelDiv: this._cardElements[index].annotationPanelDiv,
+            cardLabelsChosen: this.gallery.cardLabelsChosenByType[this.entityTypeId] ?  this.gallery.cardLabelsChosenByType[this.entityTypeId] : []
+         });
+
       } else {
          card = this._cardElements[index].card;
       }
-
-      cardObj.attributeOrder = this._cardLabelOptions;
-
-      this._currentCardIndexes[cardObj.id] = index;
-
-      // Initialize the card panel
-      this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this._cardElements[index].annotationPanel.init({
-         cardObj
-      });
-
-      
-      let cardLabelsChosen = this.gallery.cardLabelsChosenByType[typeId] ?  this.gallery.cardLabelsChosenByType[typeId] : [];
-
-      // Initialize Card
-      card.init({
-         obj: cardObj,
-         panelContainer: this.panelContainer,
-         annotationPanelDiv: this._cardElements[index].annotationPanelDiv,
-         cardLabelsChosen
-      });
 
       card.style.display = "block";
       this.numberOfDisplayedCards += 1;
    }
 
    showLabels(selectedLabels) {
-      console.log(selectedLabels);
       for (let el of this.attributeLabelEls) {
-         console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
+         //console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
          if (selectedLabels.includes(el.id)) {
             el.classList.remove("hidden");
          } else {
@@ -492,22 +486,6 @@ class EntityGallerySlider extends TatorElement {
       }
    }
 
-   // _updateLocalizationAttribute({ newValues }) {
-   //    for (let i = 0; i < this._cardElements.length; i++) {
-   //       let cardAttr = this._cardElements[i].card.cardObj.attributes;
-   //       cardAttr = newValues.attributes;
-
-   //       for (let attrType of this.state.entityType.attribute_types) {
-   //          if (attrType.order == 0) {
-   //             if (cardAttr[attrType.name] != undefined) {
-   //                this._cardElements[i].card._name.textContent = cardAttr[attrType.name];
-   //             }
-   //             break;
-   //          }
-   //       }
-   //    }
-   // }
-
    async _handleCardPagination(evt) {
       const start = evt.detail.start;
       const stop = evt.detail.stop;
@@ -525,7 +503,7 @@ class EntityGallerySlider extends TatorElement {
             this._cardElements[i].card.style.display = "block";
          } else {
             delete this.unshownCards[i];
-            console.log(`Preparing new card for id ${initData.id} where i is equal to ${i}`);
+            //console.log(`Preparing new card for id ${initData.id} where i is equal to ${i}`);
             // start is further than we have gotten cards
             const card = await this.slideCardData.makeCardList(initData);
 
@@ -550,43 +528,76 @@ class EntityGallerySlider extends TatorElement {
    }
 
    updateCardData(newCardData) {
-      const index = this._currentCardIndexes[newCardData.id];
-      const card = this._cardElements[index].card;
-      //console.log(card);
+      try{
+         const index = this._currentCardIndexes[newCardData.id];
+         const card = this._cardElements[index].card;
+         //console.log(card);
+      
+         if(card){
+            card._updateAttributeValues(newCardData);
+         }
+        
+         // Then... Check if we need to resort
+         let sortProperty = this._cardAtributeSort._selectionValues[this.entityTypeId].getValue();
+         let comparedVals = card.cardObj.attributes[sortProperty] === newCardData.attributes[sortProperty];
 
-      if(card){
-         card._updateAttributeValues(newCardData);
+         //update the cards' cardObject, not just display
+         
+         // console.log(!comparedVals)
+         if(!comparedVals){
+            card.cardObj = newCardData;
+            // #todo _sortCards should accept typeId, then fn check and property off current settings
+            let sortOrder = this._cardAtributeSort._sortOrderValues[this.entityTypeId].getValue();
+
+            // console.log(sortOrder);
+            let cards = this._cardAtributeSort._sortCards({
+               cards: this._cardElements, 
+               slider: this, 
+               fnCheck: this._cardAtributeSort.getFnCheck(sortOrder), 
+               property: sortProperty
+            });
+            this.updateCardOrder(cards);
+         } else {
+            card.cardObj = newCardData;
+         }
+      } catch(e){
+         console.error("Cards not updated due to error: " + e);
       }
       
    }
 
-   // _cardSortUpdate(evt){
-   //    // go through all cards, and sort them..
-   //    let property = evt.detail.sortProperty;
-   //    let sortType = evt.detail.sortType;
+   updateCardOrder(cards) {
+      let total = cards.length;
+      for(let [idx, obj] of Object.entries(cards)){
+         obj.card._li.classList.add("entity-gallery-sortable");
+         obj.card._li.classList.add("reorder-progress");
+         // Update position text
+         let pos = Number(idx) + 1;
+         obj.card.posText = `${pos} of ${total}`;
+         obj.counter = idx;
 
-   //    if(evt.detail.sortType){ // true is == "Ascending"
-   //           // #todo handle pagination
-   //    this._cardElements.sort((el1, el2) => {
-   //       console.log(el1);
-   //       console.log(el2);
-         
-   //       return el1[property] - el2[property];
-   //    });
-   //    } else {
-         
-   //       // #todo handle pagination
-   //       this._cardElements.sort((el1, el2) => {
-   //          console.log(el1);
-   //          console.log(el2);
-            
-   //          return el2[property] - el1[property];
-   //       });
-   //    }
+         // Get index of one and the other
+         let id = obj.card.cardObj.id;
+         //console.log(`Adding id ${id} at idx ${idx}`);
+         this._currentCardIndexes[id] = Number(idx);
 
-   //    let msg = `Entry sort complete`
-   //    Utilities.showSuccessIcon(msg);
-   // }
+         // Place them in those indexes in card array
+         this._cardElements[idx] = obj;
+
+         // Add back in order and make sure visibility stays...
+         this._ul.appendChild(obj.card);
+
+         // Add visibility back (auto behavior to go hidden)
+         // Use classes to add back with specific animation, remove animation class
+         obj.card.style.visibility = "visible";
+
+         setTimeout(() => {
+            obj.card._li.classList.remove("reorder-progress");
+            obj.card._li.classList.remove("entity-gallery-sortable");
+         }, 500);
+         
+      }
+   }
 
 }
 
