@@ -49,7 +49,7 @@ jobs:
   install-and-test:
     machine:
       image: ubuntu-2004:202010-01
-      resource_class: xlarge
+      resource_class: large
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
