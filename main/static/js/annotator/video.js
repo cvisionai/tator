@@ -68,11 +68,9 @@ class VideoBufferDemux
 {
   constructor()
   {
-    // By default use 100 megabytes
-    this._bufferSize = 100*1024*1024;
-    this._numBuffers = 60; // Technically +1 to this value for onDemand
+    this._bufferSize = 125*1024*1024; // 125Mb
+    this._numBuffers = 10;
 
-    this._totalBufferSize = this._bufferSize*this._numBuffers;
     this._vidBuffers=[];
     this._inUse=[];
     this._full=[];
@@ -90,7 +88,7 @@ class VideoBufferDemux
 
     this._mime_str = 'video/mp4; codecs="avc1.64001e"';
 
-    for (var idx = 0; idx <= this._numBuffers; idx++)
+    for (var idx = 0; idx < this._numBuffers; idx++)
     {
       this._vidBuffers.push(document.createElement("VIDEO"));
       this._vidBuffers[idx].setAttribute("crossorigin", "anonymous");
@@ -122,6 +120,8 @@ class VideoBufferDemux
           this.appendSeekBuffer(pending.data, pending.time);
         }
       };
+
+      this.recreateOnDemandBuffers(() => {return;});
 
       // Initialize the playback buffers
       let that = this;
@@ -182,9 +182,7 @@ class VideoBufferDemux
 
       // This links the source element buffers with a paired video element and also
       // a media source
-      //
-      // Note: +1 for onDemand buffer
-      for (var idx = 0; idx <= this._numBuffers; idx++)
+      for (var idx = 0; idx < this._numBuffers; idx++)
       {
         var ms = new MediaSource();
         this._mediaSources[idx] = ms;
@@ -208,16 +206,14 @@ class VideoBufferDemux
   }
 
   recreateOnDemandBuffers(callback) {
-    var idx = this._numBuffers;
-    var ms = new MediaSource();
-    this._mediaSources[idx] = ms;
-    this._vidBuffers[idx] = document.createElement("VIDEO");
-    this._vidBuffers[idx].setAttribute("crossorigin", "anonymous");
-    this._vidBuffers[idx].src = URL.createObjectURL(this._mediaSources[idx]);
+    this._onDemandSource = new MediaSource();
+    this._onDemandVideo = document.createElement("VIDEO");
+    this._onDemandVideo.setAttribute("crossorigin", "anonymous");
+    this._onDemandVideo.src = URL.createObjectURL(this._onDemandSource);
 
-    ms.onsourceopen = () => {
-      ms.onsourceopen = null;
-      this._sourceBuffers[idx] = ms.addSourceBuffer(this._mime_str);
+    this._onDemandSource.onsourceopen = () => {
+      this._onDemandSource.onsourceopen = null;
+      this._onDemandSourceBuffer = this._onDemandSource.addSourceBuffer(this._mime_str);
       console.log("recreateOnDemandBuffers - onsourceopen");
       callback();
     };
@@ -303,7 +299,8 @@ class VideoBufferDemux
 
     if (buffer == "play")
     {
-      var ranges = this._vidBuffers[this._onDemandBufferIndex].buffered;
+      const video = this.playBuffer();
+      var ranges = video.buffered;
 
       // Note: The way it's setup right now, there should only be a continuous range
       //       But we'll keep the for loop for now.
@@ -314,7 +311,7 @@ class VideoBufferDemux
 
         if (time >= start && time <= end)
         {
-          return this._vidBuffers[this._onDemandBufferIndex];
+          return video;
         }
       }
 
@@ -372,7 +369,17 @@ class VideoBufferDemux
 
   playBuffer()
   {
-    return this._vidBuffers[this._onDemandBufferIndex];
+    return this._onDemandVideo;
+  }
+
+  playSource()
+  {
+    return this._onDemandSource;
+  }
+
+  playSourceBuffer()
+  {
+    return this._onDemandSourceBuffer;
   }
 
   /**
@@ -395,7 +402,7 @@ class VideoBufferDemux
           setTimeout(checkBuffer, 100);
         }
         else {
-          console.log(`resetOnDemandBuffer: length - ${this.playBuffer().buffered.length}`);
+          console.log(`resetOnDemandBuffer: length - ${video.buffered.length}`);
           resolve();
         }
       };
@@ -411,8 +418,7 @@ class VideoBufferDemux
    */
   isOnDemandBufferCleared()
   {
-    const video = this.playBuffer();
-    return video.buffered.length == 0;
+    return this.playBuffer().buffered.length == 0;
   }
 
   /**
@@ -420,8 +426,7 @@ class VideoBufferDemux
    */
   isOnDemandBufferBusy()
   {
-    const buffer = this._sourceBuffers[this._onDemandBufferIndex];
-    return buffer.updating;
+    return this.playSourceBuffer().updating;
   }
 
   /**
@@ -443,11 +448,11 @@ class VideoBufferDemux
    */
   deletePendingOnDemand(delete_range)
   {
-    const buffer = this._sourceBuffers[this._onDemandBufferIndex];
+    const buffer = this.playSourceBuffer();
     if (buffer.updating == false)
     {
       buffer.onupdateend = () => {
-        buffer.onupdatedend = null;
+        buffer.onupdateend = null;
         this.cleanOnDemandBuffer();
       };
 
@@ -505,11 +510,11 @@ class VideoBufferDemux
    */
   pause()
   {
-    // <= instead of < to include onDemand buffer
-    for (var idx = 0; idx <= this._numBuffers; idx++)
+    for (var idx = 0; idx < this._numBuffers; idx++)
     {
       this._vidBuffers[idx].pause();
     }
+    this.playBuffer().pause();
   }
 
   /**
@@ -711,7 +716,36 @@ class VideoBufferDemux
       console.info("Waiting for init... (onDemand)");
       return;
     }
-    this._updateBuffers([this._onDemandBufferIndex], data, callback, "onDemand");
+    this._updateOnDemandBuffer(data, callback);
+  }
+
+  _updateOnDemandBuffer(data, callback) {
+
+    var that = this;
+
+    // Callback wrapper function used to help keep track of how many buffers
+    // have been updated.
+    var semaphore = 1;
+    var wrapper=function()
+    {
+      that.playSourceBuffer().onupdateend=null;
+      semaphore--;
+      if (semaphore == 0)
+      {
+        callback();
+      }
+    };
+
+    // Place the provided frame data into each of the buffers if it's safe to do so.
+    // Once the all the buffers have been updated, perform the callback
+    var error = this.playBuffer().error;
+    if (error)
+    {
+      console.error("Error " + error.code + "; details: " + error.message);
+      updateStatus("Video Decode Error", "danger", -1);
+      throw `Video Decode Error: ${bufferType}`;
+    }
+    this.safeUpdate(this.playSourceBuffer(),data).then(wrapper);
   }
 
   /**
