@@ -69,7 +69,7 @@ class VideoBufferDemux
   constructor()
   {
     this._bufferSize = 125*1024*1024; // 125Mb
-    this._numBuffers = 10;
+    this._numBuffers = 1;
 
     this._vidBuffers=[];
     this._inUse=[];
@@ -82,6 +82,7 @@ class VideoBufferDemux
     // Video, source, and buffer for seek track
     this._seekVideo = document.createElement("VIDEO");
     this._seekVideo.setAttribute("crossorigin", "anonymous");
+    console.log("MediaSource element created: VIDEO (seek)");
     this._seekReady = false;
     this._pendingSeeks = [];
     this._pendingSeekDeletes = [];
@@ -92,6 +93,7 @@ class VideoBufferDemux
     {
       this._vidBuffers.push(document.createElement("VIDEO"));
       this._vidBuffers[idx].setAttribute("crossorigin", "anonymous");
+      console.log("MediaSource element created: VIDEO (scrub)");
       this._inUse.push(0);
       this._sourceBuffers.push(null);
       this._full.push(false);
@@ -100,7 +102,9 @@ class VideoBufferDemux
     // Create another video buffer specifically used for onDemand playback
     this._onDemandBufferIndex = this._numBuffers;
     this._pendingOnDemandDeletes = [];
+    this.recreateOnDemandBuffers(() => {return;});
 
+    this._needNewScrubBuffer = true;
     this._init = false;
     this._dataLag = [];
     let init_buffers = () => {
@@ -120,8 +124,6 @@ class VideoBufferDemux
           this.appendSeekBuffer(pending.data, pending.time);
         }
       };
-
-      this.recreateOnDemandBuffers(() => {return;});
 
       // Initialize the playback buffers
       let that = this;
@@ -205,17 +207,46 @@ class VideoBufferDemux
     }
   }
 
+  saveBufferInitData(data) {
+    this._ftypInfo = data;
+  }
+
+  appendNewScrubBuffer(callback) {
+    this._numBuffers += 1;
+    var idx = this._numBuffers - 1;
+
+    this._vidBuffers.push(document.createElement("VIDEO"));
+    console.log("MediaSource element created: VIDEO (scrub)");
+    this._vidBuffers[idx].setAttribute("crossorigin", "anonymous");
+    this._inUse.push(0);
+    this._sourceBuffers.push(null);
+    this._full.push(false);
+
+    var ms = new MediaSource();
+    this._mediaSources[idx] = ms;
+    this._vidBuffers[idx].src = URL.createObjectURL(this._mediaSources[idx]);
+    ms.onsourceopen = () => {
+      ms.onsourceopen = null;
+      this._sourceBuffers[idx]=ms.addSourceBuffer(this._mime_str);
+      console.log("appendNewScrubBuffer - onsourceopen");
+      this._updateBuffers([idx], this._ftypInfo, callback);
+    };
+  }
+
   recreateOnDemandBuffers(callback) {
     this._onDemandSource = new MediaSource();
     this._onDemandVideo = document.createElement("VIDEO");
+    console.log("MediaSource element created: VIDEO (onDemand)");
     this._onDemandVideo.setAttribute("crossorigin", "anonymous");
     this._onDemandVideo.src = URL.createObjectURL(this._onDemandSource);
 
     this._onDemandSource.onsourceopen = () => {
-      this._onDemandSource.onsourceopen = null;
-      this._onDemandSourceBuffer = this._onDemandSource.addSourceBuffer(this._mime_str);
-      console.log("recreateOnDemandBuffers - onsourceopen");
-      callback();
+      if (this._onDemandSource.readyState == "open") {
+        this._onDemandSource.onsourceopen = null;
+        this._onDemandSourceBuffer = this._onDemandSource.addSourceBuffer(this._mime_str);
+        console.log("recreateOnDemandBuffers - onsourceopen");
+        callback();
+      }
     };
   }
 
@@ -555,7 +586,7 @@ class VideoBufferDemux
           that._vidBuffers[0].onerror = null;
         }
 
-        if (that._vidBuffers[0].readyState > 0)
+        if (that._vidBuffers[0].readyState == "open")
         {
           resolve();
         }
@@ -659,7 +690,7 @@ class VideoBufferDemux
     }
   }
 
-  appendLatestBuffer(data, callback, blah)
+  appendLatestBuffer(data, callback)
   {
     if (this._init == false)
     {
@@ -676,21 +707,28 @@ class VideoBufferDemux
       {
         console.log(`${latest} is full, proceeding to next buffer`);
         this._full[latest] = true;
+        this._needNewScrubBuffer = true;
         this.appendLatestBuffer(data, callback);
       }
       else
       {
-        // If we are 5% away from the end, start overlapping
-        // Except for the last buffer because then we are
-        // SoL.
-        if (newSize > (this._bufferSize *0.95) &&
-            latest != (this._numBuffers - 1))
+        // If we are 5% away from the end, start overlapping with a new buffer
+        // If this does not happen, we will get short segments of missing time.
+        if (newSize > (this._bufferSize *0.95))
         {
-          this._updateBuffers([latest,latest+1], data, callback, "scrub");
+          if (this._needNewScrubBuffer) {
+            this._needNewScrubBuffer = false;
+            this.appendNewScrubBuffer(() => {
+              this._updateBuffers([latest,latest+1], data, callback);
+            });
+          }
+          else {
+            this._updateBuffers([latest,latest+1], data, callback);
+          }
         }
         else
         {
-          this._updateBuffers([latest], data, callback, "scrub");
+          this._updateBuffers([latest], data, callback);
         }
       }
     }
@@ -753,16 +791,11 @@ class VideoBufferDemux
    * @param {array} buffersToUpdate - List of buffer indices to add data to
    * @param {array} data - Array of video bytes to store
    * @param {function} callback - Callback function
-   * @param {string} bufferType - "scrub" | "onDemand"
    */
-  _updateBuffers(buffersToUpdate, data, callback, bufferType)
+  _updateBuffers(buffersToUpdate, data, callback)
   {
     var that = this;
-
-    if (bufferType == "scrub")
-    {
-      this._activeBuffers=Math.max(...buffersToUpdate)+1;
-    }
+    this._activeBuffers=Math.max(...buffersToUpdate)+1;
 
     // Callback wrapper function used to help keep track of how many buffers
     // have been updated.
@@ -1369,6 +1402,7 @@ class VideoCanvas extends AnnotationCanvas {
               console.log(`Video init of: ${e.data["buf_idx"]}`);
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
+              video_buffer.saveBufferInitData(data.slice(begin, end));
               video_buffer.appendAllBuffers(data.slice(begin, end), callback);
               video_buffer.appendOnDemandBuffer(data.slice(begin, end), () => {});
               idx+=2;
@@ -1791,6 +1825,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         let audio_def = videoObject.media_files['audio'][0];
         this._audioPlayer = document.createElement("AUDIO");
+        console.log("MediaSource element created: AUDIO");
         this._audioPlayer.setAttribute('src', audio_def.path);
         this._audioPlayer.volume = 0.5; // Default volume
         this.audio = true;
@@ -2875,7 +2910,7 @@ class VideoCanvas extends AnnotationCanvas {
               {
                 if (!this._sentPlaybackReady)
                 {
-                  if (video.playBuffer().readyState > 0 && this.videoBuffer(this.currentFrame(), "play") != null)
+                  if (video.playBuffer().readyState == "open" && this.videoBuffer(this.currentFrame(), "play") != null)
                   {
                     console.log(`(ID:${this._videoObject.id}) playbackReady (start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`)
                     this._sentPlaybackReady = true;
