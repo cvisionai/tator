@@ -1568,6 +1568,12 @@ class VideoCanvas extends AnnotationCanvas {
 
           var setupCallback = function() {
             console.log("******* restarting onDemand: Setting up new buffer");
+            if (that._ftypInfo[that._play_idx] == null) {
+              // It's possible to get into a restart loop where this occurs before getting
+              // the ftypInfo. Eventually the video download system will fill this in and
+              // restart the onDemand appropriately.
+              return;
+            }
             var offsets2 = that._ftypInfo[that._play_idx]["offsets"];
             var data2 = that._ftypInfo[that._play_idx]["buffer"];
             var begin2 = offsets2[0][0];
