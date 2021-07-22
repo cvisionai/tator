@@ -68,7 +68,7 @@ class VideoBufferDemux
 {
   constructor()
   {
-    this._bufferSize = 125*1024*1024; // 125Mb
+    this._bufferSize = 140*1024*1024; // 140Mb
     this._numBuffers = 1;
 
     this._vidBuffers=[];
@@ -208,8 +208,8 @@ class VideoBufferDemux
   }
 
   getMediaElementCount() {
-    // 1 for audio, 1 for seek video, 1 for onDemand video, numBuffers for scrub video
-    return this._numBuffers + 3;
+    // 1 for seek video, 1 for onDemand video, numBuffers for scrub video
+    return this._numBuffers + 2;
   }
 
   saveBufferInitData(data) {
@@ -218,7 +218,7 @@ class VideoBufferDemux
 
   clearScrubBuffer() {
 
-    if (this._ftypeInfo == null) { 
+    if (this._ftypInfo == null) {
       return;
     }
 
@@ -233,10 +233,10 @@ class VideoBufferDemux
     }
 
     this._numBuffers = 0;
-    appendNewScrubBuffer(() => {});
+    this.appendNewScrubBuffer(() => {}, true);
   }
 
-  appendNewScrubBuffer(callback) {
+  appendNewScrubBuffer(callback, skipInit) {
     this._numBuffers += 1;
     var idx = this._numBuffers - 1;
 
@@ -254,7 +254,9 @@ class VideoBufferDemux
       ms.onsourceopen = null;
       this._sourceBuffers[idx]=ms.addSourceBuffer(this._mime_str);
       console.log("appendNewScrubBuffer - onsourceopen");
-      this._updateBuffers([idx], this._ftypInfo, callback);
+      if (skipInit != true) {
+        this._updateBuffers([idx], this._ftypInfo, callback)
+      };
     };
   }
 
@@ -1400,7 +1402,10 @@ class VideoCanvas extends AnnotationCanvas {
       else if (type == "buffer")
       {
         let totalMediaElementCount = 0;
-        for (let vidBuffIdx=0; vidBuffIdx < that._videoElement.length; that.vidBuffIdx++) {
+        if (that._audioPlayer) {
+          totalMediaElementCount += 1;
+        }
+        for (let vidBuffIdx=0; vidBuffIdx < that._videoElement.length; vidBuffIdx++) {
           totalMediaElementCount += that._videoElement[vidBuffIdx].getMediaElementCount();
         }
         console.log(`(Media ID: ${that._videoObject.id}) Current mediaElementCount: ${totalMediaElementCount}`);
@@ -1775,7 +1780,7 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (buffer == "scrub") {
         if (new_play_idx != this._scrub_idx) {
-          this.stopDownload();    
+          this.stopDownload();
           this._videoElement[this._scrub_idx].clearScrubBuffer();
           this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig);
         }
