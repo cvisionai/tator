@@ -207,8 +207,33 @@ class VideoBufferDemux
     }
   }
 
+  getMediaElementCount() {
+    // 1 for audio, 1 for seek video, 1 for onDemand video, numBuffers for scrub video
+    return this._numBuffers + 3;
+  }
+
   saveBufferInitData(data) {
     this._ftypInfo = data;
+  }
+
+  clearScrubBuffer() {
+
+    if (this._ftypeInfo == null) { 
+      return;
+    }
+
+    for (let idx=0; idx < this._numBuffers; idx++) {
+
+      this._vidBuffers[idx].pause();
+      this._vidBuffers[idx].removeAttribute('src');
+      this._vidBuffers[idx].load();
+
+      delete this._mediaSources[idx];
+      delete this._sourceBuffers[idx];
+    }
+
+    this._numBuffers = 0;
+    appendNewScrubBuffer(() => {});
   }
 
   appendNewScrubBuffer(callback) {
@@ -1374,6 +1399,12 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "buffer")
       {
+        let totalMediaElementCount = 0;
+        for (let vidBuffIdx=0; vidBuffIdx < that._videoElement.length; that.vidBuffIdx++) {
+          totalMediaElementCount += that._videoElement[vidBuffIdx].getMediaElementCount();
+        }
+        console.log(`(Media ID: ${that._videoObject.id}) Current mediaElementCount: ${totalMediaElementCount}`);
+
         //console.log(`....downloaded: ${parseInt(100*e.data["percent_complete"])} (buf_idx: ${e.data["buf_idx"]})`)
         let video_buffer = that._videoElement[e.data["buf_idx"]];
         var error = video_buffer.error();
@@ -1744,7 +1775,8 @@ class VideoCanvas extends AnnotationCanvas {
       }
       else if (buffer == "scrub") {
         if (new_play_idx != this._scrub_idx) {
-          this.stopDownload();
+          this.stopDownload();    
+          this._videoElement[this._scrub_idx].clearScrubBuffer();
           this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig);
         }
         this._scrub_idx = new_play_idx;
