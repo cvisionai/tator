@@ -234,6 +234,13 @@ class VideoBufferDemux
   }
 
   recreateOnDemandBuffers(callback) {
+
+    if (this._onDemandVideo != null) {
+      this._onDemandVideo.pause();
+      this._onDemandVideo.removeAttribute('src');
+      this._onDemandVideo.load();
+    }
+
     this._onDemandSource = new MediaSource();
     this._onDemandVideo = document.createElement("VIDEO");
     console.log("MediaSource element created: VIDEO (onDemand)");
