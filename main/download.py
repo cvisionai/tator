@@ -5,6 +5,6 @@ def download_file(url, dst):
     :param url: URL of the file.
     :param dst: Destination of the download.
     """
-    cmd = ['wget', '-O', dst, url]
+    cmd = ['wget', '-q', '-O', dst, url]
     subprocess.run(cmd, check=True)
 

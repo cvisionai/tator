@@ -125,6 +125,7 @@ class TatorSearch:
                     'settings': {
                         'number_of_shards': 1,
                         'number_of_replicas': 1,
+                        'refresh_interval': '1s',
                         'analysis': {
                             'normalizer': {
                                 'lower_normalizer': {
@@ -493,13 +494,12 @@ class TatorSearch:
         return entity_type
 
     def bulk_add_documents(self, listOfDocs):
-        bulk(self.es, listOfDocs, raise_on_error=False)
+        bulk(self.es, listOfDocs, raise_on_error=False, refresh='wait_for')
 
-    def create_document(self, entity, wait=False):
+    def create_document(self, entity, wait=True):
         """ Indicies an element into ES """
         docs = self.build_document(entity, 'single')
         for doc in docs:
-            logger.info(f"Making Doc={doc}")
             res = self.es.index(index=self.index_name(entity.project.pk),
                                 id=doc['_id'],
                                 refresh=wait,
@@ -655,7 +655,8 @@ class TatorSearch:
             index = self.index_name(entity.project.pk)
             if entity.meta:
                 if self.es.exists(index=index, id=f'{entity.meta.dtype}_{entity.pk}'):
-                    self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}')
+                    self.es.delete(index=index, id=f'{entity.meta.dtype}_{entity.pk}',
+                                   refresh='wait_for')
 
     def search_raw(self, project, query):
         return self.es.search(
@@ -732,6 +733,7 @@ class TatorSearch:
             index=self.index_name(project),
             body=query,
             conflicts='proceed',
+            refresh=True,
         )
 
     def update(self, project, entity_type, query, attrs):
@@ -753,6 +755,7 @@ class TatorSearch:
             index=self.index_name(project),
             body=query,
             conflicts='proceed',
+            refresh=True,
         )
 
 TatorSearch.setup_elasticsearch()

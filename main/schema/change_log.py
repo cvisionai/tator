@@ -22,6 +22,14 @@ change_log_filter_schema = [
         "description": "Filters ChangeLogs for the given entity.",
         "schema": {"type": "integer"},
     },
+    {
+        "name": "entity_type",
+        "in": "query",
+        "required": False,
+        "description": "Filters ChangeLogs for the given entity type.",
+        "schema": {"type": "string",
+                   "enum": ["media", "localization", "state", "leaf"]},
+    },
 ]
 
 boilerplate = dedent(
