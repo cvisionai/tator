@@ -164,7 +164,11 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
 
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).
-    qs = qs.order_by(Coalesce('id', 'id'))
+    if stop is None:
+        qs = qs.order_by('id')
+    else:
+        qs = qs.order_by(Coalesce('id', 'id'))
+
     if start is not None and stop is not None:
         qs = qs[start:stop]
     elif start is not None:
