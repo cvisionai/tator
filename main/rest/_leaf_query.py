@@ -2,6 +2,8 @@
 from collections import defaultdict
 import logging
 
+from django.db.models.functions import Coalesce
+
 from ..search import TatorSearch
 from ..models import Leaf
 
@@ -160,7 +162,9 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
 
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
-    qs = qs.order_by('id')
+    # Coalesce is a no-op that prevents PSQL from using the primary key index for small
+    # LIMIT values (which results in slow queries).
+    qs = qs.order_by(Coalesce('id', 'id'))
     if start is not None and stop is not None:
         qs = qs[start:stop]
     elif start is not None:
