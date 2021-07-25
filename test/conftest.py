@@ -98,8 +98,15 @@ def project(request, browser, token):
     browser.get(f"{host}/projects")
     
     time.sleep(2)
-    
-        
+    mgr = ShadowManager(browser)
+    # Find all project summary elements.
+    summaries = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'project-summary')
+    for summary in summaries:
+        shadow = mgr.expand_shadow_element(summary)
+        title = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'h2')
+        if title.get_attribute('textContent') == name:
+            link = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'a')
+            href = link.get_attribute('href')
+            project_id = href.split('/')[-2]
+            break
     yield project_id
-    if not keep:
-        status = tator_api.delete_project(project_id)
