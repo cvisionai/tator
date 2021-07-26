@@ -1,3 +1,5 @@
+import os
+
 from selenium.common.exceptions import NoSuchElementException
 from urllib.parse import urlparse, urljoin
 
@@ -50,3 +52,16 @@ def go_to_uri(browser, uri):
     parsed = urlparse(browser.current_url)
     goto = urljoin(f"{parsed.scheme}://{parsed.netloc}", uri)
     browser.get(goto)
+
+class ScreenshotSaver:
+    def __init__(self, browser, directory):
+        self._dir = directory
+        self._browser = browser
+        self._count = 0
+
+    def save_screenshot(self, description):
+        fname = f"{self._count:02d}_{description.lower().replace(' ', '_')}.png"
+        out = os.path.join(self._dir, fname)
+        self._browser.save_screenshot(out)
+        self._count += 1
+        
