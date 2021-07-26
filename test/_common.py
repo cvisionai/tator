@@ -1,4 +1,5 @@
 from selenium.common.exceptions import NoSuchElementException
+from urllib.parse import urlparse, urljoin
 
 class ShadowManager:
     def __init__(self, browser):
@@ -44,3 +45,8 @@ class ShadowManager:
         else:
             raise NoSuchElementException
         return element
+
+def go_to_uri(browser, uri):
+    parsed = urlparse(browser.current_url)
+    goto = urljoin(f"{parsed.scheme}://{parsed.netloc}", uri)
+    browser.get(goto)

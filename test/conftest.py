@@ -12,6 +12,7 @@ import pytest
 import requests
 
 from ._common import ShadowManager
+from ._common import go_to_uri
 
 def pytest_addoption(parser):
     parser.addoption('--host', help='Tator host', default='https://adamant.duckdns.org')
@@ -60,11 +61,10 @@ def browser(request):
 def token(request, browser):
     """ Token obtained via the API Token page. """
     print("Getting token...")
-    host = request.config.option.host
     username = request.config.option.username
     password = request.config.option.password
     keep = request.config.option.keep
-    browser.get(f"{host}/token")
+    go_to_uri(browser, 'token')
     time.sleep(1)
     mgr = ShadowManager(browser)
     t0 = datetime.datetime.now()
@@ -108,7 +108,7 @@ def project(request, browser, token):
         '--create-track-type',
     ]
     subprocess.run(cmd, check=True)
-    browser.get(f"{host}/projects")
+    go_to_uri(browser, 'projects')
     
     time.sleep(1)
     mgr = ShadowManager(browser)
@@ -129,8 +129,7 @@ def project(request, browser, token):
 @pytest.fixture(scope='session')
 def video_section(request, browser, project):
     print("Creating video section...")
-    host = request.config.option.host
-    browser.get(f"{host}/{project}/project-detail")
+    go_to_uri(browser, f"{project}/project-detail")
     time.sleep(1)
     mgr = ShadowManager(browser)
     # Click add folder button
@@ -215,8 +214,7 @@ def video_file(request):
 @pytest.fixture(scope='session')
 def video(request, browser, project, video_section, video_file):
     print("Uploading a video...")
-    host = request.config.option.host
-    browser.get(f"{host}/{project}/project-detail?section={video_section}")
+    go_to_uri(browser, f"{project}/project-detail?section={video_section}")
     time.sleep(1)
     mgr = ShadowManager(browser)
     upload = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'section-upload')
