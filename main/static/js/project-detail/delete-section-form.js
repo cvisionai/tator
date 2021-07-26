@@ -50,8 +50,9 @@ class DeleteSectionForm extends ModalDialog {
     this._accept.addEventListener("click", async evt => {
       const projectId = this._project;
       const params = this._sectionParams;
+      let promise = Promise.resolve();
       if (this._deleteMedia) {
-        fetch(`/rest/Medias/${projectId}?${params.toString()}`, {
+        promise = promise.then(fetch(`/rest/Medias/${projectId}?${params.toString()}`, {
           method: "DELETE",
           credentials: "same-origin",
           headers: {
@@ -59,10 +60,10 @@ class DeleteSectionForm extends ModalDialog {
             "Accept": "application/json",
             "Content-Type": "application/json"
           },
-        })
+        }))
         .catch(err => console.log(err));
       }
-      fetch(`/rest/Section/${this._section.id}`, {
+      promise.then(fetch(`/rest/Section/${this._section.id}`, {
         method: "DELETE",
         credentials: "same-origin",
         headers: {
@@ -70,7 +71,7 @@ class DeleteSectionForm extends ModalDialog {
           "Accept": "application/json",
           "Content-Type": "application/json"
         },
-      })
+      }))
       .catch(err => console.log(err));
       this.dispatchEvent(new CustomEvent("confirmDelete", {
         detail: {id: this._section.id}
