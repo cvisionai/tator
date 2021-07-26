@@ -17,7 +17,7 @@ class ShadowManager:
             shadow_root = self.expand_shadow_element(element)
         return shadow_root
 
-    def find_shadow_tree_elements(self, dom, by, value):
+    def find_shadow_tree_elements(self, dom, by, value, single=False):
         """ Given description of the element you want to find, searches full shadow tree
             on the page for any elements that match and returns a list.
         """
@@ -30,13 +30,15 @@ class ShadowManager:
             shadow = self.expand_shadow_element(element)
             if shadow:
                 elements += self.find_shadow_tree_elements(shadow, by, value)
+            if single and len(elements) > 0:
+                break
         return elements
 
     def find_shadow_tree_element(self, dom, by, value):
         """ Given description of the element you want to find, searches full shadow tree
             on the page for that element and returns the first one.
         """
-        elements = self.find_shadow_tree_elements(dom, by, value)
+        elements = self.find_shadow_tree_elements(dom, by, value, True)
         if len(elements) > 0:
             element = elements[0]
         else:
