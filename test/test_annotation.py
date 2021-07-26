@@ -20,8 +20,10 @@ def test_annotation(browser, screenshots, project, video):
     canvas = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "video-canvas")
     save_dialog = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "save-dialog")
     save_shadow = mgr.expand_shadow_element(save_dialog)
-    box_info = [(-200, -50), (-50, -50), (100, -50)]
-    for idx, start in enumerate(box_info):
+    box_info = [((-200, -50), 'Test Choice 1'),
+                ((-50, -50), 'Test Choice 2'),
+                ((100, -50), 'Test Choice 3')]
+    for idx, (start, enum_value) in enumerate(box_info):
         box_button.click()
         time.sleep(0.25)
         ActionChains(browser)\
@@ -33,7 +35,9 @@ def test_annotation(browser, screenshots, project, video):
             .perform()
         time.sleep(0.25)
         options = mgr.find_shadow_tree_elements(save_shadow, By.TAG_NAME, "option")
-        options[idx].click()
+        for option in options:
+            if option.get_attribute('value') == enum_value:
+                option.click()
         time.sleep(0.25)
         browser.save_screenshot(os.path.join(screenshots, f"{idx+1:02d}_drawing_boxes.png"))
         buttons = mgr.find_shadow_tree_elements(save_shadow, By.TAG_NAME, "button")
