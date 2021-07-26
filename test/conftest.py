@@ -32,6 +32,7 @@ def browser(request):
     """ Headless browser based on Chrome. Session is authenticated by entering
         username and password. """
     # Driver must be installed via `sudo apt-get install chromium-chromedriver`
+    print("Setting up browser...")
     host = request.config.option.host
     username = request.config.option.username
     password = request.config.option.password
@@ -41,7 +42,7 @@ def browser(request):
     browser = webdriver.Chrome(options=options)
     browser.set_window_size(1920, 1080)
     browser.get(host)
-    time.sleep(2)
+    time.sleep(1)
     assert(browser.current_url.endswith('/accounts/login/'))
     mgr = ShadowManager(browser)
     username_input = mgr.find_shadow_tree_element(browser, By.ID, 'id_username')
@@ -50,7 +51,7 @@ def browser(request):
     username_input.send_keys(username)
     password_input.send_keys(password)
     continue_button.click()
-    time.sleep(2)
+    time.sleep(1)
     assert(browser.current_url.endswith('/projects/'))
     yield browser
     browser.quit()
@@ -58,14 +59,17 @@ def browser(request):
 @pytest.fixture(scope='session')
 def token(request, browser):
     """ Token obtained via the API Token page. """
+    print("Getting token...")
     host = request.config.option.host
     username = request.config.option.username
     password = request.config.option.password
     keep = request.config.option.keep
     browser.get(f"{host}/token")
-    time.sleep(2)
+    time.sleep(1)
     mgr = ShadowManager(browser)
+    t0 = datetime.datetime.now()
     inputs = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'input')
+    print(f"Time to find all input tags: {datetime.datetime.now() - t0}")
     for element in inputs:
         if element.get_attribute('type') == 'text':
             element.send_keys(username)
@@ -74,9 +78,11 @@ def token(request, browser):
         elif element.get_attribute('type') == 'submit':
             button = element
     button.click()
-    time.sleep(5)
+    time.sleep(1)
     browser.save_screenshot('/home/jon/test.png')
+    t0 = datetime.datetime.now()
     p_list = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'p')
+    print(f"Time to find all p tags: {datetime.datetime.now() - t0}")
     for p in p_list:
         token = p.get_attribute('textContent')
         if len(token) == 40:
@@ -86,6 +92,7 @@ def token(request, browser):
 @pytest.fixture(scope='session')
 def project(request, browser, token):
     """ Project created with setup_project.py script, all options enabled. """
+    print("Creating test project with setup_project.py...")
     host = request.config.option.host
     current_dt = datetime.datetime.now()
     dt_str = current_dt.strftime('%Y_%m_%d__%H_%M_%S')
@@ -103,11 +110,13 @@ def project(request, browser, token):
     subprocess.run(cmd, check=True)
     browser.get(f"{host}/projects")
     
-    time.sleep(2)
+    time.sleep(1)
     mgr = ShadowManager(browser)
     # Find all project summary elements.
-    summaries = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'project-summary')
-    for summary in summaries:
+    dashboard = browser.find_element(By.TAG_NAME, 'projects-dashboard')
+    shadow = mgr.expand_shadow_element(dashboard)
+    summaries = mgr.find_shadow_tree_elements(shadow, By.TAG_NAME, 'project-summary')
+    for summary in reversed(summaries):
         shadow = mgr.expand_shadow_element(summary)
         title = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'h2')
         if title.get_attribute('textContent') == name:
@@ -119,9 +128,10 @@ def project(request, browser, token):
 
 @pytest.fixture(scope='session')
 def video_section(request, browser, project):
+    print("Creating video section...")
     host = request.config.option.host
     browser.get(f"{host}/{project}/project-detail")
-    time.sleep(2)
+    time.sleep(1)
     mgr = ShadowManager(browser)
     # Click add folder button
     buttons = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'button')
@@ -132,7 +142,7 @@ def video_section(request, browser, project):
             break
     assert(found)
     button.click()
-    time.sleep(2)
+    time.sleep(1)
     # Enter name
     name_dialog = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'name-dialog')
     browser.save_screenshot('/home/jon/test.png')
@@ -163,6 +173,7 @@ def video_section(request, browser, project):
 
 @pytest.fixture(scope='session')
 def image_set(request):
+    print("Getting image files...")
     out_path = '/tmp/lfw.tgz'
     extract_path = '/tmp/lfw'
 
@@ -189,6 +200,7 @@ def image_set(request):
 
 @pytest.fixture(scope='session')
 def video_file(request):
+    print("Getting video file...")
     out_path = '/tmp/AudioVideoSyncTest_BallastMedia.mp4'
     if not os.path.exists(out_path):
         url = 'http://www.ballastmedia.com/wp-content/uploads/AudioVideoSyncTest_BallastMedia.mp4'
@@ -202,9 +214,10 @@ def video_file(request):
 
 @pytest.fixture(scope='session')
 def video(request, browser, project, video_section, video_file):
+    print("Uploading a video...")
     host = request.config.option.host
     browser.get(f"{host}/{project}/project-detail?section={video_section}")
-    time.sleep(2)
+    time.sleep(1)
     mgr = ShadowManager(browser)
     upload = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'section-upload')
     shadow = mgr.expand_shadow_element(upload)
@@ -213,7 +226,7 @@ def video(request, browser, project, video_section, video_file):
     shutil.copyfile(video_file, local_path)
     upload.send_keys(local_path)
     # Close upload dialog
-    time.sleep(5)
+    time.sleep(2)
     dialog = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'upload-dialog')
     shadow = mgr.expand_shadow_element(dialog)
     close = mgr.find_shadow_tree_element(shadow, By.CLASS_NAME, 'btn-purple')
