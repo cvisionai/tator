@@ -1282,14 +1282,9 @@ class AnnotationPage extends TatorPage {
           "extra_params": [
             {name: 'track', value: evt.detail.trackId},
             {name: 'extend_direction', value: evt.detail.direction},
-            {name: 'extend_detection_id', value: evt.detail.localization.id}]
+            {name: 'extend_detection_id', value: evt.detail.localization.id},
+            {name: "extend_max_frames", value: evt.detail.maxFrames}]
           };
-
-        if (evt.detail.useMaxFrames) {
-          body["extra_params"].push({
-            name: "extend_max_frames", value: evt.detail.maxFrames
-          });
-        }
 
         if ('media' in evt.detail.localization)
         {

@@ -154,23 +154,25 @@ class ModifyTrackDialog extends TatorElement {
     div.appendChild(this._extendMaxFrames);
     this._extendMaxFrames.style.display = "none";
 
-    this._extendMethod.addEventListener("change", () => {
-      let alg = this._extendMethod.getValue();
-      if (alg == "Auto") {
-        this._extendFrames.style.display = "none";
-        this._applyMaxFrames.setValue(false);
-        this._setMaxFrameUI(); // Sets visibility of this._extendMaxFrames
-        this._applyMaxFrames.style.display = "initial";
-      }
-      else {
-        this._extendFrames.style.display = "initial";
-        this._applyMaxFrames.style.display = "none";
-        this._extendMaxFrames.style.display = "none";
-      }
-    });
+    this._extendMethod.addEventListener("change", this._setExtendUI.bind(this));
 
     this._extendDiv = div;
     this._contentDiv.appendChild(div);
+  }
+
+  _setExtendUI() {
+    let alg = this._extendMethod.getValue();
+    if (alg == "Auto") {
+      this._extendFrames.style.display = "none";
+      this._applyMaxFrames.setValue(false);
+      this._setMaxFrameUI(); // Sets visibility of this._extendMaxFrames
+      this._applyMaxFrames.style.display = "initial";
+    }
+    else {
+      this._extendFrames.style.display = "initial";
+      this._applyMaxFrames.style.display = "none";
+      this._extendMaxFrames.style.display = "none";
+    }
   }
 
   _setMaxFrameUI() {
@@ -277,6 +279,9 @@ class ModifyTrackDialog extends TatorElement {
           if (useMaxFrames) {
             maxFrames = parseInt(this._extendMaxFrames.getValue());
           }
+          else {
+            maxFrames = -1
+          }
         }
 
         this.dispatchEvent(
@@ -306,7 +311,6 @@ class ModifyTrackDialog extends TatorElement {
     this._mergeDiv.style.display = "none";
     this._addDetectionDiv.style.display = "none";
     this._trimDiv.style.display = "none";
-    this._extendFrames.style.display = "initial";
   }
 
   _setToFillTrackGapsUI() {
@@ -324,6 +328,7 @@ class ModifyTrackDialog extends TatorElement {
     this._span.textContent = "Extend Track";
     this._extendDiv.style.display = "block";
     this._yesButton.textContent = "Extend";
+    this._setExtendUI();
   }
 
   _setToMergeUI() {
