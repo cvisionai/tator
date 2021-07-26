@@ -18,6 +18,7 @@ def pytest_addoption(parser):
     parser.addoption('--host', help='Tator host', default='https://adamant.duckdns.org')
     parser.addoption('--username', help='Username for login page.')
     parser.addoption('--password', help='Password for login page.')
+    parser.addoption('--screenshots', help='Directory to store screenshots.')
     parser.addoption('--keep', help='Do not delete project when done', action='store_true')
 
 def pytest_generate_tests(metafunc):
@@ -58,6 +59,13 @@ def browser(request):
     browser.quit()
 
 @pytest.fixture(scope='session')
+def screenshots(request):
+    """ Directory created to store screenshots. """
+    screenshots = request.config.option.screenshots
+    os.makedirs(screenshots, exist_ok=True)
+    yield screenshots
+
+@pytest.fixture(scope='session')
 def token(request, browser):
     """ Token obtained via the API Token page. """
     print("Getting token...")
@@ -79,7 +87,6 @@ def token(request, browser):
             button = element
     button.click()
     time.sleep(1)
-    browser.save_screenshot('/home/jon/test.png')
     t0 = datetime.datetime.now()
     p_list = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'p')
     print(f"Time to find all p tags: {datetime.datetime.now() - t0}")
@@ -231,12 +238,18 @@ def video(request, browser, project, video_section, video_file):
     close.click()
     # Find soft reload button
     soft_reload = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'reload-button')
-    for _ in range(30):
-        time.sleep(10)
+    for _ in range(8):
+        time.sleep(15)
         soft_reload.click()
         media_cards = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'media-card')
-        if len(media_cards) == 1:
+        if len(media_cards) == 0:
+            continue
+        shadow = mgr.expand_shadow_element(media_cards[0])
+        a = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'a')
+        href = a.get_attribute('href')
+        if 'annotation' in href:
+            print(f"Media card has href {href}, media is ready...")
             break
-    videos = [int(media_card.get_attribute('media-id')) for media_card in media_cards]
-    yield videos
+    video = int(media_cards[0].get_attribute('media-id'))
+    yield video
 
