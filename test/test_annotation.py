@@ -3,16 +3,21 @@ import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 
 from ._common import go_to_uri
 from ._common import ShadowManager
+from ._common import ScreenshotSaver
 
 def test_annotation(browser, screenshots, project, video):
     print("Going to annotation view...")
+    save_dir = os.path.join(screenshots, "annotation")
+    os.makedirs(save_dir, exist_ok=True)
+    saver = ScreenshotSaver(browser, save_dir)
     go_to_uri(browser, f"{project}/annotation/{video}")
     time.sleep(10)
-    browser.save_screenshot(os.path.join(screenshots, '00_annotation_view_done_loading.png'))
+    saver.save_screenshot('annotation_view_done_loading')
     # Draw three boxes
     print("Drawing three boxes with different enum values...")
     mgr = ShadowManager(browser)
@@ -39,13 +44,48 @@ def test_annotation(browser, screenshots, project, video):
             if option.get_attribute('value') == enum_value:
                 option.click()
         time.sleep(0.25)
-        browser.save_screenshot(os.path.join(screenshots, f"{idx+1:02d}_drawing_boxes.png"))
+        saver.save_screenshot(f"drawing_boxes_{idx}")
         buttons = mgr.find_shadow_tree_elements(save_shadow, By.TAG_NAME, "button")
         for button in buttons:
             if button.get_attribute("textContent") == "Save":
                 button.click()
                 break
         time.sleep(1)
-    browser.save_screenshot(os.path.join(screenshots, '04_three_boxes_different_colors.png'))
+    saver.save_screenshot('three_boxes_different_colors')
+    # Move boxes
+    print("Moving and resizing boxes...")
+    for idx, (start, enum_value) in enumerate(box_info):
+        left, top = start
+        ActionChains(browser)\
+            .move_to_element(canvas)\
+            .move_by_offset(left+50, top+50)\
+            .click()\
+            .pause(1)\
+            .click_and_hold()\
+            .move_by_offset(-50, -50)\
+            .release()\
+            .pause(1)\
+            .move_by_offset(0, 100)\
+            .click()\
+            .perform()
+    saver.save_screenshot('moved_boxes')
+    # Resize boxes
+    for idx, (start, enum_value) in enumerate(box_info):
+        left, top = start
+        ActionChains(browser)\
+            .move_to_element(canvas)\
+            .move_by_offset(left, top)\
+            .click()\
+            .pause(1)\
+            .move_by_offset(45, 45)\
+            .click_and_hold()\
+            .move_by_offset(50, 50)\
+            .release()\
+            .pause(1)\
+            .move_by_offset(0, 100)\
+            .click()\
+            .perform()
+    saver.save_screenshot('resized_boxes')
+
         
     
