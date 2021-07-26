@@ -1122,19 +1122,21 @@ class AnnotationPage extends TatorPage {
     })
     .then(response => { return response.json(); })
     .then(result => {
-      var registeredAlgos = [];
+      var registeredAnnotatorAlgos = [];
       for (const alg of result) {
-        registeredAlgos.push(alg.name);
-        if (alg.name == this._extend_track_algo_name) {
-          menu.enableExtendAutoMethod();
-        }
-        else if (alg.name == this._fill_track_gaps_algo_name) {
-          if (typeof canvas.enableFillTrackGapsOption !== "undefined") {
-            canvas.enableFillTrackGapsOption();
+        if (alg.categories.includes("annotator-view")) {
+          registeredAnnotatorAlgos.push(alg.name);
+          if (alg.name == this._extend_track_algo_name) {
+            menu.enableExtendAutoMethod();
+          }
+          else if (alg.name == this._fill_track_gaps_algo_name) {
+            if (typeof canvas.enableFillTrackGapsOption !== "undefined") {
+              canvas.enableFillTrackGapsOption();
+            }
           }
         }
       }
-      console.log("Registered algorithms: " + registeredAlgos);
+      console.log("Registered annotator algorithms: " + registeredAnnotatorAlgos);
     });
 
     menu.addEventListener("fillTrackGaps", evt => {
@@ -1282,6 +1284,13 @@ class AnnotationPage extends TatorPage {
             {name: 'extend_direction', value: evt.detail.direction},
             {name: 'extend_detection_id', value: evt.detail.localization.id}]
           };
+
+        if (evt.detail.useMaxFrames) {
+          body["extra_params"].push({
+            name: "extend_max_frames", value: evt.detail.maxFrames
+          });
+        }
+
         if ('media' in evt.detail.localization)
         {
           body["media_ids"] = [evt.detail.localization.media];
