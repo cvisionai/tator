@@ -43,7 +43,7 @@ class LiveCanvas extends AnnotationCanvas
     clearTimeout(this._diagThread);
     if (this._currentFrame - this._diagLastFrame < 10)
     {
-      this.error(null, "Remote Video feed has stopped.");
+      //this.error(null, "Remote Video feed has stopped.");
     }
     else
     {
