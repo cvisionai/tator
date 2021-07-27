@@ -17,7 +17,8 @@ sudo snap install microk8s --classic --channel=1.19/stable
 # Install apt packages.
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip build-essential
+    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip build-essential \
+    chromium-chromedriver
 
 # Get IP address if it is not set explicitly.
 # Credit to https://serverfault.com/a/1019371
@@ -118,7 +119,7 @@ kubectl delete pod sleepy
 echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
-pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml
+pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml selenium
 
 # Install tator.
 echo "Installing tator."

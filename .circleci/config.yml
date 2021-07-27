@@ -49,7 +49,7 @@ jobs:
   install-and-test:
     machine:
       image: ubuntu-2004:202010-01
-      resource_class: large
+      resource_class: xlarge
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
@@ -67,8 +67,11 @@ jobs:
         name: Run REST tests
         command: make test
     - run:
+        name: Front end tests
+        command: pytest test --host=http://$TATOR_UNIT_TEST_HOST_IP --username=admin --password=admin --screenshots $HOME -s
+    - run:
         name: Copy test directories
-        command: cp -r scripts/packages/tator-py/test . && cp -r scripts/packages/tator-py/examples .
+        command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
     - run:
         name: Find gunicorn pod
         command: echo "export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')" >> $BASH_ENV
@@ -77,7 +80,7 @@ jobs:
         command: echo "export TOKEN=$(echo $(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command='from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)') | tr -d '^@\r\000')" >> $BASH_ENV
     - run:
         name: Run tator-py tests
-        command: pytest test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN -s --keep
+        command: pytest tatorpy_test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN -s --keep
 workflows:
   version: 2
   build-docker-images-workflow:
