@@ -46,7 +46,9 @@ echo "Using host interface $HOST_INTERFACE."
 echo "Using host IP address $HOST_IP."
 
 # Export host IP for unit tests.
-echo "export TATOR_UNIT_TEST_HOST_IP=$HOST_IP" >> $BASH_ENV
+if [[ ! -z "${BASH_ENV}" ]]; then
+  echo "export TATOR_UNIT_TEST_HOST_IP=$HOST_IP" >> $BASH_ENV
+fi
 
 # Get docker registry if it is not set explicitly.
 if [[ -z "${DOCKER_REGISTRY}" ]]; then
@@ -127,8 +129,10 @@ make cluster-install
 # Create a superuser.
 echo "Creating a superuser."
 GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
-kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=admin \
+kubectl exec -it $GUNICORN_POD -- \
     python3 manage.py createsuperuser --username admin --email no-reply@cvisionai.com --noinput
+kubectl exec -it $GUNICORN_POD -- \
+    python3 manage.py shell -c 'from main.models import User; user=User.objects.first(); user.set_password("admin"); user.save()'
 
 # Print success.
 echo "Installation completed successfully!"
