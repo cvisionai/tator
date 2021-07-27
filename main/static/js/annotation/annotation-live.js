@@ -8,6 +8,8 @@ class AnnotationLive extends TatorElement {
     playerDiv.setAttribute("class", "annotation__multi-player rounded-bottom-2");
     this._shadow.appendChild(playerDiv);
 
+    this._playerDiv = playerDiv;
+
     this._vidDiv = document.createElement("div");
     playerDiv.appendChild(this._vidDiv);
 
