@@ -933,7 +933,7 @@ class Media(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True,
                          db_column='project', related_name='media_project')
     meta = ForeignKey(MediaType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
-    """ Meta points to the defintion of the attribute field. That is
+    """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
@@ -1153,7 +1153,7 @@ def media_post_delete(sender, instance, **kwargs):
 class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     meta = ForeignKey(LocalizationType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
-    """ Meta points to the defintion of the attribute field. That is
+    """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
@@ -1216,7 +1216,7 @@ class State(Model, ModelDiffMixin):
     """
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     meta = ForeignKey(StateType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
-    """ Meta points to the defintion of the attribute field. That is
+    """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
@@ -1289,7 +1289,7 @@ def calc_segments(sender, **kwargs):
 class Leaf(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
     meta = ForeignKey(LeafType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
-    """ Meta points to the defintion of the attribute field. That is
+    """ Meta points to the definition of the attribute field. That is
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
