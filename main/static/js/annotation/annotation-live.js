@@ -8,6 +8,8 @@ class AnnotationLive extends TatorElement {
     playerDiv.setAttribute("class", "annotation__multi-player rounded-bottom-2");
     this._shadow.appendChild(playerDiv);
 
+    this._playerDiv = playerDiv;
+
     this._vidDiv = document.createElement("div");
     playerDiv.appendChild(this._vidDiv);
 
@@ -362,7 +364,7 @@ class AnnotationLive extends TatorElement {
       {
         roi_vid.addEventListener("healthy", () => {
           const d = new Date();
-          const date_str = `${d.getUTCFullYear()}-${pad_digit(d.getUTCMonth()+1,2)}-${pad_digit(d.getUTCDay(),2)}`
+          const date_str = `${d.getUTCFullYear()}-${pad_digit(d.getUTCMonth()+1,2)}-${pad_digit(d.getUTCDate(),2)}`
           const time_str = `${pad_digit(d.getUTCHours(),2)}:${pad_digit(d.getUTCMinutes(),2)}:${pad_digit(d.getUTCSeconds(),2)}Z`;
           this._currentTimeText.textContent = `${date_str}T${time_str}`;
         });
