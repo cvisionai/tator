@@ -160,10 +160,10 @@ class AnalyticsLocalizations extends TatorPage {
       });
 
       // Init Card Gallery and Right Panel
-      this._cardGallery({
-        filterState: this._filterState,
-        paginationState: this._paginationState
-      });
+      this._cardGallery(
+        this._filterConditions,
+        this._paginationState
+      );
 
       // Listen for pagination events
       this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
@@ -208,7 +208,7 @@ class AnalyticsLocalizations extends TatorPage {
     return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
   }
 
-  _cardGallery({ filterConditions, paginationState }) {
+  _cardGallery(filterConditions, paginationState) {
     this.loading.showSpinner();
     this.showDimmer();
 
@@ -235,10 +235,10 @@ class AnalyticsLocalizations extends TatorPage {
     this._paginationState.stop = this._paginationState.pageSize;
 
     // updated the card gallery
-    this._cardGallery({
-      filterConditions: this._filterConditions,
-      paginationState: this._paginationState
-    });
+    this._cardGallery(
+      this._filterConditions,
+      this._paginationState
+    );
 
     this._settings.setAttribute("filterConditions", filterURIString);
     this._settings.setAttribute("pagesize", this._paginationState.pageSize);
@@ -256,10 +256,10 @@ class AnalyticsLocalizations extends TatorPage {
     this._paginationState.init = false;
 
     // get the gallery
-    this._cardGallery({
-      filterConditions: this._filterConditions,
-      paginationState: this._paginationState
-    });
+    this._cardGallery(
+      this._filterConditions,
+      this._paginationState
+    );
 
     // make sure view lined up top and bottom
     this._filterResults._paginator.setValues(this._paginationState);
