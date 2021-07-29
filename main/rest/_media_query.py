@@ -3,6 +3,8 @@ from collections import defaultdict
 import logging
 from urllib import parse as urllib_parse
 
+from django.db.models.functions import Coalesce
+
 from ..search import TatorSearch
 from ..models import Section
 from ..models import Media
@@ -224,7 +226,13 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
 
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
-    qs = qs.order_by('name')
+    # Coalesce is a no-op that prevents PSQL from using the primary key index for small
+    # LIMIT values (which results in slow queries).
+    if stop is None:
+        qs = qs.order_by('name')
+    else:
+        qs = qs.order_by(Coalesce('name', 'name'))
+
     if start is not None and stop is not None:
         qs = qs[start:stop]
     elif start is not None:

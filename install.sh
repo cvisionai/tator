@@ -17,7 +17,8 @@ sudo snap install microk8s --classic --channel=1.19/stable
 # Install apt packages.
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip build-essential
+    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip build-essential \
+    chromium-chromedriver
 
 # Get IP address if it is not set explicitly.
 # Credit to https://serverfault.com/a/1019371
@@ -46,7 +47,9 @@ echo "Using host interface $HOST_INTERFACE."
 echo "Using host IP address $HOST_IP."
 
 # Export host IP for unit tests.
-echo "export TATOR_UNIT_TEST_HOST_IP=$HOST_IP" >> $BASH_ENV
+if [[ ! -z "${BASH_ENV}" ]]; then
+  echo "export TATOR_UNIT_TEST_HOST_IP=$HOST_IP" >> $BASH_ENV
+fi
 
 # Get docker registry if it is not set explicitly.
 if [[ -z "${DOCKER_REGISTRY}" ]]; then
@@ -116,7 +119,7 @@ kubectl delete pod sleepy
 echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
-pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml
+pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml selenium
 
 # Install tator.
 echo "Installing tator."
@@ -127,8 +130,10 @@ make cluster-install
 # Create a superuser.
 echo "Creating a superuser."
 GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')
-kubectl exec -it $GUNICORN_POD -- env DJANGO_SUPERUSER_PASSWORD=admin \
+kubectl exec -it $GUNICORN_POD -- \
     python3 manage.py createsuperuser --username admin --email no-reply@cvisionai.com --noinput
+kubectl exec -it $GUNICORN_POD -- \
+    python3 manage.py shell -c 'from main.models import User; user=User.objects.first(); user.set_password("admin"); user.save()'
 
 # Print success.
 echo "Installation completed successfully!"
