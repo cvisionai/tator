@@ -10,6 +10,19 @@ class ImageCanvas extends AnnotationCanvas
     this._good=false;
   }
 
+  /**
+   * Call this prior to mediaInfo
+   * @param {integer} val - If provided, media assumed to be a video and the particular frame
+   *                        will be used. This should be null if dealing with an image.
+   */
+  set videoFrame(val) {
+    this._videoFrame = val;
+  }
+
+
+  /**
+   * @param {Media object} val - Media object to load the canvas with
+   */
   set mediaInfo(val) {
     super.mediaInfo = val;
     this._dims = [val.width, val.height];
@@ -24,25 +37,61 @@ class ImageCanvas extends AnnotationCanvas
         }
         await new Promise(res => setTimeout(res, 10));
       }
-      let url = null;
-      if (val.media_files) {
-        if (val.media_files.image) {
-          url = val.media_files.image[0].path;
-        }
+
+      if (Number.isInteger(this._videoFrame)) {
+        // Assume it's a video file. Get the appropriate frame and display that.
+        fetch(`/rest/GetFrame/${val.id}?frames=${this._videoFrame}`, {
+          method: "GET",
+          mode: "cors",
+          credentials: "include",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "image/*",
+            "Content-Type": "image/*"
+          }
+        })
+        .then(response => response.blob())
+        .then(imageBlob => {
+
+          var reader = new FileReader();
+          var that = this;
+          reader.addEventListener("load", function () {
+            // convert image file to base64 string
+            that.loadFromURL(reader.result, that._dims)
+            .then(() => {
+              that._good = true;
+              that.refresh();
+            })
+            .then(() => {
+              that.dispatchEvent(new Event("canvasReady", {
+                composed: true
+              }));
+            });
+          });
+          reader.readAsDataURL(imageBlob); // converts the blob to base64
+        });
       }
-      this.loadFromURL(url, this._dims)
-      .then(() => {
-        this._good = true;
-        this.refresh()
-      })
-      .then(() => {
-        this.dispatchEvent(new Event("canvasReady", {
-          composed: true
-        }));
-      });
+      else {
+        // Normal image media file. Load the image from the given URL
+        let url = null;
+        if (val.media_files) {
+          if (val.media_files.image) {
+            url = val.media_files.image[0].path;
+          }
+        }
+        this.loadFromURL(url, this._dims)
+        .then(() => {
+          this._good = true;
+          this.refresh()
+        })
+        .then(() => {
+          this.dispatchEvent(new Event("canvasReady", {
+            composed: true
+          }));
+        });
+      }
     });
   }
-
 
   // Images are neither playing or paused
   isPaused()
@@ -70,6 +119,10 @@ class ImageCanvas extends AnnotationCanvas
     // We want half of the margin to the left of the image frame
     const leftSide=margin/2;
 
+    var frame = 0
+    if (Number.isInteger(this._videoFrame)) {
+      frame = this._videoFrame;
+    }
     const promise = new Promise(resolve => {
       if (this._draw.canPlay())
       {
@@ -82,7 +135,7 @@ class ImageCanvas extends AnnotationCanvas
       }
       else
       {
-        this._draw.pushImage(0,
+        this._draw.pushImage(frame,
                              this._imageElement,
                              this._roi[0],this._roi[1], //No clipping
                              this._roi[2],this._roi[3], //Image size
@@ -91,7 +144,7 @@ class ImageCanvas extends AnnotationCanvas
                              this._dirty
                             );
 
-        this.updateOffscreenBuffer(0,
+        this.updateOffscreenBuffer(frame,
                                    this._imageElement,
                                    this._dims[0],
                                    this._dims[1],
@@ -127,7 +180,12 @@ class ImageCanvas extends AnnotationCanvas
   // 'Media Interface' implementations
   currentFrame()
   {
-    return 0;
+    if (Number.isInteger(this._videoFrame)) {
+      return this._videoFrame;
+    }
+    else {
+      return 0;
+    }
   }
 
   gotoFrame(frame)
