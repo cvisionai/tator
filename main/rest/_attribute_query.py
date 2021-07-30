@@ -85,6 +85,30 @@ def get_attribute_es_query(query_params, query, bools, project,
     attr_query['media']['filter'] += bools
     attr_query['annotation']['filter'] += annotation_bools
 
+    section = query_params.get('section')
+    if section is not None:
+        section_object = Section.objects.get(pk=section)
+        if section_object.lucene_search:
+            attr_query['media']['filter'].append({'bool': {
+                'should': [
+                    {'query_string': {'query': section_object.lucene_search}},
+                    {'has_child': {
+                        'type': 'annotation',
+                        'query': {'query_string': {'query': section_object.lucene_search}},
+                        },
+                    },
+                ],
+                'minimum_should_match': 1,
+            }})
+        if section_object.media_bools:
+            attr_query['media']['filter'].append(section_object.media_bools)
+        if section_object.annotation_bools:
+            attr_query['annotation']['filter'].append(section_object.annotation_bools)
+        if section_object.tator_user_sections:
+            attr_query['media']['filter'].append({'match': {'tator_user_sections': {
+                'query': section_object.tator_user_sections,
+            }}})
+
     if is_media:
         # Construct query for media
         has_child = False
