@@ -13,7 +13,15 @@ What is Tator?
 * **Collaboration** - Invite your team to help annotate, analyze, and review data
 * **REST API** - Develop custom scripts and tools. Clients available in Python and R
 
-**IMPORTANT**: Only Chromium-based browsers are supported (Chrome and Edge).
+Quick start
+===========
+
+From a node with a fresh [Ubuntu 20.04 LTS](https://releases.ubuntu.com/20.04/) install and a [reserved IP address](https://lifehacker.com/how-to-set-up-dhcp-reservations-and-never-check-an-ip-5822605):
+```bash
+git clone --recurse-submodules -b stable https://github.com/cvisionai/tator
+cd tator
+./install.sh
+```
 
 Tutorials
 =========
