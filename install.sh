@@ -137,7 +137,7 @@ kubectl exec -it $GUNICORN_POD -- \
 
 # Print success.
 echo "Installation completed successfully!"
-echo "Open a browser to http://$HOST_IP and enter credentials:"
+echo "Open a browser (must be Chrome or Edge) to http://$HOST_IP and enter credentials:"
 echo "username: admin"
 echo "password: admin"
 echo "If this installation is accessible by others please change your password!"
