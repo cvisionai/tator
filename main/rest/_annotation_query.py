@@ -216,7 +216,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     return qs
 
 def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'media_search']
+    ES_ONLY_PARAMS = ['search', 'media_search', 'section']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
         if es_param in params:
