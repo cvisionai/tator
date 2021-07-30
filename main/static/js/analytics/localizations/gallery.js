@@ -56,7 +56,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     /**
       * CARD Label display options link for menu, and checkbox div
-      */ 
+      */
     this._cardAtributeLabels = document.createElement("entity-gallery-labels");
     this._mainTop.appendChild(this._cardAtributeLabels);
     this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
@@ -64,7 +64,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     /**
       * CARD Sort display options link for menu, and checkbox div
-      */ 
+      */
     this._cardAtributeSort = document.createElement("entity-gallery-sort");
     this._mainTop.appendChild(this._cardAtributeSort);
     this._cardAtributeSort.menuLinkTextSpan.innerHTML = "Sort Entries";
@@ -98,7 +98,7 @@ class AnnotationsGallery extends EntityCardGallery {
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
-    
+
     // Slider Card Sort display changes
     this._cardAtributeSort.addEventListener("sort-update", this._cardSortUpdate.bind(this));
 
@@ -160,7 +160,7 @@ class AnnotationsGallery extends EntityCardGallery {
     // // This will dupe check if it already exists for this type, or add
     for(let card of cardInfo){
       let entityTypeData = card.entityType;
-      this._cardAtributeSort.add({ 
+      this._cardAtributeSort.add({
           typeData: entityTypeData
       });
 
@@ -195,7 +195,7 @@ class AnnotationsGallery extends EntityCardGallery {
           //   // update counter used for card placement
           //   obj.counter = Number(idx);
           // }
-          // 
+          //
       }
     }
 
@@ -203,7 +203,7 @@ class AnnotationsGallery extends EntityCardGallery {
     // apply the card entry to an existing card.
     for (const [index, cardObj] of cardInfo.entries()) {
       const newCard = index >= this._cardElements.length;
-      
+
       /**
       * entity info for card
       */
@@ -218,7 +218,7 @@ class AnnotationsGallery extends EntityCardGallery {
         /**
         * Card labels / attributes of localization or media type
         */
-        this._cardAtributeLabels.add({ 
+        this._cardAtributeLabels.add({
           typeData: entityType,
           checkedFirst: true
         });
@@ -297,25 +297,25 @@ class AnnotationsGallery extends EntityCardGallery {
         };
         this._cardElements.push(cardInfo);
 
-        // Initialize the card panel
-        this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-        this._cardElements[index].annotationPanel.init({ cardObj });
-
         this._ul.appendChild(card);
       } else {
         card = this._cardElements[index].card;
       }
 
+      // Initialize the card panel
+      this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
+      this._cardElements[index].annotationPanel.init({ cardObj });
+
       // Initialize Card
       card.init({
-        obj : cardObj, 
-        panelContainer : this.panelContainer, 
+        obj : cardObj,
+        panelContainer : this.panelContainer,
         annotationPanelDiv : this._cardElements[index].annotationPanelDiv,
         cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
       });
 
       this._currentCardIndexes[cardObj.id] = index;
-      
+
       card.style.display = "block";
       numberOfDisplayedCards += 1;
     }
@@ -383,7 +383,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     var data = await result.json();
     let msg = "";
-    if (result.ok) {  
+    if (result.ok) {
       if (data.details && data.details.contains("Exception")) {
         msg = `Error: ${data.message}`
         Utilities.warningAlert(msg);
@@ -432,16 +432,16 @@ class AnnotationsGallery extends EntityCardGallery {
             let fnCheck = sortType ? this._cardAtributeSort.ascCheck : this._cardAtributeSort.dscCheck;
 
             // #todo handle pagination
-            let cards = this._cardAtributeSort._sortCards({ 
-               cards: this._cardElements, 
-               slider: this, 
-               fnCheck, 
+            let cards = this._cardAtributeSort._sortCards({
+               cards: this._cardElements,
+               slider: this,
+               fnCheck,
                property
             });
 
             // #todo look into reuse of slider.makeCards
             this.updateCardOrder(cards, true);
-            
+
         // }
 
          let msg = `Entry sort complete`
@@ -449,7 +449,7 @@ class AnnotationsGallery extends EntityCardGallery {
       } catch(e) {
          let msg = `Entry sort error`;
          console.error(e);
-         Utilities.warningAlert(msg, "#ff3e1d", false); 
+         Utilities.warningAlert(msg, "#ff3e1d", false);
       }
    }
 
@@ -465,7 +465,7 @@ class AnnotationsGallery extends EntityCardGallery {
          obj.counter = idx + start;
          let usableIndex = Number(obj.counter);
 
-        if(updatePosition){  
+        if(updatePosition){
           obj.card.classList.add("reorder-progress");
           // Get index of one and the other
           let id = obj.card.cardObj.id;
