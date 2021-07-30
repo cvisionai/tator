@@ -2741,6 +2741,12 @@ class VideoCanvas extends AnnotationCanvas {
 
   onDemandDownloadPrefetch(reset)
   {
+    // This function can be called at anytime. If auto-download is disabled, then just stop
+    // onDemand functionality completely
+    if (this._disableAutoDownloads) {
+      return;
+    }
+
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
     if (this.videoBuffer(this.currentFrame(), "play") != null && reset != true) {

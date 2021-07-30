@@ -25,8 +25,11 @@ class AnnotationImage extends TatorElement {
     this._image.undoBuffer = val;
   }
 
+  set videoFrame(val) {
+    this._image.videoFrame = val;
+  }
+
   set mediaInfo(val) {
-    this._image.mediaType = this.mediaType;
     this._image.mediaInfo = val;
   }
 
