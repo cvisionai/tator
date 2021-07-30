@@ -134,6 +134,9 @@ cluster-install:
 cluster-upgrade: check-migration main/version.py images
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
+cluster-update: 
+	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+
 cluster-uninstall:
 	kubectl delete apiservice v1beta1.metrics.k8s.io
 	kubectl delete all --namespace kubernetes-dashboard --all
