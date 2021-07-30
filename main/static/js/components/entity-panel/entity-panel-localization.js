@@ -3,8 +3,6 @@ class GalleryPanelLocalization extends TatorElement {
     super();
 
     this._main = document.createElement("main");
-    this._undo = document.createElement("undo-buffer");
-    this._data = document.createElement("annotation-data");
     this._versionLookup = {};
     this.panelData = document.createElement("annotation-panel-data");
     this.savedMediaData = {};
@@ -40,7 +38,7 @@ class GalleryPanelLocalization extends TatorElement {
   }
 
   _setupCanvas(mediaData) {
-    this._player = this._setupImageCanvas(); // (dtype == "image") ? this._setupImageCanvas() : this._setupVideoCanvas();
+    this._player = this._setupImageCanvas();
     this._player.addDomParent({
       "object": this.panelContainer,
       "alignTo": this._shadow
@@ -54,16 +52,17 @@ class GalleryPanelLocalization extends TatorElement {
       this._imageCanvas.remove();
       delete this._imageCanvas;
     }
-    if (typeof this._videoCanvas != "undefined") {
-      this._videoCanvas.remove();
-      delete this._videoCanvas;
-    }
+
+    delete this._undo;
+    delete this._data;
   }
 
   _setupImageCanvas() {
 
     this._clearExistingCanvas();
 
+    this._undo = document.createElement("undo-buffer");
+    this._data = document.createElement("annotation-data");
     this._imageCanvas = document.createElement("annotation-image");
     this._imageCanvas.annotationData = this._data;
     this._imageCanvas.undoBuffer = this._undo;
@@ -72,24 +71,6 @@ class GalleryPanelLocalization extends TatorElement {
     this._player = this._imageCanvas;
 
     return this._imageCanvas;
-  }
-
-  _setupVideoCanvas() {
-
-    this._clearExistingCanvas();
-
-    this._videoCanvas = document.createElement("annotation-player");
-    this._videoCanvas.disableAutoDownloads();
-    this._videoCanvas.hideVideoControls();
-    this._videoCanvas.hideVideoText();
-    this._videoCanvas.disableShortcuts();
-    this._videoCanvas.annotationData = this._data;
-    this._videoCanvas.undoBuffer = this._undo;
-    this._shadow.appendChild(this._videoCanvas);
-
-    this._player = this._videoCanvas;
-
-    return this._videoCanvas;
   }
 
   _popModalWithPlayer(e, modal = this.pageModal) {
@@ -164,11 +145,11 @@ class GalleryPanelLocalization extends TatorElement {
         this._player.videoFrame = this._localization.frame;
       }
       this._player.mediaInfo = mediaData.mediaInfo;
-      this._player.undoBuffer = this._undo;
-      this._player.annotationData = this._data;
-      this._data.updateTypeWithData(locDataType, this._localization)
 
       this._player.addEventListener("canvasReady", () => {
+          this._player.undoBuffer = this._undo;
+          this._player.annotationData = this._data;
+          this._data.updateTypeWithData(locDataType, this._localization)
           this._player.selectLocalization(this._localization);
       });
     }
