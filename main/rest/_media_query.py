@@ -94,29 +94,6 @@ def get_media_es_query(project, params):
     if name is not None:
         bools.append({'match': {'_exact_name': {'query': name}}})
 
-    if section is not None:
-        section_object = Section.objects.get(pk=section)
-        if section_object.lucene_search:
-            bools.append({'bool': {
-                'should': [
-                    {'query_string': {'query': section_object.lucene_search}},
-                    {'has_child': {
-                        'type': 'annotation',
-                        'query': {'query_string': {'query': section_object.lucene_search}},
-                        },
-                    },
-                ],
-                'minimum_should_match': 1,
-            }})
-        if section_object.media_bools:
-            bools.append(section_object.media_bools)
-        if section_object.annotation_bools:
-            annotation_bools.append(section_object.annotation_bools)
-        if section_object.tator_user_sections:
-            bools.append({'match': {'tator_user_sections': {
-                'query': section_object.tator_user_sections,
-            }}})
-
     if dtype is not None:
         bools.append({'match': {'_dtype': {'query': dtype}}})
 
