@@ -7,6 +7,7 @@ from dateutil.parser import parse as dateutil_parse
 
 from ..models import LocalizationType
 from ..models import StateType
+from ..models import Section
 from ..search import TatorSearch
 
 from ._attributes import KV_SEPARATOR
