@@ -45,6 +45,7 @@ def authenticated(request, launch_time, base_url, browser_type, browser_type_lau
         "base_url": base_url,
         "record_video_dir": videos,
         "locale": "en-US",
+        "executable_path": "/usr/bin/google-chrome",
     })
     page = context.new_page()
     page.goto('/')

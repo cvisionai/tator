@@ -1,7 +1,7 @@
 from playwright.sync_api import sync_playwright
 
 with sync_playwright() as p:
-    browser = p.chromium.launch()
+    browser = p.chromium.launch(executable_path='/usr/bin/google-chrome')
     page = browser.new_page()
     page.goto('http://tatordemo.duckdns.org/2146/annotation/437900')
     page.on("pageerror", lambda err: print(err.message))
