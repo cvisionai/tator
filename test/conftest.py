@@ -31,6 +31,7 @@ def screenshots(request):
 @pytest.fixture(scope='session')
 def authenticated(request, base_url, browser_type, browser_type_launch_args, browser_context_args):
     """ Yields a persistent logged in context. """
+    print("Logging in...")
     username = request.config.option.username
     password = request.config.option.password
     context = browser_type.launch_persistent_context("./foobar", **{
@@ -97,49 +98,16 @@ def project(request, authenticated, base_url, token):
             break
     yield project_id
 
-"""
 @pytest.fixture(scope='session')
-def video_section(request, browser, project):
+def video_section(request, authenticated, project):
     print("Creating video section...")
-    go_to_uri(browser, f"{project}/project-detail")
-    time.sleep(1)
-    mgr = ShadowManager(browser)
-    # Click add folder button
-    buttons = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'button')
-    found = False
-    for button in buttons:
-        if 'Add folder' in button.get_attribute('textContent'):
-            found = True
-            break
-    assert(found)
-    button.click()
-    time.sleep(1)
-    # Enter name
-    name_dialog = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'name-dialog')
-    browser.save_screenshot('/home/jon/test.png')
-    shadow = mgr.expand_shadow_element(name_dialog)
-    field = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'input')
-    footer = mgr.find_shadow_tree_elements(shadow, By.TAG_NAME, 'button')
-    field.send_keys('Videos')
-    for button in footer:
-        if button.get_attribute('textContent') == 'Save':
-            button.click()
-    time.sleep(1)
-    # Select the new section
-    cards = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'section-card')
-    found = False
-    for card in cards:
-        shadow = mgr.expand_shadow_element(card)
-        h2 = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'h2')
-        if h2.get_attribute('textContent') == 'Videos':
-            found = True
-            card.click()
-            break
-    assert(found)
-    time.sleep(1)
-    # Get section ID from URL
-    url = browser.current_url
-    section = int(url.split('=')[-1])
+    page = authenticated.new_page()
+    page.goto(f'{project}/project-detail')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Videos')
+    page.click('text="Save"')
+    page.click('text="Videos"')
+    section = int(page.url.split('=')[-1])
     yield section
 
 @pytest.fixture(scope='session')
@@ -183,6 +151,7 @@ def video_file(request):
                         f.write(chunk)
     yield out_path
 
+"""
 @pytest.fixture(scope='session')
 def video(request, browser, project, video_section, video_file):
     print("Uploading a video...")
