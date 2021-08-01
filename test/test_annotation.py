@@ -27,8 +27,9 @@ def test_annotation(authenticated, project, video):
         page.mouse.down()
         page.mouse.move(x + width, y + height)
         page.mouse.up()
-        save_dialog = page.query_selector('save-dialog:visible')
-        save_dialog.query_selector('select').select_option(enum_value)
+        save_dialog = page.query_selector('save-dialog.is-open')
+        enum_input = save_dialog.query_selector('enum-input[name="Test Enum"]')
+        enum_input.query_selector('select').select_option(enum_value)
         save_dialog.query_selector('text="Save"').click()
     """
     # Move boxes
