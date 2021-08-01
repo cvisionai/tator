@@ -31,39 +31,30 @@ def test_annotation(authenticated, project, video):
         enum_input = save_dialog.query_selector('enum-input[name="Test Enum"]')
         enum_input.query_selector('select').select_option(enum_value)
         save_dialog.query_selector('text="Save"').click()
-    """
+        page.wait_for_timeout(500)
     # Move boxes
-    print("Moving and resizing boxes...")
+    print("Moving boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
-        left, top = start
-        ActionChains(browser)\
-            .move_to_element(canvas)\
-            .move_by_offset(left+50, top+50)\
-            .click()\
-            .pause(1)\
-            .click_and_hold()\
-            .move_by_offset(-50, -50)\
-            .release()\
-            .pause(1)\
-            .move_by_offset(0, 100)\
-            .click()\
-            .perform()
-    saver.save_screenshot('moved_boxes')
+        x, y = start
+        x += canvas_center_x
+        y += canvas_center_y
+        page.mouse.click(x+50, y+50)
+        page.wait_for_timeout(500)
+        page.mouse.move(x+50, y+50)
+        page.mouse.down()
+        page.mouse.move(x, y)
+        page.mouse.up()
+        page.wait_for_timeout(500)
     # Resize boxes
+    print("Resizing boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
-        left, top = start
-        ActionChains(browser)\
-            .move_to_element(canvas)\
-            .move_by_offset(left, top)\
-            .click()\
-            .pause(1)\
-            .move_by_offset(45, 45)\
-            .click_and_hold()\
-            .move_by_offset(50, 50)\
-            .release()\
-            .pause(1)\
-            .move_by_offset(0, 100)\
-            .click()\
-            .perform()
-    saver.save_screenshot('resized_boxes')
-    """
+        x, y = start
+        x += canvas_center_x
+        y += canvas_center_y
+        page.mouse.move(x+45, y+45)
+        page.mouse.click(x+45, y+45)
+        page.wait_for_timeout(500)
+        page.mouse.down()
+        page.mouse.move(x+95, y+95)
+        page.mouse.up()
+        page.wait_for_timeout(500)
