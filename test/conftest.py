@@ -9,10 +9,12 @@ import shutil
 import pytest
 import requests
 
+from ._common import get_video_path
+
 def pytest_addoption(parser):
     parser.addoption('--username', help='Username for login page.')
     parser.addoption('--password', help='Password for login page.')
-    parser.addoption('--screenshots', help='Directory to store screenshots.')
+    parser.addoption('--videos', help='Directory to store videos.')
     parser.addoption('--keep', help='Do not delete project when done', action='store_true')
 
 def pytest_generate_tests(metafunc):
@@ -22,22 +24,26 @@ def pytest_generate_tests(metafunc):
           metafunc.parametrize('password', [metafunc.config.getoption('password')])
 
 @pytest.fixture(scope='session')
-def screenshots(request):
-    """ Directory created to store screenshots. """
-    screenshots = request.config.option.screenshots
-    os.makedirs(screenshots, exist_ok=True)
-    yield screenshots
+def launch_time(request):
+    current_dt = datetime.datetime.now()
+    dt_str = current_dt.strftime('%Y_%m_%d__%H_%M_%S')
+    yield dt_str
 
 @pytest.fixture(scope='session')
-def authenticated(request, base_url, browser_type, browser_type_launch_args, browser_context_args):
+def authenticated(request, launch_time, base_url, browser_type, browser_type_launch_args,
+                  browser_context_args):
     """ Yields a persistent logged in context. """
     print("Logging in...")
     username = request.config.option.username
     password = request.config.option.password
+    videos = os.path.join(request.config.option.videos, launch_time)
+    if os.path.exists("foobar"):
+        shutil.rmtree("foobar")
     context = browser_type.launch_persistent_context("./foobar", **{
         **browser_type_launch_args,
         **browser_context_args,
         "base_url": base_url,
+        "record_video_dir": videos,
         "locale": "en-US",
     })
     page = context.new_page()
@@ -68,12 +74,10 @@ def token(request, authenticated):
     yield token
 
 @pytest.fixture(scope='session')
-def project(request, authenticated, base_url, token):
+def project(request, authenticated, launch_time, base_url, token):
     """ Project created with setup_project.py script, all options enabled. """
     print("Creating test project with setup_project.py...")
-    current_dt = datetime.datetime.now()
-    dt_str = current_dt.strftime('%Y_%m_%d__%H_%M_%S')
-    name = f"test_front_end_{dt_str}"
+    name = f"test_front_end_{launch_time}"
     cmd = [
         'python3',
         'scripts/packages/tator-py/examples/setup_project.py',
@@ -102,7 +106,7 @@ def project(request, authenticated, base_url, token):
 def video_section(request, authenticated, project):
     print("Creating video section...")
     page = authenticated.new_page()
-    page.goto(f'{project}/project-detail')
+    page.goto(f'/{project}/project-detail')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Videos')
     page.click('text="Save"')
@@ -151,39 +155,22 @@ def video_file(request):
                         f.write(chunk)
     yield out_path
 
-"""
 @pytest.fixture(scope='session')
-def video(request, browser, project, video_section, video_file):
+def video(request, authenticated, project, video_section, video_file):
     print("Uploading a video...")
-    go_to_uri(browser, f"{project}/project-detail?section={video_section}")
-    time.sleep(1)
-    mgr = ShadowManager(browser)
-    upload = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'section-upload')
-    shadow = mgr.expand_shadow_element(upload)
-    upload = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'input')
-    local_path = f"{os.getenv('HOME')}/AudioVideoSyncTest_BallastMedia.mp4"
-    shutil.copyfile(video_file, local_path)
-    upload.send_keys(local_path)
-    # Close upload dialog
-    time.sleep(2)
-    dialog = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'upload-dialog')
-    shadow = mgr.expand_shadow_element(dialog)
-    close = mgr.find_shadow_tree_element(shadow, By.CLASS_NAME, 'btn-purple')
-    close.click()
-    # Find soft reload button
-    soft_reload = mgr.find_shadow_tree_element(browser, By.TAG_NAME, 'reload-button')
-    for _ in range(8):
-        time.sleep(15)
-        soft_reload.click()
-        media_cards = mgr.find_shadow_tree_elements(browser, By.TAG_NAME, 'media-card')
-        if len(media_cards) == 0:
+    page = authenticated.new_page()
+    page.goto(f"/{project}/project-detail?section={video_section}")
+    page.set_input_files('section-upload input', video_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.click('reload-button')
+        cards = page.query_selector_all('media-card')
+        if len(cards) == 0:
             continue
-        shadow = mgr.expand_shadow_element(media_cards[0])
-        a = mgr.find_shadow_tree_element(shadow, By.TAG_NAME, 'a')
-        href = a.get_attribute('href')
+        href = cards[0].query_selector('a').get_attribute('href')
         if 'annotation' in href:
-            print(f"Media card has href {href}, media is ready...")
+            print(f"Card href is {href}, media is ready...")
             break
-    video = int(media_cards[0].get_attribute('media-id'))
+    video = int(cards[0].get_attribute('media-id'))
     yield video
-"""
+

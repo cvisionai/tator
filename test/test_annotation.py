@@ -1,50 +1,36 @@
 import os
 import time
 
-def test_annotation(authenticated, screenshots, project):#, video):
-    pass
-    """
+from ._common import print_page_error
+
+def test_annotation(authenticated, project, video):
     print("Going to annotation view...")
-    save_dir = os.path.join(screenshots, "annotation")
-    os.makedirs(save_dir, exist_ok=True)
-    saver = ScreenshotSaver(browser, save_dir)
-    go_to_uri(browser, f"{project}/annotation/{video}")
-    time.sleep(10)
-    saver.save_screenshot('annotation_view_done_loading')
-    # Draw three boxes
+    page = authenticated.new_page()
+    page.goto(f"/{project}/annotation/{video}")
+    page.on("pageerror", print_page_error)
+    canvas = page.query_selector('video-canvas')
+    canvas_box = canvas.bounding_box()
+    canvas_center_x = canvas_box['x'] + canvas_box['width'] / 2
+    canvas_center_y = canvas_box['y'] + canvas_box['height'] / 2
     print("Drawing three boxes with different enum values...")
-    mgr = ShadowManager(browser)
-    box_button = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "box-button")
-    canvas = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "video-canvas")
-    save_dialog = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "save-dialog")
-    save_shadow = mgr.expand_shadow_element(save_dialog)
     box_info = [((-200, -50), 'Test Choice 1'),
                 ((-50, -50), 'Test Choice 2'),
                 ((100, -50), 'Test Choice 3')]
     for idx, (start, enum_value) in enumerate(box_info):
-        box_button.click()
-        time.sleep(0.25)
-        ActionChains(browser)\
-            .move_to_element(canvas)\
-            .move_by_offset(*start)\
-            .click_and_hold()\
-            .move_by_offset(100, 100)\
-            .release()\
-            .perform()
-        time.sleep(0.25)
-        options = mgr.find_shadow_tree_elements(save_shadow, By.TAG_NAME, "option")
-        for option in options:
-            if option.get_attribute('value') == enum_value:
-                option.click()
-        time.sleep(0.25)
-        saver.save_screenshot(f"drawing_boxes_{idx}")
-        buttons = mgr.find_shadow_tree_elements(save_shadow, By.TAG_NAME, "button")
-        for button in buttons:
-            if button.get_attribute("textContent") == "Save":
-                button.click()
-                break
-        time.sleep(1)
-    saver.save_screenshot('three_boxes_different_colors')
+        page.click('box-button')
+        x, y = start
+        x += canvas_center_x
+        y += canvas_center_y
+        width = 100
+        height = 100
+        page.mouse.move(x, y)
+        page.mouse.down()
+        page.mouse.move(x + width, y + height)
+        page.mouse.up()
+        save_dialog = page.query_selector('save-dialog:visible')
+        save_dialog.query_selector('select').select_option(enum_value)
+        save_dialog.query_selector('text="Save"').click()
+    """
     # Move boxes
     print("Moving and resizing boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
