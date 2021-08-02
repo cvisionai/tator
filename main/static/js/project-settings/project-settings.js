@@ -36,6 +36,7 @@ class ProjectSettings extends TatorPage {
                                   "leaf-type-edit",
                                   "state-type-edit",
                                   "membership-edit",
+                                  "versions-edit",
                                 ];
 
     // Modal parent - to pass to page components
@@ -74,7 +75,7 @@ class ProjectSettings extends TatorPage {
     projectPromise
     .then( (data) => {
       return data.json();
-    }).then( (objData) => {
+    }).then((objData) => {
       this._breadcrumbs.setAttribute("project-name", objData.name);
       const formView = this.projectView;
 
@@ -170,6 +171,11 @@ class ProjectSettings extends TatorPage {
     }).then( (objData) => {
       this.loading.hideSpinner();
 
+      // Versions number sort
+      if (typeof objData[0].number !== "undefined") {
+        objData = objData.filter(version => version.number >= 0)
+      }
+
       // Pass in data interface to memberships.
       if (formView.typeName == "Membership") {
         this.membershipData = new MembershipData(this.projectId);
@@ -180,6 +186,12 @@ class ProjectSettings extends TatorPage {
       if(formView.typeName == "MediaType"){
         const mediaList = new DataMediaList( this.projectId );
         mediaList._setProjectMediaList(objData, true);
+      }
+
+      // Make versions new list before we add an empty row
+      if(formView.typeName == "Version"){
+        const versionsList = new DataVersionList( this.projectId );
+        versionsList._setVersionList(objData, true);
       }
 
       // Add item containers for Types

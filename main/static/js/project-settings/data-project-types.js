@@ -43,13 +43,15 @@ class ProjectTypesData {
         this._getLeafTypePromise();
         this._getStateTypePromise();
         this._getMembershipDataPromise();
+        this._getVersionsDataPromise();
     
         return [
           this.mediaTypesPromise,
           this.localizationsPromise,
           this.leafTypesPromise,
           this.stateTypesPromise,
-          this.membershipPromise
+          this.membershipPromise,
+          this.versionsPromise
         ];
       }
 
@@ -76,5 +78,9 @@ class ProjectTypesData {
       _getMembershipDataPromise(){
         this.membershipData = new MembershipData(this.projectId);
         return this.membershipPromise = this.membershipData._getMembershipPromise();
+      }
+      _getVersionsDataPromise(){
+        this.versionsBlock = document.createElement("versions-edit");
+        return this.versionsPromise = this.versionsBlock._fetchGetPromise({"id": this.projectId} );
       }
 }

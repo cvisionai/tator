@@ -75,9 +75,12 @@ class TypeForm extends TatorElement {
       // Add all elements to page
       this.typeFormDiv.appendChild(this.h1);
       const sectionForm = await this._getSectionForm(this.data);
-      this.typeFormDiv.appendChild( sectionForm );
-      this.typeFormDiv.appendChild(this._getAttributeSection());
+      this.typeFormDiv.appendChild(sectionForm);
       
+      if (typeof this._hideAttributes !== "undefined" && !this._hideAttributes ) {
+        this.typeFormDiv.appendChild(this._getAttributeSection());
+      }
+          
       const submitNew = this._getSubmitDiv({ "id": this.data.id });
       this.typeFormDiv.appendChild(submitNew);
 
@@ -192,6 +195,8 @@ class TypeForm extends TatorElement {
         return "project-main-edit";
       case "Membership" :
         return "membership-edit";
+      case "Version" :
+        return "version-edit";
       default:
         break;
     }
@@ -315,7 +320,7 @@ class TypeForm extends TatorElement {
     let button = document.createElement("button");
     let confirmText = document.createTextNode("Confirm")
     button.appendChild(confirmText);
-    button.setAttribute("class", "btn btn-clear f1 text-semibold")
+    button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red")
 
     button.addEventListener("click", this._deleteType.bind(this));
 
@@ -439,7 +444,6 @@ class TypeForm extends TatorElement {
       } else {
         promises.push( this._fetchPatchPromise({id, formData}) );
       }
-      
     }
 
     let hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
@@ -688,6 +692,10 @@ class TypeForm extends TatorElement {
     if(this.typeName == "MediaType"){
       const mediaList = new DataMediaList(this.projectId);
       mediaList._setProjectMediaList( "", true ); 
+    }
+    if(this.typeName == "Version"){
+      const versionsList = new DataVersionList( this.projectId );
+      versionsList._setVersionList(objData, true);
     }
   }
 
