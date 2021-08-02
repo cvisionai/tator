@@ -27,11 +27,14 @@ def test_annotation(authenticated, project, video):
         page.mouse.down()
         page.mouse.move(x + width, y + height)
         page.mouse.up()
+        page.wait_for_selector('save-dialog.is-open')
         save_dialog = page.query_selector('save-dialog.is-open')
         enum_input = save_dialog.query_selector('enum-input[name="Test Enum"]')
         enum_input.query_selector('select').select_option(enum_value)
         save_dialog.query_selector('text="Save"').click()
-        page.wait_for_timeout(500)
+        light = page.query_selector('#tator-success-light')
+        light.wait_for_element_state('visible')
+        light.wait_for_element_state('hidden')
     # Move boxes
     print("Moving boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
@@ -39,22 +42,28 @@ def test_annotation(authenticated, project, video):
         x += canvas_center_x
         y += canvas_center_y
         page.mouse.click(x+50, y+50)
-        page.wait_for_timeout(500)
+        selector = page.query_selector('entity-selector:visible')
+        selector.wait_for_selector(f'#current-index :text("{idx+1}")')
         page.mouse.move(x+50, y+50)
         page.mouse.down()
         page.mouse.move(x, y)
         page.mouse.up()
-        page.wait_for_timeout(500)
+        light = page.query_selector('#tator-success-light')
+        light.wait_for_element_state('visible')
+        light.wait_for_element_state('hidden')
     # Resize boxes
     print("Resizing boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
-        page.mouse.move(x+45, y+45)
         page.mouse.click(x+45, y+45)
-        page.wait_for_timeout(500)
+        selector = page.query_selector('entity-selector:visible')
+        selector.wait_for_selector(f'#current-index :text("{idx+1}")')
+        page.mouse.move(x+45, y+45)
         page.mouse.down()
         page.mouse.move(x+95, y+95)
         page.mouse.up()
-        page.wait_for_timeout(500)
+        light = page.query_selector('#tator-success-light')
+        light.wait_for_element_state('visible')
+        light.wait_for_element_state('hidden')
