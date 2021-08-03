@@ -92,7 +92,7 @@ class ProjectMainEdit extends TypeForm {
     this._thumbUpload.setAttribute("for", "thumb");
     this._thumbUpload.projectId = this.projectId;
     this._thumbUpload.setValue(this.data.thumb);
-    this._thumbUpload.default = this.data.thumb;
+    this._thumbUpload.default = this.data.thumb === null ? "" : this.data.thumb;
     this._thumbUpload.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._thumbUpload);
 

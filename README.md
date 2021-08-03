@@ -13,7 +13,15 @@ What is Tator?
 * **Collaboration** - Invite your team to help annotate, analyze, and review data
 * **REST API** - Develop custom scripts and tools. Clients available in Python and R
 
-**IMPORTANT**: Only Chromium-based browsers are supported (Chrome and Edge).
+Quick start
+===========
+
+From a node with a fresh [Ubuntu 20.04 LTS](https://releases.ubuntu.com/20.04/) install and a [reserved IP address](https://lifehacker.com/how-to-set-up-dhcp-reservations-and-never-check-an-ip-5822605):
+```bash
+git clone --recurse-submodules -b stable https://github.com/cvisionai/tator
+cd tator
+./install.sh
+```
 
 Tutorials
 =========
@@ -48,6 +56,26 @@ Annotation
 * [Create tracks](https://www.tator.io/tutorials/2021-04-27-create-tracks/)
 * [Speed up annotation with favorites](https://www.tator.io/tutorials/2021-06-29-speed-up-annotation-with-favorites/)
 * [Pick up where you left off with bookmarks](https://www.tator.io/tutorials/2021-06-29-pick-up-where-you-left-off-with-bookmarks/)
+
+Analysis
+* [Explore and edit localizations](https://www.tator.io/tutorials/2021-07-09-localization-analytics-view/)
+* [Apply advanced localization filters](https://www.tator.io/tutorials/2021-07-09-apply-advanced-localization-filters/)
+
+Collaboration
+* [Make a project public](https://www.tator.io/tutorials/2021-07-27-make-a-project-public/)
+
+REST API
+* [Use Swagger UI for documentation and requests](https://www.tator.io/tutorials/2021-06-21-use-swagger-ui-for-documentation-and-requests/)
+* [Create a project with python](https://www.tator.io/tutorials/2021-03-11-create-a-project-with-python/)
+
+Administration
+* [Make announcements](https://www.tator.io/tutorials/2021-05-12-make-announcements/)
+* [Update your account profile](https://www.tator.io/tutorials/2021-06-12-update-your-account-profile/)
+* [Reset your password](https://www.tator.io/tutorials/2021-06-11-reset-your-password/)
+
+Advanced installation
+* [Set up a domain](https://www.tator.io/tutorials/2021-03-30-set-up-a-domain/)
+* [Enable HTTPS](https://www.tator.io/tutorials/2021-03-30-enable-https/)
 
 API Reference
 =============

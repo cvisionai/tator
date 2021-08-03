@@ -1,91 +1,69 @@
 import os
 import time
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import Select
+from ._common import print_page_error
 
-from ._common import go_to_uri
-from ._common import ShadowManager
-from ._common import ScreenshotSaver
-
-def test_annotation(browser, screenshots, project, video):
+def test_annotation(authenticated, project, video):
     print("Going to annotation view...")
-    save_dir = os.path.join(screenshots, "annotation")
-    os.makedirs(save_dir, exist_ok=True)
-    saver = ScreenshotSaver(browser, save_dir)
-    go_to_uri(browser, f"{project}/annotation/{video}")
-    time.sleep(10)
-    saver.save_screenshot('annotation_view_done_loading')
-    # Draw three boxes
+    page = authenticated.new_page()
+    page.goto(f"/{project}/annotation/{video}")
+    page.on("pageerror", print_page_error)
+    canvas = page.query_selector('video-canvas')
+    canvas_box = canvas.bounding_box()
+    canvas_center_x = canvas_box['x'] + canvas_box['width'] / 2
+    canvas_center_y = canvas_box['y'] + canvas_box['height'] / 2
     print("Drawing three boxes with different enum values...")
-    mgr = ShadowManager(browser)
-    box_button = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "box-button")
-    canvas = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "video-canvas")
-    save_dialog = mgr.find_shadow_tree_element(browser, By.TAG_NAME, "save-dialog")
-    save_shadow = mgr.expand_shadow_element(save_dialog)
     box_info = [((-200, -50), 'Test Choice 1'),
                 ((-50, -50), 'Test Choice 2'),
                 ((100, -50), 'Test Choice 3')]
     for idx, (start, enum_value) in enumerate(box_info):
-        box_button.click()
-        time.sleep(0.25)
-        ActionChains(browser)\
-            .move_to_element(canvas)\
-            .move_by_offset(*start)\
-            .click_and_hold()\
-            .move_by_offset(100, 100)\
-            .release()\
-            .perform()
-        time.sleep(0.25)
-        options = mgr.find_shadow_tree_elements(save_shadow, By.TAG_NAME, "option")
-        for option in options:
-            if option.get_attribute('value') == enum_value:
-                option.click()
-        time.sleep(0.25)
-        saver.save_screenshot(f"drawing_boxes_{idx}")
-        buttons = mgr.find_shadow_tree_elements(save_shadow, By.TAG_NAME, "button")
-        for button in buttons:
-            if button.get_attribute("textContent") == "Save":
-                button.click()
-                break
-        time.sleep(1)
-    saver.save_screenshot('three_boxes_different_colors')
+        page.click('box-button')
+        x, y = start
+        x += canvas_center_x
+        y += canvas_center_y
+        width = 100
+        height = 100
+        page.mouse.move(x, y)
+        page.mouse.down()
+        page.mouse.move(x + width, y + height)
+        page.mouse.up()
+        page.wait_for_selector('save-dialog.is-open')
+        save_dialog = page.query_selector('save-dialog.is-open')
+        enum_input = save_dialog.query_selector('enum-input[name="Test Enum"]')
+        enum_input.query_selector('select').select_option(enum_value)
+        save_dialog.query_selector('text="Save"').click()
+        light = page.query_selector('#tator-success-light')
+        light.wait_for_element_state('visible')
+        light.wait_for_element_state('hidden')
     # Move boxes
-    print("Moving and resizing boxes...")
+    print("Moving boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
-        left, top = start
-        ActionChains(browser)\
-            .move_to_element(canvas)\
-            .move_by_offset(left+50, top+50)\
-            .click()\
-            .pause(1)\
-            .click_and_hold()\
-            .move_by_offset(-50, -50)\
-            .release()\
-            .pause(1)\
-            .move_by_offset(0, 100)\
-            .click()\
-            .perform()
-    saver.save_screenshot('moved_boxes')
+        x, y = start
+        x += canvas_center_x
+        y += canvas_center_y
+        page.mouse.click(x+50, y+50)
+        selector = page.query_selector('entity-selector:visible')
+        selector.wait_for_selector(f'#current-index :text("{idx+1}")')
+        page.mouse.move(x+50, y+50)
+        page.mouse.down()
+        page.mouse.move(x, y)
+        page.mouse.up()
+        light = page.query_selector('#tator-success-light')
+        light.wait_for_element_state('visible')
+        light.wait_for_element_state('hidden')
     # Resize boxes
+    print("Resizing boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
-        left, top = start
-        ActionChains(browser)\
-            .move_to_element(canvas)\
-            .move_by_offset(left, top)\
-            .click()\
-            .pause(1)\
-            .move_by_offset(45, 45)\
-            .click_and_hold()\
-            .move_by_offset(50, 50)\
-            .release()\
-            .pause(1)\
-            .move_by_offset(0, 100)\
-            .click()\
-            .perform()
-    saver.save_screenshot('resized_boxes')
-
-        
-    
+        x, y = start
+        x += canvas_center_x
+        y += canvas_center_y
+        page.mouse.click(x+45, y+45)
+        selector = page.query_selector('entity-selector:visible')
+        selector.wait_for_selector(f'#current-index :text("{idx+1}")')
+        page.mouse.move(x+45, y+45)
+        page.mouse.down()
+        page.mouse.move(x+95, y+95)
+        page.mouse.up()
+        light = page.query_selector('#tator-success-light')
+        light.wait_for_element_state('visible')
+        light.wait_for_element_state('hidden')
