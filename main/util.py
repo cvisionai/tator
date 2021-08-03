@@ -48,7 +48,7 @@ def updateProjectTotals(force=False):
     projects=Project.objects.all()
     for project in projects:
         temp_files = TemporaryFile.objects.filter(project=project)
-        files = Media.objects.filter(project=project)
+        files = Media.objects.filter(project=project, deleted=False)
         num_files = temp_files.count() + files.count()
         if force or num_files != project.num_files:
             project.num_files = num_files

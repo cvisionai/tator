@@ -27,6 +27,7 @@ class EntitySelector extends TatorElement {
 
     const details = document.createElement("details");
     details.setAttribute("class", "position-relative");
+    details.setAttribute("id", "current-index");
     controls.appendChild(details);
 
     const summary = document.createElement("summary");

@@ -11,6 +11,13 @@ annotation_filter_parameter_schema = [
         },
     },
     {
+        'name': 'section',
+        'in': 'query',
+        'required': False,
+        'description': 'Unique integer identifying a media section.',
+        'schema': {'type': 'integer'},
+    },
+    {
         'name': 'type',
         'in': 'query',
         'required': False,

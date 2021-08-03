@@ -1,67 +1,20 @@
 import os
 
-from selenium.common.exceptions import NoSuchElementException
-from urllib.parse import urlparse, urljoin
+def get_video_path(page):
+    """ Gets a page with video name set to the current test.
+    """
+    dir_name = os.path.dirname(page.video.path())
+    test_name = os.getenv('PYTEST_CURRENT_TEST')
+    test_name = test_name.replace('/', '__').replace('.py::', '__').split('[')[0]
+    file_name = f"{test_name}.webm"
+    path = os.path.join(dir_name, file_name)
+    return path
 
-class ShadowManager:
-    def __init__(self, browser):
-        self._browser = browser
+def print_page_error(err):
+    print("--------------------------------")
+    print("Got page error:")
+    print(f"Message: {err.message}")
+    print(f"Name: {err.name}")
+    print(f"Stack: {err.stack}")
+    print("--------------------------------")
 
-    def expand_shadow_element(self, element):
-        return self._browser.execute_script('return arguments[0].shadowRoot', element)
-
-    def expand_shadow_hierarchy(self, tags):
-        """ Given a list of shadow element tag names, return the shadow dom of the
-            last element.
-        """
-        shadow_root = self._browser
-        for tag in tags:
-            element = shadow_root.find_element_by_tag_name(tag)
-            shadow_root = self.expand_shadow_element(element)
-        return shadow_root
-
-    def find_shadow_tree_elements(self, dom, by, value, single=False):
-        """ Given description of the element you want to find, searches full shadow tree
-            on the page for any elements that match and returns a list.
-        """
-        elements = []
-        # Try to find the specified element in the dom.
-        elements += dom.find_elements(by, value)
-        # Keep searching in nested shadow doms.
-        all_elements = dom.find_elements_by_tag_name("*")
-        for element in all_elements:
-            shadow = self.expand_shadow_element(element)
-            if shadow:
-                elements += self.find_shadow_tree_elements(shadow, by, value)
-            if single and len(elements) > 0:
-                break
-        return elements
-
-    def find_shadow_tree_element(self, dom, by, value):
-        """ Given description of the element you want to find, searches full shadow tree
-            on the page for that element and returns the first one.
-        """
-        elements = self.find_shadow_tree_elements(dom, by, value, True)
-        if len(elements) > 0:
-            element = elements[0]
-        else:
-            raise NoSuchElementException
-        return element
-
-def go_to_uri(browser, uri):
-    parsed = urlparse(browser.current_url)
-    goto = urljoin(f"{parsed.scheme}://{parsed.netloc}", uri)
-    browser.get(goto)
-
-class ScreenshotSaver:
-    def __init__(self, browser, directory):
-        self._dir = directory
-        self._browser = browser
-        self._count = 0
-
-    def save_screenshot(self, description):
-        fname = f"{self._count:02d}_{description.lower().replace(' ', '_')}.png"
-        out = os.path.join(self._dir, fname)
-        self._browser.save_screenshot(out)
-        self._count += 1
-        
