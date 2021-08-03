@@ -1,6 +1,7 @@
 class DataMediaList{
     constructor(projectId){
       this.projectId = projectId;
+      this.el = document.createElement("div");
     }
 
     _setProjectMediaList(data = "", update = false) {

@@ -73,8 +73,9 @@ class StateTypeEdit extends TypeForm {
     this._form.appendChild(this._groupingDefault);
 
     // const MEDIA = "Media"; 
-    const mediaList = new DataMediaList( this.projectId );
-    const mediaListWithChecked = await mediaList.getCompiledMediaList( data.media );
+    // const mediaList = new DataMediaList( this.projectId );
+    console.log(this.mediaListHandler);
+    const mediaListWithChecked = await this.mediaListHandler.getCompiledMediaList( data.media );
     this._mediaCheckboxes = document.createElement("checkbox-set");
     this._mediaCheckboxes.setAttribute("name", "Media");
     this._mediaCheckboxes.setAttribute("type", "number");

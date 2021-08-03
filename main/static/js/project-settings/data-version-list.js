@@ -1,6 +1,7 @@
 class DataVersionList{
     constructor(projectId){
       this.projectId = projectId;
+      this.el = document.createElement("div");
     }
 
     _setVersionList(data = "", update = false) {
@@ -33,7 +34,7 @@ class DataVersionList{
       if(!update && versionListData){
         return Promise.resolve(JSON.parse(versionListData));      
       } else {
-        let m = document.createElement("version-edit");
+        let m = document.createElement("versions-edit");
         return m._fetchGetPromise({"id": this.projectId} )
         .then(data => data.json()).then( data => {
           return this.getListFromData(data);
@@ -47,28 +48,27 @@ class DataVersionList{
     getCompiledVersionList( ids, currentId ){
       let newList = [];
       let versionIds = ids;
-      console.log(ids);
 
-        return this._setVersionList().then(versionList => {
+      return this._setVersionList().then(versionList => {
 
-          versionList.forEach((version, i) => {
-            const skip = version.id == currentId ? true : false;
+        versionList.forEach((version, i) => {
+          const skip = version.id == currentId ? true : false;
 
-            if (!skip) {
-              const checkObj = {
-                "id" : version.id,
-                "name" : version.name,
-                "checked": false
-              }
-              if (typeof versionIds !== "undefined" && versionIds.length > 0 && versionIds.includes(version.id)) {
-                checkObj["checked"] = true;
-              }
-              newList.push(checkObj);
+          if (!skip) {
+            const checkObj = {
+              "id" : version.id,
+              "name" : version.name,
+              "checked": false
             }
+            if (typeof versionIds !== "undefined" && versionIds.length > 0 && versionIds.includes(version.id)) {
+              checkObj["checked"] = true;
+            }
+            newList.push(checkObj);
+          }
 
-          });
-          return newList;
         });
+        return newList;
+      });
     }
 
 

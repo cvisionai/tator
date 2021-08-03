@@ -50,19 +50,29 @@ class VersionsEdit extends TypeForm {
       this._number = document.createElement("text-input");
       this._number.setAttribute("name", "Number");
       this._number.setAttribute("type", "int");
-      this._number.setValue(this.data.number);
-      this._number.default = this.data.number;
+      if (typeof data.number == "undefined") {
+         this._number.setValue("");
+         this._number.default = "";
+      } else {
+         this._number.setValue(this.data.number);
+         this._number.default = this.data.number;
+      }
+      this._number._input.disabled = true;
       this._number.addEventListener("change", this._formChanged.bind(this));
+
+
+      
       this._form.appendChild(this._number);
 
       // Bases
-      const basesList = new DataVersionList(this.projectId);
-      const basesListWithChecked = await basesList.getCompiledVersionList(data.bases, data.id);
+      // const basesList = new DataVersionList(this.projectId);
+      const basesListWithChecked = await this.versionListHandler.getCompiledVersionList(data.bases, data.id);
       this._basesCheckbox = document.createElement("checkbox-set");
       this._basesCheckbox.setAttribute("name", "Bases");
       this._basesCheckbox.setAttribute("type", "number");
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
+      console.log(this._basesCheckbox.default);
       this._basesCheckbox.addEventListener("change", this._formChanged.bind(this));
       this._form.appendChild(this._basesCheckbox);
 
@@ -93,6 +103,10 @@ class VersionsEdit extends TypeForm {
       if (this._number.changed() || isNew) {
          formData._number = this._number.getValue();
       }
+
+      console.log(this._basesCheckbox._default);
+      console.log(this._basesCheckbox.getValue());
+      console.log(this._basesCheckbox.changed());
 
       if (this._basesCheckbox.changed() || isNew) {
          formData.bases = this._basesCheckbox.getValue();
@@ -142,7 +156,7 @@ class VersionsEdit extends TypeForm {
          .then(([stateCount, LocalizationCount]) => {
             this._modalConfirm({
                "titleText": `Delete Confirmation`,
-               "mainText": `Pressing confirm will delete this ${this.typeName} and all related states and localizations from your account.<br/><br/><span class="text-ted">There are ${stateCount} states and ${LocalizationCount} localizations that will also be deleted</span><br/><br/>Do you want to continue?`,
+               "mainText": `Pressing confirm will delete this ${this.typeName} and all related states and localizations from your account.<br/><br/><span class="text-ted">There are ${stateCount} states and ${LocalizationCount} localizations that will also be deleted.</span><br/><br/>Do you want to continue?`,
                "buttonSave": button,
                "scroll": false
             });
@@ -198,9 +212,6 @@ class VersionsEdit extends TypeForm {
                "scroll": false
             });
          });
-
-
-
    }
 
    _saveConfirmed({ id = this.versionId }) {
@@ -212,6 +223,13 @@ class VersionsEdit extends TypeForm {
       let promises = []
       let errors = 0; // @TODO
 
+      this._nameEdit = {
+         edited: false,
+         newName: "",
+         typeName: this.typeName,
+         typeId: this.typeId
+       }
+
       // Main type form
       if (this.isChanged()) {
          console.log("Main form was changed");
@@ -220,6 +238,10 @@ class VersionsEdit extends TypeForm {
             return console.error("No formData");
          } else {
             promises.push(this._fetchPatchPromise({ id, formData }));
+            if (typeof formData.name !== "undefined") {
+               this._nameEdit.edited = true;
+               this._nameEdit.newName = formData.name;
+             }
          }
       }
 
@@ -280,6 +302,12 @@ class VersionsEdit extends TypeForm {
                }).then(() => {
                   // Reset changed flag
                   this.changed = false;
+
+                  // Update anything related
+                  // Update related items with an event if required
+                  if (this._nameEdit.edited) {
+                     this._updateNavEvent("rename", this._nameEdit.newName)
+                  }
                });
 
          }).catch(err => {

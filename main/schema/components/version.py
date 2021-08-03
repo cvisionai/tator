@@ -6,12 +6,10 @@ version_properties = {
     'description': {
         'description': 'Description of the version.',
         'type': 'string',
-        'default': '',
     },
     'show_empty': {
         'type': 'boolean',
         'description': 'Whether to show this version on media for which no annotations exist.',
-        'default': True,
     },
     'bases': {
         'type': 'array',

@@ -20,7 +20,7 @@ class TypeForm extends TatorElement {
     this._shadow.appendChild( this.loading.getImg());
   }
 
-  _init({ data, modal, sidenav}){
+  _init({ data, modal, sidenav, versionListHandler, mediaListHandler}){
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
@@ -31,6 +31,8 @@ class TypeForm extends TatorElement {
     this.projectId = this.data.project;
     this.typeId = this.data.id
     this.sideNav = sidenav;
+    this.versionListHandler = versionListHandler;
+    this.mediaListHandler = mediaListHandler;
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox( this.modal );
@@ -159,7 +161,7 @@ class TypeForm extends TatorElement {
         // Add the item to navigation
         this._updateNavEvent("new", formData.name, data.id);
 
-              // Let user know everything's all set!
+        // Let user know everything's all set!
         return this._modalSuccess(data.message);
       } else {
         return this._modalError(data.message);
@@ -196,7 +198,7 @@ class TypeForm extends TatorElement {
       case "Membership" :
         return "membership-edit";
       case "Version" :
-        return "version-edit";
+        return "versions-edit";
       default:
         break;
     }
@@ -435,6 +437,13 @@ class TypeForm extends TatorElement {
     let promises = []
     let errors = 0; // @TODO
 
+    this._nameEdit = {
+      edited: false,
+      newName: "",
+      typeName: this.typeName,
+      typeId: this.typeId
+    }
+
     // Main type form
     if (this.isChanged()) {
       console.log("Main form was changed");
@@ -442,7 +451,11 @@ class TypeForm extends TatorElement {
       if (Object.entries(formData).length === 0) {
         return console.error("No formData");
       } else {
-        promises.push( this._fetchPatchPromise({id, formData}) );
+        promises.push(this._fetchPatchPromise({ id, formData }));
+        if (typeof formData.name !== "undefined") {
+          this._nameEdit.edited = true;
+          this._nameEdit.newName = formData.name;
+        }
       }
     }
 
@@ -536,6 +549,12 @@ class TypeForm extends TatorElement {
                 }
               }
             }
+
+            // Update related items with an event if required
+            if (this._nameEdit.edited) {
+              this._updateNavEvent("rename", this._nameEdit.newName)
+            }
+
           });
 
         }).catch(err => {
@@ -555,6 +574,9 @@ class TypeForm extends TatorElement {
     }
   }
 
+  /**
+   * @param {boolean} val
+   */
   set changed(val) {
     console.log(`Changed val set to ${val}`);
     return this._changed = val;
@@ -695,7 +717,7 @@ class TypeForm extends TatorElement {
     }
     if(this.typeName == "Version"){
       const versionsList = new DataVersionList( this.projectId );
-      versionsList._setVersionList(objData, true);
+      versionsList._setVersionList( "", true);
     }
   }
 
@@ -786,14 +808,75 @@ class TypeForm extends TatorElement {
     if(whatChanged == "remove"){
       let event = this.sideNav.removeItemEvent(this.typeId, this.typeName);
       this.sideNav.dispatchEvent(event);
+
+
+      // If this item is a MEDIA or VERSION
+      // Then remove the related media list inputs
+      if (this.typeName == "MediaType") {
+        const deleteEvt = new CustomEvent("change", {detail: { changed: "remove", typeId: this.typeId } });
+        this.mediaListHandler.el.dispatchEvent(deleteEvt);
+      } else if (this.typeName == "Version") {
+        const deleteEvt = new CustomEvent("change", {detail: { changed: "remove", typeId: this.typeId } });
+        this.versionListHandler.el.dispatchEvent(deleteEvt);
+      }
+
     } else if(whatChanged == "rename") {
+      console.log("Rename event");
+      
+      // Renames the item in the side navigation
       let event = this.sideNav.renameItemEvent(this.typeId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
+
+      // If this item is a MEDIA or VERSION
+      // Then update the related media list inputs
+      if (this.typeName == "MediaType") {
+        const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: this.typeId, newName } });
+        this.mediaListHandler.el.dispatchEvent(renameEvt);
+      } else if (this.typeName == "Version") {
+        const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: this.typeId, newName } });
+        this.versionListHandler.el.dispatchEvent(renameEvt);
+      }
+
     } else if(whatChanged == "new") {
       let event = this.sideNav.newItemEvent(newId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
     } else {
       console.log("Need more information to update the sidenav.");
+    }
+  }
+
+  updateMediaList(detail) {
+    //Look for the input and remove specific checkbox, or rename the label
+    if (typeof this._mediaCheckboxes !== "undefined") {
+      if (detail.changed == "rename") {
+        this._mediaCheckboxes.relabelInput({
+          value: detail.typeId,
+          newLabel: detail.newName
+        });
+      } else if (detail.changed == "remove") {
+        this._mediaCheckboxes.removeInput({
+          value: detail.typeId
+        });
+      }
+
+    }
+  }
+
+  updateVersionList(detail) {
+    //Look for the input and remove specific checkbox, or rename the label
+    if (typeof this._basesCheckbox !== "undefined") {
+      if (detail.changed == "rename") {
+        console.log("Heard rename")
+        this._basesCheckbox.relabelInput({
+          value: detail.typeId,
+          newLabel: detail.newName
+        });
+      } else if (detail.changed == "remove") {
+        this._basesCheckbox.removeInput({
+          value: detail.typeId
+        });
+      }
+
     }
   }
 

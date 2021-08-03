@@ -118,6 +118,27 @@ class CheckboxSet extends TatorElement {
     changed(){
       return this.getValue() !== this._default;
     }
+  
+  relabelInput({ value, newLabel }) {
+    for (let checkbox of this._inputs) {
+      if(Number(checkbox._input.value) === Number(value)) return checkbox.setAttribute("name", newLabel);
+    }
+    return console.log("No matching input found");
+  }
+  
+  removeInput({ value }) {
+    for (let checkbox of this._inputs) {
+      if (Number(checkbox._input.value) === Number(value)) {
+        checkbox.setValue(false);
+
+        let idx = this._inputs.indexOf(checkbox);
+        this._inputs.splice(idx, 1);
+
+        return checkbox.parent("div").remove();
+      }
+    }
+    return console.log("No matching input found");
+  }
 
 }
 
