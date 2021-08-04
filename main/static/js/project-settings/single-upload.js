@@ -79,7 +79,7 @@ class SingleUpload {
   }
 
   handleError(error) {
-    console.log("Error during upload: " + error);
+    console.error("Error during upload: " + error);
     //this.removeFromActive(this.upload_uid);
     // this.uploadData.retries++;
     // if (this.uploadData.retries > 2) {

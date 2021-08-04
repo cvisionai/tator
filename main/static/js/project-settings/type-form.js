@@ -14,17 +14,17 @@ class TypeForm extends TatorElement {
     // Required helpers.
     this.inputHelper = new SettingsInput("");
     this.attributeFormHelper = new AttributesForm();
-    
+
     // Loading spinner
     this.loading = new LoadingSpinner();
-    this._shadow.appendChild( this.loading.getImg());
+    this._shadow.appendChild(this.loading.getImg());
   }
 
-  _init({ data, modal, sidenav, versionListHandler, mediaListHandler}){
+  _init({ data, modal, sidenav, versionListHandler, mediaListHandler }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
-    
+
     // Initial values
     this.data = data;
     this.modal = modal;
@@ -35,7 +35,7 @@ class TypeForm extends TatorElement {
     this.mediaListHandler = mediaListHandler;
 
     // Pass modal to helper
-    this.boxHelper = new SettingsBox( this.modal );
+    this.boxHelper = new SettingsBox(this.modal);
 
     // Add form to page
     this.setupFormPage(data)
@@ -73,37 +73,37 @@ class TypeForm extends TatorElement {
       this.h1.appendChild(this.id_span);
       const h1_id = document.createTextNode(` (ID ${this.data.id})`);
       this.id_span.appendChild(h1_id);
-      
+
       // Add all elements to page
       this.typeFormDiv.appendChild(this.h1);
       const sectionForm = await this._getSectionForm(this.data);
       this.typeFormDiv.appendChild(sectionForm);
-      
-      if (typeof this._hideAttributes !== "undefined" && !this._hideAttributes ) {
+
+      if (typeof this._hideAttributes !== "undefined" && !this._hideAttributes) {
         this.typeFormDiv.appendChild(this._getAttributeSection());
       }
-          
+
       const submitNew = this._getSubmitDiv({ "id": this.data.id });
       this.typeFormDiv.appendChild(submitNew);
 
-      this.typeFormDiv.appendChild( this.deleteTypeSection() );
+      this.typeFormDiv.appendChild(this.deleteTypeSection());
       return this.typeFormDiv;
     } else {
-      const t = document.createTextNode(`Add new ${this.readableTypeName}.`); 
+      const t = document.createTextNode(`Add new ${this.readableTypeName}.`);
       this.h1.appendChild(t);
 
       this.typeFormDiv.appendChild(this.h1);
-      
+
       const sectionForm = await this._getSectionForm(this._getEmptyData());
       this.typeFormDiv.appendChild(this.h1);
-      this.typeFormDiv.appendChild( sectionForm );
-      this.typeFormDiv.appendChild( this._getSubmitNewDiv( {"id": this.data.id }) );
+      this.typeFormDiv.appendChild(sectionForm);
+      this.typeFormDiv.appendChild(this._getSubmitNewDiv({ "id": this.data.id }));
 
       return this.typeFormDiv;
     }
   }
 
-  _getSubmitNewDiv(){
+  _getSubmitNewDiv() {
     let text = document.createTextNode("Save");
     this.savePost = document.createElement("Button");
     this.savePost.appendChild(text);
@@ -111,15 +111,15 @@ class TypeForm extends TatorElement {
     this.savePost.setAttribute("class", `btn btn-clear text-center f1 text-semibold`);
     this.savePost.style.margin = "0 auto";
     this.savePost.addEventListener("click", this._savePost.bind(this));
-    
+
     return this.savePost;
   }
 
-  _savePost(){
+  _savePost() {
     this.loading.showSpinner();
     let addNew = new TypeNew({
-      "type" : this.typeName,
-      "projectId" : this.projectId
+      "type": this.typeName,
+      "projectId": this.projectId
     });
 
     let formData = this._getFormData();
@@ -127,45 +127,70 @@ class TypeForm extends TatorElement {
     addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();
 
-      if(status != 400){
+      if (status != 400) {
         // Hide the add new form
         this.sideNav.hide(`itemDivId-${this.typeName}-New`);
-        console.log("Resetting new form after save....");
+        // console.log("Resetting new form after save....");
         this.reset();
 
         // Create and show the container with new type
         this.sideNav.addItemContainer({
-          "type" : this.typeName,
-          "id" : data.id,
-          "hidden" : false
+          "type": this.typeName,
+          "id": data.id,
+          "hidden": false
         });
 
-        let form = document.createElement( this._getTypeClass() );
+        let form = document.createElement(this._getTypeClass());
 
         this.sideNav.fillContainer({
-          "type" : this.typeName,
-          "id" : data.id,
-          "itemContents" : form
+          "type": this.typeName,
+          "id": data.id,
+          "itemContents": form
         });
+
+        const saveMessage = data.message;
 
         // init form with the data
-        formData.id = data.id;
-        formData.project = this.projectId;
-        if(this.typeName == "LocalizationType" || this.typeName == "StateType") formData.media = formData.media_types;
-        form._init({ 
-          "data": formData, 
-          "modal" : this.modal, 
-          "sidenav" : this.sideNav
-        });
+        if (this.typeName !== "Version") {
+          formData.id = data.id;
+          formData.project = this.projectId;
+          if (this.typeName == "LocalizationType" || this.typeName == "StateType") formData.media = formData.media_types;
+          form._init({
+            data: formData,
+            modal: this.modal,
+            sidenav: this.sideNav,
+            mediaListHandler: this.mediaListHandler,
+            versionListHandler: this.versionListHandler
+          });
 
-        // Add the item to navigation
-        this._updateNavEvent("new", formData.name, data.id);
+          // Add the item to navigation
+          this._updateNavEvent("new", formData.name, data.id);
 
-        // Let user know everything's all set!
-        return this._modalSuccess(data.message);
+          // Let user know everything's all set!
+          return this._modalSuccess(data.message);
+        } else {
+          // Version creates number on save, so we need that...
+          // Save only returns the Version ID
+          this._fetchByIdPromise().then(data => {
+            form._init({
+              data,
+              modal: this.modal,
+              sidenav: this.sideNav,
+              mediaListHandler: this.mediaListHandler,
+              versionListHandler: this.versionListHandler
+            });
+
+            // Add the item to navigation
+            this._updateNavEvent("new", data.name, data.id);
+
+            // Let user know everything's all set!
+            return this._modalSuccess(saveMessage);
+          });
+        }
+        
       } else {
         return this._modalError(data.message);
-      } 
+      }
 
 
     }).catch((err) => {
@@ -183,21 +208,21 @@ class TypeForm extends TatorElement {
   //   "state-type-edit"
   // ];
 
-  _getTypeClass(){
+  _getTypeClass() {
     switch (this.typeName) {
-      case "MediaType" :
+      case "MediaType":
         return "media-type-main-edit";
-      case "LocalizationType" :
+      case "LocalizationType":
         return "localization-edit";
-      case "LeafType" :
-        return  "leaf-type-edit";
-      case "StateType" : 
+      case "LeafType":
+        return "leaf-type-edit";
+      case "StateType":
         return "state-type-edit";
-      case "Project" : 
+      case "Project":
         return "project-main-edit";
-      case "Membership" :
+      case "Membership":
         return "membership-edit";
-      case "Version" :
+      case "Version":
         return "versions-edit";
       default:
         break;
@@ -205,49 +230,49 @@ class TypeForm extends TatorElement {
   }
 
   //
-  _getSubmitDiv({id = -1} = {}){
+  _getSubmitDiv({ id = -1 } = {}) {
     const submitDiv = document.createElement("div");
     submitDiv.setAttribute("class", "d-flex flex-items-center flex-justify-center py-3");
 
     // Save button and reset link
-    submitDiv.appendChild( this._saveEntityButton(id) );
-    submitDiv.appendChild( this._resetEntityLink(id) );
+    submitDiv.appendChild(this._saveEntityButton(id));
+    submitDiv.appendChild(this._resetEntityLink(id));
 
     return submitDiv;
   }
 
-  _getAttributeSection(){
+  _getAttributeSection() {
     this.attributeSection = document.createElement("attributes-main");
     this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
     this.attributeSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.data.attribute_types, this.modal);
-    
+
     // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
-    this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this) );
+    this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
 
     return this.attributeSection;
   }
 
-  _attRefreshListener(e){
+  _attRefreshListener(e) {
     return this.resetHard();
   }
 
-  _saveEntityButton(id){
+  _saveEntityButton(id) {
     this.saveButton = this.inputHelper.saveButton();
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
-      if( this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges) ){
-        console.log("Save for id: "+id);
-        this._save( {"id":id} )
+      if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
+        // console.log("Save for id: " + id);
+        this._save({ "id": id })
       } else {
         // @TODO- UX Save button disabled until form change
         let happyMsg = "Nothing new to save!";
-        this._modalSuccess( happyMsg );
+        this._modalSuccess(happyMsg);
       }
     });
     return this.saveButton;
   }
 
-  _resetEntityLink(id){
+  _resetEntityLink(id) {
     this.resetLink = this.inputHelper.resetLink();
 
     // Form reset event
@@ -260,7 +285,7 @@ class TypeForm extends TatorElement {
   }
 
   // form with parts put together
-  _setForm(){
+  _setForm() {
     this._form = document.createElement("form");
     this._form.id = this.typeId;
 
@@ -269,11 +294,11 @@ class TypeForm extends TatorElement {
     return this._form;
   }
 
-  _getHeading(){
+  _getHeading() {
     let headingSpan = document.createElement("span");
     let labelSpan = document.createElement("span");
     labelSpan.setAttribute("class", "item-label");
-    let t = document.createTextNode(`${this.readableTypeName}s`); 
+    let t = document.createTextNode(`${this.readableTypeName}s`);
     labelSpan.appendChild(t);
     headingSpan.innerHTML = this.icon;
     headingSpan.appendChild(labelSpan);
@@ -281,13 +306,13 @@ class TypeForm extends TatorElement {
     return headingSpan;
   }
 
-  deleteTypeSection(){
+  deleteTypeSection() {
     let button = document.createElement("button");
     button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
     button.style.marginRight = "10px";
 
     let deleteText = document.createTextNode(`Delete`);
-    button.appendChild( deleteText );
+    button.appendChild(deleteText);
 
     let descriptionText = `Delete this ${this.readableTypeName} and all its data?`;
     let headingDiv = document.createElement("div");
@@ -295,21 +320,21 @@ class TypeForm extends TatorElement {
 
     let heading = document.createElement("div");
     heading.setAttribute("class", "py-md-5 float-left col-md-5 col-sm-5 text-right");
-    
-    heading.appendChild( button );
-        
+
+    heading.appendChild(button);
+
     let description = document.createElement("div");
     let _descriptionText = document.createTextNode("");
     _descriptionText.nodeValue = descriptionText;
     description.setAttribute("class", "py-md-6 f1 text-gray float-left col-md-7 col-sm-7");
-    description.appendChild( _descriptionText );
-    
+    description.appendChild(_descriptionText);
+
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
-    this.deleteBox = this.boxHelper.boxWrapDelete( {
-      "children" : headingDiv
-    } );
+    this.deleteBox = this.boxHelper.boxWrapDelete({
+      "children": headingDiv
+    });
 
     this.deleteBox.style.backgroundColor = "transparent";
 
@@ -318,7 +343,7 @@ class TypeForm extends TatorElement {
     return this.deleteBox;
   }
 
-  _deleteTypeConfirm(){
+  _deleteTypeConfirm() {
     let button = document.createElement("button");
     let confirmText = document.createTextNode("Confirm")
     button.appendChild(confirmText);
@@ -327,22 +352,22 @@ class TypeForm extends TatorElement {
     button.addEventListener("click", this._deleteType.bind(this));
 
     this._modalConfirm({
-      "titleText" : `Delete Confirmation`,
-      "mainText" : `Pressing confirm will delete this ${this.typeName} and all its data from your account. Do you want to continue?`,
-      "buttonSave" : button,
-      "scroll" : false    
+      "titleText": `Delete Confirmation`,
+      "mainText": `Pressing confirm will delete this ${this.typeName} and all its data from your account. Do you want to continue?`,
+      "buttonSave": button,
+      "scroll": false
     });
   }
 
-  _deleteType(){
+  _deleteType() {
     this._modalCloseCallback();
     this.loading.showSpinner();
     let deleteType = new TypeDelete({
-      "type" : this.typeName,
-      "typeId" : this.typeId
+      "type": this.typeName,
+      "typeId": this.typeId
     });
-  
-    if(this.typeId != "undefined"){
+
+    if (this.typeId != "undefined") {
       deleteType.deleteFetch().then((data) => {
         this._updateNavEvent("remove");
         this.loading.hideSpinner();
@@ -362,27 +387,27 @@ class TypeForm extends TatorElement {
 
   _getEmptyData() {
     return {
-      "id" : `New`,
-      "name" : "",
-      "project" : this.projectId,
-      "description" : "",
-      "visible" : false,
-      "grouping_default" : false,
-      "media" : [],
-      "dtype" : "",
-      "colorMap" : null,
-      "interpolation" : "none",
-      "association" : "Media",
-      "line_width" : 2,
-      "delete_child_localizations" : false,
-      "form" : "empty"
+      "id": `New`,
+      "name": "",
+      "project": this.projectId,
+      "description": "",
+      "visible": false,
+      "grouping_default": false,
+      "media": [],
+      "dtype": "",
+      "colorMap": null,
+      "interpolation": "none",
+      "association": "Media",
+      "line_width": 2,
+      "delete_child_localizations": false,
+      "form": "empty"
     };
   }
 
 
   // FETCH FROM MODEL PROMISE STRUCTURE
   // GET ALL {typeName}
-  _fetchGetPromise({id = this.projectId} = {}){
+  _fetchGetPromise({ id = this.projectId } = {}) {
     return fetch(`/rest/${this.typeName}s/${id}`, {
       method: "GET",
       credentials: "same-origin",
@@ -395,7 +420,7 @@ class TypeForm extends TatorElement {
   }
 
   // GET {typeName} {ID}
-  _fetchByIdPromise({id = this.typeId} = {}){
+  _fetchByIdPromise({ id = this.typeId } = {}) {
     return fetch(`/rest/${this.typeName}/${id}`, {
       method: "GET",
       credentials: "same-origin",
@@ -408,7 +433,7 @@ class TypeForm extends TatorElement {
   }
 
   // PATCH
-  _fetchPatchPromise({id = -1, formData } = {}){
+  _fetchPatchPromise({ id = -1, formData } = {}) {
     return fetch(`/rest/${this.typeName}/${id}`, {
       method: "PATCH",
       mode: "cors",
@@ -424,16 +449,16 @@ class TypeForm extends TatorElement {
 
 
 
-  _save({id = -1, globalAttribute = false} = {}){
+  _save({ id = -1, globalAttribute = false } = {}) {
     // @TODO add back inline error messaging
     // If any fields still have errors don't submit the form.
     // const errorList = this._shadow.querySelectorAll(`.errored`);
     // if(errorList && errorList.length > 0) return this._modalError("Please fix form errors.");;
-    
+
     // Start spinner & Get promises list
-    console.log("Settings _save method for id: "+id);
+    // console.log("Settings _save method for id: " + id);
     this.loading.showSpinner();
-    
+
     let promises = []
     let errors = 0; // @TODO
 
@@ -446,7 +471,7 @@ class TypeForm extends TatorElement {
 
     // Main type form
     if (this.isChanged()) {
-      console.log("Main form was changed");
+      // console.log("Main form was changed");
       const formData = this._getFormData();
       if (Object.entries(formData).length === 0) {
         return console.error("No formData");
@@ -467,84 +492,84 @@ class TypeForm extends TatorElement {
     };
 
     if (hasAttributeChanges) {
-      const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
-      if(attrFormsChanged && attrFormsChanged.length > 0){
+      const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
+      if (attrFormsChanged && attrFormsChanged.length > 0) {
 
-        for(let form of attrFormsChanged){
-          let promiseInfo = form._getPromise({ id, entityType : this.typeName });
+        for (let form of attrFormsChanged) {
+          let promiseInfo = form._getPromise({ id, entityType: this.typeName });
           attrPromises.promises.push(promiseInfo.promise);
           attrPromises.attrNamesNew.push(promiseInfo.newName);
           attrPromises.attrNames.push(promiseInfo.oldName);
         }
 
-        if(attrPromises.promises.length > 0){
+        if (attrPromises.promises.length > 0) {
           promises = [...promises, ...attrPromises.promises];
         }
-      }     
+      }
     }
 
     let messageObj = {};
-    if(promises.length > 0 && errors === 0){
+    if (promises.length > 0 && errors === 0) {
       // Check if anything changed
-      Promise.all(promises).then( async( respArray ) => {
+      Promise.all(promises).then(async (respArray) => {
         let responses = [];
         respArray.forEach((item, i) => {
-          responses.push( item.json() )
+          responses.push(item.json())
         });
 
-          Promise.all( responses )
-            .then ( dataArray => {
-              messageObj = this._handleResponseWithAttributes({
-                id,
-                dataArray,
-                hasAttributeChanges,
-                attrPromises,
-                respArray
+        Promise.all(responses)
+          .then(dataArray => {
+            messageObj = this._handleResponseWithAttributes({
+              id,
+              dataArray,
+              hasAttributeChanges,
+              attrPromises,
+              respArray
+            });
+
+            let message = "";
+            let success = false;
+            let error = false;
+            if (messageObj.messageSuccess) {
+              let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
+              message += heading + messageObj.messageSuccess;
+              success = true;
+            }
+            if (messageObj.messageError) {
+              let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
+              message += heading + messageObj.messageError;
+              error = true;
+            }
+
+            if (messageObj.requiresConfirmation) {
+              let buttonSave = this._getAttrGlobalTrigger(id);
+              let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
+              let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
+
+              let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
+              this.loading.hideSpinner();
+              this._modalConfirm({
+                "titleText": "Complete",
+                mainText,
+                buttonSave
               });
-
-              let message = "";
-              let success = false;
-              let error = false;
-              if(messageObj.messageSuccess) {
-                let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-                message += heading+messageObj.messageSuccess;
-                success = true;
-              }
-              if(messageObj.messageError) {
-                let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-                message += heading+messageObj.messageError;
-                error = true;
-              }
-
-              if(messageObj.requiresConfirmation) {
-                let buttonSave = this._getAttrGlobalTrigger(id);
-                let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-                let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-                
-                let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
-                this.loading.hideSpinner();
-                this._modalConfirm({
-                  "titleText" : "Complete",
-                  mainText,
-                  buttonSave
-                });
-              } else {
-                let mainText = `${message}`;
-                this.loading.hideSpinner();
-                this._modalComplete(
-                  mainText
-                );
-                // Reset forms to the saved data from model
-                this.resetHard();
-              }
-          }).then( () => {
+            } else {
+              let mainText = `${message}`;
+              this.loading.hideSpinner();
+              this._modalComplete(
+                mainText
+              );
+              // Reset forms to the saved data from model
+              this.resetHard();
+            }
+          }).then(() => {
             // Reset changed flag
             this.changed = false;
 
-            if(hasAttributeChanges){            
-              const attrFormsChanged = this.attributeSection.attrForms.filter( form => form._changed );
-              if(attrFormsChanged.length > 0 ) {
-                for(let f of attrFormsChanged) {
+            if (hasAttributeChanges) {
+              const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
+              if (attrFormsChanged.length > 0) {
+                for (let f of attrFormsChanged) {
                   f.changeReset();
                 }
               }
@@ -557,11 +582,11 @@ class TypeForm extends TatorElement {
 
           });
 
-        }).catch(err => {
-          console.error("File "+ err.fileName + " Line "+ err.lineNumber +"\n" + err);
-          this.loading.hideSpinner();
-        });
-    } else if (!promises.length > 0 ) {
+      }).catch(err => {
+        console.error("File " + err.fileName + " Line " + err.lineNumber + "\n" + err);
+        this.loading.hideSpinner();
+      });
+    } else if (!promises.length > 0) {
       this.loading.hideSpinner();
       console.error("Attempted to save but no promises found.");
       return this._modalSuccess("Nothing new to save!");
@@ -578,17 +603,17 @@ class TypeForm extends TatorElement {
    * @param {boolean} val
    */
   set changed(val) {
-    console.log(`Changed val set to ${val}`);
+    // console.log(`Changed val set to ${val}`);
     return this._changed = val;
   }
 
   isChanged() {
-    console.log(`Checking is this._changed.... ${this._changed}`);
+    // console.log(`Checking is this._changed.... ${this._changed}`);
     return this._changed;
   }
 
   _formChanged(event) {
-    console.log(`Changed: ${event.target.tagName}`);
+    // console.log(`Changed: ${event.target.tagName}`);
     return this.changed = true;
   }
 
@@ -597,8 +622,8 @@ class TypeForm extends TatorElement {
     dataArray = [],
     hasAttributeChanges = false,
     attrPromises = [],
-    respArray = []}
-    = {}){
+    respArray = [] }
+    = {}) {
 
     let messageSuccess = "";
     let messageError = "";
@@ -610,25 +635,25 @@ class TypeForm extends TatorElement {
       let succussIcon = document.createElement("modal-success");
       let iconWrap = document.createElement("span");
       let warningIcon = document.createElement("modal-warning");
-      let index = (hasAttributeChanges && respArray[0].url.indexOf("Attribute") > 0) ? i : i-1;
+      let index = (hasAttributeChanges && respArray[0].url.indexOf("Attribute") > 0) ? i : i - 1;
       let formReadable = hasAttributeChanges ? attrPromises.attrNames[index] : "";
       let formReadable2 = hasAttributeChanges ? attrPromises.attrNamesNew[index] : "";
 
-      if( item.status == 200){
+      if (item.status == 200) {
         //console.log("Return Message - It's a 200 response.");
         iconWrap.appendChild(succussIcon);
         messageSuccess += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-      } else if(item.status != 200){
-        if (!hasAttributeChanges ){
+      } else if (item.status != 200) {
+        if (!hasAttributeChanges) {
           iconWrap.appendChild(warningIcon);
           //console.log("Return Message - It's a 400 response for main form.");
           messageError += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-        } else if(hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
+        } else if (hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
           //console.log("Return Message - It's a 400 response for attr form.");
           let input = `<input type="checkbox" checked name="global" data-old-name="${formReadable}" class="checkbox"/>`;
           let newName = formReadable == formReadable2 ? "" : ` new name "${formReadable2}"`
           messageConfirm += `<div class="py-2">${input} Attribute "${formReadable}" ${newName}</div>`
-          requiresConfirmation = true;            
+          requiresConfirmation = true;
         } else {
           iconWrap.appendChild(warningIcon);
           messageError += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${formReadable} not saved.</span></div>`
@@ -637,10 +662,10 @@ class TypeForm extends TatorElement {
       }
     });
 
-    return {requiresConfirmation, messageSuccess, messageConfirm, messageError};
+    return { requiresConfirmation, messageSuccess, messageConfirm, messageError };
   }
 
-  _getAttrGlobalTrigger(id){
+  _getAttrGlobalTrigger(id) {
     let buttonSave = document.createElement("button")
     buttonSave.setAttribute("class", "btn btn-clear f1 text-semibold");
     buttonSave.innerHTML = "Confirm";
@@ -649,15 +674,15 @@ class TypeForm extends TatorElement {
       e.preventDefault();
       let confirmCheckboxes = this.modal._shadow.querySelectorAll('[name="global"]');
       this._modalCloseCallback();
-         
-      for(let check of confirmCheckboxes){
+
+      for (let check of confirmCheckboxes) {
         //add and changed flag back to this one
         let name = check.dataset.oldName;
         let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
 
-        if(check.checked == true){
-          console.log("User marked as global: "+name);
-          for(let form of this.attributeSection.attrForms){
+        if (check.checked == true) {
+          console.log("User marked as global: " + name);
+          for (let form of this.attributeSection.attrForms) {
             if (form.id == formId) {
               // add back changed flag
               form.changed = true;
@@ -666,23 +691,23 @@ class TypeForm extends TatorElement {
             }
           }
         } else {
-          console.log("User marked NOT global, do not resend: "+name);
+          console.log("User marked NOT global, do not resend: " + name);
         }
       }
 
       //run the _save method again with global true
-      this._save({"id" : id, "globalAttribute" : true})
+      this._save({ "id": id, "globalAttribute": true })
     });
 
     return buttonSave;
   }
 
-  _toggleChevron(e){
+  _toggleChevron(e) {
     var el = e.target;
     return el.classList.toggle('chevron-trigger-90');
   }
 
-  _toggleAttributes(e){
+  _toggleAttributes(e) {
     let el = e.target.parentNode.nextSibling;
     let hidden = el.hidden
 
@@ -690,12 +715,12 @@ class TypeForm extends TatorElement {
   };
 
   // RESET FUNCTIONS
-  reset(data = this.data){
+  reset(data = this.data) {
     this.typeFormDiv.innerHTML = "";
     return this.setupFormPage(data);
   }
 
-  async resetHard(){
+  async resetHard() {
     console.log("Hard reset...");
     this.loading.showSpinner();
     //Utilities.warningAlert("Refreshing data", "#fff", false);
@@ -709,31 +734,33 @@ class TypeForm extends TatorElement {
 
     this.reset(this.data);
 
+    // console.log(this.data);
+
     // Update media list in the background
     // In future could send individual media update if fn there to receive it
-    if(this.typeName == "MediaType"){
-      const mediaList = new DataMediaList(this.projectId);
-      mediaList._setProjectMediaList( "", true ); 
+    if (this.typeName == "MediaType") {
+      // const mediaList = new DataMediaList(this.projectId);
+      this.mediaListHandler._setProjectMediaList("", true);
     }
-    if(this.typeName == "Version"){
-      const versionsList = new DataVersionList( this.projectId );
-      versionsList._setVersionList( "", true);
+    if (this.typeName == "Version") {
+      // const versionsList = new DataVersionList( this.projectId );
+      this.versionListHandler._setVersionList("", true);
     }
   }
 
-  _findDataById(allData){
-    for(let x of allData){
+  _findDataById(allData) {
+    for (let x of allData) {
       if (x.id == this.typeId) return x;
     }
     return false;
   }
 
   // MODAL
-  _modalSuccess(message){
+  _modalSuccess(message) {
     this._modalClear();
     let text = document.createTextNode(" Success");
     this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-success") );
+    this.modal._titleDiv.append(document.createElement("modal-success"));
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     //this.modal._main.classList.add("fixed-height-scroll");
@@ -741,11 +768,11 @@ class TypeForm extends TatorElement {
     return this.modal.setAttribute("is-open", "true")
   }
 
-  _modalError(message){
+  _modalError(message) {
     this._modalClear();
     let text = document.createTextNode(" Error");
     this.modal._titleDiv.innerHTML = "";
-    this.modal._titleDiv.append( document.createElement("modal-warning") );
+    this.modal._titleDiv.append(document.createElement("modal-warning"));
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     return this.modal.setAttribute("is-open", "true")
@@ -756,17 +783,17 @@ class TypeForm extends TatorElement {
     mainText = "",
     buttonSave = document.createElement("button"),
     scroll = true
-  } = {}){
+  } = {}) {
     this._modalClear();
     this.modal._titleDiv.innerHTML = titleText;
 
-    if(mainText.nodeType == Node.ELEMENT_NODE){
+    if (mainText.nodeType == Node.ELEMENT_NODE) {
       this.modal._main.appendChild(mainText);
     } else {
       this.modal._main.innerHTML = mainText;
     }
-    
-    if(scroll) this.modal._main.classList.add("fixed-height-scroll");
+
+    if (scroll) this.modal._main.classList.add("fixed-height-scroll");
 
     let buttonClose = document.createElement("button")
     buttonClose.setAttribute("class", "btn btn-clear f1 text-semibold btn-charcoal");
@@ -779,7 +806,7 @@ class TypeForm extends TatorElement {
     return this.modal.setAttribute("is-open", "true");
   }
 
-  _modalComplete(message){
+  _modalComplete(message) {
     this._modalClear();
     let text = document.createTextNode("Complete");
     this.modal._titleDiv.innerHTML = "";
@@ -791,21 +818,21 @@ class TypeForm extends TatorElement {
     return this.modal.setAttribute("is-open", "true");
   }
 
-  _modalClear(){
+  _modalClear() {
     this.modal._titleDiv.innerHTML = "";
     this.modal._main.innerHTML = "";
     this.modal._footer.innerHTML = "";
-    
+
     return this.modal;
   }
 
-  _modalCloseCallback(){
+  _modalCloseCallback() {
     return this.modal._closeCallback();
   }
 
   // Update the navigation
-  _updateNavEvent(whatChanged, newName = "", newId = -1){
-    if(whatChanged == "remove"){
+  _updateNavEvent(whatChanged, newName = "", newId = -1) {
+    if (whatChanged == "remove") {
       let event = this.sideNav.removeItemEvent(this.typeId, this.typeName);
       this.sideNav.dispatchEvent(event);
 
@@ -813,16 +840,16 @@ class TypeForm extends TatorElement {
       // If this item is a MEDIA or VERSION
       // Then remove the related media list inputs
       if (this.typeName == "MediaType") {
-        const deleteEvt = new CustomEvent("change", {detail: { changed: "remove", typeId: this.typeId } });
+        const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: this.typeId } });
         this.mediaListHandler.el.dispatchEvent(deleteEvt);
       } else if (this.typeName == "Version") {
-        const deleteEvt = new CustomEvent("change", {detail: { changed: "remove", typeId: this.typeId } });
+        const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: this.typeId } });
         this.versionListHandler.el.dispatchEvent(deleteEvt);
       }
 
-    } else if(whatChanged == "rename") {
-      console.log("Rename event");
-      
+    } else if (whatChanged == "rename") {
+      // console.log("Rename event");
+
       // Renames the item in the side navigation
       let event = this.sideNav.renameItemEvent(this.typeId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
@@ -837,11 +864,11 @@ class TypeForm extends TatorElement {
         this.versionListHandler.el.dispatchEvent(renameEvt);
       }
 
-    } else if(whatChanged == "new") {
+    } else if (whatChanged == "new") {
       let event = this.sideNav.newItemEvent(newId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
     } else {
-      console.log("Need more information to update the sidenav.");
+      // console.log("Need more information to update the sidenav.");
     }
   }
 
@@ -866,7 +893,7 @@ class TypeForm extends TatorElement {
     //Look for the input and remove specific checkbox, or rename the label
     if (typeof this._basesCheckbox !== "undefined") {
       if (detail.changed == "rename") {
-        console.log("Heard rename")
+        // console.log("Heard rename")
         this._basesCheckbox.relabelInput({
           value: detail.typeId,
           newLabel: detail.newName

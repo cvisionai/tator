@@ -74,7 +74,7 @@ class StateTypeEdit extends TypeForm {
 
     // const MEDIA = "Media"; 
     // const mediaList = new DataMediaList( this.projectId );
-    console.log(this.mediaListHandler);
+    // console.log(this.mediaListHandler);
     const mediaListWithChecked = await this.mediaListHandler.getCompiledMediaList( data.media );
     this._mediaCheckboxes = document.createElement("checkbox-set");
     this._mediaCheckboxes.setAttribute("name", "Media");
@@ -140,7 +140,7 @@ class StateTypeEdit extends TypeForm {
   _getFormData(){
     const formData = {};
 
-    console.log(`Data ID: ${this.data.id}`);
+    // console.log(`Data ID: ${this.data.id}`);
     const isNew = this.data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {

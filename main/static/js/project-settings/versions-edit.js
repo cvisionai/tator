@@ -51,13 +51,14 @@ class VersionsEdit extends TypeForm {
       this._number.setAttribute("name", "Number");
       this._number.setAttribute("type", "int");
       if (typeof data.number == "undefined") {
-         this._number.setValue("");
+         this._number.setValue("Created on Save");
          this._number.default = "";
       } else {
          this._number.setValue(this.data.number);
          this._number.default = this.data.number;
       }
       this._number._input.disabled = true;
+      this._number._input.classList.add("disabled");
       this._number.addEventListener("change", this._formChanged.bind(this));
 
 
@@ -72,7 +73,6 @@ class VersionsEdit extends TypeForm {
       this._basesCheckbox.setAttribute("type", "number");
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
-      console.log(this._basesCheckbox.default);
       this._basesCheckbox.addEventListener("change", this._formChanged.bind(this));
       this._form.appendChild(this._basesCheckbox);
 
@@ -85,7 +85,7 @@ class VersionsEdit extends TypeForm {
    _getFormData() {
       const formData = {};
 
-      console.log(`Data ID: ${this.data.id}`);
+      // console.log(`Data ID: ${this.data.id}`);
       const isNew = this.data.id == "New" ? true : false;
 
       if (this._editName.changed() || isNew) {
@@ -103,10 +103,6 @@ class VersionsEdit extends TypeForm {
       if (this._number.changed() || isNew) {
          formData._number = this._number.getValue();
       }
-
-      console.log(this._basesCheckbox._default);
-      console.log(this._basesCheckbox.getValue());
-      console.log(this._basesCheckbox.changed());
 
       if (this._basesCheckbox.changed() || isNew) {
          formData.bases = this._basesCheckbox.getValue();
@@ -232,7 +228,7 @@ class VersionsEdit extends TypeForm {
 
       // Main type form
       if (this.isChanged()) {
-         console.log("Main form was changed");
+         // console.log("Main form was changed");
          const formData = this._getFormData();
          if (Object.entries(formData).length === 0) {
             return console.error("No formData");

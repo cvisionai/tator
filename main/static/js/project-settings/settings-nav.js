@@ -76,9 +76,9 @@ class SettingsNav extends TatorElement {
   }
 
   updateNavItem(e) {
-    console.log("Rename to......"+e.detail.newName);
+    // console.log("Rename to......"+e.detail.newName);
     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
-    console.log(navItem);
+    // console.log(navItem);
     return navItem.innerHTML = e.detail.newName;
   }
 
@@ -217,7 +217,7 @@ class SettingsNav extends TatorElement {
         }
       }
     } else {
-      console.log("No subitems for heading "+name);
+      // console.log("No subitems for heading "+name);
       // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
 
@@ -248,7 +248,7 @@ class SettingsNav extends TatorElement {
         }
       }
     } else {
-      console.log("No subitems for heading "+name);
+      // console.log("No subitems for heading "+name);
       // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
 
