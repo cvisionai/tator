@@ -335,7 +335,7 @@ FILES = \
     components/inline-warning.js \
     project-settings/single-upload.js \
     project-settings/data-media-list.js \
-    project-settings/version-list.js \
+    project-settings/data-version-list.js \
     project-settings/data-project-types.js \
     project-settings/data-attributes-clone.js \
     project-settings/data-memberships.js \
