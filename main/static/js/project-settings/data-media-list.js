@@ -65,5 +65,8 @@ class DataMediaList{
         });
     }
 
+    _clear() {
+      localStorage.clear();
+    }
 
 }

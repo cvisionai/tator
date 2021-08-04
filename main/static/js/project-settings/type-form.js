@@ -149,14 +149,14 @@ class TypeForm extends TatorElement {
         });
 
         const saveMessage = data.message;
+        const saveReturnId = data.id;
+        form.typeId = saveReturnId;
 
         // init form with the data
-        if (this.typeName !== "Version") {
-          formData.id = data.id;
-          formData.project = this.projectId;
-          if (this.typeName == "LocalizationType" || this.typeName == "StateType") formData.media = formData.media_types;
+        this._fetchByIdPromise({id : saveReturnId}).then(resp => resp.json()).then( data=> {
+          console.log(data);
           form._init({
-            data: formData,
+            data,
             modal: this.modal,
             sidenav: this.sideNav,
             mediaListHandler: this.mediaListHandler,
@@ -164,30 +164,12 @@ class TypeForm extends TatorElement {
           });
 
           // Add the item to navigation
-          this._updateNavEvent("new", formData.name, data.id);
+          console.log(data)
+          this._updateNavEvent("new", data.name, saveReturnId);
+        });
+        // Let user know everything's all set!
+        return this._modalSuccess(saveMessage);
 
-          // Let user know everything's all set!
-          return this._modalSuccess(data.message);
-        } else {
-          // Version creates number on save, so we need that...
-          // Save only returns the Version ID
-          this._fetchByIdPromise().then(data => {
-            form._init({
-              data,
-              modal: this.modal,
-              sidenav: this.sideNav,
-              mediaListHandler: this.mediaListHandler,
-              versionListHandler: this.versionListHandler
-            });
-
-            // Add the item to navigation
-            this._updateNavEvent("new", data.name, data.id);
-
-            // Let user know everything's all set!
-            return this._modalSuccess(saveMessage);
-          });
-        }
-        
       } else {
         return this._modalError(data.message);
       }
@@ -737,6 +719,8 @@ class TypeForm extends TatorElement {
     // console.log(this.data);
 
     // Update media list in the background
+    this._dataMediaList._clear();
+    this._dataVersionList._clear();
     // In future could send individual media update if fn there to receive it
     if (this.typeName == "MediaType") {
       // const mediaList = new DataMediaList(this.projectId);
@@ -867,6 +851,16 @@ class TypeForm extends TatorElement {
     } else if (whatChanged == "new") {
       let event = this.sideNav.newItemEvent(newId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
+
+      // If this item is a MEDIA or VERSION
+      // Then update the related media list inputs
+      if (this.typeName == "MediaType") {
+        const evt = new CustomEvent("change", { detail: { changed: "new", typeId: this.typeId, newName } });
+        this.mediaListHandler.el.dispatchEvent(evt);
+      } else if (this.typeName == "Version") {
+        const evt = new CustomEvent("change", { detail: { changed: "new", typeId: this.typeId, newName } });
+        this.versionListHandler.el.dispatchEvent(evt);
+      }
     } else {
       // console.log("Need more information to update the sidenav.");
     }
@@ -884,6 +878,13 @@ class TypeForm extends TatorElement {
         this._mediaCheckboxes.removeInput({
           value: detail.typeId
         });
+      } else if (detail.changed == "new") {
+        let item = {
+          id: detail.typeId,
+          name: detail.newName
+        };
+        
+        this._mediaCheckboxes._newInput(item);
       }
 
     }
@@ -902,6 +903,13 @@ class TypeForm extends TatorElement {
         this._basesCheckbox.removeInput({
           value: detail.typeId
         });
+      } else if (detail.changed == "new") {
+        let item = {
+          id: detail.typeId,
+          name: detail.newName
+        };
+
+        this._basesCheckbox._newInput(item);
       }
 
     }

@@ -14,10 +14,12 @@ class VersionsEdit extends TypeForm {
       });
 
       this.versionId = data.id;
+      console.log(this.versionId);
 
       //
       this._setForm();
 
+      
       // append input for name
       this._editName = document.createElement("text-input");
       this._editName.setAttribute("name", "Name");
@@ -60,14 +62,13 @@ class VersionsEdit extends TypeForm {
       this._number._input.disabled = true;
       this._number._input.classList.add("disabled");
       this._number.addEventListener("change", this._formChanged.bind(this));
-
-
       
       this._form.appendChild(this._number);
 
       // Bases
-      // const basesList = new DataVersionList(this.projectId);
       const basesListWithChecked = await this.versionListHandler.getCompiledVersionList(data.bases, data.id);
+      console.log(basesListWithChecked);
+
       this._basesCheckbox = document.createElement("checkbox-set");
       this._basesCheckbox.setAttribute("name", "Bases");
       this._basesCheckbox.setAttribute("type", "number");

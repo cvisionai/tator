@@ -4,7 +4,7 @@ class DataVersionList{
       this.el = document.createElement("div");
     }
 
-    _setVersionList(data = "", update = false) {
+    _setVersionList(data = "", update = true) {
       let promise;
       if (data == "") {
         promise = this.getVersionList(update);
@@ -70,6 +70,10 @@ class DataVersionList{
         return newList;
       });
     }
+  
+  _clear() {
+    localStorage.clear();
+  }
 
 
 }

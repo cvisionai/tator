@@ -169,6 +169,18 @@ class ProjectSettings extends TatorPage {
           });
         }
 
+        // Make media new list before we add an empty row
+        if(formView.typeName == "MediaType"){
+          // const mediaList = new DataMediaList( this.projectId );
+          this._dataMediaList._setProjectMediaList("", true);
+        }
+
+        // Make versions new list before we add an empty row
+        if(formView.typeName == "Version"){
+          // const versionsList = new DataVersionList( this.projectId );
+          this._dataVersionList._setVersionList("", true);
+        }
+
         // init the form with the data
         typeClassView._init({ 
           data : emptyData, 
