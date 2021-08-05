@@ -140,11 +140,6 @@ class EntityGallerySlider extends TatorElement {
       // New image listener
       this.slideCardData.addEventListener("setSlideCardImage", this.updateCardImage.bind(this));
 
-      // Update the card with the localization's associated media
-      this.slideCardData.addEventListener("setSlideMedia", (evt) => {
-         this.updateCardMedia(evt.detail.id, evt.detail.media);
-      });
-
       /**
        * Slider labels / attributes of slider type
        * #todo componentize (remove state refs)
@@ -230,17 +225,6 @@ class EntityGallerySlider extends TatorElement {
       }
    }
 
-   /* Init function to show and populate gallery w/ pagination */
-   // show(sliderData) {
-   //    // Hide all cards' panels and de-select
-   //    for (let idx = 0; idx < this._cardElements.length; idx++) {
-   //       this._cardElements[idx].card._deselectedCardAndPanel();
-   //    }
-
-   //    // Append the cardList
-   //    this.makeCards(cardList.cards)
-   // }
-
    /**
     * Updates the specific card's thumbnail image
     * @param {integer} id
@@ -250,54 +234,13 @@ class EntityGallerySlider extends TatorElement {
    updateCardImage(e) {
       // We need to check if this slider has the card we heard about...
       const id = e.detail.id;
-      var index = this._currentCardIndexes[id]
-      var info = this._cardElements[index];
-
-      if (typeof this._currentCardIndexes[id] !== "undefined" && typeof info !== "undefined") {
-         const image = e.detail.image;
-         info.card.setImage(image);
+      if (id in this._currentCardIndexes[id]) {
+         var info = this._cardElements[index];
+         info.card.setImage(e.detail.image);
       } else {
          // If the card hasn't been added yet -- save it here (we'll check for it when new cards are added)
          // console.log("Saving image for card ID " + id)
          this._preloadedImages[id] = e.detail.image;
-      }
-   }
-
-   /**
-    * Updates the specific card's panel's media
-    * @param {integer} id
-    * @param {entityObject} media
-    */
-   updateCardMedia(id, media) {
-      if (id in this._currentCardIndexes) {
-         var info = this._cardElements[this._currentCardIndexes[id]];
-         //#TODO Entity gallery panel needs to be updated so that it can display multiple
-         //      entity attributes (e.g. media associated with the localization)
-         //info.annotationPanel.setMedia(media);
-      }
-   }
-
-   /**
-    * Creates the card display in the gallery portion of the page using the provided
-    * localization information
-    *
-    * @param {object} cardInfo
-    */
-   makeCards(cardInfo) {
-      this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
-
-      // Loop through all of the card entries and create a new card if needed. Otherwise
-      // apply the card entry to an existing card.
-      //for (const [index, cardObj] of cardInfo.entries()) {
-      this._addCard(index, cardObj);
-      //}
-
-      // Hide unused cards
-      if (this.numberOfDisplayedCards < this._cardElements.length) {
-         const len = this._cardElements.length;
-         for (let idx = len - 1; idx >= numberOfDisplayedCards; idx--) {
-            this._cardElements[idx].card.style.display = "none";
-         }
       }
    }
 
@@ -417,6 +360,7 @@ class EntityGallerySlider extends TatorElement {
             annotationPanelDiv: annotationPanelDiv
          };
 
+         /*
          if (cardObj.image) {
             annotationPanel.localizationType = false;
             //annotationPanel.setImage(cardObj.image);
@@ -425,7 +369,7 @@ class EntityGallerySlider extends TatorElement {
             } else {
                card.setImageStatic(cardObj.image);
             }
-         }
+         }*/
          this._ul.appendChild(card);
 
          this._cardElements.push(cardInfo);

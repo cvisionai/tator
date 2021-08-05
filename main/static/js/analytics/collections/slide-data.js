@@ -54,7 +54,7 @@ class CollectionSlideCardData extends HTMLElement {
             let modified = new Date(m.modified_datetime);
             let mediaId = id;
 
-            let image = m.media_files.image[0].path;
+            let image = m.media_files.thumbnail[0].path;
             let thumbnail = m.media_files.thumbnail[0].path;
 
             let mediaInfo = {

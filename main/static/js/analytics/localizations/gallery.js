@@ -62,15 +62,6 @@ class AnnotationsGallery extends EntityCardGallery {
     this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
     this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
 
-    /**
-      * CARD Sort display options link for menu, and checkbox div
-      */
-    this._cardAtributeSort = document.createElement("entity-gallery-sort");
-    this._mainTop.appendChild(this._cardAtributeSort);
-    this._cardAtributeSort.menuLinkTextSpan.innerHTML = "Sort Entries";
-    //this._moreMenu._menu.appendChild(this._cardAtributeSort.menuLink);
-
-
     // Init aspect toggle
     this._aspectToggle.init(this);
     this.panelContainer = null;
@@ -98,10 +89,6 @@ class AnnotationsGallery extends EntityCardGallery {
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
-
-    // Slider Card Sort display changes
-    this._cardAtributeSort.addEventListener("sort-update", this._cardSortUpdate.bind(this));
-
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -152,52 +139,6 @@ class AnnotationsGallery extends EntityCardGallery {
   makeCards(cardInfo) {
     this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
     var numberOfDisplayedCards = 0;
-
-    /**
-      * Sort setup
-      * And alpha attribute options added to card obj
-    */
-    // // This will dupe check if it already exists for this type, or add
-    for(let card of cardInfo){
-      let entityTypeData = card.entityType;
-      this._cardAtributeSort.add({
-          typeData: entityTypeData
-      });
-
-      let options = entityTypeData.attribute_types;
-      options.sort((a, b) => {
-        return a.order - b.order || a.name - b.name;
-      });
-      card.attributeOrder = options;
-
-      //Check if we want these sorted, sort before adding new cards
-      var sortProperty = this._cardAtributeSort._selectionValues[entityTypeData.id];
-      var sortOrder = this._cardAtributeSort._sortOrderValues[entityTypeData.id];
-
-      let order = sortOrder.getValue()
-      let fnCheck = this._cardAtributeSort.getFnCheck(order);
-      let prop = sortProperty.getValue();
-      //console.log(`Saved sort... Asc ${order} on ${prop}`)
-      if(!(order === true && prop === "ID")){
-          //console.log(`Not using default sort.`)
-
-          cardInfo.sort( (a,b) => {
-            // let aVal = a[0].attributes[prop];
-            // let bVal = b[0].attributes[prop];
-
-             let aVal = a.attributes[prop];
-            let bVal = b.attributes[prop];
-
-            return fnCheck(aVal, bVal);
-          });
-
-          // for(let [idx, obj] of Object.entries(cardList)){
-          //   // update counter used for card placement
-          //   obj.counter = Number(idx);
-          // }
-          //
-      }
-    }
 
     // Loop through all of the card entries and create a new card if needed. Otherwise
     // apply the card entry to an existing card.
@@ -420,70 +361,6 @@ class AnnotationsGallery extends EntityCardGallery {
     if(!this.panelContainer.open) this.panelContainer._toggleOpen();
     this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
   }
-
-  _cardSortUpdate(evt){
-      let property = evt.detail.sortProperty;
-      let sortType = evt.detail.sortType;
-      //console.log(`Sorting ${property} in Asc? ${sortType}`);
-
-      try{
-        //  for (let s of this._sliderElements) {
-            // go through all cards, and sort them..
-            let fnCheck = sortType ? this._cardAtributeSort.ascCheck : this._cardAtributeSort.dscCheck;
-
-            // #todo handle pagination
-            let cards = this._cardAtributeSort._sortCards({
-               cards: this._cardElements,
-               slider: this,
-               fnCheck,
-               property
-            });
-
-            // #todo look into reuse of slider.makeCards
-            this.updateCardOrder(cards, true);
-
-        // }
-
-         let msg = `Entry sort complete`
-         Utilities.showSuccessIcon(msg);
-      } catch(e) {
-         let msg = `Entry sort error`;
-         console.error(e);
-         Utilities.warningAlert(msg, "#ff3e1d", false);
-      }
-   }
-
-   updateCardOrder(cards, updatePosition = false) {
-      let start = this._paginator._page * this._paginator._pageSize;
-      let total = cards.length + start;
-      for(let [idx, obj] of Object.entries(cards)){
-        obj.card.classList.add("entity-gallery-sortable");
-        //console.log(obj);
-         // Update position text
-         let pos = Number(idx) + 1 + start;
-         obj.card.posText = `${pos} of ${total}`;
-         obj.counter = idx + start;
-         let usableIndex = Number(obj.counter);
-
-        if(updatePosition){
-          obj.card.classList.add("reorder-progress");
-          // Get index of one and the other
-          let id = obj.card.cardObj.id;
-          //console.log(`Adding id ${id} at idx ${idx}`);
-          this._currentCardIndexes[id] = usableIndex;
-
-          // Place them in those indexes in card array
-          this._cardElements[usableIndex] = obj;
-
-          // Add back in order and make sure visibility stays...
-          this._ul.appendChild(obj.card);
-          obj.card.classList.remove("reorder-progress");
-          obj.card.style.visibility = "visible";
-         }
-        obj.card.classList.remove("entity-gallery-sortable");
-      }
-   }
-
 }
 
 customElements.define("annotations-gallery", AnnotationsGallery);
