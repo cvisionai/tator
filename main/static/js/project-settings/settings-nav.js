@@ -35,7 +35,7 @@ class SettingsNav extends TatorElement {
     return new CustomEvent('settings-nav-new', detail);
   }
 
-  renameItemEvent(typeId, typeName, newName){
+  renameItemEvent(typeId, typeName, newName) {
     let detail = {
       "bubbles" : true,
       "detail" : {
@@ -75,8 +75,10 @@ class SettingsNav extends TatorElement {
     return subNavLink.click();
   }
 
-  updateNavItem(e){
+  updateNavItem(e) {
+    // console.log("Rename to......"+e.detail.newName);
     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
+    // console.log(navItem);
     return navItem.innerHTML = e.detail.newName;
   }
 
@@ -91,6 +93,10 @@ class SettingsNav extends TatorElement {
     // remove the container and side nav link
     container.remove();
     navItem.remove()
+  }
+
+  _getItemDivId(typeName, typeId) {
+    return `itemDivId-${typeName}-${typeId}`;
   }
 
 
@@ -211,7 +217,7 @@ class SettingsNav extends TatorElement {
         }
       }
     } else {
-      console.log("No subitems for heading "+name);
+      // console.log("No subitems for heading "+name);
       // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
 
@@ -242,7 +248,7 @@ class SettingsNav extends TatorElement {
         }
       }
     } else {
-      console.log("No subitems for heading "+name);
+      // console.log("No subitems for heading "+name);
       // Should not get here (just a heading - not link - with no subitems or ability to +Add new)
     }
 
