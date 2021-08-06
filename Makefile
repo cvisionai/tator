@@ -271,6 +271,7 @@ FILES = \
     components/filter-data.js \
     components/removable-pill.js \
     components/user-data.js \
+    components/text-calendar-button.js \
     registration/registration-page.js \
     password-reset/password-reset-request-page.js \
     password-reset/password-reset-page.js \
