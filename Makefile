@@ -271,6 +271,7 @@ FILES = \
     components/filter-data.js \
     components/removable-pill.js \
     components/user-data.js \
+    components/text-calendar-button.js \
     registration/registration-page.js \
     password-reset/password-reset-request-page.js \
     password-reset/password-reset-page.js \
@@ -335,6 +336,7 @@ FILES = \
     components/inline-warning.js \
     project-settings/single-upload.js \
     project-settings/data-media-list.js \
+    project-settings/data-version-list.js \
     project-settings/data-project-types.js \
     project-settings/data-attributes-clone.js \
     project-settings/data-memberships.js \
@@ -350,6 +352,7 @@ FILES = \
     project-settings/leaf-type-edit.js \
     project-settings/state-type-edit.js \
     project-settings/membership-edit.js \
+    project-settings/version-edit.js \
     project-settings/project-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \

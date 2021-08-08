@@ -101,6 +101,7 @@ class CheckboxInput extends TatorElement {
   }
 
   setValue(val) {
+    console.log(val.id);
     this._input.value = val.id;
     this._checked = val.checked;
     if (val.data) {

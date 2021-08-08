@@ -68,6 +68,8 @@ class CheckboxSet extends TatorElement {
     }
 
     _newInput(item){
+      console.log(item.id);
+      console.log(item.name);
       let checkbox = document.createElement("checkbox-input");
       checkbox.setAttribute("name", `${item.name}`);
       if (this.type != undefined) {
@@ -115,9 +117,48 @@ class CheckboxSet extends TatorElement {
       return this._inputs.filter(input => input.getChecked()).map(checked => checked.getData());
     }
 
-    changed(){
-      return this.getValue() !== this._default;
+  changed() {
+    const currentValue = this.getValue();
+    const originalValue = this._default
+
+    if (currentValue && originalValue) {
+      if (originalValue.length !== currentValue.length) {
+        return true;
+      } else {
+        // if they are the same lenght they should have the same values
+        for (let val of originalValue) {
+          if(!currentValue.includes(val)) return true
+        }
+      }
     }
+
+    return false;
+  }
+  
+  relabelInput({ value, newLabel }) {
+    for (let checkbox of this._inputs) {
+      if(Number(checkbox._input.value) === Number(value)) return checkbox.setAttribute("name", newLabel);
+    }
+    return console.log("No matching input found");
+  }
+  
+  removeInput({ value }) {
+    for (let checkbox of this._inputs) {
+      if (Number(checkbox._input.value) === Number(value)) {
+        checkbox.setValue(false);
+
+        let idx = this._inputs.indexOf(checkbox);
+        this._inputs.splice(idx, 1);
+        checkbox.remove()
+        const inputWrapper = this._inputDiv.children[idx];
+        console.log(inputWrapper);
+        this._inputDiv.removeChild(inputWrapper);
+
+        return true;
+      }
+    }
+    return console.log("No matching input found");
+  }
 
 }
 

@@ -1943,6 +1943,11 @@ class VideoCanvas extends AnnotationCanvas {
     var promise = this._videoElement[this._scrub_idx].loadedDataPromise(this);
 
     this.startDownload(streaming_files, offsite_config);
+    if (fps < 20)
+    {
+      console.info("Disable safe mode for low FPS");
+      this.allowSafeMode = false;
+    }
     if (fps > guiFPS)
     {
       this._playbackRate=guiFPS/fps;

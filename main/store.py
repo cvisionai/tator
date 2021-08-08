@@ -533,7 +533,15 @@ def get_tator_store(bucket=None) -> TatorStorage:
         else:
             server = ObjectStore.MINIO
     else:
-        server = ObjectStore(response["ResponseMetadata"]["HTTPHeaders"]["server"])
+        response_server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
+        if ObjectStore.AWS.value in response_server:
+            server = ObjectStore.AWS
+        elif ObjectStore.MINIO.value in response_server:
+            server = ObjectStore.MINIO
+        elif ObjectStore.GCP.value in response_server:
+            server = ObjectStore.GCP
+        else:
+            raise ValueError(f"Received unhandled server type '{response_server}'")
 
     return TatorStorage.get_tator_store(server, bucket, client, external_host)
 

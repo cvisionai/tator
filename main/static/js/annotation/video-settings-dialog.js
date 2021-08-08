@@ -86,6 +86,7 @@ class VideoSettingsDialog extends ModalDialog {
     safeModeOption.setAttribute("on-text", "On");
     safeModeOption.setValue(true);
     safeModeGridDiv.appendChild(safeModeOption);
+    this._safeModeOption = safeModeOption;
 
     const apply = document.createElement("button");
     apply.setAttribute("class", "btn btn-clear");
@@ -252,6 +253,10 @@ class VideoSettingsDialog extends ModalDialog {
     }
 
     let mainVideo = this._medias[0];
+    if (mainVideo['fps'] < 20)
+    {
+      this._safeModeOption.setValue(false);
+    }
     let sourceList = [];
     for (let mediaFile of mainVideo.media_files["streaming"])
     {
