@@ -14,7 +14,7 @@ class TypeNew {
     }
 
     _fetchPostPromise(formData){
-        console.log(`Creating new ${this.type} for Project id ${this.projectId}`);
+        // console.log(`Creating new ${this.type} for Project id ${this.projectId}`);
     
         return fetch(`/rest/${this.type}s/${this.projectId}`, {
           method: "POST",

@@ -36,8 +36,12 @@ class ProjectSettings extends TatorPage {
                                   "leaf-type-edit",
                                   "state-type-edit",
                                   "membership-edit",
+                                  "versions-edit",
                                 ];
 
+    
+
+    
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild( this.modal );
@@ -64,17 +68,24 @@ class ProjectSettings extends TatorPage {
     }
   }
 
-  /* Run when project-id is set to run fetch the page content. */
+  /* 
+   * Run when project-id is set to run fetch the page content. 
+  */
   _init() {
+    // Project data
     this.projectId = this.getAttribute("project-id");
     this.projectView = new ProjectMainEdit();
     this.typesData = new ProjectTypesData(this.projectId);
     const projectPromise = this.projectView._fetchGetPromise({ id: this.projectId });
 
+    // Data Handlers for Media and Version initialized below
+    this._dataMediaList = new DataMediaList( this.projectId );;
+    this._dataVersionList = new DataVersionList( this.projectId );
+
     projectPromise
     .then( (data) => {
       return data.json();
-    }).then( (objData) => {
+    }).then((objData) => {
       this._breadcrumbs.setAttribute("project-name", objData.name);
       const formView = this.projectView;
 
@@ -144,11 +155,39 @@ class ProjectSettings extends TatorPage {
           itemContents : typeClassView
         });
 
-        // init form with the data
+        // List to relevant data handlers to show the correct list options
+        const usesMediaList = ["StateType", "LocalizationType"];
+        if (usesMediaList.includes(typeClassView.typeName)) {
+          this._dataMediaList.el.addEventListener("change", (e) => {
+            console.log(e.detail);
+            typeClassView.updateMediaList(e.detail);
+          });
+        } else if(typeClassView.typeName == "Version") {
+          this._dataVersionList.el.addEventListener("change", (e) => {
+            console.log(e.detail);
+            typeClassView.updateVersionList(e.detail);
+          });
+        }
+
+        // Make media new list before we add an empty row
+        if(formView.typeName == "MediaType"){
+          // const mediaList = new DataMediaList( this.projectId );
+          this._dataMediaList._setProjectMediaList("", true);
+        }
+
+        // Make versions new list before we add an empty row
+        if(formView.typeName == "Version"){
+          // const versionsList = new DataVersionList( this.projectId );
+          this._dataVersionList._setVersionList("", true);
+        }
+
+        // init the form with the data
         typeClassView._init({ 
           data : emptyData, 
           modal : this.modal, 
-          sidenav : this.settingsNav
+          sidenav : this.settingsNav,
+          versionListHandler: this._dataVersionList,
+          mediaListHandler: this._dataMediaList
         });
 
         headingEl.addEventListener("click", () => {
@@ -170,6 +209,11 @@ class ProjectSettings extends TatorPage {
     }).then( (objData) => {
       this.loading.hideSpinner();
 
+      // Versions number sort
+      if (typeof objData[0].number !== "undefined") {
+        objData = objData.sort((a, b) => a.number > b.number);
+      }
+
       // Pass in data interface to memberships.
       if (formView.typeName == "Membership") {
         this.membershipData = new MembershipData(this.projectId);
@@ -178,8 +222,14 @@ class ProjectSettings extends TatorPage {
 
       // Make media new list before we add an empty row
       if(formView.typeName == "MediaType"){
-        const mediaList = new DataMediaList( this.projectId );
-        mediaList._setProjectMediaList(objData, true);
+        // const mediaList = new DataMediaList( this.projectId );
+        this._dataMediaList._setProjectMediaList(objData, true);
+      }
+
+      // Make versions new list before we add an empty row
+      if(formView.typeName == "Version"){
+        // const versionsList = new DataVersionList( this.projectId );
+        this._dataVersionList._setVersionList(objData, true);
       }
 
       // Add item containers for Types
@@ -207,11 +257,27 @@ class ProjectSettings extends TatorPage {
           itemContents : form
         });
 
+        // List to relevant data handlers to show the correct list options
+        const usesMediaList = ["StateType", "LocalizationType"];
+        if (usesMediaList.includes(form.typeName)) {
+          this._dataMediaList.el.addEventListener("change", (e) => {
+            console.log(e.detail);
+            form.updateMediaList(e.detail);
+          });
+        } else if(form.typeName == "Version") {
+          this._dataVersionList.el.addEventListener("change", (e) => {
+            console.log(e.detail);
+            form.updateVersionList(e.detail);
+          });
+        }
+
         // init form with the data
         form._init({ 
           data : g, 
           modal : this.modal, 
-          sidenav : this.settingsNav
+          sidenav: this.settingsNav,
+          versionListHandler: this._dataVersionList,
+          mediaListHandler: this._dataMediaList
         });
       }
           

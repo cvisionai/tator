@@ -29,7 +29,7 @@ class TypeDelete {
     }
 
     _fetchPromise(){
-        console.log(`Deleting ${this.type} id ${this.typeId}`);
+        // console.log(`Deleting ${this.type} id ${this.typeId}`);
     
         return fetch(`/rest/${this.type}/${this.typeId}`, {
           method: "DELETE",

@@ -39,7 +39,7 @@ class FramePanel extends TatorElement {
     this._typeId = val.id;
     this._method = val.interpolation;
     this._attributes.dataType = val;
-    this._attributes.addEventListener("input", () => {
+    this._attributes.addEventListener("change", () => {
       if (this._blockingWrites) {
         return;
       }
