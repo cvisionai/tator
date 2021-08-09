@@ -18,6 +18,9 @@ class TypeForm extends TatorElement {
     // Loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
+
+    // Init hide attributes
+    this._hideAttributes = false;
   }
 
   _init({ data, modal, sidenav, versionListHandler, mediaListHandler }) {
@@ -79,7 +82,7 @@ class TypeForm extends TatorElement {
       const sectionForm = await this._getSectionForm(this.data);
       this.typeFormDiv.appendChild(sectionForm);
 
-      if (typeof this._hideAttributes !== "undefined" && !this._hideAttributes) {
+      if (typeof this._hideAttributes !== "undefined" && this._hideAttributes == false) {
         this.typeFormDiv.appendChild(this._getAttributeSection());
       }
 
