@@ -352,7 +352,7 @@ FILES = \
     project-settings/leaf-type-edit.js \
     project-settings/state-type-edit.js \
     project-settings/membership-edit.js \
-    project-settings/version-edit.js \
+    project-settings/versions-edit.js \
     project-settings/project-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
