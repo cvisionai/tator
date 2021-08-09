@@ -113,6 +113,13 @@ class FilterData {
         };
         entityType.attribute_types.push(sectionAttribute);
 
+        var mediaIdAttribute = {
+          choices: sectionNames,
+          name: "_id",
+          dtype: "int"
+        };
+        entityType.attribute_types.push(mediaIdAttribute);
+
         this._allTypes.push(entityType);
       }
     }
