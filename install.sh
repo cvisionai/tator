@@ -124,6 +124,7 @@ echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
 pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright
+export PATH=$PATH:$HOME/.local/bin:/snap/bin
 playwright install
 
 # Install tator.

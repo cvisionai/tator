@@ -68,8 +68,6 @@ class CheckboxSet extends TatorElement {
     }
 
     _newInput(item){
-      console.log(item.id);
-      console.log(item.name);
       let checkbox = document.createElement("checkbox-input");
       checkbox.setAttribute("name", `${item.name}`);
       if (this.type != undefined) {
@@ -151,7 +149,7 @@ class CheckboxSet extends TatorElement {
         this._inputs.splice(idx, 1);
         checkbox.remove()
         const inputWrapper = this._inputDiv.children[idx];
-        console.log(inputWrapper);
+        // console.log(inputWrapper);
         this._inputDiv.removeChild(inputWrapper);
 
         return true;
