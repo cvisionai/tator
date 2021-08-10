@@ -86,10 +86,8 @@ class AnnotationsCard extends EntityCard {
     /**
      * Attributes hidden on card are controlled by outer menu 
     */
-    // console.log(obj.attributeOrder);
     if(obj.attributeOrder && obj.attributeOrder.length > 0){
       this.attributesDiv.innerHTML = "";
-      let firstShown = false;
       for(const attr of obj.attributeOrder){
         let attrStyleDiv = document.createElement("div");
         attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
@@ -102,8 +100,6 @@ class AnnotationsCard extends EntityCard {
         if(typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== ""){
           attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
         } else {
-          // attrLabel.innerHTML = "&nbsp;";
-          // attrLabel.style.visibility = "hidden"; // keeps spacing
           attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
         }
 
@@ -111,16 +107,12 @@ class AnnotationsCard extends EntityCard {
         this.attributeDivs[key] = {};
         this.attributeDivs[key].div = attrStyleDiv;
         this.attributeDivs[key].value = attrLabel;
-
-        //console.log(key)
-        //console.log(cardLabelsChosen);
+        attrStyleDiv.classList.add("hidden");
 
         if(cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0){
           // If we have any preferences saved check against it
-          if(cardLabelsChosen.indexOf(key) > -1) {     
-            //console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
-          } else {
-            attrStyleDiv.classList.add("hidden");
+          if(cardLabelsChosen.indexOf(key) >= 0) {
+            attrStyleDiv.classList.remove("hidden");
           }
         }       
 
@@ -139,15 +131,11 @@ class AnnotationsCard extends EntityCard {
   * Custom label display update
   */
   _updateShownAttributes(evt){
-    //console.log(evt);
-    //console.log(this.attributeDivs);
-    let typeId = evt.detail.typeId;
     let labelValues = evt.detail.value;
     
     if(this.attributeDivs){
       // show selected
       for (let [key, value] of Object.entries(this.attributeDivs)) {
-        //console.log(key);
         if(labelValues.includes(key)){
           value.div.classList.remove("hidden");
         } else {

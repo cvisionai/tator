@@ -100,10 +100,9 @@ class EntityGalleryLabels extends TatorElement {
     styleDiv.appendChild(selectionBoxes);
 
     selectionBoxes.addEventListener("change", (e) => {
-      // console.log("Update labels!");
       this.dispatchEvent(new CustomEvent("labels-update", { 
           detail: { 
-              value: decodeURI(e.target.getValue()),
+              value: e.target.getValue(),
               typeId: typeData.id
             }
         }));
