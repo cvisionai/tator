@@ -209,7 +209,8 @@ class FilterData {
   }
 
   /**
-   * #TODO
+   * Retrieve a list of the algorithms that are valid for this filter data view.
+   * These will be filtered based on category.
    */
   getAlgorithms() {
     return this.algorithms;
