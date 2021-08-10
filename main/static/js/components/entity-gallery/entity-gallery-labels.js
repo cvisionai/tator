@@ -142,10 +142,24 @@ class EntityGalleryLabels extends TatorElement {
     this.newList = [];
     let tmpArray = [...typeData.attribute_types];
 
+    // Non-hidden attributes (ie order >= 0))
+    let nonHiddenAttrs = [];
+    let hiddenAttrs = [];
+    for (let attr of typeData.attribute_types) {
+      if (attr.order >= 0) {
+        nonHiddenAttrs.push(attr);
+      }
+      else {
+        hiddenAttrs.push(attr);
+      }
+    }
+
     // Show array by order, or alpha
-    const sorted = tmpArray.sort((a, b) => {
+    const sorted = nonHiddenAttrs.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
+
+    sorted.push(...hiddenAttrs);
 
     // Create an array for checkbox set el
     let checked = checkedFirst == null ? false : checkedFirst;

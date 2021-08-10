@@ -247,10 +247,25 @@ class AnnotationsGallery extends EntityCardGallery {
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
       this._cardElements[index].annotationPanel.init({ cardObj });
 
-      var cardLabelOptions = entityType.attribute_types;
-      cardLabelOptions.sort((a, b) => {
-         return a.order - b.order || a.name - b.name;
+      // Non-hidden attributes (ie order >= 0))
+      let nonHiddenAttrs = [];
+      let hiddenAttrs = [];
+      for (let attr of entityType.attribute_types) {
+        if (attr.order >= 0) {
+          nonHiddenAttrs.push(attr);
+        }
+        else {
+          hiddenAttrs.push(attr);
+        }
+      }
+
+      // Show array by order, or alpha
+      var cardLabelOptions = nonHiddenAttrs.sort((a, b) => {
+        return a.order - b.order || a.name - b.name;
       });
+
+      cardLabelOptions.push(...hiddenAttrs);
+
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card

@@ -2,14 +2,9 @@ class AnnotationsCard extends EntityCard {
   constructor() {
     super();
 
-
     // Add annotation class to list item
     this._li.classList.add("analysis__annotation");
     this.addEventListener("click", this.togglePanel.bind(this) );
-
-
-    //@TODO pausing on hover behavior -- needs work w/ canvas
-    //this.addEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
 
     // prep this var
     this._tmpHidden = null;
@@ -23,20 +18,12 @@ class AnnotationsCard extends EntityCard {
   
 
   init({obj, panelContainer, annotationPanelDiv, cardLabelsChosen}){
-    // ID is title
-    //this.titleDiv.innerHTML = `ID ${obj.id}`;
     this._id_text.innerHTML = `ID: ${obj.id}`;
 
     // Give card access to panel
     this.panelContainer = panelContainer;
     this.annotationPanelDiv = annotationPanelDiv;
     this.cardObj = obj;
-
-    // Additional information about localization
-    // Name and type like "ABOX (Box)"
-    //this.typeInfo = document.createElement('div');
-    //this.typeInfo.innerHTML = `${obj.localizationType.name} (${obj.localizationType.type})`;
-    //this.titleDiv.appendChild(this.typeInfo);
 
     // Graphic
     if(typeof obj.image !== "undefined" && obj.image !== null) {
@@ -54,38 +41,7 @@ class AnnotationsCard extends EntityCard {
     // Add position text related to pagination
     this.setAttribute("pos-text", obj.posText);
 
-    // Link to the media @TODO
-    // this.mediaLink = document.createElement('div');
-    // this.mediaLink.innerHTML = `Media ID ${obj.mediaLink}`;
-    // this.descDiv.appendChild(this.mediaLink);
-
-    // Display the first 0 order attribute value
-    //this.displayAttributes();
-
-    // // Create Date
-    // this.created = document.createElement('div');
-    // this.created.innerHTML = `Created: ${obj.created}`;
-    // this.descDiv.appendChild(this.created);
-
-    // // Modified Date
-    // this.modified = document.createElement('div');
-    // this.modified.innerHTML = `Modified: ${obj.modified}`;
-    // this.descDiv.appendChild(this.modified);
-
-    // // Modified By
-    // this.modifiedby = document.createElement('div');
-    // this.modifiedby.innerHTML = `By: ${obj.userName}`;
-    // this.descDiv.appendChild(this.modifiedby);
-
-    // Show description div
-    //this.descDiv.hidden = false;
-
-    // More actions
-    // this._more.hidden = false;
-    // Add more ... > labels, swap views?
-    /**
-     * Attributes hidden on card are controlled by outer menu 
-    */
+    // Attributes hidden on card are controlled by outer menu 
     if(obj.attributeOrder && obj.attributeOrder.length > 0){
       this.attributesDiv.innerHTML = "";
       for(const attr of obj.attributeOrder){
