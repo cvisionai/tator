@@ -849,7 +849,8 @@ class TatorData {
       });
     }
      
-     if (stateMap !== null) {
+     // If we're given a map of state typeIds, and user hasn't filtered on a type
+     if (stateMap !== null && typeIds.length === 0) {
        console.log(stateMap);
        stateMap.forEach(
          (value, key, map) => {
