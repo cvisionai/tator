@@ -103,7 +103,7 @@ class EntityGalleryLabels extends TatorElement {
       // console.log("Update labels!");
       this.dispatchEvent(new CustomEvent("labels-update", { 
           detail: { 
-              value: e.target.getValue(),
+              value: decodeURI(e.target.getValue()),
               typeId: typeData.id
             }
         }));
