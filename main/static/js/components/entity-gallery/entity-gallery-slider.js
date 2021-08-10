@@ -234,7 +234,8 @@ class EntityGallerySlider extends TatorElement {
    updateCardImage(e) {
       // We need to check if this slider has the card we heard about...
       const id = e.detail.id;
-      if (id in this._currentCardIndexes[id]) {
+      if (typeof this._currentCardIndexes[id] !== "undefined") {
+         var index = this._currentCardIndexes[id];
          var info = this._cardElements[index];
          info.card.setImage(e.detail.image);
       } else {

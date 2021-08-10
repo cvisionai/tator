@@ -808,7 +808,7 @@ class TatorData {
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-   async getFilteredStates(outputType, filters, listStart, listStop, afterMap) {
+   async getFilteredStates(outputType, filters, listStart, listStop, afterMap, stateMap = null) {
 
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
@@ -848,6 +848,15 @@ class TatorData {
         }
       });
     }
+     
+     if (stateMap !== null) {
+       console.log(stateMap);
+       stateMap.forEach(
+         (value, key, map) => {
+          typeIds.push(key)
+         }
+       )
+     }
 
     if (typeIds.length > 0) {
       typeIds.forEach(dtypeId => {
