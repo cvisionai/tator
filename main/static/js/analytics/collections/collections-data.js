@@ -19,6 +19,7 @@ class CollectionsData extends HTMLElement {
     var mediaStateTypes = this._modelData.getStoredMediaStateTypes();
     var locStateTypes = this._modelData.getStoredLocalizationStateTypes();
     this._stateTypes = mediaStateTypes.concat(locStateTypes);
+
     this._stateTypesMap = new Map();
     for (const stateType of this._stateTypes) {
       this._stateTypesMap.set(stateType.id, stateType);
@@ -63,7 +64,9 @@ class CollectionsData extends HTMLElement {
       filterConditions,
       this._paginationState.start,
       this._paginationState.stop,
-      this.afterMap);
+      this.afterMap,
+      this._stateTypesMap
+    );
 
     for (let idx = 0; idx < this._states.length; idx++) {
       this._states[idx].typeData = this._stateTypesMap.get(this._states[idx].meta);

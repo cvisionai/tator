@@ -59,7 +59,7 @@ class AnnotationsGallery extends EntityCardGallery {
       */
     this._cardAtributeLabels = document.createElement("entity-gallery-labels");
     this._mainTop.appendChild(this._cardAtributeLabels);
-    this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
+    this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
     this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
 
     // Init aspect toggle
