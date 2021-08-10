@@ -43,8 +43,8 @@ class EntityGalleryPanel extends TatorElement {
     this._main.appendChild(this._mediaHeading)
 
     const mediaSubHeading = document.createElement("h2");
-    mediaSubHeading.setAttribute("class", "f2 text-gray");
-    mediaSubHeading.appendChild(document.createTextNode("Go To Frame"));
+    mediaSubHeading.setAttribute("class", "f2 text-gray py-2");
+    mediaSubHeading.appendChild(document.createTextNode("View In Annotator"));
     mediaSubHeading.appendChild(this.goToFrameButton);
     this._main.appendChild(mediaSubHeading)
 
