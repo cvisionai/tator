@@ -40,6 +40,7 @@ class EntityCard extends TatorElement {
       this.titleDiv = document.createElement("div");
       this.titleDiv.setAttribute("class", "entity-card__title py-1");
       this._styledDiv.appendChild(this.titleDiv);
+      this.titleDiv.hidden = true;
   
       // Text for Title Div
       this._name = document.createElement("a");
