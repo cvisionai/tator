@@ -143,7 +143,7 @@ class ModifyTrackDialog extends TatorElement {
     this._applyMaxFrames.setAttribute("name", "Apply Max Frames");
     this._applyMaxFrames.setAttribute("on-text", "Yes");
     this._applyMaxFrames.setAttribute("off-text", "No");
-    this._applyMaxFrames.setValue(false);
+    this._applyMaxFrames.setValue(true);
     this._applyMaxFrames.addEventListener("change", this._setMaxFrameUI.bind(this));
     div.appendChild(this._applyMaxFrames);
     this._applyMaxFrames.style.display = "none";
@@ -151,6 +151,7 @@ class ModifyTrackDialog extends TatorElement {
     this._extendMaxFrames = document.createElement("text-input");
     this._extendMaxFrames.setAttribute("name", "Max Num Frames");
     this._extendMaxFrames.setAttribute("type", "int");
+    this._extendMaxFrames.setValue(200);
     div.appendChild(this._extendMaxFrames);
     this._extendMaxFrames.style.display = "none";
 
@@ -164,7 +165,7 @@ class ModifyTrackDialog extends TatorElement {
     let alg = this._extendMethod.getValue();
     if (alg == "Auto") {
       this._extendFrames.style.display = "none";
-      this._applyMaxFrames.setValue(false);
+      this._applyMaxFrames.setValue(true);
       this._setMaxFrameUI(); // Sets visibility of this._extendMaxFrames
       this._applyMaxFrames.style.display = "initial";
     }
