@@ -61,7 +61,7 @@ media_get_properties = {
         'description': 'Number of frames for videos.',
     },
     'fps': {
-        'type': 'integer',
+        'type': 'number',
         'description': 'Frame rate for videos.',
     },
     'codec': {
@@ -130,7 +130,7 @@ media_spec = {
             'nullable': True,
         },
         'fps': {
-            'type': 'integer',
+            'type': 'number',
             'description': 'Frame rate for videos.',
             'nullable': True,
         },
