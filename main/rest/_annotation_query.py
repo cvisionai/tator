@@ -190,15 +190,15 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if after is not None:
         qs = qs.filter(pk__gt=after)
 
-    if exclude_parents:
-        parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
-        qs = qs.difference(parent_set)
-        
     # TODO: Remove modified parameter
     qs = qs.exclude(modified=False)
 
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
+    if exclude_parents:
+        parent_set = Localization.objects.filter(pk__in=Subquery(qs.values('parent')))
+        qs = qs.difference(parent_set)
+        
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).
     if exclude_parents or (stop is None):
