@@ -23,7 +23,7 @@ class AttributePanel extends TatorElement {
     this._shadow.appendChild(this._builtInAttrLabel);
 
     this._builtInAttrsDiv = document.createElement("div");
-    this._builtInAttrsDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    this._builtInAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
     this._shadow.appendChild(this._builtInAttrsDiv);
 
     this._builtInAttrLabel.appendChild(this._chevron());
@@ -38,7 +38,7 @@ class AttributePanel extends TatorElement {
     this._shadow.appendChild(this._hiddenAttrLabel);
 
     this._hiddenAttrsDiv = document.createElement("div");
-    this._hiddenAttrsDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    this._hiddenAttrsDiv.setAttribute("class", "annotation__panel-group annotation__panel-border py-2 px-2 text-gray f2");
     this._shadow.appendChild(this._hiddenAttrsDiv);
 
     this._hiddenAttrLabel.appendChild(this._chevron());
