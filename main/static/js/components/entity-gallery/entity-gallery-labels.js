@@ -40,7 +40,7 @@ class EntityGalleryLabels extends TatorElement {
       this.div.classList.toggle("hidden");
     });
 
-    // Dont dupe the types
+    // Each type is shown in the menu. Organized by type ID
     this._shownTypes = {};
 
     // Keep track of values by TypeId
@@ -54,11 +54,11 @@ class EntityGalleryLabels extends TatorElement {
   */
   async add({ typeData, hideTypeName = false, checkedFirst = null }){
     let typeName = typeData.name ? typeData.name : "";
-    if(this._shownTypes[typeName]) {
+    if(this._shownTypes[typeData.id]) {
       // don't re-add this type...
       return false;
     } else {
-      this._shownTypes[typeName] = true;
+      this._shownTypes[typeData.id] = true;
     }
 
     // Main labels box
