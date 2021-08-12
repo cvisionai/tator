@@ -88,7 +88,13 @@ class AnnotationsCard extends EntityCard {
   */
   _updateShownAttributes(evt){
     let labelValues = evt.detail.value;
+    let typeId = evt.detail.typeId;
     
+    // If the given typeId doesn't match this card's equivalent typeId, ignore.
+    if (typeId != this.cardObj.entityType.id) {
+      return;
+    }
+
     if(this.attributeDivs){
       // show selected
       for (let [key, value] of Object.entries(this.attributeDivs)) {
