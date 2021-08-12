@@ -111,7 +111,6 @@ class FilterInterface extends TatorElement {
     // Respond to user requesting to run an algorithm
     this._algoButton.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));
     this._confirmRunAlgorithm.addEventListener("close", this._closeConfirmRunAlgoModal.bind(this));
-    this._currentFilterConditions = "";
   }
 
   _notify(title, message, error_or_ok) {
@@ -129,7 +128,7 @@ class FilterInterface extends TatorElement {
     var extraParameters = [
       {
         name: "encoded_filters",
-        value: encodeURIComponent(encodeURIComponent(JSON.stringify(this._filterConditions))),
+        value: encodeURIComponent(encodeURIComponent(JSON.stringify(this._filterConditionGroup.getConditions()))),
       }
     ]
     console.log(extraParameters);
@@ -175,11 +174,10 @@ class FilterInterface extends TatorElement {
     this.setFilterBar();
 
     // Send out an event to anyone listening that there's a new filter applied
-    this._currentFilterConditions = this._filterConditionGroup.getConditions();
     this.dispatchEvent(new CustomEvent("filterParameters", {
       composed: true,
       detail: {
-        conditions: this._currentFilterConditions
+        conditions: this._filterConditionGroup.getConditions()
       }
     }));
   }
