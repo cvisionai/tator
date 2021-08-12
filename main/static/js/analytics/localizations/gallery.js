@@ -58,6 +58,7 @@ class AnnotationsGallery extends EntityCardGallery {
       * CARD Label display options link for menu, and checkbox div
       */
     this._cardAtributeLabels = document.createElement("entity-gallery-labels");
+    this._cardAtributeLabels.titleEntityTypeName = "localization";
     this._mainTop.appendChild(this._cardAtributeLabels);
     this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
     this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);

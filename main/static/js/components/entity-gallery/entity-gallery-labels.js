@@ -6,7 +6,7 @@ class EntityGalleryLabels extends TatorElement {
     // #todo this could be a menu button component?
     this.menuLink = document.createElement("button");
     this.menuLink.setAttribute("class", "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center")
-    
+
     let labelIcon = new SvgDefinition({ iconName: "label-tag" });
     this.menuLink.appendChild(labelIcon);
 
@@ -15,7 +15,7 @@ class EntityGalleryLabels extends TatorElement {
 
     this.labelLinkText = document.createTextNode("Choose Labels");
     this.menuLinkTextSpan.appendChild(this.labelLinkText);
- 
+
     this.menuLink.appendChild(labelIcon);
     this.menuLink.appendChild(this.menuLinkTextSpan);
 
@@ -24,11 +24,17 @@ class EntityGalleryLabels extends TatorElement {
     this.div.setAttribute("class", "enitity-gallery__labels-div rounded-1 my-2 py-2 px-2 hidden");
     this._shadow.appendChild(this.div);
 
+    let titleDiv = document.createElement("div");
+    titleDiv.setAttribute("class", "text-gray d-flex flex-row flex-items-center f2 py-2 px-2");
+    this._titleText = document.createTextNode("Select labels to display in the gallery")
+    titleDiv.appendChild(this._titleText);
+    this.div.append(titleDiv);
+
     // Hide and showing the attribute div
-    let xClose = document.createElement("nav-close");
-    xClose.setAttribute("class", "float-right");
-    xClose.style.height = "40px";
-    this.div.appendChild(xClose);
+    const xClose = document.createElement("nav-close");
+    xClose.style.marginLeft = "auto";
+    xClose.style.height = "20px";
+    titleDiv.appendChild(xClose);
 
     // Listeners
     xClose.addEventListener("click", () => {
@@ -36,7 +42,6 @@ class EntityGalleryLabels extends TatorElement {
     });
 
     this.menuLink.addEventListener("click", () => {
-      // console.log("Menu link clicked!")
       this.div.classList.toggle("hidden");
     });
 
@@ -45,6 +50,10 @@ class EntityGalleryLabels extends TatorElement {
 
     // Keep track of values by TypeId
     this._selectionValues = {};
+  }
+
+  set titleEntityTypeName(val) {
+    this._titleText.textContent = `Select ${val} labels to display in the gallery`;
   }
 
   /**
@@ -67,8 +76,12 @@ class EntityGalleryLabels extends TatorElement {
 
     if(!hideTypeName){
       let _title = document.createElement("div");
-      _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-2");
+      _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-3");
       _title.appendChild(document.createTextNode(`Labels for ${typeName}`));
+      let idText = document.createElement("text");
+      idText.setAttribute("class", "d-flex py-1 text-gray f2");
+      idText.textContent = `Type ID: ${typeData.id}`;
+      _title.appendChild(idText);
       labelsMain.appendChild(_title);
     }
 
@@ -100,8 +113,8 @@ class EntityGalleryLabels extends TatorElement {
     styleDiv.appendChild(selectionBoxes);
 
     selectionBoxes.addEventListener("change", (e) => {
-      this.dispatchEvent(new CustomEvent("labels-update", { 
-          detail: { 
+      this.dispatchEvent(new CustomEvent("labels-update", {
+          detail: {
               value: e.target.getValue(),
               typeId: typeData.id
             }
@@ -169,7 +182,7 @@ class EntityGalleryLabels extends TatorElement {
         name: attr.name,
         checked
       });
-      
+
       // reset checked - only check the first one
       if(checked) checked = false;
     }
