@@ -174,6 +174,11 @@ class TatorSearch:
                 '_duration': {'type': 'float'},
                 '_gid': {'type': 'keyword'},
                 '_uid': {'type': 'keyword'},
+                '_fps': {'type': 'float'},
+                '_num_frames': {'type': 'long'},
+                '_codec': {'type': 'keyword'},
+                '_width': {'type': 'integer'},
+                '_height': {'type': 'integer'},
                 'filename': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
             }},
         )
