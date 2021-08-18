@@ -177,8 +177,8 @@ class TatorSearch:
                 '_fps': {'type': 'float'},
                 '_num_frames': {'type': 'long'},
                 '_codec': {'type': 'keyword'},
-                '_width': {'type': 'integer'},
-                '_height': {'type': 'integer'},
+                '_rows': {'type': 'integer'},
+                '_columns': {'type': 'integer'},
                 'filename': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
             }},
         )
