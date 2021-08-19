@@ -123,7 +123,7 @@ kubectl delete pod sleepy
 echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
-pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright
+pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 playwright install
 
