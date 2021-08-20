@@ -16,11 +16,13 @@ from .views import MainRedirect
 from .views import RegistrationView
 from .views import PasswordResetRequestView
 from .views import PasswordResetView
+from .views import OrganizationsView
 from .views import ProjectsView
 from .views import AccountProfileView
 from .views import TokenView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
+from .views import OrganizationSettingsView
 from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
@@ -58,6 +60,9 @@ urlpatterns = [
          AnalyticsVisualizationView.as_view(), name='analytics-visualization'),
     path('<int:project_id>/analytics/reports',
          AnalyticsReportsView.as_view(), name='analytics-reports'),
+    path('organizations/', OrganizationsView.as_view(), name='organizations'),
+    path('<int:organization_id>/organization-settings', OrganizationSettingsView.as_view(),
+         name='organization-settings'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),

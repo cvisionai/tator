@@ -58,6 +58,9 @@ class PasswordResetRequestView(TemplateView):
 class PasswordResetView(TemplateView):
     template_name = 'password-reset/password-reset.html'
 
+class OrganizationsView(LoginRequiredMixin, TemplateView):
+    template_name = 'organizations.html'
+
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
 
@@ -94,6 +97,19 @@ class ProjectDetailView(ProjectBase, TemplateView):
 class ProjectSettingsView(ProjectBase, TemplateView):
     template_name = 'project-settings.html'
 
+class OrganizationSettingsView(LoginRequiredMixin, TemplateView):
+    template_name = 'project-settings.html'
+
+    def get_context_data(self, **kwargs):
+        # Get organization info.
+        context = super().get_context_data(**kwargs)
+        organization = get_object_or_404(Organization, pk=self.kwargs['organization_id'])
+        context['organization'] = organization
+
+        # Check if user is part of project.
+        if organization.user_permission(self.request.user.pk) != 'Admin':
+            raise PermissionDenied
+        return context
 
 class AnalyticsDashboardView(ProjectBase, TemplateView):
     template_name = 'analytics/dashboard.html'
