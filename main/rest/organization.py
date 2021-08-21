@@ -74,6 +74,18 @@ class OrganizationDetailAPI(BaseDetailView):
                 affiliation__user=self.request.user).filter(name__iexact=params['name']).exists():
                 raise Exception("Organization with this name already exists!")
             organization.name = params['name']
+        if 'thumb' in params:
+            organization_from_key = int(params['thumb'].split('/')[0])
+            if organization.pk != organization_from_key:
+                raise Exception("Invalid thumbnail path for this organization!")
+
+            tator_store = get_tator_store()
+            if not tator_store.check_key(params["thumb"]):
+                raise ValueError(f"Key {params['thumb']} not found in bucket")
+
+            if organization.thumb:
+                safe_delete(organization.thumb)
+            organization.thumb = params['thumb']
         organization.save()
         return {'message': f"Organization {params['id']} updated successfully!"}
 
