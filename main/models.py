@@ -225,6 +225,7 @@ class TwoDPlotType(Enum):
 
 class Organization(Model):
     name = CharField(max_length=128)
+    thumb = CharField(max_length=1024, null=True, blank=True)
     def user_permission(self, user_id):
         permission = None
         qs = self.affiliation_set.filter(user_id=user_id)
