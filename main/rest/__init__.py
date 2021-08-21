@@ -58,6 +58,7 @@ from .membership import MembershipDetailAPI
 from .notify import NotifyAPI
 from .organization import OrganizationListAPI
 from .organization import OrganizationDetailAPI
+from .organization_upload_info import OrganizationUploadInfoAPI
 from .password_reset import PasswordResetListAPI
 from .permalink import PermalinkAPI
 from .project import ProjectListAPI

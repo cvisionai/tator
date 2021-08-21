@@ -329,6 +329,10 @@ urlpatterns += [
         OrganizationDetailAPI.as_view(),
     ),
     path(
+        'rest/OrganizationUploadInfo/<int:organization>',
+        OrganizationUploadInfoAPI.as_view(),
+    ),
+    path(
         'rest/PasswordReset',
         PasswordResetListAPI.as_view(),
     ),
