@@ -352,6 +352,19 @@ urlpatterns += [
         ProjectDetailAPI.as_view(),
     ),
     path(
+        'rest/Reports/<int:project>',
+        ReportListAPI.as_view(),
+    ),
+    path(
+        'rest/Report/<int:id>',
+        ReportDetailAPI.as_view(),
+    ),
+    path(
+        'rest/SaveReportFile/<int:project>',
+        SaveReportFileAPI.as_view(),
+        name='SaveReportFile',
+    ),
+    path(
         'rest/Sections/<int:project>',
         SectionListAPI.as_view(),
     ),
