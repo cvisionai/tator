@@ -5,7 +5,7 @@ A Tator deployment makes use of one or more kubernetes clusters: one for serving
 the web application, and either the same cluster or other remote clusters for 
 running heavy workloads such as transcodes and algorithms.
 
-.. image:: https://user-images.githubusercontent.com/47112112/77114204-827e1000-6a02-11ea-857b-9d27f7f98310.png
+.. image:: https://user-images.githubusercontent.com/7937658/130495996-069fcca5-7950-4b68-8657-7773d18ffbaf.png
    :scale: 50 %
    :alt: Top-level architectural components
 
@@ -19,19 +19,18 @@ deployment, a summary of the core components is below:
    MetalLB
      The load balancer used in a bare metal deployment of kubernetes. The load
      balancer is configured via :term:`loadBalancerIp` to forward traffic seen
-     at that IP to the internal software network of kubernetes. Advanced
-     configuration of load balancing failovers is not covered in this
-     tutorial.
+     at that IP to the internal software network of kubernetes.
 
    Job Server
      The job server is the kuberneters cluster that has :term:`Argo` installed
-     to run asynchronous jobs for the tator deployment.
+     to run asynchronous jobs for the tator deployment. Asynchronous work can include
+     transcodes, GPU and/or CPU algorithms, report generation, and more.
 
    Argo
      An extension to kubernetes to define a new job type called a *workflow*.
      This allows for defining the execution of complex algorithms or routines
      across a series of pods based on the description.
-     `Argo <https://argoproj.github.io/projects/argo/>`_ is develoiped and
+     `Argo <https://argoproj.github.io/projects/argo/>`_ is developed and
      maintained by `Intuit <https://www.intuit.com/>`_.
 
    NGINX
@@ -41,14 +40,22 @@ deployment, a summary of the core components is below:
 
    Django
      The `python web framework <https://www.djangoproject.com/>`_ used by
-     tator online for handling dynamic web content and REST interactions.
+     Tator for handling dynamic web content and REST interactions.
 
-   Elastic Search
-     Complement to the :term:`PostgresSQL` database to allow for `faster searches <https://www.elastic.co/>`_.
+   Elasticsearch
+     Complement to the :term:`PostgresSQL` database to allow for 
+     `faster searches and analytics <https://www.elastic.co/>`_.
 
    PostgresSQL
      `SQL-compliant database <https://www.postgresql.org/>`_ used to store
      project configurations as well as media and associated metadata.
+
+   Redis
+     Provides `in-memory caching <https://www.redis.io>` of temporary data.
+
+   MinIO
+     An S3-compatible object storage suite used to store and retrieve all
+     media files.
 
    Kubernetes
      The underlying system used to deploy and manage the containerized
