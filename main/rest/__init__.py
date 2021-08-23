@@ -63,6 +63,9 @@ from .password_reset import PasswordResetListAPI
 from .permalink import PermalinkAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
+from .report import ReportListAPI
+from .report import ReportDetailAPI
+from .save_report_file import SaveReportFileAPI
 from .section import SectionListAPI
 from .section import SectionDetailAPI
 from .section_analysis import SectionAnalysisAPI

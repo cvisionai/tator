@@ -1477,6 +1477,16 @@ class AnnouncementToUser(Model):
     announcement = ForeignKey(Announcement, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
 
+class Report(Model):
+    """
+    """
+    created_datetime = DateTimeField(auto_now_add=True)
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
+    name = CharField(max_length=128)
+    html_file = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    description = CharField(max_length=1024, blank=True)
+
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {

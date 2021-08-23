@@ -84,6 +84,10 @@ from .password_reset import password_reset_spec
 from .project import project_spec
 from .project import project_update
 from .project import project
+from .report import report
+from .report import report_spec
+from .report import report_file
+from .report import report_file_spec
 from .section import section_spec
 from .section import section_update
 from .section import section

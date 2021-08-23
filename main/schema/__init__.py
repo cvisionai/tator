@@ -65,6 +65,9 @@ from .password_reset import PasswordResetListSchema
 from .permalink import PermalinkSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
+from .report import ReportListSchema
+from .report import ReportDetailSchema
+from .save_report_file import SaveReportFileSchema
 from .section import SectionListSchema
 from .section import SectionDetailSchema
 from .section_analysis import SectionAnalysisSchema
