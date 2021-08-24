@@ -143,32 +143,31 @@
     <script src={% static "js/project-detail/new-algorithm-form.js" %}></script>
     <script src={% static "js/project-detail/project-detail.js" %}></script>
     <script src={% static "js/components/loading-spinner.js" %}></script>
-    <script src={% static "js/project-settings/settings-breadcrumbs.js" %}></script>
-    <script src={% static "js/project-settings/type-form-validation.js" %}></script>
-    <script src={% static "js/project-settings/settings-input-helpers.js" %}></script>
+    <script src={% static "js/project-settings/attributes/attributes-clone.js" %}></script>
+    <script src={% static "js/project-settings/attributes/attributes-delete.js" %}></script>
+    <script src={% static "js/project-settings/attributes/attributes-form.js" %}></script>
+    <script src={% static "js/project-settings/attributes/attributes-main.js" %}></script>
+    <script src={% static "js/project-settings/components/settings-breadcrumbs.js" %}></script>
+    <script src={% static "js/project-settings/components/settings-nav.js" %}></script>
+    <script src={% static "js/project-settings/components/single-upload.js" %}></script>.js
+    <script src={% static "js/project-settings/data/data-attributes-clone.js" %}></script>
+    <script src={% static "js/project-settings/data/data-media-list.js" %}></script>
+    <script src={% static "js/project-settings/data/data-memberships.js" %}></script>
+    <script src={% static "js/project-settings/data/data-project-types.js" %}></script>
+    <script src={% static "js/project-settings/data/data-version-list.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/type-form.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/leaf-type-edit.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/localization-type-edit.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/media-type-main-edit.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/membership-edit.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/project-delete.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/project-main-edit.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/state-type-edit.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/type-delete.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/type-new.js" %}></script>
+    <script src={% static "js/project-settings/type-forms/versions-edit.js" %}></script>
     <script src={% static "js/project-settings/settings-box-helpers.js" %}></script>
-    <script src={% static "js/project-settings/type-delete.js" %}></script>
-    <script src={% static "js/project-settings/type-form.js" %}></script>
-    <script src={% static "js/project-settings/settings-nav.js" %}></script>
-    <script src={% static "js/project-settings/single-upload.js" %}></script>
-    <script src={% static "js/project-settings/data-media-list.js" %}></script>
-    <script src={% static "js/project-settings/data-version-list.js" %}></script>
-    <script src={% static "js/project-settings/data-project-types.js" %}></script>
-    <script src={% static "js/project-settings/data-attributes-clone.js" %}></script>
-    <script src={% static "js/project-settings/data-memberships.js" %}></script>
-    <script src={% static "js/project-settings/type-new.js" %}></script>
-    <script src={% static "js/project-settings/attributes-clone.js" %}></script>
-    <script src={% static "js/project-settings/attributes-main.js" %}></script>
-    <script src={% static "js/project-settings/attributes-form.js" %}></script>
-    <script src={% static "js/project-settings/attributes-delete.js" %}></script>
-    <script src={% static "js/project-settings/media-type-main-edit.js" %}></script>
-    <script src={% static "js/project-settings/project-delete.js" %}></script>
-    <script src={% static "js/project-settings/project-main-edit.js" %}></script>
-    <script src={% static "js/project-settings/localization-type-edit.js" %}></script>
-    <script src={% static "js/project-settings/leaf-type-edit.js" %}></script>
-    <script src={% static "js/project-settings/state-type-edit.js" %}></script>
-    <script src={% static "js/project-settings/membership-edit.js" %}></script>
-    <script src={% static "js/project-settings/versions-edit.js" %}></script>
+    <script src={% static "js/project-settings/type-form-validation.js" %}></script>
     <script src={% static "js/project-settings/project-settings.js" %}></script>
     <script src={% static "js/annotation/annotation-breadcrumbs.js" %}></script>
     <script src={% static "js/annotation/lock-button.js" %}></script>
@@ -269,9 +268,10 @@
     {% block head %}
     {% endblock head %}
   </head>
-  <body>
+<body>
 
-    {% block body %}
-    {% endblock body %}
-  </body>
+  {% block body %}
+  {% endblock body %}
+</body>
+
 </html>

@@ -12,7 +12,6 @@ class TypeForm extends TatorElement {
     this._shadow.appendChild(this.typeFormDiv);
 
     // Required helpers.
-    this.inputHelper = new SettingsInput("");
     this.attributeFormHelper = new AttributesForm();
 
     // Loading spinner
@@ -242,7 +241,11 @@ class TypeForm extends TatorElement {
   }
 
   _saveEntityButton(id) {
-    this.saveButton = this.inputHelper.saveButton();
+    this.saveButton = document.createElement("input");
+    this.saveButton.setAttribute("type", "submit");
+    this.saveButton.setAttribute("value", "Save");
+    this.saveButton.setAttribute("class", `btn btn-clear f1 text-semibold`);
+
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
       if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
@@ -258,7 +261,12 @@ class TypeForm extends TatorElement {
   }
 
   _resetEntityLink(id) {
-    this.resetLink = this.inputHelper.resetLink();
+    this.resetLink = document.createElement("a");
+    this.resetLink.setAttribute("href", "#");
+    this.resetLink.setAttribute("class", `px-5 f1 text-gray hover-text-white`);
+
+    let resetLinkText = document.createTextNode("Reset");
+    this.resetLink.appendChild( resetLinkText );
 
     // Form reset event
     this.resetLink.addEventListener("click", (event) => {
@@ -722,15 +730,13 @@ class TypeForm extends TatorElement {
     // console.log(this.data);
 
     // Update media list in the background
-    this._dataMediaList._clear();
-    this._dataVersionList._clear();
     // In future could send individual media update if fn there to receive it
     if (this.typeName == "MediaType") {
-      // const mediaList = new DataMediaList(this.projectId);
+      this.mediaListHandler._clear();
       this.mediaListHandler._setProjectMediaList("", true);
     }
     if (this.typeName == "Version") {
-      // const versionsList = new DataVersionList( this.projectId );
+      this.versionListHandler.clear();
       this.versionListHandler._setVersionList("", true);
     }
   }

@@ -4,7 +4,6 @@ class AttributesClone {
     // Feature-related class(es) to customize form element. Applies to all elements.
     this.attributeDataByType = attributeDataByType;
     this.attributeFormHelper = new AttributesForm();
-    this.inputHelper = new SettingsInput("media-types-main-edit");
   }
 
   _init(){
@@ -16,16 +15,6 @@ class AttributesClone {
     //this.form.addEventListener("change", this._formChanged);
 
     const typeOptions = this._getTypesList();
-
-    // Fields for this form
-    // const TYPE = "Type";
-    // this.typeOptionsSelect = this.inputHelper.inputSelectOptions({
-    //   "labelText": TYPE,
-    //   "value": "Select",
-    //   "optionsList": typeOptions,
-    //   "name" : TYPE.toLowerCase()
-    // });
-    // this.form.appendChild(this.typeOptionsSelect);
 
     // Emptyform uses "" for dtype value
     this._typeSelect = document.createElement("enum-input");
@@ -109,15 +98,6 @@ class AttributesClone {
       this.attributeCheckboxes.setAttribute("name", "Attribute(s)");
       this.attributeCheckboxes.setValue(newList);
       this.attributeCheckboxes.default = newList;
-
-      // console.log(newList); // why do I make a new list?
-  
-      // let attributeCheckboxes = this.inputHelper.multipleCheckboxes({
-      //   "value" : '',
-      //   "labelText" : 'Attribute(s)',
-      //   "name" : 'attribute-clones',
-      //   "checkboxList" : newList
-      // });
   
       return this.attributeCheckboxes;
     }
@@ -144,12 +124,6 @@ class AttributesClone {
         entityOptions.push(option)
       }
   
-      // let entitySelectBox = this.inputHelper.inputSelectOptions({
-      //   "labelText": "",
-      //   "value": "",
-      //   "optionsList": entityOptions,
-      //   "name" : "entity"
-      // });
       this._entitySelect = document.createElement("enum-input");
       this._entitySelect.setAttribute("name", "Entity");
       this._entitySelect.choices = entityOptions;

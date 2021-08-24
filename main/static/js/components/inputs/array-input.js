@@ -20,9 +20,7 @@ class ArrayInput extends TatorElement {
       this._inputs = []
 
       // Add new
-      //@Tmp keeping in helper bc of styling
-      this.settingsHelper = new SettingsInput(); 
-      this.addNewButton = this.settingsHelper.addNewRow({
+      this.addNewButton = this.addNewRow({
           "labelText" : "+ New",
           "callback" : ""
       });
@@ -103,6 +101,29 @@ class ArrayInput extends TatorElement {
       });
 
       return this.addNewButton.before(wrapper);
+    }
+  
+    addNewRow({
+      labelText = '',
+      callback = null
+    } = {}){
+      const labelWrap = document.createElement("label");
+      labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
+
+      const spanTextNode = document.createElement("span");
+      const spanText = document.createTextNode("");
+      const labelDiv = document.createElement("div"); 
+
+      spanTextNode.setAttribute("class", "col-sm-4 col-md-3 text-gray clickable");
+      spanText.nodeValue = labelText;
+      spanTextNode.appendChild(spanText);
+
+      labelWrap.append(spanTextNode);
+
+      labelDiv.setAttribute("class", "py-2 f1 text-semibold");
+      labelDiv.appendChild(labelWrap);
+
+      return labelDiv;
     }
 
     getValue(){

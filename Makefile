@@ -326,33 +326,32 @@ FILES = \
     project-detail/new-algorithm-form.js \
     project-detail/project-detail.js \
     components/loading-spinner.js \
-    project-settings/settings-breadcrumbs.js \
-    project-settings/type-form-validation.js \
-    project-settings/settings-input-helpers.js \
-    project-settings/settings-box-helpers.js \
-    project-settings/type-delete.js \
-    project-settings/type-form.js \
-    project-settings/settings-nav.js \
     components/inline-warning.js \
-    project-settings/single-upload.js \
-    project-settings/data-media-list.js \
-    project-settings/data-version-list.js \
-    project-settings/data-project-types.js \
-    project-settings/data-attributes-clone.js \
-    project-settings/data-memberships.js \
-    project-settings/type-new.js \
-    project-settings/attributes-clone.js \
-    project-settings/attributes-main.js \
-    project-settings/attributes-form.js \
-    project-settings/attributes-delete.js \
-    project-settings/media-type-main-edit.js \
-    project-settings/project-delete.js \
-    project-settings/project-main-edit.js \
-    project-settings/localization-type-edit.js \
-    project-settings/leaf-type-edit.js \
-    project-settings/state-type-edit.js \
-    project-settings/membership-edit.js \
-    project-settings/versions-edit.js \
+    project-settings/attributes/attributes-clone.js \
+    project-settings/attributes/attributes-delete.js \
+    project-settings/attributes/attributes-form.js \
+    project-settings/attributes/attributes-main.js \
+    project-settings/components/settings-breadcrumbs.js \
+    project-settings/components/settings-nav.js \
+    project-settings/components/single-upload.js \.js
+    project-settings/data/data-attributes-clone.js \
+    project-settings/data/data-media-list.js \
+    project-settings/data/data-memberships.js \
+    project-settings/data/data-project-types.js \
+    project-settings/data/data-version-list.js \
+    project-settings/type-forms/type-form.js \
+    project-settings/type-forms/leaf-type-edit.js \
+    project-settings/type-forms/localization-type-edit.js \
+    project-settings/type-forms/media-type-main-edit.js \
+    project-settings/type-forms/membership-edit.js \
+    project-settings/type-forms/project-delete.js \
+    project-settings/type-forms/project-main-edit.js \
+    project-settings/type-forms/state-type-edit.js \
+    project-settings/type-forms/type-delete.js \
+    project-settings/type-forms/type-new.js \
+    project-settings/type-forms/versions-edit.js \
+    project-settings/settings-box-helpers.js \
+    project-settings/type-form-validation.js \
     project-settings/project-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
