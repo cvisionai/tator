@@ -458,6 +458,7 @@ FILES = \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
     analytics/visualization/visualization.js \
+    analytics/reports/report-card.js \
     analytics/reports/reports.js \
     third_party/autocomplete.js \
     third_party/webrtcstreamer.js \

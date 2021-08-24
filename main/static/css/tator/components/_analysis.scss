@@ -255,3 +255,18 @@ body.analysis-annotations-body {
     background-color: $color-charcoal--medium70;
   }
 }
+
+.reports_list {
+  box-sizing: border-box;
+  height: calc(100vh - 62px);
+  overflow: auto;
+  width: 450px;
+}
+
+.reports_main {
+  border-left: 1px solid $color-charcoal--light;
+  box-sizing: border-box;
+  height: calc(100vh - 62px);
+  overflow: auto;
+  width: 100%;
+}

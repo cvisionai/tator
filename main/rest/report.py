@@ -4,7 +4,9 @@ import os
 from django.db import transaction
 from django.conf import settings
 
+from ..models import Project
 from ..models import Report
+from ..models import User
 from ..models import database_qs
 from ..schema import ReportListSchema
 from ..schema import ReportDetailSchema
@@ -67,7 +69,7 @@ class ReportListAPI(BaseListView):
             user=user,
             name=params[fields.name],
             description=description,
-            html_file=report_url)
+            html_file=report_path)
 
         return {"message": f"Successfully created report {new_report.id}!.", "id": new_report.id}
 
@@ -86,10 +88,10 @@ class ReportDetailAPI(BaseDetailView):
     def _delete(self, params: dict) -> dict:
         # Grab the report object and delete it from the database
         report = Report.objects.get(pk=params['id'])
-        html_file = alg.html_file
+        html_file = report.html_file
         report.delete()
 
-        # Delete the correlated manifest file
+        # Delete the correlated file
         path = os.path.join(settings.MEDIA_ROOT, html_file)
         self.safe_delete(path=path)
 
@@ -102,7 +104,7 @@ class ReportDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params) -> dict:
         report_id = params["id"]
-        obj = Report.objects.get(pk=alg_id)
+        obj = Report.objects.get(pk=report_id)
 
         name = params.get(fields.name, None)
         if name is not None:
