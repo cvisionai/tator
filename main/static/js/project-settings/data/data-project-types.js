@@ -44,6 +44,7 @@ class ProjectTypesData {
         this._getStateTypePromise();
         this._getMembershipDataPromise();
         this._getVersionsDataPromise();
+        this._getAlgoDataPromise();
     
         return [
           this.mediaTypesPromise,
@@ -51,7 +52,8 @@ class ProjectTypesData {
           this.leafTypesPromise,
           this.stateTypesPromise,
           this.membershipPromise,
-          this.versionsPromise
+          this.versionsPromise,
+          this.algoPromise
         ];
       }
 
@@ -79,8 +81,14 @@ class ProjectTypesData {
         this.membershipData = new MembershipData(this.projectId);
         return this.membershipPromise = this.membershipData._getMembershipPromise();
       }
+  
       _getVersionsDataPromise(){
         this.versionsBlock = document.createElement("versions-edit");
         return this.versionsPromise = this.versionsBlock._fetchGetPromise({"id": this.projectId} );
+      }
+  
+      _getAlgoDataPromise(){
+        this.algoBlock = document.createElement("alogorithm-edit");
+        return this.algoPromise = this.algoBlock._fetchGetPromise({"id": this.projectId} );
       }
 }

@@ -208,6 +208,8 @@ class TypeForm extends TatorElement {
         return "membership-edit";
       case "Version":
         return "versions-edit";
+      case "Algorithm":
+        return "algorithm-edit";
       default:
         break;
     }

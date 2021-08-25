@@ -333,13 +333,14 @@ FILES = \
     project-settings/attributes/attributes-main.js \
     project-settings/components/settings-breadcrumbs.js \
     project-settings/components/settings-nav.js \
-    project-settings/components/single-upload.js \.js
+    project-settings/components/single-upload.js \
     project-settings/data/data-attributes-clone.js \
     project-settings/data/data-media-list.js \
     project-settings/data/data-memberships.js \
     project-settings/data/data-project-types.js \
     project-settings/data/data-version-list.js \
     project-settings/type-forms/type-form.js \
+    project-settings/type-forms/algorithm-edit.js \
     project-settings/type-forms/leaf-type-edit.js \
     project-settings/type-forms/localization-type-edit.js \
     project-settings/type-forms/media-type-main-edit.js \
