@@ -64,25 +64,18 @@ class OrganizationSettings extends TatorPage {
    */
   _init() {
     // Organization data
-    this.organizationId = this.getAttribute("project-id");
+    this.organizationId = this.getAttribute("organization-id");
+    this.organizationData = new OrganizationData(this.organizationId);
     this.organizationEdit = new OrganizationMainEdit();
-    this.typesData = new ProjectTypesData(this.projectId);
-    const projectPromise = this.projectView._fetchGetPromise({ id: this.projectId });
+    const organizationPromise = this.organizationData.getOrganization();
 
-    // Data Handlers for Media and Version initialized below
-    this._dataMediaList = new DataMediaList( this.projectId );;
-    this._dataVersionList = new DataVersionList( this.projectId );
-
-    projectPromise
-    .then( (data) => {
-      return data.json();
-    }).then((objData) => {
-      this._breadcrumbs.setAttribute("project-name", objData.name);
-      const formView = this.projectView;
+    organizationPromise
+    .then(data => {
+      const formView = this.organizationEdit;
 
       this.loading.hideSpinner();
       this.makeContainer({
-        objData, 
+        objData: data, 
         classBase: formView,
         hidden : false
       });
@@ -90,13 +83,13 @@ class OrganizationSettings extends TatorPage {
       // Fill it with contents
       this.settingsNav.fillContainer({
         type : formView.typeName,
-        id : objData.id,
+        id : data.id,
         itemContents : formView
       });
 
       // init form with the data
       formView._init({ 
-        data: objData, 
+        data: data, 
         modal : this.modal, 
         sidenav : this.settingsNav
       });
@@ -105,13 +98,14 @@ class OrganizationSettings extends TatorPage {
       this.settingsNav._addSimpleNav({
         name : formView._getHeading(),
         type : formView.typeName ,
-        id : objData.id,
+        id : data.id,
         selected : true
       });
-        
+       
+      /* 
       for(let i in this.settingsViewClasses){
         // Add a navigation section
-        // let objData =  dataArray[i] ;
+        // let data =  dataArray[i] ;
         let tc = this.settingsViewClasses[i];
         let typeClassView = document.createElement(tc);
 
@@ -123,7 +117,7 @@ class OrganizationSettings extends TatorPage {
 
         // Add empty form container for + New
         this.makeContainer({
-          objData : emptyData, 
+          data : emptyData, 
           classBase: typeClassView
         });
 
@@ -135,10 +129,7 @@ class OrganizationSettings extends TatorPage {
         });
 
         // Add add new containers
-        if (typeClassView.typeName == "Membership") {
-          this.membershipData = new MembershipData(this.projectId);
-          typeClassView.init(this.membershipData);
-        }
+        typeClassView.init(this.organizationData);
 
         this.settingsNav.fillContainer({
           type : typeClassView.typeName,
@@ -146,39 +137,11 @@ class OrganizationSettings extends TatorPage {
           itemContents : typeClassView
         });
 
-        // List to relevant data handlers to show the correct list options
-        const usesMediaList = ["StateType", "LocalizationType"];
-        if (usesMediaList.includes(typeClassView.typeName)) {
-          this._dataMediaList.el.addEventListener("change", (e) => {
-            console.log(e.detail);
-            typeClassView.updateMediaList(e.detail);
-          });
-        } else if(typeClassView.typeName == "Version") {
-          this._dataVersionList.el.addEventListener("change", (e) => {
-            console.log(e.detail);
-            typeClassView.updateVersionList(e.detail);
-          });
-        }
-
-        // Make media new list before we add an empty row
-        if(formView.typeName == "MediaType"){
-          // const mediaList = new DataMediaList( this.projectId );
-          this._dataMediaList._setProjectMediaList("", true);
-        }
-
-        // Make versions new list before we add an empty row
-        if(formView.typeName == "Version"){
-          // const versionsList = new DataVersionList( this.projectId );
-          this._dataVersionList._setVersionList("", true);
-        }
-
         // init the form with the data
         typeClassView._init({ 
           data : emptyData, 
           modal : this.modal, 
           sidenav : this.settingsNav,
-          versionListHandler: this._dataVersionList,
-          mediaListHandler: this._dataMediaList
         });
 
         headingEl.addEventListener("click", () => {
@@ -186,6 +149,7 @@ class OrganizationSettings extends TatorPage {
           this._sectionInit({ viewClass : tc })
         }, { once: true }); // just run this once
       }
+      */
     });
   }
 

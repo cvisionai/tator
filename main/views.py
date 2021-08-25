@@ -12,6 +12,7 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework.authentication import TokenAuthentication
 import yaml
 
+from .models import Organization
 from .models import Project
 from .models import Media
 from .models import Membership
@@ -98,7 +99,7 @@ class ProjectSettingsView(ProjectBase, TemplateView):
     template_name = 'project-settings.html'
 
 class OrganizationSettingsView(LoginRequiredMixin, TemplateView):
-    template_name = 'project-settings.html'
+    template_name = 'organization-settings.html'
 
     def get_context_data(self, **kwargs):
         # Get organization info.

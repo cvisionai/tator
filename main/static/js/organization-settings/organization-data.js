@@ -1,5 +1,5 @@
 class OrganizationData {
-  constructor(organizationId){
+  constructor(organizationId) {
     this.organizationId = organizationId;
   }
 

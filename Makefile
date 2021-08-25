@@ -354,6 +354,9 @@ FILES = \
     project-settings/membership-edit.js \
     project-settings/versions-edit.js \
     project-settings/project-settings.js \
+    organization-settings/organization-data.js \
+    organization-settings/organization-main-edit.js \
+    organization-settings/organization-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
     annotation/fill-boxes-button.js \
