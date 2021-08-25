@@ -1897,12 +1897,14 @@ class VideoCanvas extends AnnotationCanvas {
       // The streaming files may not be in order, find the largest resolution
       hq_idx = 0;
       var largest_height = 0;
+      var largest_width = 0;
       for (let idx = 0; idx < videoObject.media_files["streaming"].length; idx++)
       {
         let height = videoObject.media_files["streaming"][idx].resolution[0];
         if (height > largest_height)
         {
           largest_height = height;
+          largest_width = videoObject.media_files["streaming"][idx].resolution[1];
           hq_idx = idx;
         }
       }
@@ -1911,8 +1913,7 @@ class VideoCanvas extends AnnotationCanvas {
       }
 
       // Use the largest resolution to set the viewport
-      dims = [streaming_files[hq_idx].resolution[1],
-              streaming_files[hq_idx].resolution[0]];
+      dims = [largest_width, largest_height];
     }
     // Handle cases when there are no streaming files in the set
     if (play_idx == -1)
