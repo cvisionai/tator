@@ -29,8 +29,8 @@ class OrganizationSettings extends TatorPage {
 
     // Web Components for this page
     this.settingsViewClasses = [  "affiliation-edit",
-                                  "bucket-edit",
-                                  "job-cluster-edit",
+                                  //"bucket-edit",
+                                  //"job-cluster-edit",
                                ];
     
     // Modal parent - to pass to page components
@@ -102,8 +102,7 @@ class OrganizationSettings extends TatorPage {
         selected : true
       });
        
-      /* 
-      for(let i in this.settingsViewClasses){
+      for (let i in this.settingsViewClasses) {
         // Add a navigation section
         // let data =  dataArray[i] ;
         let tc = this.settingsViewClasses[i];
@@ -113,11 +112,11 @@ class OrganizationSettings extends TatorPage {
         // an empty row in each TYPE
         let emptyData = typeClassView._getEmptyData();
         emptyData.name = "+ Add new";
-        emptyData.project = this.projectId;
+        emptyData.organization = this.organizationId;
 
         // Add empty form container for + New
         this.makeContainer({
-          data : emptyData, 
+          objData: emptyData, 
           classBase: typeClassView
         });
 
@@ -149,42 +148,19 @@ class OrganizationSettings extends TatorPage {
           this._sectionInit({ viewClass : tc })
         }, { once: true }); // just run this once
       }
-      */
     });
   }
 
-  /* Run when project-id is set to run fetch the page content. */
+  /* Run when organization-id is set to run fetch the page content. */
   _sectionInit( {viewClass} ) {
     const formView = document.createElement( viewClass );
     console.log(viewClass);
 
-    formView._fetchGetPromise({"id": this.projectId} )
+    formView._fetchGetPromise({"id": this.organizationId} )
     .then( (data) => {
       return data.json();
     }).then( (objData) => {
       this.loading.hideSpinner();
-
-      // Pass in data interface to memberships.
-      if (formView.typeName == "Membership") {
-        this.membershipData = new MembershipData(this.projectId);
-        formView.init(this.membershipData);
-      }
-
-      // Make media new list before we add an empty row
-      if(formView.typeName == "MediaType"){
-        // const mediaList = new DataMediaList( this.projectId );
-        this._dataMediaList._setProjectMediaList(objData, true);
-      }
-
-      // Make versions new list before we add an empty row
-      if(formView.typeName == "Version"){
-        // Versions number sort
-        if (typeof objData[0] !== "undefined" && typeof objData[0].number !== "undefined") {
-          objData = objData.sort((a, b) => a.number > b.number);
-        }
-        // const versionsList = new DataVersionList( this.projectId );
-        this._dataVersionList._setVersionList(objData, true);
-      }
 
       // Add item containers for Types
       this.makeContainers({
@@ -202,36 +178,17 @@ class OrganizationSettings extends TatorPage {
       // Add contents for each Entity
       for(let g of objData){
         let form = document.createElement(viewClass);
-        if (form.typeName == "Membership") {
-          form.init(this.membershipData);
-        }
         this.settingsNav.fillContainer({
           type : form.typeName,
           id : g.id,
           itemContents : form
         });
 
-        // List to relevant data handlers to show the correct list options
-        const usesMediaList = ["StateType", "LocalizationType"];
-        if (usesMediaList.includes(form.typeName)) {
-          this._dataMediaList.el.addEventListener("change", (e) => {
-            console.log(e.detail);
-            form.updateMediaList(e.detail);
-          });
-        } else if(form.typeName == "Version") {
-          this._dataVersionList.el.addEventListener("change", (e) => {
-            console.log(e.detail);
-            form.updateVersionList(e.detail);
-          });
-        }
-
         // init form with the data
         form._init({ 
           data : g, 
           modal : this.modal, 
           sidenav: this.settingsNav,
-          versionListHandler: this._dataVersionList,
-          mediaListHandler: this._dataMediaList
         });
       }
           

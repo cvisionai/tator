@@ -285,6 +285,9 @@ FILES = \
     projects/new-project-dialog.js \
     projects/delete-project.js \
     projects/projects-dashboard.js \
+    organizations/organization-summary.js \
+    organizations/new-organization.js \
+    organizations/organizations-dashboard.js \
     account-profile/account-profile.js \
     token/token-page.js \
     new-project/new-project-close.js \
@@ -355,7 +358,9 @@ FILES = \
     project-settings/versions-edit.js \
     project-settings/project-settings.js \
     organization-settings/organization-data.js \
+    organization-settings/organization-type-form.js \
     organization-settings/organization-main-edit.js \
+    organization-settings/affiliation-edit.js \
     organization-settings/organization-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
