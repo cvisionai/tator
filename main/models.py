@@ -46,6 +46,7 @@ from django_ltree.fields import PathField
 from django.db import transaction
 
 from .search import TatorSearch
+from .ses import TatorSES
 from .download import download_file
 from .store import get_tator_store, ObjectStore, get_storage_lookup
 from .cognito import TatorCognito
@@ -346,6 +347,32 @@ class Affiliation(Model):
                            default='Member')
     def __str__(self):
         return f'{self.user} | {self.organization}'
+
+@receiver(post_save, sender=Affiliation)
+def affiliation_save(sender, instance, created, **kwargs):
+    if created:
+        # Send email notification to organizational admins.
+        organization = instance.organization
+        user = instance.user
+        if settings.TATOR_EMAIL_ENABLED:
+            recipients = Affiliation.objects.filter(organization=organization, permission='Admin')\
+                                            .values_list('user', flat=True)
+            recipients = User.objects.filter(pk__in=recipients).values_list('email', flat=True)
+            recipients = list(recipients)
+            email_response = TatorSES().email(
+                sender=settings.TATOR_EMAIL_SENDER,
+                recipients=recipients,
+                title=f"{user} added to {organization}",
+                text=f"You are being notified that a new user {user} (username {user.username}, "
+                     f"email {user.email}) has been added to the Tator organization "
+                     f"{organization}. This message has been sent to all organization admins. "
+                      "No action is required.",
+                html=None,
+                attachments=[])
+                logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
+            if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
+                logger.error(email_response)
+                # Don't raise an error, email is not required for affiliation creation.
 
 class Bucket(Model):
     """ Stores info required for remote S3 buckets.
