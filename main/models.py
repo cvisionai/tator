@@ -369,7 +369,7 @@ def affiliation_save(sender, instance, created, **kwargs):
                       "No action is required.",
                 html=None,
                 attachments=[])
-                logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
+            logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
             if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
                 logger.error(email_response)
                 # Don't raise an error, email is not required for affiliation creation.
