@@ -1815,7 +1815,12 @@ class VideoCanvas extends AnnotationCanvas {
   }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject, mediaType, quality, resizeHandler, offsite_config, numGridRows, heightPadObject)
+  //
+  // @param {integer} seekQuality - If provided, closest quality to this will be used for the
+  //                                seek buffer. Otherwise be the highest quality will be used.
+  // @param {integer} scrubQuality - If provided, closest quality to this will be used for the
+  //                                 scrub buffer. Otherwise, closest quality to 320 will be used.
+  loadFromVideoObject(videoObject, mediaType, quality, resizeHandler, offsite_config, numGridRows, heightPadObject, seekQuality, scrubQuality)
   {
     this.mediaInfo = videoObject;
     if (mediaType)
@@ -1867,8 +1872,13 @@ class VideoCanvas extends AnnotationCanvas {
     {
       streaming_files = videoObject.media_files["streaming"];
       play_idx = find_closest(videoObject, quality);
-      // Todo parameterize this to maximize flexibility
-      scrub_idx = find_closest(videoObject, 320);
+
+      if (Number.isInteger(scrubQuality)) {
+        scrub_idx = find_closest(videoObject, scrubQuality);
+      }
+      else {
+        scrub_idx = find_closest(videoObject, 320);
+      }
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
       if ('audio' in videoObject.media_files && !offsite_config.hasOwnProperty('host'))
@@ -1895,6 +1905,9 @@ class VideoCanvas extends AnnotationCanvas {
           largest_height = height;
           hq_idx = idx;
         }
+      }
+      if (Number.isInteger(seekQuality)) {
+        hq_idx = find_closest(videoObject, seekQuality);
       }
 
       // Use the largest resolution to set the viewport

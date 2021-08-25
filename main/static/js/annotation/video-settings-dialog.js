@@ -107,6 +107,14 @@ class VideoSettingsDialog extends ModalDialog {
           dockPlayback: this.getSourceObject("dockPlayback")
         }
       }));
+
+      // Set the video quality search parameters
+      var searchParams = new URLSearchParams(window.location.search);
+      searchParams = this.queryParams(searchParams);
+      const path = document.location.pathname;
+      const searchArgs = searchParams.toString();
+      var newUrl = path + "?" + searchArgs;
+      window.history.replaceState(null, "VideoSettings", newUrl);
     });
 
     // Sets all the choices to the defaults
@@ -201,6 +209,10 @@ class VideoSettingsDialog extends ModalDialog {
     }
 
     this.applySettings(this._defaultSources);
+  }
+
+  applyPlayQuality(quality) {
+    this._divOptions["play"].choice.choices
   }
 
   /**
@@ -309,6 +321,35 @@ class VideoSettingsDialog extends ModalDialog {
   {
     this._defaultSources = val;
     this.applyDefaults();
+  }
+
+  /**
+   * @param {URLSearchParams} params - Existing parameters to add to. If not provided, a new
+   *                                   set is created.
+   * @returns URLSearchParams - Contains video related URL parameters
+   */
+  queryParams(params) {
+    if (params == undefined) {
+      params = new URLSearchParams(window.location.search)
+    }
+
+    params.delete("focusQuality");
+    params.delete("dockQuality");
+    params.delete("scrubQuality");
+    params.delete("seekQuality");
+    params.delete("playQuality");
+
+    if (this._mode == "multiview") {
+      params.set("focusQuality", parseInt(this._divOptions["focusPlayback"].choice.getValue().split("p")[0]));
+      params.set("dockQuality", parseInt(this._divOptions["dockPlayback"].choice.getValue().split("p")[0]));
+    }
+    
+    if (this._mode == "single" || this._mode == "multiview") {
+      params.set("scrubQuality", parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0]));
+      params.set("seekQuality", parseInt(this._divOptions["seek"].choice.getValue().split("p")[0]));
+      params.set("playQuality", parseInt(this._divOptions["play"].choice.getValue().split("p")[0]));
+    }
+    return params;
   }
 }
 

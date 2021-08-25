@@ -148,9 +148,22 @@ class AnnotationMulti extends TatorElement {
     this._quality = 720;
     this._focusQuality = 1080;
     this._dockQuality = 144;
-    if (searchParams.has("quality"))
-    {
-      this._quality = Number(searchParams.get("quality"));
+    this._seekQuality = null;
+    this._scrubQuality = null;
+    if (searchParams.has("playQuality")) {
+      this._quality = Number(searchParams.get("playQuality"));
+    }
+    if (searchParams.has("seekQuality")) {
+      this._seekQuality = Number(searchParams.get("seekQuality"));
+    }
+    if (searchParams.has("scrubQuality")) {
+      this._scrubQuality = Number(searchParams.get("scrubQuality"));
+    }
+    if (searchParams.has("focusQuality")) {
+      this._focusQuality = Number(searchParams.get("focusQuality"));
+    }
+    if (searchParams.has("dockQuality")) {
+      this._dockQuality = Number(searchParams.get("dockQuality"));
     }
 
     this._timelineMore.addEventListener("click", () => {
@@ -714,7 +727,7 @@ class AnnotationMulti extends TatorElement {
       this._videos[idx].overlayTextStyle = smallTextStyle;
 
       this._videos[idx].loadFromVideoObject(
-        video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject)
+        video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
       .then(() => {
         this.setDefaultVideoSettings(idx);
         this.handleNotReadyEvent(idx);

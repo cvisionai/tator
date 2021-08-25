@@ -142,9 +142,16 @@ class AnnotationPlayer extends TatorElement {
 
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
-    if (searchParams.has("quality"))
-    {
-      this._quality = Number(searchParams.get("quality"));
+    this._seekQuality = null;
+    this._scrubQuality = null;
+    if (searchParams.has("playQuality")) {
+      this._quality = Number(searchParams.get("playQuality"));
+    }
+    if (searchParams.has("seekQuality")) {
+      this._seekQuality = Number(searchParams.get("seekQuality"));
+    }
+    if (searchParams.has("scrubQuality")) {
+      this._scrubQuality = Number(searchParams.get("scrubQuality"));
     }
 
     this._timelineMore.addEventListener("click", () => {
@@ -615,7 +622,7 @@ class AnnotationPlayer extends TatorElement {
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
-    this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject)
+    this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
       .then(() => {
         const seekInfo = this._video.getQuality("seek");
         const scrubInfo = this._video.getQuality("scrub");

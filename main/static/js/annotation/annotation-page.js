@@ -259,9 +259,9 @@ class AnnotationPage extends TatorPage {
                     {
                       playbackQuality = 360; // Default to something sensible
                     }
-                    if (searchParams.has("quality"))
+                    if (searchParams.has("playQuality"))
                     {
-                      playbackQuality = Number(searchParams.get("quality"));
+                      playbackQuality = Number(searchParams.get("playQuality"));
                     }
                     this._settings.quality = playbackQuality;
                     this._player.setQuality(playbackQuality, null, true);
@@ -331,7 +331,7 @@ class AnnotationPage extends TatorPage {
             else {
               this._prev.addEventListener("click", () => {
                 let url = baseUrl + prevData.prev;
-                const searchParams = this._settings._queryParams();
+                var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
                 searchParams.delete("selected_entity");
                 searchParams.delete("frame");
@@ -339,6 +339,7 @@ class AnnotationPage extends TatorPage {
                 if (typeParams) {
                   searchParams.append("selected_type",typeParams)
                 }
+                searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
@@ -350,7 +351,7 @@ class AnnotationPage extends TatorPage {
             else {
               this._next.addEventListener("click", () => {
                 let url = baseUrl + nextData.next;
-                const searchParams = this._settings._queryParams();
+                var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
                 searchParams.delete("selected_entity");
                 searchParams.delete("frame");
@@ -358,6 +359,7 @@ class AnnotationPage extends TatorPage {
                 if (typeParams) {
                   searchParams.append("selected_type", typeParams)
                 }
+                searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
@@ -563,6 +565,9 @@ class AnnotationPage extends TatorPage {
         if ("setQuality" in canvas) {
           canvas.setQuality(evt.detail.quality);
         }
+
+        var videoSettings = canvas.getVideoSettings();
+        this._videoSettingsDialog.applySettings(videoSettings);
       });
     }
 
