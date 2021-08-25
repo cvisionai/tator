@@ -229,7 +229,7 @@ class AnnotationPage extends TatorPage {
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._player.addEventListener(
-                "primaryVideoLoaded", () => {
+                "primaryVideoLoaded", (evt) => {
                   /* #TODO Figure out a capture frame capability for multiview
                   this._settings._capture.addEventListener(
                     'captureFrame',
@@ -240,33 +240,21 @@ class AnnotationPage extends TatorPage {
                   */
                   this._settings._capture.setAttribute("disabled", "");
 
-                  // Set the quality control based on the prime video
-                  fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: {
-                      "X-CSRFToken": getCookie("csrftoken"),
-                      "Accept": "application/json",
-                      "Content-Type": "application/json"
-                    }
-                  })
-                  .then(response => response.json())
-                  .then(primeMediaData => {
-                    this._videoSettingsDialog.mode("multiview", [primeMediaData]);
-                    this._settings.mediaInfo = primeMediaData;
-                    var playbackQuality = data.media_files.quality;
-                    if (playbackQuality == undefined)
-                    {
-                      playbackQuality = 360; // Default to something sensible
-                    }
-                    if (searchParams.has("playQuality"))
-                    {
-                      playbackQuality = Number(searchParams.get("playQuality"));
-                    }
-                    this._settings.quality = playbackQuality;
-                    this._player.setQuality(playbackQuality, null, true);
-                    this._player.setAvailableQualities(primeMediaData);
-                  });
+                  var primeMediaData = evt.detail.media;
+                  this._videoSettingsDialog.mode("multiview", [primeMediaData]);
+                  this._settings.mediaInfo = primeMediaData;
+                  var playbackQuality = data.media_files.quality;
+                  if (playbackQuality == undefined)
+                  {
+                    playbackQuality = 360; // Default to something sensible
+                  }
+                  if (searchParams.has("playQuality"))
+                  {
+                    playbackQuality = Number(searchParams.get("playQuality"));
+                  }
+                  this._settings.quality = playbackQuality;
+                  this._player.setQuality(playbackQuality, null, true);
+                  this._player.setAvailableQualities(primeMediaData);
                 }
               );
             } else if (type_data.dtype == "live") {

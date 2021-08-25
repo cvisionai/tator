@@ -732,7 +732,12 @@ class AnnotationMulti extends TatorElement {
         this.setDefaultVideoSettings(idx);
         this.handleNotReadyEvent(idx);
         if (idx == 0) {
-          this.dispatchEvent(new CustomEvent("primaryVideoLoaded", {composed: true}));
+          this.dispatchEvent(new CustomEvent("primaryVideoLoaded", {
+            composed: true,
+            detail: {
+              media: video_info
+            }
+          }));
         }
       });
 
