@@ -150,6 +150,7 @@ class AnnotationMulti extends TatorElement {
     this._dockQuality = 144;
     this._seekQuality = null;
     this._scrubQuality = null;
+    this._allowSafeMode = true;
     if (searchParams.has("playQuality")) {
       this._quality = Number(searchParams.get("playQuality"));
     }
@@ -164,6 +165,9 @@ class AnnotationMulti extends TatorElement {
     }
     if (searchParams.has("dockQuality")) {
       this._dockQuality = Number(searchParams.get("dockQuality"));
+    }
+    if (searchParams.has("safeMode")) {
+      this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
     }
 
     this._timelineMore.addEventListener("click", () => {
@@ -729,6 +733,12 @@ class AnnotationMulti extends TatorElement {
       this._videos[idx].loadFromVideoObject(
         video_info, this.mediaType, this._quality, undefined, undefined, this._multi_layout[0], this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
       .then(() => {
+        if (this._videos[idx].allowSafeMode) {
+          this._videos[idx].allowSafeMode = this._allowSafeMode;
+        }
+        else {
+          this._allowSafeMode = false;
+        }
         this.setDefaultVideoSettings(idx);
         this.handleNotReadyEvent(idx);
         if (idx == 0) {
@@ -950,7 +960,8 @@ class AnnotationMulti extends TatorElement {
         focusedQuality: focusedInfo.quality,
         focusedFPS: focusedInfo.fps,
         dockedQuality: dockedInfo.quality,
-        dockedFPS: dockedInfo.fps
+        dockedFPS: dockedInfo.fps,
+        allowSafeMode: this._allowSafeMode
       }
     }));
   }
@@ -1863,7 +1874,8 @@ class AnnotationMulti extends TatorElement {
         focusedQuality: this._focusQuality,
         focusedFPS: playInfo.fps,
         dockedQuality: this._dockQuality,
-        dockedFPS: playInfo.fps
+        dockedFPS: playInfo.fps,
+        allowSafeMode: this._allowSafeMode
       };
   }
 }

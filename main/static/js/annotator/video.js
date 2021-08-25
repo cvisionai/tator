@@ -1248,7 +1248,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._addVideoDiagnosticOverlay();
     this._ftypInfo = {};
     this._disableAutoDownloads = false;
-    this._allowSafeMode = true;
+    this.allowSafeMode = true;
 
     // Set the onDemand watchdog download thread
     // This will request to download segments if needed
@@ -1265,10 +1265,6 @@ class VideoCanvas extends AnnotationCanvas {
    */
    disableAutoDownloads() {
     this._disableAutoDownloads = true;
-  }
-
-  set allowSafeMode(val) {
-    this._allowSafeMode = val;
   }
 
   // #TODO Refactor this so that it uses internal variables?
@@ -2667,7 +2663,7 @@ class VideoCanvas extends AnnotationCanvas {
 
       if (this._fpsScore == 0)
       {
-        if (this._allowSafeMode) {
+        if (this.allowSafeMode) {
           console.warn(`(ID:${this._videoObject.id}) Detected slow performance, entering safe mode.`);
 
           this.dispatchEvent(new Event("safeMode"));

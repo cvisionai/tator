@@ -144,6 +144,7 @@ class AnnotationPlayer extends TatorElement {
     this._quality = 720;
     this._seekQuality = null;
     this._scrubQuality = null;
+    this._allowSafeMode = true;
     if (searchParams.has("playQuality")) {
       this._quality = Number(searchParams.get("playQuality"));
     }
@@ -152,6 +153,9 @@ class AnnotationPlayer extends TatorElement {
     }
     if (searchParams.has("scrubQuality")) {
       this._scrubQuality = Number(searchParams.get("scrubQuality"));
+    }
+    if (searchParams.has("safeMode")) {
+      this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
     }
 
     this._timelineMore.addEventListener("click", () => {
@@ -624,6 +628,12 @@ class AnnotationPlayer extends TatorElement {
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
       .then(() => {
+        if (this._video.allowSafeMode) {
+          this._video.allowSafeMode = this._allowSafeMode;
+        }
+        else {
+          this._allowSafeMode = false;
+        }
         const seekInfo = this._video.getQuality("seek");
         const scrubInfo = this._video.getQuality("scrub");
         const playInfo = this._video.getQuality("play");
@@ -642,6 +652,7 @@ class AnnotationPlayer extends TatorElement {
             focusedFPS: null,
             dockedQuality: null,
             dockedFPS: null,
+            allowSafeMode: this._allowSafeMode
           }
         }));
 
@@ -1040,6 +1051,7 @@ class AnnotationPlayer extends TatorElement {
         focusedFPS: null,
         dockedQuality: null,
         dockedFPS: null,
+        allowSafeMode: this._allowSafeMode
       };
   }
 }

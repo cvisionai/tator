@@ -73,7 +73,7 @@ class VideoSettingsDialog extends ModalDialog {
     safeModeHeaderDiv.appendChild(safeModeHeader);
 
     const safeModeSubHeader = document.createElement("div");
-    safeModeSubHeader.textContent = "Allow safe mode to occur";
+    safeModeSubHeader.textContent = "Allow safe mode to occur. If safe mode has already been invoked, this will not turn off safe mode.";
     safeModeSubHeader.setAttribute("class", "text-gray f2");
     safeModeHeaderDiv.appendChild(safeModeSubHeader);
 
@@ -201,6 +201,8 @@ class VideoSettingsDialog extends ModalDialog {
       settingsStr = this.createSourceString(settings.dockedQuality, this._defaultSources.dockedFPS);
       this._divOptions["dockPlayback"].choice.setValue(settingsStr);
     }
+
+    this._safeModeOption.setValue(settings.allowSafeMode);
   }
 
   applyDefaults() {
@@ -209,10 +211,6 @@ class VideoSettingsDialog extends ModalDialog {
     }
 
     this.applySettings(this._defaultSources);
-  }
-
-  applyPlayQuality(quality) {
-    this._divOptions["play"].choice.choices
   }
 
   /**
@@ -254,6 +252,9 @@ class VideoSettingsDialog extends ModalDialog {
    *
    * @param {string} mode - single|multiview
    * @param {array} medias - Array of media objects to set the display
+   * @param {bool} enableSafeMode - True if safe mode is enabled. False otherwise.
+   *                                Overrides the < 20 FPS threshold where safe mode is
+   *                                disabled.
    */
   mode(mode, medias) {
     this._mode = mode;
@@ -316,6 +317,7 @@ class VideoSettingsDialog extends ModalDialog {
    *     focusedFPS
    *     dockedQuality
    *     dockedFPS
+   *     allowSafeMode
    */
   set defaultSources(val)
   {
@@ -338,6 +340,7 @@ class VideoSettingsDialog extends ModalDialog {
     params.delete("scrubQuality");
     params.delete("seekQuality");
     params.delete("playQuality");
+    params.delete("safeMode");
 
     if (this._mode == "multiview") {
       params.set("focusQuality", parseInt(this._divOptions["focusPlayback"].choice.getValue().split("p")[0]));
@@ -348,6 +351,12 @@ class VideoSettingsDialog extends ModalDialog {
       params.set("scrubQuality", parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0]));
       params.set("seekQuality", parseInt(this._divOptions["seek"].choice.getValue().split("p")[0]));
       params.set("playQuality", parseInt(this._divOptions["play"].choice.getValue().split("p")[0]));
+      if (this._safeModeOption.getValue()) {
+        params.set("safeMode", 1);
+      }
+      else {
+        params.set("safeMode", 0);
+      }
     }
     return params;
   }
