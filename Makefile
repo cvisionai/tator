@@ -361,6 +361,7 @@ FILES = \
     organization-settings/organization-type-form.js \
     organization-settings/organization-main-edit.js \
     organization-settings/affiliation-edit.js \
+    organization-settings/bucket-edit.js \
     organization-settings/organization-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
