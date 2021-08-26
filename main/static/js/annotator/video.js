@@ -2809,6 +2809,7 @@ class VideoCanvas extends AnnotationCanvas {
       that.stopPlayerThread();
 
       var video = that._videoElement[that._play_idx];
+      if (that._ftypInfo[that._play_idx] == undefined) { return; }
 
       var setupCallback = function() {
         console.log("******* restarting onDemand: Setting up new buffer");
