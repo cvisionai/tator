@@ -30,7 +30,7 @@ class OrganizationSettings extends TatorPage {
     // Web Components for this page
     this.settingsViewClasses = [  "affiliation-edit",
                                   "bucket-edit",
-                                  //"job-cluster-edit",
+                                  "job-cluster-edit",
                                ];
     
     // Modal parent - to pass to page components
