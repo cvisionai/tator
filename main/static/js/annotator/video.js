@@ -1257,6 +1257,9 @@ class VideoCanvas extends AnnotationCanvas {
     this._onDemandPlaybackReady = false;
     this._onDemandFinished = false;
     this._onDemandId = 0;
+
+
+    this.initialized = false;
   }
 
   /**
@@ -1837,6 +1840,13 @@ class VideoCanvas extends AnnotationCanvas {
     }
     this._offsiteConfig = offsite_config;
 
+    // Initialize the resize handler to a nominal size prior to loading the media info (which
+    // may cause an error if there's something wrong with the media)
+    this._dims = [400, 400];
+    this._gridRow = numGridRows;
+    this.heightPadObject = heightPadObject;
+    this.forceSizeChange();
+
     // Note: dims is width,height here
     let videoUrl, fps, numFrames, dims;
     fps = videoObject.fps;
@@ -1990,6 +2000,9 @@ class VideoCanvas extends AnnotationCanvas {
       streaming_files[this._scrub_idx].resolution[0],
       streaming_files[this._seek_idx].resolution[0],
       videoObject.id);
+
+    this.initialized = true;
+    this.hideErrorMessage();
 
     // On load seek to frame 0
     return promise;

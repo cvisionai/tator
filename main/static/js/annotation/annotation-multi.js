@@ -750,7 +750,6 @@ class AnnotationMulti extends TatorElement {
           }));
         }
       });
-
       // #TODO This should be changed to dispatched events vs. calling the parent directly.
       this.parent._getMetadataTypes(this,
                                     this._videos[idx]._canvas,
@@ -926,7 +925,19 @@ class AnnotationMulti extends TatorElement {
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
         }));
+      })
+      .catch(() => {
+        for (let idx = 0; idx < this._videos.length; idx++) {
+          if (!this._videos[idx].initialized) {
+            this._videos[idx].displayErrorMessage(`Error occurred. Could not load media: ${this._mediaInfo.media_files.ids[idx]}`);
+          }
+        }
+
+        this.dispatchEvent(new Event("videoInitError", {
+          composed: true
+        }));
       });
+
     });
 
     // Audio for multi might get fun...

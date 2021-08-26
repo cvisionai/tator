@@ -820,7 +820,7 @@ class AnnotationCanvas extends TatorElement
     this._fillBoxes = true;
     this._lastHoverDraw = 0;
 
-
+    this._errorTextId = this._textOverlay.addText(0.5,0.5,"",{'fontSize': '14pt',color: 'red'});
 
     try
     {
@@ -983,6 +983,14 @@ class AnnotationCanvas extends TatorElement
 
   set permission(val) {
     this._canEdit = hasPermission(val, "Can Edit");
+  }
+
+  displayErrorMessage(message) {
+    this._textOverlay.modifyText(this._errorTextId, {content: message}, true);
+  }
+
+  hideErrorMessage() {
+    this._textOverlay.modifyText(this._errorTextId, {}, false);
   }
 
   /**
@@ -1226,6 +1234,59 @@ class AnnotationCanvas extends TatorElement
     return this._domParents;
   }
 
+  /**
+   * Utilizes this._dims, this._gridRow, and this.heightPadObject
+   */
+  forceSizeChange() {
+    const ratio=this._dims[0]/this._dims[1];
+    var maxHeight;
+    if (this._gridRows) {
+      maxHeight = (window.innerHeight - this.heightPadObject.height) / this._gridRows;
+    }
+    else {
+       maxHeight = window.innerHeight - this.heightPadObject.height;
+    }
+    let maxWidth = maxHeight*ratio;
+
+    // If stretch mode is on, stretch the canvas
+    if (this._stretch)
+    {
+      let hStretch = (maxWidth/this._canvas.width);
+      let vStretch = (maxHeight/this._canvas.height);
+      if (hStretch > 1 || vStretch > 1)
+      {
+        this._canvas.width = maxWidth;
+        this._canvas.height = maxHeight;
+        this._draw.resizeViewport(maxWidth, maxHeight);
+      }
+    }
+    else
+    {
+      this._canvas.width = this._dims[0];
+      this._canvas.height = this._dims[1];
+    }
+    this._canvas.style.maxHeight=`${maxHeight}px`;
+    this.parentElement.style.maxWidth=`${maxWidth}px`;
+    this._domParents.forEach(parent =>
+                             {
+                               var obj = parent.object;
+                               var align = parent.alignTo;
+                               if (align)
+                               {
+                                 var style=getComputedStyle(obj,null)
+                                 const end = align.offsetLeft + align.offsetWidth;
+                                 const width = end - obj.offsetLeft -
+                                       parseInt(style.paddingRight);
+                                 obj.style.maxWidth=`${width}px`;
+                               }
+                               else
+                               {
+                                 obj.style.maxWidth=`${maxWidth}px`;
+                               }
+                             });
+    this._textOverlay.resize(this.clientWidth, this.clientHeight);
+  }
+
   setupResizeHandler(dims, numGridRows, heightPadObject)
   {
     this._gridRows = numGridRows;
@@ -1292,7 +1353,8 @@ class AnnotationCanvas extends TatorElement
     // Set up resize handler.
     window.addEventListener("resize", () => {
       clearTimeout(this._resizeTimer);
-      resizeHandler();
+      this.forceSizeChange();
+      this.dispatchEvent(new Event("canvasResized"));
       requestAnimationFrame(() => {
 
 
@@ -1305,7 +1367,8 @@ class AnnotationCanvas extends TatorElement
               this.refresh(true);
             });
           }
-          resizeHandler();
+          this.forceSizeChange();
+          this.dispatchEvent(new Event("canvasResized"));
         }, 10);
       });
     });

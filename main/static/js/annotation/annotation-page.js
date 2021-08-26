@@ -466,8 +466,8 @@ class AnnotationPage extends TatorPage {
       }
     }
 
-    const _removeLoading = () => {
-      if (this._dataInitialized && this._canvasInitialized) {
+    const _removeLoading = (force) => {
+      if ((this._dataInitialized && this._canvasInitialized) || force) {
         try
         {
           this._loading.style.display = "none";
@@ -520,6 +520,10 @@ class AnnotationPage extends TatorPage {
       this._canvasInitialized = true;
       _handleQueryParams();
       _removeLoading();
+    });
+
+    canvas.addEventListener("videoInitError", () => {
+      _removeLoading(true);
     });
 
     canvas.addEventListener("defaultVideoSettings", evt => {

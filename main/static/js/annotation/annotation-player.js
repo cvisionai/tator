@@ -659,6 +659,12 @@ class AnnotationPlayer extends TatorElement {
         this.dispatchEvent(new Event("canvasReady", {
           composed: true
         }));
+      })
+      .catch(() => {
+        this._video.displayErrorMessage(`Error occurred. Could not load media: ${val.id}`);
+        this.dispatchEvent(new Event("videoInitError", {
+          composed: true
+        }));
       });
     if (this._video.audio != true)
     {
