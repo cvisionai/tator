@@ -326,6 +326,22 @@ class VideoSettingsDialog extends ModalDialog {
   }
 
   /**
+   * Play quality options must've been set prior to using this.
+   * @param {integer} quality - Resolution/quality of the play buffer. Doesn't take FPS into account
+   *                            and will just pick the first matching quality.
+   */
+   setPlayQuality(quality) {
+    var choices = this._divOptions["play"].choice.getChoices();
+    for (let idx = 0; idx < choices.length; idx++) {
+      const currentQuality = parseInt(choices[idx].split("p")[0]);
+      if (currentQuality == quality) {
+        this._divOptions["play"].choice.setValue(choices[idx]);
+        return;
+      }
+    }
+  }
+
+  /**
    * @param {URLSearchParams} params - Existing parameters to add to. If not provided, a new
    *                                   set is created.
    * @returns URLSearchParams - Contains video related URL parameters

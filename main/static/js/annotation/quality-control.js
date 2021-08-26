@@ -80,6 +80,14 @@ class QualityControl extends TatorElement {
     newUrl += "?" + searchArgs;
 
     window.history.replaceState(quality,"playQuality",newUrl);
+    this.dispatchEvent(new CustomEvent("setQuality",
+    {
+      composed: true,
+      detail: {
+        quality: quality
+      }
+    }
+    ));
 
     for (let index = 0; index < this._select.options.length; index++)
     {

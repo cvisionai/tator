@@ -342,6 +342,16 @@ class AnnotationMulti extends TatorElement {
       this._currentTimeText.style.display = "none";
     });
 
+    this._qualityControl.addEventListener("setQuality", (evt) => {
+      this.dispatchEvent(new CustomEvent("setPlayQuality",
+      {
+        composed: true,
+        detail: {
+          quality: evt.detail.quality
+        }
+      }));
+    });
+
     document.addEventListener("keydown", evt => {
 
       if (document.body.classList.contains("shortcuts-disabled"))
