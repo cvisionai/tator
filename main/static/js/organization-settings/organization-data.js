@@ -1,3 +1,14 @@
+
+function handleErrors(response) {
+  return response.json()
+  .then(data => {
+    if (!response.ok) {
+      throw Error(data.message);
+    }
+    return data;
+  });
+}
+
 class OrganizationData {
   constructor(organizationId) {
     this.organizationId = organizationId;
@@ -9,7 +20,7 @@ class OrganizationData {
       method: "GET",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   updateOrganization(update) {
@@ -18,7 +29,7 @@ class OrganizationData {
       body: JSON.stringify(update),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   // Affiliation CRUD
@@ -27,7 +38,7 @@ class OrganizationData {
       method: "GET",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   createAffiliation(spec) {
@@ -36,7 +47,7 @@ class OrganizationData {
       body: JSON.stringify(spec),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   updateAffiliation(id, update) {
@@ -45,7 +56,7 @@ class OrganizationData {
       body: JSON.stringify(update),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   deleteAffiliation(id) {
@@ -53,7 +64,7 @@ class OrganizationData {
       method: "DELETE",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   // Invitation CRUD
@@ -62,7 +73,7 @@ class OrganizationData {
       method: "GET",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   createInvitation(spec) {
@@ -71,12 +82,7 @@ class OrganizationData {
       body: JSON.stringify(spec),
       ...sameOriginCredentials(),
     })
-    .then(response => {
-      if (!response.ok) {
-        throw Error(response.statusText);
-      }
-      return response.json();
-    });
+    .then(handleErrors);
   }
 
   updateInvitation(id, update) {
@@ -85,7 +91,7 @@ class OrganizationData {
       body: JSON.stringify(update),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   deleteInvitation(id) {
@@ -93,7 +99,7 @@ class OrganizationData {
       method: "DELETE",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   // Bucket CRUD
@@ -102,7 +108,7 @@ class OrganizationData {
       method: "GET",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   createBucket(spec) {
@@ -111,7 +117,7 @@ class OrganizationData {
       body: JSON.stringify(spec),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   updateBucket(id, update) {
@@ -120,7 +126,7 @@ class OrganizationData {
       body: JSON.stringify(update),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   deleteBucket(id) {
@@ -128,7 +134,7 @@ class OrganizationData {
       method: "DELETE",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   // Job Cluster CRUD
@@ -137,7 +143,7 @@ class OrganizationData {
       method: "GET",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   createJobCluster(spec) {
@@ -146,7 +152,7 @@ class OrganizationData {
       body: JSON.stringify(spec),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   updateJobCluster(id, update) {
@@ -155,7 +161,7 @@ class OrganizationData {
       body: JSON.stringify(update),
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 
   deleteJobCluster(id) {
@@ -163,6 +169,6 @@ class OrganizationData {
       method: "DELETE",
       ...sameOriginCredentials(),
     })
-    .then(response => response.json());
+    .then(handleErrors);
   }
 }
