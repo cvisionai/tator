@@ -9,6 +9,7 @@ from django.http import Http404
 from ..models import Invitation
 from ..models import Organization
 from ..models import User
+from ..models import database_qs
 from ..schema import InvitationListSchema
 from ..schema import InvitationDetailSchema
 from ..schema.components import invitation as invitation_schema
@@ -20,7 +21,14 @@ from ._permissions import OrganizationAdminPermission
 
 logger = logging.getLogger(__name__)
 
-INVITATION_PROPERTIES = list(invitation_schema['properties'].keys())
+INVITATION_PROPERTIES = list(invitation_schema['properties'].keys()).remove('created_username')
+
+def _serialize_invitations(invitations):
+    invitation_data = database_qs(invitations)
+    for idx, invitation in enumerate(invitations):
+        invitation_data[idx]['created_username'] = invitation.created_by.username
+    invitation_data.sort(key=lambda invitation: invitation['created_datetime'])
+    return invitation_data
 
 class InvitationListAPI(BaseListView):
     """ Create or retrieve a list of project invitations.
@@ -31,7 +39,7 @@ class InvitationListAPI(BaseListView):
 
     def _get(self, params):
         invites = Invitation.objects.filter(organization=params['organization'])
-        return list(invites.values(*INVITATION_PROPERTIES))
+        return _serialize_invitations(invites)
 
     def _post(self, params):
         organization = params['organization']
@@ -85,10 +93,12 @@ class InvitationDetailAPI(BaseDetailView):
         invites = Invitation.objects.filter(pk=params['id'])
         if invites.count() == 0:
             raise Http404
-        return list(invites.values(*INVITATION_PROPERTIES))[0]
+        return _serialize_invitations(invites)[0]
 
     def _patch(self, params):
         invitation = Invitation.objects.get(pk=params['id']) 
+        if 'permission' in params:
+            invitation.permission = params['permission']
         if 'status' in params:
             invitation.status = params['status']
         invitation.save()
