@@ -56,6 +56,46 @@ class OrganizationData {
     .then(response => response.json());
   }
 
+  // Invitation CRUD
+  getInvitations() {
+    return fetch(`/rest/Invitations/${this.organizationId}`, {
+      method: "GET",
+      ...sameOriginCredentials(),
+    })
+    .then(response => response.json());
+  }
+
+  createInvitation(spec) {
+    return fetch(`/rest/Invitations/${this.organizationId}`, {
+      method: "POST",
+      body: JSON.stringify(spec),
+      ...sameOriginCredentials(),
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
+    });
+  }
+
+  updateInvitation(id, update) {
+    return fetch(`/rest/Invitation/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(update),
+      ...sameOriginCredentials(),
+    })
+    .then(response => response.json());
+  }
+
+  deleteInvitation(id) {
+    return fetch(`/rest/Invitation/${id}`, {
+      method: "DELETE",
+      ...sameOriginCredentials(),
+    })
+    .then(response => response.json());
+  }
+
   // Bucket CRUD
   getBuckets() {
     return fetch(`/rest/Buckets/${this.organizationId}`, {
