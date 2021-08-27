@@ -29,6 +29,7 @@ class OrganizationSettings extends TatorPage {
 
     // Web Components for this page
     this.settingsViewClasses = [  "affiliation-edit",
+                                  "invitation-edit",
                                   "bucket-edit",
                                   "job-cluster-edit",
                                ];
