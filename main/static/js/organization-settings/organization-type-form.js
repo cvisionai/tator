@@ -52,6 +52,8 @@ class OrganizationTypeForm extends TatorElement {
     if (!this.data.form && !this.data.form != "empty") {
       if (this.typeName == "Affiliation") {
         this.h1_name = document.createTextNode(`${this.data.username} `);
+      } else if (this.typeName == "Invitation") {
+        this.h1_name = document.createTextNode(`${this.data.email} `);
       } else {
         this.h1_name = document.createTextNode(`${this.data.name} `);
       }
@@ -189,6 +191,8 @@ class OrganizationTypeForm extends TatorElement {
         return "organization-main-edit";
       case "Affiliation":
         return "affiliation-edit";
+      case "Invitation":
+        return "invitation-edit";
       case "Bucket":
         return "bucket-edit";
       case "JobCluster":

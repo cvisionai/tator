@@ -120,6 +120,14 @@ class EmailListInput extends TatorElement {
     pill.setAttribute("class", "py-1 d-flex");
     pill.init(name, userId);
     this._pills.appendChild(pill);
+    pill.addEventListener("removeId", evt => {
+      const email = evt.detail.id;
+      for (const pill of this._pills.children) {
+        if (pill.getId() == email) {
+            this._pills.removeChild(pill);
+        }
+      }
+    });
   }
 
   _addError(msg) {

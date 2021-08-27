@@ -200,7 +200,7 @@ class JobClusterEdit extends TypeForm {
     let errorMessages = "";
     const promises = [];
     for (const formData of formDataList) {
-      const username = formData.username;
+      const name = formData.name;
       //delete formData.username;
       const promise = this._data.createJobCluster(formData).then(data => {
         console.log(data.message);
@@ -235,7 +235,7 @@ class JobClusterEdit extends TypeForm {
         });
 
         // Add the item to navigation
-        this._updateNavEvent("new", username, data.id);
+        this._updateNavEvent("new", name, data.id);
 
         // Increment succeeded.
         numSucceeded++;

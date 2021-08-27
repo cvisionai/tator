@@ -139,45 +139,39 @@ class InvitationEdit extends OrganizationTypeForm {
         console.log(data.message);
         this.loading.hideSpinner();
 
-        if(status != 400){
-          
-          // Hide the add new form
-          this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+        // Hide the add new form
+        this.sideNav.hide(`itemDivId-${this.typeName}-New`);
 
-          // Create and show the container with new type
-          this.sideNav.addItemContainer({
-            "type" : this.typeName,
-            "id" : data.id,
-            "hidden" : false
-          });
+        // Create and show the container with new type
+        this.sideNav.addItemContainer({
+          "type" : this.typeName,
+          "id" : data.id,
+          "hidden" : false
+        });
 
-          let form = document.createElement( this._getTypeClass() );
-          form.init(this._data);
+        let form = document.createElement( this._getTypeClass() );
+        form.init(this._data);
 
-          this.sideNav.fillContainer({
-            "type" : this.typeName,
-            "id" : data.id,
-            "itemContents" : form
-          });
+        this.sideNav.fillContainer({
+          "type" : this.typeName,
+          "id" : data.id,
+          "itemContents" : form
+        });
 
-          // init form with the data
-          formData.id = data.id;
-          formData.organization = this.organization;
-          form._init({ 
-            "data": formData, 
-            "modal" : this.modal, 
-            "sidenav" : this.sideNav
-          });
+        // init form with the data
+        formData.id = data.id;
+        formData.organization = this.organization;
+        form._init({ 
+          "data": formData, 
+          "modal" : this.modal, 
+          "sidenav" : this.sideNav
+        });
 
-          // Add the item to navigation
-          this._updateNavEvent("new", email, data.id);
+        // Add the item to navigation
+        this._updateNavEvent("new", email, data.id);
 
-          // Increment succeeded.
-          numSucceeded++;
-        } else {
-          errorMessages = `${errorMessages}\n${data.message}`;
-          numFailed++;
-        }
+        // Increment succeeded.
+        numSucceeded++;
       }).catch((err) => {
         console.error(err);
         errorMessages = `${errorMessages}\n${err}`;
@@ -189,7 +183,6 @@ class InvitationEdit extends OrganizationTypeForm {
     // Let user know everything's all set!
     Promise.all(promises).then(() => {
       this.loading.hideSpinner();
-      this._userData.reset();
       let message;
       if (numSucceeded > 0) {
         message = `Successfully created ${numSucceeded} invitations.`;
