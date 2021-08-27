@@ -209,6 +209,7 @@ FILES = \
     components/inputs/feature/checkbox-set.js \
     components/inputs/array-input.js \
     components/inputs/user-input.js \
+    components/inputs/email-list-input.js \
     components/inputs/bool-input.js \
     components/inputs/checkbox-input.js \
     components/inputs/enum-input.js \
@@ -361,6 +362,7 @@ FILES = \
     organization-settings/organization-type-form.js \
     organization-settings/organization-main-edit.js \
     organization-settings/affiliation-edit.js \
+    organization-settings/invitation-edit.js \
     organization-settings/bucket-edit.js \
     organization-settings/job-cluster-edit.js \
     organization-settings/organization-settings.js \
