@@ -113,10 +113,6 @@ class AffiliationEdit extends OrganizationTypeForm {
 
   _savePost() {
     this.loading.showSpinner();
-    let addNew = new TypeNew({
-      "type" : this.typeName,
-      "organizationId" : this.organizationId
-    });
 
     let formDataList = this._getFormData("New", true);
     console.log("New form Data....");
@@ -129,7 +125,7 @@ class AffiliationEdit extends OrganizationTypeForm {
     for (const formData of formDataList) {
       const username = formData.username;
       //delete formData.username;
-      const promise = addNew.saveFetch(formData).then(([data, status]) => {
+      const promise = this._data.createAffiliation(formData).then(data => {
         console.log(data.message);
         this.loading.hideSpinner();
 
