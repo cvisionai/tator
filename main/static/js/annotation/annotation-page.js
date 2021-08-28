@@ -965,6 +965,13 @@ class AnnotationPage extends TatorPage {
           }
           canvas.selectNone();
         });
+        this._browser.addEventListener("trackSliderInput", evt => {
+          evt.target.value = evt.detail.frame;
+          canvas.handleSliderInput(evt);
+        });
+        this._browser.addEventListener("trackSliderChange", evt => {
+          canvas.handleSliderChange(evt);
+        });
         this._browser.addEventListener("frameChange", evt => {
           if ('track' in evt.detail)
           {
