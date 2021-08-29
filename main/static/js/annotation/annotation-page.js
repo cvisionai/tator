@@ -92,16 +92,20 @@ class AnnotationPage extends TatorPage {
 
     this._videoSettingsDialog = document.createElement("video-settings-dialog");
     this._main.appendChild(this._videoSettingsDialog);
+
+    this._progressDialog.addEventListener("jobsDone", evt => {
+      evt.detail.job.callback(evt.detail.status);
+    });
   }
 
   /**
    * Returned promise resolves when job monitoring is done
    */
-  showAlgoRunningDialog(uid, runningMsg, successfulMsg, failedMsg) {
-    const promise = this._progressDialog.monitorJob(uid, runningMsg, successfulMsg, failedMsg);
+  showAlgoRunningDialog(uid, msg, callback) {
+    this._progressDialog.monitorJob(uid, msg, callback);
     this._progressDialog.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
-    return promise;
+    //return promise;
   };
 
   static get observedAttributes() {
@@ -1130,19 +1134,21 @@ class AnnotationPage extends TatorPage {
     })
     .then(response => { return response.json(); })
     .then(result => {
-      var registeredAlgos = [];
+      var registeredAnnotatorAlgos = [];
       for (const alg of result) {
-        registeredAlgos.push(alg.name);
-        if (alg.name == this._extend_track_algo_name) {
-          menu.enableExtendAutoMethod();
-        }
-        else if (alg.name == this._fill_track_gaps_algo_name) {
-          if (typeof canvas.enableFillTrackGapsOption !== "undefined") {
-            canvas.enableFillTrackGapsOption();
+        if (alg.categories.includes("annotator-view")) {
+          registeredAnnotatorAlgos.push(alg.name);
+          if (alg.name == this._extend_track_algo_name) {
+            menu.enableExtendAutoMethod();
+          }
+          else if (alg.name == this._fill_track_gaps_algo_name) {
+            if (typeof canvas.enableFillTrackGapsOption !== "undefined") {
+              canvas.enableFillTrackGapsOption();
+            }
           }
         }
       }
-      console.log("Registered algorithms: " + registeredAlgos);
+      console.log("Registered annotator algorithms: " + registeredAnnotatorAlgos);
     });
 
     menu.addEventListener("fillTrackGaps", evt => {
@@ -1178,19 +1184,20 @@ class AnnotationPage extends TatorPage {
       })
       .then(data => {
         console.log(data);
-        return this.showAlgoRunningDialog(
+        this.showAlgoRunningDialog(
           data.uid,
-          "Filling in track gaps with a visual tracker...",
-          "Track gaps filled.",
-          "Error occured with the visual tracker. Track was not modified.");
-      })
-      .then((jobSuccessful) => {
-        if (jobSuccessful) {
-          this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
-          this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          Utilities.showSuccessIcon("Track extension done.");
-          canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
-        }
+          `Filling gaps in track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
+          (jobSuccessful) => {
+            if (jobSuccessful) {
+              this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+              this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+              Utilities.showSuccessIcon(`Filled gaps in track ${evt.detail.trackId}`);
+              //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
+            }
+            else {
+              Utilities.warningAlert(`Error filling gaps in track ${evt.detail.trackId}`, "#ff3e1d", false);
+            }
+          });
       });
     });
 
@@ -1278,7 +1285,7 @@ class AnnotationPage extends TatorPage {
         .then(() => {
           this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
           this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-          Utilities.showSuccessIcon("Track extension done.");
+          Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
           canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
         });
       }
@@ -1288,8 +1295,10 @@ class AnnotationPage extends TatorPage {
           "extra_params": [
             {name: 'track', value: evt.detail.trackId},
             {name: 'extend_direction', value: evt.detail.direction},
-            {name: 'extend_detection_id', value: evt.detail.localization.id}]
+            {name: 'extend_detection_id', value: evt.detail.localization.id},
+            {name: "extend_max_frames", value: evt.detail.maxFrames}]
           };
+
         if ('media' in evt.detail.localization)
         {
           body["media_ids"] = [evt.detail.localization.media];
@@ -1317,19 +1326,20 @@ class AnnotationPage extends TatorPage {
         })
         .then(data => {
           console.log(data);
-          return this.showAlgoRunningDialog(
+          this.showAlgoRunningDialog(
             data.uid,
-            "Extending track with a visual tracker...",
-            "Track extended.",
-            "Error occured with the visual tracker. Track was not extended.");
-        })
-        .then((jobSuccessful) => {
-          if (jobSuccessful) {
-            this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
-            this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-            Utilities.showSuccessIcon("Track extension done.");
-            canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
-          }
+            `Extending track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
+            (jobSuccessful) => {
+              if (jobSuccessful) {
+                this._data.updateType(this._data._dataTypes[evt.detail.localization.meta]);
+                this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
+                Utilities.showSuccessIcon(`Extended track ${evt.detail.trackId}`);
+                //canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.localization.frame);
+              }
+              else {
+                Utilities.warningAlert(`Error extending track ${evt.detail.trackId}`, "#ff3e1d", false);
+              }
+            });
         });
       }
       else {
@@ -1358,7 +1368,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        Utilities.showSuccessIcon("Track trimming done.");
+        Utilities.showSuccessIcon(`Trimmed track ${evt.detail.trackId}`);
         canvas.selectTrackUsingId(evt.detail.trackId, evt.detail.trackType, evt.detail.frame);
       });
     });
@@ -1383,7 +1393,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        Utilities.showSuccessIcon("Detection added to track.");
+        Utilities.showSuccessIcon(`Added detection to track ${evt.detail.mainTrackId}`);
         if (evt.detail.selectTrack) {
           canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
         }
@@ -1415,7 +1425,7 @@ class AnnotationPage extends TatorPage {
       .then(() => {
         this._data.updateType(this._data._dataTypes[evt.detail.localizationType]);
         this._data.updateType(this._data._dataTypes[evt.detail.trackType]);
-        Utilities.showSuccessIcon("Track merged.", this._successColor);
+        Utilities.showSuccessIcon(`Merged track into ${evt.detail.mainTrackId}`);
         canvas.selectTrackUsingId(evt.detail.mainTrackId, evt.detail.trackType, evt.detail.frame);
       });
     });

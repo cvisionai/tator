@@ -139,18 +139,50 @@ class ModifyTrackDialog extends TatorElement {
     this._extendFrames.setAttribute("type", "int");
     div.appendChild(this._extendFrames);
 
-    this._extendMethod.addEventListener("change", () => {
-      let alg = this._extendMethod.getValue();
-      if (alg == "Auto") {
-        this._extendFrames.style.visibility = "hidden";
-      }
-      else {
-        this._extendFrames.style.visibility = "initial";
-      }
-    })
+    this._applyMaxFrames = document.createElement("bool-input");
+    this._applyMaxFrames.setAttribute("name", "Apply Max Frames");
+    this._applyMaxFrames.setAttribute("on-text", "Yes");
+    this._applyMaxFrames.setAttribute("off-text", "No");
+    this._applyMaxFrames.setValue(true);
+    this._applyMaxFrames.addEventListener("change", this._setMaxFrameUI.bind(this));
+    div.appendChild(this._applyMaxFrames);
+    this._applyMaxFrames.style.display = "none";
+
+    this._extendMaxFrames = document.createElement("text-input");
+    this._extendMaxFrames.setAttribute("name", "Max Num Frames");
+    this._extendMaxFrames.setAttribute("type", "int");
+    this._extendMaxFrames.setValue(200);
+    div.appendChild(this._extendMaxFrames);
+    this._extendMaxFrames.style.display = "none";
+
+    this._extendMethod.addEventListener("change", this._setExtendUI.bind(this));
 
     this._extendDiv = div;
     this._contentDiv.appendChild(div);
+  }
+
+  _setExtendUI() {
+    let alg = this._extendMethod.getValue();
+    if (alg == "Auto") {
+      this._extendFrames.style.display = "none";
+      this._applyMaxFrames.setValue(true);
+      this._setMaxFrameUI(); // Sets visibility of this._extendMaxFrames
+      this._applyMaxFrames.style.display = "initial";
+    }
+    else {
+      this._extendFrames.style.display = "initial";
+      this._applyMaxFrames.style.display = "none";
+      this._extendMaxFrames.style.display = "none";
+    }
+  }
+
+  _setMaxFrameUI() {
+    if (this._applyMaxFrames.getValue()) {
+      this._extendMaxFrames.style.display = "initial";
+    }
+    else {
+      this._extendMaxFrames.style.display = "none";
+    }
   }
 
   enableExtendAutoMethod() {
@@ -217,6 +249,8 @@ class ModifyTrackDialog extends TatorElement {
 
         let alg = this._extendMethod.getValue();
         var extendFrames = 0;
+        var maxFrames = 0;
+        var useMaxFrames = false;
         var direction = this._extendDirection.getValue();
 
         if (alg === "Duplicate")
@@ -241,6 +275,15 @@ class ModifyTrackDialog extends TatorElement {
             }
           }
         }
+        else if (alg == "Auto") {
+          useMaxFrames = this._applyMaxFrames.getValue();
+          if (useMaxFrames) {
+            maxFrames = parseInt(this._extendMaxFrames.getValue());
+          }
+          else {
+            maxFrames = -1
+          }
+        }
 
         this.dispatchEvent(
           new CustomEvent("extendTrack",
@@ -252,6 +295,8 @@ class ModifyTrackDialog extends TatorElement {
                localization: this._data.localization,
                algorithm: alg,
                numFrames: extendFrames,
+               useMaxFrames: useMaxFrames,
+               maxFrames: maxFrames,
                direction: this._extendDirection.getValue()}}));
 
       } catch (error) {
@@ -267,7 +312,6 @@ class ModifyTrackDialog extends TatorElement {
     this._mergeDiv.style.display = "none";
     this._addDetectionDiv.style.display = "none";
     this._trimDiv.style.display = "none";
-    this._extendFrames.style.display = "block";
   }
 
   _setToFillTrackGapsUI() {
@@ -285,6 +329,7 @@ class ModifyTrackDialog extends TatorElement {
     this._span.textContent = "Extend Track";
     this._extendDiv.style.display = "block";
     this._yesButton.textContent = "Extend";
+    this._setExtendUI();
   }
 
   _setToMergeUI() {
