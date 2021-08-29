@@ -147,7 +147,7 @@ class UserDetailSchema(AutoSchema):
             'name': 'id',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying a localization association.',
+            'description': 'A unique integer identifying a user.',
             'schema': {'type': 'integer'},
         }]
 

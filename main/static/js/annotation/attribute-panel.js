@@ -323,7 +323,16 @@ class AttributePanel extends TatorElement {
 
       this._slider.addEventListener("input", () => {
         if (this._emitChanges) {
-          this.dispatchEvent(new CustomEvent("frameChange", {
+          this.dispatchEvent(new CustomEvent("trackSliderInput", {
+            detail: {frame: this._frames[this._slider.value],
+                     track: this._track},
+            composed: true
+          }));
+        }
+      });
+      this._slider.addEventListener("change", () => {
+        if (this._emitChanges) {
+          this.dispatchEvent(new CustomEvent("trackSliderChange", {
             detail: {frame: this._frames[this._slider.value],
                      track: this._track},
             composed: true

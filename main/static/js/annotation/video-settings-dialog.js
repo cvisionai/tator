@@ -73,7 +73,7 @@ class VideoSettingsDialog extends ModalDialog {
     safeModeHeaderDiv.appendChild(safeModeHeader);
 
     const safeModeSubHeader = document.createElement("div");
-    safeModeSubHeader.textContent = "Allow safe mode to occur";
+    safeModeSubHeader.textContent = "Allow safe mode to occur. If safe mode has already been invoked, this will not turn off safe mode.";
     safeModeSubHeader.setAttribute("class", "text-gray f2");
     safeModeHeaderDiv.appendChild(safeModeSubHeader);
 
@@ -107,6 +107,14 @@ class VideoSettingsDialog extends ModalDialog {
           dockPlayback: this.getSourceObject("dockPlayback")
         }
       }));
+
+      // Set the video quality search parameters
+      var searchParams = new URLSearchParams(window.location.search);
+      searchParams = this.queryParams(searchParams);
+      const path = document.location.pathname;
+      const searchArgs = searchParams.toString();
+      var newUrl = path + "?" + searchArgs;
+      window.history.replaceState(null, "VideoSettings", newUrl);
     });
 
     // Sets all the choices to the defaults
@@ -193,6 +201,8 @@ class VideoSettingsDialog extends ModalDialog {
       settingsStr = this.createSourceString(settings.dockedQuality, this._defaultSources.dockedFPS);
       this._divOptions["dockPlayback"].choice.setValue(settingsStr);
     }
+
+    this._safeModeOption.setValue(settings.allowSafeMode);
   }
 
   applyDefaults() {
@@ -242,6 +252,9 @@ class VideoSettingsDialog extends ModalDialog {
    *
    * @param {string} mode - single|multiview
    * @param {array} medias - Array of media objects to set the display
+   * @param {bool} enableSafeMode - True if safe mode is enabled. False otherwise.
+   *                                Overrides the < 20 FPS threshold where safe mode is
+   *                                disabled.
    */
   mode(mode, medias) {
     this._mode = mode;
@@ -304,11 +317,64 @@ class VideoSettingsDialog extends ModalDialog {
    *     focusedFPS
    *     dockedQuality
    *     dockedFPS
+   *     allowSafeMode
    */
   set defaultSources(val)
   {
     this._defaultSources = val;
     this.applyDefaults();
+  }
+
+  /**
+   * Play quality options must've been set prior to using this.
+   * @param {integer} quality - Resolution/quality of the play buffer. Doesn't take FPS into account
+   *                            and will just pick the first matching quality.
+   */
+   setPlayQuality(quality) {
+    var choices = this._divOptions["play"].choice.getChoices();
+    for (let idx = 0; idx < choices.length; idx++) {
+      const currentQuality = parseInt(choices[idx].split("p")[0]);
+      if (currentQuality == quality) {
+        this._divOptions["play"].choice.setValue(choices[idx]);
+        return;
+      }
+    }
+  }
+
+  /**
+   * @param {URLSearchParams} params - Existing parameters to add to. If not provided, a new
+   *                                   set is created.
+   * @returns URLSearchParams - Contains video related URL parameters
+   */
+  queryParams(params) {
+    if (params == undefined) {
+      params = new URLSearchParams(window.location.search)
+    }
+
+    params.delete("focusQuality");
+    params.delete("dockQuality");
+    params.delete("scrubQuality");
+    params.delete("seekQuality");
+    params.delete("playQuality");
+    params.delete("safeMode");
+
+    if (this._mode == "multiview") {
+      params.set("focusQuality", parseInt(this._divOptions["focusPlayback"].choice.getValue().split("p")[0]));
+      params.set("dockQuality", parseInt(this._divOptions["dockPlayback"].choice.getValue().split("p")[0]));
+    }
+    
+    if (this._mode == "single" || this._mode == "multiview") {
+      params.set("scrubQuality", parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0]));
+      params.set("seekQuality", parseInt(this._divOptions["seek"].choice.getValue().split("p")[0]));
+      params.set("playQuality", parseInt(this._divOptions["play"].choice.getValue().split("p")[0]));
+      if (this._safeModeOption.getValue()) {
+        params.set("safeMode", 1);
+      }
+      else {
+        params.set("safeMode", 0);
+      }
+    }
+    return params;
   }
 }
 

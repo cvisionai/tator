@@ -229,7 +229,7 @@ class AnnotationPage extends TatorPage {
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._player.addEventListener(
-                "primaryVideoLoaded", () => {
+                "primaryVideoLoaded", (evt) => {
                   /* #TODO Figure out a capture frame capability for multiview
                   this._settings._capture.addEventListener(
                     'captureFrame',
@@ -240,33 +240,21 @@ class AnnotationPage extends TatorPage {
                   */
                   this._settings._capture.setAttribute("disabled", "");
 
-                  // Set the quality control based on the prime video
-                  fetch(`/rest/Media/${this._mediaIds[0]}?presigned=28800`, {
-                    method: "GET",
-                    credentials: "same-origin",
-                    headers: {
-                      "X-CSRFToken": getCookie("csrftoken"),
-                      "Accept": "application/json",
-                      "Content-Type": "application/json"
-                    }
-                  })
-                  .then(response => response.json())
-                  .then(primeMediaData => {
-                    this._videoSettingsDialog.mode("multiview", [primeMediaData]);
-                    this._settings.mediaInfo = primeMediaData;
-                    var playbackQuality = data.media_files.quality;
-                    if (playbackQuality == undefined)
-                    {
-                      playbackQuality = 360; // Default to something sensible
-                    }
-                    if (searchParams.has("quality"))
-                    {
-                      playbackQuality = Number(searchParams.get("quality"));
-                    }
-                    this._settings.quality = playbackQuality;
-                    this._player.setQuality(playbackQuality, null, true);
-                    this._player.setAvailableQualities(primeMediaData);
-                  });
+                  var primeMediaData = evt.detail.media;
+                  this._videoSettingsDialog.mode("multiview", [primeMediaData]);
+                  this._settings.mediaInfo = primeMediaData;
+                  var playbackQuality = data.media_files.quality;
+                  if (playbackQuality == undefined)
+                  {
+                    playbackQuality = 360; // Default to something sensible
+                  }
+                  if (searchParams.has("playQuality"))
+                  {
+                    playbackQuality = Number(searchParams.get("playQuality"));
+                  }
+                  this._settings.quality = playbackQuality;
+                  this._player.setQuality(playbackQuality, null, true);
+                  this._player.setAvailableQualities(primeMediaData);
                 }
               );
             } else if (type_data.dtype == "live") {
@@ -331,7 +319,7 @@ class AnnotationPage extends TatorPage {
             else {
               this._prev.addEventListener("click", () => {
                 let url = baseUrl + prevData.prev;
-                const searchParams = this._settings._queryParams();
+                var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
                 searchParams.delete("selected_entity");
                 searchParams.delete("frame");
@@ -339,6 +327,7 @@ class AnnotationPage extends TatorPage {
                 if (typeParams) {
                   searchParams.append("selected_type",typeParams)
                 }
+                searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
@@ -350,7 +339,7 @@ class AnnotationPage extends TatorPage {
             else {
               this._next.addEventListener("click", () => {
                 let url = baseUrl + nextData.next;
-                const searchParams = this._settings._queryParams();
+                var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
                 searchParams.delete("selected_entity");
                 searchParams.delete("frame");
@@ -358,6 +347,7 @@ class AnnotationPage extends TatorPage {
                 if (typeParams) {
                   searchParams.append("selected_type", typeParams)
                 }
+                searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
@@ -476,8 +466,8 @@ class AnnotationPage extends TatorPage {
       }
     }
 
-    const _removeLoading = () => {
-      if (this._dataInitialized && this._canvasInitialized) {
+    const _removeLoading = (force) => {
+      if ((this._dataInitialized && this._canvasInitialized) || force) {
         try
         {
           this._loading.style.display = "none";
@@ -532,6 +522,10 @@ class AnnotationPage extends TatorPage {
       _removeLoading();
     });
 
+    canvas.addEventListener("videoInitError", () => {
+      _removeLoading(true);
+    });
+
     canvas.addEventListener("defaultVideoSettings", evt => {
       this._videoSettingsDialog.defaultSources = evt.detail;
     });
@@ -563,6 +557,9 @@ class AnnotationPage extends TatorPage {
         if ("setQuality" in canvas) {
           canvas.setQuality(evt.detail.quality);
         }
+
+        var videoSettings = canvas.getVideoSettings();
+        this._videoSettingsDialog.applySettings(videoSettings);
       });
     }
 
@@ -655,6 +652,10 @@ class AnnotationPage extends TatorPage {
 
     this._videoSettingsDialog.addEventListener("allowSafeMode", evt => {
       canvas.allowSafeMode(evt.detail.allowSafeMode);
+    });
+
+    this._player.addEventListener("setPlayQuality", (evt) => {
+      this._videoSettingsDialog.setPlayQuality(evt.detail.quality);
     });
 
     this._player.addEventListener("openVideoSettings", () => {
@@ -963,6 +964,13 @@ class AnnotationPage extends TatorPage {
             canvas.deselectTrack();
           }
           canvas.selectNone();
+        });
+        this._browser.addEventListener("trackSliderInput", evt => {
+          evt.target.value = evt.detail.frame;
+          canvas.handleSliderInput(evt);
+        });
+        this._browser.addEventListener("trackSliderChange", evt => {
+          canvas.handleSliderChange(evt);
         });
         this._browser.addEventListener("frameChange", evt => {
           if ('track' in evt.detail)

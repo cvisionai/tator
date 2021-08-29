@@ -228,9 +228,10 @@ class AttributesForm extends TatorElement {
 
 
     if (dtype == 'enum'){
-      this.choicesVal = choices;
-      this.labelsVal = labels;
-      if(choices.length != labels.length) this._optionLengthEqual();
+      this.choicesVal = (choices === null )? [] : choices;
+      this.labelsVal = (labels === null) ? [] : labels;
+
+      if(this.choicesVal.length != this.labelsVal.length) this._optionLengthEqual();
 
       // Choices only apply for enum types
       this._getChoicesInputs({ value : this.choicesVal });

@@ -209,11 +209,6 @@ class ProjectSettings extends TatorPage {
     }).then( (objData) => {
       this.loading.hideSpinner();
 
-      // Versions number sort
-      if (typeof objData[0].number !== "undefined") {
-        objData = objData.sort((a, b) => a.number > b.number);
-      }
-
       // Pass in data interface to memberships.
       if (formView.typeName == "Membership") {
         this.membershipData = new MembershipData(this.projectId);
@@ -228,6 +223,10 @@ class ProjectSettings extends TatorPage {
 
       // Make versions new list before we add an empty row
       if(formView.typeName == "Version"){
+        // Versions number sort
+        if (typeof objData[0] !== "undefined" && typeof objData[0].number !== "undefined") {
+          objData = objData.sort((a, b) => a.number > b.number);
+        }
         // const versionsList = new DataVersionList( this.projectId );
         this._dataVersionList._setVersionList(objData, true);
       }

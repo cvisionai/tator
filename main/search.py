@@ -174,6 +174,11 @@ class TatorSearch:
                 '_duration': {'type': 'float'},
                 '_gid': {'type': 'keyword'},
                 '_uid': {'type': 'keyword'},
+                '_fps': {'type': 'float'},
+                '_num_frames': {'type': 'long'},
+                '_codec': {'type': 'keyword'},
+                '_rows': {'type': 'integer'},
+                '_columns': {'type': 'integer'},
                 'filename': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
             }},
         )
@@ -532,6 +537,11 @@ class TatorSearch:
             aux['_gid'] = entity.gid
             aux['_uid'] = entity.uid
             aux['_archive_state'] = entity.archive_state
+            aux['_fps'] = entity.fps
+            aux['_num_frames'] = entity.num_frames
+            aux['_codec'] = entity.codec
+            aux['_rows'] = entity.height
+            aux['_columns'] = entity.width
 
             # Get total size and download size of this file.
             total_size, download_size = entity.get_file_sizes()

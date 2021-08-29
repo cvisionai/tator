@@ -1248,7 +1248,7 @@ class VideoCanvas extends AnnotationCanvas {
     this._addVideoDiagnosticOverlay();
     this._ftypInfo = {};
     this._disableAutoDownloads = false;
-    this._allowSafeMode = true;
+    this.allowSafeMode = true;
 
     // Set the onDemand watchdog download thread
     // This will request to download segments if needed
@@ -1257,6 +1257,9 @@ class VideoCanvas extends AnnotationCanvas {
     this._onDemandPlaybackReady = false;
     this._onDemandFinished = false;
     this._onDemandId = 0;
+
+
+    this.initialized = false;
   }
 
   /**
@@ -1265,10 +1268,6 @@ class VideoCanvas extends AnnotationCanvas {
    */
    disableAutoDownloads() {
     this._disableAutoDownloads = true;
-  }
-
-  set allowSafeMode(val) {
-    this._allowSafeMode = val;
   }
 
   // #TODO Refactor this so that it uses internal variables?
@@ -1815,7 +1814,12 @@ class VideoCanvas extends AnnotationCanvas {
   }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
-  loadFromVideoObject(videoObject, mediaType, quality, resizeHandler, offsite_config, numGridRows, heightPadObject)
+  //
+  // @param {integer} seekQuality - If provided, closest quality to this will be used for the
+  //                                seek buffer. Otherwise be the highest quality will be used.
+  // @param {integer} scrubQuality - If provided, closest quality to this will be used for the
+  //                                 scrub buffer. Otherwise, closest quality to 320 will be used.
+  loadFromVideoObject(videoObject, mediaType, quality, resizeHandler, offsite_config, numGridRows, heightPadObject, seekQuality, scrubQuality)
   {
     this.mediaInfo = videoObject;
     if (mediaType)
@@ -1835,6 +1839,13 @@ class VideoCanvas extends AnnotationCanvas {
       offsite_config = {}
     }
     this._offsiteConfig = offsite_config;
+
+    // Initialize the resize handler to a nominal size prior to loading the media info (which
+    // may cause an error if there's something wrong with the media)
+    this._dims = [400, 400];
+    this._gridRow = numGridRows;
+    this.heightPadObject = heightPadObject;
+    this.forceSizeChange();
 
     // Note: dims is width,height here
     let videoUrl, fps, numFrames, dims;
@@ -1867,8 +1878,13 @@ class VideoCanvas extends AnnotationCanvas {
     {
       streaming_files = videoObject.media_files["streaming"];
       play_idx = find_closest(videoObject, quality);
-      // Todo parameterize this to maximize flexibility
-      scrub_idx = find_closest(videoObject, 320);
+
+      if (Number.isInteger(scrubQuality)) {
+        scrub_idx = find_closest(videoObject, scrubQuality);
+      }
+      else {
+        scrub_idx = find_closest(videoObject, 320);
+      }
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
       if ('audio' in videoObject.media_files && !offsite_config.hasOwnProperty('host'))
@@ -1887,19 +1903,23 @@ class VideoCanvas extends AnnotationCanvas {
       // The streaming files may not be in order, find the largest resolution
       hq_idx = 0;
       var largest_height = 0;
+      var largest_width = 0;
       for (let idx = 0; idx < videoObject.media_files["streaming"].length; idx++)
       {
         let height = videoObject.media_files["streaming"][idx].resolution[0];
         if (height > largest_height)
         {
           largest_height = height;
+          largest_width = videoObject.media_files["streaming"][idx].resolution[1];
           hq_idx = idx;
         }
       }
+      if (Number.isInteger(seekQuality)) {
+        hq_idx = find_closest(videoObject, seekQuality);
+      }
 
       // Use the largest resolution to set the viewport
-      dims = [streaming_files[hq_idx].resolution[1],
-              streaming_files[hq_idx].resolution[0]];
+      dims = [largest_width, largest_height];
     }
     // Handle cases when there are no streaming files in the set
     if (play_idx == -1)
@@ -1980,6 +2000,9 @@ class VideoCanvas extends AnnotationCanvas {
       streaming_files[this._scrub_idx].resolution[0],
       streaming_files[this._seek_idx].resolution[0],
       videoObject.id);
+
+    this.initialized = true;
+    this.hideErrorMessage();
 
     // On load seek to frame 0
     return promise;
@@ -2653,7 +2676,7 @@ class VideoCanvas extends AnnotationCanvas {
 
       if (this._fpsScore == 0)
       {
-        if (this._allowSafeMode) {
+        if (this.allowSafeMode) {
           console.warn(`(ID:${this._videoObject.id}) Detected slow performance, entering safe mode.`);
 
           this.dispatchEvent(new Event("safeMode"));
@@ -2786,6 +2809,7 @@ class VideoCanvas extends AnnotationCanvas {
       that.stopPlayerThread();
 
       var video = that._videoElement[that._play_idx];
+      if (that._ftypInfo[that._play_idx] == undefined) { return; }
 
       var setupCallback = function() {
         console.log("******* restarting onDemand: Setting up new buffer");

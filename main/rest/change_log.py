@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 CHANGE_LOG_PROPERTIES = ["id", "project", "user", "description_of_change"]
 
+
 class ChangeLogListAPI(BaseListView):
     """
     Interact with list of change logs.
@@ -46,7 +47,7 @@ class ChangeLogListAPI(BaseListView):
 
         if entity_id is not None:
             cto_qs = cto_qs.filter(ref_id=entity_id)
-        
+
         if entity_type is not None:
             cto_qs = cto_qs.filter(ref_table__model=entity_type)
 

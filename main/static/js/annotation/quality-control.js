@@ -33,9 +33,9 @@ class QualityControl extends TatorElement {
     // handle default
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
-    if (searchParams.has("quality"))
+    if (searchParams.has("playQuality"))
     {
-      this._quality = Number(searchParams.get("quality"));
+      this._quality = Number(searchParams.get("playQuality"));
     }
 
     this._select = null;
@@ -73,13 +73,21 @@ class QualityControl extends TatorElement {
     this._quality = quality;
 
     let params = new URLSearchParams(document.location.search.substring(1));
-    params.set("quality", quality);
+    params.set("playQuality", quality);
     const path = document.location.pathname;
     const searchArgs = params.toString();
     var newUrl = path;
     newUrl += "?" + searchArgs;
 
-    window.history.replaceState(quality,"Quality",newUrl);
+    window.history.replaceState(quality,"playQuality",newUrl);
+    this.dispatchEvent(new CustomEvent("setQuality",
+    {
+      composed: true,
+      detail: {
+        quality: quality
+      }
+    }
+    ));
 
     for (let index = 0; index < this._select.options.length; index++)
     {
