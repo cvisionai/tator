@@ -140,7 +140,10 @@ body.analysis-annotations-body {
     border-color: $color-white;
     box-shadow: 0 0 0 3px $color-charcoal--light;
     &:before {
-      background-color: $color-charcoal--light;
+      //background-color: $color-charcoal--light;
+    }
+    .entity-gallery-card__attribute {
+      color: $color-white !important;
     }
   }
 }

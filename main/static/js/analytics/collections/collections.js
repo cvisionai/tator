@@ -35,18 +35,19 @@ class AnalyticsCollections extends TatorPage {
       this.main.setAttribute("class", "collections-gallery--main col-12");
       this.mainWrapper.appendChild(this.main);
 
-      const filterDiv = document.createElement("div");
-      filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
-      this.main.appendChild(filterDiv);
-
-      this._filterView = document.createElement("filter-interface");
-      filterDiv.appendChild(this._filterView);
-
       //
       /* Slider w/ Cards Gallery */
       // Gallery of horizontal bars to view collections
       this._collectionsGallery = document.createElement("collections-gallery");
       this.main.appendChild(this._collectionsGallery);
+
+      /* Collections Filter */
+      // add filter into the gallery (to place under gallery heading)
+      this._filterView = document.createElement("filter-interface");
+      this._collectionsGallery._filterDiv.appendChild(this._filterView);
+
+      // Custom gallery more menu added into filter interface tools ares
+      this._filterView._moreNavDiv.appendChild(this._collectionsGallery._moreMenu);
 
       //
       /* Right Navigation Pane - Annotation Detail Viewer */
@@ -57,6 +58,9 @@ class AnalyticsCollections extends TatorPage {
       // Gallery navigation panel
       this._panelContainer = document.createElement("entity-panel-container");
       this.aside.appendChild(this._panelContainer);
+      
+      // Use in panel navigation
+      this._panelContainer._panelTop._navigation.init();
 
       //
       /* Other */
@@ -110,7 +114,7 @@ class AnalyticsCollections extends TatorPage {
           aside: this.aside,
           pageModal: this.modal,
           modelData: this._modelData,
-          panelName: "Entity"
+          gallery: this._collectionsGallery 
         });
 
         // Pass panel and localization types to gallery
@@ -125,9 +129,8 @@ class AnalyticsCollections extends TatorPage {
 
         // Filter interface
         this._filterConditions = this._settings.getFilterConditionsObject();
-
         this._filterDataView = new FilterData(
-          this._modelData, ["collections-analytics-view"], ["Localizations"]);
+        this._modelData, ["collections-analytics-view"], ["Localizations"]);
         this._filterDataView.init();
         this._filterView.dataView = this._filterDataView;
         this._filterView.setFilterConditions(this._filterConditions);

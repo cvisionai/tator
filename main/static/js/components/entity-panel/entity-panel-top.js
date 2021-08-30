@@ -22,11 +22,6 @@ class EntityGalleryPanelTop extends TatorElement {
     svg.appendChild(path);
     this._topBar.appendChild(this._topBarArrow);
 
-    // Optional navigation
-    this.panelNav = document.createElement("entity-panel-navigation");
-    this.panelNav.hidden = true;
-    this._topBar.appendChild(this.panelNav);
-
     // Text box
     this._box = document.createElement("div");
     this._box.setAttribute("class", "px-3 pt-4");
@@ -51,11 +46,21 @@ class EntityGalleryPanelTop extends TatorElement {
     // this._topBarP.appendChild( document.createTextNode("Hover over localizations in gallery to preview annotations. Click to pin in the viewer.") );
     // this._box.appendChild(this._topBarP);
 
-
-
     // Panel Img Canvas
     this._locImage = document.createElement("entity-panel-localization");
     this._box.appendChild(this._locImage);
+
+    // Optional static image
+    this._staticImage = document.createElement("img");
+    this._staticImage.hidden = true;
+    this._box.appendChild(this._staticImage);
+
+    /* Media Prev/Next and Go To Frame*/
+    // Hidden until initialized
+    this._navigation = document.createElement("entity-panel-navigation");
+    this._navigation.hidden = true;
+    this._navigation.controls.marginTop = "-20px"
+    this._box.appendChild(this._navigation);
 
     // Image modal link container @TODO styling
     const modalLinkDiv = document.createElement("div");
@@ -74,6 +79,12 @@ class EntityGalleryPanelTop extends TatorElement {
 
     // If the panel is showing a localization default is true
     this.localizationType = true;
+
+    /* #TODO
+     * Create 1 panel, and init it / reuse it from card sending it cardObj data (currently done on card creation) 
+     */
+    // this._panel = document.createElement("entity-gallery-panel");
+    // this._box.appendChild(this._panel);
   }
 
   static get observedAttributes() {
@@ -89,19 +100,42 @@ class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  init({ pageModal, modelData, panelContainer, panelName }) {
+  init({ pageModal, modelData, panelContainer }) {
     if (this.localizationType) {
       this._locImage.init({ pageModal, modelData, panelContainer });
     }
-
-    this.panelName = panelName;
   }
 
-  openHandler(evtDetail) {
+  setImage(imageSource) {
+    this._staticImage.setAttribute("src", imageSource);
+    //this._staticImage.hidden = false;
+  }
+
+  openHandler(evtDetail, cardElements, cardIndexes) {
     if (this.localizationType) {
       this.locDataHandler(evtDetail);
     }
     this.headingHandler(evtDetail);
+    //this.panelDataHandler(evtDetail);
+    this.navigationHandler(evtDetail, cardElements, cardIndexes);
+  }
+
+  navigationHandler(evtDetail, cardElements, cardIndexes) {
+    if (this._navigation.getInit() && evtDetail.openFlag) {
+      this._navigation.classList.remove("hidden");
+      this._navigation.handle({
+          cardElements, 
+          cardIndexes, 
+          cardObj: evtDetail.cardObj
+        });
+    } else {
+      this._navigation.classList.add("hidden");
+    }
+  }
+
+  panelDataHandler(evtDetail){
+    let cardObj = evtDetail.cardObj
+    this._panel.init({cardObj});
   }
 
   locDataHandler(evtDetail) {
@@ -115,10 +149,19 @@ class EntityGalleryPanelTop extends TatorElement {
   }
 
   headingHandler(evtDetail) {
-    //console.log("Heading handler");
+    // console.log("Heading handler");
     if (evtDetail.openFlag) {
       // We're opening the panel with new card click
-      this._headingText.innerHTML = this.panelName;
+      let cardObj = evtDetail.cardObj
+      /* Get panel name */
+      let panelName = "";
+      // Localization or Media Type name
+      if(cardObj.stateType && cardObj.stateType == "Media"){
+        panelName = evtDetail.cardObj.mediaInfo.entityType.name;
+      } else {
+        panelName = evtDetail.cardObj.entityType.name;
+      }
+      this._headingText.innerHTML = panelName;
       this._topBarID.innerHTML = ` | ID: ${evtDetail.cardObj.id}`;
     } else {
       this._headingText.innerHTML = `No selection.`;

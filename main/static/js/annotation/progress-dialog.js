@@ -8,7 +8,7 @@ class ProgressDialog extends ModalDialog {
     this._titleDiv.setAttribute("class", "h2");
     this._title.nodeValue = "";
     this._footer.remove();
-    
+
     // Loading Icon
     this._loadingImg = document.createElement("img");
     this._loadingImg.setAttribute("src", "/static/images/spinner-transparent.svg");
@@ -87,19 +87,22 @@ class ProgressDialog extends ModalDialog {
     // Ok Button
     this._okButton = document.createElement("button");
     this._okButton.setAttribute("class", "btn btn-clear");
-    this._okButton.setAttribute("disabled", "");
     this._okButton.style.margin = "auto";
     this._okButton.textContent = "Ok";
     this._okButton.addEventListener("click", this._okClickHandler.bind(this));
     this._main.appendChild(this._okButton);
+
+    this._jobList = []; // Objects with {uid: str, promise: Promise}
+    this._newJobList = [];
+    this._checkJobThread = null;
   }
 
   /**
    * This function won't return until the corresponding job's status is not "Running"
-   * 
+   *
    * Returns true if the job's status is succeeded. False is failed.
    */
-  async getJobCompleteStatus(jobUid) {
+  async getJobCompleteStatus(jobUid, jobPromise) {
 
     let response = await fetchRetry("/rest/Job/" + jobUid, {
       method: "GET",
@@ -116,7 +119,7 @@ class ProgressDialog extends ModalDialog {
 
     if (jobStatus.status === "Running") {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      jobSucceeded = await this.getJobCompleteStatus(jobUid);
+      jobSucceeded = await this.getJobCompleteStatus(jobUid, jobPromise);
     }
     else if (jobStatus.status === "Succeeded") {
       return true;
@@ -128,11 +131,88 @@ class ProgressDialog extends ModalDialog {
     return jobSucceeded;
   }
 
+  checkJobs() {
+
+    this._checkJobThread = null;
+
+    var promises = [];
+    for (let index = 0; index < this._jobList.length; index++) {
+      var jobPromise = fetchRetry("/rest/Job/" + this._jobList[index].jobUid, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+      promises.push(jobPromise);
+    }
+
+    var jsonDataPromises = [];
+    Promise.all(promises).then((responses) => {
+      for (let index = 0; index < this._jobList.length; index++) {
+        jsonDataPromises.push(responses[index].json());
+      }
+      Promise.all(jsonDataPromises).then((jsonData) => {
+        var keepJobs = [];
+        for (let index = 0; index < this._jobList.length; index++) {
+          var data = jsonData[index];
+          if (data.status == "Running") {
+            keepJobs.push(this._jobList[index]);
+          }
+          else if (data.status == "Succeeded") {
+            this.dispatchEvent(new CustomEvent("jobsDone", {
+              detail: {status: true, job: this._jobList[index]},
+              composed: true
+            }));
+          }
+          else {
+            this.dispatchEvent(new CustomEvent("jobsDone", {
+              detail: {status: false, job: this._jobList[index]},
+              composed: true
+            }));
+          }
+        }
+  
+        this._jobList = keepJobs;
+        if (this._newJobList.length > 0) {
+          this._jobList.push(...this._newJobList);
+        }
+  
+        if (this._jobList.length > 0) {
+          this._checkJobThread = setTimeout(() => { this.checkJobs(); }, 5000);
+        }
+      });
+    });
+  }
+
   /**
    * Returns a promise once the job is completed. The promise contains a boolean
    * that is true if the job was successful. If the job failed, false is returned.
    */
-  monitorJob(jobUid, runningMsg, successfulMsg, failedMsg) {
+  monitorJob(jobUid, msg, callback) {
+
+    this._failedSvg.style.display = "none";
+    this._successSvg.style.display = "none";
+    this._loadingImg.style.display = "block";
+    this._msg.textContent = msg;
+
+    var newJob = {
+      jobUid: jobUid,
+      msg: msg,
+      callback: callback
+    };
+
+    if (this._jobList.length == 0) {
+      this._jobList.push(newJob);
+      this._checkJobThread = setTimeout(() => { this.checkJobs(); }, 5000);
+    }
+    else {
+      this._newJobList.push(newJob);
+    }
+
+    /*
 
     var promise = new Promise((resolve) => {
       this._okButton.setAttribute("disabled", "");
@@ -156,9 +236,9 @@ class ProgressDialog extends ModalDialog {
         resolve(jobStatus);
       });
     });
-    
+
     return promise;
-    
+    */
   }
 
   /**

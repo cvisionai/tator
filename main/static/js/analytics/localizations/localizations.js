@@ -39,26 +39,20 @@ class AnalyticsLocalizations extends TatorPage {
     this.main.setAttribute("class", "enitity-gallery--main col-12");
     this.mainWrapper.appendChild(this.main);
 
-    const filterDiv = document.createElement("div");
-    filterDiv.setAttribute("class", "analysis__filter py-3 px-6");
-    this.main.appendChild(filterDiv);
-
-    this._filterView = document.createElement("filter-interface");
-    filterDiv.appendChild(this._filterView);
-
-    // Respond to events from the filter interface
-    this._filterView.addEventListener("openedFilterDialog", () => {
-      this.setAttribute("has-open-modal", "");
-    });
-    this._filterView.addEventListener("closedFilterDialog", () => {
-      this.removeAttribute("has-open-modal");
-    });
-
     //
     /* Card Gallery */
     // Gallery of cards showing filter results
     this._filterResults = document.createElement("annotations-gallery");
     this.main.appendChild(this._filterResults);
+
+    // Localizations Filter
+    /* Filter interface part of gallery */
+    this._filterView = document.createElement("filter-interface");
+    this._filterResults._filterDiv.appendChild(this._filterView);
+
+    // Custom gallery more menu added into filter interface tools ares
+     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
+
 
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
@@ -70,7 +64,8 @@ class AnalyticsLocalizations extends TatorPage {
     this._panelContainer = document.createElement("entity-panel-container");
     this.aside.appendChild(this._panelContainer);
 
-
+    // Use in panel navigation
+    this._panelContainer._panelTop._navigation.init();
 
     //
     /* Other */
@@ -98,7 +93,6 @@ class AnalyticsLocalizations extends TatorPage {
       let settingsLock = this._settings.getAttribute("lock");
 
       if (settingsLock === "1") {
-        console.log("open the lock");
         this._settings._lock.unlock();
         this._panelContainer.setAttribute("permissionValue", "Can Edit");
       }
@@ -149,7 +143,13 @@ class AnalyticsLocalizations extends TatorPage {
       });
 
       // Init panel side behavior
-      this._panelContainer.init({ main: this.main, aside: this.aside, pageModal: this.modal, modelData: this._modelData, panelName: "Annotation" });
+      this._panelContainer.init({ 
+          main: this.main, 
+          aside: this.aside, 
+          pageModal: this.modal, 
+          modelData: this._modelData,
+          gallery: this._filterResults 
+        });
 
       // Pass panel and localization types to gallery
       this._filterResults._initPanel({
