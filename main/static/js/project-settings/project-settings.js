@@ -17,6 +17,7 @@ class ProjectSettings extends TatorPage {
     const div = document.createElement("div");
     div.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(div);
+    
 
     this._breadcrumbs = document.createElement("settings-breadcrumbs");
     div.appendChild(this._breadcrumbs);

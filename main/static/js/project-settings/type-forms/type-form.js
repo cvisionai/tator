@@ -184,14 +184,6 @@ class TypeForm extends TatorElement {
     });
   }
 
-  // this.settingsViewClasses = [
-  //   "project-main-edit",
-  //   "media-type-main-edit",
-  //   "localization-edit",
-  //   "leaf-type-edit",
-  //   "state-type-edit"
-  // ];
-
   _getTypeClass() {
     switch (this.typeName) {
       case "MediaType":
