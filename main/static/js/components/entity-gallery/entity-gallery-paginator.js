@@ -34,7 +34,7 @@ class EntityGalleryPaginator extends TatorElement {
       this._pages[idx].addEventListener("click", evt => {
         evt.preventDefault();
         this._setPage(Number(evt.target.textContent) - 1);
-        console.log("Clicked " + evt.target.textContent);
+        // console.log("Clicked " + evt.target.textContent);
         this._emit();
       });
       this._pages[idx].style.cursor = "pointer";
@@ -85,14 +85,14 @@ class EntityGalleryPaginator extends TatorElement {
     //pageSize.selectedIndex = 2;
     this.div.appendChild(this.pageSizeEl);
 
-    const goToPageText = document.createElement("span");
-    goToPageText.setAttribute("class", "pagination__ellipsis");
-    goToPageText.textContent = "Go To:";
-    this.div.appendChild(goToPageText);
+    this.goToPageText = document.createElement("span");
+    this.goToPageText.setAttribute("class", "pagination__ellipsis");
+    this.goToPageText.textContent = "Go To:";
+    this.div.appendChild(this.goToPageText);
 
-    const goToPage = document.createElement("input");
-    goToPage.setAttribute("class", "form-control input-sm2 has-border");
-    this.div.appendChild(goToPage);
+    this.goToPage = document.createElement("input");
+    this.goToPage.setAttribute("class", "form-control input-sm2 has-border");
+    this.div.appendChild(this.goToPage);
 
     this._prev.addEventListener("click", (evt) => {
       evt.preventDefault();
@@ -122,11 +122,11 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-    goToPage.addEventListener("keydown", evt => {
+    this.goToPage.addEventListener("keydown", evt => {
       if (evt.keyCode == 13) {
         evt.preventDefault();
         const page = Number(evt.target.value);
-        goToPage.value = "";
+        this.goToPage.value = "";
         if (page <= this._numPages && page >= 1) {
           this._setPage(page - 1);
           this._emit();
@@ -249,7 +249,8 @@ class EntityGalleryPaginator extends TatorElement {
         start: this._page * this._pageSize,
         stop: Math.min(this._numFiles, (this._page + 1) * this._pageSize),
         page: this._page + 1,
-        pgsize: this._pageSize
+        pgsize: this._pageSize,
+        pageSize: this._pageSize
       },
     }));
   }

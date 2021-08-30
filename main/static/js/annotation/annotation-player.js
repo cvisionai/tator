@@ -142,9 +142,20 @@ class AnnotationPlayer extends TatorElement {
 
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
-    if (searchParams.has("quality"))
-    {
-      this._quality = Number(searchParams.get("quality"));
+    this._seekQuality = null;
+    this._scrubQuality = null;
+    this._allowSafeMode = true;
+    if (searchParams.has("playQuality")) {
+      this._quality = Number(searchParams.get("playQuality"));
+    }
+    if (searchParams.has("seekQuality")) {
+      this._seekQuality = Number(searchParams.get("seekQuality"));
+    }
+    if (searchParams.has("scrubQuality")) {
+      this._scrubQuality = Number(searchParams.get("scrubQuality"));
+    }
+    if (searchParams.has("safeMode")) {
+      this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
     }
 
     this._timelineMore.addEventListener("click", () => {
@@ -342,6 +353,16 @@ class AnnotationPlayer extends TatorElement {
       this._currentTimeInput.style.display = "block";
       this._currentTimeInput.focus();
       this._currentTimeText.style.display = "none";
+    });
+
+    this._qualityControl.addEventListener("setQuality", (evt) => {
+      this.dispatchEvent(new CustomEvent("setPlayQuality",
+      {
+        composed: true,
+        detail: {
+          quality: evt.detail.quality
+        }
+      }));
     });
 
     document.addEventListener("keydown", evt => {
@@ -615,8 +636,14 @@ class AnnotationPlayer extends TatorElement {
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
-    this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject)
+    this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
       .then(() => {
+        if (this._video.allowSafeMode) {
+          this._video.allowSafeMode = this._allowSafeMode;
+        }
+        else {
+          this._allowSafeMode = false;
+        }
         const seekInfo = this._video.getQuality("seek");
         const scrubInfo = this._video.getQuality("scrub");
         const playInfo = this._video.getQuality("play");
@@ -635,10 +662,17 @@ class AnnotationPlayer extends TatorElement {
             focusedFPS: null,
             dockedQuality: null,
             dockedFPS: null,
+            allowSafeMode: this._allowSafeMode
           }
         }));
 
         this.dispatchEvent(new Event("canvasReady", {
+          composed: true
+        }));
+      })
+      .catch(() => {
+        this._video.displayErrorMessage(`Error occurred. Could not load media: ${val.id}`);
+        this.dispatchEvent(new Event("videoInitError", {
           composed: true
         }));
       });
@@ -1033,6 +1067,7 @@ class AnnotationPlayer extends TatorElement {
         focusedFPS: null,
         dockedQuality: null,
         dockedFPS: null,
+        allowSafeMode: this._allowSafeMode
       };
   }
 }

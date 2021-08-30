@@ -38,7 +38,7 @@ class AnalyticsDashboard extends TatorPage {
     const collectionsBox = this._getDashboardBox({
         name : "Collections",
         href : `/${this.projectId}/analytics/collections`,
-        iconName: "layers-icon",
+      iconName: "track-icon",
         disabled: true,
       });
     this.main.appendChild(collectionsBox);
@@ -89,8 +89,17 @@ class AnalyticsDashboard extends TatorPage {
     const iconDiv = document.createElement("div");
     iconDiv.setAttribute("class", "pb-3 d-block color-white");
 
-    const dashboardIcon = new SvgDefinition({iconName, height, width});
-    iconDiv.appendChild(dashboardIcon);
+    if (iconName == "track-icon") {
+      const dashboardIcon = document.createElement("track-icon");
+      dashboardIcon.svg.setAttribute("height", height);
+      dashboardIcon.svg.setAttribute("width", width);
+      dashboardIcon.svg.setAttribute("stroke", "white");
+      iconDiv.appendChild(dashboardIcon);
+    } else {
+      const dashboardIcon = new SvgDefinition({ iconName, height, width });
+      iconDiv.appendChild(dashboardIcon);
+    }
+
 
     const dashboardText = document.createElement("p");
     dashboardText.setAttribute("class", "h3 analysis__dashboard-text text-normal text-gray");
@@ -100,13 +109,7 @@ class AnalyticsDashboard extends TatorPage {
   }
 
   _newRoundedBox(iconDiv, dashboardText, href, disabled){
-    var roundedBox;
-    if (disabled) {
-      roundedBox = document.createElement("button");
-    }
-    else {
-      roundedBox = document.createElement("a");
-    }
+    var roundedBox = document.createElement("a");
     roundedBox.setAttribute("class", "analysis__dashboard-box d-flex flex-items-center rounded-2");
     roundedBox.setAttribute("href", href);
 

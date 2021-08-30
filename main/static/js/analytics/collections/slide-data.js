@@ -1,5 +1,5 @@
 class CollectionSlideCardData extends HTMLElement {
-    constructor(){
+    constructor() {
         super();
 
 
@@ -13,23 +13,23 @@ class CollectionSlideCardData extends HTMLElement {
     }
 
     async makeCardList({ type, id }) {
-       // 2 -- slideCard list will be the _states array with a "cards" attribute added
+        // 2 -- slideCard list will be the _states array with a "cards" attribute added
         //console.log("********** makeSlideCardList****** For id: "+id);
         this.slideCardList = {};
         this.slideCardList.slideCards = [];
 
-         if(type == "Localization"){
+        if (type == "Localization") {
             var localization = await this._modelData.getLocalization(id);
             var media = await this._modelData.getMedia(localization.media);
             await this.getSlideCardList(localization, media);
             return this.slideCardList.slideCards;
-         } else if (type == "Media") {
+        } else if (type == "Media") {
             this.media = await this._modelData.getMedia(id)
             await this.getSlideMediaCardList(this.media);
             return this.slideCardList.slideCards;
-         }
-      
-        
+        }
+
+
     }
 
     /**
@@ -43,7 +43,7 @@ class CollectionSlideCardData extends HTMLElement {
         cardObj.modified = new Date(locData.modified_datetime);
     }
 
-    getSlideMediaCardList(media){
+    getSlideMediaCardList(media) {
         return new Promise((resolve, reject) => {
             let m = media;
             let id = m.id;
@@ -54,28 +54,28 @@ class CollectionSlideCardData extends HTMLElement {
             let modified = new Date(m.modified_datetime);
             let mediaId = id;
 
-            let image = m.media_files.image[0].path;
+            let image = m.media_files.thumbnail[0].path;
             let thumbnail = m.media_files.thumbnail[0].path;
 
             let mediaInfo = {
-               id,
-               entityType,
-               attributes,
-               media: m,
+                id,
+                entityType,
+                attributes,
+                media: m,
             }
 
             let slideCard = {
-               id,
-               localization : m, // # todo - fix this downstream to not rely on localization
-               entityType,
-               mediaId,
-               mediaInfo,
-               mediaLink,
-               attributes,
-               created,
-               modified,
-               image,
-               thumbnail 
+                id,
+                localization: m, // # todo - fix this downstream to not rely on localization
+                entityType,
+                mediaId,
+                mediaInfo,
+                mediaLink,
+                attributes,
+                created,
+                modified,
+                image,
+                thumbnail
             };
 
             this.slideCardList.slideCards.push(slideCard);
@@ -103,15 +103,15 @@ class CollectionSlideCardData extends HTMLElement {
 
             let slideCard = {
                 id,
-                    localization: l,
-                    entityType,
-                    mediaId,
-                    mediaInfo,
-                    mediaLink,
-                    attributes,
-                    created,
-                    modified
-                };
+                localization: l,
+                entityType,
+                mediaId,
+                mediaInfo,
+                mediaLink,
+                attributes,
+                created,
+                modified
+            };
 
             this.slideCardList.slideCards.push(slideCard);
             resolve();
@@ -129,14 +129,14 @@ class CollectionSlideCardData extends HTMLElement {
         });
     }
 
-    findMetaDetails(id){
-       //console.log("findMetaDetails to match id  = "+id);
-       //console.log(this.localizationTypes);
-        for(let lt of this.localizationTypes){
-            if(lt.id == id){
-               // console.log("found! returning.....");
-               // console.log(lt);
-               return lt;
+    findMetaDetails(id) {
+        //console.log("findMetaDetails to match id  = "+id);
+        //console.log(this.localizationTypes);
+        for (let lt of this.localizationTypes) {
+            if (lt.id == id) {
+                // console.log("found! returning.....");
+                // console.log(lt);
+                return lt;
             }
         }
     }
@@ -151,4 +151,4 @@ class CollectionSlideCardData extends HTMLElement {
 
 }
 
-customElements.define("collection-slide-card-data",CollectionSlideCardData);
+customElements.define("collection-slide-card-data", CollectionSlideCardData);

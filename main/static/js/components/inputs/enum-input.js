@@ -128,6 +128,15 @@ class EnumInput extends TatorElement {
       }
     }
   }
+
+  getChoices() {
+    var choiceList = [];
+    for (const option of this._select.options) {
+      choiceList.push(option.value);
+    }
+    return choiceList;
+  }
+
   
   /**
    * Clears the options. Useful for resetting the menu options.

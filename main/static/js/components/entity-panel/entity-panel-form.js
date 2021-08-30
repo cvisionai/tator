@@ -75,4 +75,4 @@ class EntityGalleryPanelForm extends TatorElement {
   }
 }
 
-customElements.define("entity-gallery-panel-form", EntityGalleryPanelForm);
+customElements.define("entity-panel-form", EntityGalleryPanelForm);

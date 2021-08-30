@@ -533,6 +533,7 @@ class TatorData {
    * @param {integer} listStart
    * @param {integer} listStop
    * @param {Map} afterMap
+   * @param {array} mediaIds
    * @param {array} versionIds
    * @param {integer} dtype
    */
@@ -544,6 +545,7 @@ class TatorData {
     listStart,
     listStop,
     afterMap,
+    mediaIds,
     versionIds,
     dtype) {
 
@@ -582,6 +584,16 @@ class TatorData {
       for (let idx = 0; idx < versionIds.length; idx++) {
         paramString += versionIds[idx];
         if (idx < versionIds.length - 1) {
+          paramString += ","
+        }
+      }
+    }
+
+    if (mediaIds != undefined && mediaIds.length > 0) {
+      paramString += "&media_id=";
+      for (let idx = 0; idx < mediaIds.length; idx++) {
+        paramString += mediaIds[idx];
+        if (idx < mediaIds.length - 1) {
           paramString += ","
         }
       }
@@ -687,6 +699,7 @@ class TatorData {
     var dtypeIds = [];
     var versionIds = [];
     var typePromises = [];
+    var mediaIds = [];
 
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
@@ -697,6 +710,9 @@ class TatorData {
             newFilter.field = "tator_user_sections";
             newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
+          }
+          else if (filter.field == "_id") {
+            mediaIds.push(Number(filter.value))
           }
           else {
             mediaFilters.push(filter);
@@ -726,6 +742,7 @@ class TatorData {
           listStart,
           listStop,
           afterMap,
+          mediaIds,
           versionIds,
           dtypeId
         ));
@@ -740,6 +757,7 @@ class TatorData {
         listStart,
         listStop,
         afterMap,
+        mediaIds,
         versionIds
       ));
     }
@@ -790,7 +808,7 @@ class TatorData {
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-   async getFilteredStates(outputType, filters, listStart, listStop, afterMap) {
+   async getFilteredStates(outputType, filters, listStart, listStop, afterMap, stateMap = null) {
 
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
@@ -798,6 +816,7 @@ class TatorData {
     var typeIds = [];
     var versionIds = [];
     var typePromises = [];
+    var mediaIds = [];
 
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
@@ -808,6 +827,9 @@ class TatorData {
             newFilter.field = "tator_user_sections";
             newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
             mediaFilters.push(newFilter);
+          }
+          else if (filter.field == "_id") {
+            mediaIds.push(Number(filter.value))
           }
           else {
             mediaFilters.push(filter);
@@ -826,6 +848,16 @@ class TatorData {
         }
       });
     }
+     
+     // If we're given a map of state typeIds, and user hasn't filtered on a type
+     if (stateMap !== null && typeIds.length === 0) {
+       console.log(stateMap);
+       stateMap.forEach(
+         (value, key, map) => {
+          typeIds.push(key)
+         }
+       )
+     }
 
     if (typeIds.length > 0) {
       typeIds.forEach(dtypeId => {
@@ -837,6 +869,7 @@ class TatorData {
           listStart,
           listStop,
           afterMap,
+          mediaIds,
           versionIds,
           dtypeId
         ));
@@ -851,6 +884,7 @@ class TatorData {
         listStart,
         listStop,
         afterMap,
+        mediaIds,
         versionIds
       ));
     }

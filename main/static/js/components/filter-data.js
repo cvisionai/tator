@@ -113,6 +113,13 @@ class FilterData {
         };
         entityType.attribute_types.push(sectionAttribute);
 
+        var mediaIdAttribute = {
+          choices: sectionNames,
+          name: "_id",
+          dtype: "int"
+        };
+        entityType.attribute_types.push(mediaIdAttribute);
+
         this._allTypes.push(entityType);
       }
     }
@@ -202,7 +209,8 @@ class FilterData {
   }
 
   /**
-   * #TODO
+   * Retrieve a list of the algorithms that are valid for this filter data view.
+   * These will be filtered based on category.
    */
   getAlgorithms() {
     return this.algorithms;
