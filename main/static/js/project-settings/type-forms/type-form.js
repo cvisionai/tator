@@ -22,7 +22,7 @@ class TypeForm extends TatorElement {
     this._hideAttributes = false;
   }
 
-  _init({ data, modal, sidenav, versionListHandler, mediaListHandler }) {
+  _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
@@ -35,6 +35,7 @@ class TypeForm extends TatorElement {
     this.sideNav = sidenav;
     this.versionListHandler = versionListHandler;
     this.mediaListHandler = mediaListHandler;
+    this.clusterListHandler = clusterListHandler;
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox(this.modal);
@@ -374,20 +375,25 @@ class TypeForm extends TatorElement {
 
   _getEmptyData() {
     return {
-      "id": `New`,
-      "name": "",
-      "project": this.projectId,
-      "description": "",
-      "visible": false,
-      "grouping_default": false,
-      "media": [],
-      "dtype": "",
-      "colorMap": null,
-      "interpolation": "none",
-      "association": "Media",
-      "line_width": 2,
-      "delete_child_localizations": false,
-      "form": "empty"
+      id: `New`,
+      name: "",
+      project: this.projectId,
+      description: "",
+      visible: false,
+      grouping_default: false,
+      media: [],
+      dtype: "",
+      colorMap: null,
+      interpolation: "none",
+      association: "Media",
+      line_width: 2,
+      delete_child_localizations: false,
+      cluster: null,
+      manifest: null,
+      files_per_job: null,
+      parameters: null,
+      categories: null,
+      form: "empty"
     };
   }
 

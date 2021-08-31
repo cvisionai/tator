@@ -81,8 +81,9 @@ class ProjectSettings extends TatorPage {
     const projectPromise = this.projectView._fetchGetPromise({ id: this.projectId });
 
     // Data Handlers for Media and Version initialized below
-    this._dataMediaList = new DataMediaList(this.projectId);;
+    this._dataMediaList = new DataMediaList(this.projectId);
     this._dataVersionList = new DataVersionList(this.projectId);
+    
 
     projectPromise
       .then((data) => {
@@ -90,6 +91,10 @@ class ProjectSettings extends TatorPage {
       }).then((objData) => {
         this._breadcrumbs.setAttribute("project-name", objData.name);
         const formView = this.projectView;
+
+        // Data Handler requires organization ID
+        this._dataJobClusterList = new DataJobClusters(objData.organization);
+        // console.log("Organization ID: "+objData.organization)
 
         this.loading.hideSpinner();
         this.makeContainer({
@@ -172,16 +177,20 @@ class ProjectSettings extends TatorPage {
           }
 
           // Make media new list before we add an empty row
-          if (formView.typeName == "MediaType") {
-            // const mediaList = new DataMediaList( this.projectId );
+          if (typeClassView.typeName == "MediaType") {
             this._dataMediaList._setProjectMediaList("", true);
           }
 
           // Make versions new list before we add an empty row
-          if (formView.typeName == "Version") {
-            // const versionsList = new DataVersionList( this.projectId );
+          if (typeClassView.typeName == "Version") {
             this._dataVersionList._setVersionList("", true);
           }
+
+          // Make Algorithm job cluster new list before we add an empty row
+          if (typeClassView.typeName == "Algorithm") {
+            this._dataJobClusterList._setList("", true);
+          }
+          
 
           // init the form with the data
           typeClassView._init({
@@ -189,7 +198,8 @@ class ProjectSettings extends TatorPage {
             modal: this.modal,
             sidenav: this.settingsNav,
             versionListHandler: this._dataVersionList,
-            mediaListHandler: this._dataMediaList
+            mediaListHandler: this._dataMediaList,
+            clusterListHandler: this._dataJobClusterList
           });
 
           headingEl.addEventListener("click", () => {
@@ -219,7 +229,6 @@ class ProjectSettings extends TatorPage {
 
         // Make media new list before we add an empty row
         if (formView.typeName == "MediaType") {
-          // const mediaList = new DataMediaList( this.projectId );
           this._dataMediaList._setProjectMediaList(objData, true);
         }
 
@@ -231,6 +240,11 @@ class ProjectSettings extends TatorPage {
           }
           // const versionsList = new DataVersionList( this.projectId );
           this._dataVersionList._setVersionList(objData, true);
+        }
+
+        // Make Algorithm job cluster new list before we add an empty row
+        if (formView.typeName == "Algorithm") {
+          this._dataJobClusterList._setList("", true);
         }
 
         // Add item containers for Types
@@ -278,7 +292,8 @@ class ProjectSettings extends TatorPage {
             modal: this.modal,
             sidenav: this.settingsNav,
             versionListHandler: this._dataVersionList,
-            mediaListHandler: this._dataMediaList
+            mediaListHandler: this._dataMediaList,
+            clusterListHandler: this._dataJobClusterList
           });
         }
 

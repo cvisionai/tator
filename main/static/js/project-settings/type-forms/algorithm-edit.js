@@ -3,12 +3,54 @@ class AlgorithmEdit extends TypeForm {
       super();
       this.typeName = "Algorithm";
       this.readableTypeName = "Algorithm";
-      this.icon = '<svg class="SideNav-icon icon-eye" viewBox="0 0 24 24" height="1em" width="1em"><path d="M0.106 11.553c-0.136 0.274-0.146 0.603 0 0.894 0.015 0.029 0.396 0.789 1.12 1.843 0.451 0.656 1.038 1.432 1.757 2.218 0.894 0.979 2.004 1.987 3.319 2.8 0.876 0.542 1.849 1 2.914 1.302 0.871 0.248 1.801 0.39 2.784 0.39s1.913-0.142 2.784-0.39c1.065-0.302 2.037-0.76 2.914-1.302 1.315-0.813 2.425-1.821 3.319-2.8 0.718-0.786 1.306-1.562 1.757-2.218 0.724-1.054 1.106-1.814 1.12-1.843 0.136-0.274 0.146-0.603 0-0.894-0.015-0.029-0.396-0.789-1.12-1.843-0.451-0.656-1.038-1.432-1.757-2.218-0.894-0.979-2.004-1.987-3.319-2.8-0.876-0.542-1.849-1-2.914-1.302-0.871-0.248-1.801-0.39-2.784-0.39s-1.913 0.142-2.784 0.39c-1.065 0.302-2.037 0.76-2.914 1.302-1.315 0.813-2.425 1.821-3.319 2.8-0.719 0.786-1.306 1.561-1.757 2.218-0.724 1.054-1.106 1.814-1.12 1.843zM2.141 12c0.165-0.284 0.41-0.687 0.734-1.158 0.41-0.596 0.94-1.296 1.585-2.001 0.805-0.881 1.775-1.756 2.894-2.448 0.743-0.459 1.547-0.835 2.409-1.079 0.703-0.2 1.449-0.314 2.237-0.314s1.534 0.114 2.238 0.314c0.862 0.245 1.666 0.62 2.409 1.079 1.119 0.692 2.089 1.567 2.894 2.448 0.644 0.705 1.175 1.405 1.585 2.001 0.323 0.471 0.569 0.873 0.734 1.158-0.165 0.284-0.41 0.687-0.734 1.158-0.41 0.596-0.94 1.296-1.585 2.001-0.805 0.881-1.775 1.756-2.894 2.448-0.743 0.459-1.547 0.835-2.409 1.079-0.704 0.2-1.45 0.314-2.238 0.314s-1.534-0.114-2.238-0.314c-0.862-0.245-1.666-0.62-2.409-1.079-1.119-0.692-2.089-1.567-2.894-2.448-0.644-0.705-1.175-1.405-1.585-2.001-0.323-0.471-0.569-0.874-0.733-1.158zM16 12c0-0.54-0.108-1.057-0.303-1.53-0.203-0.49-0.5-0.93-0.868-1.298s-0.809-0.666-1.299-0.869c-0.473-0.195-0.99-0.303-1.53-0.303s-1.057 0.108-1.53 0.303c-0.49 0.203-0.93 0.5-1.298 0.868s-0.666 0.809-0.869 1.299c-0.195 0.473-0.303 0.99-0.303 1.53s0.108 1.057 0.303 1.53c0.203 0.49 0.5 0.93 0.868 1.298s0.808 0.665 1.298 0.868c0.474 0.196 0.991 0.304 1.531 0.304s1.057-0.108 1.53-0.303c0.49-0.203 0.93-0.5 1.298-0.868s0.665-0.808 0.868-1.298c0.196-0.474 0.304-0.991 0.304-1.531zM14 12c0 0.273-0.054 0.53-0.151 0.765-0.101 0.244-0.25 0.464-0.435 0.65s-0.406 0.334-0.65 0.435c-0.234 0.096-0.491 0.15-0.764 0.15s-0.53-0.054-0.765-0.151c-0.244-0.101-0.464-0.25-0.65-0.435s-0.334-0.406-0.435-0.65c-0.096-0.234-0.15-0.491-0.15-0.764s0.054-0.53 0.151-0.765c0.101-0.244 0.25-0.464 0.435-0.65s0.406-0.334 0.65-0.435c0.234-0.096 0.491-0.15 0.764-0.15s0.53 0.054 0.765 0.151c0.244 0.101 0.464 0.25 0.65 0.435s0.334 0.406 0.435 0.65c0.096 0.234 0.15 0.491 0.15 0.764z"></path></svg>';
+      this.icon = `<svg  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="SideNav-icon" id="Layer_1" width="24px" height="24px" x="0px" y="0px" viewBox="0 0 472.615 472.615" style="enable-background:new 0 0 472.615 472.615;" xml:space="preserve">
+      <g>
+         <g>
+            <circle cx="204.002" cy="183.237" r="49.063"/>
+         </g>
+      </g>
+      <g>
+         <g>
+            <path d="M391.799,181.04C390.449,80.923,307.79,0,206.418,0C104.179,0,21.038,82.273,21.038,182.584    c-0.193,2.603-5.691,64.912,38.773,128.184c19.002,27.2,31.444,53.242,37.714,79.574c4.244,17.843,7.426,48.418,7.426,72.628    v9.645h214.799v-96.452h77.162v-86.807h54.978L391.799,181.04z M329.395,199.588l-29.642,4.941    c-2.505,11.305-6.973,21.85-13.007,31.318l17.489,24.485l-23.13,23.129l-24.484-17.489c-9.468,6.034-20.012,10.502-31.318,13.007    l-4.941,29.643h-32.71l-4.941-29.643c-11.305-2.505-21.85-6.973-31.318-13.007l-24.484,17.489l-23.13-23.129l17.489-24.485    c-6.034-9.468-10.502-20.012-13.007-31.318l-29.642-4.941v-32.71l29.642-4.94c2.505-11.305,6.973-21.851,13.007-31.319    l-17.489-24.484l23.13-23.13l24.484,17.49c9.468-6.035,20.012-10.503,31.318-13.007l4.941-29.643h32.71l4.941,29.643    c11.305,2.504,21.85,6.972,31.318,13.007l24.484-17.49l23.13,23.13l-17.489,24.484c6.033,9.468,10.502,20.013,13.007,31.319    l29.642,4.94V199.588z"/>
+         </g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      <g>
+      </g>
+      </svg>`;
       this._hideAttributes = true;
       this.versionId = null;
    }
 
    async _getSectionForm(data) {
+      this.data = data;
       let current = this.boxHelper.boxWrapDefault({
          "children": ""
       });
@@ -19,7 +61,7 @@ class AlgorithmEdit extends TypeForm {
       //
       this._setForm();
 
-      
+
       // append input for name
       this._editName = document.createElement("text-input");
       this._editName.setAttribute("name", "Name");
@@ -47,21 +89,21 @@ class AlgorithmEdit extends TypeForm {
       this._form.appendChild(this._manifestPath);
 
       // Cluster
-      this._cluster = document.createElement("text-input");
-      this._cluster.setAttribute("name", "Cluster");
-      this._cluster.setAttribute("type", "int");
-      this._cluster.setValue(this.data.cluster);
-      this._cluster.default = this.data.cluster;
-      this._cluster.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._cluster);
+      const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
+      this._clusterEnumInput = document.createElement("enum-input");
+      this._clusterEnumInput.setAttribute("name", "Job Cluster");
+      this._clusterEnumInput.choices = jobClusterWithChecked;
+      this._clusterEnumInput.default = this.data.cluster;
+      this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
+      this._form.appendChild(this._clusterEnumInput);
 
       // User
-      this._userEdit = document.createElement("text-input");
-      this._userEdit.setAttribute("name", "User");
-      this._userEdit.setValue(this.data.user);
-      this._userEdit.default = this.data.user;
-      this._userEdit.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._userEdit);
+      // this._userEdit = document.createElement("text-input");
+      // this._userEdit.setAttribute("name", "User");
+      // this._userEdit.setValue(this.data.user);
+      // this._userEdit.default = this.data.user;
+      // this._userEdit.addEventListener("change", this._formChanged.bind(this));
+      // this._form.appendChild(this._userEdit);
 
       // Files per job
       this._filesPerJob = document.createElement("text-input");
@@ -249,7 +291,7 @@ class AlgorithmEdit extends TypeForm {
          newName: "",
          typeName: this.typeName,
          typeId: this.typeId
-       }
+      }
 
       // Main type form
       if (this.isChanged()) {
@@ -262,7 +304,7 @@ class AlgorithmEdit extends TypeForm {
             if (typeof formData.name !== "undefined") {
                this._nameEdit.edited = true;
                this._nameEdit.newName = formData.name;
-             }
+            }
          }
       }
 

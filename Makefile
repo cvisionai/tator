@@ -337,6 +337,7 @@ FILES = \
     project-settings/components/settings-nav.js \
     project-settings/components/single-upload.js \
     project-settings/data/data-attributes-clone.js \
+    project-settings/data/data-clusters.js \
     project-settings/data/data-media-list.js \
     project-settings/data/data-memberships.js \
     project-settings/data/data-project-types.js \
