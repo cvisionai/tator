@@ -296,12 +296,6 @@ class CollectionsCard extends EntityCard {
     this.annotationPanelDiv.classList.remove("hidden");
     this.annotationPanelDiv.classList.remove("preview");
 
-    // Handles swapping src in panel top's still image holder
-    if(typeof this.cardObj.image !== "undefined"){
-      this.panelContainer._panelTop.setImage(this.cardObj.image);
-    }
-    
-
     //remove preview listener
     this.removeEventListener("mouseenter", this._mouseEnterHandler.bind(this) );
   }

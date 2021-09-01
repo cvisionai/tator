@@ -32,17 +32,6 @@ class CollectionSlideCardData extends HTMLElement {
 
     }
 
-    /**
- * Updates the provided localization card's attributes
- */
-    async updateLocalizationAttributes(cardObj) {
-        var locData = await this._modelData.getLocalization(cardObj.id);
-        cardObj.localization = locData;
-        cardObj.attributes = locData.attributes;
-        cardObj.created = new Date(locData.created_datetime);
-        cardObj.modified = new Date(locData.modified_datetime);
-    }
-
     getSlideMediaCardList(media) {
         return new Promise((resolve, reject) => {
             let m = media;
@@ -66,7 +55,7 @@ class CollectionSlideCardData extends HTMLElement {
 
             let slideCard = {
                 id,
-                localization: m, // # todo - fix this downstream to not rely on localization
+                localization: null,
                 entityType,
                 mediaId,
                 mediaInfo,

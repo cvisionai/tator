@@ -101,9 +101,9 @@ class EntityGalleryPanelTop extends TatorElement {
   }
 
   init({ pageModal, modelData, panelContainer }) {
-    if (this.localizationType) {
-      this._locImage.init({ pageModal, modelData, panelContainer });
-    }
+    //if (this.localizationType) {
+    this._locImage.init({ pageModal, modelData, panelContainer });
+    //}
   }
 
   setImage(imageSource) {
