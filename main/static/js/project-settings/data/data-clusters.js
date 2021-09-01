@@ -63,13 +63,14 @@ class DataJobClusters {
          // console.log(clusterList);
 
          clusterList.forEach((cluster, i) => {
+            console.log(cluster);
             const checkObj = {
-               "id": cluster.id,
-               "name": cluster.name,
-               "checked": false
+               value: cluster.id,
+               label: cluster.name,
+               selected: false
             };
-            if (jobClusterIds.includes(cluster.id)) {
-               checkObj["checked"] = true;
+            if (jobClusterIds !== null && jobClusterIds.includes(cluster.id)) {
+               checkObj.selected = true;
             }
             newList.push(checkObj);
          });

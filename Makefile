@@ -207,6 +207,8 @@ FILES = \
     components/inputs/feature/color-inputs.js \
     components/inputs/feature/thumb-inputs.js \
     components/inputs/feature/checkbox-set.js \
+    components/inputs/feature/file-input.js \
+    components/inputs/feature/array-object-input.js \
     components/inputs/array-input.js \
     components/inputs/user-input.js \
     components/inputs/bool-input.js \

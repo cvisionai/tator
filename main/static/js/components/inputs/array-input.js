@@ -59,9 +59,10 @@ class ArrayInput extends TatorElement {
       }
     }
   
-    setValue(val) {
-      if( Array.isArray(val) ){
-        for(let key of val){
+  setValue(val) {
+    console.log(val);
+      if( Array.isArray(val) && val.length > 0){
+        for (let key of val) {
           let textInput = document.createElement("text-input");
           textInput._input.classList.remove("col-8");
           textInput.setValue(key);

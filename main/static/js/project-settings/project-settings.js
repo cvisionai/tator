@@ -18,9 +18,19 @@ class ProjectSettings extends TatorPage {
     div.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(div);
     
-
     this._breadcrumbs = document.createElement("settings-breadcrumbs");
     div.appendChild(this._breadcrumbs);
+
+    const settingsDiv = document.createElement("div");
+    settingsDiv.setAttribute("class", "d-flex");
+    header.appendChild(settingsDiv);
+
+    this._lightSpacer = document.createElement("span");
+    this._lightSpacer.style.width = "32px";
+    settingsDiv.appendChild(this._lightSpacer);
+
+    this._success = document.createElement("success-light");
+    this._lightSpacer.appendChild(this._success);
 
     // main element
     this.main = document.createElement("main");

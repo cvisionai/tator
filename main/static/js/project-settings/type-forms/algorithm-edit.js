@@ -3,48 +3,7 @@ class AlgorithmEdit extends TypeForm {
       super();
       this.typeName = "Algorithm";
       this.readableTypeName = "Algorithm";
-      this.icon = `<svg  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" class="SideNav-icon" id="Layer_1" width="24px" height="24px" x="0px" y="0px" viewBox="0 0 472.615 472.615" style="enable-background:new 0 0 472.615 472.615;" xml:space="preserve">
-      <g>
-         <g>
-            <circle cx="204.002" cy="183.237" r="49.063"/>
-         </g>
-      </g>
-      <g>
-         <g>
-            <path d="M391.799,181.04C390.449,80.923,307.79,0,206.418,0C104.179,0,21.038,82.273,21.038,182.584    c-0.193,2.603-5.691,64.912,38.773,128.184c19.002,27.2,31.444,53.242,37.714,79.574c4.244,17.843,7.426,48.418,7.426,72.628    v9.645h214.799v-96.452h77.162v-86.807h54.978L391.799,181.04z M329.395,199.588l-29.642,4.941    c-2.505,11.305-6.973,21.85-13.007,31.318l17.489,24.485l-23.13,23.129l-24.484-17.489c-9.468,6.034-20.012,10.502-31.318,13.007    l-4.941,29.643h-32.71l-4.941-29.643c-11.305-2.505-21.85-6.973-31.318-13.007l-24.484,17.489l-23.13-23.129l17.489-24.485    c-6.034-9.468-10.502-20.012-13.007-31.318l-29.642-4.941v-32.71l29.642-4.94c2.505-11.305,6.973-21.851,13.007-31.319    l-17.489-24.484l23.13-23.13l24.484,17.49c9.468-6.035,20.012-10.503,31.318-13.007l4.941-29.643h32.71l4.941,29.643    c11.305,2.504,21.85,6.972,31.318,13.007l24.484-17.49l23.13,23.13l-17.489,24.484c6.033,9.468,10.502,20.013,13.007,31.319    l29.642,4.94V199.588z"/>
-         </g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      <g>
-      </g>
-      </svg>`;
+      this.icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="SideNav-icon icon-cpu no-fill"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
       this._hideAttributes = true;
       this.versionId = null;
    }
@@ -55,7 +14,7 @@ class AlgorithmEdit extends TypeForm {
          "children": ""
       });
 
-      this.versionId = data.id;
+      this.algorithmId = data.id;
       console.log(this.versionId);
 
       //
@@ -81,8 +40,11 @@ class AlgorithmEdit extends TypeForm {
       this._form.appendChild(this._editDescription);
 
       // Path to manifest
-      this._manifestPath = document.createElement("text-input");
-      this._manifestPath.setAttribute("name", "Manifest Path");
+      this._manifestPath = document.createElement("file-input");
+      this._manifestPath.setAttribute("name", "Manifest");
+      this._manifestPath.setAttribute("for", "manifest");
+      this._manifestPath.setAttribute("type", "yaml");
+      this._manifestPath.projectId = this.projectId;
       this._manifestPath.setValue(this.data.manifest);
       this._manifestPath.default = this.data.manifest;
       this._manifestPath.addEventListener("change", this._formChanged.bind(this));
@@ -94,15 +56,20 @@ class AlgorithmEdit extends TypeForm {
       this._clusterEnumInput.setAttribute("name", "Job Cluster");
       this._clusterEnumInput.choices = jobClusterWithChecked;
       this._clusterEnumInput.default = this.data.cluster;
-      this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
+      if (jobClusterWithChecked.length == 0) {
+         this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
+      } else {
+         this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
+      }
+      
       this._form.appendChild(this._clusterEnumInput);
 
       // User
-      // this._userEdit = document.createElement("text-input");
-      // this._userEdit.setAttribute("name", "User");
-      // this._userEdit.setValue(this.data.user);
-      // this._userEdit.default = this.data.user;
-      // this._userEdit.addEventListener("change", this._formChanged.bind(this));
+      this._userEdit = document.createElement("text-input");
+      this._userEdit.setAttribute("name", "User");
+      this._userEdit.setValue(this.data.user);
+      this._userEdit.default = this.data.user;
+      this._userEdit.addEventListener("change", this._formChanged.bind(this));
       // this._form.appendChild(this._userEdit);
 
       // Files per job
@@ -123,8 +90,12 @@ class AlgorithmEdit extends TypeForm {
       this._form.appendChild(this._categoriesList);
 
       // Parameters
-      this._parametersList = document.createElement("array-input");
+      let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
+      let paramInputTemplate = JSON.stringify({ name: '', value: '' });
+      this._parametersList = document.createElement("array-object-input");
       this._parametersList.setAttribute("name", "Parameters");
+      this._parametersList.setAttribute("properties", paramInputTypes);
+      this._parametersList.setAttribute("empty-row", paramInputTemplate);
       this._parametersList.setValue(this.data.parameters);
       this._parametersList.default = this.data.parameters;
       this._parametersList.addEventListener("change", this._formChanged.bind(this));
@@ -141,7 +112,8 @@ class AlgorithmEdit extends TypeForm {
       const formData = {};
 
       // console.log(`Data ID: ${this.data.id}`);
-      const isNew = this.data.id == "New" ? true : false;
+      // const isNew = this.data.id == "New" ? true : false;
+      const isNew = true;
 
       if (this._editName.changed() || isNew) {
          formData.name = this._editName.getValue();
@@ -155,12 +127,12 @@ class AlgorithmEdit extends TypeForm {
          formData.manifest = this._manifestPath.getValue();
       }
 
-      if (this._cluster.changed() || isNew) {
-         formData.cluster = this._cluster.getValue();
+      if (this._clusterEnumInput.changed() || isNew) {
+         formData.cluster = Number(this._clusterEnumInput.getValue());
       }
 
       if (this._userEdit.changed() || isNew) {
-         formData.user = this._userEdit.getValue();
+         formData.user = Number(this._userEdit.getValue());
       }
 
       if (this._filesPerJob.changed() || isNew) {
@@ -178,109 +150,12 @@ class AlgorithmEdit extends TypeForm {
       return formData;
    }
 
-   async _deleteTypeConfirm() {
-      this.loading.showSpinner();
-      let button = document.createElement("button");
-      let confirmText = document.createTextNode("Confirm")
-      button.appendChild(confirmText);
-      button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red")
-
-      button.addEventListener("click", this._deleteType.bind(this));
-
-      // Check the related state types
-      const [sc, lc] = await Promise.all(
-         [fetch(`/rest/StateCount/${this.projectId}?version=${this.versionId}`,
-            {
-               method: "GET",
-               credentials: "same-origin",
-               headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-               }
-            }
-         ),
-         fetch(`/rest/LocalizationCount/${this.projectId}?version=${this.versionId}`,
-            {
-               method: "GET",
-               credentials: "same-origin",
-               headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-               }
-            })]
-      );
-
-      const stateCountData = sc.json();
-      const LocalizationCountData = lc.json();
-
-      Promise.all([stateCountData, LocalizationCountData])
-         .then(([stateCount, LocalizationCount]) => {
-            this._modalConfirm({
-               "titleText": `Delete Confirmation`,
-               "mainText": `Pressing confirm will delete this ${this.typeName} and all related states and localizations from your account.<br/><br/><span class="text-ted">There are ${stateCount} states and ${LocalizationCount} localizations that will also be deleted.</span><br/><br/>Do you want to continue?`,
-               "buttonSave": button,
-               "scroll": false
-            });
-         });
-   }
-
    async _save({ id = -1, globalAttribute = false } = {}) {
       this.loading.showSpinner();
 
-      // Overriding save to show prompt
-      let button = document.createElement("button");
-      let confirmText = document.createTextNode("Confirm")
-      button.appendChild(confirmText);
-      button.setAttribute("class", "btn btn-clear f1 text-semibold")
-
-      button.addEventListener("click", this._saveConfirmed.bind(this));
-
-      // Check the related state types
-      const [sc, lc] = await Promise.all(
-         [fetch(`/rest/StateCount/${this.projectId}?version=${this.versionId}`,
-            {
-               method: "GET",
-               credentials: "same-origin",
-               headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-               }
-            }
-         ),
-         fetch(`/rest/LocalizationCount/${this.projectId}?version=${this.versionId}`,
-            {
-               method: "GET",
-               credentials: "same-origin",
-               headers: {
-                  "X-CSRFToken": getCookie("csrftoken"),
-                  "Accept": "application/json",
-                  "Content-Type": "application/json"
-               }
-            })]
-      );
-
-      const stateCountData = sc.json();
-      const LocalizationCountData = lc.json();
-
-      Promise.all([stateCountData, LocalizationCountData])
-         .then(([stateCount, LocalizationCount]) => {
-            this.loading.hideSpinner();
-            this._modalConfirm({
-               "titleText": `Edit Confirmation`,
-               "mainText": `There are ${stateCount} states and ${LocalizationCount} localizations existing in this version. Any edits will be reflected on those existing states and localizations.<br/><br/>Do you want to continue?`,
-               "buttonSave": button,
-               "scroll": false
-            });
-         });
-   }
-
-   _saveConfirmed({ id = this.versionId }) {
-      this._modalCloseCallback();
+      id = this.algorithmId;
       // Start spinner & Get promises list
-      console.log("Settings _save method for id: " + id);
+      console.log("Settings _save method for algorithm id: " + id);
       // this.loading.showSpinner();
 
       let promises = []
