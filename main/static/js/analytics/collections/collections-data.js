@@ -64,8 +64,7 @@ class CollectionsData extends HTMLElement {
       filterConditions,
       this._paginationState.start,
       this._paginationState.stop,
-      this.afterMap,
-      this._stateTypesMap
+      this.afterMap
     );
 
     for (let idx = 0; idx < this._states.length; idx++) {
