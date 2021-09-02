@@ -119,12 +119,7 @@ class AnalyticsCollections extends TatorPage {
 
         // Pass panel and localization types to gallery
         this._collectionsGallery.init({
-          panelContainer: this._panelContainer,
-          pageModal: this.modal,
-          modelData: this._modelData,
-          collectionsData: this._collectionsData,
-          galleryContainer: this._collectionsGallery,
-          analyticsSettings: this._settings
+          parentPage: this
         });
 
         // Filter interface

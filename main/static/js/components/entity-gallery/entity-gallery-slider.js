@@ -513,10 +513,7 @@ class EntityGallerySlider extends TatorElement {
 
    updateCardOrder(cards) {
       let total = cards.length;
-      for(let [idx, obj] of Object.entries(cards)){
-         obj.card._li.classList.add("entity-gallery-sortable");
-         obj.card._li.classList.add("reorder-progress");
-         // Update position text
+      for (let [idx, obj] of Object.entries(cards)) {
          let pos = Number(idx) + 1;
          obj.card.posText = `${pos} of ${total}`;
          obj.counter = idx;
@@ -530,18 +527,24 @@ class EntityGallerySlider extends TatorElement {
          this._cardElements[idx] = obj;
 
          // Add back in order and make sure visibility stays...
+         obj.card.classList.add("hidden");
+         obj.card.classList.add("reorder-progress");
          this._ul.appendChild(obj.card);
-
-         // Add visibility back (auto behavior to go hidden)
-         // Use classes to add back with specific animation, remove animation class
-         obj.card.style.visibility = "visible";
-
-         setTimeout(() => {
-            obj.card._li.classList.remove("reorder-progress");
-            obj.card._li.classList.remove("entity-gallery-sortable");
-         }, 500);
-         
       }
+
+      setTimeout(() => {
+         for (let [idx, obj] of Object.entries(cards)) {
+            obj.card.style.visibility = "visible";
+            obj.card.classList.add("slide-in");
+            obj.card.classList.remove("hidden");
+         }
+      }, 300);
+      setTimeout(() => {
+         for (let [idx, obj] of Object.entries(cards)) {
+            obj.card.classList.remove("reorder-progress");
+            obj.card._li.classList.remove("slide-in");
+         }
+      }, 500);
    }
 
 }

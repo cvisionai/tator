@@ -65,29 +65,26 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this.slideCardData = document.createElement("collection-slide-card-data");
       this.cardLabelsChosenByType = {};
 
-      // First group and total cards
-      this._previewCardCount = 11;
+      // First collections per page (see analytics settings)
+      // Preview card count controls total cards per collection & inner pagination hide/show
+      this._previewCardCount = 16; // #todo shows previewCardCount - 1 ; so 11 for 10
    }
 
    // Provide access to side panel for events
    init({
-      panelContainer,
-      pageModal,
-      modelData,
-      collectionsData,
-      galleryContainer,
-      analyticsSettings
+      parentPage
    }) {
-      this.panelContainer = panelContainer;
+      this._parentPage = parentPage;
+      this.panelContainer = this._parentPage._panelContainer;
       this.panelControls = this.panelContainer._panelTop;
-      this.pageModal = pageModal;
-      this.collectionsData = collectionsData;
-      this.galleryContainer = galleryContainer;
-      this.analyticsSettings = analyticsSettings;
-      this.modelData = modelData;
+      this.pageModal = this._parentPage.modal;
+      this.collectionsData = this._parentPage._collectionsData;
+      this.galleryContainer = this._parentPage._galleryContainer;
+      this.analyticsSettings = this._parentPage._settings;
+      this.modelData = this._parentPage._modelData;
 
       try {
-         this.slideCardData.init(modelData);
+         this.slideCardData.init(this.modelData);
       } catch (e) {
          console.log(e.description);
       }
@@ -144,7 +141,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // or by the settings. This must be done prior to collecting data
       if (isNaN(page) || isNaN(pageSize)) {
          page = 1;
-         pageSize = 5;
+         pageSize = this.analyticsSettings._pageSize;
       }
       var paginationState = {
          start: (page - 1) * pageSize,
@@ -382,7 +379,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
                //}
             } else {
                slider.loadAllTeaser.remove();
-               this._setupSliderPgn();
+               this._setupSliderPgn({ slider, totalList });
 
             }
          }
@@ -593,7 +590,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
       return data;
    }
 
-    _cardSortUpdate(evt){
+   _cardSortUpdate(evt) {
+      this._parentPage.showDimmer();
+      this._parentPage.loading.showSpinner();
+      
       let property = evt.detail.sortProperty;
       let sortType = evt.detail.sortType;
       //console.log(`Sorting ${property} in Asc? ${sortType}`);
@@ -615,10 +615,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
             s.updateCardOrder(cards);
             
          }
+         this._parentPage.loading.hideSpinner();
+         this._parentPage.hideDimmer();
 
          let msg = `Entry sort complete`
          Utilities.showSuccessIcon(msg);
-      } catch(e) {
+      } catch (e) {
+         this._parentPage.loading.hideSpinner();
+         this._parentPage.hideDimmer();
+
          let msg = `Entry sort error`;
          console.error(e);
          Utilities.warningAlert(msg, "#ff3e1d", false); 

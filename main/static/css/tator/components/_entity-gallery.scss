@@ -372,20 +372,51 @@ collections-card {
   }
 }
 
-.entity-gallery-sortable {
-  transition: display 300ms linear !important;
-  transition: opacity 500ms ease-in !important;
-  perspective: 1000;
-  -ms-transform: perspective(1000px);
-  -moz-transform: perspective(1000px);
-  -ms-transform-style: preserve-3d;
-  -moz-transform-style: preserve-3d;
-  opacity: 1;
+// .entity-gallery-sortable {
+//   transition: display 300ms linear !important;
+//   transition: opacity 500ms ease-in !important;
+//   perspective: 1000;
+//   -ms-transform: perspective(1000px);
+//   -moz-transform: perspective(1000px);
+//   -ms-transform-style: preserve-3d;
+//   -moz-transform-style: preserve-3d;
+//   opacity: 1;
 
-  .reorder-progress {
-    transition: opacity 500ms ease-in !important;
-    display: none !important;
-    opacity: 0;
-  }
+//   .reorder-progress {
+//     transition: opacity 500ms ease-in !important;
+//     display: none !important;
+//     opacity: 0;
+//   }
 
+// }
+
+
+.reorder-progress {
+  transform: translateX(-150%);
+  overflow: hidden;
+}
+
+.reorder-progress.slide-in {
+  animation: slide-in .5s forwards;
+  -webkit-animation: slide-in .5s forwards;
+}
+
+@keyframes slide-in {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(0%); }
+}
+
+@-webkit-keyframes slide-in {
+  0% { -webkit-transform: translateX(-150%); }
+  100% { -webkit-transform: translateX(0%); }
+}
+  
+@keyframes slide-out {
+  0% { transform: translateY(0%); }
+  100% { transform: translateX(-150%); }
+}
+
+@-webkit-keyframes slide-out {
+  0% { -webkit-transform: translateX(0%); }
+  100% { -webkit-transform: translateX(-150%); }
 }
