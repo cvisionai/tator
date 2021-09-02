@@ -737,7 +737,7 @@ class TypeForm extends TatorElement {
       this.mediaListHandler._setProjectMediaList("", true);
     }
     if (this.typeName == "Version") {
-      this.versionListHandler.clear();
+      this.versionListHandler._clear();
       this.versionListHandler._setVersionList("", true);
     }
   }
