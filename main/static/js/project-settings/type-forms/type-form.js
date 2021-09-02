@@ -163,7 +163,8 @@ class TypeForm extends TatorElement {
             modal: this.modal,
             sidenav: this.sideNav,
             mediaListHandler: this.mediaListHandler,
-            versionListHandler: this.versionListHandler
+            versionListHandler: this.versionListHandler,
+            clusterListHandler: this.clusterListHandler
           });
 
           // Add the item to navigation
