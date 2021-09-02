@@ -5,46 +5,40 @@ from django.core.management.base import BaseCommand
 from main.models import Media, Resource
 
 logger = logging.getLogger(__name__)
+FILES_TO_ARCHIVE = ["streaming", "archival", "audio", "image"]
+TO_ARCHIVE_STATE = "to_archive"
 
 
 def _archive_multi(multi):
     """
     Attempts to archive all media associated with a multi view by iterating over its media file ids.
     If successful, the archive state of the multi view is changed from `to_archive` to `archived`.
-    Returns a tuple of lists, where the first list is the media that was successfully archived and
-    the second is the media that was not successfully archived.
     """
-    media_archived = []
-    media_not_archived = []
     media_ids = multi.media_files.get("ids")
 
     if not media_ids:
         # No media associated with this multiview, consider it archived
         multi.archive_state = "archived"
         multi.save()
-        return [multi], []
+        return 1
 
     media_qs = Media.objects.filter(pk__in=media_ids)
-    for obj in media_qs:
-        archived, not_archived = _archive_single(obj)
-        media_archived.extend(archived)
-        media_not_archived.extend(not_archived)
+    multi_archived = [_archive_single(obj) for obj in media_qs]
 
-    if not media_not_archived:
+    if all(multi_archived):
         multi.archive_state = "archived"
         multi.save()
 
-    return media_archived, media_not_archived
+    return sum(multi_archived)
+
 
 def _archive_single(media):
     """
     Attempts to archive all media associated with a video or image, except for thumbnails. If
-    successful, the archive state of the media is changed from `to_archive` to `archived`.  Returns
-    a tuple of lists, where the first list is the media that was successfully archived and the
-    second is the media that was not successfully archived.
+    successful, the archive state of the media is changed from `to_archive` to `archived`.
     """
     media_archived = True
-    for key in ["streaming", "archival", "audio", "image"]:
+    for key in FILES_TO_ARCHIVE:
         if key not in media.media_files:
             continue
 
@@ -59,8 +53,50 @@ def _archive_single(media):
         media.archive_state = "archived"
         media.save()
 
-        return [media], []
-    return [], [media]
+    return media_archived
+
+
+def _get_clone_readiness(media, dtype):
+    """
+    Checks the given media for clones and determines their readiness for archiving.
+    """
+    is_cloned = False
+    if dtype == "image":
+        return _get_single_clone_readiness(media, "image")
+    if dtype == "video":
+        return _get_single_clone_readiness(media, "archival")
+    if dtype == "multi":
+        return _get_multi_clone_readiness(media)
+
+    raise TypeError(f"Expected dtype in ['multi', 'image', 'video'], got {media.meta.dtype}")
+
+
+def _get_multi_clone_readiness(media):
+    """
+    Checks the given multiview's individual media for clones.
+    """
+    multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
+    media_readiness = [_get_clone_readiness(obj, obj.meta.dtype) for obj in multi_qs]
+    return tuple(map(list, zip(*media_readiness)))
+
+
+def _get_single_clone_readiness(media, key):
+    """
+    Checks the given media for clones. Returns a tuple of lists, where the former is the list of
+    media whose `archive_state` is `to_archive` and the latter whose `archive_state` is anything
+    else.
+    """
+    if key not in media.media_files:
+        raise TypeError(f"Key '{key}' not found in media_files field")
+
+    path = media.media_files[key][0]["path"]
+    media_qs = Media.objects.filter(resource_media__path=path).exclude(
+        archive_state=TO_ARCHIVE_STATE
+    )
+    media_not_ready = list(media_qs.exclude(archive_state=TO_ARCHIVE_STATE))
+    media_ready = list(media_qs.filter(archive_state=TO_ARCHIVE_STATE))
+
+    return media_ready, media_not_ready
 
 
 class Command(BaseCommand):
@@ -75,8 +111,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, **options):
-        archived_media = []
-        media_not_archived = []
+        num_archived = 0
         min_delta = datetime.timedelta(days=options["min_age_days"])
         max_datetime = datetime.datetime.now(datetime.timezone.utc) - min_delta
         archived_qs = Media.objects.filter(
@@ -94,19 +129,23 @@ class Command(BaseCommand):
                 continue
 
             media_dtype = media.meta.dtype
-            if media_dtype == "multi":
-                # num_media = _archive_multi(media)
-                archived, not_archived = _archive_multi(media)
-            elif media_dtype in ["image", "video"]:
-                # num_media = int(_archive_single(media))
-                archived, not_archived = _archive_single(media)
+            if media_dtype in ["multi", "image", "video"]:
+                media_ready, media_not_ready = _get_clone_readiness(media, media_dtype)
             else:
-                logger.warning(f"Unknown media dtype '{media_dtype}', skipping archive")
+                logger.warning(
+                    f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
+                )
+                continue
 
-            archived_media.extend(archived)
-            media_not_archived.extend(not_archived)
+            if media_not_ready:
+                # Do something and skip archiving
+                continue
 
-        logger.info(f"Archived a total of {len(archived_media)} media!")
+            num_media = 0
+            if media_dtype == "multi":
+                num_media = _archive_multi(media)
+            elif media_dtype in ["image", "video"]:
+                num_media = int(_archive_single(media))
 
-        if media_not_archived:
-            logger.warning(f"Could not archive a total of {len(media_not_archived)} media!")
+            num_archived += num_media
+        logger.info(f"Archived a total of {num_archived} media!")
