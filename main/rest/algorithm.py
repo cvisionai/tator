@@ -118,6 +118,10 @@ class AlgorithmListAPI(BaseListView):
         categories = params.get(fields.categories, None)
         parameters = params.get(fields.parameters, None)
 
+        # Convert cluster to an object if not None.
+        if cluster is not None:
+            cluster = JobCluster.objects.get(pk=cluster, organization=project.organization)
+
         # Register the algorithm workflow
         alg_obj = Algorithm(
             name=alg_workflow_name,
