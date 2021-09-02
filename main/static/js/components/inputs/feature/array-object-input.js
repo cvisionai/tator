@@ -74,12 +74,11 @@ class ArrayObjectInput extends TatorElement {
   }
 
   setValue(val) {
-    console.log(val);
     if (val !== null) {
       // Value is an array of objects
       if (Array.isArray(val)) {
         for (let [i, obj] of val.entries()) {
-            console.log(obj)
+            // console.log(obj)
             let row = this._newInputRow(obj, i);
             this._rows.push(row);
             this.addNewButton.before(row);
@@ -112,7 +111,7 @@ class ArrayObjectInput extends TatorElement {
 
     if (props !== null) {
       for (let i in props) {
-        console.log(`${i} : ${props[i]}`)
+        // console.log(`${i} : ${props[i]}`)
         let propName = i;
         let inputType = props[i];
         let inputValue = val[i];
@@ -141,7 +140,7 @@ class ArrayObjectInput extends TatorElement {
     label.appendChild(name);
 
     for (let i in propObj) {
-      console.log(`${i} : ${propObj[i]}`)
+      // console.log(`${i} : ${propObj[i]}`)
       let propName = i;
       let inputType = propObj[i];
       let inputValue = valueObj[i];
@@ -206,41 +205,30 @@ class ArrayObjectInput extends TatorElement {
     let rowVal = {}
     
     // Loop through the inputs
+    // # TODO this could be generalized
+    // # currently this is the only thing specific to algorith-edit.js
     if (this._inputs.length > 0) {
-      console.log(this._inputs);
       for (let inputData of this._inputs) {
         rowVal = {...this._emptyRow};
-        console.log(`TESTING inputData `);
-        console.log(inputData);
         rowVal.name = inputData[0].name.getValue();
         rowVal.value = inputData[1].value.getValue();
         
-        // console.log(i);
-        // console.log(inputData);
-        // for (let o of inputData) {
-        //   console.log(o);
-        //   for (let [prop, val] of Object.entries(o)) {
-        //     console.log(`${prop} : ${val}`);
-
-        //     if (rowVal.hasOwnProperty(prop)) {
-        //       rowVal[prop] = inputData[prop];
-        //       console.log(`This is the prop ${prop} AND rowVal[prop] ${rowVal[prop]}`);
+        // for (let [key, input] of Object.entries(inputData)) {
+        //   console.log(rowVal.hasOwnProperty(key));
+        //     //if (rowVal.hasOwnProperty(key) && typeof rowVal[key] !== "object") {
+        //     if (typeof rowVal[key] !== "undefined" && typeof rowVal[key] !== "object") {
+        //       rowVal[key] = input.getValue();
         //     } else {
-        //       for (let [i, p] of Object.entries(rowVal)) {
-        //         if (typeof p == "object") {
-        //           console.log(p);
-        //           if (p.hasOwnProperty(prop)) {
-        //             p[prop] = inputData[prop];
-        //             console.log(`This is the prop ${prop} AND inputData[prop] ${p[prop]}`);
-        //           }
-        //         }
+        //       // # todo for nested objects
+        //       if(typeof rowVal[key] === "object"){
+        //         this._drillIntoSetProps(rowVal[key], key, input);
         //       }
         //     }
         //   }
 
 
         // }
-        console.log(rowVal);
+        // console.log(rowVal);
         let emptyRow = (rowVal.name === "" && rowVal.value === "")
         if (!emptyRow) {
           val.push(rowVal);
@@ -248,9 +236,21 @@ class ArrayObjectInput extends TatorElement {
         
       }
     }
-    if (val.length === 1) val = rowVal;
+
+
+
     return val;
   }
+
+  // _drillIntoSetProps(object, key, input){
+  //   for (let [property, value] of Object.entries(object)) {
+  //     if (key == property) {
+  //       object[key] = input.getValue();
+  //     } else if (typeof value === "object") {
+  //       this._drillIntoSetProps(value, key, input);
+  //     }
+  //   }
+  // }
 
   changed() {
     return this.getValue() !== this._default;
