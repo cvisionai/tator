@@ -88,7 +88,7 @@ class ProjectTypesData {
       }
   
       _getAlgoDataPromise(){
-        this.algoBlock = document.createElement("alogorithm-edit");
+        this.algoBlock = document.createElement("algorithm-edit");
         return this.algoPromise = this.algoBlock._fetchGetPromise({"id": this.projectId} );
       }
 }

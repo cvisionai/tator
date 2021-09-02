@@ -114,11 +114,12 @@ class EnumInput extends TatorElement {
   getValue() {
     if (this._select.options.length !== 0) {
       const selected = this._select.selectedIndex;
-      return this._select.options[selected].value;
-    } else {
-      return null;
+      if(typeof this._select.options[selected] !== "undefined"){
+        return this._select.options[selected].value;
+      }
     }
-
+    
+    return null;
   }
 
   setValue(val) {
