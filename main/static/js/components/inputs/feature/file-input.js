@@ -134,8 +134,14 @@ class FileInput extends TatorElement {
 
   setValue(val) {
     this._hiddenInput.setValue(val);
-    this._viewFile.setAttribute("href", `/media/${val}`);
-    this._viewFile.classList.remove("hidden");
+
+    if (typeof val !== "undefined" && val !== null && val !== "") {
+      this._viewFile.setAttribute("href", `/media/${val}`);
+      this._viewFile.classList.remove("hidden");
+    } else {
+      this._viewFile.classList.add("hidden");
+    }
+
   }
 
   set projectId(val) {
