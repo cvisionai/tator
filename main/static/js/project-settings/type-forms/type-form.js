@@ -391,8 +391,8 @@ class TypeForm extends TatorElement {
       cluster: null,
       manifest: null,
       files_per_job: null,
-      parameters: null,
-      categories: null,
+      parameters: [],
+      categories: "",
       form: "empty"
     };
   }

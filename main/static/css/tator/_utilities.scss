@@ -1,3 +1,7 @@
+.d-block {
+  display: block;
+}
+
 .d-flex {
   display: flex;
 }
@@ -441,6 +445,10 @@
       margin-left: (4 / 12 * 100%);
     }
   }
+}
+
+.offset-col-4 {
+  margin-left: (4 / 12 * 100%);
 }
 
 // Hide utilities

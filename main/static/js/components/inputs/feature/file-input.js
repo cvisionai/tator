@@ -19,10 +19,17 @@ class FileInput extends TatorElement {
     // This input is URL to send to an endpoint
     this._hiddenInput = document.createElement("text-input");
     this._hiddenInput.setAttribute("class", "col-12");
-    this._hiddenInput._input.setAttribute("class", "form-control input-sm col-12");
+    this._hiddenInput._input.setAttribute("class", "form-control input-sm col-12 ");
     this._hiddenInput.setAttribute("type", "text");
     this._hiddenInput.permission = null;
     this.styleSpan.appendChild(this._hiddenInput);
+
+    this._viewFile = document.createElement("a");
+    this._viewFile.textContent = "View File";
+    this._viewFile.setAttribute("target", "_blank");
+    this._viewFile.setAttribute("class", "offset-col-4 text-gray f3 clickable hover-white hidden pb-3 d-block");
+    this._viewFile.style.marginTop = "-5px";
+    this._shadow.appendChild(this._viewFile);
 
     // Edit button
     this.editButton = document.createElement("label");
@@ -127,11 +134,14 @@ class FileInput extends TatorElement {
 
   setValue(val) {
     this._hiddenInput.setValue(val);
+    this._viewFile.setAttribute("href", `/media/${val}`);
+    this._viewFile.classList.remove("hidden");
   }
 
   set projectId(val) {
     this._projectId = val;
   }
+  
 
   //
   _editListeners(e) {

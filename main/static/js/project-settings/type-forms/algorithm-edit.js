@@ -6,6 +6,9 @@ class AlgorithmEdit extends TypeForm {
       this.icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="SideNav-icon icon-cpu no-fill"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
       this._hideAttributes = true;
       this.versionId = null;
+
+      // To show who algo is registered to
+      this._userData = document.createElement("user-data");
    }
 
    async _getSectionForm(data) {
@@ -15,7 +18,6 @@ class AlgorithmEdit extends TypeForm {
       });
 
       this.algorithmId = data.id;
-      console.log(this.versionId);
 
       //
       this._setForm();
@@ -38,6 +40,40 @@ class AlgorithmEdit extends TypeForm {
       this._editDescription.default = this.data.description;
       this._editDescription.addEventListener("change", this._formChanged.bind(this));
       this._form.appendChild(this._editDescription);
+
+
+      // User
+      this._registeredUserName = "";
+      this._registeredUserId = "";
+      if (this.data.id == "New") {
+         //use current user
+         let userData = await this._userData.getCurrentUser();
+         // console.log(userData);
+         this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
+         this._registeredUserId = userData.id;
+      } else {
+         let userData = await this._userData.getUserById(this.data.user);
+         // console.log(userData);
+         this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
+         this._registeredUserId = userData.id;
+      }
+
+      // Visible input with readable name
+      this._userEditVisible = document.createElement("text-input");
+      this._userEditVisible.setAttribute("name", "Registering User");
+      this._userEditVisible.setValue(this._registeredUserName );
+      this._userEditVisible.default = this._registeredUserName ;
+      this._userEditVisible.permission = null;
+      this._userEditVisible.addEventListener("change", this._formChanged.bind(this));
+      // this._userEditVisible.setAttribute("tooltip", "User registering algorithm cannot be edited.")
+      this._form.appendChild(this._userEditVisible);
+
+      // Hidden input for formValue
+      this._userEdit = document.createElement("text-input");
+      this._userEdit.setValue(this._registeredUserId );
+      this._userEdit.default = this._registeredUserId ;
+      this._userEdit.permission = null;
+      this._userEdit.addEventListener("change", this._formChanged.bind(this));
 
       // Path to manifest
       this._manifestPath = document.createElement("file-input");
@@ -63,14 +99,7 @@ class AlgorithmEdit extends TypeForm {
       }
       
       this._form.appendChild(this._clusterEnumInput);
-
-      // User
-      this._userEdit = document.createElement("text-input");
-      this._userEdit.setAttribute("name", "User");
-      this._userEdit.setValue(this.data.user);
-      this._userEdit.default = this.data.user;
-      this._userEdit.addEventListener("change", this._formChanged.bind(this));
-      // this._form.appendChild(this._userEdit);
+      
 
       // Files per job
       this._filesPerJob = document.createElement("text-input");

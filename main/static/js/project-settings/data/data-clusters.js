@@ -56,7 +56,7 @@ class DataJobClusters {
    // Returns an Array of Object with:
    // - job cluster id, name, and checked (bool)
    // - checked is true if the both lists contain the id
-   getCompiledList(jobClusterIds){
+   getCompiledList(jobClusterId){
       let newList = [];
 
       return this._setList().then((clusterList) => {
@@ -69,7 +69,7 @@ class DataJobClusters {
                label: cluster.name,
                selected: false
             };
-            if (jobClusterIds !== null && jobClusterIds.includes(cluster.id)) {
+            if (jobClusterId !== null && jobClusterId == cluster.id) {
                checkObj.selected = true;
             }
             newList.push(checkObj);

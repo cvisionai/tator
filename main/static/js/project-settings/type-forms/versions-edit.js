@@ -52,7 +52,7 @@ class VersionsEdit extends TypeForm {
       this._number = document.createElement("text-input");
       this._number.setAttribute("name", "Number");
       this._number.setAttribute("type", "int");
-      if (typeof data.number == "undefined") {
+      if (typeof data.number == "undefined" || data.number == "") {
          this._number.setValue("Created on Save");
          this._number.default = "";
       } else {
