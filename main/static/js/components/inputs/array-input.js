@@ -60,7 +60,7 @@ class ArrayInput extends TatorElement {
     }
   
   setValue(val) {
-    console.log(val);
+    // console.log(val);
       if( Array.isArray(val) && val.length > 0){
         for (let key of val) {
           let textInput = document.createElement("text-input");

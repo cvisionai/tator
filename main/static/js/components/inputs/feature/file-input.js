@@ -49,13 +49,21 @@ class FileInput extends TatorElement {
 
     // Image upload visible, and hidden - Plus Custom warning area.
     this.uploadWarningRow = document.createElement("div");
-    this.uploadWarningRow.setAttribute("class", "offset-md-3 offset-sm-4 col-md-9 col-sm-8 pb-3");
-    this._editInput.appendChild(this.uploadWarningRow);
+    this.uploadWarningRow.setAttribute("class", "offset-col-4 pb-3");
+    this._shadow.appendChild(this.uploadWarningRow);
 
     // Validate file size / show warning
     this.validate = new TypeFormValidation(); // @TODO move validation in here
     const warning = new InlineWarning();
     this.uploadWarningRow.appendChild(warning.div());
+
+    // this._resetLink = document.createElement("span");
+    // this._resetLink.setAttribute("class", "clickable");
+    // this._resetLink.textContent = "Reset.";
+    // this._resetLink.addEventListener("click", this.reset.bind(this));
+    // this.uploadWarningRow._resetLink;
+
+    //
     this._editInput.addEventListener("change", this._editListeners.bind(this));
 
     // this._input.addEventListener("focus", () => {
@@ -175,9 +183,12 @@ class FileInput extends TatorElement {
           "detail":
             { "errorMsg": hasError }
         });
+        this.setValue("");
         this._editInput.dispatchEvent(errorEvent);
       } else {
-        console.log("Fetch download info")
+        let successEvent = new CustomEvent("input-valid");
+        this._editInput.dispatchEvent(successEvent);
+        // console.log("Fetch download info")
         let bodyData = {
           keys: [
             key
@@ -215,9 +226,10 @@ class FileInput extends TatorElement {
             }
           ).then(resp => resp.json()).then(
             manifestData => {
-              console.log(manifestData);
+              // console.log(manifestData);
               this.setValue(manifestData.url);
               Utilities.showSuccessIcon(`Manifest file uploaded to: ${manifestData.url}`);
+
             }
           );
 
@@ -237,9 +249,13 @@ class FileInput extends TatorElement {
 
   yamlValidate(file) {
     var extension = String(file.name).substr(-4, 4);
-    console.log(extension);
+    // console.log(extension);
 
-    return !(extension === "yaml" || extension === ".yml");
+    if (!(extension === "yaml" || extension === ".yml")) {
+      return "YAML file format required."
+    } else {
+      return false;
+    }
   }
 }
 
