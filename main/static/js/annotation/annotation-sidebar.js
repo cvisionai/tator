@@ -19,6 +19,9 @@ class AnnotationSidebar extends TatorElement {
     this._point = document.createElement("point-button");
     this._div.appendChild(this._point);
 
+    this._poly = document.createElement("poly-button");
+    this._div.appendChild(this._poly);
+
     this._track = document.createElement("track-button");
     this._div.appendChild(this._track);
 
