@@ -80,6 +80,8 @@ class AnnotationSidebar extends TatorElement {
         this._line.removeAttribute("disabled");
       if (!this._point.permenantDisable)
         this._point.removeAttribute("disabled");
+      if (!this._poly.permenantDisable)
+        this._poly.removeAttribute("disabled");
       if (!this._track.permenantDisable)
         this._track.removeAttribute("disabled");
     } else {
@@ -153,6 +155,27 @@ class AnnotationSidebar extends TatorElement {
       this._point.setAttribute("disabled", "");
       this._point.permenantDisable = true;
     }
+
+    if (typeof val.poly !== "undefined") {
+      this._poly.addEventListener("click", (evt) => {
+        this._selectButton(this._poly, evt.shiftKey);
+        this.dispatchEvent(new CustomEvent("newMeta", {
+          detail: {typeId: val.poly[0].id,
+                   metaMode: true}
+        }));
+      });
+      document.addEventListener("keydown", evt => {
+        if (document.body.classList.contains("shortcuts-disabled")) {
+          return;
+        }
+        if (evt.keyCode === 80) {
+          this._poly.dispatchEvent(new MouseEvent("click", {shiftKey: evt.shiftKey}));
+        }
+      });
+    } else {
+      this._poly.setAttribute("disabled", "");
+      this._poly.permenantDisable = true;
+    }
   }
 
   set trackTypes(val) {
@@ -174,7 +197,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._track.setAttribute("disabled", "");
-      this._track.permanentDisable = true;
+      this._track.permenantDisable = true;
     }
   }
 
