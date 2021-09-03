@@ -181,6 +181,7 @@ class LocalizationListAPI(BaseListView):
                 v=loc_spec.get("v", None),
                 width=loc_spec.get("width", None),
                 height=loc_spec.get("height", None),
+                points=loc_spec.get("points", None),
                 frame=loc_spec.get("frame", None),
             )
             for loc_spec, attrs in zip(loc_specs, attr_specs)
@@ -319,23 +320,23 @@ class LocalizationDetailAPI(BaseDetailView):
 
         # Patch common attributes.
         frame = params.get("frame", None)
-        x = params.get("x", None)
-        y = params.get("y", None)
         version = params.get("version", None)
 
         if frame is not None:
             obj.frame = frame
-        if x is not None:
-            obj.x = x
-        if y is not None:
-            obj.y = y
         if version is not None:
             obj.version = version
 
         if obj.meta.dtype == 'box':
+            x = params.get("x", None)
+            y = params.get("y", None)
             height = params.get("height", None)
             width = params.get("width", None)
             thumbnail_image = params.get("thumbnail_image", None)
+            if x is not None:
+                obj.x = x
+            if y is not None:
+                obj.y = y
             if height:
                 obj.height = height
             if width:
@@ -352,14 +353,29 @@ class LocalizationDetailAPI(BaseDetailView):
                 except:
                     logger.error("Bad thumbnail reference given")
         elif obj.meta.dtype == 'line':
+            x = params.get("x", None)
+            y = params.get("y", None)
             u = params.get("u", None)
             v = params.get("v", None)
+            if x is not None:
+                obj.x = x
+            if y is not None:
+                obj.y = y
             if u:
                 obj.u = u
             if v:
                 obj.v = v
         elif obj.meta.dtype == 'dot':
-            pass
+            x = params.get("x", None)
+            y = params.get("y", None)
+            if x is not None:
+                obj.x = x
+            if y is not None:
+                obj.y = y
+        elif obj.meta.dtype == 'poly':
+            points = params.get("points", None)
+            if points:
+                obj.points = points
         else:
             # TODO: Handle circles.
             pass
