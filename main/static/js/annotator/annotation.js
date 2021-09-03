@@ -2106,19 +2106,31 @@ class AnnotationCanvas extends TatorElement
     var scaleFactor=[drawCtx.clientWidth/roi[2],
                      drawCtx.clientHeight/roi[3]];
 
-    //Scale box dimenisons
-    var actX = (localization.x - roi[0]) *scaleFactor[0];
-    var actY = (localization.y - roi[1])*scaleFactor[1];
-    var actWidth = localization.width*scaleFactor[0];
-    var actHeight = localization.height*scaleFactor[1];
+    var poly = [];
+    if (localization.points)
+    {
+      for (let point of localization.points)
+      {
+        poly.push([(point[0] - roi[0]) *scaleFactor[0],
+                   (point[1] - roi[1]) *scaleFactor[1]]);
+      }
+    }
+    else
+    {
+      //Scale box dimenisons
+      var actX = (localization.x - roi[0]) *scaleFactor[0];
+      var actY = (localization.y - roi[1])*scaleFactor[1];
+      var actWidth = localization.width*scaleFactor[0];
+      var actHeight = localization.height*scaleFactor[1];
 
-    var poly = [[actX, actY],
-                [actX + actWidth,
-                 actY],
-                [actX + actWidth,
-                 actY + actHeight],
-                [actX,
-                 actY + actHeight]];
+      poly = [[actX, actY],
+              [actX + actWidth,
+               actY],
+              [actX + actWidth,
+               actY + actHeight],
+              [actX,
+                actY + actHeight]];
+    }
 
     return poly;
   }
@@ -3505,8 +3517,16 @@ class AnnotationCanvas extends TatorElement
       width = Math.round(defaultDrawWidth * this._draw.displayToViewportScale()[0]);
     }
     const dotWidth = width * 1.33;
+    if (item.length > 4)
+    {
+      for (let p of item)
+      {
+        this._draw.drawCircle(p, dotWidth, color, alpha);
+      }
+    }
     if (item.length == 4)
     {
+      // Box case
       item = this.fix_box(item);
       const halfX = (item[0][0]+item[1][0])/2;
       const halfY = (item[0][1]+item[3][1])/2;
@@ -3966,7 +3986,7 @@ class AnnotationCanvas extends TatorElement
       localization.color = color.MEDIUM_GRAY;
       let alpha = 0.5*255;
 
-      if (type=='box')
+      if (type=='box' || type=='poly')
       {
         var poly = this.localizationToPoly(localization, drawContext, roi);
         drawContext.drawPolygon(poly, localization.color, width, alpha);
@@ -4016,11 +4036,11 @@ class AnnotationCanvas extends TatorElement
           localization.color = colorInfo.color
           var fill = colorInfo.fill;
 
-          if (type=='box')
+          if (type=='box' || type=='poly')
           {
             var poly = this.localizationToPoly(localization, drawContext, roi);
             drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
-            if (colorInfo['handles'] == true)
+            if (colorInfo['handles'] == true || type=='poly')
             {
               this.accentWithHandles(drawContext, poly, localization.color, width, colorInfo.alpha);
             }
