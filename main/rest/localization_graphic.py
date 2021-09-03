@@ -79,6 +79,9 @@ class LocalizationGraphicAPI(BaseDetailView):
             elif localization_type == 'box':
                 margins = self.schema.DEFAULT_MARGIN_BOX
 
+            elif localization_type == 'poly':
+                raise NotImplementedError('Error: poly dtype does not support localization graphics!')
+
             else:
                 raise Exception(f'Error: Invalid meta.dtype detected {localization_type}')
 

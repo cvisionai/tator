@@ -1511,6 +1511,67 @@ class LocalizationDotTestCase(
     def tearDown(self):
         self.project.delete()
 
+class LocalizationPolyTestCase(
+        APITestCase,
+        AttributeTestMixin,
+        AttributeMediaTestMixin,
+        DefaultCreateTestMixin,
+        PermissionCreateTestMixin,
+        PermissionListTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        media_entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+        )
+        self.entity_type = LocalizationType.objects.create(
+            name="polys",
+            dtype='poly',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.entity_type.media.add(media_entity_type)
+        self.media_entities = [
+            create_test_video(self.user, f'asdf{idx}', media_entity_type, self.project)
+            for idx in range(random.randint(3, 10))
+        ]
+        self.entities = [
+            create_test_box(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
+            for idx in range(random.randint(6, 10))
+        ]
+        self.list_uri = 'Localizations'
+        self.detail_uri = 'Localization'
+        self.create_entity = functools.partial(
+            create_test_box, self.user, self.entity_type, self.project, self.media_entities[0], 0)
+        self.create_json = [{
+            'type': self.entity_type.pk,
+            'name': 'asdf',
+            'media_id': self.media_entities[0].pk,
+            'frame': 0,
+            'points': [[0.0, 0.1], [0.0, 0.2], [0.1, 0.2], [0.0, 0.1]],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': 'asdf',
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [179.0, -89.0],
+        }]
+        self.edit_permission = Permission.CAN_EDIT
+        self.patch_json = {'name': 'box1'}
+        TatorSearch().refresh(self.project.pk)
+
+    def tearDown(self):
+        self.project.delete()
+
 class StateTestCase(
         APITestCase,
         AttributeTestMixin,
