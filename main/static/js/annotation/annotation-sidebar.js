@@ -74,15 +74,15 @@ class AnnotationSidebar extends TatorElement {
 
   set permission(val) {
     if (hasPermission(val, "Can Edit")) {
-      if (!this._box.permenantDisable)
+      if (!this._box.permanentDisable)
         this._box.removeAttribute("disabled");
-      if (!this._line.permenantDisable)
+      if (!this._line.permanentDisable)
         this._line.removeAttribute("disabled");
-      if (!this._point.permenantDisable)
+      if (!this._point.permanentDisable)
         this._point.removeAttribute("disabled");
-      if (!this._poly.permenantDisable)
+      if (!this._poly.permanentDisable)
         this._poly.removeAttribute("disabled");
-      if (!this._track.permenantDisable)
+      if (!this._track.permanentDisable)
         this._track.removeAttribute("disabled");
     } else {
       this._box.setAttribute("disabled", "");
@@ -111,7 +111,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._box.setAttribute("disabled", "");
-      this._box.permenantDisable = true;
+      this._box.permanentDisable = true;
     }
 
     if (typeof val.line !== "undefined") {
@@ -132,7 +132,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._line.setAttribute("disabled", "");
-      this._line.permenantDisable = true;
+      this._line.permanentDisable = true;
     }
 
     if (typeof val.dot !== "undefined") {
@@ -153,7 +153,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._point.setAttribute("disabled", "");
-      this._point.permenantDisable = true;
+      this._point.permanentDisable = true;
     }
 
     if (typeof val.poly !== "undefined") {
@@ -174,7 +174,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._poly.setAttribute("disabled", "");
-      this._poly.permenantDisable = true;
+      this._poly.permanentDisable = true;
     }
   }
 
@@ -197,7 +197,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._track.setAttribute("disabled", "");
-      this._track.permenantDisable = true;
+      this._track.permanentDisable = true;
     }
   }
 
