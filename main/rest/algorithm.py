@@ -221,7 +221,7 @@ class AlgorithmDetailAPI(BaseDetailView):
 
         cluster = params.get(fields.cluster, None)
         if cluster is not None:
-            cluster_obj = JobCluster.objects.get(pk=cluster, organization=project.organization)
+            cluster_obj = JobCluster.objects.get(pk=cluster, organization=obj.project.organization)
             obj.cluster = cluster_obj
 
         files_per_job = params.get(fields.files_per_job, None)
