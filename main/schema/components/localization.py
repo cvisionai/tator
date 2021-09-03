@@ -51,7 +51,7 @@ localization_properties = {
         'items': {
             'type': 'array',
             'items': {
-                'type': 'float',
+                'type': 'number',
                 'minimum': 0.0,
                 'maximum': 1.0,
             },
