@@ -2018,6 +2018,37 @@ class AnnotationCanvas extends TatorElement
     for (let localization of localizations)
     {
       var meta = that.getObjectDescription(localization);
+      if (meta.dtype == "poly")
+      {
+        let minX = 1;
+        let minY = 1;
+        let maxX = 0;
+        let maxY = 0;
+        for (let anchor of localization.points)
+        {
+          if (anchor[0] > maxX)
+            maxX = anchor[0]
+          if (anchor[1] > maxY)
+            maxY = anchor[1]
+          if (anchor[0] < minX)
+            minX = anchor[0]
+          if (anchor[1] < minY)
+            minY = anchor[1]
+        }
+        let in_poly = (loc) => {
+          return loc[0] >= minX && loc[0] <= maxX && loc[1] >= minY && loc[1] <= maxY;
+        }
+        const poly_threshold = hypot(maxX-minX,maxY-minY);
+        for (let anchor of localization.points)
+        {
+          var distance = distance_func(anchor, loc);
+          if (distance < poly_threshold && in_poly(loc))
+          {
+            distances.push({"distance": distance,
+                            "data": localization});
+          }
+        }
+      }
       if (meta.dtype == "box")
       {
         var nw = [localization.x,localization.y];
@@ -2984,10 +3015,10 @@ class AnnotationCanvas extends TatorElement
           let fillAlpha = alphaInfo.fillAlpha;
           var colorInfo = that.computeLocalizationColor(localization,meta);
 
-          if (meta.dtype == 'box')
+          if (meta.dtype == 'box' || meta.dtype == 'poly')
           {
             that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width, alpha);
-            if (colorInfo['handles'] == true)
+            if (colorInfo['handles'] == true || meta.dtype == 'poly')
             {
               that.accentWithHandles(poly, getColorForFrame(frameIdx), width, alpha);
             }
