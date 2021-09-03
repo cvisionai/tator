@@ -219,14 +219,10 @@ class AlgorithmDetailAPI(BaseDetailView):
         if manifest is not None:
             obj.manifest = manifest
 
-        #TODO This needs to be updated at some point to actually use the JobCluster objects
-        #     Currently, there doesn't exist an endpoint to manage jobclusters
-        '''
         cluster = params.get(fields.cluster, None)
         if cluster is not None:
-            cluster_obj = JobCluster.objects.get(pk=cluster)
+            cluster_obj = JobCluster.objects.get(pk=cluster, organization=project.organization)
             obj.cluster = cluster_obj
-        '''
 
         files_per_job = params.get(fields.files_per_job, None)
         if files_per_job is not None:
