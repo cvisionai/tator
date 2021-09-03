@@ -778,7 +778,7 @@ class AnnotationPage extends TatorPage {
           let isTrack=false;
           let isTLState=false;
           if ("dtype" in dataType) {
-            isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
+            isLocalization = ["box", "line", "dot", "poly"].includes(dataType.dtype);
           }
           if ("association" in dataType) {
             isTrack = (dataType.association == "Localization");
