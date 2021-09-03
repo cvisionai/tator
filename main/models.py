@@ -1220,7 +1220,7 @@ class Localization(Model, ModelDiffMixin):
     """ Width for boxes."""
     height = FloatField(null=True, blank=True)
     """ Height for boxes."""
-    points = JSONField(default=list)
+    points = JSONField(null=True, blank=True)
     """ List of points used by poly dtype. """
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
