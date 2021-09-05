@@ -175,3 +175,16 @@ def video(request, authenticated, project, video_section, video_file):
     video = int(cards[0].get_attribute('media-id'))
     yield video
 
+@pytest.fixture(scope='session')
+def image_file(request):
+    out_path = '/tmp/test1.jpg'
+    if not os.path.exists(out_path):
+        url = 'https://www.gstatic.com/webp/gallery/1.jpg'
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(out_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+    yield out_path
+
