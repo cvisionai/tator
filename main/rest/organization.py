@@ -8,6 +8,7 @@ from ..models import Affiliation
 from ..models import database_qs
 from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
+from ..store import get_tator_store
 
 from ._permissions import OrganizationAdminPermission
 from ._base_views import BaseListView
@@ -16,7 +17,10 @@ from ._base_views import BaseDetailView
 def _serialize_organizations(organizations, user_id):
     organization_data = database_qs(organizations)
     for idx, organization in enumerate(organizations):
+        store = get_tator_store()
         organization_data[idx]['permission'] = str(organization.user_permission(user_id))
+        if organization_data[idx]['thumb']:
+            organization_data[idx]['thumb'] = store.get_download_url(organization_data[idx]['thumb'], 28800)
     return organization_data
 
 class OrganizationListAPI(BaseListView):
