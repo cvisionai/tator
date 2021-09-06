@@ -2,9 +2,6 @@ class AttributesForm extends TatorElement {
   constructor() {
     super();
 
-    // Required helpers.
-    this.inputHelper = new SettingsInput("media-types-main-edit");
-
     // Flag values
     this._changed = false;
     this._global = false;
@@ -593,14 +590,14 @@ class AttributesForm extends TatorElement {
 
   _dispatchWarningEvents({ dtype, newType }) {
     if (this._irreversibleCheck({ dtype, newType })) {
-      this.inputHelper.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
+      this.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
       this._dtype._select.dispatchEvent(new CustomEvent("input-caution", {
         "detail":
           { "errorMsg": `Warning: ${dtype} to ${newType} is not reversible.` }
       }));
 
     } else if (this._reversibleCheck({ dtype, newType })) {
-      this.inputHelper.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
+      this.addWarningWrap(this._dtype.label, this.dataTypeSelectDiv, this._dtype._select, false);
       this._dtype._select.dispatchEvent(new CustomEvent("input-caution", {
         "detail":
           { "errorMsg": `Warning: ${dtype} to ${newType} may cause data loss.` }
@@ -775,6 +772,60 @@ class AttributesForm extends TatorElement {
     }
 
     return formData;
+  }
+
+  addWarningWrap(labelWrap, labelDiv, inputNode, checkErrors = true){
+      
+    if(labelDiv.querySelector('.warning-row')){
+      labelDiv.querySelector('.warning-row').remove();
+    }
+    // Warning Message Spot
+    let warningRow = document.createElement("div");
+    warningRow.setAttribute("class", "warning-row offset-lg-4 col-lg-8 pb-3");
+    labelDiv.appendChild(warningRow);
+
+    const warning = new InlineWarning();
+    warningRow.appendChild(warning.div());
+
+    // Dispatch events to validate, and listen for errors
+    if(checkErrors){
+      inputNode.addEventListener("input", (e) => {
+        let hasError = this.validate.findError(inputNode.name, inputNode.value);
+        if(hasError){
+          let errorEvent = new CustomEvent("input-invalid", {"detail" : 
+            {"errorMsg" : hasError}
+          });
+          inputNode.invalid = true;
+          inputNode.classList.add("invalid");
+          inputNode.dispatchEvent(errorEvent);
+        } else {
+          let successEvent = new CustomEvent("input-valid");
+          inputNode.classList.remove("invalid");
+          inputNode.dispatchEvent(successEvent);
+        }    
+      });
+
+      inputNode.addEventListener("input-invalid", (e) => {
+        warning.show(e.detail.errorMsg);
+        labelWrap.classList.remove("caution");
+        labelWrap.classList.remove("successed");
+        labelWrap.classList.add("errored");
+      });
+    }
+
+    inputNode.addEventListener("input-caution", (e) => {
+      warning.showCaution(e.detail.errorMsg);
+      labelWrap.classList.remove("successed");
+      labelWrap.classList.remove("errored");
+      labelWrap.classList.add("caution");
+    });
+
+    inputNode.addEventListener("input-valid", (e) => {
+      labelWrap.classList.add("successed");
+      labelWrap.classList.remove("errored");
+      labelWrap.classList.remove("caution");
+      warning.hide();
+    }); 
   }
 
   _getPromise({ form = this.form, id = -1, entityType = null } = {}) {

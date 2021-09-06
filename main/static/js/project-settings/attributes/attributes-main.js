@@ -29,7 +29,6 @@ class AttributesMain extends HTMLElement {
 
     // Required helpers.
     this.boxHelper = new SettingsBox( this.modal );
-    this.inputHelper = new SettingsInput("media-types-main-edit");
     this.refreshTypeEvent = new Event('settings-refresh');
 
     // Section h1.
@@ -178,7 +177,11 @@ class AttributesMain extends HTMLElement {
   _getAddForm(){
     let attrForm = document.createElement("attributes-form");
     attrForm._initEmptyForm();
-    let submitAttribute = this.inputHelper.saveButton();
+
+    let submitAttribute = document.createElement("input");
+    submitAttribute.setAttribute("type", "submit");
+    submitAttribute.setAttribute("value", "Save");
+    submitAttribute.setAttribute("class", `btn btn-clear f1 text-semibold`);
 
     return {attrForm, submitAttribute};
   }
@@ -265,7 +268,11 @@ class AttributesMain extends HTMLElement {
       
       const clone = new AttributesClone( attributeDataByType );
       const cloneForm = clone._init();
-      const cloneSave = this.inputHelper.saveButton();
+
+      const cloneSave = document.createElement("input");
+      cloneSave.setAttribute("type", "submit");
+      cloneSave.setAttribute("value", "Save");
+      cloneSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
       
       cloneSave.addEventListener("click", (e) => {
         e.preventDefault();

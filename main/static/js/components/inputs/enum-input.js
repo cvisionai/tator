@@ -73,19 +73,23 @@ class EnumInput extends TatorElement {
   }
 
   set choices(val) {
+    let selectedDefault = null;
     // Add attribute type choices.
     for (const choice of val) {
       const option = document.createElement("option");
       option.setAttribute("value", choice.value);
-      if ('label' in choice)
-      {
+      if ('label' in choice) {
         option.textContent = choice.label;
-      }
-      else
-      {
+      } else {
         option.textContent = choice.value;
       }
+      if (choice.selected) {
+        selectedDefault = choice.value;
+      }
       this._select.appendChild(option);
+    }
+    if (selectedDefault !== null) {
+      this.setValue(selectedDefault)
     }
   }
 
@@ -108,8 +112,14 @@ class EnumInput extends TatorElement {
   }
 
   getValue() {
-    const selected = this._select.selectedIndex;
-    return this._select.options[selected].value;
+    if (this._select.options.length !== 0) {
+      const selected = this._select.selectedIndex;
+      if(typeof this._select.options[selected] !== "undefined"){
+        return this._select.options[selected].value;
+      }
+    }
+    
+    return null;
   }
 
   setValue(val) {

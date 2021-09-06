@@ -60,6 +60,42 @@ class UserData extends TatorElement {
     return this._users;
   }
 
+  async getCurrentUser() {
+    let resp = await fetch('/rest/User/GetCurrent', {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+
+    let data = resp.json();
+
+    console.log(data);
+
+    return data;
+  }
+
+  async getUserById(id) {
+    let resp = await fetch('/rest/User/'+id, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+
+    let data = resp.json();
+
+    console.log(data);
+
+    return data;
+  }
+
   removeUser(userId) {
     // Removes a user by user ID and emits updated list of users.
     this._users.delete(userId);
