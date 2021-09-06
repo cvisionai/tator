@@ -471,9 +471,7 @@ class SettingsInput {
         labelWrap.classList.remove("errored");
         labelWrap.classList.remove("caution");
         warning.hide();
-      });
-
-      
+      }); 
     }
 
     addNewRow({

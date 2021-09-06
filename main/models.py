@@ -751,6 +751,8 @@ class MediaType(Model):
     default_dot = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
                              related_name='+')
     """ Dot type used as default in UI. """
+    default_poly = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
+                              related_name='+')
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -760,7 +762,7 @@ def media_type_save(sender, instance, **kwargs):
 
 class LocalizationType(Model):
     dtype = CharField(max_length=16,
-                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
+                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot'), ('poly', 'poly')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
@@ -1218,6 +1220,8 @@ class Localization(Model, ModelDiffMixin):
     """ Width for boxes."""
     height = FloatField(null=True, blank=True)
     """ Height for boxes."""
+    points = JSONField(null=True, blank=True)
+    """ List of points used by poly dtype. """
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False)

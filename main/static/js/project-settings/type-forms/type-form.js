@@ -12,7 +12,6 @@ class TypeForm extends TatorElement {
     this._shadow.appendChild(this.typeFormDiv);
 
     // Required helpers.
-    this.inputHelper = new SettingsInput("");
     this.attributeFormHelper = new AttributesForm();
 
     // Loading spinner
@@ -23,7 +22,7 @@ class TypeForm extends TatorElement {
     this._hideAttributes = false;
   }
 
-  _init({ data, modal, sidenav, versionListHandler, mediaListHandler }) {
+  _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
@@ -36,6 +35,7 @@ class TypeForm extends TatorElement {
     this.sideNav = sidenav;
     this.versionListHandler = versionListHandler;
     this.mediaListHandler = mediaListHandler;
+    this.clusterListHandler = clusterListHandler;
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox(this.modal);
@@ -163,7 +163,8 @@ class TypeForm extends TatorElement {
             modal: this.modal,
             sidenav: this.sideNav,
             mediaListHandler: this.mediaListHandler,
-            versionListHandler: this.versionListHandler
+            versionListHandler: this.versionListHandler,
+            clusterListHandler: this.clusterListHandler
           });
 
           // Add the item to navigation
@@ -185,14 +186,6 @@ class TypeForm extends TatorElement {
     });
   }
 
-  // this.settingsViewClasses = [
-  //   "project-main-edit",
-  //   "media-type-main-edit",
-  //   "localization-edit",
-  //   "leaf-type-edit",
-  //   "state-type-edit"
-  // ];
-
   _getTypeClass() {
     switch (this.typeName) {
       case "MediaType":
@@ -209,6 +202,8 @@ class TypeForm extends TatorElement {
         return "membership-edit";
       case "Version":
         return "versions-edit";
+      case "Algorithm":
+        return "algorithm-edit";
       default:
         break;
     }
@@ -242,7 +237,11 @@ class TypeForm extends TatorElement {
   }
 
   _saveEntityButton(id) {
-    this.saveButton = this.inputHelper.saveButton();
+    this.saveButton = document.createElement("input");
+    this.saveButton.setAttribute("type", "submit");
+    this.saveButton.setAttribute("value", "Save");
+    this.saveButton.setAttribute("class", `btn btn-clear f1 text-semibold`);
+
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
       if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
@@ -258,7 +257,12 @@ class TypeForm extends TatorElement {
   }
 
   _resetEntityLink(id) {
-    this.resetLink = this.inputHelper.resetLink();
+    this.resetLink = document.createElement("a");
+    this.resetLink.setAttribute("href", "#");
+    this.resetLink.setAttribute("class", `px-5 f1 text-gray hover-text-white`);
+
+    let resetLinkText = document.createTextNode("Reset");
+    this.resetLink.appendChild( resetLinkText );
 
     // Form reset event
     this.resetLink.addEventListener("click", (event) => {
@@ -372,20 +376,25 @@ class TypeForm extends TatorElement {
 
   _getEmptyData() {
     return {
-      "id": `New`,
-      "name": "",
-      "project": this.projectId,
-      "description": "",
-      "visible": false,
-      "grouping_default": false,
-      "media": [],
-      "dtype": "",
-      "colorMap": null,
-      "interpolation": "none",
-      "association": "Media",
-      "line_width": 2,
-      "delete_child_localizations": false,
-      "form": "empty"
+      id: `New`,
+      name: "",
+      project: this.projectId,
+      description: "",
+      visible: false,
+      grouping_default: false,
+      media: [],
+      dtype: "",
+      colorMap: null,
+      interpolation: "none",
+      association: "Media",
+      line_width: 2,
+      delete_child_localizations: false,
+      cluster: null,
+      manifest: null,
+      files_per_job: null,
+      parameters: [],
+      categories: "",
+      form: "empty"
     };
   }
 
@@ -722,15 +731,13 @@ class TypeForm extends TatorElement {
     // console.log(this.data);
 
     // Update media list in the background
-    this._dataMediaList._clear();
-    this._dataVersionList._clear();
     // In future could send individual media update if fn there to receive it
     if (this.typeName == "MediaType") {
-      // const mediaList = new DataMediaList(this.projectId);
+      this.mediaListHandler._clear();
       this.mediaListHandler._setProjectMediaList("", true);
     }
     if (this.typeName == "Version") {
-      // const versionsList = new DataVersionList( this.projectId );
+      this.versionListHandler._clear();
       this.versionListHandler._setVersionList("", true);
     }
   }

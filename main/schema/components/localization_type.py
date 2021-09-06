@@ -10,7 +10,7 @@ localization_type_properties = {
     'dtype': {
         'type': 'string',
         'description': 'Shape of this localization type.',
-        'enum': ['box', 'line', 'dot'],
+        'enum': ['box', 'line', 'dot', 'poly'],
     },
     'colorMap': {'$ref': '#/components/schemas/ColorMap'},
     'line_width': {

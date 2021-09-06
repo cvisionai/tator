@@ -38,6 +38,7 @@ box, line, or dot. Each shape is parameterized by a different subset of data mem
 - `box` uses `x`, `y`, `width`, `height`.
 - `line` uses `x`, `y`, `u`, `v`.
 - `dot` uses `x` and `y`.
+- `poly` uses `points`.
 
 Geometry members may be left null when creating a localization, in which case the shapes may be 
 drawn later using the redraw capability in the web UI. Localizations are a type of entity in Tator,
@@ -220,6 +221,36 @@ class LocalizationListSchema(AutoSchema):
                             {
                                 'x': 0.1,
                                 'y': 0.2,
+                                'frame': 1000,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                        ],
+                    },
+                    'poly': {
+                        'summary': 'Single poly localization',
+                        'value': [{
+                            'media_id': 1,
+                            'type': 1,
+                            'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
+                            'frame': 1000,
+                            'My First Attribute': 'value1',
+                            'My Second Attribute': 'value2',
+                        }],
+                    },
+                    'polys': {
+                        'summary': 'Many poly localizations',
+                        'value': [
+                            {
+                                'media_id': 1,
+                                'type': 1,
+                                'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
+                                'frame': 100,
+                                'My First Attribute': 'value1',
+                                'My Second Attribute': 'value2',
+                            },
+                            {
+                                'points': [[0.1, 0.1], [0.2, 0.1], [0.2, 0.2], [0.1, 0.1]],
                                 'frame': 1000,
                                 'My First Attribute': 'value1',
                                 'My Second Attribute': 'value2',

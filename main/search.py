@@ -558,7 +558,7 @@ class TatorSearch:
             if entity.attributes is not None:
                 if 'tator_user_sections' in entity.attributes:
                     aux['tator_user_sections'] = entity.attributes['tator_user_sections']
-        elif entity.meta.dtype in ['box', 'line', 'dot']:
+        elif entity.meta.dtype in ['box', 'line', 'dot', 'poly']:
             aux['_media_relation'] = {
                 'name': 'annotation',
                 'parent': f"{entity.media.meta.dtype}_{entity.media.pk}",
@@ -583,6 +583,8 @@ class TatorSearch:
                 aux['_u'] = entity.u
                 aux['_v'] = entity.v
             elif entity.meta.dtype == 'dot':
+                pass
+            elif entity.meta.dtype == 'poly':
                 pass
         elif entity.meta.dtype in ['state']:
             media = entity.media.all()
