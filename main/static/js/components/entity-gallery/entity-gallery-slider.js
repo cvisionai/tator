@@ -271,10 +271,10 @@ class EntityGallerySlider extends TatorElement {
       */
       this.entityType = (this.association == "Localization") ? cardObj.entityType : cardObj.mediaInfo.entityType;
       this.entityTypeId = this.entityType.id;
-      this._cardAtributeLabels.add({ 
-         typeData: this.entityType,
-         checkedFirst: true
-      });
+      // this._cardAtributeLabels.add({ 
+      //    typeData: this.entityType,
+      //    checkedFirst: true
+      // });
 
       this.gallery.cardLabelsChosenByType[this.entityTypeId] = this._cardAtributeLabels._getValue(this.entityTypeId);
       
@@ -369,8 +369,8 @@ class EntityGallerySlider extends TatorElement {
 
    showLabels(selectedLabels) {
       for (let el of this.attributeLabelEls) {
-         //console.log(`ID ${el.id} is included? ${selectedLabels.includes(el.id)}`);
-         if (selectedLabels.includes(el.id)) {
+         let decoded = decodeURI(el.id);
+         if (selectedLabels.includes(decoded)) {
             el.classList.remove("hidden");
          } else {
             el.classList.add("hidden");

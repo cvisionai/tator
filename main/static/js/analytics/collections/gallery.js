@@ -114,6 +114,31 @@ class CollectionsGallery extends EntityCardSlideGallery {
          this._attributeLabels.addEventListener("labels-update", this.labelsUpdate.bind(this));
       }
 
+      // Init card attribute & card sort options using model mediatypes
+      // console.log(this.modelData);
+      for (let locTypeData of this.modelData._localizationTypes){
+         // let entityTypeData = cardsTmp[0][0].entityType;
+         this._cardAtributeSort.add({
+            typeData:locTypeData
+         });
+         this._cardAtributeLabels.add({ 
+            typeData: locTypeData,
+            checkedFirst: true
+         });
+      }
+
+      for (let mediaTypeData of this.modelData._mediaTypes){
+         // let entityTypeData = cardsTmp[0][0].entityType;
+         this._cardAtributeSort.add({
+            typeData: mediaTypeData
+         });
+         this._cardAtributeLabels.add({ 
+            typeData: mediaTypeData,
+            checkedFirst: true
+         });
+      }
+
+
       // form change listeners
       // Listen for attribute changes
       this.panelControls._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
@@ -369,9 +394,9 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
             // This will dupe check if it already exists for this type, or add
             let entityTypeData = cardsTmp[0][0].entityType;
-            this._cardAtributeSort.add({
-               typeData: entityTypeData
-            });
+            // this._cardAtributeSort.add({
+            //    typeData: entityTypeData
+            // });
 
             //Check if we want these sorted, sort before adding new cards
             var sortProperty = this._cardAtributeSort._selectionValues[entityTypeData.id];

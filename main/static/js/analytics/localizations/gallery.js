@@ -94,6 +94,14 @@ class AnnotationsGallery extends EntityCardGallery {
     // Listen for attribute changes
     this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
     this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
+
+    // Initialize labels selection
+    for (let locTypeData of this.modelData._localizationTypes){
+      this._cardAtributeLabels.add({ 
+         typeData: locTypeData,
+         checkedFirst: true
+      });
+   }
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -176,10 +184,10 @@ class AnnotationsGallery extends EntityCardGallery {
         /**
         * Card labels / attributes of localization or media type
         */
-        this._cardAtributeLabels.add({
-          typeData: entityType,
-          checkedFirst: true
-        });
+        // this._cardAtributeLabels.add({
+        //   typeData: entityType,
+        //   checkedFirst: true
+        // });
 
         this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
 
