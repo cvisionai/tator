@@ -141,7 +141,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // or by the settings. This must be done prior to collecting data
       if (isNaN(page) || isNaN(pageSize)) {
          page = 1;
-         pageSize = this.analyticsSettings._pageSize;
+         pageSize = 5;
       }
       var paginationState = {
          start: (page - 1) * pageSize,
@@ -165,7 +165,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
             this._paginator.init(totalCount, this.collectionsData.getPaginationState());
          }
 
-         this._numFiles.textContent = `${totalCount} Results`;
+         if (cardList.total == 0) {
+            this._numFiles.textContent = `${totalCount} Results`;
+         } else {
+            this._numFiles.textContent = `Viewing ${paginationState.start + 1} to ${paginationState.stop > totalCount ? totalCount : paginationState.stop} of ${totalCount} Results`;
+         }
 
          this._paginationUpdate(paginationState);
       });
@@ -234,7 +238,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
          this.panelContainer.dispatchEvent(panelPermissionEvt);
       }
 
-      this._numFiles.textContent = `${this.collectionsData.getNumberOfResults()} Results`;
+      let numResults = this.collectionsData.getNumberOfResults();
+      if (numResults == 0) {
+         this._numFiles.textContent = `${numResults} Results`;
+      } else {
+         this._numFiles.textContent = ` Viewing ${paginationState.start + 1} to ${paginationState.stop > numResults ? numResults : paginationState.stop} of ${numResults} Results`;
+      }
+      
       this.analyticsSettings.setAttribute("pagesize", this.collectionsData.getPageSize());
       this.analyticsSettings.setAttribute("page", this.collectionsData.getPage());
       window.history.pushState({}, "", this.analyticsSettings.getURL());
@@ -353,11 +363,14 @@ class CollectionsGallery extends EntityCardSlideGallery {
             let fnCheck = this._cardAtributeSort.getFnCheck(order);
             let prop = sortProperty.getValue();
             if(!(order == "true" && prop == "ID")){
-               //console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
+               console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
 
-               cardsTmp.sort( (a,b) => {
-                  let aVal = a[0].attributes[prop];
-                  let bVal = b[0].attributes[prop];
+               cardsTmp.sort((a, b) => {
+                  console.log(a);
+                  console.log(b);
+
+                  let aVal = a[0].attributes !== null ? a[0].attributes[prop] : "";
+                  let bVal = b[0].attributes !== null ? b[0].attributes[prop] : "";
 
                   return fnCheck(aVal, bVal);
                });

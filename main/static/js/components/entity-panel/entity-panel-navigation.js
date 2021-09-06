@@ -31,17 +31,17 @@ class EntityPanelNavigation extends TatorElement {
       styleDiv.setAttribute("class", "files__main files-wrap");
       details.appendChild(styleDiv);
 
-      const div = document.createElement("div");
-      div.setAttribute("class", "more d-flex flex-column f2 py-3 px-2");
-      styleDiv.appendChild(div);
+      // const div = document.createElement("div");
+      // div.setAttribute("class", "more d-flex flex-column f2 py-3 px-2");
+      // styleDiv.appendChild(div);
 
-      this._slider = document.createElement("input");
-      this._slider.setAttribute("class", "range flex-grow");
-      this._slider.setAttribute("type", "range");
-      this._slider.setAttribute("step", "1");
-      this._slider.setAttribute("min", "0");
-      this._slider.setAttribute("value", "0");
-      div.appendChild(this._slider);
+      // this._slider = document.createElement("input");
+      // this._slider.setAttribute("class", "range flex-grow");
+      // this._slider.setAttribute("type", "range");
+      // this._slider.setAttribute("step", "1");
+      // this._slider.setAttribute("min", "0");
+      // this._slider.setAttribute("value", "0");
+      // div.appendChild(this._slider);
 
       this.next = document.createElement("entity-next-button");
       this.controls.appendChild(this.next);
@@ -54,10 +54,10 @@ class EntityPanelNavigation extends TatorElement {
          this._emitSelection("next");
       });
 
-      this._slider.addEventListener("input", () => {
-         let newIndex = Number(this._slider.value);
-         this._emitSelection("slider", newIndex);
-      });
+      // this._slider.addEventListener("input", () => {
+      //    let newIndex = Number(this._slider.value);
+      //    this._emitSelection("slider", newIndex);
+      // });
 
       this._goToFrameButton = document.createElement("entity-frame-link-button");
       this._goToFrameButton.button.classList.add("ml-3");
@@ -134,8 +134,8 @@ class EntityPanelNavigation extends TatorElement {
       console.log("Navigation Init at card index: " + cardIndex);
 
       this._current.textContent = start;
-      this._slider.setAttribute("value", start);
-      this._slider.setAttribute("max", total);
+      // this._slider.setAttribute("value", start);
+      // this._slider.setAttribute("max", total);
 
       // Update go to frame destination
       let mediaLink = this._selectedCardEl.card.cardObj.mediaLink;

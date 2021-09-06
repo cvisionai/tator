@@ -99,7 +99,12 @@ class AnnotationsGallery extends EntityCardGallery {
    //   this._numFiles.textContent = `Too many results to preview. Displaying the first ${cardList.total} results.`
    //}
    //else {
-   this._numFiles.textContent = `${cardList.total} Results`;
+    if (cardList.total == 0) {
+      this._numFiles.textContent = `${cardList.total} Results`;
+    } else {
+      this._numFiles.textContent = `Viewing ${cardList.paginationState.start + 1} to ${cardList.paginationState.stop > cardList.total ? cardList.total : cardList.paginationState.stop} of ${cardList.total} Results`;
+    }
+   
    //}
 
     // Only populate the pagination when the dataset has changed (and therefore the pagination

@@ -20,6 +20,7 @@ class AnalyticsCollections extends TatorPage {
       this._breadcrumbs.setAttribute("analytics-name", "Collections Gallery");
 
       this._settings = document.createElement("analytics-settings");
+      this._settings.pageSize = 10;
       this._settings.style.marginLeft = "50px";
       div.appendChild(this._settings);
 

@@ -46,6 +46,8 @@ class CollectionSlideCardData extends HTMLElement {
             let image = m.media_files.thumbnail[0].path;
             let thumbnail = m.media_files.thumbnail[0].path;
 
+            console.log(attributes);
+
             let mediaInfo = {
                 id,
                 entityType,
@@ -89,6 +91,8 @@ class CollectionSlideCardData extends HTMLElement {
                 attributes: media.attributes,
                 media: media,
             }
+
+            console.log(attributes);
 
             let slideCard = {
                 id,

@@ -102,8 +102,8 @@ class EntityGalleryLabels extends TatorElement {
     const checkboxList = this.makeListFrom(typeData, checkedFirst);
 
     const selectionBoxes = document.createElement("checkbox-set");
-    selectionBoxes._colSize = "col-4 py-1 pr-2";
-    selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-8");
+    selectionBoxes._colSize = "py-1 pr-2";
+    selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-12");
     selectionBoxes.setValue(checkboxList);
 
     // Save to refer to in get/set later
