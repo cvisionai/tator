@@ -90,6 +90,10 @@ class AnnotationsGallery extends EntityCardGallery {
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
+
+    // Listen for attribute changes
+    this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
+    this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -121,6 +125,13 @@ class AnnotationsGallery extends EntityCardGallery {
 
     // Append the cardList
     this.makeCards(cardList.cards)
+  }
+
+  cardNotSelected(id) {
+    if (id in this._currentCardIndexes) {
+      var info = this._cardElements[this._currentCardIndexes[id]];
+      info.card._li.classList.remove("is-selected");
+    }
   }
 
   /**
@@ -186,48 +197,6 @@ class AnnotationsGallery extends EntityCardGallery {
           Utilities.showSuccessIcon(msg);
         });
 
-        // Inner div of side panel
-        let annotationPanelDiv = document.createElement("div");
-        annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
-        this.panelContainer._shadow.appendChild(annotationPanelDiv);
-
-        // Init a side panel that can be triggered from card
-        let annotationPanel = document.createElement("entity-gallery-panel");
-        annotationPanelDiv.appendChild(annotationPanel);
-
-        // Listen for attribute changes
-        annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
-        annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
-
-        // Check and set current permission level on annotationPanel
-        if (this.panelContainer.hasAttribute("permissionValue")) {
-          let permissionVal = this.panelContainer.getAttribute("permissionValue");
-          annotationPanel.entityData.setAttribute("permission", permissionVal);
-          annotationPanel.stateData.setAttribute("permission", permissionVal);
-          annotationPanel.mediaData.setAttribute("permission", permissionVal);
-        }
-
-        // when lock changes set attribute on forms to "View Only" / "Can Edit"
-        this.panelContainer.addEventListener("permission-update", (e) => {
-          this.panelContainer.setAttribute("permissionValue", e.detail.permissionValue);
-          annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
-          annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
-        });
-
-        // Update view
-        annotationPanelDiv.addEventListener("unselected", () => {
-          card._li.classList.remove("is-selected");
-          annotationPanelDiv.classList.remove("is-selected");
-          annotationPanelDiv.classList.add("hidden");
-        });
-
-        // Listen for all clicks on the document
-        document.addEventListener('click', function (evt) {
-          if (evt.target.tagName == "BODY" && card._li.classList.contains("is-selected")) {
-            card._li.click();
-          }
-        }, false);
-
         // Open panel if a card is clicked
         card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
 
@@ -238,9 +207,7 @@ class AnnotationsGallery extends EntityCardGallery {
         });
 
         cardInfo = {
-          card: card,
-          annotationPanel: annotationPanel,
-          annotationPanelDiv: annotationPanelDiv
+          card: card
         };
         this._cardElements.push(cardInfo);
 
@@ -248,10 +215,6 @@ class AnnotationsGallery extends EntityCardGallery {
       } else {
         card = this._cardElements[index].card;
       }
-
-      // Initialize the card panel
-      this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-      this._cardElements[index].annotationPanel.init({ cardObj });
 
       // Non-hidden attributes (ie order >= 0))
       let nonHiddenAttrs = [];
@@ -276,9 +239,8 @@ class AnnotationsGallery extends EntityCardGallery {
 
       // Initialize Card
       card.init({
-        obj : cardObj,
+        obj: cardObj,
         panelContainer : this.panelContainer,
-        annotationPanelDiv : this._cardElements[index].annotationPanelDiv,
         cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
       });
 

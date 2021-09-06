@@ -7,7 +7,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       */
       this.panelContainer = null;
 
-      this.h2.appendChild( document.createTextNode("Collections") );
+      this.h2.appendChild(document.createTextNode("Collections"));
 
       this.sliderList = document.createElement("div");
       this.sliderList.setAttribute("class", "slider-list");
@@ -27,8 +27,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._resizeCards = document.createElement('entity-card-resize');
       this.colSize = 272;
       this._resizeCards._initGallery(null, this.colSize);
-      this.resizeContainer.appendChild( this._resizeCards );
-      this._tools.appendChild( this.resizeContainer );
+      this.resizeContainer.appendChild(this._resizeCards);
+      this._tools.appendChild(this.resizeContainer);
 
       // Display options in more menu
       // Note: this is appended to filter nav in collections.js
@@ -37,7 +37,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       /**
        * SLIDER Label display options link for menu, and checkbox div
-      */ 
+      */
       this._attributeLabels = document.createElement("entity-gallery-labels");
       this._mainTop.appendChild(this._attributeLabels);
       this._attributeLabels.menuLinkTextSpan.innerHTML = "Collection Labels";
@@ -45,7 +45,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       /**
        * CARD Label display options link for menu, and checkbox div
-       */ 
+       */
       this._cardAtributeLabels = document.createElement("entity-gallery-labels");
       this._mainTop.appendChild(this._cardAtributeLabels);
       this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
@@ -53,7 +53,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       /**
        * CARD Sort display options link for menu, and checkbox div
-       */ 
+       */
       this._cardAtributeSort = document.createElement("entity-gallery-sort");
       this._mainTop.appendChild(this._cardAtributeSort);
       this._cardAtributeSort.menuLinkTextSpan.innerHTML = "Sort Entries";
@@ -104,15 +104,21 @@ class CollectionsGallery extends EntityCardSlideGallery {
          let typeId = stateType.id;
 
          this.currentLabelValues[typeId] = labelValues;
-         
+
          // Provide labels and access to the sliders
-         let labels = this._attributeLabels.add({ 
-               typeData: stateType 
-            });
+         let labels = this._attributeLabels.add({
+            typeData: stateType
+         });
 
          // Slider label display changes
          this._attributeLabels.addEventListener("labels-update", this.labelsUpdate.bind(this));
       }
+
+      // form change listeners
+      // Listen for attribute changes
+      this.panelControls._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
+      this.panelControls._panel.stateData.addEventListener("save", this.stateFormChange.bind(this));
+      this.panelControls._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
    }
 
 
@@ -129,10 +135,22 @@ class CollectionsGallery extends EntityCardSlideGallery {
             s.showLabels(labelValues);
          }
       }
-      
+
       let msg = `Collection labels updated`;
       Utilities.showSuccessIcon(msg);
    }
+
+   cardNotSelected(id) {
+      // find the slider, and pass labelvalues)
+      for (let s of this._sliderElements) {
+         if (id in s._currentCardIndexes) {
+            var info = s._cardElements[s._currentCardIndexes[id]];
+            return info.card._li.classList.remove("is-selected");
+         }
+      }
+   }
+
+
 
    updateFilterResults(filterConditions, page, pageSize) {
       this._filterConditions = filterConditions;
@@ -165,7 +183,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             this._paginator.init(totalCount, this.collectionsData.getPaginationState());
          }
 
-         if (cardList.total == 0) {
+         if (totalCount.total == 0) {
             this._numFiles.textContent = `${totalCount} Results`;
          } else {
             this._numFiles.textContent = `Viewing ${paginationState.start + 1} to ${paginationState.stop > totalCount ? totalCount : paginationState.stop} of ${totalCount} Results`;
@@ -244,7 +262,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       } else {
          this._numFiles.textContent = ` Viewing ${paginationState.start + 1} to ${paginationState.stop > numResults ? numResults : paginationState.stop} of ${numResults} Results`;
       }
-      
+
       this.analyticsSettings.setAttribute("pagesize", this.collectionsData.getPageSize());
       this.analyticsSettings.setAttribute("page", this.collectionsData.getPage());
       window.history.pushState({}, "", this.analyticsSettings.getURL());
@@ -254,7 +272,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       const currentSliderEls = [];
       let sliderPage = this.collectionsData.getPage();
       this._sliderLists[sliderPage] = sliderList;
-      
+
       // Append the sliders
       for (let idx = 0; idx < states.length; idx++) {
          let state = states[idx];
@@ -281,11 +299,11 @@ class CollectionsGallery extends EntityCardSlideGallery {
             cardType: "collections-card",
             attributes: state.attributes,
             state,
-            gallery: this 
+            gallery: this
          });
 
          slider.unshownCards = {};
-         slider._fullCardsAdded = false;  
+         slider._fullCardsAdded = false;
 
          let currentCount = (sliderPage - 1) * this.collectionsData.getPageSize() + idx + 1;
          slider.setAttribute("title", `${state.typeData.name} ID: ${state.id}`);
@@ -327,7 +345,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          const totalList = galleryList.length;
 
          // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
-         if (totalList > 0) {        
+         if (totalList > 0) {
             // Get the localizations & make cards with slideCard
             let cardsTmp = [];
 
@@ -338,7 +356,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   card.counter = counter;
 
                   if (card) {
-                     cardsTmp.push(card);                     
+                     cardsTmp.push(card);
                   }
                } else {
                   const cardInitData = { type: state.typeData.association, id, totalList };
@@ -351,7 +369,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
             // This will dupe check if it already exists for this type, or add
             let entityTypeData = cardsTmp[0][0].entityType;
-            this._cardAtributeSort.add({ 
+            this._cardAtributeSort.add({
                typeData: entityTypeData
             });
 
@@ -362,7 +380,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             let order = sortOrder.getValue()
             let fnCheck = this._cardAtributeSort.getFnCheck(order);
             let prop = sortProperty.getValue();
-            if(!(order == "true" && prop == "ID")){
+            if (!(order == "true" && prop == "ID")) {
                console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
 
                cardsTmp.sort((a, b) => {
@@ -375,14 +393,14 @@ class CollectionsGallery extends EntityCardSlideGallery {
                   return fnCheck(aVal, bVal);
                });
 
-               for(let [idx, obj] of Object.entries(cardsTmp)){
+               for (let [idx, obj] of Object.entries(cardsTmp)) {
                   // update counter used for card placement
                   obj.counter = Number(idx);
                }
             }
 
-            for(let card of cardsTmp){
-               this._dispatchCardData({slider, card, counter: card.counter, totalList, state})
+            for (let card of cardsTmp) {
+               this._dispatchCardData({ slider, card, counter: card.counter, totalList, state })
             }
 
             if (totalList <= this._previewCardCount) {
@@ -399,7 +417,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       }
    }
 
-   _dispatchCardData({slider, card, counter, totalList, state}){
+   _dispatchCardData({ slider, card, counter, totalList, state }) {
       card[0].posText = `${counter + 1} of ${totalList}`;
       card[0].stateType = state.typeData.association;
       card[0].stateInfo = {
@@ -419,7 +437,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // }
    }
 
-   _setupSliderPgn({slider, totalList}){
+   _setupSliderPgn({ slider, totalList }) {
       // setup navigation within this slider
       let topNav = document.createElement("entity-gallery-paginator");
       let bottomNav = document.createElement("entity-gallery-paginator");
@@ -511,10 +529,10 @@ class CollectionsGallery extends EntityCardSlideGallery {
          id: e.detail.id,
          values: { attributes: e.detail.values },
          type: "Localization"
-      }).then((data) => {   
+      }).then((data) => {
          //console.log("Localization form change.....") 
          for (let s of this._sliderElements) {
-            if(s.state.typeData.association == "Localization"){
+            if (s.state.typeData.association == "Localization") {
                s.updateCardData(data);
             }
          }
@@ -542,19 +560,19 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    mediaFormChange(e) {
-    var mediaId = e.detail.id;
-    this.formChange({
-      id: e.detail.id,
-      values: { attributes: e.detail.values },
-      type: "Media"
-    }).then(() => {
-      for (let s of this._sliderElements) {
-         if(s.state.typeData.association == "Media"){
-            s.updateCardData(data);
+      var mediaId = e.detail.id;
+      this.formChange({
+         id: e.detail.id,
+         values: { attributes: e.detail.values },
+         type: "Media"
+      }).then((data) => {
+         for (let s of this._sliderElements) {
+            if (s.state.typeData.association == "Media") {
+               s.updateCardData(data);
+            }
          }
-      }
-    });
-   }   
+      });
+   }
 
    async formChange({ type, id, values } = {}) {
       var result = await fetch(`/rest/${type}/${id}`, {
@@ -606,27 +624,27 @@ class CollectionsGallery extends EntityCardSlideGallery {
    _cardSortUpdate(evt) {
       this._parentPage.showDimmer();
       this._parentPage.loading.showSpinner();
-      
+
       let property = evt.detail.sortProperty;
       let sortType = evt.detail.sortType;
       //console.log(`Sorting ${property} in Asc? ${sortType}`);
 
-      try{
+      try {
          for (let s of this._sliderElements) {
             // go through all cards, and sort them..
             let fnCheck = sortType ? this._cardAtributeSort.ascCheck : this._cardAtributeSort.dscCheck;
 
             // #todo handle pagination
-            let cards = this._cardAtributeSort._sortCards({ 
-               cards: s._cardElements, 
-               slider: s, 
-               fnCheck, 
+            let cards = this._cardAtributeSort._sortCards({
+               cards: s._cardElements,
+               slider: s,
+               fnCheck,
                property
             });
 
             // #todo look into reuse of slider.makeCards
             s.updateCardOrder(cards);
-            
+
          }
          this._parentPage.loading.hideSpinner();
          this._parentPage.hideDimmer();
@@ -639,7 +657,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
          let msg = `Entry sort error`;
          console.error(e);
-         Utilities.warningAlert(msg, "#ff3e1d", false); 
+         Utilities.warningAlert(msg, "#ff3e1d", false);
       }
    }
 }

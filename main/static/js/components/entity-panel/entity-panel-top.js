@@ -80,11 +80,11 @@ class EntityGalleryPanelTop extends TatorElement {
     // If the panel is showing a localization default is true
     this.localizationType = true;
 
-    /* #TODO
+    /* 
      * Create 1 panel, and init it / reuse it from card sending it cardObj data (currently done on card creation) 
      */
-    // this._panel = document.createElement("entity-gallery-panel");
-    // this._box.appendChild(this._panel);
+    this._panel = document.createElement("entity-gallery-panel");
+    this._box.appendChild(this._panel);
   }
 
   static get observedAttributes() {
@@ -116,11 +116,12 @@ class EntityGalleryPanelTop extends TatorElement {
       this.locDataHandler(evtDetail);
     }
     this.headingHandler(evtDetail);
-    //this.panelDataHandler(evtDetail);
+    this.panelDataHandler(evtDetail);
     this.navigationHandler(evtDetail, cardElements, cardIndexes);
   }
 
   navigationHandler(evtDetail, cardElements, cardIndexes) {
+    // console.log("nav handler?")
     if (this._navigation.getInit() && evtDetail.openFlag) {
       this._navigation.classList.remove("hidden");
       this._navigation.handle({
@@ -133,9 +134,14 @@ class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  panelDataHandler(evtDetail){
-    let cardObj = evtDetail.cardObj
-    this._panel.init({cardObj});
+  panelDataHandler(evtDetail) {
+    // console.log(evtDetail.cardObj);
+    if (evtDetail.openFlag) {
+      this._panel.init({ cardObj: evtDetail.cardObj });
+      this._panel.hidden = false;
+    } else {
+      this._panel.hidden = true;
+    }
   }
 
   locDataHandler(evtDetail) {

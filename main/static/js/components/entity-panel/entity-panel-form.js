@@ -18,6 +18,7 @@ class EntityGalleryPanelForm extends TatorElement {
     this._div.appendChild(this._attributes);
 
     this._attributes.addEventListener("change", this._emitChangedData.bind(this));
+  
   }
 
   static get observedAttributes() {
@@ -77,6 +78,7 @@ class EntityGalleryPanelForm extends TatorElement {
   setValues(data) {
     this._attributes.setValues(data);
   }
+
 }
 
 customElements.define("entity-panel-form", EntityGalleryPanelForm);

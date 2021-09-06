@@ -251,6 +251,13 @@ class EntityGallerySlider extends TatorElement {
       this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
    }
 
+   cardNotSelected(id) {
+      if (id in this._currentCardIndexes) {
+        var info = this._cardElements[this._currentCardIndexes[id]];
+        info.card._li.classList.remove("is-selected");
+      }
+    }
+
    _addCard(index, cardObj, cardType) { 
       let newCard = false;
       let location = this._currentCardIndexes[cardObj.id];
@@ -294,49 +301,11 @@ class EntityGallerySlider extends TatorElement {
             this._resizeCards._rangeHandler(resizeValue, this._ul);
          });
 
-         // Inner div of side panel
-         let annotationPanelDiv = document.createElement("div");
-         annotationPanelDiv.setAttribute("class", "entity-panel--div hidden");
-         this.panelContainer._shadow.appendChild(annotationPanelDiv);
-
-         // // Init a side panel that can be triggered from card
-         // let annotationPanel = this.panelContainer._panelTop._panel;
-         let annotationPanel = document.createElement("entity-gallery-panel");
-         annotationPanelDiv.appendChild(annotationPanel);
-
-         // Listen for attribute changes
-         
-         // #todo needs to be componentized?
-         annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
-         annotationPanel.stateData.addEventListener("save", this.stateFormChange.bind(this));
-         annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
-
-         if (this.panelContainer.hasAttribute("permissionValue")) {
-            let permissionVal = this.panelContainer.getAttribute("permissionValue");
-            annotationPanel.entityData.setAttribute("permission", permissionVal);
-            annotationPanel.stateData.setAttribute("permission", permissionVal);
-            annotationPanel.mediaData.setAttribute("permission", permissionVal);
-         }
-
-         // when lock changes set attribute on forms to "View Only" / "Can Edit"
-         this.panelContainer.addEventListener("permission-update", (e) => {
-            annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
-            annotationPanel.stateData.setAttribute("permission", e.detail.permissionValue);
-            annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
-         });
-
          this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
             card._updateShownAttributes(evt);
             this.gallery.cardLabelsChosenByType[this.entityTypeId] =  evt.detail.value;
             let msg = `Entry labels updated`;
             Utilities.showSuccessIcon(msg);
-         });
-
-         // Update view unselected card panel
-         annotationPanelDiv.addEventListener("unselected", () => {
-            card._li.classList.remove("is-selected");
-            annotationPanelDiv.classList.remove("is-selected");
-            annotationPanelDiv.classList.add("hidden");
          });
 
          // Listen for all clicks on the document
@@ -356,9 +325,7 @@ class EntityGallerySlider extends TatorElement {
          // });
 
          let cardInfo = {
-            card: card,
-            annotationPanel: annotationPanel,
-            annotationPanelDiv: annotationPanelDiv
+            card: card
          };
 
          /*
@@ -371,11 +338,9 @@ class EntityGallerySlider extends TatorElement {
                card.setImageStatic(cardObj.image);
             }
          }*/
-         this._ul.appendChild(card);
 
+         this._ul.appendChild(card);
          this._cardElements.push(cardInfo);
-         // console.log(this._cardElements.length);
-         // console.log(index);
 
          if (this._preloadedImages[cardObj.id]) {
             const image = this._preloadedImages[cardObj.id];
@@ -387,17 +352,10 @@ class EntityGallerySlider extends TatorElement {
          cardObj.attributeOrder = this._cardLabelOptions;
          this._currentCardIndexes[cardObj.id] = index;
 
-         // Initialize the card panel
-         this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
-         this._cardElements[index].annotationPanel.init({
-            cardObj
-         });
-
          // Initialize Card
          card.init({
             obj: cardObj,
             panelContainer: this.panelContainer,
-            annotationPanelDiv: this._cardElements[index].annotationPanelDiv,
             cardLabelsChosen: this.gallery.cardLabelsChosenByType[this.entityTypeId] ?  this.gallery.cardLabelsChosenByType[this.entityTypeId] : []
          });
 
@@ -473,6 +431,7 @@ class EntityGallerySlider extends TatorElement {
    }
 
    updateCardData(newCardData) {
+      // console.log(newCardData);
       try{
          const index = this._currentCardIndexes[newCardData.id];
          const card = this._cardElements[index].card;

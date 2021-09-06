@@ -75,7 +75,7 @@ class EntityPanelNavigation extends TatorElement {
    }
 
    _emitSelection(action, value = null) {
-      console.log("updated via emit selection");
+      // console.log("updated via emit selection");
       let newCardIndex = null;
       let total = this._data.length;
 
@@ -88,7 +88,7 @@ class EntityPanelNavigation extends TatorElement {
          newCardIndex = value;
       }
 
-      console.log(`newCardIndex ${newCardIndex} and current index is this._cardIndex ${this._cardIndex} (displayed should be +1)`);
+      // console.log(`newCardIndex ${newCardIndex} and current index is this._cardIndex ${this._cardIndex} (displayed should be +1)`);
 
       if (newCardIndex < 0) {
          console.log(`But oops we're out of range! [START -1]  setting to end of the line`);
@@ -118,7 +118,7 @@ class EntityPanelNavigation extends TatorElement {
    }
 
    handle({ cardElements, cardIndexes, cardObj }) {
-      console.log("handled via panel top");
+      // console.log("handled via panel top");
       // Setup next/prev/slider nav
       this._data = cardElements;
       this._cardIndex = cardIndexes[cardObj.id];
@@ -131,7 +131,7 @@ class EntityPanelNavigation extends TatorElement {
       let start = Number(cardIndex) + 1;
       let total = this._data.length;
 
-      console.log("Navigation Init at card index: " + cardIndex);
+      // console.log("Navigation Init at card index: " + cardIndex);
 
       this._current.textContent = start;
       // this._slider.setAttribute("value", start);
