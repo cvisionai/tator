@@ -431,38 +431,41 @@ class EntityGallerySlider extends TatorElement {
    }
 
    updateCardData(newCardData) {
-      // console.log(newCardData);
+
       try{
          const index = this._currentCardIndexes[newCardData.id];
-         const card = this._cardElements[index].card;
-         //console.log(card);
-      
-         if(card){
-            card._updateAttributeValues(newCardData);
-         }
-        
-         // Then... Check if we need to resort
-         let sortProperty = this._cardAtributeSort._selectionValues[this.entityTypeId].getValue();
-         let comparedVals = card.cardObj.attributes[sortProperty] === newCardData.attributes[sortProperty];
-
-         //update the cards' cardObject, not just display
+         let card = null;
          
-         // console.log(!comparedVals)
-         if(!comparedVals){
-            card.cardObj = newCardData;
-            // #todo _sortCards should accept typeId, then fn check and property off current settings
-            let sortOrder = this._cardAtributeSort._sortOrderValues[this.entityTypeId].getValue();
+      
+         if (typeof index !== "undefined" && index !== null) {
+            card = this._cardElements[index].card;
+            card._updateAttributeValues(newCardData);
+         
+            console.log(card);
+         
+            // Then... Check if we need to resort
+            let sortProperty = this._cardAtributeSort._selectionValues[this.entityTypeId].getValue();
+            let comparedVals = card.cardObj.attributes[sortProperty] === newCardData.attributes[sortProperty];
 
-            // console.log(sortOrder);
-            let cards = this._cardAtributeSort._sortCards({
-               cards: this._cardElements, 
-               slider: this, 
-               fnCheck: this._cardAtributeSort.getFnCheck(sortOrder), 
-               property: sortProperty
-            });
-            this.updateCardOrder(cards);
-         } else {
-            card.cardObj = newCardData;
+            //update the cards' cardObject, not just display
+            
+            // console.log(!comparedVals)
+            if(!comparedVals){
+               card.cardObj = newCardData;
+               // #todo _sortCards should accept typeId, then fn check and property off current settings
+               let sortOrder = this._cardAtributeSort._sortOrderValues[this.entityTypeId].getValue();
+
+               // console.log(sortOrder);
+               let cards = this._cardAtributeSort._sortCards({
+                  cards: this._cardElements, 
+                  slider: this, 
+                  fnCheck: this._cardAtributeSort.getFnCheck(sortOrder), 
+                  property: sortProperty
+               });
+               this.updateCardOrder(cards);
+            } else {
+               card.cardObj = newCardData;
+            }
          }
       } catch(e){
          console.error("Cards not updated due to error: " + e);
