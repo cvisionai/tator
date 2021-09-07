@@ -14,6 +14,7 @@ from rest_framework.schemas import get_schema_view
 from .views import APIBrowserView
 from .views import MainRedirect
 from .views import RegistrationView
+from .views import AcceptView
 from .views import PasswordResetRequestView
 from .views import PasswordResetView
 from .views import OrganizationsView
@@ -72,6 +73,7 @@ urlpatterns = [
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(),
          name='anonymous-gateway'),
     path('registration', RegistrationView.as_view(), name='registration'),
+    path('accept', AcceptView.as_view(), name='accept'),
     path('token', TokenView.as_view(), name='token'),
     path('accounts/password_change/', PasswordChangeView.as_view()),
     path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),

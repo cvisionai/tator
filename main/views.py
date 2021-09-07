@@ -16,6 +16,9 @@ from .models import Organization
 from .models import Project
 from .models import Media
 from .models import Membership
+from .models import Affiliation
+from .models import Invitation
+from .models import User
 from .notify import Notify
 from .cache import TatorCache
 
@@ -52,6 +55,31 @@ class MainRedirect(View):
 
 class RegistrationView(TemplateView):
     template_name = 'registration/registration.html'
+
+class AcceptView(TemplateView):
+    template_name = 'registration/accept.html'
+    def dispatch(self, request, *args, **kwargs):
+        if 'registration_token' in request.GET:
+            invites = Invitation.objects.filter(registration_token=request.GET['registration_token'],
+                                                status='Pending')
+            logger.info(f"GOT {invites.count} INVITES!!")
+            if invites.count() == 0:
+                return HttpResponse(status=403)
+            else:
+                invite = invites[0]
+                user = User.objects.filter(email=invite.email)
+                if user.count() == 0:
+                    return HttpResponse(status=403)
+                user = user[0]
+                Affiliation.objects.create(organization=invite.organization,
+                                           permission=invite.permission,
+                                           user=user)
+                invite.status = "Accepted"
+                invite.save()
+        else:
+            logger.info(f"NO REGISTRATION TOKEN!!")
+            return HttpResponse(status=403)
+        return super().dispatch(request, *args, **kwargs)
 
 class PasswordResetRequestView(TemplateView):
     template_name = 'password-reset/password-reset-request.html'

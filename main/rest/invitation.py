@@ -8,6 +8,7 @@ from django.http import Http404
 
 from ..models import Invitation
 from ..models import Organization
+from ..models import Affiliation
 from ..models import User
 from ..models import database_qs
 from ..schema import InvitationListSchema
@@ -51,22 +52,31 @@ class InvitationListAPI(BaseListView):
         if existing.exists():
             raise RuntimeError(f"Pending invitation already exists for organization {organization}, email {email}!")
         users = User.objects.filter(email=email)
-        if users.count() > 0:
-            raise RuntimeError(f"User already exists with email {email}!")
+        if users.count() > 1:
+            raise RuntimeError(f"Multiple users exist with email {email}!")
         else:
             invite = Invitation(organization=organization,
                                 email=email,
                                 permission=permission,
                                 created_by=self.request.user,
                                 registration_token=uuid.uuid1())
-            url = f"{os.getenv('MAIN_HOST')}/registration?registration_token={invite.registration_token}"
+            if users.count() == 1:
+                affiliations = Affiliation.objects.filter(user=users[0], organization=organization)
+                if affiliations.count() > 0:
+                    raise RuntimeError(f"Affiliation already exists for email {email}!")
+                url = f"{os.getenv('MAIN_HOST')}/accept?registration_token={invite.registration_token}"
+                text = (f"You have been invited to collaborate with {organization} using Tator. "
+                        f"To accept this invitation, please visit: \n\n{url}")
+            else:
+                url = f"{os.getenv('MAIN_HOST')}/registration?registration_token={invite.registration_token}"
+                text = (f"You have been invited to collaborate with {organization} using Tator. "
+                        f"To create an account, please visit: \n\n{url}")
             if settings.TATOR_EMAIL_ENABLED:
                 email_response = TatorSES().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[email],
                     title=f"Tator invitation from {organization}",
-                    text=f"You have been invited to collaborate with {organization} using Tator. "
-                         f"To create an account, please visit: \n\n{url}",
+                    text=text,
                     html=None,
                     attachments=[])
                 if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
