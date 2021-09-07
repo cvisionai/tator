@@ -160,6 +160,8 @@ class TatorData {
 
     this._localizationTypeNames = [];
     this._localizationTypes.forEach(typeElem => this._localizationTypeNames.push(typeElem.name));
+
+    return this._localizationTypes;
   }
 
   /**
@@ -196,6 +198,7 @@ class TatorData {
 
     this._mediaTypeNames = [];
     this._mediaTypes.forEach(typeElem => this._mediaTypeNames.push(typeElem.name));
+    return this._mediaTypes;
   }
 
   /**

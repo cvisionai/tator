@@ -11,16 +11,18 @@ class AnnotationCardData extends HTMLElement {
    * @precondition The provided modelData must have been initialized
    * @param {TatorData} modelData
    */
-  init(modelData) {
+  async init(modelData) {
     this._modelData = modelData;
 
-    this.mediaTypes = this._modelData.getStoredMediaTypes();
+    // this.mediaTypes = this._modelData.getStoredMediaTypes();
+    this.mediaTypes = await this._modelData.getAllMediaTypes()
     this.mediaTypeMap = new Map();
     for (const mediaType of this.mediaTypes) {
       this.mediaTypeMap.set(mediaType.id, mediaType);
     }
 
-    this.localizationTypes = this._modelData.getStoredLocalizationTypes();
+    // this.localizationTypes = this._modelData.getStoredLocalizationTypes();
+    this.localizationTypes = await this._modelData.getAllLocalizationTypes();
     this.localizationTypeMap = new Map();
     for (const locType of this.localizationTypes) {
       this.localizationTypeMap.set(locType.id, locType);
