@@ -778,7 +778,7 @@ class AnnotationPage extends TatorPage {
           let isTrack=false;
           let isTLState=false;
           if ("dtype" in dataType) {
-            isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
+            isLocalization = ["box", "line", "dot", "poly"].includes(dataType.dtype);
           }
           if ("association" in dataType) {
             isTrack = (dataType.association == "Localization");
@@ -992,7 +992,7 @@ class AnnotationPage extends TatorPage {
         });
         this._saves = {};
 
-        for (const dataType of ["box", "line", "dot"]) {
+        for (const dataType of ["poly", "box", "line", "dot"]) {
           const save = document.createElement("save-dialog");
           const dataTypes = localizationTypes.filter(type => type.dtype == dataType
                                                              && type.visible
@@ -1483,7 +1483,7 @@ class AnnotationPage extends TatorPage {
 
   _getSave(objDescription) {
     let save;
-    if (["box", "line", "dot"].includes(objDescription.dtype)) {
+    if (["poly", "box", "line", "dot"].includes(objDescription.dtype)) {
       save = this._saves[objDescription.dtype];
     } else {
       save = this._saves[objDescription.id];

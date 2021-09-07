@@ -947,6 +947,14 @@ class DrawGL
 
     for (var idx = 0; idx < length; idx++)
     {
+      if (idx == length - 1)
+      {
+         if (points[0][0] == points[idx][0] && points[0][1] == points[idx][1])
+         {
+           // Skip closing point in a closed poly
+           break;
+         }
+      }
       // Account for margin
       var start=points[idx % length];
       var dest=points[(idx+1)%length];
@@ -970,6 +978,11 @@ class DrawGL
     if (points.length < 3)
     {
       console.error("Can't draw polygon with less than 3 points");
+      return;
+    }
+    if (points.length > 4)
+    {
+      console.warn("We only support rectangle fill");
       return;
     }
 
