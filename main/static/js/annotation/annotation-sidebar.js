@@ -19,6 +19,9 @@ class AnnotationSidebar extends TatorElement {
     this._point = document.createElement("point-button");
     this._div.appendChild(this._point);
 
+    this._poly = document.createElement("poly-button");
+    this._div.appendChild(this._poly);
+
     this._track = document.createElement("track-button");
     this._div.appendChild(this._track);
 
@@ -71,13 +74,15 @@ class AnnotationSidebar extends TatorElement {
 
   set permission(val) {
     if (hasPermission(val, "Can Edit")) {
-      if (!this._box.permenantDisable)
+      if (!this._box.permanentDisable)
         this._box.removeAttribute("disabled");
-      if (!this._line.permenantDisable)
+      if (!this._line.permanentDisable)
         this._line.removeAttribute("disabled");
-      if (!this._point.permenantDisable)
+      if (!this._point.permanentDisable)
         this._point.removeAttribute("disabled");
-      if (!this._track.permenantDisable)
+      if (!this._poly.permanentDisable)
+        this._poly.removeAttribute("disabled");
+      if (!this._track.permanentDisable)
         this._track.removeAttribute("disabled");
     } else {
       this._box.setAttribute("disabled", "");
@@ -106,7 +111,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._box.setAttribute("disabled", "");
-      this._box.permenantDisable = true;
+      this._box.permanentDisable = true;
     }
 
     if (typeof val.line !== "undefined") {
@@ -127,7 +132,7 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._line.setAttribute("disabled", "");
-      this._line.permenantDisable = true;
+      this._line.permanentDisable = true;
     }
 
     if (typeof val.dot !== "undefined") {
@@ -148,7 +153,28 @@ class AnnotationSidebar extends TatorElement {
       });
     } else {
       this._point.setAttribute("disabled", "");
-      this._point.permenantDisable = true;
+      this._point.permanentDisable = true;
+    }
+
+    if (typeof val.poly !== "undefined") {
+      this._poly.addEventListener("click", (evt) => {
+        this._selectButton(this._poly, evt.shiftKey);
+        this.dispatchEvent(new CustomEvent("newMeta", {
+          detail: {typeId: val.poly[0].id,
+                   metaMode: true}
+        }));
+      });
+      document.addEventListener("keydown", evt => {
+        if (document.body.classList.contains("shortcuts-disabled")) {
+          return;
+        }
+        if (evt.keyCode === 80) {
+          this._poly.dispatchEvent(new MouseEvent("click", {shiftKey: evt.shiftKey}));
+        }
+      });
+    } else {
+      this._poly.setAttribute("disabled", "");
+      this._poly.permanentDisable = true;
     }
   }
 

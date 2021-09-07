@@ -18,6 +18,139 @@ function updateStatus(msg, type, timeout)
   // This function should be deleted.
 }
 
+function distance_func(a,b)
+{
+  return Math.sqrt(Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2));
+}
+
+function enclosing_box(poly)
+{
+  let minX = Number.MAX_SAFE_INTEGER;
+  let minY = Number.MAX_SAFE_INTEGER;
+  let maxX = 0;
+  let maxY = 0;
+  for (let anchor of poly)
+  {
+    if (anchor[0] > maxX)
+      maxX = anchor[0]
+    if (anchor[1] > maxY)
+      maxY = anchor[1]
+    if (anchor[0] < minX)
+      minX = anchor[0]
+    if (anchor[1] < minY)
+      minY = anchor[1]
+  }
+  return [minX,minY,maxX,maxY];
+}
+
+class PolyMaker
+{
+  constructor(annotation)
+  {
+    this._ctrl = annotation;
+    this._points = [];
+    this._complete = false;
+  }
+
+  reset()
+  {
+    this._points = [];
+    this._complete = false;
+  }
+
+  drawPointsAndLines(loc)
+  {
+    let width = defaultDrawWidth*this._ctrl._draw.displayToViewportScale()[0];
+    for (let p of this._points)
+    {
+      this._ctrl._draw.drawCircle(p, width, color.WHITE);
+    }
+
+    if (this._points.length >= 2)
+    {
+      for (let idx = 0; idx < this._points.length-1; idx++)
+      {
+        this._ctrl._draw.drawLine(this._points[idx], this._points[idx+1], color.WHITE);
+      }
+    }
+
+    if (this._points.length > 0 && loc)
+    {
+      this._ctrl._draw.drawLine(this._points[this._points.length-1], loc, color.GRAY);
+    }
+
+    if (loc)
+    {
+      let isClose = false;
+      if (this._points.length > 0)
+      {
+        let distance = distance_func(loc,this._points[0]);
+        if (distance < 10)
+        {
+          width *= 2.50;
+        }
+      }
+      this._ctrl._draw.drawCircle(loc, width, color.WHITE);
+    }
+    this._ctrl._draw.dispImage(true, true);
+  }
+
+  onMouseDown(loc)
+  {
+    if (this._complete)
+    {
+      return;
+    }
+    if (this._points.length > 0)
+    {
+      let distance = distance_func(loc,this._points[0]);
+      if (distance < 10)
+      {
+        // Close it
+        this._points.push(this._points[0]);
+        this.drawPointsAndLines();
+        this._complete = true;
+        let [minX,minY,maxX,maxY] = enclosing_box(this._points);
+        let exploded = [];
+        for (let p of this._points)
+        {
+          exploded.push(p[0]);
+          exploded.push(p[1]);
+        }
+        exploded = this._ctrl.scaleToRelative(exploded, true);
+        let fixed = [];
+        for (let idx = 0; idx < exploded.length; idx+=2)
+        {
+          fixed.push([exploded[idx],exploded[idx+1]]);
+        }
+        let fakeDrag = {start: {x:minX,y:minY},
+                        end: {x:maxX,y:maxY},
+                        points: fixed,
+                        url: this._ctrl._draw.viewport.toDataURL()};
+        this._ctrl.makeModalCreationPrompt(this._ctrl.draft,fakeDrag)
+        this._ctrl._canvas.dispatchEvent(
+          new CustomEvent("drawComplete",
+                    {composed: true,
+                     detail: {metaMode: this._ctrl._metaMode}
+                    }));
+        this._ctrl.defaultMode();
+
+        return;
+      }
+    }
+    this._points.push(loc);
+    this.drawPointsAndLines();
+  }
+
+  onMouseOver(loc)
+  {
+    if (this._complete)
+    {
+      return;
+    }
+    this.drawPointsAndLines(loc);
+  }
+}
 // The clipboard acts like the power point clipboard
 // +++++++++++++++++++++++++++++++++++
 // +++++ Behavorial expectations: ++++
@@ -536,6 +669,9 @@ const MouseMode =
 
         // User is panning an roi
         PAN: 6,
+
+        // User is making a new polygon
+        NEW_POLY: 7
       };
 
 
@@ -791,6 +927,7 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuFrame = 0;
 
     this._clipboard = new Clipboard(this);
+    this._polyMaker = new PolyMaker(this);
 
     this._draw=new DrawGL(this._canvas);
     this._dragHandler = new CanvasDrag(this,
@@ -2018,6 +2155,23 @@ class AnnotationCanvas extends TatorElement
     for (let localization of localizations)
     {
       var meta = that.getObjectDescription(localization);
+      if (meta.dtype == "poly")
+      {
+        let [minX,minY,maxX,maxY] = enclosing_box(localization.points);
+        let in_poly = (loc) => {
+          return loc[0] >= minX && loc[0] <= maxX && loc[1] >= minY && loc[1] <= maxY;
+        }
+        const poly_threshold = hypot(maxX-minX,maxY-minY);
+        for (let anchor of localization.points)
+        {
+          var distance = distance_func(anchor, loc);
+          if (distance < poly_threshold && in_poly(loc))
+          {
+            distances.push({"distance": distance,
+                            "data": localization});
+          }
+        }
+      }
       if (meta.dtype == "box")
       {
         var nw = [localization.x,localization.y];
@@ -2106,19 +2260,31 @@ class AnnotationCanvas extends TatorElement
     var scaleFactor=[drawCtx.clientWidth/roi[2],
                      drawCtx.clientHeight/roi[3]];
 
-    //Scale box dimenisons
-    var actX = (localization.x - roi[0]) *scaleFactor[0];
-    var actY = (localization.y - roi[1])*scaleFactor[1];
-    var actWidth = localization.width*scaleFactor[0];
-    var actHeight = localization.height*scaleFactor[1];
+    var poly = [];
+    if (localization.points)
+    {
+      for (let point of localization.points)
+      {
+        poly.push([(point[0] - roi[0]) *scaleFactor[0],
+                   (point[1] - roi[1]) *scaleFactor[1]]);
+      }
+    }
+    else
+    {
+      //Scale box dimenisons
+      var actX = (localization.x - roi[0]) *scaleFactor[0];
+      var actY = (localization.y - roi[1])*scaleFactor[1];
+      var actWidth = localization.width*scaleFactor[0];
+      var actHeight = localization.height*scaleFactor[1];
 
-    var poly = [[actX, actY],
-                [actX + actWidth,
-                 actY],
-                [actX + actWidth,
-                 actY + actHeight],
-                [actX,
-                 actY + actHeight]];
+      poly = [[actX, actY],
+              [actX + actWidth,
+               actY],
+              [actX + actWidth,
+               actY + actHeight],
+              [actX,
+                actY + actHeight]];
+    }
 
     return poly;
   }
@@ -2367,6 +2533,10 @@ class AnnotationCanvas extends TatorElement
       this._textOverlay.classList.add("select-zoom-roi");
     }
 
+    if (this._mouseMode == MouseMode.NEW_POLY)
+    {
+      this._polyMaker.onMouseOver(absImageLocation);
+    }
     if (this._mouseMode == MouseMode.NEW)
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
@@ -2440,6 +2610,10 @@ class AnnotationCanvas extends TatorElement
       {
         this._panStartRoi = this._roi;
       }
+    }
+    if (this._mouseMode == MouseMode.NEW_POLY)
+    {
+      this._polyMaker.onMouseDown(clickLocation);
     }
     if (this._mouseMode == MouseMode.NEW)
     {
@@ -2972,10 +3146,10 @@ class AnnotationCanvas extends TatorElement
           let fillAlpha = alphaInfo.fillAlpha;
           var colorInfo = that.computeLocalizationColor(localization,meta);
 
-          if (meta.dtype == 'box')
+          if (meta.dtype == 'box' || meta.dtype == 'poly')
           {
             that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width, alpha);
-            if (colorInfo['handles'] == true)
+            if (colorInfo['handles'] == true || meta.dtype == 'poly')
             {
               that.accentWithHandles(poly, getColorForFrame(frameIdx), width, alpha);
             }
@@ -3036,16 +3210,22 @@ class AnnotationCanvas extends TatorElement
                       this._draw.clientHeight/this._roi[3]];
     var shiftFactor=[this._roi[0], this._roi[1],0,0];
 
+    var relative=new Array(vector.length);
     // Lines need shifting on all coordinates
+    // First go to image coordinates to take account of zoom, etc.
     if (isLine)
     {
-      shiftFactor=[this._roi[0], this._roi[1],this._roi[0],this._roi[1]];
+      for (var idx = 0; idx < vector.length; idx++)
+      {
+        relative[idx] = ((vector[idx] / normalFactor[idx % 2]) + shiftFactor[idx%2]);
+      }
     }
-    // First go to image coordinates to take account of zoom, etc.
-    var relative=new Array(vector.length);
-    for (var idx = 0; idx < vector.length; idx++)
+    else
     {
-      relative[idx] = ((vector[idx] / normalFactor[idx % 2]) + shiftFactor[idx]);
+      for (var idx = 0; idx < vector.length; idx++)
+      {
+        relative[idx] = ((vector[idx] / normalFactor[idx % 2]) + shiftFactor[idx]);
+      }
     }
 
     return relative;
@@ -3071,7 +3251,15 @@ class AnnotationCanvas extends TatorElement
       }
       else
       {
-        this._mouseMode = MouseMode.NEW;
+        if (this._data._dataTypes[typeId].dtype == 'poly')
+        {
+          this._polyMaker.reset();
+          this._mouseMode = MouseMode.NEW_POLY;
+        }
+        else
+        {
+          this._mouseMode = MouseMode.NEW;
+        }
       }
       this.draft=objDescription;
       this._textOverlay.classList.add("select-draw");
@@ -3137,6 +3325,11 @@ class AnnotationCanvas extends TatorElement
         type = objDescription.localizationType.dtype;
       }
 
+      if (type=="poly")
+      {
+        // Forward the points to the REST call
+        requestObj.points=dragInfo.points;
+      }
       if (type=="box")
       {
         localization=this.scaleToRelative(boxInfo);
@@ -3505,8 +3698,16 @@ class AnnotationCanvas extends TatorElement
       width = Math.round(defaultDrawWidth * this._draw.displayToViewportScale()[0]);
     }
     const dotWidth = width * 1.33;
+    if (item.length > 4)
+    {
+      for (let p of item)
+      {
+        this._draw.drawCircle(p, dotWidth, color, alpha);
+      }
+    }
     if (item.length == 4)
     {
+      // Box case
       item = this.fix_box(item);
       const halfX = (item[0][0]+item[1][0])/2;
       const halfY = (item[0][1]+item[3][1])/2;
@@ -3966,7 +4167,7 @@ class AnnotationCanvas extends TatorElement
       localization.color = color.MEDIUM_GRAY;
       let alpha = 0.5*255;
 
-      if (type=='box')
+      if (type=='box' || type=='poly')
       {
         var poly = this.localizationToPoly(localization, drawContext, roi);
         drawContext.drawPolygon(poly, localization.color, width, alpha);
@@ -4016,11 +4217,11 @@ class AnnotationCanvas extends TatorElement
           localization.color = colorInfo.color
           var fill = colorInfo.fill;
 
-          if (type=='box')
+          if (type=='box' || type=='poly')
           {
             var poly = this.localizationToPoly(localization, drawContext, roi);
             drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
-            if (colorInfo['handles'] == true)
+            if (colorInfo['handles'] == true || type=='poly')
             {
               this.accentWithHandles(poly, localization.color, width, colorInfo.alpha);
             }
