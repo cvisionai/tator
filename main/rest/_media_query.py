@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_archived_filter(params):
-    archive_lifecycle = params.get("archive_lifecycle", "live")
+    archive_lifecycle = params.get("archive_lifecycle", "all")
     if archive_lifecycle == "archived":
         return ["to_archive", "archived", "to_live"]
     if archive_lifecycle == "all":

@@ -4,6 +4,7 @@ class SingleUpload {
   constructor(uploadData) {
     this.last_progress = Date.now();
     this.file = uploadData.file;
+    this.validationType = typeof uploadData.validationType != undefined ? uploadData.validationType : "image";
     this.projectId = uploadData.projectId;
     this.gid = uploadData.gid;
     this.section = uploadData.section;
@@ -104,6 +105,13 @@ class SingleUpload {
     this.aborted = true;
     this.controller.abort();
     //removeFromActive(this.upload_uid);
+  }
+
+  validateImage(data) {
+    return true;
+  }
+  validateYaml(data) {
+    return true;
   }
 }
 

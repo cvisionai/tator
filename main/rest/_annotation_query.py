@@ -59,6 +59,7 @@ def get_annotation_es_query(project, params, annotation_type):
                 {'match': {'_dtype': 'box'}},
                 {'match': {'_dtype': 'line'}},
                 {'match': {'_dtype': 'dot'}},
+                {'match': {'_dtype': 'poly'}},
             ],
             'minimum_should_match': 1,
         }}]
