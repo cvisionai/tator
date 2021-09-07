@@ -62,7 +62,6 @@ class AcceptView(TemplateView):
         if 'registration_token' in request.GET:
             invites = Invitation.objects.filter(registration_token=request.GET['registration_token'],
                                                 status='Pending')
-            logger.info(f"GOT {invites.count} INVITES!!")
             if invites.count() == 0:
                 return HttpResponse(status=403)
             else:
@@ -77,7 +76,6 @@ class AcceptView(TemplateView):
                 invite.status = "Accepted"
                 invite.save()
         else:
-            logger.info(f"NO REGISTRATION TOKEN!!")
             return HttpResponse(status=403)
         return super().dispatch(request, *args, **kwargs)
 

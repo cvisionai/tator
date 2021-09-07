@@ -19,5 +19,19 @@ def test_organization_settings(authenticated, project, launch_time, image_file):
             summary.click()
             break
     page.wait_for_url(f'/{organization_id}/organization-settings')
-    print("Testing thumbnail upload...")
+    print("Testing organization update...")
     page.set_input_files('input[type="file"]', image_file)
+    page.fill('text-input[name="Name"] input', f"{name} updated")
+    page.click('input[type="submit"]')
+    page.wait_for_selector(f'text="Organization {organization_id} updated successfully!"')
+    page.click('modal-close button')
+    print("Testing affiliation create...")
+    page.click('button[class="toggle-subitems-Affiliation]')
+    page.click('text="+ Add new"')
+    page.fill('user-input input', 'no-reply@cvisionai.com;')
+    page.click('input[type="submit"]')
+    page.wait_for_selector(f'text="Successfully created 1 affiliations."')
+    page.click('modal-close button')
+    print("Testing affiliation update...")
+    
+    
