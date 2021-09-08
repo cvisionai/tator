@@ -24,7 +24,7 @@ def test_organization_settings(authenticated, project, launch_time, image_file):
     page.fill('text-input[name="Name"] input', f"{name} updated")
     page.click('input[type="submit"]')
     page.wait_for_selector(f'text="Organization {organization_id} updated successfully!"')
-    page.click('modal-close button')
+    page.click('organization-main-edit modal-close')
     print("Testing affiliation create...")
     page.click('button[class="toggle-subitems-Affiliation]')
     page.click('text="+ Add new"')
@@ -33,5 +33,7 @@ def test_organization_settings(authenticated, project, launch_time, image_file):
     page.wait_for_selector(f'text="Successfully created 1 affiliations."')
     page.click('modal-close button')
     print("Testing affiliation update...")
+    select = page.query_selector('affiliation-edit select')
+    select.select_option('Member')
     
     
