@@ -1241,48 +1241,71 @@ class VideoTestCase(
                                                    dtype='box',
                                                    attribute_types=[])
         loc_type.media.add(self.entity_type)
-        locs = [create_test_box(self.user, loc_type, self.project, medias[0], 0)
-                for _ in range(random.randint(2, 5))]
-        for _ in range(random.randint(2, 5)):
-            state = State.objects.create(project=self.project,
-                                         meta=state_type,
-                                         frame=0)
-            state.media.add(medias[0])
-            for loc in locs:
-                state.localizations.add(loc)
-        # Test detail delete
-        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertNotEqual(response.data, 0)
-        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertNotEqual(response.data, 0)
-        response = self.client.delete(f'/rest/Media/{medias[0].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, 0)
-        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, 0)
         locs = [create_test_box(self.user, loc_type, self.project, medias[1], 0)
                 for _ in range(random.randint(2, 5))]
+        state_specs = []
         for _ in range(random.randint(2, 5)):
-            state = State.objects.create(project=self.project,
-                                         meta=state_type,
-                                         frame=0)
-            state.media.add(medias[1])
-            for loc in locs:
-                state.localizations.add(loc)
-        # Test list delete
+            state_specs.append({
+                'project': self.project.id,
+                'type': state_type.id,
+                'frame': 0,
+                'media_ids': [medias[0].id, medias[1].id],
+                'localization_ids': [loc.id for loc in locs],
+            })
+        response = self.client.post(f'/rest/States/{self.project.pk}', state_specs, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Test detail delete
         response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
         self.assertNotEqual(response.data, 0)
         response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
         self.assertNotEqual(response.data, 0)
-        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[1].id}')
+        num_states = response.data
+        response = self.client.delete(f'/rest/Media/{medias[1].id}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
-        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, num_states)
+        response = self.client.delete(f'/rest/Media/{medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        locs = [create_test_box(self.user, loc_type, self.project, medias[2], 0)
+                for _ in range(random.randint(2, 5))]
+        state_specs = []
+        for _ in range(random.randint(2, 5)):
+            state_specs.append({
+                'project': self.project.id,
+                'type': state_type.id,
+                'frame': 0,
+                'media_ids': [medias[2].id, medias[3].id],
+                'localization_ids': [loc.id for loc in locs],
+            })
+        response = self.client.post(f'/rest/States/{self.project.pk}', state_specs, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Test list delete
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[2].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[2].id}')
+        self.assertNotEqual(response.data, 0)
+        num_states = response.data
+        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[2].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, num_states)
+        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[3].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
 
