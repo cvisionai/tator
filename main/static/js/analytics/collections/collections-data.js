@@ -70,6 +70,8 @@ class CollectionsData extends HTMLElement {
     for (let idx = 0; idx < this._states.length; idx++) {
       this._states[idx].typeData = this._stateTypesMap.get(this._states[idx].meta);
     }
+
+    return this._states;
   }
 
   getStates() {

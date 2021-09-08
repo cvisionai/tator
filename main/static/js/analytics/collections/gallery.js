@@ -193,7 +193,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          init: true
       }
       this.collectionsData.setPaginationState(paginationState);
-      this.collectionsData.updateData(this._filterConditions).then(() => {
+      this.collectionsData.updateData(this._filterConditions).then((states) => {
          var totalCount = this.collectionsData.getNumberOfResults();
          if (totalCount > 0) {
             // Top page selector
@@ -213,7 +213,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             this._numFiles.textContent = `Viewing ${paginationState.start + 1} to ${paginationState.stop > totalCount ? totalCount : paginationState.stop} of ${totalCount} Results`;
          }
 
-         this._paginationUpdate(paginationState);
+         this._paginationUpdate(paginationState, states);
       });
    }
 
@@ -232,7 +232,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._paginationUpdate(paginationState);
    }
 
-   async _paginationUpdate(paginationState) {
+   async _paginationUpdate(paginationState, states = null) {
       // keep pagination in sync
       this.collectionsData.setPaginationState(paginationState);
       const newSliderPage = this.collectionsData.getPage();
@@ -249,14 +249,14 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // clear side panel
       this.panelControls.openHandler({openFlag: false}, null, null);
 
-      // Add new states
-      // If we haven't made this page, we need to fetch the next page
-      await this.collectionsData.updateData(this._filterConditions);
-      var states = this.collectionsData.getStates();
+      // Add new states     
+      if (states == null) {
+         await this.collectionsData.updateData(this._filterConditions);
+         states = this.collectionsData.getStates();
+      }
 
       let newSliderList = document.createElement("div");
       newSliderList.setAttribute("class", "slider-list");
-      newSliderList.setAttribute("page", this.collectionsData.getPaginationState());
       this._addSliders({ sliderList: newSliderList, states });
       this._sliderContainer.appendChild(newSliderList);
 
