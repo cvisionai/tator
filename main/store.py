@@ -481,9 +481,6 @@ class WasabiStorage(MinIOStorage):
         super().__init__(bucket, client, external_host)
         self._server = ObjectStore.WASABI
 
-    def _path_to_key(self, path):
-        return f"{self.bucket_name}/{path}"
-
     def _restore_object(self, path, desired_storage_class, min_exp_days):
         return self.client.restore_object(
             Bucket=self.bucket_name,
