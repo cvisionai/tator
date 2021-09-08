@@ -392,12 +392,15 @@ class MediaListAPI(BaseListView):
 
             # Any states that are only associated to deleted media should also be marked 
             # for deletion.
-            not_deleted_media = Media.objects.filter(project=project, deleted=False)
-            state_qs = State.objects.filter(project=project).exclude(media__in=not_deleted_media)
+            not_deleted = State.objects.filter(project=project, media__deleted=False)\
+                                       .values_list('id', flat=True)
+            deleted = State.objects.filter(project=project, media__deleted=True)\
+                                   .values_list('id', flat=True)
+            all_deleted = set(deleted) - set(not_deleted)
+            state_qs = State.objects.filter(pk__in=all_deleted)
             state_qs.update(deleted=True,
                             modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                             modified_by=self.request.user)
-
 
             # Delete any localizations associated to this media
             loc_qs = Localization.objects.filter(project=project, media__in=media_ids)
@@ -693,8 +696,12 @@ class MediaDetailAPI(BaseDetailView):
 
         # Any states that are only associated to deleted media should also be marked 
         # for deletion.
-        not_deleted_media = Media.objects.filter(project=project, deleted=False)
-        state_qs = State.objects.filter(project=project).exclude(media__in=not_deleted_media)
+        not_deleted = State.objects.filter(project=project, media__deleted=False)\
+                                   .values_list('id', flat=True)
+        deleted = State.objects.filter(project=project, media__deleted=True)\
+                               .values_list('id', flat=True)
+        all_deleted = set(deleted) - set(not_deleted)
+        state_qs = State.objects.filter(pk__in=all_deleted)
         state_qs.update(deleted=True,
                         modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                         modified_by=self.request.user)
