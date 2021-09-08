@@ -23,7 +23,6 @@ class EntityPanelContainer extends TatorElement {
       this._panelTop._topBarArrow.addEventListener("click", this._toggleRightOnClick.bind(this));
 
       // Check and set current permission level on annotationPanel
-      // console.log("Yesss..... we have one"+this.getAttribute("permissionValue"));
       if (this.hasAttribute("permissionValue")) {
          let permissionVal = this.getAttribute("permissionValue");
          this._panelTop._panel.permission = permissionVal;
@@ -31,7 +30,6 @@ class EntityPanelContainer extends TatorElement {
 
       // when lock changes set attribute on forms to "View Only" / "Can Edit"
       this.addEventListener("permission-update", (e) => {
-         console.log("permission updated!!!! ---> " + e.detail.permissionValue);
          this.setAttribute("permissionValue", e.detail.permissionValue);
          this._panelTop._panel.permission = e.detail.permissionValue;
       });

@@ -114,9 +114,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       }
 
       // Init card attribute & card sort options using model mediatypes
-      // console.log(this.modelData);
       for (let locTypeData of this.modelData._localizationTypes){
-         // let entityTypeData = cardsTmp[0][0].entityType;
          this._cardAtributeSort.add({
             typeData:locTypeData
          });
@@ -127,7 +125,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
       }
 
       for (let mediaTypeData of this.modelData._mediaTypes){
-         // let entityTypeData = cardsTmp[0][0].entityType;
          this._cardAtributeSort.add({
             typeData: mediaTypeData
          });
@@ -390,12 +387,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
             let fnCheck = this._cardAtributeSort.getFnCheck(order);
             let prop = sortProperty.getValue();
             if (!(order == "true" && prop == "ID")) {
-               console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
-
                cardsTmp.sort((a, b) => {
-                  console.log(a);
-                  console.log(b);
-
                   let aVal = a[0].attributes !== null ? a[0].attributes[prop] : "";
                   let bVal = b[0].attributes !== null ? b[0].attributes[prop] : "";
 
@@ -539,7 +531,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
          values: { attributes: e.detail.values },
          type: "Localization"
       }).then((data) => {
-         //console.log("Localization form change.....") 
          for (let s of this._sliderElements) {
             if (s.state.typeData.association == "Localization") {
                s.updateCardData(data);

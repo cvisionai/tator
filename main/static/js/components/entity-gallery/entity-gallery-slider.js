@@ -406,7 +406,7 @@ class EntityGallerySlider extends TatorElement {
             this._cardElements[i].card.style.display = "block";
          } else {
             delete this.unshownCards[i];
-            //console.log(`Preparing new card for id ${initData.id} where i is equal to ${i}`);
+
             // start is further than we have gotten cards
             const card = await this.slideCardData.makeCardList(initData);
 
@@ -431,7 +431,6 @@ class EntityGallerySlider extends TatorElement {
    }
 
    updateCardData(newCardData) {
-
       try{
          const index = this._currentCardIndexes[newCardData.id];
          let card = null;
@@ -441,21 +440,15 @@ class EntityGallerySlider extends TatorElement {
             card = this._cardElements[index].card;
             card._updateAttributeValues(newCardData);
          
-            console.log(card);
-         
             // Then... Check if we need to resort
             let sortProperty = this._cardAtributeSort._selectionValues[this.entityTypeId].getValue();
             let comparedVals = card.cardObj.attributes[sortProperty] === newCardData.attributes[sortProperty];
-
-            //update the cards' cardObject, not just display
             
-            // console.log(!comparedVals)
             if(!comparedVals){
                card.cardObj = newCardData;
                // #todo _sortCards should accept typeId, then fn check and property off current settings
                let sortOrder = this._cardAtributeSort._sortOrderValues[this.entityTypeId].getValue();
 
-               // console.log(sortOrder);
                let cards = this._cardAtributeSort._sortCards({
                   cards: this._cardElements, 
                   slider: this, 

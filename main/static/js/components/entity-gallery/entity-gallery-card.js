@@ -82,8 +82,6 @@ class EntityCard extends TatorElement {
       this._id_text = document.createElement("span");
       this._id_text.setAttribute("class", "f3 text-gray px-2");
       this._bottom.appendChild(this._id_text);
-
-      
   
       // More menu styling (if included)
       this.addEventListener("mouseenter", () => {
@@ -103,7 +101,6 @@ class EntityCard extends TatorElement {
   
       /* Holds attributes for the card */
       this.attributesDiv = document.createElement('div');
-      this.attributesDiv.setAttribute("class", ""); //d-flex flex-wrap
     }
   
     static get observedAttributes() {
@@ -159,11 +156,7 @@ class EntityCard extends TatorElement {
   init({ obj, panelContainer, cardLabelsChosen }) {
       // Give card access to panel
       this.panelContainer = panelContainer;
-      // this.annotationPanelDiv = annotationPanelDiv;
       this.cardObj = obj;
-
-      // this._styledDiv.classList.add("dark-card");
-      // this._styledDiv.classList.remove("py-2");
   
       // ID is title
       this._id_text.innerHTML = `ID: ${this.cardObj.id}`;
@@ -184,24 +177,13 @@ class EntityCard extends TatorElement {
       // Add position text related to pagination
       this.setAttribute("pos-text", obj.posText);
   
-      // Display the first 0 order attribute value
-      // this.setAttribute("name", "");
-      // for (let attrType of obj.entityType.attribute_types) {
-      //   if (attrType.order == 0) {
-      //     if (obj.attributes[attrType.name] != undefined) {
-      //       this._name.textContent = obj.attributes[attrType.name];
-      //     }
-      //     break;
-      //   }
-      // }
   
       /**
        * Attributes hidden on card are controlled by outer menu 
       */
-      if(obj.attributeOrder && obj.attributeOrder.length > 0){
-        this.attributesDiv = document.createElement('div');
-        this.attributesDiv.setAttribute("class", ""); //d-flex flex-wrap
-        let firstShown = false;
+    if (obj.attributeOrder && obj.attributeOrder.length > 0) {
+        // Clear this in case of reuse / re-init
+        this.attributesDiv.innerHTML = "";
         for(const attr of obj.attributeOrder){
           let attrStyleDiv = document.createElement("div");
           attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
@@ -214,9 +196,6 @@ class EntityCard extends TatorElement {
           if(obj.attributes !== null && typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== ""){
             attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
           } else {
-            // attrLabel.innerHTML = "&nbsp;";
-            // attrLabel.style.visibility = "hidden"; // keeps spacing
-            // #todo- Check for a default value?
             attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
           }
   
@@ -228,7 +207,7 @@ class EntityCard extends TatorElement {
           if(cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0){
             // If we have any preferences saved check against it
             if(cardLabelsChosen.indexOf(key) > -1) {     
-              //console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
+              // console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
             } else {
               attrStyleDiv.classList.add("hidden");
             }
@@ -249,15 +228,11 @@ class EntityCard extends TatorElement {
     * Custom label display update
     */
     _updateShownAttributes(evt){
-      //console.log(evt);
-      //console.log(this.attributeDivs);
-      let typeId = evt.detail.typeId;
       let labelValues = evt.detail.value;
       
       if(this.attributeDivs){
         // show selected
         for (let [key, value] of Object.entries(this.attributeDivs)) {
-          //console.log(key);
           if(labelValues.includes(key)){
             value.div.classList.remove("hidden");
           } else {
@@ -272,9 +247,7 @@ class EntityCard extends TatorElement {
      * - If side panel is edited the card needs to update attributes
      */
      _updateAttributeValues(data) {
-       //console.log(data);
       for (let [attr, value] of Object.entries(data.attributes)) {
-        //console.log(attr);
         if(this.attributeDivs[attr] != null){
           this.attributeDivs[attr].value.innerHTML = value;
         } else {

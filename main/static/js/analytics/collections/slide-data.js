@@ -14,7 +14,6 @@ class CollectionSlideCardData extends HTMLElement {
 
     async makeCardList({ type, id }) {
         // 2 -- slideCard list will be the _states array with a "cards" attribute added
-        //console.log("********** makeSlideCardList****** For id: "+id);
         this.slideCardList = {};
         this.slideCardList.slideCards = [];
 
@@ -42,11 +41,8 @@ class CollectionSlideCardData extends HTMLElement {
             let created = new Date(m.created_datetime);
             let modified = new Date(m.modified_datetime);
             let mediaId = id;
-
             let image = m.media_files.thumbnail[0].path;
             let thumbnail = m.media_files.thumbnail[0].path;
-
-            console.log(attributes);
 
             let mediaInfo = {
                 id,
@@ -92,8 +88,6 @@ class CollectionSlideCardData extends HTMLElement {
                 media: media,
             }
 
-            console.log(attributes);
-
             let slideCard = {
                 id,
                 localization: l,
@@ -110,7 +104,6 @@ class CollectionSlideCardData extends HTMLElement {
             resolve();
 
             this._modelData.getLocalizationGraphic(l.id).then((image) => {
-                //console.log("getLocalizationGraphic for this Loc resolved, id: "+l.id);
                 this.dispatchEvent(new CustomEvent("setSlideCardImage", {
                     composed: true,
                     detail: {
@@ -123,12 +116,8 @@ class CollectionSlideCardData extends HTMLElement {
     }
 
     findMetaDetails(id) {
-        //console.log("findMetaDetails to match id  = "+id);
-        //console.log(this.localizationTypes);
         for (let lt of this.localizationTypes) {
             if (lt.id == id) {
-                // console.log("found! returning.....");
-                // console.log(lt);
                 return lt;
             }
         }
