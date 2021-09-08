@@ -60,7 +60,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._moreMenu._menu.appendChild(this._cardAtributeSort.menuLink);
 
       /* Slider information */
-      this._sliderLists = [];
       this._sliderElements = [];
       this.slideCardData = document.createElement("collection-slide-card-data");
       this.cardLabelsChosenByType = {};
@@ -234,7 +233,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    async _paginationUpdate(paginationState) {
-
+      // keep pagination in sync
       this.collectionsData.setPaginationState(paginationState);
       const newSliderPage = this.collectionsData.getPage();
 
@@ -242,44 +241,30 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this._paginator_top.setValues(this.collectionsData.getPaginationState());
       this._paginator.setValues(this.collectionsData.getPaginationState());
 
+      // remove previous page's sliders
       while (this._sliderContainer.firstChild) {
          this._sliderContainer.removeChild(this._sliderContainer.firstChild);
       }
-      this._sliderLists = [];
+
+      // clear side panel
+      this.panelControls.openHandler({openFlag: false}, null, null);
 
       // Add new states
-      // If the slider already exists, we're hiding and showing
-      if (this._sliderLists[newSliderPage]) {
-         for (let a in this._sliderLists) {
-            //console.log(this._sliderLists[a]);
-            this._sliderLists[a].hidden = true;
-         }
-         this._sliderLists[newSliderPage].hidden = false;
-      } else {
-         // If we haven't made this page, we need to fetch the next page
-         await this.collectionsData.updateData(this._filterConditions);
-         var states = this.collectionsData.getStates();
+      // If we haven't made this page, we need to fetch the next page
+      await this.collectionsData.updateData(this._filterConditions);
+      var states = this.collectionsData.getStates();
 
-         for (let a in this._sliderLists) {
-            //console.log(this._sliderLists[a]);
-            this._sliderLists[a].hidden = true;
-         }
+      let newSliderList = document.createElement("div");
+      newSliderList.setAttribute("class", "slider-list");
+      newSliderList.setAttribute("page", this.collectionsData.getPaginationState());
+      this._addSliders({ sliderList: newSliderList, states });
+      this._sliderContainer.appendChild(newSliderList);
 
-         let newSliderList = document.createElement("div");
-         newSliderList.setAttribute("class", "slider-list");
-         newSliderList.setAttribute("page", this.collectionsData.getPaginationState());
-         //this._sliderLists[this.collectionsData._states.paginationState.page] = newSliderList;
-
-         this._addSliders({ sliderList: newSliderList, states });
-
-         this._sliderContainer.appendChild(newSliderList);
-
-         // Update new slider panel permission
-         const locked = this.analyticsSettings._lock._pathLocked.style.display != "none";
-         const permissionValue = locked ? "View Only" : "Can Edit";
-         const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-         this.panelContainer.dispatchEvent(panelPermissionEvt);
-      }
+      // Update new slider panel permission
+      const locked = this.analyticsSettings._lock._pathLocked.style.display != "none";
+      const permissionValue = locked ? "View Only" : "Can Edit";
+      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+      this.panelContainer.dispatchEvent(panelPermissionEvt);
 
       let numResults = this.collectionsData.getNumberOfResults();
       if (numResults == 0) {
@@ -296,7 +281,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
    async _addSliders({ sliderList, states }) {
       const currentSliderEls = [];
       let sliderPage = this.collectionsData.getPage();
-      this._sliderLists[sliderPage] = sliderList;
 
       // Append the sliders
       for (let idx = 0; idx < states.length; idx++) {
