@@ -161,7 +161,7 @@ class AnnotationSidebar extends TatorElement {
         this._selectButton(this._poly, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
           detail: {typeId: val.poly[0].id,
-                   metaMode: true}
+                   metaMode: evt.shiftKey}
         }));
       });
       document.addEventListener("keydown", evt => {

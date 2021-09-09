@@ -133,8 +133,6 @@ class PolyMaker
                     {composed: true,
                      detail: {metaMode: this._ctrl._metaMode}
                     }));
-        this._ctrl.defaultMode();
-
         return;
       }
     }
