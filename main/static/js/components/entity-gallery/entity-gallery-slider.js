@@ -36,13 +36,12 @@ class EntityGallerySlider extends TatorElement {
 
       // Tools container
       this.sliderContainer = document.createElement("div");
-      this.sliderContainer.setAttribute("class", "entity-card-resize col-4")
       this._tools.appendChild(this.sliderContainer);
 
       // Loading text
       this.loadAllTeaser = document.createElement("span");
-      this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more text-gray"); //
-      this.loadAllTeaser.appendChild(document.createTextNode("Loading..."));
+      this.loadAllTeaser.setAttribute("class", "entity-gallery-slider--load-more text-gray py-2"); //
+      this.loadAllTeaser.appendChild(document.createTextNode("..."));
       this.sliderContainer.appendChild(this.loadAllTeaser);
 
       // Property IDs are the entity IDs (which are expected to be unique)
@@ -257,7 +256,7 @@ class EntityGallerySlider extends TatorElement {
    }
 
    openClosedPanel(e) {
-      console.log(e.target)
+      // console.log(e.target)
       if (!this.panelContainer.open) this.panelContainer._toggleOpen();
       this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
    }

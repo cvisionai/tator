@@ -85,7 +85,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       try {
          this.slideCardData.init(this.modelData);
       } catch (e) {
-         console.log(e.description);
+         console.error(e.description);
       }
 
       this._paginator_top.addEventListener("selectPage", this._paginateGallery.bind(this));
@@ -354,7 +354,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
          if (galleryList !== null && galleryList.length > 0) {
             const totalList = galleryList.length;
-
+            slider.loadAllTeaser.innerHTML = `Loading ${totalList} ${association}${totalList > 1 ? 's' : ''}...`
             // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
             if (totalList > 0) {
                // Get the localizations & make cards with slideCard
@@ -421,10 +421,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
                }
             }
          } else {
+            slider.loadAllTeaser.innerHTML = "Collection is empty."
             console.warn("Cannot iterate collection list.", state);
          }
       } else {
-         console.warn("Unable to find association.", state);
+         slider.loadAllTeaser.innerHTML = "Error loading collection."
+         console.error("Missing typeData.", state);
       }
    }
 
