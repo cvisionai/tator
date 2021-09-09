@@ -348,13 +348,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
          
          if (association === "Localization") {
             galleryList = state.localizations;
-         } else if (association === "Localization") {
+         } else if (association === "Media") {
             galleryList = state.media;
          }
 
          if (galleryList !== null && galleryList.length > 0) {
             const totalList = galleryList.length;
-            slider.loadAllTeaser.innerHTML = `Loading ${totalList} ${association}${totalList > 1 ? 's' : ''}...`
+            slider.loadAllTeaser.innerHTML = `Loading ${totalList} ${association} ${totalList > 1 ? 'entries' : 'entry'}...`
             // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
             if (totalList > 0) {
                // Get the localizations & make cards with slideCard

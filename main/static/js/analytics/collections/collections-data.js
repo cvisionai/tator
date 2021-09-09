@@ -97,7 +97,7 @@ class CollectionsData extends HTMLElement {
       modifier: "OR",
       value: string
     });
-    console.log(this.collectionsFilter)
+    // console.log(this.collectionsFilter)
 
     return this.collectionsFilter;
   }
