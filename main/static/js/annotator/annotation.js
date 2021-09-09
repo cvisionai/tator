@@ -2954,13 +2954,13 @@ class AnnotationCanvas extends TatorElement
       {
         var poly = this.localizationToPoly(localization);
         this._draw.drawPolygon(poly, drawColor, width);
-        this.accentWithHandles(this._draw, poly, drawColor, width);
+        this.accentWithHandles(this._draw, meta.dtype, poly, drawColor, width);
       }
       else if (meta.dtype == "line")
       {
         var line = this.localizationToLine(localization);
         this._draw.drawLine(line[0], line[1], drawColor, width);
-        this.accentWithHandles(this._draw, line, drawColor, width);
+        this.accentWithHandles(this._draw, meta.dtype, line, drawColor, width);
       }
       else if (meta.dtype == 'dot')
       {
@@ -3149,7 +3149,7 @@ class AnnotationCanvas extends TatorElement
             that._draw.drawPolygon(poly, getColorForFrame(frameIdx), width, alpha);
             if (colorInfo['handles'] == true || meta.dtype == 'poly')
             {
-              that.accentWithHandles(that._draw,poly, getColorForFrame(frameIdx), width, alpha);
+              that.accentWithHandles(that._draw, meta.dtype, poly, getColorForFrame(frameIdx), width, alpha);
             }
             if (colorInfo.fill.style == "solid")
             {
@@ -3169,7 +3169,7 @@ class AnnotationCanvas extends TatorElement
             that._draw.drawLine(line[0], line[1], getColorForFrame(frameIdx), width, alpha);
             if (colorInfo['handles'] == true)
             {
-              that.accentWithHandles(that._draw,line, getColorForFrame(frameIdx), width, alpha);
+              that.accentWithHandles(that._draw,meta.dtype, line, getColorForFrame(frameIdx), width, alpha);
             }
           }
           else if (meta.dtype == 'dot')
@@ -3676,7 +3676,7 @@ class AnnotationCanvas extends TatorElement
     return new_box;
   }
 
-  accentWithHandles(drawCtx, item, color, width, alpha)
+  accentWithHandles(drawCtx, type, item, color, width, alpha)
   {
     let allZeros = true;
     for (let idx = 0; idx < item.length; idx++)
@@ -3696,14 +3696,18 @@ class AnnotationCanvas extends TatorElement
       width = Math.round(defaultDrawWidth * this._draw.displayToViewportScale()[0]);
     }
     const dotWidth = width * 1.33;
-    if (item.length > 4)
+    if (type == 'poly')
     {
-      for (let p of item)
+      this._draw.drawCircle(item[0], dotWidth, color, alpha);
+      for (let idx = 1; idx < item.length; idx++)
       {
-        this._draw.drawCircle(p, dotWidth, color, alpha);
+        if (item[idx][0] != item[0][0] || item[idx][1] != item[0][1])
+        {
+          this._draw.drawCircle(item[idx], dotWidth, color, alpha);
+        }
       }
     }
-    if (item.length == 4)
+    else if (type == 'box')
     {
       // Box case
       item = this.fix_box(item);
@@ -3718,7 +3722,7 @@ class AnnotationCanvas extends TatorElement
       drawCtx.drawCircle(item[3], dotWidth, color, alpha);
       drawCtx.drawCircle([item[3][0],halfY], dotWidth, color, alpha);
     }
-    else if (item.length == 2)
+    else if (type == 'line')
     {
       const halfX = (item[0][0]+item[1][0])/2;
       const halfY = (item[0][1]+item[1][1])/2;
@@ -4028,7 +4032,7 @@ class AnnotationCanvas extends TatorElement
             that.blackoutOutside(poly);
             this._draw.drawPolygon(poly, color.WHITE,
                                    Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
-            this.accentWithHandles(this._draw,poly, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
+            this.accentWithHandles(this._draw,objType.dtype, poly, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
           else if (objType.dtype == 'line')
           {
@@ -4040,7 +4044,7 @@ class AnnotationCanvas extends TatorElement
             var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
             that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
-            this.accentWithHandles(this._draw,line, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
+            this.accentWithHandles(this._draw,objType.dtype, line, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
           }
           else
           {
@@ -4110,7 +4114,7 @@ class AnnotationCanvas extends TatorElement
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
             that.blackoutOutside(poly);
             this._draw.drawPolygon(poly, color.WHITE, width);
-            this.accentWithHandles(this._draw,poly, color.WHITE, width);
+            this.accentWithHandles(this._draw,type, poly, color.WHITE, width);
           }
           else if (type == 'line')
           {
@@ -4122,7 +4126,7 @@ class AnnotationCanvas extends TatorElement
             var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
             that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0],line[1], color.WHITE, width);
-            that.accentWithHandles(that._draw,line,color.WHITE, width);
+            that.accentWithHandles(that._draw,type, line,color.WHITE, width);
           }
           this._draw.dispImage(true, true);
         }
@@ -4169,13 +4173,13 @@ class AnnotationCanvas extends TatorElement
       {
         var poly = this.localizationToPoly(localization, drawContext, roi);
         drawContext.drawPolygon(poly, localization.color, width, alpha);
-        this.accentWithHandles(drawContext,poly, localization.color, width, alpha);
+        this.accentWithHandles(drawContext,type, poly, localization.color, width, alpha);
       }
       else if (type == 'line')
       {
         var line = this.localizationToLine(localization, drawContext, roi);
         drawContext.drawLine(line[0], line[1], localization.color, width, alpha);
-        this.accentWithHandles(drawContext,line, localization.color, width, alpha);
+        this.accentWithHandles(drawContext,type, line, localization.color, width, alpha);
       }
       else if (type == 'dot')
       {
@@ -4221,7 +4225,7 @@ class AnnotationCanvas extends TatorElement
             drawContext.drawPolygon(poly, localization.color, width, colorInfo.alpha);
             if (colorInfo['handles'] == true || type=='poly')
             {
-              this.accentWithHandles(drawContext, poly, localization.color, width, colorInfo.alpha);
+              this.accentWithHandles(drawContext, type, poly, localization.color, width, colorInfo.alpha);
             }
             if (fill.style == "solid")
             {
@@ -4242,7 +4246,7 @@ class AnnotationCanvas extends TatorElement
             drawContext.drawLine(line[0], line[1], localization.color, width, colorInfo.alpha);
             if (colorInfo['handles'] == true)
             {
-              this.accentWithHandles(drawContext,line, localization.color, width, colorInfo.alpha);
+              this.accentWithHandles(drawContext,type, line, localization.color, width, colorInfo.alpha);
             }
           }
           else if (type == 'dot')
