@@ -2533,7 +2533,7 @@ class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.NEW_POLY)
     {
-      this._polyMaker.onMouseOver(absImageLocation);
+      this._polyMaker.onMouseOver(location);
     }
     if (this._mouseMode == MouseMode.NEW)
     {
