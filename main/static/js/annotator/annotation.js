@@ -515,6 +515,37 @@ function determineLineResizeType(mouseLocation,
     return null;
   }
 }
+
+function determinePolyResizeType(mouseLocation,poly)
+{
+  // 15 px margin for location
+  var margin = 15;
+  var resizeType=null;
+  var impactVector=null;
+  for (var idx = 0; idx < poly.length; idx++)
+  {
+    // calculate cartesian distance to the point, if within the margin
+    // it's a corner resize
+    var distance = Math.sqrt(Math.pow(poly[idx][0]-mouseLocation[0],2)+
+    Math.pow(poly[idx][1]-mouseLocation[1],2));
+
+    if (distance < margin)
+    {
+      resizeType="move";
+      impactVector=[[0.0,0.0],
+                    [0.0,0.0]];
+    }
+  }
+
+  if (resizeType)
+  {
+    return [resizeType, impactVector];
+  }
+  else
+  {
+    return null;
+  }
+}
 // Given a mouse location and a box return resize type
 // Box winds clockwise by convention from upper left
 // (null if none)
@@ -2468,7 +2499,13 @@ class AnnotationCanvas extends TatorElement
     {
       var resizeType=null;
       var type = this.getObjectDescription(this.activeLocalization).dtype;
-      if (type == 'box')
+      if (type == 'poly')
+      {
+        var poly = this.localizationToPoly(this.activeLocalization);
+        var resizeType=determinePolyResizeType(location,
+                                               poly);
+      }
+      else if (type == 'box')
       {
         var poly = this.localizationToPoly(this.activeLocalization);
         var resizeType=determineBoxResizeType(location,
@@ -3452,7 +3489,11 @@ class AnnotationCanvas extends TatorElement
   {
     let patchObj = {}
     // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
-    if (objDescription.dtype=='box')
+    if (objDescription.dtype == 'poly')
+    {
+      patchObj.points = localization.points;
+    }
+    else if (objDescription.dtype=='box')
     {
       patchObj.x = localization.x;
       patchObj.y = localization.y;
@@ -3985,7 +4026,7 @@ class AnnotationCanvas extends TatorElement
         {
           // Translate the box based on the drag
           var box=that.localizationToPoly(that.activeLocalization);
-          for (var idx = 0; idx < 4; idx++)
+          for (var idx = 0; idx < box.length; idx++)
           {
             box[idx][0] += end.x - begin.x;
             box[idx][1] += end.y - begin.y;
@@ -3999,7 +4040,16 @@ class AnnotationCanvas extends TatorElement
           console.log("Moved = " + JSON.stringify(dragEvent));
           // TODO: Handle move event
           cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
-          if (objType.dtype == 'box')
+          if (objType.dtype == 'poly')
+          {
+            let newPoints = translatedPoly(dragEvent.start, dragEvent.end);
+            for (let idx = 0; idx < newPoints.length; idx++)
+            {
+              newPoints[idx] = this.scaleToRelative(newPoints[idx],true);
+            }
+            this.activeLocalization.points = newPoints;
+          }
+          else if (objType.dtype == 'box')
           {
             var localization=this.scaleToRelative(polyToBox(translatedPoly(dragEvent.start, dragEvent.end)));
             this.activeLocalization.x = localization[0];
@@ -4026,7 +4076,7 @@ class AnnotationCanvas extends TatorElement
         }
         else
         {
-          if (objType.dtype == 'box')
+          if (objType.dtype == 'box' || objType.dtype =='poly')
           {
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
             that.blackoutOutside(poly);
