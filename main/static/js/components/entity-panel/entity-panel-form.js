@@ -54,7 +54,7 @@ class EntityGalleryPanelForm extends TatorElement {
       this._attributes.setValues(attributePanelData);
       this._attributes.style.display = "block";
     } else {
-      console.error("Enity panel form cannot init with missing attributes.", attributePanelData);
+      console.warn("Missing attributes.", attributePanelData);
     }
   }
 

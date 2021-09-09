@@ -243,7 +243,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
          this._sliderContainer.removeChild(this._sliderContainer.firstChild);
       }
 
-      // clear side panel
+      // empty slider element list & clear side panel
+      this._sliderElements = [];
       this.panelControls.openHandler({openFlag: false}, null, null);
 
       // Add new states     
@@ -276,7 +277,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    async _addSliders({ sliderList, states }) {
-      const currentSliderEls = [];
       let sliderPage = this.collectionsData.getPage();
 
       // Append the sliders
@@ -287,9 +287,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
          const slider = document.createElement("entity-gallery-slider");
          slider.setAttribute("id", state.id);
          slider.setAttribute("meta", state.meta);
-         slider.entityFormChange = this.entityFormChange.bind(this);
-         slider.stateFormChange = this.stateFormChange.bind(this);
-         slider.mediaFormChange = this.mediaFormChange.bind(this);
          slider._cardAtributeLabels = this._cardAtributeLabels;
          slider._cardAtributeSort = this._cardAtributeSort;
          slider._resizeCards = this._resizeCards;
@@ -308,15 +305,18 @@ class CollectionsGallery extends EntityCardSlideGallery {
             gallery: this
          });
 
+
          slider.unshownCards = {};
          slider._fullCardsAdded = false;
 
          let currentCount = (sliderPage - 1) * this.collectionsData.getPageSize() + idx + 1;
-         slider.setAttribute("title", `${state.typeData.name} ID: ${state.id}`);
+
+         if (typeof state.typeData !== "undefined") {
+            slider.setAttribute("title", `${state.typeData.name} ID: ${state.id}`);
+         }
          slider.setAttribute("count", `${currentCount} of ${this.collectionsData.getNumberOfResults()}`);
 
          this._sliderElements.push(slider);
-         currentSliderEls.push(slider);
 
          slider.addEventListener("click", (e) => {
             if (!slider.main.classList.contains("active")) {
@@ -335,86 +335,96 @@ class CollectionsGallery extends EntityCardSlideGallery {
          this._cardAtributeSort.addEventListener("sort-update", this._cardSortUpdate.bind(this));
       }
 
-      for (let i in currentSliderEls) {
-         await this._addSliderCards({ slider: currentSliderEls[i], state: states[i] });
+      for (let i in this._sliderElements) {
+         await this._addSliderCards({ slider: this._sliderElements[i], state: states[i] });
       }
-
    }
 
    async _addSliderCards({ slider, state }) {
-      const association = state.typeData.association;
-      const galleryList = association === "Localization" ? state.localizations : state.media;
-
-      let counter = 0;
-
-      if (galleryList) {
-         const totalList = galleryList.length;
-
-         // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
-         if (totalList > 0) {
-            // Get the localizations & make cards with slideCard
-            let cardsTmp = [];
-
-            for (let id of galleryList) {
-               if ((counter + 1) < this._previewCardCount) {
-                  const cardInitData = { type: state.typeData.association, id };
-                  const card = await this.slideCardData.makeCardList(cardInitData);
-                  card.counter = counter;
-
-                  if (card) {
-                     cardsTmp.push(card);
-                  }
-               } else {
-                  const cardInitData = { type: state.typeData.association, id, totalList };
-                  // const card = await this.slideCardData.makeCardList(cardInitData);
-                  slider.unshownCards[counter] = cardInitData;
-               }
-
-               counter++;
-            }
-
-            // This will dupe check if it already exists for this type, or add
-            let entityTypeData = cardsTmp[0][0].entityType;
-            // this._cardAtributeSort.add({
-            //    typeData: entityTypeData
-            // });
-
-            //Check if we want these sorted, sort before adding new cards
-            var sortProperty = this._cardAtributeSort._selectionValues[entityTypeData.id];
-            var sortOrder = this._cardAtributeSort._sortOrderValues[entityTypeData.id];
-
-            let order = sortOrder.getValue()
-            let fnCheck = this._cardAtributeSort.getFnCheck(order);
-            let prop = sortProperty.getValue();
-            if (!(order == "true" && prop == "ID")) {
-               cardsTmp.sort((a, b) => {
-                  let aVal = a[0].attributes !== null ? a[0].attributes[prop] : "";
-                  let bVal = b[0].attributes !== null ? b[0].attributes[prop] : "";
-
-                  return fnCheck(aVal, bVal);
-               });
-
-               for (let [idx, obj] of Object.entries(cardsTmp)) {
-                  // update counter used for card placement
-                  obj.counter = Number(idx);
-               }
-            }
-
-            for (let card of cardsTmp) {
-               this._dispatchCardData({ slider, card, counter: card.counter, totalList, state })
-            }
-
-            if (totalList <= this._previewCardCount) {
-               // slider.loadAllTeaser.innerHTML = "See All";
-               // if (totalList < 4) {
-               slider.loadAllTeaser.remove();
-               //}
-            } else {
-               slider.loadAllTeaser.remove();
-               this._setupSliderPgn({ slider, totalList });
-
-            }
+      if (typeof state.typeData !== "undefined") {
+         const association = state.typeData.association;
+         let galleryList = null;
+         let counter = 0;
+         
+         if (association === "Localization") {
+            galleryList = state.localizations;
+         } else if (association === "Localization") {
+            galleryList = state.media;
          }
+
+         if (galleryList !== null && galleryList.length > 0) {
+            const totalList = galleryList.length;
+
+            // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
+            if (totalList > 0) {
+               // Get the localizations & make cards with slideCard
+               let cardsTmp = [];
+
+               for (let id of galleryList) {
+                  if ((counter + 1) < this._previewCardCount) {
+                     const cardInitData = { type: state.typeData.association, id };
+                     const card = await this.slideCardData.makeCardList(cardInitData);
+                     card.counter = counter;
+
+                     if (card) {
+                        cardsTmp.push(card);
+                     }
+                  } else {
+                     const cardInitData = { type: state.typeData.association, id, totalList };
+                     // const card = await this.slideCardData.makeCardList(cardInitData);
+                     slider.unshownCards[counter] = cardInitData;
+                  }
+
+                  counter++;
+               }
+
+               // This will dupe check if it already exists for this type, or add
+               let entityTypeData = cardsTmp[0][0].entityType;
+               // this._cardAtributeSort.add({
+               //    typeData: entityTypeData
+               // });
+
+               //Check if we want these sorted, sort before adding new cards
+               var sortProperty = this._cardAtributeSort._selectionValues[entityTypeData.id];
+               var sortOrder = this._cardAtributeSort._sortOrderValues[entityTypeData.id];
+
+               let order = sortOrder.getValue()
+               let fnCheck = this._cardAtributeSort.getFnCheck(order);
+               let prop = sortProperty.getValue();
+               if (!(order == "true" && prop == "ID")) {
+                  cardsTmp.sort((a, b) => {
+                     let aVal = a[0].attributes !== null ? a[0].attributes[prop] : "";
+                     let bVal = b[0].attributes !== null ? b[0].attributes[prop] : "";
+
+                     return fnCheck(aVal, bVal);
+                  });
+
+                  for (let [idx, obj] of Object.entries(cardsTmp)) {
+                     // update counter used for card placement
+                     obj.counter = Number(idx);
+                  }
+               }
+
+               for (let card of cardsTmp) {
+                  this._dispatchCardData({ slider, card, counter: card.counter, totalList, state })
+               }
+
+               if (totalList <= this._previewCardCount) {
+                  // slider.loadAllTeaser.innerHTML = "See All";
+                  // if (totalList < 4) {
+                  slider.loadAllTeaser.remove();
+                  //}
+               } else {
+                  slider.loadAllTeaser.remove();
+                  this._setupSliderPgn({ slider, totalList });
+
+               }
+            }
+         } else {
+            console.warn("Cannot iterate collection list.", state);
+         }
+      } else {
+         console.warn("Unable to find association.", state);
       }
    }
 

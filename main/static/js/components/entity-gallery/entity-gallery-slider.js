@@ -102,7 +102,14 @@ class EntityGallerySlider extends TatorElement {
       this.currentLabelValues = currentLabelValues;
       this._sliderAttributeValues = attributes;
       this.gallery = gallery;
-      this.association = this.state.typeData.association;
+      
+      // Check that we have typedata, or fallback
+      if (typeof this.state.typeData !== "undefined") {
+         this.association = this.state.typeData.association;
+      } else {
+         console.warn("State missing typedata.", this.state);
+         return false;
+      }
 
       // Slider active listener
       this.addEventListener("slider-active", () => {
@@ -177,11 +184,15 @@ class EntityGallerySlider extends TatorElement {
          }
       }
    }
+   /**
+    * 
+    *  param0 
+    */
 
    /**
     * Dispay SLIDER Attributes
-    * Takes an attribute and creates a name: value pair for display
-    * Uses references saved at higher level to determine to hide/show
+    * - @attr {json} Takes an attribute and creates a name: value pair for display
+    * - Uses references saved at higher level to determine to hide/show
     */
    _displayAttributes({ attr, value = true }){    
       let attributeLabel = document.createElement("div");
