@@ -1,5 +1,6 @@
-import logging
+from collections import defaultdict
 import datetime
+import logging
 
 from django.core.management.base import BaseCommand
 from main.models import Media, Resource
@@ -60,7 +61,6 @@ def _get_clone_readiness(media, dtype):
     """
     Checks the given media for clones and determines their readiness for archiving.
     """
-    is_cloned = False
     if dtype == "image":
         return _get_single_clone_readiness(media, "image")
     if dtype == "video":
@@ -90,10 +90,14 @@ def _get_single_clone_readiness(media, key):
         raise TypeError(f"Key '{key}' not found in media_files field")
 
     path = media.media_files[key][0]["path"]
-    media_qs = Media.objects.filter(resource_media__path=path).exclude(
-        archive_state=TO_ARCHIVE_STATE
-    )
+
+    # Shared base queryset
+    media_qs = Media.objects.filter(resource_media__path=path)
+
+    # Media not ready for archive is not in the TO_ARCHIVE_STATE state
     media_not_ready = list(media_qs.exclude(archive_state=TO_ARCHIVE_STATE))
+
+    # Media ready for archive is in the TO_ARCHIVE_STATE state
     media_ready = list(media_qs.filter(archive_state=TO_ARCHIVE_STATE))
 
     return media_ready, media_not_ready
@@ -121,6 +125,7 @@ class Command(BaseCommand):
             logger.info(f"No media to archive!")
             return
 
+        cloned_media_not_ready = defaultdict(list)
         for media in archived_qs:
             if not media.media_files:
                 # No files to move to archive storage, consider this media archived
@@ -138,7 +143,14 @@ class Command(BaseCommand):
                 continue
 
             if media_not_ready:
-                # Do something and skip archiving
+                # Accumulate the lists of cloned media that are(n't) ready
+                cloned_media_not_ready[media.project.id].append(
+                    {
+                        "media_requesting_archive": media,
+                        "media_ready": media_ready,
+                        "media_not_ready": media_not_ready,
+                    }
+                )
                 continue
 
             num_media = 0
@@ -149,3 +161,11 @@ class Command(BaseCommand):
 
             num_archived += num_media
         logger.info(f"Archived a total of {num_archived} media!")
+
+        # Notify owners of blocked archive attempt
+        for project_id, blocking_media in cloned_media_not_ready.items():
+            for instance in blocking_media:
+                logger.warning(
+                    f"Archiving '{instance['media_requesting_archive'].id}' blocked by: "
+                    f"{[m.id for m in instance['media_not_ready']]}."
+                )
