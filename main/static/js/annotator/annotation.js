@@ -521,7 +521,7 @@ function determinePolyResizeType(mouseLocation,poly)
   // 15 px margin for location
   var margin = 15;
   var resizeType=null;
-  var impactVector=null;
+  var impactVector=[];
   for (var idx = 0; idx < poly.length; idx++)
   {
     // calculate cartesian distance to the point, if within the margin
@@ -532,8 +532,11 @@ function determinePolyResizeType(mouseLocation,poly)
     if (distance < margin)
     {
       resizeType="move";
-      impactVector=[[0.0,0.0],
-                    [0.0,0.0]];
+      impactVector.push([1.0,1.0]);
+    }
+    else
+    {
+      impactVector.push([0.0,0.0]);
     }
   }
 
@@ -2714,7 +2717,13 @@ class AnnotationCanvas extends TatorElement
       var resizeType = null;
       if (this._canEdit) {
         var type = this.getObjectDescription(this.activeLocalization).dtype;
-        if (type == 'box')
+        if (type == 'poly')
+        {
+          var poly = this.localizationToPoly(this.activeLocalization);
+          var resizeType=determinePolyResizeType(clickLocation,
+                                                 poly);
+        }
+        else if (type == 'box')
         {
           var poly = this.localizationToPoly(this.activeLocalization);
           resizeType=determineBoxResizeType(clickLocation,
@@ -4122,20 +4131,29 @@ class AnnotationCanvas extends TatorElement
         }
         var translatedPoly = function(begin, end)
         {
-          var box=that.localizationToPoly(that.activeLocalization);
-          for (var idx = 0; idx < 4; idx++)
+          var poly=that.localizationToPoly(that.activeLocalization);
+          for (var idx = 0; idx < poly.length; idx++)
           {
-            box[idx][0] += (end.x - begin.x) * that._impactVector[idx][0];
-            box[idx][1] += (end.y - begin.y) * that._impactVector[idx][1];
+            poly[idx][0] += (end.x - begin.x) * that._impactVector[idx][0];
+            poly[idx][1] += (end.y - begin.y) * that._impactVector[idx][1];
           }
-          return box;
+          return poly;
         };
 
         if ('end' in dragEvent)
         {
           console.log("Resized = " + JSON.stringify(dragEvent));
 
-          if (type == 'box')
+          if (type == 'poly')
+          {
+            let newPoints = translatedPoly(dragEvent.start, dragEvent.end);
+            for (let idx = 0; idx < newPoints.length; idx++)
+            {
+              newPoints[idx] = this.scaleToRelative(newPoints[idx],true);
+            }
+            this.activeLocalization.points = newPoints;
+          }
+          else if (type == 'box')
           {
             var localization=this.scaleToRelative(polyToBox(translatedPoly(dragEvent.start, dragEvent.end)));
             this.activeLocalization.x = localization[0];
@@ -4159,7 +4177,7 @@ class AnnotationCanvas extends TatorElement
           let width = this.getObjectDescription(this.activeLocalization).line_width;
           width *= this._draw.displayToViewportScale()[0];
           width = Math.round(width);
-          if (type == 'box')
+          if (type == 'box' || type == 'poly')
           {
             let poly = translatedPoly(dragEvent.start, dragEvent.current);
             that.blackoutOutside(poly);
