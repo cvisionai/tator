@@ -506,6 +506,9 @@ class TatorData {
     // Adjust the modifier to be lucene compliant
     var modifier = filter.modifier;
     var modifierEnd = "";
+    var doNotReplace = false;
+    var value = filter.value;
+    var field = filter.field;
 
     if (modifier == "==") {
       modifier = "";
@@ -514,14 +517,21 @@ class TatorData {
       modifier = "*";
       modifierEnd = "*";
     }
+    else if (modifier == "OR") {
+      modifier = "";
+      doNotReplace = true;
+    }
 
-    // Lucene search string requires spaces to have the backlash preceding it
-    var field = filter.field.replace(/ /g,"\\ ")
-    field = field.replace(/\(/g,"\\(")
-    field = field.replace(/\)/g,"\\)")
-    var value = filter.value.replace(/ /g,"\\ ")
-    value = value.replace(/\(/g,"\\(")
-    value = value.replace(/\)/g,"\\)")
+    if (!doNotReplace) {
+      // Lucene search string requires spaces to have the backlash preceding it
+      field = filter.field.replace(/ /g, "\\ ")
+      field = field.replace(/\(/g, "\\(")
+      field = field.replace(/\)/g, "\\)")
+    
+      value = filter.value.replace(/ /g, "\\ ")
+      value = value.replace(/\(/g, "\\(")
+      value = value.replace(/\)/g, "\\)")
+    }
 
     // Finally generate the final parameter string compliant with Tator's REST call
     var paramStr = `${field}:${modifier}${value}${modifierEnd}`;
@@ -837,6 +847,9 @@ class TatorData {
           else {
             mediaFilters.push(filter);
           }
+        }
+        else if (filter.category == "State") {
+          stateFilters.push(filter);
         }
         else if (this._stateTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_version") {
