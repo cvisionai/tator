@@ -114,6 +114,11 @@ class AnalyticsVisualizationView(ProjectBase, TemplateView):
 class AnalyticsReportsView(ProjectBase, TemplateView):
     template_name = 'analytics/reports.html'
 
+class AppsSpeciesView(ProjectBase, TemplateView):
+    template_name = 'apps/species.html'
+
+class AppsVerificationView(ProjectBase, TemplateView):
+    template_name = 'apps/verification.html'
 
 class AnnotationView(ProjectBase, TemplateView):
     template_name = 'annotation.html'

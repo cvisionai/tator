@@ -29,6 +29,8 @@ from .views import AnalyticsLocalizationsView
 from .views import AnalyticsCollectionsView
 from .views import AnalyticsVisualizationView
 from .views import AnalyticsReportsView
+from .views import AppsSpeciesView
+from .views import AppsVerificationView
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -58,6 +60,10 @@ urlpatterns = [
          AnalyticsVisualizationView.as_view(), name='analytics-visualization'),
     path('<int:project_id>/analytics/reports',
          AnalyticsReportsView.as_view(), name='analytics-reports'),
+    path('<int:project_id>/apps/species',
+         AppsSpeciesView.as_view(), name='apps-species'),
+    path('<int:project_id>/apps/verification',
+         AppsVerificationView.as_view(), name='apps-verification'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
