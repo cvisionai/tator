@@ -7,7 +7,7 @@ from main.models import Media, Resource
 
 logger = logging.getLogger(__name__)
 FILES_TO_ARCHIVE = ["streaming", "archival", "audio", "image"]
-TO_ARCHIVE_STATE = "to_archive"
+READY_TO_ARCHIVE = ["to_archive", "archived"]
 
 
 def _archive_multi(multi):
@@ -94,11 +94,11 @@ def _get_single_clone_readiness(media, key):
     # Shared base queryset
     media_qs = Media.objects.filter(resource_media__path=path)
 
-    # Media not ready for archive is not in the TO_ARCHIVE_STATE state
-    media_not_ready = list(media_qs.exclude(archive_state=TO_ARCHIVE_STATE))
+    # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
+    media_not_ready = list(media_qs.exclude(archive_state__in=READY_TO_ARCHIVE))
 
-    # Media ready for archive is in the TO_ARCHIVE_STATE state
-    media_ready = list(media_qs.filter(archive_state=TO_ARCHIVE_STATE))
+    # Media ready for archive is in one of the READY_TO_ARCHIVE states
+    media_ready = list(media_qs.filter(archive_state__in=READY_TO_ARCHIVE))
 
     return media_ready, media_not_ready
 
