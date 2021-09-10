@@ -26,7 +26,7 @@ class EntityGalleryLabels extends TatorElement {
 
     let titleDiv = document.createElement("div");
     titleDiv.setAttribute("class", "text-gray d-flex flex-row flex-items-center f2 py-2 px-2");
-    this._titleText = document.createTextNode("Select labels to display in the gallery")
+    this._titleText = document.createTextNode("Select labels to display in the gallery");
     titleDiv.appendChild(this._titleText);
     this.div.append(titleDiv);
 
@@ -61,7 +61,8 @@ class EntityGalleryLabels extends TatorElement {
    * @param {typeData} - object
    *
   */
-  async add({ typeData, hideTypeName = false, checkedFirst = null }){
+  async add({ typeData, hideTypeName = false, checkedFirst = null }) {
+    console.log(typeData);
     let typeName = typeData.name ? typeData.name : "";
     if(this._shownTypes[typeData.id]) {
       // don't re-add this type...
@@ -77,9 +78,17 @@ class EntityGalleryLabels extends TatorElement {
     if(!hideTypeName){
       let _title = document.createElement("div");
       _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-3");
-      _title.appendChild(document.createTextNode(`Labels for ${typeName}`));
+      _title.appendChild(document.createTextNode(`${typeName}`));
+
+      if (typeof typeData.description !== "undefined" && typeData.description !== "") {
+        let descriptionText = document.createElement("div");
+        descriptionText.setAttribute("class", "f3 py-1 text-gray");
+        descriptionText.textContent = `${typeData.description}`;
+        _title.appendChild(descriptionText);
+      }
+
       let idText = document.createElement("text");
-      idText.setAttribute("class", "d-flex py-1 text-gray f2");
+      idText.setAttribute("class", "d-flex py-1 text-gray f3");
       idText.textContent = `Type ID: ${typeData.id}`;
       _title.appendChild(idText);
       labelsMain.appendChild(_title);
