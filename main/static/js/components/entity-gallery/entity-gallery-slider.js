@@ -88,7 +88,6 @@ class EntityGallerySlider extends TatorElement {
       pageModal,
       currentLabelValues,
       slideCardData,
-      cardType,
       attributes,
       state,
       gallery
@@ -140,7 +139,7 @@ class EntityGallerySlider extends TatorElement {
 
       // New card listener
       this.addEventListener("new-card", (e) => {
-         this._addCard(e.detail.cardIndex, e.detail.cardData[0], cardType);
+         this._addCard(e.detail.cardIndex, e.detail.cardData[0]);
       });
 
       // New image listener
@@ -268,7 +267,7 @@ class EntityGallerySlider extends TatorElement {
       }
     }
 
-   _addCard(index, cardObj, cardType) { 
+   _addCard(index, cardObj) { 
       let newCard = false;
       let location = this._currentCardIndexes[cardObj.id];
 
@@ -299,7 +298,8 @@ class EntityGallerySlider extends TatorElement {
       if (newCard) {
          //console.log("New card...");
          // create a new card
-         card = document.createElement(cardType);
+         card = document.createElement("entity-card");
+         card._li.setAttribute("class", "analysis__collection entity-slider-card entity-card aspect-true rounded-2");
 
          // Resize Tool needs to change style within card on change
          // card.style.width = "272px";

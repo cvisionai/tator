@@ -57,21 +57,25 @@ class CollectionsData extends HTMLElement {
    *   getState
    */
   async updateData(filterConditions) {
-    if (this._needReload(filterConditions)) {
-      await this._reload(filterConditions);
+    if (this._stateTypesMap.size !== 0) {
+      if (this._needReload(filterConditions)) {
+        await this._reload(filterConditions);
+      }
+
+      this._states = await this._modelData.getFilteredStates(
+        "objects",
+        this.filterConditions,
+        this._paginationState.start,
+        this._paginationState.stop,
+        this.afterMap
+      );
+
+      this._states = this._states.map(state => {
+        return { ...state, typeData: this._stateTypesMap.get(state.meta) }
+      });
+    } else {
+      this._states = [];
     }
-
-    this._states = await this._modelData.getFilteredStates(
-      "objects",
-      this.filterConditions,
-      this._paginationState.start,
-      this._paginationState.stop,
-      this.afterMap
-    );
-
-    this._states = this._states.map(state => {
-      return {...state, typeData: this._stateTypesMap.get(state.meta)}
-    });
 
     return this._states;
   }

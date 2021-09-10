@@ -59,6 +59,7 @@ class AnnotationsGallery extends EntityCardGallery {
       */
     this._cardAtributeLabels = document.createElement("entity-gallery-labels");
     this._cardAtributeLabels.titleEntityTypeName = "localization";
+    this._cardAtributeLabels._titleText = document.createTextNode("Select localization labels to display.");
     this._mainTop.appendChild(this._cardAtributeLabels);
     this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
     this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
@@ -175,20 +176,15 @@ class AnnotationsGallery extends EntityCardGallery {
       */
       let entityType = cardObj.entityType;
       let entityTypeId = entityType.id;
-
-
       let card;
+
       if (newCard) {
-        card = document.createElement("annotations-card");
+        card = document.createElement("entity-card");
+        // card._li.classList.add("analysis__annotation");
 
         /**
         * Card labels / attributes of localization or media type
         */
-        // this._cardAtributeLabels.add({
-        //   typeData: entityType,
-        //   checkedFirst: true
-        // });
-
         this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
 
         // Resize Tool needs to change style within card on change
