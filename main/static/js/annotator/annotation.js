@@ -522,14 +522,24 @@ function determinePolyResizeType(mouseLocation,poly)
   var margin = 15;
   var resizeType=null;
   var impactVector=[];
+  var minDistance = Number.MAX_SAFE_INTEGER;
+  var minIdx = -1;
   for (var idx = 0; idx < poly.length; idx++)
   {
     // calculate cartesian distance to the point, if within the margin
     // it's a corner resize
     var distance = Math.sqrt(Math.pow(poly[idx][0]-mouseLocation[0],2)+
     Math.pow(poly[idx][1]-mouseLocation[1],2));
+    if (distance < minDistance)
+    {
+      minDistance = distance;
+      minIdx = idx;
+    }
+  }
 
-    if (distance < margin)
+  for (var idx = 0; idx < poly.length; idx++)
+  {
+    if (idx == minIdx && minDistance < margin)
     {
       resizeType="move";
       impactVector.push([1.0,1.0]);
