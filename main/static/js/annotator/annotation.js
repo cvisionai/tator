@@ -1971,6 +1971,35 @@ class AnnotationCanvas extends TatorElement
     this._textOverlay.display(on);
   }
 
+  determineLocalizationResizeType(location, localization)
+  {
+    var resizeType=null;
+    if (localization == null)
+    {
+      return null;
+    }
+    var type = this.getObjectDescription(localization).dtype;
+    if (type == 'poly')
+    {
+      var poly = this.localizationToPoly(localization);
+      resizeType=determinePolyResizeType(location,
+                                              poly);
+    }
+    else if (type == 'box')
+    {
+      var poly = this.localizationToPoly(localization);
+      resizeType=determineBoxResizeType(location,
+                                            poly);
+    }
+    else if (type == 'line')
+    {
+      var line = this.localizationToLine(localization);
+      resizeType=determineLineResizeType(location,
+                                              line);
+    }
+    return resizeType;
+  }
+
   computeLocalizationColor(localization, meta)
   {
     // Default fill is solid
@@ -2545,32 +2574,13 @@ class AnnotationCanvas extends TatorElement
     }
     if (this._mouseMode == MouseMode.SELECT && this._canEdit)
     {
-      var resizeType=null;
-      var type = this.getObjectDescription(this.activeLocalization).dtype;
-      if (type == 'poly')
-      {
-        var poly = this.localizationToPoly(this.activeLocalization);
-        var resizeType=determinePolyResizeType(location,
-                                               poly);
-      }
-      else if (type == 'box')
-      {
-        var poly = this.localizationToPoly(this.activeLocalization);
-        var resizeType=determineBoxResizeType(location,
-                                              poly);
-      }
-      else if (type == 'line')
-      {
-        var line = this.localizationToLine(this.activeLocalization);
-        var resizeType=determineLineResizeType(location,
-                                               line);
-      }
+      var resizeType = this.determineLocalizationResizeType(location, this.activeLocalization);
 
       var localization = this.localizationByLocation(location);
       if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
           this._clipboard.isCutting(localization) && localization.id == this.activeLocalization.id) {
         this._textOverlay.classList.add("select-not-allowed");
-        this.emphasizeLocalization(this.activeLocaliztion);
+        this.emphasizeLocalization(this.activeLocalization);
       }
       else if (resizeType)
       {
@@ -2762,25 +2772,7 @@ class AnnotationCanvas extends TatorElement
       var resizeType = null;
       this._impactVector=null;
       if (this._canEdit) {
-        var type = this.getObjectDescription(this.activeLocalization).dtype;
-        if (type == 'poly')
-        {
-          var poly = this.localizationToPoly(this.activeLocalization);
-          var resizeType=determinePolyResizeType(clickLocation,
-                                                 poly);
-        }
-        else if (type == 'box')
-        {
-          var poly = this.localizationToPoly(this.activeLocalization);
-          resizeType=determineBoxResizeType(clickLocation,
-                                            poly);
-        }
-        else if (type == 'line')
-        {
-          var line = this.localizationToLine(this.activeLocalization);
-          resizeType=determineLineResizeType(clickLocation,
-                                             line);
-        }
+        resizeType = this.determineLocalizationResizeType(clickLocation, this.activeLocalization);
       }
 
       if ((resizeType && this._clipboard.isCutting(this.activeLocalization)) ||
