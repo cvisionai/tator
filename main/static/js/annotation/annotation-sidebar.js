@@ -201,6 +201,18 @@ class AnnotationSidebar extends TatorElement {
     }
   }
 
+  modeChange(newMode, metaMode)
+  {
+    if (newMode == "new_poly")
+    {
+      this._selectButton(this._poly, metaMode);
+    }
+    else
+    {
+      console.info(`Mode change to ${newMode} ignored.`);
+    }
+  }
+
   _selectButton(obj, altMode) {
     if (altMode)
     {

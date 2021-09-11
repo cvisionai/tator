@@ -60,8 +60,9 @@ class PolyMaker
 
   drawPointsAndLines(loc)
   {
+    let normalCoords = this._ctrl.localizationToPoly({points:this._points});
     let width = defaultDrawWidth*this._ctrl._draw.displayToViewportScale()[0];
-    for (let p of this._points)
+    for (let p of normalCoords)
     {
       this._ctrl._draw.drawCircle(p, width, color.WHITE);
     }
@@ -70,13 +71,13 @@ class PolyMaker
     {
       for (let idx = 0; idx < this._points.length-1; idx++)
       {
-        this._ctrl._draw.drawLine(this._points[idx], this._points[idx+1], color.WHITE);
+        this._ctrl._draw.drawLine(normalCoords[idx], normalCoords[idx+1], color.WHITE);
       }
     }
 
     if (this._points.length > 0 && loc)
     {
-      this._ctrl._draw.drawLine(this._points[this._points.length-1], loc, color.GRAY);
+      this._ctrl._draw.drawLine(normalCoords[this._points.length-1], loc, color.GRAY);
     }
 
     if (loc)
@@ -84,8 +85,8 @@ class PolyMaker
       let isClose = false;
       if (this._points.length > 0)
       {
-        let distance = distance_func(loc,this._points[0]);
-        if (distance < 10)
+        let distance = distance_func(loc,normalCoords);
+        if (distance < 15)
         {
           width *= 2.50;
         }
@@ -97,35 +98,25 @@ class PolyMaker
 
   onMouseDown(loc)
   {
+    let normalCoords = this._ctrl.localizationToPoly({points:this._points});
     if (this._complete)
     {
       return;
     }
     if (this._points.length > 0)
     {
-      let distance = distance_func(loc,this._points[0]);
-      if (distance < 10)
+      let distance = distance_func(loc,normalCoords[0]);
+      if (distance < 15)
       {
         // Close it
         this._points.push(this._points[0]);
         this.drawPointsAndLines();
         this._complete = true;
-        let [minX,minY,maxX,maxY] = enclosing_box(this._points);
-        let exploded = [];
-        for (let p of this._points)
-        {
-          exploded.push(p[0]);
-          exploded.push(p[1]);
-        }
-        exploded = this._ctrl.scaleToRelative(exploded, true);
-        let fixed = [];
-        for (let idx = 0; idx < exploded.length; idx+=2)
-        {
-          fixed.push([exploded[idx],exploded[idx+1]]);
-        }
+        // Calculate drag based on viewport coordinates
+        let [minX,minY,maxX,maxY] = enclosing_box(normalCoords);
         let fakeDrag = {start: {x:minX,y:minY},
                         end: {x:maxX,y:maxY},
-                        points: fixed,
+                        points: this._points, // These are always relative coords
                         url: this._ctrl._draw.viewport.toDataURL()};
         this._ctrl.makeModalCreationPrompt(this._ctrl.draft,fakeDrag)
         this._ctrl._canvas.dispatchEvent(
@@ -136,7 +127,7 @@ class PolyMaker
         return;
       }
     }
-    this._points.push(loc);
+    this._points.push(this._ctrl.scaleToRelative(loc,true));
     this.drawPointsAndLines();
   }
 
@@ -932,6 +923,7 @@ class AnnotationCanvas extends TatorElement
     this._showTextOverlays = true;
     this._gridRows = 0;
     this._stretch = false;
+    this._overrideState = null; // Used to pop back into a state during a zoom/pan
 
     this._shortcutsDisabled = false;
 
@@ -2640,6 +2632,10 @@ class AnnotationCanvas extends TatorElement
     {
       this._polyMaker.onMouseOver(location);
     }
+    if (this._overrideState == MouseMode.NEW_POLY)
+    {
+      this._polyMaker.onMouseOver(null); // use poly shape, but no next point hint.
+    }
     if (this._mouseMode == MouseMode.NEW)
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
@@ -3796,12 +3792,12 @@ class AnnotationCanvas extends TatorElement
     const dotWidth = width * 1.33;
     if (type == 'poly')
     {
-      this._draw.drawCircle(item[0], dotWidth, color, alpha);
+      drawCtx.drawCircle(item[0], dotWidth, color, alpha);
       for (let idx = 1; idx < item.length; idx++)
       {
         if (item[idx][0] != item[0][0] || item[idx][1] != item[0][1])
         {
-          this._draw.drawCircle(item[idx], dotWidth, color, alpha);
+          drawCtx.drawCircle(item[idx], dotWidth, color, alpha);
         }
       }
     }
@@ -3940,6 +3936,18 @@ class AnnotationCanvas extends TatorElement
 
         this.setRoi(x, y, w, h);
         this.refresh();
+
+        if ('end' in dragEvent)
+        {
+          if (this._overrideState == MouseMode.NEW_POLY)
+          {
+            this._canvas.dispatchEvent(
+                          new CustomEvent("modeChange",
+                                    {composed: true,
+                                    detail: {newMode: "new_poly", metaMode: this._metaMode}
+                                    }));
+          }
+        }
       }
     }
     else if (this._mouseMode==MouseMode.ZOOM_ROI)
@@ -3959,6 +3967,14 @@ class AnnotationCanvas extends TatorElement
                     {composed: true,
                      detail: {metaMode: this._metaMode}
                     }));
+        if (this._overrideState == MouseMode.NEW_POLY)
+        {
+          this._canvas.dispatchEvent(
+                        new CustomEvent("modeChange",
+                                  {composed: true,
+                                  detail: {newMode: "new_poly", metaMode: this._metaMode}
+                                  }));
+        }
       }
       else
       {
@@ -4341,7 +4357,17 @@ class AnnotationCanvas extends TatorElement
       this._lastHoverDraw == 0;
       this.refresh();
     }
-    this._mouseMode = MouseMode.QUERY;
+    if (this._overrideState)
+    {
+      this._mouseMode = this._overrideState;
+      this.draft = this._oldDraft;
+      this._oldDraft = null;
+      this._overrideState = null;
+    }
+    else
+    {
+      this._mouseMode = MouseMode.QUERY;
+    }
     this._metaMode = false;
   }
 
@@ -4410,12 +4436,17 @@ class AnnotationCanvas extends TatorElement
   {
     var that = this;
     this.refresh().then(
-      function()
+      () =>
       {
+        if (this._mouseMode == MouseMode.NEW_POLY)
+        {
+          this._overrideState = MouseMode.NEW_POLY;
+          this._oldDraft = this.draft;
+        }
         updateStatus("Select an area to zoom", "primary", -1);
-        that._mouseMode = MouseMode.ZOOM_ROI;
+        this._mouseMode = MouseMode.ZOOM_ROI;
         cursorTypes.forEach((t) => {that._canvas.classList.remove("select-"+t);});
-        that._canvas.classList.add("select-zoom-roi");
+        this._canvas.classList.add("select-zoom-roi");
       });
   }
 
@@ -4430,6 +4461,11 @@ class AnnotationCanvas extends TatorElement
 
   pan()
   {
+    if (this._mouseMode == MouseMode.NEW_POLY)
+    {
+      this._overrideState = MouseMode.NEW_POLY;
+      this._oldDraft = this.draft;
+    }
     this._mouseMode = MouseMode.PAN;
     updateStatus("Drag to pan");
   }
