@@ -2224,7 +2224,6 @@ class AnnotationCanvas extends TatorElement
         poly[idx][1] += (end.y - begin.y);
       }
     }
-    poly = this.boundsCheck(poly);
     return poly;
   }
   
@@ -2412,7 +2411,7 @@ class AnnotationCanvas extends TatorElement
     var scaleFactor=[drawCtx.clientWidth/roi[2],
                      drawCtx.clientHeight/roi[3]];
 
-    //Scale box dimenisons
+    //Scale box dimensions
     var actX0 = (localization.x - roi[0]) / roi[2];
     var actY0 = (localization.y - roi[1]) / roi[3];
     var actX1 = (localization.x + localization.u - roi[0]) / roi[2];
