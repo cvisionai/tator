@@ -514,23 +514,25 @@ function determinePolyResizeType(mouseLocation,poly)
   var resizeType=null;
   var impactVector=[];
   var minDistance = Number.MAX_SAFE_INTEGER;
-  var minIdx = -1;
+  var distances=[];
+  // Calculate the nearest point
   for (var idx = 0; idx < poly.length; idx++)
   {
     // calculate cartesian distance to the point, if within the margin
     // it's a corner resize
     var distance = Math.sqrt(Math.pow(poly[idx][0]-mouseLocation[0],2)+
     Math.pow(poly[idx][1]-mouseLocation[1],2));
+    distances.push(distance);
     if (distance < minDistance)
     {
       minDistance = distance;
-      minIdx = idx;
     }
   }
 
   for (var idx = 0; idx < poly.length; idx++)
   {
-    if (idx == minIdx && minDistance < margin)
+    // Handles overlapping point move for closed poly case.
+    if (distances[idx] == minDistance && distances[idx] < margin)
     {
       resizeType="move";
       impactVector.push([1.0,1.0]);
