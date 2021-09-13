@@ -3,15 +3,25 @@ class appsTable extends TatorElement {
       super();
 
       this._main = document.createElement("div");
-      this._main.setAttribute("class", "px-6 mr-6");
+      this._main.setAttribute("class", "px-6");
       this._shadow.appendChild(this._main);
 
       this._tableCount = 0;
 
       //
       this._table = document.createElement("table");
-      this._table.setAttribute("class", "apps__table")
+      this._table.setAttribute("class", "apps__table col-12")
       this._main.appendChild(this._table);
+
+      // fixed header
+      this._fixedHeader = document.createElement("thead");
+      this._fixedHeader.setAttribute("class", "scroll col-12 f2")
+      this._table.appendChild(this._fixedHeader);
+
+      // rows not header
+      this._scrollSheet = document.createElement("tbody");
+      this._scrollSheet.setAttribute("class", "scroll col-12 f3")
+      this._table.appendChild(this._scrollSheet);
 
       // Keep track of rows
       this._rows = [];
@@ -19,20 +29,39 @@ class appsTable extends TatorElement {
 
       this._sortRemember = {};
       this.headerNameMap = new Map();
+      this._columnCount = 0;
    }
 
    /**
     * 
     * @param {json} data
-    * @param {Node} panelContainer
     * 
     */
-   init({ columns = null, panelContainer = null }) {
-      this.panelContainer = panelContainer;
+   init({ columns = null, hasActionCol = false }) {
+      
 
+      // Create map of columns for user
       for (let col of columns) {
          this.headerNameMap.set(col.name, col.name);
       }
+
+      // All rows will have an action col in addition
+      if (hasActionCol) {
+         this.headerNameMap.set("Actions", "Actions");
+      }
+      
+      // Add header row to table
+      this._columnCount = this.headerNameMap.size;
+      let headerRow = this.getRow(true);
+
+      for (let [label, path] of this.headerNameMap) {        
+         this.addHeaderCol({
+            name: path,
+            value: label
+         }, headerRow);
+      }
+
+      this._fixedHeader.appendChild(headerRow);
    }
 
    /**
@@ -42,7 +71,7 @@ class appsTable extends TatorElement {
    _refreshTable(data) {
       // console.log("Clearing out table");
 
-      this._table.innerHTML = "";
+      this._scrollSheet.innerHTML = "";
       this._rows = [];
       this._rowDataIndex = {}; // 1234 : 0, 12345 : 1
 
@@ -54,47 +83,34 @@ class appsTable extends TatorElement {
     * @param {json} data 
     */
    _addTable(data) {
-      console.log(this.headerNameMap);
-      // Heading row
-      // Add a header and a row for all data
-      let header = this.getRow(true);
-      this._table.appendChild(header);
-      
-      for (let [label, path] of this.headerNameMap) {
-         console.log(`label, path ${label}, ${path}`);
-         let data = {
-            name: path,
-            value: label
-         }
-         
-         this.addCol(data, header);
-      }
-
-      // Now for each data object....
+      // For each data object....
       for (let item of data) {
          let rowObject = item.attributes;
          let row = this.getRow(false);
          row.setAttribute("class", "table-row")
          row.setAttribute("data", JSON.stringify(rowObject));
          row.setAttribute("id", item.id);
-
          this._rowDataIndex[item.id] = row;
 
          // #todo instead of going through data, prob should loop header items
          for (let [label, path] of this.headerNameMap) {
-            let value = rowObject[path];
+            if (path !== "Actions") {
+               let value = rowObject[path];
 
-            if (typeof value === "undefined" || value === null) {
-               value = "--";
-            }
-
-            // Add the data item
-            let colObj = {
-               name: path,
-               value
-            }
-
-            this.addCol(colObj, row);
+               if (typeof value === "undefined" || value === null) {
+                  value = "--";
+               }
+   
+               // Add the data item
+               let colObj = {
+                  name: path,
+                  value
+               }
+   
+               this.addCol(colObj, row);
+            } else {
+               this.addActionCol(item.id, row);
+            } 
          }
 
          // row.addEventListener("click", () => {
@@ -119,7 +135,7 @@ class appsTable extends TatorElement {
          }
 
          this._rows.push(row);
-         this._table.appendChild(row);
+         this._scrollSheet.appendChild(row);
       }
 
       this.updateTableCount();
@@ -151,31 +167,26 @@ class appsTable extends TatorElement {
       return row;
    }
 
-   /**
-    * 
-    * @param {json} data 
-    * @param {Node} row 
-    */
-   addCol(colObj, row) {
-      let column = null;
-      if (row.getAttribute("isHeaderRow") && row.getAttribute("isHeaderRow") == "true") {
-         column = document.createElement("th");
-         this._addColumnSort(column);
-      } else {
-         column = document.createElement("td");
-      }
+   addHeaderCol(colObj, row) {
+      let normal = 100 / Number(this._columnCount)
+      let narrow = normal / 2;
+      let wide = normal + narrow;
+      let x_wide = normal + normal;
 
-      console.log(colObj)
-
+      let column = document.createElement("th");
+      this._addColumnSort(column);
+      
       column.setAttribute("name", colObj.name);
-
-      // if (colObj.name == "name") {
-      //    column.classList.add("wide");
-      // }
-
-      // if (colObj.name == "size" || data.name == "file_type") {
-      //    column.classList.add("narrow");
-      // }
+      
+      if (colObj.name == "Species") {
+         column.style.width = `${x_wide}%`;
+      } else if (colObj.name == "Subject") {
+         column.style.width = `${wide}%`;
+      } else if (colObj.name == "Year" || colObj.name == "Haul" || colObj.name == "NESPP4") {
+         column.style.width = `${narrow}%`;
+      } else {
+         column.style.width = `${normal}%`;
+      }
 
       let textSpan = document.createElement("span")
       textSpan.appendChild(document.createTextNode(colObj.value));
@@ -183,6 +194,36 @@ class appsTable extends TatorElement {
 
       this._columns.push(column);
 
+      row.appendChild(column);
+   }
+
+   /**
+    * 
+    * @param {json} data 
+    * @param {Node} row 
+    */
+   addCol(colObj, row) {
+      let column = document.createElement("td");
+      column.setAttribute("name", colObj.name);
+
+      let textSpan = document.createElement("span")
+      textSpan.appendChild(document.createTextNode(colObj.value));
+      column.prepend(textSpan);
+
+      this._columns.push(column);
+
+      row.appendChild(column);
+   }
+
+   addActionCol(stateId, row) {
+      let column = document.createElement("td");
+
+      let action = document.createElement("a");
+      action.setAttribute("class", "clickable hover-text-white text-white");
+      action.setAttribute("href", `/${this._projectId}/apps/species?submission=${stateId}`);
+      action.appendChild(document.createTextNode("Verify Submission"));
+
+      column.appendChild(action);
       row.appendChild(column);
    }
 
@@ -247,6 +288,7 @@ class appsTable extends TatorElement {
    updateTableCount() {
       let rowQuery = this._table.querySelectorAll(".table-row:not(.hidden)");
       let rowLength = rowQuery.length;
+
       for (let [i, row] of Object.entries(rowQuery)) {
          let odd = i % 2;
          if (odd) {

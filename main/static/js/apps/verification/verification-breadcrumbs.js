@@ -8,8 +8,9 @@ class InventoryBreadcrumbs extends TatorElement {
     div.setAttribute("class", "annotation__breadcrumbs d-flex flex-items-center f3");
     this._shadow.appendChild(div);
 
-    this._analyticsText = document.createElement("a");
+    this._analyticsText = document.createElement("span");
     this._analyticsText.setAttribute("class", "h2");
+    this.analyticsText.textContent = "Species Verfication";
     div.appendChild(this._analyticsText);
 
     this.chevron2 = document.createElement("chevron-right");

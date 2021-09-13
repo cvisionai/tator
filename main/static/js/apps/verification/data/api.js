@@ -8,7 +8,7 @@ class AppData {
    /**
     * Returns attribute types JSON for "Submission" State Type
     */
-   async _getSubmissionInfo() {
+   async _getSubmissionAttributes() {
       await this._modelData.getAllStateTypes();
       
       let states = this._modelData.getStoredMediaStateTypes();
@@ -26,7 +26,7 @@ class AppData {
       return null
    }
 
-   async _getSubmissionData() {
+   async _getSubmissions() {
       if (this._submissionState !== null) {
          // get all the collections, and display data in table
          try {
