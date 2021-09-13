@@ -2579,11 +2579,14 @@ class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.NEW_POLY)
     {
+      cursorTypes.forEach((t) => {that._textOverlay.classList.remove("select-"+t);});
+      this._textOverlay.classList.add("select-crosshair");
       this._polyMaker.onMouseOver(location);
     }
     if (this._overrideState == MouseMode.NEW_POLY)
     {
-      this._polyMaker.onMouseOver(null); // use poly shape, but no next point hint.
+      // TODO: This would be ideal but causes some flashes that are unsightly.
+      //this._polyMaker.onMouseOver(null); // use poly shape, but no next point hint.
     }
     if (this._mouseMode == MouseMode.NEW)
     {
@@ -4394,8 +4397,8 @@ class AnnotationCanvas extends TatorElement
         }
         updateStatus("Select an area to zoom", "primary", -1);
         this._mouseMode = MouseMode.ZOOM_ROI;
-        cursorTypes.forEach((t) => {that._canvas.classList.remove("select-"+t);});
-        this._canvas.classList.add("select-zoom-roi");
+        cursorTypes.forEach((t) => {that._textOverlay.classList.remove("select-"+t);});
+        this._textOverlay.classList.add("select-zoom-roi");
       });
   }
 
