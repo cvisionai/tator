@@ -444,6 +444,9 @@ FILES = \
     analytics/collections/collections-data.js \
     analytics/visualization/visualization.js \
     analytics/reports/reports.js \
+    svp/apps-species.js \
+    svp/apps-species-gallery.js \
+    svp/apps-species-panel.js \
     third_party/autocomplete.js \
     third_party/webrtcstreamer.js \
     utilities.js

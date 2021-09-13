@@ -7,11 +7,11 @@
 {% endblock head %}
 
 {% block body %}
-<analytics-collections 
+<apps-species
     username="{{ user|stringformat:'s' }}"
     email="{{ user.email }}"
     project-id="{{ project.id }}"
     project-name="{{ project.name }}"
     token="{{ token }}">
-</analytics-collections>
+</apps-species>
 {% endblock body %}

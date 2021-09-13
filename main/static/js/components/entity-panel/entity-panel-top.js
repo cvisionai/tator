@@ -40,10 +40,6 @@ class EntityGalleryPanelTop extends TatorElement {
     this._topBarID.setAttribute("class", "entity-panel--container--top-bar--id text-normal text-gray h3 ");
     this._topBarH3.appendChild(this._topBarID);
 
-    // Panel Img Canvas
-    this._locImage = document.createElement("entity-panel-localization");
-    this._box.appendChild(this._locImage);
-
     // Optional static image
     this._staticImage = document.createElement("img");
     this._staticImage.hidden = true;
@@ -82,6 +78,10 @@ class EntityGalleryPanelTop extends TatorElement {
 
   init({ pageModal, modelData, panelContainer }) {
     //if (this.localizationType) {
+    if (this._locImage == undefined) {
+      this._locImage = document.createElement("entity-panel-localization");
+      this._box.insertBefore(this._locImage, this._staticImage);
+    }
     this._locImage.init({ pageModal, modelData, panelContainer });
     //}
   }
@@ -140,8 +140,8 @@ class EntityGalleryPanelTop extends TatorElement {
       /* Get panel name */
       let panelName = "";
       // Localization or Media Type name
-      if(cardObj.stateType && cardObj.stateType == "Media"){
-        panelName = evtDetail.cardObj.mediaInfo.entityType.name;
+      if(cardObj.stateInfo){
+        panelName = cardObj.stateInfo.entityType.name;
       } else {
         panelName = evtDetail.cardObj.entityType.name;
       }
