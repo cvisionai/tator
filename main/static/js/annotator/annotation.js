@@ -85,7 +85,7 @@ class PolyMaker
       let isClose = false;
       if (this._points.length > 0)
       {
-        let distance = distance_func(loc,normalCoords);
+        let distance = distance_func(loc,normalCoords[0]);
         if (distance < 15)
         {
           width *= 2.50;
@@ -2412,55 +2412,6 @@ class AnnotationCanvas extends TatorElement
     var scaleFactor=[drawCtx.clientWidth/roi[2],
                      drawCtx.clientHeight/roi[3]];
 
-    // If the line will be drawn off screen
-    // correct for the actual vertex location due to
-    // viewable pixels
-    let rectify = (x0,y0,x1,y1, sf) => {
-      let slope = (y1-y0)/(x1-x0);
-
-      if (x0 < 0)
-      {
-        y0 -= (slope*x0);
-        x0 = 0;
-      }
-      else if (x0 > 1.0)
-      {
-        y0 -= (slope*(x0-1.0));
-        x0 = 1.0;
-      }
-      if (y0 < 0)
-      {
-        x0 -= (y0/slope);
-        y0 = 0;
-      }
-      else if (y0 > 1.0)
-      {
-        x0 -= ((y0-1.0)/slope);
-        y0 = 1.0;
-      }
-      if (x1 > 1.0)
-      {
-        y1 -= (slope*(x1-1.0));
-        x1 = 1.0;
-      }
-      else if (x1 < 0)
-      {
-        y1 -= (slope*x1);
-        x1 = 0;
-      }
-      if (y1 > 1.0)
-      {
-        x1 -= ((y1-1.0)/slope);
-        y1 = 1.0;
-      }
-      else if (y1 < 0)
-      {
-        x1 -= (y1/slope);
-        y1 = 0;
-      }
-      return [[x0*sf[0],y0*sf[1]],[x1*sf[0],y1*sf[1]]];
-    };
-
     //Scale box dimenisons
     var actX0 = (localization.x - roi[0]) / roi[2];
     var actY0 = (localization.y - roi[1]) / roi[3];
@@ -2469,9 +2420,8 @@ class AnnotationCanvas extends TatorElement
 
     scaleFactor[0] *= roi[2];
     scaleFactor[1] *= roi[3];
-    var line = rectify(actX0,actY0,actX1,actY1, scaleFactor);
 
-    return line;
+    return [[actX0*scaleFactor[0],actY0*scaleFactor[1]],[actX1*scaleFactor[0], actY1*scaleFactor[1]]];
   }
 
   localizationToDot(localization, width, drawCtx, roi)
