@@ -24,6 +24,19 @@ class EntityGallerySlider extends TatorElement {
       this._title.setAttribute("class", "entity-gallery-slider--title text-gray");
       this._labels.appendChild(this._title);
 
+      this._displayLabels = document.createElement("div");
+      this._displayLabels.setAttribute("class", "entity-gallery-slider--labels flex-wrap col-12 d-flex d-row f2 text-normal text-gray py-2");
+      this.main.appendChild(this._displayLabels);
+
+      /**
+       * Minimize button
+       */
+       this._minimizeDiv = document.createElement("div");
+       this._minimizeDiv.setAttribute("class", "d-flex chevron-trigger-90");
+       this._minimizeDiv.style.marginLeft = "10px";
+       this._labels.appendChild(this._minimizeDiv);
+       this._minimizeDiv.appendChild(this._chevron());
+
       /**
        * Placeholder for tools
        */
@@ -51,21 +64,10 @@ class EntityGallerySlider extends TatorElement {
       // Entity cards aren't deleted. They are reused and hidden if not used.
       this._cardElements = [];
 
-      // Gallery Top Pagination Holder
-      // #todo customize in-slider pagination feel
-      this._topNav = document.createElement("div");
-      this._topNav.setAttribute("class", "enitity-gallery-slider__nav py-2 d-flex flex-justify-center");
-      this.main.appendChild(this._topNav);
-
       // Div to contain slider cards styling
       this.styleDiv = document.createElement("div");
       this.styleDiv.setAttribute("class", "entity-gallery-slider__ul-container");
       this.main.appendChild(this.styleDiv);
-
-      // Gallery Bottom Pagination Holder
-      this._bottomNav = document.createElement("div");
-      this._bottomNav.setAttribute("class", "enitity-gallery-slider__nav py-2 d-flex flex-justify-center");
-      this.main.appendChild(this._bottomNav);
 
       // card columns inside slider #todo finish styling
       this.colSize = 272;
@@ -87,7 +89,37 @@ class EntityGallerySlider extends TatorElement {
       this._attrWrapper.hidden = true;
 
       this._mode = "normal";
+
+      this._minimizeDiv.addEventListener("click", evt => {
+         // Hide everything but the displayed labels
+         this.styleDiv.hidden = !this.styleDiv.hidden;
+         this.sliderContainer.hidden = !this.sliderContainer.hidden;
+         if (this._mode != "normal") {
+            this._attrWrapper.hidden = !this._attrWrapper.hidden;
+         }
+         this._toggleChevron(evt);
+      });
    }
+
+   _chevron() {
+      const chevron = document.createElementNS(svgNamespace, "svg");
+      chevron.setAttribute("class", "chevron");
+      chevron.setAttribute("viewBox", "0 0 24 24");
+      chevron.setAttribute("height", "1em");
+      chevron.setAttribute("width", "1em");
+
+      const chevronPath = document.createElementNS(svgNamespace, "path");
+      chevronPath.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+
+      chevron.appendChild(chevronPath);
+
+      return chevron;
+    }
+
+    _toggleChevron(evt){
+      var el = evt.target;
+      return el.classList.toggle('chevron-trigger-90');
+    }
 
    /**
     * Initialize slider with access to outer components and data
@@ -215,7 +247,7 @@ class EntityGallerySlider extends TatorElement {
       seperator.setAttribute("class", "px-2");
       attributeLabel.appendChild(seperator)
 
-      let sep = document.createTextNode("|");
+      let sep = document.createTextNode("-");
       seperator.appendChild(sep);
 
       let text = "";
@@ -226,7 +258,7 @@ class EntityGallerySlider extends TatorElement {
       }
       attributeLabel.appendChild(text);
 
-      this._labels.appendChild(attributeLabel);
+      this._displayLabels.appendChild(attributeLabel);
       this.attributeLabelEls.push(attributeLabel);
 
       // Apply preference to newly created Label
