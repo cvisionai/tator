@@ -790,6 +790,16 @@ class DrawGL
   // Draw a line at start to finish. Optionally supply pen info.
   drawLine(start, finish, penColor, width, alpha, effect)
   {
+    // If both start and finish are off-screen there isn't anything to draw
+    if (start[0] < 0 && finish[0] < 0 || start[1] < 0 && finish[1] < 0)
+    {
+      return;
+    }
+    if (start[0] > this.clientWidth && finish[0] > this.clientWidth || start[1] > this.clientHeight && finish[1] > this.clientHeight)
+    {
+      return;
+    }
+
     if (this.drawBuffer == null)
     {
       this.beginDraw();
