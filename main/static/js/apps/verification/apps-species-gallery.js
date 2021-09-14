@@ -190,7 +190,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
     for (let s of this._sliderElements) {
       if (id in s._currentCardIndexes) {
         var info = s._cardElements[s._currentCardIndexes[id]];
-        return info.card._li.classList.remove("is-selected");
+        info.card._li.classList.remove("is-selected");
       }
     }
   }
