@@ -4486,10 +4486,14 @@ class AnnotationCanvas extends TatorElement
   zoomOut()
   {
     cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
-    this._mouseMode = MouseMode.QUERY;
     updateStatus("Reset to full frame");
+    if (this._mouseMode == MouseMode.NEW_POLY)
+    {
+      this._overrideState = MouseMode.NEW_POLY;
+      this._oldDraft = this.draft;
+    }
     this.resetRoi();
-    this.refresh();
+    this.defaultMode();
   }
 
   pan()
