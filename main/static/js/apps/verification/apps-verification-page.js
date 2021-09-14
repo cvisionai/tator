@@ -39,7 +39,7 @@ class AppsVerificationPage extends TatorPage {
 
     // front end table search
     const searchDiv = document.createElement("div");
-    searchDiv.setAttribute("class", "project__search search d-flex position-relative px-6 py-6 col-6 float-right");
+    searchDiv.setAttribute("class", "project__search search d-flex position-relative px-6 py-3 col-6 float-right");
     this.main.appendChild(searchDiv);
 
     const label = document.createElement("label");

@@ -225,7 +225,15 @@ class appsTable extends TatorElement {
 
    addActionCol(idNum, status, row) {
       let column = document.createElement("td");
-      let pageType = status == "Not Verified" ? "verify" : "verify";
+      let pageType = "";
+      if (status == "Not Verified") {
+         pageType = "verify";
+      } else if (status == "Needs Resolution") {
+         pageType = "resolve";
+      } else {
+         pageType = "complete";
+      }
+
       console.log(`status ${status}`);
       let verifyType = "reviewer"; // #todo other options?
       let actionHREF = `/${this.projectId}/apps/species?pageType=${pageType}&idnum=${idNum}&verifyType=${verifyType}`
