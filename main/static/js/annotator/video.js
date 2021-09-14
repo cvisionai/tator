@@ -1582,7 +1582,7 @@ class VideoCanvas extends AnnotationCanvas {
 
           var playCallback = function () {
             console.log("******* restarting onDemand: Playing");
-	          that.onDemandDownloadPrefetch(true);
+	          that.onDemandDownloadPrefetch(-1);
             that._playGenericOnDemand(that._direction)
           };
 
@@ -2767,7 +2767,7 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  onDemandDownloadPrefetch(reset)
+  onDemandDownloadPrefetch(reqFrame)
   {
     // This function can be called at anytime. If auto-download is disabled, then just stop
     // onDemand functionality completely
@@ -2777,7 +2777,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    if (this.videoBuffer(this.currentFrame(), "play") != null && reset != true) {
+    if (this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {

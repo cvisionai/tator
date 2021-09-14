@@ -2541,7 +2541,6 @@ class AnnotationCanvas extends TatorElement
       }
       else if (resizeType)
       {
-        console.log(`resize type = ${resizeType}`);
         this._textOverlay.classList.add("select-"+resizeType[0]);
         this._impactVector = resizeType[1];
         this.refresh();
