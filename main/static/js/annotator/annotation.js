@@ -3004,13 +3004,13 @@ class AnnotationCanvas extends TatorElement
       {
         var poly = this.localizationToPoly(localization);
         this._draw.drawPolygon(poly, drawColor, width);
-        this.accentWithHandles(this._draw, meta.dtype, poly, drawColor, width, true);
+        this.accentWithHandles(this._draw, meta.dtype, poly, drawColor, width, annotation_alpha, true);
       }
       else if (meta.dtype == "line")
       {
         var line = this.localizationToLine(localization);
         this._draw.drawLine(line[0], line[1], drawColor, width);
-        this.accentWithHandles(this._draw, meta.dtype, line, drawColor, width, true);
+        this.accentWithHandles(this._draw, meta.dtype, line, drawColor, width, annotation_alpha, true);
       }
       else if (meta.dtype == 'dot')
       {
@@ -4121,7 +4121,7 @@ class AnnotationCanvas extends TatorElement
             that.blackoutOutside(poly);
             this._draw.drawPolygon(poly, color.WHITE,
                                    Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
-            this.accentWithHandles(this._draw,objType.dtype, poly, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]), true);
+            this.accentWithHandles(this._draw,objType.dtype, poly, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]), annotation_alpha, true);
           }
           else if (objType.dtype == 'line')
           {
@@ -4133,7 +4133,7 @@ class AnnotationCanvas extends TatorElement
             var fauxBoxCoords = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]];
             that.blackoutOutside(fauxBoxCoords);
             this._draw.drawLine(line[0], line[1], color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]));
-            this.accentWithHandles(this._draw,objType.dtype, line, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]), true);
+            this.accentWithHandles(this._draw,objType.dtype, line, color.WHITE, Math.round(objType.line_width * this._draw.displayToViewportScale()[0]), annotation_alpha, true);
           }
           else
           {
