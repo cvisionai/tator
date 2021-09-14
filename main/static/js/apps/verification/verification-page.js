@@ -25,7 +25,7 @@ class AppsVerificationPage extends TatorPage {
 
     // Table Container
     const headerText = document.createElement("div");
-    headerText.setAttribute("class", "project__header d-flex flex-items-center px-6 py-6");
+    headerText.setAttribute("class", "project__header d-flex flex-items-center px-6 py-6 col-6 float-left");
     this.main.appendChild(headerText);
 
     this._name = document.createElement("h2");
@@ -39,7 +39,7 @@ class AppsVerificationPage extends TatorPage {
 
     // front end table search
     const searchDiv = document.createElement("div");
-    searchDiv.setAttribute("class", "project__search search d-flex position-relative px-6 py-6");
+    searchDiv.setAttribute("class", "project__search search d-flex position-relative px-6 py-6 col-6 float-right");
     this.main.appendChild(searchDiv);
 
     const label = document.createElement("label");
@@ -94,8 +94,6 @@ class AppsVerificationPage extends TatorPage {
 
     // All of the file data
     this._data = null;
-
-    // Subset shown to user at a given time
     this._displayData = null;
   }
 
@@ -196,14 +194,15 @@ class AppsVerificationPage extends TatorPage {
   }
 
   frontEndFilterShowAll() {
-    return this._table._refreshTable(this._data);
+    this._displayData = this._data;
+    return this._table._refreshTable(this._displayData);
   }
 
   frontEndSort(e) {
     console.log(e);
     // sort the current data, and refresh table
     let selectedId = this._table.findSelected();
-    let prop = e.detail.sortData.name;
+    let attributeName = e.detail.sortData.name;
     this._sortCompare = null;
 
     if (e.detail.sortData.sortType == "asc") {
@@ -220,38 +219,19 @@ class AppsVerificationPage extends TatorPage {
       };
     }
 
-    let sorted = this._data.sort((a, b) => {
-      let aProp = a;
-      let bProp = b;
-      let aIsNull = false;
-      let bIsNull = false;
+    let sorted = this._displayData.sort((a, b) => {
+      let aAttr = a.attributes;
+      let bAttr = b.attributes;
 
-      let path = prop.split("--");
+      // find A and B values to compare
+      let aVal = aAttr[attributeName];
+      let bVal = bAttr[attributeName];
 
-      for (let p of path) {
-        if (aProp != null && !aIsNull) {
-          aProp = aProp[p];
-        } else {
-          aIsNull = true;
-          aProp = "";
-        }
-
-        if (bProp != null && !bIsNull) {
-          bProp = bProp[p];
-        } else {
-          bIsNull = true;
-          bProp = "";
-        }
-      }
-
-      return this._sortCompare(aProp, bProp);
+      return this._sortCompare(aVal, bVal);
     });
 
-    this._data = sorted;
-    // this._table._refreshTable(this._data);
-
-    // reapply any front end filtering or selections
-    this._filterButtons.applyCurrentValues();
+    this._displayData = sorted;
+    this._table._refreshTable(this._displayData)
 
     if (selectedId) {
       for (let r of this._table._rows) {
