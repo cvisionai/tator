@@ -2530,6 +2530,7 @@ class AnnotationCanvas extends TatorElement
     }
     if (this._mouseMode == MouseMode.SELECT && this._canEdit)
     {
+      this._impactVector = null;
       var resizeType = this.determineLocalizationResizeType(location, this.activeLocalization);
 
       var localization = this.localizationByLocation(location);
@@ -2547,7 +2548,6 @@ class AnnotationCanvas extends TatorElement
       }
       else
       {
-        this._impactVector = null;
         // Check to see if we are nearby are in the localization
         if (localization && localization.id == this.activeLocalization.id)
         {
@@ -2561,6 +2561,7 @@ class AnnotationCanvas extends TatorElement
             this._textOverlay.classList.add("select-grabbing");
           }
           this.emphasizeLocalization(localization);
+          this.refresh();
         }
         else if (localization)
         {
@@ -2999,18 +3000,23 @@ class AnnotationCanvas extends TatorElement
       {
         var drawColor = emphasisColor(localization);
       }
+      let match = false;
+      if (this.activeLocalization && this.activeLocalization.id == localization.id)
+      {
+        match = true;
+      }
 
       if (meta.dtype == "box" || meta.dtype == "box")
       {
         var poly = this.localizationToPoly(localization);
         this._draw.drawPolygon(poly, drawColor, width);
-        this.accentWithHandles(this._draw, meta.dtype, poly, drawColor, width, annotation_alpha, true);
+        this.accentWithHandles(this._draw, meta.dtype, poly, drawColor, width, annotation_alpha, match);
       }
       else if (meta.dtype == "line")
       {
         var line = this.localizationToLine(localization);
         this._draw.drawLine(line[0], line[1], drawColor, width);
-        this.accentWithHandles(this._draw, meta.dtype, line, drawColor, width, annotation_alpha, true);
+        this.accentWithHandles(this._draw, meta.dtype, line, drawColor, width, annotation_alpha, match);
       }
       else if (meta.dtype == 'dot')
       {
@@ -3054,6 +3060,7 @@ class AnnotationCanvas extends TatorElement
     }
     else
     {
+      // TODO: Why is this check really here to avoid a refresh?
       if (this._emphasis != localization)
       {
         this._emphasis = localization;
