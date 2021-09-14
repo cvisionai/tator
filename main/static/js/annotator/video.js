@@ -2298,8 +2298,11 @@ class VideoCanvas extends AnnotationCanvas {
           video.oncanplay=null;
           if (forceSeekBuffer && that._audioPlayer)
           {
-            that._audioPlayer.currentTime = audio_time;
-            console.info("Setting audio to " + audio_time);
+            if (that._audioPlayer.currentTime != audio_time)
+            {
+              that._audioPlayer.currentTime = audio_time;
+              console.info("Setting audio to " + audio_time);
+            }
           }
 
           // Remove entries (if required to do so) now that we've drawn the frame
