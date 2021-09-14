@@ -2560,7 +2560,11 @@ class AnnotationCanvas extends TatorElement
             this._textOverlay.classList.add("select-grabbing");
           }
           this.emphasizeLocalization(localization);
-          this.refresh();
+          if (mouseEvent.buttons == 0)
+          {
+            // Don't draw if we are dragging because then the drag handler is using the pen.
+            this.refresh();
+          }
         }
         else if (localization)
         {
@@ -3506,30 +3510,42 @@ class AnnotationCanvas extends TatorElement
 
   static updatePositions(localization, objDescription)
   {
+    let boundsFix = (number) => {
+      return Math.min(1,Math.max(0,number));
+    };
+    let boundsFixPoint = (point) => {
+      return [Math.min(1,Math.max(0,point[0])), Math.min(1,Math.max(0,point[1]))];
+    };
+
     let patchObj = {}
     // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
     if (objDescription.dtype == 'poly')
     {
-      patchObj.points = localization.points;
+      let points = [];
+      for (let p of localization.points)
+      {
+        points.push(boundsFixPoint(p));
+      }
+      patchObj.points = points;
     }
     else if (objDescription.dtype=='box')
     {
-      patchObj.x = localization.x;
-      patchObj.y = localization.y;
-      patchObj.width = localization.width;
-      patchObj.height = localization.height;
+      patchObj.x = boundsFix(localization.x);
+      patchObj.y = boundsFix(localization.y);
+      patchObj.width = boundsFix(localization.width);
+      patchObj.height = boundsFix(localization.height);
     }
     else if (objDescription.dtype=='line')
     {
-      patchObj.x = localization.x0;
-      patchObj.y = localization.y0;
-      patchObj.u = localization.x1 - localization.x0;
-      patchObj.v = localization.y1 - localization.y0;
+      patchObj.x = boundsFix(localization.x0);
+      patchObj.y = boundsFix(localization.y0);
+      patchObj.u = boundsFix(localization.x1 - localization.x0);
+      patchObj.v = boundsFix(localization.y1 - localization.y0);
     }
     else if (objDescription.dtype=='dot')
     {
-      patchObj.x = localization.x;
-      patchObj.y = localization.y;
+      patchObj.x = boundsFix(localization.x);
+      patchObj.y = boundsFix(localization.y);
     }
     return patchObj;
   }
