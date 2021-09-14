@@ -86,6 +86,10 @@
   display: block;
   border: 1px solid $color-charcoal--medium-dark;
 
+  thead {
+    background-color: $color-blue;
+  }
+
   th {
     background-color: $color-blue;
     &:hover {
@@ -141,8 +145,8 @@
     &.selected,
     &:hover {
        background-color: $color-white;
-       color: $color-charcoal--medium-dark;
-       cursor: pointer;
+       color: $color-charcoal--medium-dark !important;
+      //  cursor: pointer;
        .sort-icon svg {
           fill: $color-charcoal--medium-dark;
        }

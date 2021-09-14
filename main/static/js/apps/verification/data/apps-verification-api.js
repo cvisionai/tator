@@ -54,5 +54,40 @@ class AppData {
       
    }
 
+   async getSubmissionStateById(id) {
+      try {
+         let restUrl = `/rest/State/${id}`;
+         let resp = await fetch(restUrl, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+               "X-CSRFToken": getCookie("csrftoken"),
+               "Accept": "application/json",
+               "Content-Type": "application/json"
+            },
+         });
+      
+         let data = resp.json();
+
+         return data;
+      } catch (e) {
+         console.error("Error getting submission data.", e);
+      }
+   }
+
+   async getStateTypeById(id) {
+      let typeData = await fetch(`/rest/StateType/${id}`, {
+         method: "GET",
+         credentials: "same-origin",
+         headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+         },
+      }).then(resp => resp.json());
+
+      return typeData;
+   }
+
   
 }

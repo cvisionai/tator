@@ -16,9 +16,9 @@ class AppsSpecies extends TatorPage {
     div.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(div);
 
-    this._breadcrumbs = document.createElement("analytics-breadcrumbs");
+    this._breadcrumbs = document.createElement("verification-breadcrumbs");
     div.appendChild(this._breadcrumbs);
-    this._breadcrumbs.setAttribute("analytics-name", "Collections Gallery");
+    this._breadcrumbs.setAttribute("verification-name", "Species Review");
 
     //
     // Settings
@@ -49,7 +49,8 @@ class AppsSpecies extends TatorPage {
     // Right entity panel
     //
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container gray-panel slide-close col-6")
+    this.aside.setAttribute("class", "entity-panel--container gray-panel slide-close col-6");
+    this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 
     this._panelContainer = document.createElement("apps-species-panel-container");
@@ -93,6 +94,9 @@ class AppsSpecies extends TatorPage {
       // Collections data view
       this._collectionsData = document.createElement("collections-data");
       this._collectionsData.init(this._modelData);
+
+      //
+      this._appData = new AppData(this.projectId);
 
       // Init panel side behavior
       this._panelContainer.init({

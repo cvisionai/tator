@@ -105,8 +105,16 @@
   color: $color-yellow;
 }
 
+.text-orange {
+  color: $color-orange;
+}
+
 .text-italic {
   font-style: italic;
+}
+
+.text-underline {
+  text-decoration: underline;
 }
 
 .hover-text-white {

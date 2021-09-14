@@ -25,10 +25,10 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
     this.resizeContainer = document.createElement("div");
     this.resizeContainer.setAttribute("class", "col-4")
     this._resizeCards = document.createElement('entity-card-resize');
-    this.colSize = 272;
+    this.colSize = 136;
     this._resizeCards._initGallery(null, this.colSize);
     this.resizeContainer.appendChild(this._resizeCards);
-    this._tools.appendChild(this.resizeContainer);
+   //  this._tools.appendChild(this.resizeContainer);
 
     // Display options in more menu
     // Note: this is appended to filter nav in collections.js
@@ -337,7 +337,16 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
 
       for (let i in this._sliderElements) {
          await this._addSliderCards({ slider: this._sliderElements[i], state: savedStates[i] });
+         
+         // Open first card and show panel
+         let slider = this._sliderElements[i];
+         if (slider._cardElements[0] && slider._cardElements[0].card) {
+            slider._cardElements[0].card.click();
+            this._parentPage.aside.hidden = false;
+         }
       }
+
+
     } else {
       this._numFiles.textContent = `0 Results`;
       const slider = document.createElement("entity-gallery-slider");
@@ -426,6 +435,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
 
               }
            }
+
         } else {
            slider.loadAllTeaser.innerHTML = "Collection is empty."
            console.warn("Cannot iterate collection list.", state);

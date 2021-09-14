@@ -37,8 +37,8 @@ class appsTable extends TatorElement {
     * @param {json} data
     * 
     */
-   init({ columns = null, hasActionCol = false }) {
-      
+   init({ projectId = null, columns = null, hasActionCol = false }) {
+      this.projectId = projectId;
 
       // Create map of columns for user
       for (let col of columns) {
@@ -109,7 +109,7 @@ class appsTable extends TatorElement {
    
                this.addCol(colObj, row);
             } else {
-               this.addActionCol(item.id, row);
+               this.addActionCol(item.attributes["IDNUM"], item.attributes["Status"], row);
             } 
          }
 
@@ -210,17 +210,29 @@ class appsTable extends TatorElement {
       textSpan.appendChild(document.createTextNode(colObj.value));
       column.prepend(textSpan);
 
+      if (colObj.name == "Status" && colObj.value == "Not Verified") {
+         column.classList.add("text-orange");
+      } else if (colObj.name == "Status" && colObj.value == "Complete") {
+         column.classList.add("text-green");
+      } else if (colObj.name == "Status" && colObj.value == "Needs Resolution") {
+         column.classList.add("text-red");
+      }
+
       this._columns.push(column);
 
       row.appendChild(column);
    }
 
-   addActionCol(stateId, row) {
+   addActionCol(idNum, status, row) {
       let column = document.createElement("td");
+      let pageType = status == "Not Verified" ? "verify" : "verify";
+      console.log(`status ${status}`);
+      let verifyType = "reviewer"; // #todo other options?
+      let actionHREF = `/${this.projectId}/apps/species?pageType=${pageType}&idnum=${idNum}&verifyType=${verifyType}`
 
       let action = document.createElement("a");
-      action.setAttribute("class", "clickable hover-text-white text-white");
-      action.setAttribute("href", `/${this._projectId}/apps/species?submission=${stateId}`);
+      action.setAttribute("class", "clickable text-purple text-underline");
+      action.setAttribute("href", actionHREF);
       action.appendChild(document.createTextNode("Verify Submission"));
 
       column.appendChild(action);

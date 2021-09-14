@@ -3,23 +3,17 @@
 {% load static %}
 
 {% block head %}
-    <!-- Nat GEO Inventory-specific components -->
-    <script src={% static "js/apps/verification/data/api.js" %}></script>
-    <script src={% static "js/apps/verification/components/table.js" %}></script>
-    
-    
-    <!-- Init element defined here -->
-    <script src={% static "js/apps/verification/verification-breadcrumbs.js" %}></script>
-    <script src={% static "js/apps/verification/verification-page.js" %}></script>
 
-<title>HOME | Species Verification Project | NOAA</title>
+
+<title>Record Verification | Tator Online</title>
 {% endblock head %}
 
 {% block body %}
 <apps-verification-page
   username="{{ user|stringformat:'s' }}"
   email="{{ user.email }}"
-  project-id="{{ project.id }}">
+  project-id="{{ project.id }}"
+  project-name="{{ project.name }}">
 </apps-verification-page>
 {% endblock body %}
 

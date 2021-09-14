@@ -444,9 +444,13 @@ FILES = \
     analytics/collections/collections-data.js \
     analytics/visualization/visualization.js \
     analytics/reports/reports.js \
-    apps/verification/apps-species.js \
-    apps/verification/apps-species-gallery.js \
-    apps/verification/apps-species-panel.js \
+    apps/verification/components/apps-species-gallery.js \
+    apps/verification/components/apps-species-panel.js \
+    apps/verification/components/apps-verification-breadcrumbs.js \
+    apps/verification/components/apps-verification-table.js \
+    apps/verification/data/apps-verification-api.js \
+    apps/verification/apps-species-page.js \
+    apps/verification/apps-verification-page.js \
     third_party/autocomplete.js \
     third_party/webrtcstreamer.js \
     utilities.js

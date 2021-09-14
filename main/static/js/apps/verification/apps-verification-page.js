@@ -30,7 +30,7 @@ class AppsVerificationPage extends TatorPage {
 
     this._name = document.createElement("h2");
     this._name.setAttribute("class", "h3 text-white"); //not a typo
-    this._name.textContent = "SVP Records Needing Verification";
+    this._name.textContent = "Verification";
     headerText.appendChild(this._name);
 
     this._numFiles = document.createElement("span");
@@ -70,7 +70,7 @@ class AppsVerificationPage extends TatorPage {
     this._input.setAttribute("name", "q");
     searchDiv.appendChild(this._input);
 
-    this._input.setAttribute("placeholder", "Search Submissions...");
+    this._input.setAttribute("placeholder", "Search...");
 
     // Gallery count / info
     this._table = document.createElement("verification-table");
@@ -127,6 +127,7 @@ class AppsVerificationPage extends TatorPage {
 
     // Pass panel and localization types to gallery
     this._table.init({
+      projectId: this.projectId, 
       columns: tableColumns,
       hasActionCol: true
     });
@@ -149,7 +150,7 @@ class AppsVerificationPage extends TatorPage {
   }
 
   updateTableCount() {
-    this._numFiles.textContent = this._table._tableCount;
+    this._numFiles.textContent = `Viewing ${this._table._tableCount} records`;
   }
 
   frontEndSearch() {
