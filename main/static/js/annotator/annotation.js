@@ -2630,6 +2630,19 @@ class AnnotationCanvas extends TatorElement
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
     }
+    if (this._mouseMode == MouseMode.PAN)
+    {
+      // When drawing a poly, only allow one move at a time.
+      if (this._overrideState == MouseMode.NEW_POLY)
+      {
+        this._canvas.dispatchEvent(
+                      new CustomEvent("modeChange",
+                                {composed: true,
+                                detail: {newMode: "new_poly", metaMode: this._metaMode}
+                                }));
+        this.defaultMode();
+      }
+    }
   }
 
   // If the user clicked an annotation, bring up an edit form if they clicked nothing, reset
@@ -3957,18 +3970,6 @@ class AnnotationCanvas extends TatorElement
 
         this.setRoi(x, y, w, h);
         this.refresh();
-
-        if ('end' in dragEvent)
-        {
-          if (this._overrideState == MouseMode.NEW_POLY)
-          {
-            this._canvas.dispatchEvent(
-                          new CustomEvent("modeChange",
-                                    {composed: true,
-                                    detail: {newMode: "new_poly", metaMode: this._metaMode}
-                                    }));
-          }
-        }
       }
     }
     else if (this._mouseMode==MouseMode.ZOOM_ROI)
