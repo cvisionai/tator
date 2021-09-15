@@ -80,7 +80,7 @@ class AppsSpecies extends TatorPage {
 
     // Gather the URL parameters which will setup this page.
     this.processURL();
-    if (this.pageType != "resolve" && this.pageType != "verify" && this.pageType != "view") {
+    if (this.pageType != "resolve" && this.pageType != "verify" && this.pageType != "feedback") {
       window.alert("Invalid page type provided.")
       return window.location.href =`/${this.projectId}/apps/verification`;
     }

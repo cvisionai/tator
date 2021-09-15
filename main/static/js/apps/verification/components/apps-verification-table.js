@@ -234,8 +234,8 @@ class appsTable extends TatorElement {
          pageType = "resolve";
          actionText = "RESOLVE";
       } else if (status == "Verified") {
-         pageType = "view";
-         actionText = "VIEW";
+         pageType = "feedback";
+         actionText = "PROVIDE ID FEEDBACK";
       } else {
          // no action
          return row.appendChild(column);

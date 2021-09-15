@@ -96,16 +96,17 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
       this.modelData = this._parentPage._modelData;
 
       if (this._pageType == "verify" && this._verifyType == "ai") {
-         this._titleText.textContent = "Verify Species | AI"
+         this._titleText.textContent = "Verify Species | AI";
       }
       else if (this._pageType == "verify" && this._verifyType == "reviewer") {
-         this._titleText.textContent = "Verify Species | Reviewer"
+         this._titleText.textContent = "Verify Species | Reviewer";
       }
       else if (this._pageType == "resolve") {
-         this._titleText.textContent = "Verify Species | Resolve Discrepancy"
+         this._titleText.textContent = "Verify Species | Resolve Discrepancy";
       }
-      else if (this._pageType == "view") {
-         this._titleText.textContent = "Verify Species | View ID"
+      else if (this._pageType == "feedback") {
+         this._titleText.textContent = "Provide Submission ID Feedback";
+         this._save.style.display = "none";
       }
       else {
          window.alert(`Invalid verifyType (${verifyType}) and pageType (${pageType})`)
@@ -249,17 +250,9 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
       this._addSliders({ sliderList: newSliderList, states });
       this._sliderContainer.appendChild(newSliderList);
 
-      // Update new slider panel permission
-      if (this._pageType !== "view") {
-         const permissionValue = "Can Edit";
-         const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-         this.panelContainer.dispatchEvent(panelPermissionEvt);
-      } else {
-         const permissionValue = "Read Only";
-         const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-         this.panelContainer.dispatchEvent(panelPermissionEvt);
-      }
-
+      const permissionValue = "Can Edit";
+      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+      this.panelContainer.dispatchEvent(panelPermissionEvt);
    }
 
    async _addSliders({ sliderList, states }) {
@@ -301,7 +294,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
             slider._resizeCards = this._resizeCards;
             sliderList.appendChild(slider);
 
-            if (this._pageType == "resolve" || this._pageType == "view") {
+            if (this._pageType == "resolve" || this._pageType == "feedback") {
                if (state.meta == this.verificationType.id) {
                   if (state.attributes["Record Category"] == "AI") {
                      slider._attributes.enableHiddenAttributes = true;
@@ -342,7 +335,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
             });
 
 
-            if (this._pageType == "resolve" || this._pageType == "view") {
+            if (this._pageType == "resolve") {
                if (state.meta != this.verificationType.id) {
                   slider.setToTextMode();
                   slider.setNoClick();
@@ -354,6 +347,16 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
                      slider.setToTextMode();
                      slider.setNoClick();
                   }
+               }
+            }
+            else if (this._pageType == "feedback") {
+               if (state.meta == this.submissionType.id) {
+                  slider.setAttribute("title", `${state.typeData.name} Record | IDNUM: ${state.attributes["IDNUM"]}`);
+               }
+               else {
+                  slider.setAttribute("title", `${state.typeData.name} Record | ${state.attributes["Record Category"]} | IDNUM: ${state.attributes["IDNUM"]}`);
+                  slider.setToTextMode();
+                  slider.setNoClick();
                }
             }
             else {
