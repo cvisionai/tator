@@ -61,8 +61,8 @@ class AlgorithmEdit extends TypeForm {
       // Visible input with readable name
       this._userEditVisible = document.createElement("text-input");
       this._userEditVisible.setAttribute("name", "Registering User");
-      this._userEditVisible.setValue(this._registeredUserName );
-      this._userEditVisible.default = this._registeredUserName ;
+      this._userEditVisible.setValue(this._registeredUserName);
+      this._userEditVisible.default = this._registeredUserName;
       this._userEditVisible.permission = null;
       this._userEditVisible.addEventListener("change", this._formChanged.bind(this));
       // this._userEditVisible.setAttribute("tooltip", "User registering algorithm cannot be edited.")
@@ -70,8 +70,8 @@ class AlgorithmEdit extends TypeForm {
 
       // Hidden input for formValue
       this._userEdit = document.createElement("text-input");
-      this._userEdit.setValue(this._registeredUserId );
-      this._userEdit.default = this._registeredUserId ;
+      this._userEdit.setValue(this._registeredUserId);
+      this._userEdit.default = this._registeredUserId;
       this._userEdit.permission = null;
       this._userEdit.addEventListener("change", this._formChanged.bind(this));
 
@@ -87,19 +87,26 @@ class AlgorithmEdit extends TypeForm {
       this._form.appendChild(this._manifestPath);
 
       // Cluster
+      // this.member = this._getUserMembership(this._registeredUserId);
+      // console.log(this.member);
       const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
-      this._clusterEnumInput = document.createElement("enum-input");
-      this._clusterEnumInput.setAttribute("name", "Job Cluster");
-      this._clusterEnumInput.choices = jobClusterWithChecked;
-      this._clusterEnumInput.default = this.data.cluster;
-      if (jobClusterWithChecked.length == 0) {
+
+      if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
+         this._clusterEnumInput = document.createElement("text-input");
+         this._clusterEnumInput.disabled = true;
+         this._clusterEnumInput.setAttribute("name", "Job Cluster");
+         this._clusterEnumInput.setValue("Null");
          this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
       } else {
+         this._clusterEnumInput = document.createElement("enum-input");
+         this._clusterEnumInput.setAttribute("name", "Job Cluster");
+         this._clusterEnumInput.choices = jobClusterWithChecked;
+         this._clusterEnumInput.default = this.data.cluster;
          this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
       }
-      
+
       this._form.appendChild(this._clusterEnumInput);
-      
+
 
       // Files per job
       this._filesPerJob = document.createElement("text-input");
@@ -152,12 +159,21 @@ class AlgorithmEdit extends TypeForm {
          formData.description = this._editDescription.getValue();
       }
 
-      if (this._manifestPath.changed() || isNew) {
+      if (this._manifestPath.changed() || (this._manifestPath.getValue() !== "")) {
          formData.manifest = this._manifestPath.getValue();
+       } else if (isNew && !this._manifestPath.changed()) {
+         formData.manifest = null;         
       }
 
       if (this._clusterEnumInput.changed() || isNew) {
-         formData.cluster = Number(this._clusterEnumInput.getValue());
+         let clusterValue = this._clusterEnumInput.getValue();
+         // console.log(clusterValue);
+         if (clusterValue === null || clusterValue === "Null" || clusterValue == "") {
+            formData.cluster = null;
+         } else {
+            formData.cluster = Number(clusterValue);
+         }
+
       }
 
       if (this._userEdit.changed() || isNew) {
@@ -179,120 +195,28 @@ class AlgorithmEdit extends TypeForm {
       return formData;
    }
 
-   async _save({ id = -1, globalAttribute = false } = {}) {
-      this.loading.showSpinner();
+   async _getUserMembership(userID) {
+      // Membership section.
+      if (this._projectMemberships == null) {
+        this.membershipBlock = document.createElement("membership-edit");
+        let membershipResp = await this.membershipBlock._fetchGetPromise({ "id": this.projectId });
+        
+        if (membershipResp.status !== 200) {
+          return null;
+        } else {
+          this._projectMemberships = await membershipResp.json();
+        }
 
-      id = this.algorithmId;
-      // Start spinner & Get promises list
-      console.log("Settings _save method for algorithm id: " + id);
-      // this.loading.showSpinner();
-
-      let promises = []
-      let errors = 0; // @TODO
-
-      this._nameEdit = {
-         edited: false,
-         newName: "",
-         typeName: this.typeName,
-         typeId: this.typeId
+        for( let member of this._projectMemberships){
+           if (member.user == userID) {
+              return member.permission;
+           }
+        }
+        
       }
-
-      // Main type form
-      if (this.isChanged()) {
-         // console.log("Main form was changed");
-         const formData = this._getFormData();
-         if (Object.entries(formData).length === 0) {
-            return console.error("No formData");
-         } else {
-            promises.push(this._fetchPatchPromise({ id, formData }));
-            if (typeof formData.name !== "undefined") {
-               this._nameEdit.edited = true;
-               this._nameEdit.newName = formData.name;
-            }
-         }
-      }
-
-      let messageObj = {};
-      if (promises.length > 0 && errors === 0) {
-         // Check if anything changed
-         Promise.all(promises).then(async (respArray) => {
-            let responses = [];
-            respArray.forEach((item, i) => {
-               responses.push(item.json())
-            });
-
-            Promise.all(responses)
-               .then(dataArray => {
-                  messageObj = this._handleResponseWithAttributes({
-                     id,
-                     dataArray,
-                     hasAttributeChanges: false,
-                     attrPromises: [],
-                     respArray
-                  });
-
-                  let message = "";
-                  let success = false;
-                  let error = false;
-                  if (messageObj.messageSuccess) {
-                     let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-                     message += heading + messageObj.messageSuccess;
-                     success = true;
-                  }
-                  if (messageObj.messageError) {
-                     let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-                     message += heading + messageObj.messageError;
-                     error = true;
-                  }
-
-                  if (messageObj.requiresConfirmation) {
-                     let buttonSave = this._getAttrGlobalTrigger(id);
-                     let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-                     let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-                     let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
-                     this.loading.hideSpinner();
-                     this._modalConfirm({
-                        "titleText": "Complete",
-                        mainText,
-                        buttonSave
-                     });
-                  } else {
-                     let mainText = `${message}`;
-                     this.loading.hideSpinner();
-                     this._modalComplete(
-                        mainText
-                     );
-                     // Reset forms to the saved data from model
-                     this.resetHard();
-                  }
-               }).then(() => {
-                  // Reset changed flag
-                  this.changed = false;
-
-                  // Update anything related
-                  // Update related items with an event if required
-                  if (this._nameEdit.edited) {
-                     this._updateNavEvent("rename", this._nameEdit.newName)
-                  }
-               });
-
-         }).catch(err => {
-            console.error("File " + err.fileName + " Line " + err.lineNumber + "\n" + err);
-            this.loading.hideSpinner();
-         });
-      } else if (!promises.length > 0) {
-         this.loading.hideSpinner();
-         console.error("Attempted to save but no promises found.");
-         return this._modalSuccess("Nothing new to save!");
-      } else if (!errors === 0) {
-         this.loading.hideSpinner();
-         return this._modalError("Please fix form errors.");
-      } else {
-         this.loading.hideSpinner();
-         return this._modalError("Problem saving form data.");
-      }
-   }
+      
+      return null;
+    }
 
 }
 

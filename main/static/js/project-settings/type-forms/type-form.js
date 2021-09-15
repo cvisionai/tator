@@ -129,8 +129,8 @@ class TypeForm extends TatorElement {
 
     addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();
-
-      if (status != 400) {
+      console.log(status);
+      if (status == 201 || status == 200) {
         // Hide the add new form
         this.sideNav.hide(`itemDivId-${this.typeName}-New`);
         // console.log("Resetting new form after save....");
@@ -675,17 +675,17 @@ class TypeForm extends TatorElement {
         let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
 
         if (check.checked == true) {
-          console.log("User marked as global: " + name);
+          // console.log("User marked as global: " + name);
           for (let form of this.attributeSection.attrForms) {
             if (form.id == formId) {
               // add back changed flag
               form.changed = true;
               form.global = true;
-              console.log("set data set global to true");
+              // console.log("set data set global to true");
             }
           }
         } else {
-          console.log("User marked NOT global, do not resend: " + name);
+          // console.log("User marked NOT global, do not resend: " + name);
         }
       }
 
