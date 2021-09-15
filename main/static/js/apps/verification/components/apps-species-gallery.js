@@ -721,7 +721,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
          var submission_status = ""
 
          if (this._pageType == "verify") {
-            if (reviewer_species == "Not Set") {
+            if (reviewer_species == "NOT SET") {
                submission_status = "Not Set";
             }
             else {
