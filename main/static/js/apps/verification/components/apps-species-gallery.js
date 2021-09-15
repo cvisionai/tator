@@ -735,7 +735,10 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
          }
          else if (this._pageType == "resolve") {
             if (final_species == "NOT SET") {
-               if (ai_species == reviewer_species) {
+               if (reviewer_species == "NOT SET") {
+                  submission_status = "Not Set";
+               }
+               else if (ai_species == reviewer_species) {
                   submission_status = "Verified";
                }
                else {
