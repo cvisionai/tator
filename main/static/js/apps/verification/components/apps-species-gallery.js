@@ -722,7 +722,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
 
          if (this._pageType == "verify") {
             if (reviewer_species == "NOT SET") {
-               submission_status = "Not Set";
+               submission_status = "Not Verified";
             }
             else {
                if (ai_species == reviewer_species) {
@@ -736,7 +736,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
          else if (this._pageType == "resolve") {
             if (final_species == "NOT SET") {
                if (reviewer_species == "NOT SET") {
-                  submission_status = "Not Set";
+                  submission_status = "Not Verified";
                }
                else if (ai_species == reviewer_species) {
                   submission_status = "Verified";
