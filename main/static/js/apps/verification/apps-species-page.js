@@ -49,7 +49,7 @@ class AppsSpecies extends TatorPage {
     // Right entity panel
     //
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container gray-panel slide-close col-6");
+    this.aside.setAttribute("class", "entity-panel--container gray-panel species-app slide-close col-6");
     this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 

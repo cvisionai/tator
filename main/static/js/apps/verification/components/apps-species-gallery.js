@@ -298,7 +298,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
                gallery: this
             });
 
-            slider._resizeCards.setGalleryTo(135, slider._ul);
+            slider._resizeCards.setGalleryTo(142, slider._ul);
 
             slider.unshownCards = {};
             slider._fullCardsAdded = false;
@@ -340,14 +340,15 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
 
          for (let i in this._sliderElements) {
             await this._addSliderCards({ slider: this._sliderElements[i], state: savedStates[i] });
-
-            // Open first card and show panel
+            
             let slider = this._sliderElements[i];
-            if (slider._cardElements[0] && slider._cardElements[0].card) {
+            if (slider && slider._cardElements[0] && slider._cardElements[0].card) {
+               console.log("Clicking and unhiding!")
                slider._cardElements[0].card.click();
                this._parentPage.aside.hidden = false;
-            }
+            } 
          }
+ 
 
 
       } else {

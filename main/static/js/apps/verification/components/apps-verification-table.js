@@ -240,6 +240,7 @@ class appsTable extends TatorElement {
 
       let action = document.createElement("a");
       action.setAttribute("class", "clickable text-purple text-underline");
+      action.setAttribute("target", "_blank");
       action.setAttribute("href", actionHREF);
       action.appendChild(document.createTextNode("Verify Submission"));
 
