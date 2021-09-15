@@ -76,6 +76,8 @@ class AppsSpecies extends TatorPage {
     this.loading.showSpinner();
     this.showDimmer();
 
+    this.projectId = Number(this.getAttribute("project-id"));
+
     // Gather the URL parameters which will setup this page.
     this.processURL();
     if (this.pageType != "resolve" && this.pageType != "verify" && this.pageType != "view") {
@@ -87,7 +89,6 @@ class AppsSpecies extends TatorPage {
     this._filterConditions = [];
 
     // Initialize the interface to the database
-    this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then(() => {
 

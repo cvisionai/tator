@@ -104,7 +104,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
       }
       else {
          window.alert(`Invalid verifyType (${verifyType}) and pageType (${pageType})`)
-         return window.location.href =`/${this.projectId}/apps/verification`;
+         return window.location.href =`/${this._parentPage.projectId}/apps/verification`;
       }
 
       try {
