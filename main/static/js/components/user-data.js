@@ -73,8 +73,6 @@ class UserData extends TatorElement {
 
     let data = resp.json();
 
-    console.log(data);
-
     return data;
   }
 
@@ -90,8 +88,6 @@ class UserData extends TatorElement {
     });
 
     let data = resp.json();
-
-    console.log(data);
 
     return data;
   }
