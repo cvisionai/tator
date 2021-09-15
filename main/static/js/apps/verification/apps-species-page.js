@@ -49,7 +49,7 @@ class AppsSpecies extends TatorPage {
     // Right entity panel
     //
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container gray-panel slide-close col-6");
+    this.aside.setAttribute("class", "entity-panel--container gray-panel species-app slide-close col-6");
     this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 
@@ -76,18 +76,19 @@ class AppsSpecies extends TatorPage {
     this.loading.showSpinner();
     this.showDimmer();
 
+    this.projectId = Number(this.getAttribute("project-id"));
+
     // Gather the URL parameters which will setup this page.
     this.processURL();
-    if (this.pageType != "resolve" && this.pageType != "verify") {
+    if (this.pageType != "resolve" && this.pageType != "verify" && this.pageType != "view") {
       window.alert("Invalid page type provided.")
-      return;
+      return window.location.href =`/${this.projectId}/apps/verification`;
     }
 
     // Setup the filter
     this._filterConditions = [];
 
     // Initialize the interface to the database
-    this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then(() => {
 

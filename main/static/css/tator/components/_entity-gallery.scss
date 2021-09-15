@@ -417,3 +417,8 @@ collections-card {
   0% { -webkit-transform: translateX(0%); }
   100% { -webkit-transform: translateX(-150%); }
 }
+
+
+.entity-panel--container.slide-close.species-app {
+  margin-right: -50%;
+}
