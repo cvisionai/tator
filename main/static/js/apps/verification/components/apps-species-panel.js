@@ -31,6 +31,12 @@ class AppsSpeciesPanelContainer extends TatorElement {
      this._panelTop._navigation.controls.style.marginTop = "20px";
      this._panelTop._navigation.controls.setAttribute("class", "analysis__filter_condition_group mx-3 py-3 d-flex flex-items-center");
      this._panelTop._topBarID.hidden = true;
+     this._panelTop._panel.mediaData._attributes._createdByWidget.hidden = true;
+     this._panelTop._panel.stateData._attributes._createdByWidget.hidden = true;
+     this._panelTop._panel.entityData._attributes._createdByWidget.hidden = true;
+     this._panelTop._panel.mediaData._attributes._idWidget.hidden = true;
+     this._panelTop._panel.stateData._attributes._idWidget.hidden = true;
+     this._panelTop._panel.entityData._attributes._idWidget.hidden = true;
 
      // Check and set current permission level on annotationPanel
      if (this.hasAttribute("permissionValue")) {
