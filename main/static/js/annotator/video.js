@@ -1547,6 +1547,11 @@ class VideoCanvas extends AnnotationCanvas {
       else if (type == "onDemand")
       {
         // Received the onDemand downloaded segments
+        if (that._onDemandId != e.data['id'])
+        {
+          console.warn(`On-Demand: Expected ${that._onDemandId} but got ${e.data['id']}`);
+          return;
+        }
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
@@ -2793,6 +2798,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return;
     }
+
     console.log("******* onDemandDownloadPrefetch");
     this.stopPlayerThread();
     this.shutdownOnDemandDownload();
