@@ -22,7 +22,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
 
       this._save = document.createElement("button");
       this._save.setAttribute("class", "btn f1");
-      this._save.textContent = "Update ID Status";
+      this._save.textContent = "Verify ID";
       this._tools.appendChild(this._save);
       this._save.addEventListener("click", this._updateIdStatus.bind(this));
 
