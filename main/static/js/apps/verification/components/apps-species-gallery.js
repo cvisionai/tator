@@ -99,9 +99,12 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
       else if (this._pageType == "resolve") {
          this._titleText.textContent = "Verify Species | Resolve Discrepancy"
       }
+      else if (this._pageType == "view") {
+         this._titleText.textContent = "Verify Species | View ID"
+      }
       else {
          window.alert(`Invalid verifyType (${verifyType}) and pageType (${pageType})`)
-         return;
+         return window.location.href =`/${this.projectId}/apps/verification`;
       }
 
       try {
@@ -242,9 +245,16 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
       this._sliderContainer.appendChild(newSliderList);
 
       // Update new slider panel permission
-      const permissionValue = "Can Edit";
-      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-      this.panelContainer.dispatchEvent(panelPermissionEvt);
+      if (this._pageType !== "view") {
+         const permissionValue = "Can Edit";
+         const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+         this.panelContainer.dispatchEvent(panelPermissionEvt);
+      } else {
+         const permissionValue = "Read Only";
+         const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+         this.panelContainer.dispatchEvent(panelPermissionEvt);
+      }
+
    }
 
    async _addSliders({ sliderList, states }) {
@@ -286,7 +296,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
             slider._resizeCards = this._resizeCards;
             sliderList.appendChild(slider);
 
-            if (this._pageType == "resolve") {
+            if (this._pageType == "resolve" || this._pageType == "view") {
                if (state.meta == this.verificationType.id) {
                   if (state.attributes["Record Category"] == "AI") {
                      slider._attributes.enableHiddenAttributes = true;
@@ -327,7 +337,7 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
             });
 
 
-            if (this._pageType == "resolve") {
+            if (this._pageType == "resolve" || this._pageType == "view") {
                if (state.meta != this.verificationType.id) {
                   slider.setToTextMode();
                   slider.setNoClick();

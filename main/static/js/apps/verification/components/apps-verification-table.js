@@ -212,7 +212,7 @@ class appsTable extends TatorElement {
 
       if (colObj.name == "Status" && colObj.value == "Not Verified") {
          column.classList.add("text-orange");
-      } else if (colObj.name == "Status" && colObj.value == "Complete") {
+      } else if (colObj.name == "Status" && colObj.value == "Verified") {
          column.classList.add("text-green");
       } else if (colObj.name == "Status" && colObj.value == "Needs Resolution") {
          column.classList.add("text-red");
@@ -226,12 +226,19 @@ class appsTable extends TatorElement {
    addActionCol(idNum, status, row) {
       let column = document.createElement("td");
       let pageType = "";
+      let actionText = ""
       if (status == "Not Verified") {
          pageType = "verify";
+         actionText = "VERIFY";
       } else if (status == "Needs Resolution") {
          pageType = "resolve";
+         actionText = "RESOLVE";
+      } else if (status == "Verified") {
+         pageType = "view";
+         actionText = "VIEW";
       } else {
-         pageType = "complete";
+         // no action
+         return row.appendChild(column);
       }
 
       console.log(`status ${status}`);
@@ -239,10 +246,10 @@ class appsTable extends TatorElement {
       let actionHREF = `/${this.projectId}/apps/species?pageType=${pageType}&idnum=${idNum}&verifyType=${verifyType}`
 
       let action = document.createElement("a");
-      action.setAttribute("class", "clickable text-purple text-underline");
+      action.setAttribute("class", "clickable text-purple text-bold");
       action.setAttribute("target", "_blank");
       action.setAttribute("href", actionHREF);
-      action.appendChild(document.createTextNode("Verify Submission"));
+      action.appendChild(document.createTextNode(actionText));
 
       column.appendChild(action);
       row.appendChild(column);
