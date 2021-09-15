@@ -1547,6 +1547,11 @@ class VideoCanvas extends AnnotationCanvas {
       else if (type == "onDemand")
       {
         // Received the onDemand downloaded segments
+        if (that._onDemandId != e.data['id'])
+        {
+          console.warn(`On-Demand: Expected ${that._onDemandId} but got ${e.data['id']}`);
+          return;
+        }
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
@@ -1582,7 +1587,7 @@ class VideoCanvas extends AnnotationCanvas {
 
           var playCallback = function () {
             console.log("******* restarting onDemand: Playing");
-	          that.onDemandDownloadPrefetch(true);
+	          that.onDemandDownloadPrefetch(-1);
             that._playGenericOnDemand(that._direction)
           };
 
@@ -2298,8 +2303,11 @@ class VideoCanvas extends AnnotationCanvas {
           video.oncanplay=null;
           if (forceSeekBuffer && that._audioPlayer)
           {
-            that._audioPlayer.currentTime = audio_time;
-            console.info("Setting audio to " + audio_time);
+            if (that._audioPlayer.currentTime != audio_time)
+            {
+              that._audioPlayer.currentTime = audio_time;
+              console.info("Setting audio to " + audio_time);
+            }
           }
 
           // Remove entries (if required to do so) now that we've drawn the frame
@@ -2767,7 +2775,7 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  onDemandDownloadPrefetch(reset)
+  onDemandDownloadPrefetch(reqFrame)
   {
     // This function can be called at anytime. If auto-download is disabled, then just stop
     // onDemand functionality completely
@@ -2777,7 +2785,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    if (this.videoBuffer(this.currentFrame(), "play") != null && reset != true) {
+    if (this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
@@ -2790,6 +2798,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return;
     }
+
     console.log("******* onDemandDownloadPrefetch");
     this.stopPlayerThread();
     this.shutdownOnDemandDownload();

@@ -161,7 +161,7 @@ class AnnotationSidebar extends TatorElement {
         this._selectButton(this._poly, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
           detail: {typeId: val.poly[0].id,
-                   metaMode: true}
+                   metaMode: evt.shiftKey}
         }));
       });
       document.addEventListener("keydown", evt => {
@@ -198,6 +198,18 @@ class AnnotationSidebar extends TatorElement {
     } else {
       this._track.setAttribute("disabled", "");
       this._track.permanentDisable = true;
+    }
+  }
+
+  modeChange(newMode, metaMode)
+  {
+    if (newMode == "new_poly")
+    {
+      this._selectButton(this._poly, metaMode);
+    }
+    else
+    {
+      console.info(`Mode change to ${newMode} ignored.`);
     }
   }
 

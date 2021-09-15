@@ -1095,6 +1095,11 @@ class AnnotationPage extends TatorPage {
           }
         });
 
+        // Mode change from annotation controller
+        canvas.addEventListener("modeChange", evt => {
+          this._sidebar.modeChange(evt.detail.newMode, evt.detail.metaMode);
+        });
+
         this._setupContextMenuDialogs(canvas, canvasElement, stateTypes);
 
         canvas.addEventListener("maximize", () => {
