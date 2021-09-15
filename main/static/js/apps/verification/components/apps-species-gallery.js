@@ -20,6 +20,11 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
       this._filterDiv.setAttribute("class", "analysis__filter");
       this._mainTop.appendChild(this._filterDiv);
 
+      this._save = document.createElement("button");
+      this._save.setAttribute("class", "btn f1");
+      this._save.textContent = "Update ID Status";
+      this._tools.appendChild(this._save);
+      this._save.addEventListener("click", this._updateIdStatus.bind(this));
 
       // Tools: Resize Slider to resize images
       this.resizeContainer = document.createElement("div");
@@ -661,6 +666,94 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
       });
       data = await result.json();
       return data;
+   }
+
+   _updateIdStatus() {
+      // If in the verify page, whether or not it's the AI or the human reviewer, look to
+      // see if those two states have the same species.
+      // - If the reviewer is set to "Not Set", the submission's Status == "Not Verified"
+      // - If the reviewer agrees with the AI, the submission's Status == "Verified"
+      // - If the reviewer does not agree with the AI, the submission's Status == "Needs Resolution"
+      //
+      // If in the resolve page, if the final reviewer has it set to "Not Set" AND the
+      // two reviewers don't agree, the submission's Status == "Needs Resolution"
+      // Otherwise, the submission's Status == "Verified"
+
+      this.collectionsData.updateData(this._filterConditions).then(() => {
+         var stateList = this.collectionsData.getStates();
+         var states = {
+            submission: null,
+            reviewer: null,
+            ai: null,
+            final: null
+         };
+         for (const state of stateList) {
+            if (state.meta == this.submissionType.id) {
+               states.submission = state;
+            }
+            else if (state.meta == this.verificationType.id) {
+               if (state.attributes["Record Category"] == "AI") {
+                  states.ai = state;
+               }
+               else if (state.attributes["Record Category"] == "Reviewer") {
+                  states.reviewer = state;
+               }
+               else if (state.attributes["Record Category"] == "Final") {
+                  states.final = state;
+               }
+            }
+         }
+         var submission = states.submission;
+         var reviewer_species = states.reviewer.attributes["Species"]
+         var ai_species = states.ai.attributes["Species"]
+         var final_species = states.final.attributes["Species"]
+         var submission_status = ""
+
+         if (this._pageType == "verify") {
+            if (reviewer_species == "Not Set") {
+               submission_status = "Not Set";
+            }
+            else {
+               if (ai_species == reviewer_species) {
+                  submission_status = "Verified";
+               }
+               else {
+                  submission_status = "Needs Resolution";
+               }
+            }
+         }
+         else if (this._pageType == "resolve") {
+            if (final_species == "NOT SET") {
+               if (ai_species == reviewer_species) {
+                  submission_status = "Verified";
+               }
+               else {
+                  submission_status = "Needs Resolution";
+               }
+            }
+            else {
+               submission_status = "Verified";
+            }
+         }
+
+         var patchValues = {
+            attributes: {"Status": submission_status}
+         };
+         fetch(`/rest/State/${submission.id}`, {
+            method: "PATCH",
+            mode: "cors",
+            credentials: "include",
+            headers: {
+               "X-CSRFToken": getCookie("csrftoken"),
+               "Accept": "application/json",
+               "Content-Type": "application/json"
+            },
+            body: JSON.stringify(patchValues)
+         }).then(() => {
+            Utilities.showSuccessIcon(`Updated Submission Status (IDNUM: ${submission.attributes["IDNUM"]})`);
+         });
+
+      });
    }
 }
 
