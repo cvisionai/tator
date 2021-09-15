@@ -286,6 +286,14 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
             slider._resizeCards = this._resizeCards;
             sliderList.appendChild(slider);
 
+            if (this._pageType == "resolve") {
+               if (state.meta == this.verificationType.id) {
+                  if (state.attributes["Record Category"] == "AI") {
+                     slider._attributes.enableHiddenAttributes = true;
+                  }
+               }
+            }
+
             // # todo some of above and below can be inferred from gallery
             // # #todo labels and sort state part of collections data
             slider.init({
@@ -340,10 +348,15 @@ class AppsSpeciesGallery extends EntityCardSlideGallery {
 
          for (let i in this._sliderElements) {
             await this._addSliderCards({ slider: this._sliderElements[i], state: savedStates[i] });
-            
             let slider = this._sliderElements[i];
+
+            // Hide all card labels
+            for (const cardElem of slider._cardElements) {
+               cardElem.card._styledDiv.hidden = true;
+            }
+
+            // Open first card and show panel
             if (slider && slider._cardElements[0] && slider._cardElements[0].card) {
-               console.log("Clicking and unhiding!")
                slider._cardElements[0].card.click();
                this._parentPage.aside.hidden = false;
             } 
