@@ -155,6 +155,11 @@ class SeekBar extends TatorElement {
     this.loadProgress.style.width=`${percent_complete}%`;
   }
 
+  onDemandLoaded(evt)
+  {
+    console.log(evt);
+  }
+
   /**
    * Alternative to onBufferLoaded. Uses a passed in frame
    */

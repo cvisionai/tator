@@ -1672,6 +1672,16 @@ class VideoCanvas extends AnnotationCanvas {
                          appendBuffer(afterUpdate);
                        },0);
           }
+          const ranges = that._videoElement[that._play_idx].playBuffer().buffered;
+          let ranges_list = [];
+          for (let idx = 0; idx < ranges.length; idx++)
+          {
+            ranges_list.push([that.timeToFrame(ranges.start(idx)), that.timeToFrame(ranges.end(idx))]);
+          }
+          that.dispatchEvent(new CustomEvent("on_demand_detail",
+                                             {composed: true,
+                                              detail: {"ranges": ranges_list}
+                                              }));
         }
 
         if (e.data["id"] == that._onDemandId) {
@@ -2194,6 +2204,16 @@ class VideoCanvas extends AnnotationCanvas {
   frameToTime(frame)
   {
     return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
+  }
+
+  timeToFrame(time, bias)
+  {
+    let video_time = time - this._startBias;
+    if (bias)
+    {
+      video_time -= (1/(this._fps*4));
+    }
+    return Math.round(video_time * this._fps);
   }
 
   frameToAudioTime(frame)
@@ -2957,8 +2977,8 @@ class VideoCanvas extends AnnotationCanvas {
       {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
-        const appendThreshold = 15 * this._playbackRate;
-        var playbackReadyThreshold = 10 * this._playbackRate; // Seconds * playback rate
+        const appendThreshold = 15 * Math.min(1,this._playbackRate);
+        var playbackReadyThreshold = 10 * Math.min(1,this._playbackRate); // Seconds * playback rate
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
           (totalVideoTime - currentTime < playbackReadyThreshold))
