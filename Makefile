@@ -207,6 +207,8 @@ FILES = \
     components/inputs/feature/color-inputs.js \
     components/inputs/feature/thumb-inputs.js \
     components/inputs/feature/checkbox-set.js \
+    components/inputs/feature/file-input.js \
+    components/inputs/feature/array-object-input.js \
     components/inputs/array-input.js \
     components/inputs/user-input.js \
     components/inputs/email-list-input.js \
@@ -223,6 +225,7 @@ FILES = \
     components/svg-definitions/modal-warning.js \
     components/svg-definitions/modal-success.js \
     components/svg-definitions/more-icon.js \
+    components/svg-definitions/track-icon.js \
     components/svg-definitions/all-svg.js \
     components/modal-dialog.js \
     components/modal-notify.js \
@@ -242,6 +245,7 @@ FILES = \
     components/entity-gallery/entity-gallery-slider.js \
     components/entity-gallery/entity-gallery_h-slide.js \
     components/entity-gallery/entity-gallery_grid.js \
+    components/entity-gallery/entity-gallery-more-menu.js \
     components/entity-panel/entity-panel-navigation.js \
     components/entity-panel/entity-panel-localization.js \
     components/entity-panel/entity-panel-form.js \
@@ -330,33 +334,34 @@ FILES = \
     project-detail/new-algorithm-form.js \
     project-detail/project-detail.js \
     components/loading-spinner.js \
-    project-settings/settings-breadcrumbs.js \
-    project-settings/type-form-validation.js \
-    project-settings/settings-input-helpers.js \
-    project-settings/settings-box-helpers.js \
-    project-settings/type-delete.js \
-    project-settings/type-form.js \
-    project-settings/settings-nav.js \
     components/inline-warning.js \
-    project-settings/single-upload.js \
-    project-settings/data-media-list.js \
-    project-settings/data-version-list.js \
-    project-settings/data-project-types.js \
-    project-settings/data-attributes-clone.js \
-    project-settings/data-memberships.js \
-    project-settings/type-new.js \
-    project-settings/attributes-clone.js \
-    project-settings/attributes-main.js \
-    project-settings/attributes-form.js \
-    project-settings/attributes-delete.js \
-    project-settings/media-type-main-edit.js \
-    project-settings/project-delete.js \
-    project-settings/project-main-edit.js \
-    project-settings/localization-type-edit.js \
-    project-settings/leaf-type-edit.js \
-    project-settings/state-type-edit.js \
-    project-settings/membership-edit.js \
-    project-settings/versions-edit.js \
+    project-settings/attributes/attributes-clone.js \
+    project-settings/attributes/attributes-delete.js \
+    project-settings/attributes/attributes-form.js \
+    project-settings/attributes/attributes-main.js \
+    project-settings/components/settings-breadcrumbs.js \
+    project-settings/components/settings-nav.js \
+    project-settings/components/single-upload.js \
+    project-settings/data/data-attributes-clone.js \
+    project-settings/data/data-clusters.js \
+    project-settings/data/data-media-list.js \
+    project-settings/data/data-memberships.js \
+    project-settings/data/data-project-types.js \
+    project-settings/data/data-version-list.js \
+    project-settings/type-forms/type-form.js \
+    project-settings/type-forms/algorithm-edit.js \
+    project-settings/type-forms/leaf-type-edit.js \
+    project-settings/type-forms/localization-type-edit.js \
+    project-settings/type-forms/media-type-main-edit.js \
+    project-settings/type-forms/membership-edit.js \
+    project-settings/type-forms/project-delete.js \
+    project-settings/type-forms/project-main-edit.js \
+    project-settings/type-forms/state-type-edit.js \
+    project-settings/type-forms/type-delete.js \
+    project-settings/type-forms/type-new.js \
+    project-settings/type-forms/versions-edit.js \
+    project-settings/settings-box-helpers.js \
+    project-settings/type-form-validation.js \
     project-settings/project-settings.js \
     organization-settings/organization-data.js \
     organization-settings/organization-type-form.js \
@@ -383,6 +388,7 @@ FILES = \
     annotation/box-button.js \
     annotation/line-button.js \
     annotation/point-button.js \
+    annotation/poly-button.js \
     annotation/track-button.js \
     annotation/zoom-in-button.js \
     annotation/zoom-out-button.js \
@@ -481,14 +487,17 @@ min-js:
 	@echo "Skipping min-js, because USE_MIN_JS is false"
 endif
 
+.PHONY: migrate
 migrate:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py makemigrations
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py migrate
 
+.PHONY: testinit
 testinit:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d tator_online -c 'CREATE DATABASE test_tator_online';
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION LTREE';
 
+.PHONY: test
 test:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 -c 'from elasticsearch import Elasticsearch; import os; es = Elasticsearch(host=os.getenv("ELASTICSEARCH_HOST")).indices.delete("test*")'
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'ELASTICSEARCH_PREFIX=test python3 manage.py test --keep'

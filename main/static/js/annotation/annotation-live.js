@@ -93,9 +93,9 @@ class AnnotationLive extends TatorElement {
     this._quality = 1080;
     this._focusQuality = 1080;
     this._dockQuality = 144;
-    if (searchParams.has("quality"))
+    if (searchParams.has("playQuality"))
     {
-      this._quality = Number(searchParams.get("quality"));
+      this._quality = Number(searchParams.get("playQuality"));
     }
 
     this._slider.addEventListener("input", evt => {

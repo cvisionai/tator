@@ -1241,48 +1241,71 @@ class VideoTestCase(
                                                    dtype='box',
                                                    attribute_types=[])
         loc_type.media.add(self.entity_type)
-        locs = [create_test_box(self.user, loc_type, self.project, medias[0], 0)
-                for _ in range(random.randint(2, 5))]
-        for _ in range(random.randint(2, 5)):
-            state = State.objects.create(project=self.project,
-                                         meta=state_type,
-                                         frame=0)
-            state.media.add(medias[0])
-            for loc in locs:
-                state.localizations.add(loc)
-        # Test detail delete
-        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertNotEqual(response.data, 0)
-        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertNotEqual(response.data, 0)
-        response = self.client.delete(f'/rest/Media/{medias[0].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, 0)
-        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[0].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, 0)
         locs = [create_test_box(self.user, loc_type, self.project, medias[1], 0)
                 for _ in range(random.randint(2, 5))]
+        state_specs = []
         for _ in range(random.randint(2, 5)):
-            state = State.objects.create(project=self.project,
-                                         meta=state_type,
-                                         frame=0)
-            state.media.add(medias[1])
-            for loc in locs:
-                state.localizations.add(loc)
-        # Test list delete
+            state_specs.append({
+                'project': self.project.id,
+                'type': state_type.id,
+                'frame': 0,
+                'media_ids': [medias[0].id, medias[1].id],
+                'localization_ids': [loc.id for loc in locs],
+            })
+        response = self.client.post(f'/rest/States/{self.project.pk}', state_specs, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Test detail delete
         response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
         self.assertNotEqual(response.data, 0)
         response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
         self.assertNotEqual(response.data, 0)
-        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[1].id}')
+        num_states = response.data
+        response = self.client.delete(f'/rest/Media/{medias[1].id}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
-        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[1].id}')
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, num_states)
+        response = self.client.delete(f'/rest/Media/{medias[0].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        locs = [create_test_box(self.user, loc_type, self.project, medias[2], 0)
+                for _ in range(random.randint(2, 5))]
+        state_specs = []
+        for _ in range(random.randint(2, 5)):
+            state_specs.append({
+                'project': self.project.id,
+                'type': state_type.id,
+                'frame': 0,
+                'media_ids': [medias[2].id, medias[3].id],
+                'localization_ids': [loc.id for loc in locs],
+            })
+        response = self.client.post(f'/rest/States/{self.project.pk}', state_specs, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Test list delete
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[2].id}')
+        self.assertNotEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}?media_id={medias[2].id}')
+        self.assertNotEqual(response.data, 0)
+        num_states = response.data
+        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[2].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, 0)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, num_states)
+        response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[3].id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f'/rest/StateCount/{self.project.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
 
@@ -1506,6 +1529,67 @@ class LocalizationDotTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'dot1'}
+        TatorSearch().refresh(self.project.pk)
+
+    def tearDown(self):
+        self.project.delete()
+
+class LocalizationPolyTestCase(
+        APITestCase,
+        AttributeTestMixin,
+        AttributeMediaTestMixin,
+        DefaultCreateTestMixin,
+        PermissionCreateTestMixin,
+        PermissionListTestMixin,
+        PermissionListMembershipTestMixin,
+        PermissionDetailMembershipTestMixin,
+        PermissionDetailTestMixin):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        media_entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+        )
+        self.entity_type = LocalizationType.objects.create(
+            name="polys",
+            dtype='poly',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.entity_type.media.add(media_entity_type)
+        self.media_entities = [
+            create_test_video(self.user, f'asdf{idx}', media_entity_type, self.project)
+            for idx in range(random.randint(3, 10))
+        ]
+        self.entities = [
+            create_test_box(self.user, self.entity_type, self.project, random.choice(self.media_entities), 0)
+            for idx in range(random.randint(6, 10))
+        ]
+        self.list_uri = 'Localizations'
+        self.detail_uri = 'Localization'
+        self.create_entity = functools.partial(
+            create_test_box, self.user, self.entity_type, self.project, self.media_entities[0], 0)
+        self.create_json = [{
+            'type': self.entity_type.pk,
+            'name': 'asdf',
+            'media_id': self.media_entities[0].pk,
+            'frame': 0,
+            'points': [[0.0, 0.1], [0.0, 0.2], [0.1, 0.2], [0.0, 0.1]],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': 'asdf',
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [179.0, -89.0],
+        }]
+        self.edit_permission = Permission.CAN_EDIT
+        self.patch_json = {'name': 'box1'}
         TatorSearch().refresh(self.project.pk)
 
     def tearDown(self):

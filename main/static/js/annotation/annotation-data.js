@@ -157,7 +157,7 @@ class AnnotationData extends HTMLElement {
       let isLocalization=false;
       if ("dtype" in dataType)
       {
-        isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
+        isLocalization = ["box", "line", "dot", "poly"].includes(dataType.dtype);
       }
 
       if (isLocalization)
@@ -171,10 +171,6 @@ class AnnotationData extends HTMLElement {
    * #TODO Update this to allow states
    */
   updateTypeWithData(typeObj, data) {
-    console.log("typeObj and data");
-    console.log(typeObj);
-    console.log(data);
-    console.log("END typeObj and data");
     const typeId = typeObj.id;
 
     if (this._dataByType.has(typeId)) {

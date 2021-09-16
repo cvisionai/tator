@@ -1,3 +1,7 @@
+.d-block {
+  display: block;
+}
+
 .d-flex {
   display: flex;
 }
@@ -174,8 +178,19 @@
 }
 
 // Margins R, L, X, Y, Top, Bottom
+.mr-1 {
+  margin-right: $spacing-1;
+}
 .mr-3 {
   margin-right: $spacing-3;
+}
+
+.mr-6 {
+  margin-right: $spacing-6;
+}
+
+.ml-1 {
+  margin-left: $spacing-1;
 }
 
 .ml-3 {
@@ -184,6 +199,11 @@
 
 .ml-6 {
   margin-left: $spacing-6;
+}
+
+.mx-3 {
+  margin-left: $spacing-3;
+  margin-right: $spacing-3;
 }
 
 .mx-6 {
@@ -196,9 +216,18 @@
   margin-bottom: $spacing-2;
 }
 
+.my-3 {
+  margin-top: $spacing-3;
+  margin-bottom: $spacing-3;
+}
+
 .my-6 {
   margin-top: $spacing-6;
   margin-bottom: $spacing-6;
+}
+
+.mt-3 {
+  margin-top: $spacing-3;
 }
 
 .mt-6 {
@@ -207,6 +236,14 @@
 
 .mb-2 {
   margin-bottom: $spacing-2;
+}
+
+.mb-3 {
+  margin-bottom: $spacing-3;
+}
+
+.mb-4 {
+  margin-bottom: $spacing-4;
 }
 
 .mb-6 {
@@ -410,11 +447,15 @@
   }
 }
 
+.offset-col-4 {
+  margin-left: (4 / 12 * 100%);
+}
+
 // Hide utilities
 .hidden {
   display: none;
   opacity: 0;
-  transition: 300ms ease all;
+  transition: 500ms ease opacity;
 }
 
 // Each hide utility only applies to one breakpoint range.

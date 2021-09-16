@@ -58,6 +58,7 @@
   box-button.is-selected
     + line-button
     + point-button
+    + poly-button
     + track-button
     + zoom-in-button
     + zoom-out-button
@@ -68,6 +69,7 @@
 
   line-button.is-selected
     + point-button
+    + poly-button
     + track-button
     + zoom-in-button
     + zoom-out-button
@@ -76,20 +78,35 @@
     transform: translateY(124px);
   }
 
-  point-button.is-selected + track-button + zoom-in-button + zoom-out-button + pan-button + & {
+  point-button.is-selected
+    + poly-button
+    + track-button
+    + zoom-in-button
+    + zoom-out-button
+    + pan-button
+    + & {
     transform: translateY(186px);
   }
 
-  track-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
+  poly-button.is-selected
+    + track-button
+    + zoom-in-button
+    + zoom-out-button
+    + pan-button
+    + & {
     transform: translateY(248px);
   }
 
-  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
+  track-button.is-selected + zoom-in-button + zoom-out-button + pan-button + & {
     transform: translateY(310px);
   }
 
-  pan-button.is-selected + & {
+  zoom-in-button.is-selected + zoom-out-button + pan-button + & {
     transform: translateY(434px);
+  }
+
+  pan-button.is-selected + & {
+    transform: translateY(558px);
   }
 }
 
@@ -149,6 +166,10 @@ modify-track-dialog {
     justify-content: space-between;
     width: (8 / 12 * 100%); // Same as col-8
   }
+}
+
+.annotation__panel-border {
+  border: 1px solid $color-charcoal--light;
 }
 
 .annotation__entities {

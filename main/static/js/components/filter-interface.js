@@ -7,7 +7,7 @@ class FilterInterface extends TatorElement {
     super();
 
     var outerDiv = document.createElement("div");
-    outerDiv.setAttribute("class", "analysis__filter_interface px-3 py-2 rounded-2");
+    outerDiv.setAttribute("class", "analysis__filter_interface px-1 py-1 rounded-2");
     this._shadow.appendChild(outerDiv);
 
     /**
@@ -57,13 +57,25 @@ class FilterInterface extends TatorElement {
     cancel.textContent = "Cancel";
     footerDiv.appendChild(cancel);
 
+    
+
     /**
      * Filter condition pill boxes
      */
     this._filterStringDiv = document.createElement("div");
-    this._filterStringDiv.setAttribute("class", "analysis__filter_string");
+    this._filterStringDiv.setAttribute("class", "analysis__filter_string col-10");
     this._filterStringDiv.style.paddingLeft = "16px";
     this._topNav.appendChild(this._filterStringDiv);
+
+    /**
+      * Other:
+      * - optional more menu
+      * - confirm run algo
+      * - modal notify
+    */
+    this._moreNavDiv = document.createElement("div");
+    this._moreNavDiv.setAttribute("class", "analysis__more_nav px-1");
+    this._topNav.appendChild(this._moreNavDiv);
 
     this._confirmRunAlgorithm = document.createElement("confirm-run-algorithm");
     this._shadow.appendChild(this._confirmRunAlgorithm);
@@ -71,10 +83,14 @@ class FilterInterface extends TatorElement {
     this._modalNotify = document.createElement("modal-notify");
     this._shadow.appendChild(this._modalNotify);
 
+    /**
+      * Event listeners
+    */
     filterButton.addEventListener("click", () => {
       this._filterListDiv.style.display = "block";
       this._filterNavDiv.style.display = "none";
       this._filterStringDiv.style.display = "none";
+      this._moreNavDiv.style.display = "none";
     });
 
     apply.addEventListener("click", () => {
@@ -82,18 +98,19 @@ class FilterInterface extends TatorElement {
       this._filterListDiv.style.display = "none";
       this._filterNavDiv.style.display = "flex";
       this._filterStringDiv.style.display = "flex";
+      this._moreNavDiv.style.display = "block";
     });
 
     cancel.addEventListener("click", () => {
       this._filterListDiv.style.display = "none";
       this._filterNavDiv.style.display = "flex";
       this._filterStringDiv.style.display = "flex";
+      this._moreNavDiv.style.display = "block";
     });
 
     // Respond to user requesting to run an algorithm
     this._algoButton.addEventListener("runAlgorithm", this._openConfirmRunAlgoModal.bind(this));
     this._confirmRunAlgorithm.addEventListener("close", this._closeConfirmRunAlgoModal.bind(this));
-    this._currentFilterConditions = "";
   }
 
   _notify(title, message, error_or_ok) {
@@ -111,7 +128,7 @@ class FilterInterface extends TatorElement {
     var extraParameters = [
       {
         name: "encoded_filters",
-        value: encodeURIComponent(encodeURIComponent(JSON.stringify(this._filterConditions))),
+        value: encodeURIComponent(encodeURIComponent(JSON.stringify(this._filterConditionGroup.getConditions()))),
       }
     ]
     console.log(extraParameters);
@@ -157,11 +174,10 @@ class FilterInterface extends TatorElement {
     this.setFilterBar();
 
     // Send out an event to anyone listening that there's a new filter applied
-    this._currentFilterConditions = this._filterConditionGroup.getConditions();
     this.dispatchEvent(new CustomEvent("filterParameters", {
       composed: true,
       detail: {
-        conditions: this._currentFilterConditions
+        conditions: this._filterConditionGroup.getConditions()
       }
     }));
   }

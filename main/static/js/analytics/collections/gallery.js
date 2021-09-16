@@ -7,26 +7,66 @@ class CollectionsGallery extends EntityCardSlideGallery {
       */
       this.panelContainer = null;
 
+      this.h2.appendChild( document.createTextNode("Collections") );
+
       this.sliderList = document.createElement("div");
       this.sliderList.setAttribute("class", "slider-list");
-
-
-      this._sliderLists = [];
-
-
       this._sliderContainer.appendChild(this.sliderList);
 
-      this.slideCardData = document.createElement("collection-slide-card-data");
 
-      // Property IDs are the entity IDs (which are expected to be unique)
-      // Each property (ID) points to the index of the sliders information stored in _sliderElements
-      //this._currentSliderIndexes = {};
+      // Filter toolbar
+      // * hook to add filter interface
+      this._filterDiv = document.createElement("div");
+      this._filterDiv.setAttribute("class", "analysis__filter");
+      this._mainTop.appendChild(this._filterDiv);
 
-      // Entity sliders aren't deleted. They are reused and hidden if not used.
+
+      // Tools: Resize Slider to resize images      
+      this.resizeContainer = document.createElement("div");
+      this.resizeContainer.setAttribute("class", "col-4")
+      this._resizeCards = document.createElement('entity-card-resize');
+      this.colSize = 272;
+      this._resizeCards._initGallery(null, this.colSize);
+      this.resizeContainer.appendChild( this._resizeCards );
+      this._tools.appendChild( this.resizeContainer );
+
+      // Display options in more menu
+      // Note: this is appended to filter nav in collections.js
+      this._moreMenu = document.createElement("entity-gallery-more-menu");
+      this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
+
+      /**
+       * SLIDER Label display options link for menu, and checkbox div
+      */ 
+      this._attributeLabels = document.createElement("entity-gallery-labels");
+      this._mainTop.appendChild(this._attributeLabels);
+      this._attributeLabels.menuLinkTextSpan.innerHTML = "Collection Labels";
+      this._moreMenu._menu.appendChild(this._attributeLabels.menuLink);
+
+      /**
+       * CARD Label display options link for menu, and checkbox div
+       */ 
+      this._cardAtributeLabels = document.createElement("entity-gallery-labels");
+      this._mainTop.appendChild(this._cardAtributeLabels);
+      this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
+      this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
+
+      /**
+       * CARD Sort display options link for menu, and checkbox div
+       */ 
+      this._cardAtributeSort = document.createElement("entity-gallery-sort");
+      this._mainTop.appendChild(this._cardAtributeSort);
+      this._cardAtributeSort.menuLinkTextSpan.innerHTML = "Sort Entries";
+      this._moreMenu._menu.appendChild(this._cardAtributeSort.menuLink);
+
+      /* Slider information */
+      this._sliderLists = [];
       this._sliderElements = [];
+      this.slideCardData = document.createElement("collection-slide-card-data");
+      this.cardLabelsChosenByType = {};
 
       // First group and total cards
-      this._previewCardCount = 1000;
+      this._previewCardCount = 11;
    }
 
    // Provide access to side panel for events
@@ -44,10 +84,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
       this.collectionsData = collectionsData;
       this.galleryContainer = galleryContainer;
       this.analyticsSettings = analyticsSettings;
-
-      // Possibly remove this so we can have navigation controls
-      // this.panelContainer._panelTop._topBarArrow.hidden = true;
-      // this.panelContainer._panelTop.panelNav.init();
+      this.modelData = modelData;
 
       try {
          this.slideCardData.init(modelData);
@@ -61,70 +98,46 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // Setup the label picker
       var stateTypes = this.collectionsData.getStateTypes();
 
-      this.currenLabelValues = {};
-      this.currenHiddenType = [];
 
+      // Label Values
+      this.currentLabelValues = {};
+      const labelValues = [];
       for (let idx = 0; idx < stateTypes.length; idx++) {
-         var stateType = stateTypes[idx];
+         let stateType = stateTypes[idx];
          let typeId = stateType.id;
-         let labels = document.createElement("entity-gallery-labels");
-         let labelValues = [];
-         this.currenLabelValues[typeId] = labelValues;
 
+         this.currentLabelValues[typeId] = labelValues;
+         
          // Provide labels and access to the sliders
-         labels.init({ typeData: stateType, gallery: this });
-         this._attributeLabelsDiv.appendChild(labels);
+         let labels = this._attributeLabels.add({ 
+               typeData: stateType 
+            });
 
-         // Label display changes
-         labels.addEventListener("labels-update", (e) => {
-            labelValues = e.detail.value;
-            this.labelsUpdate({typeId, labelValues});
-            this.currenLabelValues[typeId] = labelValues;
-         });
-
-         // Hide / Show type changes
-         labels.addEventListener("hide-type-update", (e) => {
-            this.hideThisType({ typeId, hidden: e.detail.off });
-         });
+         // Slider label display changes
+         this._attributeLabels.addEventListener("labels-update", this.labelsUpdate.bind(this));
       }
    }
 
-   hideThisType({ typeId, hidden }) {
-      // find the slider, and show it's values
-      for (let s of this._sliderElements) {
-         if (s.getAttribute("meta") == typeId) {
-            let hiddenHTML = `<div class="hidden-type-html col-12">[ ${s.title} Hidden ]</div>`;
-            var helper = document.createElement('div');
-            helper.innerHTML = hiddenHTML;
-            //show the Labels (which are there but hidden)
-            if (hidden) {
-               s.classList.add("hidden");
-               s.after(helper);
-               this.currenHiddenType.push(typeId);
-            } else if (!hidden) {
-               s.classList.remove("hidden");
-               helper.hidden = true;
-               helper.remove();
-               let index = this.currenHiddenType.indexOf(typeId);
-               this.currenHiddenType.splice(index, 1);
-            }
-         }
-      }
-   }
 
-   labelsUpdate({ typeId, labelValues }) {
-      // find the slider, and show it's values
+   labelsUpdate(evt) {
+      let typeId = evt.detail.typeId;
+      let labelValues = evt.detail.value;
+
+      // Keep track at gallery level for pagination
+      this.currentLabelValues[typeId] = labelValues;
+
+      // find the slider, and pass labelvalues)
       for (let s of this._sliderElements) {
-         //console.log(`Updating for ${typeId} -- this smeta is ${s.getAttribute("meta")} for slider id ${s.id}`)
          if (s.getAttribute("meta") == typeId) {
-            //show the Labels (which are there but hidden)
             s.showLabels(labelValues);
          }
       }
+      
+      let msg = `Collection labels updated`;
+      Utilities.showSuccessIcon(msg);
    }
 
    updateFilterResults(filterConditions, page, pageSize) {
-
       this._filterConditions = filterConditions;
 
       // Set the pagination state based on either defaults of this gallery
@@ -171,7 +184,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
          stop: evt.detail.stop,
          page: evt.detail.page,
          pageSize: evt.detail.pgsize,
-         init: false}
+         init: false
+      }
       this._paginationUpdate(paginationState);
    }
 
@@ -186,15 +200,12 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       while (this._sliderContainer.firstChild) {
          this._sliderContainer.removeChild(this._sliderContainer.firstChild);
-         }
+      }
       this._sliderLists = [];
 
       // Add new states
       // If the slider already exists, we're hiding and showing
       if (this._sliderLists[newSliderPage]) {
-         //console.log(newSliderPage);
-         //console.log(this._sliderLists);
-         //console.log(this._sliderLists[newSliderPage]);
          for (let a in this._sliderLists) {
             //console.log(this._sliderLists[a]);
             this._sliderLists[a].hidden = true;
@@ -215,8 +226,8 @@ class CollectionsGallery extends EntityCardSlideGallery {
          newSliderList.setAttribute("page", this.collectionsData.getPaginationState());
          //this._sliderLists[this.collectionsData._states.paginationState.page] = newSliderList;
 
-         this._addSliders({ sliderList: newSliderList, states: states });
-         console.log(states);
+         this._addSliders({ sliderList: newSliderList, states });
+
          this._sliderContainer.appendChild(newSliderList);
 
          // Update new slider panel permission
@@ -233,14 +244,14 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    async _addSliders({ sliderList, states }) {
+      const currentSliderEls = [];
       let sliderPage = this.collectionsData.getPage();
       this._sliderLists[sliderPage] = sliderList;
-
+      
       // Append the sliders
       for (let idx = 0; idx < states.length; idx++) {
          let state = states[idx];
          state.cards = [];
-         let counter = 0;
 
          const slider = document.createElement("entity-gallery-slider");
          slider.setAttribute("id", state.id);
@@ -248,33 +259,33 @@ class CollectionsGallery extends EntityCardSlideGallery {
          slider.entityFormChange = this.entityFormChange.bind(this);
          slider.stateFormChange = this.stateFormChange.bind(this);
          slider.mediaFormChange = this.mediaFormChange.bind(this);
+         slider._cardAtributeLabels = this._cardAtributeLabels;
+         slider._cardAtributeSort = this._cardAtributeSort;
+         slider._resizeCards = this._resizeCards;
+         sliderList.appendChild(slider);
 
+         // # todo some of above and below can be inferred from gallery
+         // # #todo labels and sort state part of collections data
          slider.init({
             panelContainer: this.panelContainer,
             pageModal: this.pageModal,
-            currenLabelValues: this.currenLabelValues,
-            currenHiddenType: this.currenHiddenType,
+            currentLabelValues: this.currentLabelValues,
             slideCardData: this.slideCardData,
             cardType: "collections-card",
             attributes: state.attributes,
-            state
+            state,
+            gallery: this 
          });
 
-         slider.unshownCards = [];
-         slider._fullCardsAdded = false;
+         slider.unshownCards = {};
+         slider._fullCardsAdded = false;  
 
          let currentCount = (sliderPage - 1) * this.collectionsData.getPageSize() + idx + 1;
          slider.setAttribute("title", `${state.typeData.name} ID: ${state.id}`);
          slider.setAttribute("count", `${currentCount} of ${this.collectionsData.getNumberOfResults()}`);
 
          this._sliderElements.push(slider);
-         sliderList.appendChild(slider);
-
-         // tell the panel about these cards
-         // this.panelContainer._panelTop.panelNav.pushNavData({
-         //    sliderIndex: (sliderList.length - 1),
-         //    entityList: slider._cardElements
-         // });
+         currentSliderEls.push(slider);
 
          slider.addEventListener("click", (e) => {
             if (!slider.main.classList.contains("active")) {
@@ -286,129 +297,180 @@ class CollectionsGallery extends EntityCardSlideGallery {
                      s.dispatchEvent(new Event("slider-inactive"));
                   }
                }
-
-               slider.scrollIntoView({
-                  behavior: "smooth",
-                  block: "end",
-                  inline: "nearest"
-               });
-
-               //this.analyticsSettings.setAttribute("selectedState", state.id);
-               //window.history.pushState({}, "", this.analyticsSettings.getURL());
-
-               // cards
-
-               if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
-                  let loadMoreCounter = 10;
-                  for (var i = 1; i <= loadMoreCounter; i++) {
-                     this._addUnshownCards(slider);
-                  }
-               } else {
-                  slider._fullCardsAdded === true;
-                  slider.loadAllTeaser.remove();
-               }
-            }
-            // } else {
-            //
-            //    console.log("This is already open!")
-            //    //toggle it shut
-            //    const inactiveEvent = new Event("slider-inactive");
-            //    slider.dispatchEvent(inactiveEvent);
-
-            // }
-         });
-
-         slider.loadAllTeaser.addEventListener("click", (e) => {
-            console.log("clicked loadAll link!")
-
-            if (slider.unshownCards && slider.unshownCards.length > 0 && !slider._fullCardsAdded) {
-               let loadMoreCounter = 10;
-               for (var i = 1; i <= loadMoreCounter; i++) {
-                  this._addUnshownCards(slider);
-               }
-            } else {
-               slider._fullCardsAdded === true;
-               slider.loadAllTeaser.remove();
             }
          });
 
-         // create the cards
-         const galleryList = state.typeData.association === "Localization" ? state.localizations : state.media;
-         if (galleryList) {
-            const totalList = galleryList.length;
-            //const trackOrTracks = totalList > 1 ? "Tracks" : "Track";
-            //const cardCountText = document.createTextNode(`(${totalList} ${trackOrTracks})`)
-            //slider._count.appendChild(cardCountText);
-
-            // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
-            if (totalList > 0) {
-               // Otherwise, get the localizations & make cards with slideCard
-               for (let id of galleryList) {
-                  const cardInitData = { type: state.typeData.association, id };
-                  const card = await this.slideCardData.makeCardList(cardInitData);
-
-                  if (card) {
-                     card[0].posText = `${counter + 1} of ${totalList}`;
-                     card[0].stateType = state.typeData.association;
-                     card[0].stateInfo = {
-                        id: state.id,
-                        attributes: state.attributes,
-                        entityType: state.typeData,
-                        state: state
-                     }
-                     //states.cards.push(card);
-                     const detail = { detail: { cardData: card, cardIndex: counter } };
-                     if ((counter + 1) < this._previewCardCount) {
-                        let newCardEvent = new CustomEvent('new-card', detail);
-                        slider.dispatchEvent(newCardEvent);
-                     } else {
-                        slider.unshownCards.push(detail);
-                     }
-
-                     counter++;
-                  }
-
-               }
-
-               if (totalList <= this._previewCardCount) {
-                  slider.loadAllTeaser.innerHTML = "See All";
-                  if (totalList < 4) {
-                     slider.loadAllTeaser.remove();
-                  }
-               }
-            }
-
-         }
-
-
-         // Bookmarking of state
-         // if (this.analyticsSettings.hasAttribute("selectedState")) {
-         //    //for (let s of this._sliderElements) {
-         //    let settingsState = Number(this.analyticsSettings.getAttribute("selectedState"));
-         //    let sliderId = Number(slider.getAttribute("id"));
-         //    if (settingsState == sliderId) {
-         //       //this._makeSliderActive(slider, sliderId)
-         //       //console.log("Found the selected state slider!");
-         //       // This sliderEl is active, the rest are inactive
-         //       slider.main.classList.add("active");
-         //       slider.dispatchEvent(new Event("slider-active"));
-         //       slider.scrollIntoView({
-         //          behavior: "smooth",
-         //          block: "nearest",
-         //          inline: "nearest"
-         //       });
-         //    }
-         //    //}
-
-         // }
-
+         // Slider Card Sort display changes
+         this._cardAtributeSort.addEventListener("sort-update", this._cardSortUpdate.bind(this));
       }
 
+      for (let i in currentSliderEls) {
+         await this._addSliderCards({ slider: currentSliderEls[i], state: states[i] });
+      }
 
    }
 
-   _addUnshownCards(slider) {
-      let newCardEvent = new CustomEvent('new-card', slider.unshownCards.shift());
+   async _addSliderCards({ slider, state }) {
+      const association = state.typeData.association;
+      const galleryList = association === "Localization" ? state.localizations : state.media;
+
+      let counter = 0;
+
+      if (galleryList) {
+         const totalList = galleryList.length;
+
+         // Loc association should have list of loc Ids -- If none we should show State with Name and 0 Localizations
+         if (totalList > 0) {        
+            // Get the localizations & make cards with slideCard
+            let cardsTmp = [];
+
+            for (let id of galleryList) {
+               if ((counter + 1) < this._previewCardCount) {
+                  const cardInitData = { type: state.typeData.association, id };
+                  const card = await this.slideCardData.makeCardList(cardInitData);
+                  card.counter = counter;
+
+                  if (card) {
+                     cardsTmp.push(card);                     
+                  }
+               } else {
+                  const cardInitData = { type: state.typeData.association, id, totalList };
+                  // const card = await this.slideCardData.makeCardList(cardInitData);
+                  slider.unshownCards[counter] = cardInitData;
+               }
+
+               counter++;
+            }
+
+            // This will dupe check if it already exists for this type, or add
+            let entityTypeData = cardsTmp[0][0].entityType;
+            this._cardAtributeSort.add({ 
+               typeData: entityTypeData
+            });
+
+            //Check if we want these sorted, sort before adding new cards
+            var sortProperty = this._cardAtributeSort._selectionValues[entityTypeData.id];
+            var sortOrder = this._cardAtributeSort._sortOrderValues[entityTypeData.id];
+
+            let order = sortOrder.getValue()
+            let fnCheck = this._cardAtributeSort.getFnCheck(order);
+            let prop = sortProperty.getValue();
+            if(!(order == "true" && prop == "ID")){
+               //console.log(`Not using default sort, applying saved sort... Asc ${order} on ${prop}`)
+
+               cardsTmp.sort( (a,b) => {
+                  let aVal = a[0].attributes[prop];
+                  let bVal = b[0].attributes[prop];
+
+                  return fnCheck(aVal, bVal);
+               });
+
+               for(let [idx, obj] of Object.entries(cardsTmp)){
+                  // update counter used for card placement
+                  obj.counter = Number(idx);
+               }
+            }
+
+            for(let card of cardsTmp){
+               this._dispatchCardData({slider, card, counter: card.counter, totalList, state})
+            }
+
+            if (totalList <= this._previewCardCount) {
+               // slider.loadAllTeaser.innerHTML = "See All";
+               // if (totalList < 4) {
+               slider.loadAllTeaser.remove();
+               //}
+            } else {
+               slider.loadAllTeaser.remove();
+               this._setupSliderPgn();
+
+            }
+         }
+      }
+   }
+
+   _dispatchCardData({slider, card, counter, totalList, state}){
+      card[0].posText = `${counter + 1} of ${totalList}`;
+      card[0].stateType = state.typeData.association;
+      card[0].stateInfo = {
+         id: state.id,
+         attributes: state.attributes,
+         entityType: state.typeData,
+         state: state
+      }
+
+      //states.cards.push(card);
+      const detail = { detail: { cardData: card, cardIndex: counter } };
+      // if ((counter + 1) < this._previewCardCount) {
+      let newCardEvent = new CustomEvent('new-card', detail);
+      slider.dispatchEvent(newCardEvent);
+      // } else {
+      //    slider.unshownCards.push(detail);
+      // }
+   }
+
+   _setupSliderPgn({slider, totalList}){
+      // setup navigation within this slider
+      let topNav = document.createElement("entity-gallery-paginator");
+      let bottomNav = document.createElement("entity-gallery-paginator");
+      slider._cardPaginationState = {
+         page: 1,
+         start: 0,
+         stop: 10,
+         pgsize: 10
+      };
+
+      topNav.init(totalList, slider._cardPaginationState);
+      bottomNav.init(totalList, slider._cardPaginationState);
+
+      // Init Values for nav
+      topNav.pageSizeEl.hidden = true;
+      topNav.pageSizeText.hidden = true;
+      topNav.goToPage.hidden = true;
+      topNav.goToPageText.hidden = true;
+
+      bottomNav.pageSizeEl.hidden = true;
+      bottomNav.pageSizeText.hidden = true;
+      bottomNav.goToPage.hidden = true;
+      bottomNav.goToPageText.hidden = true;
+
+      // # todo need to stop last event before this one
+      slider._cancelLoading = false;
+      topNav.addEventListener("selectPage", (evt) => {
+         evt.stopPropagation();
+         slider._handleCardPagination(evt);
+         let paginationState = {
+            page: evt.detail.page,
+            start: evt.detail.start,
+            stop: evt.detail.stop,
+            pageSize: evt.detail.pageSize
+         };
+         topNav.setValues(paginationState);
+         bottomNav.setValues(paginationState);
+      });
+      bottomNav.addEventListener("selectPage", (evt) => {
+         evt.stopPropagation();
+         slider._handleCardPagination(evt);
+         let paginationState = {
+            page: evt.detail.page,
+            start: evt.detail.start,
+            stop: evt.detail.stop,
+            pageSize: evt.detail.pageSize
+         };
+         topNav.setValues(paginationState);
+         bottomNav.setValues(paginationState);
+      });
+
+      slider._topNav.appendChild(topNav);
+      slider._bottomNav.appendChild(bottomNav);
+   }
+
+   async _addNextUnshownCard(slider) {
+      let cardInitData = slider.unshownCards.shift();
+      let card = await this.slideCardData.makeCardList(cardInitData);
+
+      const detail = { detail: { cardData: card, cardIndex: counter } };
+      let newCardEvent = new CustomEvent('new-card',);
       slider.dispatchEvent(newCardEvent);
 
       //If this is the last card, update flags, and remove link
@@ -431,19 +493,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
 
       //this.analyticsSettings.setAttribute("selectedState", stateId);
 
-      return sliderEl.scrollIntoView(true);
-   }
-
-   updateCardData(newCardData) {
-      for (let s of this._sliderElements) {
-         if (newCardData.id in s._currentCardIndexes) {
-            const index = s._currentCardIndexes[newCardData.id];
-            const card = s._cardElements[index].card;
-            s.slideData.updateLocalizationAttributes(card.cardObj).then(() => {
-               card.displayAttributes();
-            });
-         }
-      }
+      //return sliderEl.scrollIntoView(true);
    }
 
    entityFormChange(e) {
@@ -451,8 +501,13 @@ class CollectionsGallery extends EntityCardSlideGallery {
          id: e.detail.id,
          values: { attributes: e.detail.values },
          type: "Localization"
-      }).then((data) => {
-         this.updateCardData(data);
+      }).then((data) => {   
+         //console.log("Localization form change.....") 
+         for (let s of this._sliderElements) {
+            if(s.state.typeData.association == "Localization"){
+               s.updateCardData(data);
+            }
+         }
       });
    }
 
@@ -462,8 +517,6 @@ class CollectionsGallery extends EntityCardSlideGallery {
          values: { attributes: e.detail.values },
          type: "State"
       }).then((data) => {
-         //console.log(data);
-
          // Find the right slider
          for (let s of this._sliderElements) {
             if (s.id == e.detail.id) {
@@ -479,14 +532,19 @@ class CollectionsGallery extends EntityCardSlideGallery {
    }
 
    mediaFormChange(e) {
-      this.formChange({
-         id: e.detail.id,
-         values: { attributes: e.detail.values },
-         type: "Media"
-      }).then((data) => {
-         //#TODO
-      });
-   }
+    var mediaId = e.detail.id;
+    this.formChange({
+      id: e.detail.id,
+      values: { attributes: e.detail.values },
+      type: "Media"
+    }).then(() => {
+      for (let s of this._sliderElements) {
+         if(s.state.typeData.association == "Media"){
+            s.updateCardData(data);
+         }
+      }
+    });
+   }   
 
    async formChange({ type, id, values } = {}) {
       var result = await fetch(`/rest/${type}/${id}`, {
@@ -535,7 +593,37 @@ class CollectionsGallery extends EntityCardSlideGallery {
       return data;
    }
 
+    _cardSortUpdate(evt){
+      let property = evt.detail.sortProperty;
+      let sortType = evt.detail.sortType;
+      //console.log(`Sorting ${property} in Asc? ${sortType}`);
 
+      try{
+         for (let s of this._sliderElements) {
+            // go through all cards, and sort them..
+            let fnCheck = sortType ? this._cardAtributeSort.ascCheck : this._cardAtributeSort.dscCheck;
+
+            // #todo handle pagination
+            let cards = this._cardAtributeSort._sortCards({ 
+               cards: s._cardElements, 
+               slider: s, 
+               fnCheck, 
+               property
+            });
+
+            // #todo look into reuse of slider.makeCards
+            s.updateCardOrder(cards);
+            
+         }
+
+         let msg = `Entry sort complete`
+         Utilities.showSuccessIcon(msg);
+      } catch(e) {
+         let msg = `Entry sort error`;
+         console.error(e);
+         Utilities.warningAlert(msg, "#ff3e1d", false); 
+      }
+   }
 }
 
 customElements.define("collections-gallery", CollectionsGallery);

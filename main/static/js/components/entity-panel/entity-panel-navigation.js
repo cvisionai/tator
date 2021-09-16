@@ -3,7 +3,7 @@ class EntityPanelNavigation extends TatorElement {
       super();
 
       this.controls = document.createElement("div");
-      this.controls.setAttribute("class", "entity-panel-navigation col-12 d-flex flex-items-center");
+      this.controls.setAttribute("class", "entity-panel-navigation flex-justify-right mx-3 px-1 py-1 d-flex col-11 flex-items-center");
       this.controls.hidden = true; // hide until init
       this._shadow.appendChild(this.controls);
 
@@ -46,44 +46,100 @@ class EntityPanelNavigation extends TatorElement {
       this.next = document.createElement("entity-next-button");
       this.controls.appendChild(this.next);
 
-      this.panelGroups = [];
-
-   }
-
-   init() {
-      this.controls.hidden = false; 
-   }
-
-   _emitSelection() {
-      //console.log("emit selection fn in entity navigation");
-   }
-
-   pushNavData({slideIndex, entityList}){
-      // Create a nav for a particular list and save it by index #todo
-      this.panelGroups.push(entityList); // should match slideIndex
-
-      //console.log(`entityList length ${entityList.length}`)
-
       this.prev.addEventListener("click", () => {
-         const index = parseInt(this._current.textContent) - 1;
-         if (index > 0) {
-         this._current.textContent = String(index);
-         }
-         this._emitSelection();
+         this._emitSelection("prev");
       });
 
       this.next.addEventListener("click", () => {
-         const index = parseInt(this._current.textContent) + 1;
-         if (index <= this._data.length) {
-         this._current.textContent = String(index);
-         }
-         this._emitSelection();
+         this._emitSelection("next");
       });
 
       this._slider.addEventListener("input", () => {
-         this._current.textContent = String(Number(this._slider.value) + 1);
-         this._emitSelection();
+         let newIndex = Number(this._slider.value);
+         this._emitSelection("slider", newIndex);
       });
+
+      this._goToFrameButton = document.createElement("entity-frame-link-button");
+      this._goToFrameButton.button.classList.add("ml-3");
+      this._goToFrameButton.button.classList.add("tooltip-left");
+      this._goToFrameButton.button.setAttribute("tooltip", "View In Annotator");
+      this._goToFrameButton.button.setAttribute("target", "_blank");
+      this.controls.appendChild(this._goToFrameButton);
+
+      this._data = null;
+      this._selectedCardEl = null;
+   }
+
+   init() {
+      this.hidden = false; 
+   }
+
+   _emitSelection(action, value = null) {
+      console.log("updated via emit selection");
+      let newCardIndex = null;
+      let total = this._data.length;
+
+      // what is the new index
+      if (action == "next") {
+         newCardIndex = this._cardIndex + 1;
+      } else if (action == "prev") {
+         newCardIndex = this._cardIndex - 1;
+      } else if (action == "slider" && value !== null) {
+         newCardIndex = value;
+      }
+
+      console.log(`newCardIndex ${newCardIndex} and current index is this._cardIndex ${this._cardIndex} (displayed should be +1)`);
+
+      if (newCardIndex < 0) {
+         console.log(`But oops we're out of range! [START -1]  setting to end of the line`);
+         newCardIndex = Number(total) - 1;
+      } else if (newCardIndex == total) {
+         console.log(`But oops we're out of range! [END +1] setting to begginning of the line`);
+         newCardIndex = 0;
+      }
+
+      // Select the el, and update the nav
+      if (this._selectedCardEl !== null && newCardIndex !== null) {
+         this._cardIndex = newCardIndex;
+
+         let newCard = this._data[this._cardIndex];
+         this._selectedCardEl = newCard;
+
+         // faking a click also unselects prev card
+         newCard.card.click();
+
+         this._updateCurrentValues();
+      }
+
+   }
+
+   getInit(){
+      return this.controls.hidden;
+   }
+
+   handle({ cardElements, cardIndexes, cardObj }) {
+      console.log("handled via panel top");
+      // Setup next/prev/slider nav
+      this._data = cardElements;
+      this._cardIndex = cardIndexes[cardObj.id];
+      this._selectedCardEl = this._data[this._cardIndex];
+      this._updateCurrentValues();
+   }
+
+   _updateCurrentValues() {
+      let cardIndex = this._cardIndex;
+      let start = Number(cardIndex) + 1;
+      let total = this._data.length;
+
+      console.log("Navigation Init at card index: " + cardIndex);
+
+      this._current.textContent = start;
+      this._slider.setAttribute("value", start);
+      this._slider.setAttribute("max", total);
+
+      // Update go to frame destination
+      let mediaLink = this._selectedCardEl.card.cardObj.mediaLink;
+      this._goToFrameButton.button.setAttribute("href", mediaLink);
    }
 
    showSelectedNav(){

@@ -59,26 +59,6 @@ class AffiliationListAPI(BaseListView):
         )
         affiliation.save()
 
-        # Send email notification to organizational admins.
-        if settings.TATOR_EMAIL_ENABLED:
-            recipients = Affiliation.objects.filter(organization=organization, permission='Admin')\
-                                            .values_list('user', flat=True)
-            recipients = User.objects.filter(pk__in=recipients).values_list('email', flat=True)
-            recipients = list(recipients)
-            email_response = TatorSES().email(
-                sender=settings.TATOR_EMAIL_SENDER,
-                recipients=recipients,
-                title=f"{user} added to {organization}",
-                text=f"You are being notified that a new user {user} (username {user.username}, "
-                     f"email {user.email}) has been added to the Tator organization "
-                     f"{organization}. This message has been sent to all organization admins. "
-                      "No action is required.",
-                html=None,
-                attachments=[])
-            if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                logger.error(email_response)
-                # Don't raise an error, email is not required for affiliation creation.
-        
         return {'message': f"Affiliation of {user} to {organization} created!",
                 'id': affiliation.id}
 

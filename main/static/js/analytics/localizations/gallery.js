@@ -6,9 +6,15 @@ class AnnotationsGallery extends EntityCardGallery {
     *
     */
 
+
+    // * hook to add filter interface
+    this._filterDiv = document.createElement("div");
+    this._filterDiv.setAttribute("class", "analysis__filter");
+    this._mainTop.appendChild(this._filterDiv);
+
     // Custom width for annotations gallery
     this.colSize = 272;
-    this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`
+    this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`;
 
     // Heading
     this._h3.hidden = true;
@@ -28,35 +34,37 @@ class AnnotationsGallery extends EntityCardGallery {
     this._numFiles.setAttribute("class", "text-gray px-2");
     header.appendChild(this._numFiles);
 
-    // Count text
-    //this._p.classList.add("col-3");
-    //this._p.classList.add("px-2");
-
-    // @TODO Tools: Card labels display -- Not impleemented currently
-    //this.labelContainer = document.createElement("div");
-    //this.labelContainer.setAttribute("class", "col-2")
-    // this._labelsDropDown = document.createElement('entity-gallery-labels');
-    // this.labelContainer.appendChild( this._labelsDropDown );
-    //this._tools.appendChild( this.labelContainer );
-
-    // Tools: Slider to resize images
-    this.sliderContainer = document.createElement("div");
-    this.sliderContainer.setAttribute("class", "col-4")
+    // Tools: Resize Slider to resize images
+    this.resizeContainer = document.createElement("div");
+    this.resizeContainer.setAttribute("class", "col-4")
     this._resizeCards = document.createElement('entity-card-resize');
     this._resizeCards._initGallery(this._ul, this.colSize);
-    this.sliderContainer.appendChild( this._resizeCards );
-    this._tools.appendChild( this.sliderContainer );
+    this.resizeContainer.appendChild( this._resizeCards );
+    this._tools.appendChild( this.resizeContainer );
 
     // Tools: Show @aspect ratio
     this.aspectToolContainer = document.createElement("div");
-    this.aspectToolContainer.setAttribute("class", "col-3")
+    this.aspectToolContainer.setAttribute("class", "col-2")
     this._aspectToggle = document.createElement('entity-gallery-aspect-ratio');
     this.aspectToolContainer.appendChild( this._aspectToggle );
     this._tools.appendChild( this.aspectToolContainer );
 
+    // Display options in more menu
+    // Note: this is appended to filter nav in collections.js
+    this._moreMenu = document.createElement("entity-gallery-more-menu");
+    this._moreMenu.summary.setAttribute("class", "entity-gallery-tools--more"); // btn btn-clear btn-outline f2 px-1
+
+    /**
+      * CARD Label display options link for menu, and checkbox div
+      */
+    this._cardAtributeLabels = document.createElement("entity-gallery-labels");
+    this._cardAtributeLabels.titleEntityTypeName = "localization";
+    this._mainTop.appendChild(this._cardAtributeLabels);
+    this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
+    this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
+
     // Init aspect toggle
     this._aspectToggle.init(this);
-
     this.panelContainer = null;
 
     // Property IDs are the entity IDs (which are expected to be unique)
@@ -65,6 +73,9 @@ class AnnotationsGallery extends EntityCardGallery {
 
     // Entity cards aren't deleted. They are reused and hidden if not used.
     this._cardElements = [];
+
+    // State of chosen labels for gallery
+    this.cardLabelsChosenByType = {};
   }
 
   // Provide access to side panel for events
@@ -79,18 +90,6 @@ class AnnotationsGallery extends EntityCardGallery {
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
-
-
-    // Init gallery with data for filtering
-    // this._labelsDropDown.init({
-    //   gallery : this,
-    //   localizationTypes
-    // });
-    // this.addEventListener("labels-changed", this.handleLabelChange.bind(this));
-  }
-
-  handleLabelChange(e){
-    console.log(e.detail);
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -139,7 +138,6 @@ class AnnotationsGallery extends EntityCardGallery {
    * @param {object} cardInfo
    */
   makeCards(cardInfo) {
-
     this._currentCardIndexes = {}; // Clear the mapping from entity ID to card index
     var numberOfDisplayedCards = 0;
 
@@ -147,15 +145,40 @@ class AnnotationsGallery extends EntityCardGallery {
     // apply the card entry to an existing card.
     for (const [index, cardObj] of cardInfo.entries()) {
       const newCard = index >= this._cardElements.length;
+
+      /**
+      * entity info for card
+      */
+      let entityType = cardObj.entityType;
+      let entityTypeId = entityType.id;
+
+
       let card;
       if (newCard) {
         card = document.createElement("annotations-card");
+
+        /**
+        * Card labels / attributes of localization or media type
+        */
+        this._cardAtributeLabels.add({
+          typeData: entityType,
+          checkedFirst: true
+        });
+
+        this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
 
         // Resize Tool needs to change style within card on change
         this._resizeCards._slideInput.addEventListener("change", (evt) => {
           let resizeValue = evt.target.value;
           let resizeValuePerc = parseFloat(resizeValue / 100);
           return card._img.style.height = `${130 * resizeValuePerc}px`;
+        });
+
+        this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+          card._updateShownAttributes(evt);
+          this.cardLabelsChosenByType[entityTypeId] =  evt.detail.value;
+          let msg = `Entry labels updated`;
+          Utilities.showSuccessIcon(msg);
         });
 
         // Inner div of side panel
@@ -171,8 +194,17 @@ class AnnotationsGallery extends EntityCardGallery {
         annotationPanel.entityData.addEventListener("save", this.entityFormChange.bind(this));
         annotationPanel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
+        // Check and set current permission level on annotationPanel
+        if (this.panelContainer.hasAttribute("permissionValue")) {
+          let permissionVal = this.panelContainer.getAttribute("permissionValue");
+          annotationPanel.entityData.setAttribute("permission", permissionVal);
+          annotationPanel.stateData.setAttribute("permission", permissionVal);
+          annotationPanel.mediaData.setAttribute("permission", permissionVal);
+        }
+
         // when lock changes set attribute on forms to "View Only" / "Can Edit"
         this.panelContainer.addEventListener("permission-update", (e) => {
+          this.panelContainer.setAttribute("permissionValue", e.detail.permissionValue);
           annotationPanel.entityData.setAttribute("permission", e.detail.permissionValue);
           annotationPanel.mediaData.setAttribute("permission", e.detail.permissionValue);
         });
@@ -207,30 +239,48 @@ class AnnotationsGallery extends EntityCardGallery {
         };
         this._cardElements.push(cardInfo);
 
+        this._ul.appendChild(card);
       } else {
         card = this._cardElements[index].card;
       }
-      
-      this._currentCardIndexes[cardObj.id] = index;   
 
       // Initialize the card panel
       this._cardElements[index].annotationPanelDiv.setAttribute("data-loc-id", cardObj.id)
       this._cardElements[index].annotationPanel.init({ cardObj });
-      
+
+      // Non-hidden attributes (ie order >= 0))
+      let nonHiddenAttrs = [];
+      let hiddenAttrs = [];
+      for (let attr of entityType.attribute_types) {
+        if (attr.order >= 0) {
+          nonHiddenAttrs.push(attr);
+        }
+        else {
+          hiddenAttrs.push(attr);
+        }
+      }
+
+      // Show array by order, or alpha
+      var cardLabelOptions = nonHiddenAttrs.sort((a, b) => {
+        return a.order - b.order || a.name - b.name;
+      });
+
+      cardLabelOptions.push(...hiddenAttrs);
+
+      cardObj.attributeOrder = cardLabelOptions;
+
       // Initialize Card
       card.init({
-        obj : cardObj, 
-        panelContainer : this.panelContainer, 
-        annotationPanelDiv : this._cardElements[index].annotationPanelDiv
+        obj : cardObj,
+        panelContainer : this.panelContainer,
+        annotationPanelDiv : this._cardElements[index].annotationPanelDiv,
+        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
       });
+
+      this._currentCardIndexes[cardObj.id] = index;
 
       card.style.display = "block";
       numberOfDisplayedCards += 1;
-
-      // Add new card to the gallery div
-      if (newCard) {
-        this._ul.appendChild(card);
-      }
     }
 
     // Hide unused cards
@@ -247,11 +297,11 @@ class AnnotationsGallery extends EntityCardGallery {
       const index = this._currentCardIndexes[newCardData.id];
       const card = this._cardElements[index].card;
       this.cardData.updateLocalizationAttributes(card.cardObj).then(() => {
-        card.displayAttributes();
+        //card.displayAttributes();
+        card._updateAttributeValues(card.cardObj)
       });
     }
   }
-
 
   entityFormChange(e) {
     this.formChange({
@@ -296,7 +346,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
     var data = await result.json();
     let msg = "";
-    if (result.ok) {  
+    if (result.ok) {
       if (data.details && data.details.contains("Exception")) {
         msg = `Error: ${data.message}`
         Utilities.warningAlert(msg);
@@ -329,10 +379,10 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   openClosedPanel(e){
+    console.log(e.target);
     if(!this.panelContainer.open) this.panelContainer._toggleOpen();
-    this.panelControls.openHandler( e.detail );
+    this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
   }
-
 }
 
 customElements.define("annotations-gallery", AnnotationsGallery);

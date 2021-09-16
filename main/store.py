@@ -20,7 +20,7 @@ class ObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
     GCP = "UploadServer"
-
+    WASABI = "WasabiS3"
 
 class TatorStorage(ABC):
     """Interface for object storage."""
@@ -39,6 +39,8 @@ class TatorStorage(ABC):
             return GCPStorage(bucket, client, external_host)
         if server is ObjectStore.MINIO:
             return MinIOStorage(bucket, client, external_host)
+        if server is ObjectStore.WASABI:
+            return WasabiStorage(bucket, client, external_host)
 
         raise ValueError(f"Server type '{server}' is not supported")
 
@@ -474,6 +476,17 @@ class GCPStorage(TatorStorage):
     def _restore_object(self, path, desired_storage_class, min_exp_days):
         self._update_storage_class(path, desired_storage_class)
 
+class WasabiStorage(MinIOStorage):
+    def __init__(self, bucket, client, external_host=None):
+        super().__init__(bucket, client, external_host)
+        self._server = ObjectStore.WASABI
+
+    def _restore_object(self, path, desired_storage_class, min_exp_days):
+        return self.client.restore_object(
+            Bucket=self.bucket_name,
+            Key=self._path_to_key(path),
+            RestoreRequest={"Days": min_exp_days},
+        )
 
 def get_tator_store(bucket=None) -> TatorStorage:
     """
@@ -530,6 +543,8 @@ def get_tator_store(bucket=None) -> TatorStorage:
             server = ObjectStore.AWS
         elif "googleapis" in endpoint:
             server = ObjectStore.GCP
+        elif "wasabisys" in endpoint:
+            server = ObjectStore.WASABI
         else:
             server = ObjectStore.MINIO
     else:
@@ -540,6 +555,8 @@ def get_tator_store(bucket=None) -> TatorStorage:
             server = ObjectStore.MINIO
         elif ObjectStore.GCP.value in response_server:
             server = ObjectStore.GCP
+        elif ObjectStore.WASABI.value in response_server:
+            server = ObjectStore.WASABI
         else:
             raise ValueError(f"Received unhandled server type '{response_server}'")
 

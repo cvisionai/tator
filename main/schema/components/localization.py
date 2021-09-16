@@ -45,6 +45,21 @@ localization_properties = {
         'maximum': 1.0,
         'nullable': True,
     },
+    'points': {
+        'description': 'List of normalized [x, y] pairs for `poly` localization types.',
+        'type': 'array',
+        'items': {
+            'type': 'array',
+            'items': {
+                'type': 'number',
+                'minimum': 0.0,
+                'maximum': 1.0,
+            },
+            'minItems': 2,
+            'maxItems': 2,
+        },
+        'nullable': True,
+    },
     'frame': {
         'description': 'Frame number of this localization if it is in a video.',
         'type': 'integer',

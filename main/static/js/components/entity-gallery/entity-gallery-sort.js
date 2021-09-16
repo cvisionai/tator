@@ -2,99 +2,221 @@ class EntityGallerySort extends TatorElement {
   constructor() {
     super();
 
-    // clickable bar
-    this._main = document.createElement("div");
-    this._main.setAttribute("class", "entity-gallery-sort my-2 py-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
+    // Element used for menu bar (not attached to shadow)
+    // #todo this could be a menu button component?
+    this.menuLink = document.createElement("button");
+    this.menuLink.setAttribute("class", "btn-clear py-2 px-0 text-gray hover-text-white d-flex flex-items-center")
+    
+    let labelIcon = new SvgDefinition({ iconName: "triangle" });
+    this.menuLink.appendChild(labelIcon);
 
-    this._title = document.createElement("div");
-    this._title.setAttribute("class", "entity-gallery-sort--title py-1 px-1 text-gray col-3");
-    this._main.appendChild(this._title);
+    this.menuLinkTextSpan = document.createElement("span");
+    this.menuLinkTextSpan.setAttribute("class", "px-2");
 
-    this._count = document.createElement("span");
-    this._count.setAttribute("class", "gallery-sort-count")
-    this._title.appendChild(this._count);
+    this.labelLinkText = document.createTextNode("Sort Entries");
+    this.menuLinkTextSpan.appendChild(this.labelLinkText);
+ 
+    this.menuLink.appendChild(labelIcon);
+    this.menuLink.appendChild(this.menuLinkTextSpan);
 
-    // Sort chooser
-    this._sortDetails = document.createElement("details");
-    this._sortDetails.setAttribute("class", "col-12 py-3");
-    this._main.appendChild(this._sortDetails);
+    // Label div container for lists
+    this.div = document.createElement("div");
+    this.div.setAttribute("class", "enitity-gallery__labels-div rounded-1 my-2 py-2 px-2 hidden");
+    this._shadow.appendChild(this.div);
 
-    this._clickableTitle = document.createElement("summary");
-    let sortIcon = new SvgDefinition({ iconName: "triangle" });
-    sortIcon.setAttribute("tooltip", "Sort");
-    this._clickableTitle.appendChild(sortIcon);
-    this._sortDetails.appendChild(this._clickableTitle);
+    // Hide and showing the attribute div
+    let xClose = document.createElement("nav-close");
+    xClose.setAttribute("class", "float-right");
+    xClose.style.height = "40px";
+    this.div.appendChild(xClose);
 
-    let innerText = document.createTextNode("Show Attributes:");
-    this._sortDetails.appendChild(innerText);
-
-    this._details = document.createElement("div");
-    this._details.setAttribute("class", "py-3");
-    this._sortDetails.appendChild(this._details);
-
-    // Hide this type
-    // this._eyeHolder = document.createElement("div");
-    // this._eyeHolder.setAttribute("tooltip", "Hide/Show");
-    // this._eyeHolder.setAttribute("class", "col-4");
-    // this._main.appendChild(this._eyeHolder);
-
-    // this.openEyeIcon = new SvgDefinition({ iconName: "open-eye" });
-    // this._eyeHolder.appendChild(this.openEyeIcon);
-
-    // this.closedEyeIcon = new SvgDefinition({ iconName: "closed-eye" });
-    // this.closedEyeIcon.setAttribute("class", "hidden");
-    // this._eyeHolder.appendChild(this.closedEyeIcon);
-  }
-
-  /**
-   * @param {typeData} - object
-   * @param {gallery} - element
-   *
-  */
-  async init({ gallery, typeData }) {
-    this._gallery = gallery;
-
-    let text = typeData.name ? typeData.name : "";
-    this._title.appendChild(document.createTextNode(text));
-
-    let count = typeData.total ? typeData.total : "";
-    this._count.appendChild(document.createTextNode(count));
-
-    // Stop here if we aren't ok after init
-    if (gallery === null || typeof typeData == "undefined") return console.log("Error in sort init");;
-
-    /**
-     * Sort Choice
-     */
-    // If ok, create the checkbox list
-    const checkboxList = this.makeListFrom(typeData);
-    const selectionBoxes = document.createElement("checkbox-set");
-    selectionBoxes._colSize = "px-3"
-    selectionBoxes.setValue(checkboxList);
-
-    // Append to main box
-    this._details.appendChild(selectionBoxes);
-
-    selectionBoxes.addEventListener("change", (e) => {
-      this.dispatchEvent(new CustomEvent("sort-update", { detail: { value: e.target.getValue() } }));
+    // Listeners
+    xClose.addEventListener("click", () => {
+        this.div.classList.add("hidden");
     });
 
-    return this._shadow.appendChild(this._main);
+    this.menuLink.addEventListener("click", () => {
+      this.div.classList.toggle("hidden");
+    });
+
+    // Dont dupe the types
+    this._shownTypes = {};
+
+    // Keep track of values by TypeId
+    this._selectionValues = {};
+    this._sortOrderValues = {};
   }
 
-  /*
+ 
+
+  /**
+   * Add a section of labels to main label div
+   * @param {typeData} - object
+   *
+  */
+  async add({ typeData, hideTypeName = false }){
+    let typeName = typeData.name ? typeData.name : "";
+    if(this._shownTypes[typeName]) {
+      // don't re-add this type...
+      return false;
+    } else {
+      this._shownTypes[typeName] = true;
+    }
+
+    // Main labels box
+    let labelsMain = document.createElement("div");
+    labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
+
+    // Labels details with checkboxes
+    let _labelDetails = document.createElement("div");
+    _labelDetails.setAttribute("class", "float-right col-10");
+    labelsMain.appendChild(_labelDetails);
+
+    // Style div for checkbox set
+    let styleDiv = document.createElement("div");
+    styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
+    _labelDetails.appendChild(styleDiv);
+
+    /**
+     * Label Choice
+     */
+    // If ok, create the checkbox list
+    const labelsList = this.makeListFrom(typeData);
+
+    const labelSelectionBox = document.createElement("enum-input");
+    labelSelectionBox.setAttribute("name", `Sort ${typeName} By`);
+    labelSelectionBox.choices = labelsList;
+    styleDiv.appendChild(labelSelectionBox);
+
+    const ascendingBool = document.createElement("bool-input");
+    ascendingBool.setAttribute("name", "Sort Order");
+    ascendingBool.setAttribute("on-text", "Asc");
+    ascendingBool.setAttribute("off-text", "Desc");
+    ascendingBool.setValue(true);
+    styleDiv.appendChild(ascendingBool);
+
+    this._selectionValues[typeData.id] = labelSelectionBox;
+    this._sortOrderValues[typeData.id] = ascendingBool;
+
+    labelSelectionBox.addEventListener("change", (e) => {
+      this.dispatchEvent(new CustomEvent("sort-update", { 
+          detail: { 
+              sortType: this._getSortValue(typeData.id),
+              sortProperty: e.target.getValue(),
+              typeId: typeData.id
+            }
+        }));
+    });
+
+    ascendingBool.addEventListener("change", (e) => {
+      this.dispatchEvent(new CustomEvent("sort-update", { 
+          detail: { 
+              sortType: e.target.getValue(),
+              sortProperty: this._getValue(typeData.id),
+              typeId: typeData.id
+            }
+        }));
+    });
+
+    this.div.appendChild(labelsMain)
+
+    return labelsMain;
+  }
+
+  _getValue(typeId){
+    return this._selectionValues[typeId].getValue();
+  }
+
+  _setValue({ typeId, values }){
+    // # assumes values are in the accepted format for checkbox set
+    //
+    let valuesList = this._getValue(typeId);
+    for(let box in valuesList){
+      if(values.contains(box.name)){
+        box.checked = true;
+      }
+    }
+    return this._selectionValues[typeId].setValue(valuesList);
+  }
+
+   _getSortValue(typeId){
+    return this._sortOrderValues[typeId].getValue();
+  }
+
+  _setSortValue({ typeId, value }){
+    return this._sortOrderValues[typeId].setValue(value);
+  }
+
+   /*
   */
   makeListFrom(typeData) {
     this.newList = [];
-    for (let attr of typeData.attribute_types) {
+    let tmpArray = [...typeData.attribute_types];
+
+    // Show array by order, or alpha
+    const sorted = tmpArray.sort((a, b) => {
+      return a.order - b.order || a.name - b.name;
+    });
+
+    // Default sort is always by asc ID
+    this.newList.push({
+      value: "ID",
+      label: "ID"
+    });
+
+    // Create an array for checkbox set el
+    for (let attr of sorted) {
       this.newList.push({
-        id: encodeURI(attr.name),
-        name: attr.name,
-        checked: false
+        value: attr.name,
+        label: attr.name
       });
     }
+
     return this.newList;
   }
+
+  ascCheck(val1, val2) {
+      if(val1 > val2) return 1;
+      if(val1 < val2) return -1;
+      return 0;
+   };
+
+   dscCheck(val1, val2) {
+      if(val1 < val2) return 1;
+      if(val1 > val2) return -1;
+      return 0;
+   };
+
+   getFnCheck(sortType){
+     return sortType ? this.ascCheck : this.dscCheck;
+   }
+
+   _sortCards({cards, slider, fnCheck, property}){
+    //  console.log(slider._cardElements[0].card.cardObj.id);
+      cards.sort((el1, el2) => {
+         //console.log(el1.card.cardObj.attributes);
+         let el1Value = "";
+         let el2Value = "";
+         let el1Id = el1.card.cardObj.id;
+         let el2Id = el2.card.cardObj.id;
+
+         if(property !== "ID" ){
+            //if(el1.card.cardObj.attributes != {}) {
+            el1Value = typeof el1.card.cardObj.attributes[property] !=  undefined ? el1.card.cardObj.attributes[property] : "not set";
+            el2Value = el2.card.cardObj.attributes[property] !=  undefined ? el2.card.cardObj.attributes[property] : "not set";
+            //}
+         } else if(property == "ID") {
+            el1Value = el1Id;
+            el2Value = el2Id;
+         }
+
+         return fnCheck(el1Value, el2Value);
+      });
+
+      // console.log(slider._cardElements[0].card.cardObj.id);
+
+      return cards;
+   }
 }
 
 customElements.define("entity-gallery-sort", EntityGallerySort);

@@ -46,6 +46,7 @@ from django_ltree.fields import PathField
 from django.db import transaction
 
 from .search import TatorSearch
+from .ses import TatorSES
 from .download import download_file
 from .store import get_tator_store, ObjectStore, get_storage_lookup
 from .cognito import TatorCognito
@@ -347,6 +348,32 @@ class Affiliation(Model):
                            default='Member')
     def __str__(self):
         return f'{self.user} | {self.organization}'
+
+@receiver(post_save, sender=Affiliation)
+def affiliation_save(sender, instance, created, **kwargs):
+    if created:
+        # Send email notification to organizational admins.
+        organization = instance.organization
+        user = instance.user
+        if settings.TATOR_EMAIL_ENABLED:
+            recipients = Affiliation.objects.filter(organization=organization, permission='Admin')\
+                                            .values_list('user', flat=True)
+            recipients = User.objects.filter(pk__in=recipients).values_list('email', flat=True)
+            recipients = list(recipients)
+            email_response = TatorSES().email(
+                sender=settings.TATOR_EMAIL_SENDER,
+                recipients=recipients,
+                title=f"{user} added to {organization}",
+                text=f"You are being notified that a new user {user} (username {user.username}, "
+                     f"email {user.email}) has been added to the Tator organization "
+                     f"{organization}. This message has been sent to all organization admins. "
+                      "No action is required.",
+                html=None,
+                attachments=[])
+            logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
+            if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
+                logger.error(email_response)
+                # Don't raise an error, email is not required for affiliation creation.
 
 class Bucket(Model):
     """ Stores info required for remote S3 buckets.
@@ -725,6 +752,8 @@ class MediaType(Model):
     default_dot = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
                              related_name='+')
     """ Dot type used as default in UI. """
+    default_poly = ForeignKey('LocalizationType', null=True, blank=True, on_delete=SET_NULL,
+                              related_name='+')
     def __str__(self):
         return f'{self.name} | {self.project}'
 
@@ -734,7 +763,7 @@ def media_type_save(sender, instance, **kwargs):
 
 class LocalizationType(Model):
     dtype = CharField(max_length=16,
-                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot')])
+                      choices=[('box', 'box'), ('line', 'line'), ('dot', 'dot'), ('poly', 'poly')])
     project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
     name = CharField(max_length=64)
     description = CharField(max_length=256, blank=True)
@@ -1192,6 +1221,8 @@ class Localization(Model, ModelDiffMixin):
     """ Width for boxes."""
     height = FloatField(null=True, blank=True)
     """ Height for boxes."""
+    points = JSONField(null=True, blank=True)
+    """ List of points used by poly dtype. """
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False)
