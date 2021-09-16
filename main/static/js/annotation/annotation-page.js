@@ -922,13 +922,15 @@ class AnnotationPage extends TatorPage {
           if (evt.detail.byUser) {
             if (evt.detail.dataType.isLocalization) {
               canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
-            } else if (evt.detail.dataType.isTrack) {
+            }
+            else if (evt.detail.dataType.isTrack) {
               // select track takes care of frame jump
               canvas.selectTrack(evt.detail.data, undefined, !evt.detail.goToEntityFrame);
             }
             else if ('frame' in evt.detail.data) {
               if (evt.detail.goToEntityFrame) {
                 canvas.goToFrame(parseInt(evt.detail.data.frame));
+                this._browser.selectEntity(evt.detail.data);
               }
             }
 
