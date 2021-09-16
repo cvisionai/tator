@@ -1,7 +1,7 @@
 section_post_properties = {
     'name': {
         'type': 'string',
-        'description': 'Unique name of the algorithm workflow.',
+        'description': 'Unique name of the section.',
     },
     'lucene_string': {
         'type': 'string',
