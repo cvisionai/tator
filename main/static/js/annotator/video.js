@@ -2301,6 +2301,11 @@ class VideoCanvas extends AnnotationCanvas {
           callback(frame, video, that._dims[0], that._dims[1])
           resolve();
           video.oncanplay=null;
+          that.dispatchEvent(new CustomEvent("seekComplete",
+                                       {composed: true,
+                                        detail: {forceSeekBuffer: forceSeekBuffer,
+                                                 bufferType: bufferType
+                                        }}));
           if (forceSeekBuffer && that._audioPlayer)
           {
             if (that._audioPlayer.currentTime != audio_time)
