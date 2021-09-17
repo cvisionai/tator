@@ -328,7 +328,7 @@ class VideoDownloader
       // Set the current packet based on the play start frame plus some wiggle room
       this._onDemandConfig["init"] = true;
       var frameToStart;
-      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 3);
+      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 10); // Support a bit more behind us
       if (this._onDemandConfig["direction"] == "forward")
       {
         frameToStart = this._onDemandConfig["frame"] - startBuffer;

@@ -3133,7 +3133,7 @@ class VideoCanvas extends AnnotationCanvas {
 
               if (this._direction == Direction.FORWARD)
               {
-                var trimEnd = currentTime - 2;
+                var trimEnd = currentTime - 10;
                 if (trimEnd > start && this._playing)
                 {
                   console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
