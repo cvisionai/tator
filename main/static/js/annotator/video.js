@@ -2977,8 +2977,8 @@ class VideoCanvas extends AnnotationCanvas {
       {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
-        const appendThreshold = 15 * Math.min(1,this._playbackRate);
-        var playbackReadyThreshold = 10 * Math.min(1,this._playbackRate); // Seconds * playback rate
+        const appendThreshold = 45 * Math.max(1,this._playbackRate);
+        var playbackReadyThreshold = 30 * Math.max(1,this._playbackRate); // Seconds * playback rate
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
           (totalVideoTime - currentTime < playbackReadyThreshold))
