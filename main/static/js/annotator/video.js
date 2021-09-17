@@ -1333,6 +1333,16 @@ class VideoCanvas extends AnnotationCanvas {
     this._textOverlay.toggleTextDisplay(this._videoDiagOverlay, false);
   }
 
+  playBufferDuration() {
+    let duration = 0.0;
+    const ranges = this._videoElement[this._play_idx].playBuffer().buffered;
+    for (let idx = 0; idx < ranges.length; idx++)
+    {
+      duration += ranges.end(idx) - ranges.start(idx);
+    }
+    return duration;
+  }
+
   refresh(forceSeekBuffer)
   {
     // Refresh defaults to high-res buffer

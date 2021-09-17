@@ -773,6 +773,7 @@ class AnnotationPlayer extends TatorElement {
     var timeoutIndex = 0;
     var timeoutCounter = 0;
     const clock_check = 100;
+    this._last_duration = this._video.playBufferDuration();
 
     let check_ready = (checkFrame) => {
       timeoutCounter += clock_check;
@@ -800,8 +801,15 @@ class AnnotationPlayer extends TatorElement {
       }
       if (not_ready == true)
       {
-        // Seems like 3 seconds is a better bet here.
-        if (timeoutIndex < 30) {
+        // Heal the buffer state if duration increases since the last time we looked
+        if (this._video.playBufferDuration() > this._last_duration)
+        {
+          this._last_duration = this._video.playBufferDuration();
+          timeoutIndex = 0;
+        }
+        // For this logic to work it is actually based off the worst case
+        // number of clocks in a given timeout attempt.
+        if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
           //console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
           this._handleNotReadyTimeout = setTimeout(() => {
             this._handleNotReadyTimeout = null;
