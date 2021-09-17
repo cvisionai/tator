@@ -1688,7 +1688,7 @@ class VideoCanvas extends AnnotationCanvas {
           {
             ranges_list.push([that.timeToFrame(ranges.start(idx)), that.timeToFrame(ranges.end(idx))]);
           }
-          that.dispatchEvent(new CustomEvent("on_demand_detail",
+          that.dispatchEvent(new CustomEvent("onDemandDetail",
                                              {composed: true,
                                               detail: {"ranges": ranges_list}
                                               }));

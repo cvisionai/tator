@@ -671,6 +671,7 @@ class AnnotationMulti extends TatorElement {
     }
     // Functor to normalize the progress bar
     let global_progress = new Array(video_count).fill(0);
+    let global_on_demand_progress = new Array(video_count).fill([0,0]);
     let handle_buffer_load = (vid_idx,evt) =>
         {
           if (global_progress[vid_idx] == 0)
@@ -684,6 +685,37 @@ class AnnotationMulti extends TatorElement {
             }
           };
           this._slider.onBufferLoaded(fakeEvt);
+
+          let frame = Math.round(fakeEvt.detail.percent_complete * this._maxFrameNumber);
+          this._zoomSlider.setLoadProgress(frame);
+        };
+
+        let handle_ondemand_load = (vid_idx,evt) =>
+        {
+          if (evt.detail.ranges.length == 0)
+          {
+            return;
+          }
+          global_on_demand_progress[vid_idx] = evt.detail.ranges[0];
+          let minStart = Number.MAX_SAFE_INTEGER;
+          let minEnd = Number.MAX_SAFE_INTEGER;
+          for (let idx = 0; idx < global_on_demand_progress.length; idx++)
+          {
+            if (global_on_demand_progress[idx][0] < minStart)
+            {
+              minStart = global_on_demand_progress[idx][0];
+            }
+            if (global_on_demand_progress[idx][0] < minEnd)
+            {
+              minEnd = global_on_demand_progress[idx][1];
+            }
+          }
+          let fakeEvt = {
+            detail: {
+              ranges: [[minStart,minEnd]]
+            }
+          };
+          this._slider.onDemandLoaded(fakeEvt);
 
           let frame = Math.round(fakeEvt.detail.percent_complete * this._maxFrameNumber);
           this._zoomSlider.setLoadProgress(frame);
@@ -731,6 +763,10 @@ class AnnotationMulti extends TatorElement {
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
                                handle_buffer_load(idx,evt);
+                             });
+      this._videos[idx].addEventListener("onDemandDetail",
+                             (evt) => {
+                               handle_ondemand_load(idx,evt);
                              });
       this._videos[idx].addEventListener("frameChange",
                              (evt) => {

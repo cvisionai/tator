@@ -172,7 +172,7 @@ class AnnotationPlayer extends TatorElement {
       this._slider.onBufferLoaded(evt);
     });
 
-    this._video.addEventListener("on_demand_detail", evt => {
+    this._video.addEventListener("onDemandDetail", evt => {
       this._slider.onDemandLoaded(evt);
     });
 
