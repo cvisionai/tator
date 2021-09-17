@@ -1428,9 +1428,11 @@ class AnnotationMulti extends TatorElement {
     const timeouts = [4000, 8000, 16000];
     var timeoutIndex = 0;
     var timeoutCounter = 0;
+    const clock_check = 100;
+    this._last_duration = this._videos[videoIndex].playBufferDuration();
 
     let check_ready = (checkFrame) => {
-      timeoutCounter += 100;
+      timeoutCounter += clock_check;
 
       let not_ready = false;
       if (checkFrame != this._videos[videoIndex].currentFrame()) {
@@ -1439,7 +1441,7 @@ class AnnotationMulti extends TatorElement {
         timeoutCounter = 0;
         this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
           this._handleNotReadyTimeout[videoIndex] = null;
-          check_ready(this._videos[videoIndex].currentFrame())}, 100);
+          check_ready(this._videos[videoIndex].currentFrame())}, clock_check);
         return;
       }
       if (this._videos[videoIndex]._onDemandPlaybackReady != true)
@@ -1454,12 +1456,18 @@ class AnnotationMulti extends TatorElement {
       }
       if (not_ready == true)
       {
-        if (timeoutIndex < timeouts.length) {
+        // Heal the buffer state if duration increases since the last time we looked
+        if (this._videos[videoIndex].playBufferDuration() > this._last_duration)
+        {
+          this._last_duration = this._videos[videoIndex].playBufferDuration();
+          timeoutIndex = 0;
+        }
+        if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
           //console.log(`Video ${videoIndex} playback check - Not ready: checking in ${500/1000} seconds [Now: ${new Date().toISOString()}]`);
           this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
             this._handleNotReadyTimeout[videoIndex] = null;
             check_ready(checkFrame);
-          }, 100);
+          }, clock_check);
         }
         else {
           Utilities.warningAlert("Video player unable to reach ready state.", "#ff3e1d", false);
@@ -1499,7 +1507,7 @@ class AnnotationMulti extends TatorElement {
     this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
       this._handleNotReadyTimeout[videoIndex] = null;
       check_ready(this._videos[videoIndex].currentFrame())
-    }, 100);
+    }, 0);
 
   }
 

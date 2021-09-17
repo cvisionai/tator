@@ -541,7 +541,7 @@ class AnnotationPlayer extends TatorElement {
     // Use the hq buffer when the input is finalized
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
-      this._video.onDemandDownloadPrefetch(true);
+      this._video.onDemandDownloadPrefetch(frame);
       this.handleNotReadyEvent();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
@@ -796,7 +796,7 @@ class AnnotationPlayer extends TatorElement {
           timeoutCounter = 0;
           timeoutIndex += 1;
           console.log(`Video playback check - restart [Now: ${new Date().toISOString()}]`);
-          this._video.onDemandDownloadPrefetch(true);
+          this._video.onDemandDownloadPrefetch(-1);
         }
       }
       if (not_ready == true)
@@ -832,7 +832,7 @@ class AnnotationPlayer extends TatorElement {
     };
 
     // We can be faster in single play mode
-    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), timeouts[timeoutIndex]);
+    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), 0);
   }
 
   play()
@@ -950,7 +950,7 @@ class AnnotationPlayer extends TatorElement {
       this.pause();
       this._video.setQuality(quality, buffer);
     }
-    this._video.onDemandDownloadPrefetch(true);
+    this._video.onDemandDownloadPrefetch(this._video.currentFrame());
     this._video.refresh(true);
   }
 
