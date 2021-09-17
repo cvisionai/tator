@@ -373,7 +373,7 @@ class AnnotationPage extends TatorPage {
             this.enableEditing(true);
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
-          searchParams.set("after", data.name);
+          searchParams.set("after_id", data.id);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           const countPromise = fetchRetry(countUrl, {
             method: "GET",
@@ -547,6 +547,12 @@ class AnnotationPage extends TatorPage {
       canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
       canvas.refresh();
     })
+
+    canvas.addEventListener("toggleTextOverlay", evt => {
+      this._settings._toggle_text.toggle = !this._settings._toggle_text.get_toggle_status()
+      canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
+      canvas.refresh();
+    });
 
     if (this._player._rateControl) {
       this._player._rateControl.addEventListener("rateChange", evt => {
@@ -922,13 +928,15 @@ class AnnotationPage extends TatorPage {
           if (evt.detail.byUser) {
             if (evt.detail.dataType.isLocalization) {
               canvas.selectLocalization(evt.detail.data, false, false, !evt.detail.goToEntityFrame);
-            } else if (evt.detail.dataType.isTrack) {
+            }
+            else if (evt.detail.dataType.isTrack) {
               // select track takes care of frame jump
               canvas.selectTrack(evt.detail.data, undefined, !evt.detail.goToEntityFrame);
             }
             else if ('frame' in evt.detail.data) {
               if (evt.detail.goToEntityFrame) {
                 canvas.goToFrame(parseInt(evt.detail.data.frame));
+                this._browser.selectEntity(evt.detail.data);
               }
             }
 

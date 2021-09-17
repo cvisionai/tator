@@ -172,6 +172,11 @@ class AnnotationPlayer extends TatorElement {
       this._slider.onBufferLoaded(evt);
     });
 
+    // When a seek is complete check to make sure the display all set
+    this._video.addEventListener("seekComplete", evt => {
+      this.checkReady();
+    });
+
     // #TODO Combine with this._slider.addEventListener
     this._zoomSlider.addEventListener("input", evt => {
       this.handleSliderInput(evt);
@@ -379,6 +384,9 @@ class AnnotationPlayer extends TatorElement {
 
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
+      }
+      else if (evt.key == "t") {
+        this.dispatchEvent(new Event("toggleTextOverlay", {composed: true}));
       }
       else if (evt.code == "Space")
       {
@@ -783,7 +791,8 @@ class AnnotationPlayer extends TatorElement {
       }
       if (not_ready == true)
       {
-        if (timeoutIndex < timeouts.length) {
+        // Seems like 3 seconds is a better bet here.
+        if (timeoutIndex < 30) {
           //console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
           this._handleNotReadyTimeout = setTimeout(() => {
             this._handleNotReadyTimeout = null;

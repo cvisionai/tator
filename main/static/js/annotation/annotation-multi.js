@@ -362,6 +362,9 @@ class AnnotationMulti extends TatorElement {
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
       }
+      else if (evt.key == "t") {
+        this.dispatchEvent(new Event("toggleTextOverlay", {composed: true}));
+      }
       else if (evt.code == "Space")
       {
         evt.preventDefault();
@@ -895,6 +898,7 @@ class AnnotationMulti extends TatorElement {
             this._longest_idx = idx;
           }
         }
+        this._primaryVideoIndex = this._longest_idx;
         for (let idx = 0; idx < video_info.length; idx++)
         {
           setup_video(idx, info[idx]);
@@ -1155,6 +1159,13 @@ class AnnotationMulti extends TatorElement {
     this.makeAllVisible(div);
     let video = div.children[0];
     video.setQuality(quality);
+
+    for (let idx = 0; idx < this._videos.length; idx++) {
+      if (vid_id == this._videos[idx].video_id()) {
+        this._primaryVideoIndex = idx;
+        break;
+      }
+    }
   }
 
   assignToSecondary(vid_id, quality)
@@ -1191,6 +1202,7 @@ class AnnotationMulti extends TatorElement {
       video.style.gridColumn = gridInfo.col;
       video.style.gridRow = gridInfo.row;
     }
+    this._primaryVideoIndex = this._longest_idx;
 
     this._gridDiv.style.display = "grid";
     this._focusDiv.style.display = "none";
@@ -1600,7 +1612,10 @@ class AnnotationMulti extends TatorElement {
       this._play.setAttribute("is-paused", "");
     }
     clearTimeout(this._syncThread);
-    this.goToFrame(this._videos[this._longest_idx].currentFrame());
+
+    // If we are in focus mode, sync to the focused video.
+    // Otherwise, use the video with the most data.
+    this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
   }
 
   disablePlayUI() {
