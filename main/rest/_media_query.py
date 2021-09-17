@@ -51,10 +51,11 @@ def get_media_es_query(project, params):
     start = params.get('start')
     stop = params.get('stop')
     after = params.get('after')
+    after_id = params.get('after_id')
     archive_state = _get_archived_filter(params)
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort']['_exact_name'] = 'asc'
+    query['sort'] = [{'_exact_name': 'asc'}, {'_postgres_id': 'asc'}]
     bools = [{'bool': {
         'should': [
             {'match': {'_dtype': 'image'}},
@@ -109,21 +110,37 @@ def get_media_es_query(project, params):
     if start is not None:
         query['from'] = int(start)
         if start > 10000:
-            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after'.")
+            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after_id'.")
 
     if start is None and stop is not None:
         query['size'] = int(stop)
         if stop > 10000:
-            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after'.")
+            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after_id'.")
 
     if start is not None and stop is not None:
         query['size'] = int(stop) - int(start)
         if stop > 10000:
             raise ValueError("Parameter 'stop' must be less than 10000! Try using "
-                             "'after'.")
+                             "'after_id'.")
 
     if after is not None:
         bools.append({'range': {'_exact_name': {'gt': after}}})
+
+    if after_id is not None:
+        after_media = Media.objects.get(pk=after_id)
+        bools.append({
+            'bool': {
+                'should': [{
+                    'bool': {
+                        'must': [{'match': {'_exact_name': {'query': after_media.name}}},
+                                 {'range': {'_postgres_id': {'gt': after_id}}}],
+                    },
+                }, {
+                    'range': {'_exact_name': {'gt': after_media.name}}
+                }],
+                "minimum_should_match": 1,
+            },
+        })
 
     if archive_state is not None:
         bools.append(
@@ -206,9 +223,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).
     if stop is None:
-        qs = qs.order_by('name')
+        qs = qs.order_by('name', 'id')
     else:
-        qs = qs.order_by(Coalesce('name', 'name'))
+        qs = qs.order_by(Coalesce('name', 'name'), 'id')
 
     if start is not None and stop is not None:
         qs = qs[start:stop]
@@ -220,7 +237,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     return qs
 
 def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'annotation_search']
+    ES_ONLY_PARAMS = ['search', 'annotation_search', 'after_id']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
         if es_param in params:
@@ -249,7 +266,7 @@ def get_media_queryset(project, params):
         # If using ES, do the search and construct the queryset.
         query = get_media_es_query(project, params)
         media_ids, _  = TatorSearch().search(project, query)
-        qs = Media.objects.filter(pk__in=media_ids).order_by('name')
+        qs = Media.objects.filter(pk__in=media_ids).order_by('name', 'id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
