@@ -548,6 +548,12 @@ class AnnotationPage extends TatorPage {
       canvas.refresh();
     })
 
+    canvas.addEventListener("toggleTextOverlay", evt => {
+      this._settings._toggle_text.toggle = !this._settings._toggle_text.get_toggle_status()
+      canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
+      canvas.refresh();
+    });
+
     if (this._player._rateControl) {
       this._player._rateControl.addEventListener("rateChange", evt => {
         if ("setRate" in canvas) {

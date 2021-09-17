@@ -362,6 +362,9 @@ class AnnotationMulti extends TatorElement {
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
       }
+      else if (evt.key == "t") {
+        this.dispatchEvent(new Event("toggleTextOverlay", {composed: true}));
+      }
       else if (evt.code == "Space")
       {
         evt.preventDefault();
