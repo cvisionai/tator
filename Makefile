@@ -204,11 +204,6 @@ FILES = \
     util/same-origin-credentials.js \
     components/tator-element.js \
     components/buttons/entity-frame-link-button.js \
-    components/inputs/feature/color-inputs.js \
-    components/inputs/feature/thumb-inputs.js \
-    components/inputs/feature/checkbox-set.js \
-    components/inputs/feature/file-input.js \
-    components/inputs/feature/array-object-input.js \
     components/inputs/array-input.js \
     components/inputs/user-input.js \
     components/inputs/email-list-input.js \
@@ -218,6 +213,12 @@ FILES = \
     components/inputs/text-area.js \
     components/inputs/datetime-input.js \
     components/inputs/text-input.js \
+    components/inputs/feature/color-inputs.js \
+    components/inputs/feature/thumb-inputs.js \
+    components/inputs/feature/radio-set.js \
+    components/inputs/feature/checkbox-set.js \
+    components/inputs/feature/file-input.js \
+    components/inputs/feature/array-object-input.js \
     components/labeled-checkbox.js \
     components/markdown-div.js \
     components/svg-definitions/chevron-right.js \

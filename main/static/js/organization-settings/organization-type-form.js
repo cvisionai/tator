@@ -21,6 +21,7 @@ class OrganizationTypeForm extends TatorElement {
     // Init vars
     this._hideAttributes = false;
     this.organizationId = null;
+    this.saveButton = document.createElement("input"); // init early so we can disable via forms
   }
 
   _init({ data, modal, sidenav }) {
@@ -231,7 +232,6 @@ class OrganizationTypeForm extends TatorElement {
   }
 
   _saveEntityButton(id) {
-    this.saveButton = document.createElement("input");
     this.saveButton.setAttribute("type", "submit");
     this.saveButton.setAttribute("value", "Save");
     this.saveButton.setAttribute("class", `btn btn-clear f1 text-semibold`);
@@ -417,6 +417,7 @@ class OrganizationTypeForm extends TatorElement {
 
   // PATCH
   _fetchPatchPromise({ id = -1, formData } = {}) {
+    console.log("Called org type form patch");
     return fetch(`/rest/${this.typeName}/${id}`, {
       method: "PATCH",
       mode: "cors",
