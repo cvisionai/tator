@@ -2818,6 +2818,11 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    if (reqFrame == undefined)
+    {
+      reqFrame = this.currentFrame();
+    }
+
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
     if (this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
@@ -2876,9 +2881,26 @@ class VideoCanvas extends AnnotationCanvas {
 
       video.recreateOnDemandBuffers(setupCallback);
     }
+
+    let timeToEnd = 0;
+    let ranges = this._videoElement[this._play_idx].playBuffer().buffered;
+    let absEnd = this.frameToTime(this._numFrames-1);
+    let timeToAbsEnd = Number.MAX_SAFE_INTEGER;
+    let this_time =  this.frameToTime(reqFrame);
+    timeToAbsEnd = absEnd - this_time;
+    for (let idx = 0; idx < ranges.length; idx++)
+    {
+      if (reqFrame >= ranges.start(idx) && reqFrame <= ranges.end(idx))
+      {
+        timeToEnd = ranges.end(idx) - this_time;
+      }
+    }
+
+    // If we moved out of the current on-demand buffer reload it.
+    if (reqFrame == -1 || (timeToEnd < 15 && timeToAbsEnd >= 15))
     setTimeout(function() {
       restartOnDemand();
-    },100);
+    },0);
     /*
     this._videoElement[this._play_idx].resetOnDemandBuffer().then(() => {
       that.onDemandDownload(true);

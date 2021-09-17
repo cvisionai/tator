@@ -518,7 +518,7 @@ class AnnotationMulti extends TatorElement {
 		this._lastScrub = Date.now();
 	    });
         }
-	      video.onDemandDownloadPrefetch(true);
+	      video.onDemandDownloadPrefetch(this_frame);
       };
       this.handleAllNotReadyEvents();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
@@ -1400,12 +1400,12 @@ class AnnotationMulti extends TatorElement {
   forcePlaybackDownload(videoIndex) {
     if (isNaN(videoIndex)) {
       for (let video of this._videos) {
-        video.onDemandDownloadPrefetch(true);
+        video.onDemandDownloadPrefetch(-1);
       }
       this.handleAllNotReadyEvents();
     }
     else {
-      this._videos[videoIndex].onDemandDownloadPrefetch(true);
+      this._videos[videoIndex].onDemandDownloadPrefetch(-1);
       this.handleNotReadyEvent(videoIndex);
     }
   }
@@ -1449,7 +1449,7 @@ class AnnotationMulti extends TatorElement {
           timeoutCounter = 0;
           timeoutIndex += 1;
           console.log(`Video ${videoIndex} playback check - restart [Now: ${new Date().toISOString()}]`);
-          this._videos[videoIndex].onDemandDownloadPrefetch(true);
+          this._videos[videoIndex].onDemandDownloadPrefetch(-1);
         }
       }
       if (not_ready == true)
