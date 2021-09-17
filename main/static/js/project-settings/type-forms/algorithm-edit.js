@@ -13,18 +13,50 @@ class AlgorithmEdit extends TypeForm {
 
    async _getSectionForm(data) {
       this.data = data;
+      this.algorithmId = data.id;
+      this._setForm();
       let current = this.boxHelper.boxWrapDefault({
          "children": ""
       });
 
-      this.algorithmId = data.id;
+      // Before we setup the form, check if the user will be able to do things
+      const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
+      this.userCantSaveCluster = !this.isStaff && (jobClusterWithChecked == null || jobClusterWithChecked.length == 0);
+      this.userCantSeeCluster = (jobClusterWithChecked === 403); // Non Auth user
 
-      //
-      this._setForm();
+      if (this.userCantSaveCluster || this.userCantSeeCluster) {
+         this._cannotEdit = document.createElement("p");
+         this._cannotEdit.setAttribute("class", "text-gray pb-3");
+         this._form.appendChild(this._cannotEdit);
+      
+         if (this.data.id == "New") {
+            // Wihtout authorization to see clusters, or if there are none
+            if (this.userCantSeeCluster) {
+               this._cannotEdit.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
+            } else {
+               this._cannotEdit.innerHTML = `Required: Add a Job Cluster via <a href="/${this.clusterListHandler.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
+            }
+            
+            this._form.appendChild(this._cannotEdit);
+            this.savePost.disabled = true;
+            this.savePost.hidden = true;
+            current.appendChild(this._form);
 
+            return current;
+         } else {
+            if (this.userCantSeeCluster) {
+               this._cannotEdit.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
+               this.userCantSaveCluster = false;
+            } else if (this.userCantSaveCluster) {
+               this.saveButton.disabled = true;
+               this._cannotEdit.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.clusterListHandler.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
+            }
+         }
+      }
 
       // append input for name
       this._editName = document.createElement("text-input");
+      this._editName.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._editName.setAttribute("name", "Name");
       this._editName.setAttribute("type", "string");
       this._editName.setValue(this.data.name);
@@ -34,6 +66,7 @@ class AlgorithmEdit extends TypeForm {
 
       // description
       this._editDescription = document.createElement("text-input");
+      this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._editDescription.setAttribute("name", "Description");
       this._editDescription.setAttribute("type", "string");
       this._editDescription.setValue(this.data.description);
@@ -60,6 +93,7 @@ class AlgorithmEdit extends TypeForm {
 
       // Visible input with readable name
       this._userEditVisible = document.createElement("text-input");
+      this._userEditVisible.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._userEditVisible.setAttribute("name", "Registering User");
       this._userEditVisible.setValue(this._registeredUserName);
       this._userEditVisible.default = this._registeredUserName;
@@ -68,7 +102,7 @@ class AlgorithmEdit extends TypeForm {
       // this._userEditVisible.setAttribute("tooltip", "User registering algorithm cannot be edited.")
       this._form.appendChild(this._userEditVisible);
 
-      // Hidden input for formValue
+      // Note: HIDDEN input for formValue of ID; Name is for user only
       this._userEdit = document.createElement("text-input");
       this._userEdit.setValue(this._registeredUserId);
       this._userEdit.default = this._registeredUserId;
@@ -77,6 +111,7 @@ class AlgorithmEdit extends TypeForm {
 
       // Path to manifest
       this._manifestPath = document.createElement("file-input");
+      this._manifestPath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._manifestPath.setAttribute("name", "Manifest");
       this._manifestPath.setAttribute("for", "manifest");
       this._manifestPath.setAttribute("type", "yaml");
@@ -87,29 +122,30 @@ class AlgorithmEdit extends TypeForm {
       this._form.appendChild(this._manifestPath);
 
       // Cluster
-      // this.member = this._getUserMembership(this._registeredUserId);
-      // console.log(this.member);
-      const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
+      if (!this.userCantSeeCluster) {
+         // if they aren't a non auth user
+         // Check if there are going to be enum values first, show input with NULL
+         if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
+            this._clusterEnumInput = document.createElement("text-input");
+            this._clusterEnumInput.disabled = true;
+            this._clusterEnumInput.setAttribute("name", "Job Cluster");
+            this._clusterEnumInput.setValue("Null");
+            this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
+         } else {
+            this._clusterEnumInput = document.createElement("enum-input");
+            this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+            this._clusterEnumInput.setAttribute("name", "Job Cluster");
+            this._clusterEnumInput.choices = jobClusterWithChecked;
+            this._clusterEnumInput.default = this.data.cluster;
+            this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
+         }
 
-      if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
-         this._clusterEnumInput = document.createElement("text-input");
-         this._clusterEnumInput.disabled = true;
-         this._clusterEnumInput.setAttribute("name", "Job Cluster");
-         this._clusterEnumInput.setValue("Null");
-         this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
-      } else {
-         this._clusterEnumInput = document.createElement("enum-input");
-         this._clusterEnumInput.setAttribute("name", "Job Cluster");
-         this._clusterEnumInput.choices = jobClusterWithChecked;
-         this._clusterEnumInput.default = this.data.cluster;
-         this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
+         this._form.appendChild(this._clusterEnumInput);
       }
-
-      this._form.appendChild(this._clusterEnumInput);
-
 
       // Files per job
       this._filesPerJob = document.createElement("text-input");
+      this._filesPerJob.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._filesPerJob.setAttribute("name", "Files Per Job");
       this._filesPerJob.setAttribute("type", "int");
       this._filesPerJob.setValue(this.data.files_per_job);
@@ -119,6 +155,7 @@ class AlgorithmEdit extends TypeForm {
 
       // Categories
       this._categoriesList = document.createElement("array-input");
+      this._categoriesList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._categoriesList.setAttribute("name", "Categories");
       this._categoriesList.setValue(this.data.categories);
       this._categoriesList.default = this.data.categories;
@@ -128,7 +165,9 @@ class AlgorithmEdit extends TypeForm {
       // Parameters
       let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
       let paramInputTemplate = JSON.stringify({ name: '', value: '' });
+
       this._parametersList = document.createElement("array-object-input");
+      this._parametersList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._parametersList.setAttribute("name", "Parameters");
       this._parametersList.setAttribute("properties", paramInputTypes);
       this._parametersList.setAttribute("empty-row", paramInputTemplate);
@@ -165,15 +204,16 @@ class AlgorithmEdit extends TypeForm {
          formData.manifest = null;         
       }
 
-      if (this._clusterEnumInput.changed() || isNew) {
-         let clusterValue = this._clusterEnumInput.getValue();
-         // console.log(clusterValue);
-         if (clusterValue === null || clusterValue === "Null" || clusterValue == "") {
-            formData.cluster = null;
-         } else {
-            formData.cluster = Number(clusterValue);
+      if (!this.userCantSaveCluster || !this.userCantSeeCluster) {
+         if (this._clusterEnumInput.changed() || isNew) {
+            let clusterValue = this._clusterEnumInput.getValue();
+            // console.log(clusterValue);
+            if (clusterValue === null || clusterValue === "Null" || clusterValue == "") {
+               formData.cluster = null;
+            } else {
+               formData.cluster = Number(clusterValue);
+            }
          }
-
       }
 
       if (this._userEdit.changed() || isNew) {
@@ -194,29 +234,6 @@ class AlgorithmEdit extends TypeForm {
 
       return formData;
    }
-
-   async _getUserMembership(userID) {
-      // Membership section.
-      if (this._projectMemberships == null) {
-        this.membershipBlock = document.createElement("membership-edit");
-        let membershipResp = await this.membershipBlock._fetchGetPromise({ "id": this.projectId });
-        
-        if (membershipResp.status !== 200) {
-          return null;
-        } else {
-          this._projectMemberships = await membershipResp.json();
-        }
-
-        for( let member of this._projectMemberships){
-           if (member.user == userID) {
-              return member.permission;
-           }
-        }
-        
-      }
-      
-      return null;
-    }
 
 }
 

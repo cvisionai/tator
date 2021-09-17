@@ -51,8 +51,7 @@ class ProjectSettings extends TatorPage {
       "algorithm-edit",
     ];
 
-
-
+    this._userIsStaff = false;
 
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
@@ -64,18 +63,25 @@ class ProjectSettings extends TatorPage {
     window.addEventListener("error", (evt) => {
       //
     });
-
   }
 
   /* Get personlized information when we have project-id, and fill page. */
   static get observedAttributes() {
-    return ["project-id"].concat(TatorPage.observedAttributes);
+    return ["project-id","is-staff"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "project-id":
         this._init();
+        break;
+      case "is-staff":
+        if (newValue == "True") {
+          this._userIsStaff = true;
+        } else if (newValue == "False") {
+          this._userIsStaff = false;
+        }
+        
         break;
     }
   }
@@ -209,7 +215,8 @@ class ProjectSettings extends TatorPage {
             sidenav: this.settingsNav,
             versionListHandler: this._dataVersionList,
             mediaListHandler: this._dataMediaList,
-            clusterListHandler: this._dataJobClusterList
+            clusterListHandler: this._dataJobClusterList,
+            isStaff: this._userIsStaff
           });
 
           headingEl.addEventListener("click", () => {
@@ -303,7 +310,8 @@ class ProjectSettings extends TatorPage {
             sidenav: this.settingsNav,
             versionListHandler: this._dataVersionList,
             mediaListHandler: this._dataMediaList,
-            clusterListHandler: this._dataJobClusterList
+            clusterListHandler: this._dataJobClusterList,
+            isStaff: this._userIsStaff
           });
         }
 
