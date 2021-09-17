@@ -411,8 +411,9 @@ class Bucket(Model):
             try:
                 json.loads(kwargs["gcs_key_info"])
             except json.JSONDecodeError:
-                logger.warning("Received invalid json while creating bucket.")
-                raise
+                msg = f"Received invalid json while creating bucket: {kwargs['gcs_key_info']}"
+                logger.warning(msg)
+                raise ValueError(msg)
 
     @staticmethod
     def _sc_validator(
