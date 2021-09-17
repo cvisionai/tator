@@ -373,7 +373,7 @@ class AnnotationPage extends TatorPage {
             this.enableEditing(true);
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
-          searchParams.set("after", data.name);
+          searchParams.set("after_id", data.id);
           const afterUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           const countPromise = fetchRetry(countUrl, {
             method: "GET",
