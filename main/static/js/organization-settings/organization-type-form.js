@@ -12,7 +12,6 @@ class OrganizationTypeForm extends TatorElement {
     this._shadow.appendChild(this.typeFormDiv);
 
     // Required helpers.
-    this.inputHelper = new SettingsInput("");
     this.attributeFormHelper = new AttributesForm();
 
     // Loading spinner
