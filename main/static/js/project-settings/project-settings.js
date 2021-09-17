@@ -98,7 +98,9 @@ class ProjectSettings extends TatorPage {
 
     // Data Handlers for Media and Version initialized below
     this._dataMediaList = new DataMediaList(this.projectId);
+    this._dataMediaList._clear();
     this._dataVersionList = new DataVersionList(this.projectId);
+    this._dataVersionList._clear();
     
 
     projectPromise
@@ -110,7 +112,7 @@ class ProjectSettings extends TatorPage {
 
         // Data Handler requires organization ID
         this._dataJobClusterList = new DataJobClusters(objData.organization);
-        // console.log("Organization ID: "+objData.organization)
+        this._dataJobClusterList._clear();
 
         this.loading.hideSpinner();
         this.makeContainer({
@@ -205,8 +207,7 @@ class ProjectSettings extends TatorPage {
           // Make Algorithm job cluster new list before we add an empty row
           if (typeClassView.typeName == "Algorithm") {
             this._dataJobClusterList._setList("", true);
-          }
-          
+          } 
 
           // init the form with the data
           typeClassView._init({
