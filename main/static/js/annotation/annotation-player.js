@@ -772,9 +772,10 @@ class AnnotationPlayer extends TatorElement {
     const timeouts = [2000, 4000, 8000, 16000];
     var timeoutIndex = 0;
     var timeoutCounter = 0;
+    const clock_check = 100;
 
     let check_ready = (checkFrame) => {
-      timeoutCounter += 100;
+      timeoutCounter += clock_check;
 
       this._handleNotReadyTimeout = null;
       let not_ready = false;
@@ -805,7 +806,7 @@ class AnnotationPlayer extends TatorElement {
           this._handleNotReadyTimeout = setTimeout(() => {
             this._handleNotReadyTimeout = null;
             check_ready(checkFrame);
-          }, 100);
+          }, clock_check);
         }
         else {
           Utilities.warningAlert("Video player unable to reach ready state.", "#ff3e1d", false);
