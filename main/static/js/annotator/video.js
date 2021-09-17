@@ -3306,7 +3306,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > 4.0)
+      if (this._playbackRate > 8.0)
       {
         this._playGenericScrub(Direction.FORWARD);
       }
