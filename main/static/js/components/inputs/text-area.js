@@ -86,6 +86,10 @@ class TextArea extends TatorElement {
   setValue(val) {
     this._input.value = val;
   }
+
+  changed() {
+    return this.getValue() !== this._default;
+  }
 }
 
 customElements.define("text-area", TextArea);

@@ -1,4 +1,4 @@
-class JobClusterEdit extends TypeForm {
+class JobClusterEdit extends OrganizationTypeForm {
   constructor() {
     super();
     this.typeName = "JobCluster";
@@ -147,122 +147,101 @@ class JobClusterEdit extends TypeForm {
   }
   
   _getFormData(id) {
-    let formData;
-    if (id == "New") {
-      formData = [];
-      const users = this._userData.getUsers();
-      for (const user of users.values()) {
-        formData.push({
-          organization: this.organizationId,
-          name: this._editName.getValue(),
-          host: this._editHost.getValue(),
-          port: this._editPort.getValue(),
-          token: this._editToken.getValue(),
-          cert: this._editCert.getValue(),
-        });
-      }
-    } else {
-      formData = {};
+    let formData = {};
+    // const isNew = this.data.id == "New" ? true : false;
+    const isNew = true; // schema doesn't accept nulls
 
-      if (this._editName.changed()) {
-        formData.name = this._editName.getValue();
-      }
+    if (this._editName.changed() || isNew) {
+      formData.name = this._editName.getValue();
+    }
 
-      if (this._editHost.changed()) {
-        formData.host = this._editHost.getValue();
-      }
+    if (this._editHost.changed() || isNew) {
+      formData.host = this._editHost.getValue();
+    }
 
-      if (this._editPort.changed()) {
-        formData.port = this._editPort.getValue();
-      }
+    if (this._editPort.changed() || isNew) {
+      formData.port = this._editPort.getValue();
+    }
 
-      if (this._editToken.changed()) {
-        formData.token = this._editToken.getValue();
-      }
+    if (this._editToken.changed() || isNew) {
+      formData.token = this._editToken.getValue();
+    }
 
-      if (this._editCert.changed()) {
-        formData.cert = this._editCert.getValue();
-      }
+    if (this._editCert.changed() || isNew) {
+      formData.cert = this._editCert.getValue();
     }
 
     return formData;
   }
 
-  _savePost() {
-    this.loading.showSpinner();
+  // _savePost() {
+  //   this.loading.showSpinner();
 
-    let formDataList = this._getFormData("New", true);
-    console.log("New form Data....");
-    console.log(formDataList);
+  //   let formData = this._getFormData("New");
 
-    let numSucceeded = 0;
-    let numFailed = 0;
-    let errorMessages = "";
-    const promises = [];
-    for (const formData of formDataList) {
-      const name = formData.name;
-      //delete formData.username;
-      const promise = this._data.createJobCluster(formData).then(data => {
-        console.log(data.message);
-        this.loading.hideSpinner();
+  //   let numSucceeded = 0;
+  //   let numFailed = 0;
+  //   let errorMessages = "";
+  //   // const promises = [];
+  //   // for (const formData of formDataList) {
+  //     const name = formData.name;
+  //     //delete formData.username;
+  //     const promise = this._data.createJobCluster(formData).then(data => {
+  //       console.log(data.message);
+  //       this.loading.hideSpinner();
 
-        // Hide the add new form
-        this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+  //       // Hide the add new form
+  //       this.sideNav.hide(`itemDivId-${this.typeName}-New`);
 
-        // Create and show the container with new type
-        this.sideNav.addItemContainer({
-          "type" : this.typeName,
-          "id" : data.id,
-          "hidden" : false
-        });
+  //       // Create and show the container with new type
+  //       this.sideNav.addItemContainer({
+  //         "type" : this.typeName,
+  //         "id" : data.id,
+  //         "hidden" : false
+  //       });
 
-        let form = document.createElement( this._getTypeClass() );
-        form.init(this._data);
+  //       let form = document.createElement( this._getTypeClass() );
+  //       form.init(this._data);
 
-        this.sideNav.fillContainer({
-          "type" : this.typeName,
-          "id" : data.id,
-          "itemContents" : form
-        });
+  //       this.sideNav.fillContainer({
+  //         "type" : this.typeName,
+  //         "id" : data.id,
+  //         "itemContents" : form
+  //       });
 
-        // init form with the data
-        formData.id = data.id;
-        formData.organization = this.organizationId;
-        form._init({ 
-          "data": formData, 
-          "modal" : this.modal, 
-          "sidenav" : this.sideNav
-        });
+  //       // init form with the data
+  //       formData.id = data.id;
+  //       formData.organization = this.organizationId;
+  //       form._init({ 
+  //         "data": formData, 
+  //         "modal" : this.modal, 
+  //         "sidenav" : this.sideNav
+  //       });
 
-        // Add the item to navigation
-        this._updateNavEvent("new", name, data.id);
+  //       // Add the item to navigation
+  //       this._updateNavEvent("new", name, data.id);
 
-        // Increment succeeded.
-        numSucceeded++;
-      }).catch((err) => {
-        console.error(err);
-        errorMessages = `${errorMessages}\n${err}`;
-        numFailed++;
-      });
-      promises.push(promise);
-    }
-
-    // Let user know everything's all set!
-    Promise.all(promises).then(() => {
-      this.loading.hideSpinner();
-      this._userData.reset();
-      let message;
-      if (numSucceeded > 0) {
-        message = `Successfully created ${numSucceeded} job clusters.`;
-        if (numFailed > 0) {
-          message = `${message} Failed to create ${numFailed}.\n${errorMessages}`;
-        }
-        return this._modalSuccess(message);
-      } else {
-        return this._modalError(`Failed to create ${numFailed} job clusters.\n${errorMessages}`);
-      }
-    });
-  }
+  //       // Increment succeeded.
+  //       numSucceeded++;
+  //     }).then(() => {
+  //       this.loading.hideSpinner();
+  //       this.reset();
+  //       let message;
+  //       if (numSucceeded > 0) {
+  //         message = `Successfully created ${numSucceeded} job clusters.`;
+  //         if (numFailed > 0) {
+  //           message = `${message} Failed to create ${numFailed}.\n${errorMessages}`;
+  //         }
+  //         return this._modalSuccess(message);
+  //       } else {
+  //         return this._modalError(`Failed to create ${numFailed} job clusters.\n${errorMessages}`);
+  //       }
+  //     }).catch((err) => {
+  //       console.error(err);
+  //       errorMessages = `${errorMessages}\n${err}`;
+  //       return this._modalError(`Failed to create ${numFailed} job clusters.\n${errorMessages}`);
+  //     });
+  // }
 }
 
 customElements.define("job-cluster-edit", JobClusterEdit);

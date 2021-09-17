@@ -17,6 +17,20 @@ class OrganizationSettings extends TatorPage {
     const div = document.createElement("div");
     div.setAttribute("class", "d-flex flex-items-center");
     header.appendChild(div);
+    
+    this._breadcrumbs = document.createElement("settings-breadcrumbs");
+    div.appendChild(this._breadcrumbs);
+
+    const settingsDiv = document.createElement("div");
+    settingsDiv.setAttribute("class", "d-flex");
+    header.appendChild(settingsDiv);
+
+    this._lightSpacer = document.createElement("span");
+    this._lightSpacer.style.width = "32px";
+    settingsDiv.appendChild(this._lightSpacer);
+
+    this._success = document.createElement("success-light");
+    this._lightSpacer.appendChild(this._success);
 
     // main element
     this.main = document.createElement("main");
@@ -49,13 +63,17 @@ class OrganizationSettings extends TatorPage {
 
   /* Get personlized information when we have project-id, and fill page. */
   static get observedAttributes() {
-    return ["organization-id"].concat(TatorPage.observedAttributes);
+    return ["organization-id", "project-name"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "organization-id":
         this._init();
+        this._breadcrumbs._projectText.textContent = "Organizations";
+        this._breadcrumbs._projectText.setAttribute("href", `/organizations`);
+        this._breadcrumbs._settingsText.textContent = `Organization ${newValue} settings`;
+
         break;
     }
   }

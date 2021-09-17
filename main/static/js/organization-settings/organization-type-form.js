@@ -18,11 +18,12 @@ class OrganizationTypeForm extends TatorElement {
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
 
-    // Init hide attributes
+    // Init vars
     this._hideAttributes = false;
+    this.organizationId = null;
   }
 
-  _init({ data, modal, sidenav, versionListHandler, mediaListHandler }) {
+  _init({ data, modal, sidenav }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
@@ -36,6 +37,11 @@ class OrganizationTypeForm extends TatorElement {
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox(this.modal);
+    console.log(this.organizationId);
+    this._addNew = new TypeNew({
+      "type": this.typeName,
+      "projectId": this.organizationId
+    });
 
     // Add form to page
     this.setupFormPage(data)
@@ -119,14 +125,10 @@ class OrganizationTypeForm extends TatorElement {
 
   _savePost() {
     this.loading.showSpinner();
-    let addNew = new TypeNew({
-      "type": this.typeName,
-      "organizationId": this.organizationId
-    });
 
     let formData = this._getFormData();
 
-    addNew.saveFetch(formData).then(([data, status]) => {
+    this._addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();
 
       if (status != 400) {
@@ -229,7 +231,11 @@ class OrganizationTypeForm extends TatorElement {
   }
 
   _saveEntityButton(id) {
-    this.saveButton = this.inputHelper.saveButton();
+    this.saveButton = document.createElement("input");
+    this.saveButton.setAttribute("type", "submit");
+    this.saveButton.setAttribute("value", "Save");
+    this.saveButton.setAttribute("class", `btn btn-clear f1 text-semibold`);
+
     this.saveButton.addEventListener("click", (event) => {
       event.preventDefault();
       if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
@@ -245,7 +251,12 @@ class OrganizationTypeForm extends TatorElement {
   }
 
   _resetEntityLink(id) {
-    this.resetLink = this.inputHelper.resetLink();
+    this.resetLink = document.createElement("a");
+    this.resetLink.setAttribute("href", "#");
+    this.resetLink.setAttribute("class", `px-5 f1 text-gray hover-text-white`);
+
+    let resetLinkText = document.createTextNode("Reset");
+    this.resetLink.appendChild( resetLinkText );
 
     // Form reset event
     this.resetLink.addEventListener("click", (event) => {
