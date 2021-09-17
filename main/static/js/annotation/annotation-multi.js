@@ -257,6 +257,13 @@ class AnnotationMulti extends TatorElement {
       }
     });
 
+    // Start out with play button disabled.
+    this._play._button.setAttribute("disabled","");
+    // Use some spaces because the tooltip z-index is wrong
+    this._play.setAttribute("tooltip", "    Video is buffering");
+    this._rewind.setAttribute("disabled","")
+    this._fastForward.setAttribute("disabled","");
+
     this._timelineD3.addEventListener("zoomedTimeline", evt => {
       if (evt.detail.minFrame < 1 || evt.detail.maxFrame < 1) {
         // Reset the slider
@@ -903,6 +910,8 @@ class AnnotationMulti extends TatorElement {
 
     }
 
+
+
     let video_info = [];
     Promise.all(video_resp).then((values) => {
       for (let resp of values)
@@ -1343,6 +1352,19 @@ class AnnotationMulti extends TatorElement {
   is_paused()
   {
     return this._play.hasAttribute("is-paused");
+  }
+
+  checkReady()
+  {
+    let notReady;
+    for (let video of this._videos)
+    {
+      notReady |= !(video._onDemandPlaybackReady);
+    }
+    if (notReady)
+    {
+      this.handleNotReadyEvent();
+    }
   }
 
 
@@ -1804,6 +1826,7 @@ class AnnotationMulti extends TatorElement {
     let p_list=[];
     let prime_fps = this._fps[this._longest_idx]
     let idx = 0;
+    this.checkReady();
     for (let video of this._videos)
     {
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
