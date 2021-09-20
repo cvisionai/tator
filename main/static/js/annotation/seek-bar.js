@@ -96,7 +96,10 @@ class SeekBar extends TatorElement {
 
     this.loadProgress = document.createElement("div");
     this.loadProgress.setAttribute("class", "range-loaded");
+    this.onDemandProgress = document.createElement("div");
+    this.onDemandProgress.setAttribute("class", "range-ondemand");
     this.bar.appendChild(this.loadProgress);
+    this.bar.appendChild(this.onDemandProgress);
 
     this._min = 0;
     this._max = 100;
@@ -153,6 +156,22 @@ class SeekBar extends TatorElement {
     this._loadedPercentage = evt.detail['percent_complete'];
     const percent_complete = evt.detail['percent_complete']*100;
     this.loadProgress.style.width=`${percent_complete}%`;
+  }
+
+  onDemandLoaded(evt)
+  {
+    if (evt.detail.ranges.length == 0)
+    {
+      return;
+    }
+    let range = evt.detail.ranges[0]
+    const start = range[0];
+    const end = range[1];
+    const startPercentage = start / this._max;
+    const endPercentage = end / this._max;
+    this.onDemandProgress.style.marginLeft = `${startPercentage*100}%`;
+    const widthPx = Math.round((endPercentage-startPercentage)*this.bar.clientWidth);
+    this.onDemandProgress.style.width = `${widthPx}px`;
   }
 
   /**

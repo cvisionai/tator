@@ -172,8 +172,16 @@ class AnnotationPlayer extends TatorElement {
       this._slider.onBufferLoaded(evt);
     });
 
+    this._video.addEventListener("onDemandDetail", evt => {
+      this._slider.onDemandLoaded(evt);
+    });
+
     // When a seek is complete check to make sure the display all set
     this._video.addEventListener("seekComplete", evt => {
+      this.checkReady();
+    });
+
+    this._video.addEventListener("rateChange", evt => {
       this.checkReady();
     });
 
@@ -533,7 +541,7 @@ class AnnotationPlayer extends TatorElement {
     // Use the hq buffer when the input is finalized
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
-      this._video.onDemandDownloadPrefetch(true);
+      this._video.onDemandDownloadPrefetch(frame);
       this.handleNotReadyEvent();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
@@ -764,9 +772,11 @@ class AnnotationPlayer extends TatorElement {
     const timeouts = [2000, 4000, 8000, 16000];
     var timeoutIndex = 0;
     var timeoutCounter = 0;
+    const clock_check = 100;
+    this._last_duration = this._video.playBufferDuration();
 
     let check_ready = (checkFrame) => {
-      timeoutCounter += 100;
+      timeoutCounter += clock_check;
 
       this._handleNotReadyTimeout = null;
       let not_ready = false;
@@ -786,18 +796,25 @@ class AnnotationPlayer extends TatorElement {
           timeoutCounter = 0;
           timeoutIndex += 1;
           console.log(`Video playback check - restart [Now: ${new Date().toISOString()}]`);
-          this._video.onDemandDownloadPrefetch(true);
+          this._video.onDemandDownloadPrefetch(-1);
         }
       }
       if (not_ready == true)
       {
-        // Seems like 3 seconds is a better bet here.
-        if (timeoutIndex < 30) {
+        // Heal the buffer state if duration increases since the last time we looked
+        if (this._video.playBufferDuration() > this._last_duration)
+        {
+          this._last_duration = this._video.playBufferDuration();
+          timeoutIndex = 0;
+        }
+        // For this logic to work it is actually based off the worst case
+        // number of clocks in a given timeout attempt.
+        if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
           //console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
           this._handleNotReadyTimeout = setTimeout(() => {
             this._handleNotReadyTimeout = null;
             check_ready(checkFrame);
-          }, 100);
+          }, clock_check);
         }
         else {
           Utilities.warningAlert("Video player unable to reach ready state.", "#ff3e1d", false);
@@ -815,7 +832,7 @@ class AnnotationPlayer extends TatorElement {
     };
 
     // We can be faster in single play mode
-    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), timeouts[timeoutIndex]);
+    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), 0);
   }
 
   play()
@@ -933,7 +950,7 @@ class AnnotationPlayer extends TatorElement {
       this.pause();
       this._video.setQuality(quality, buffer);
     }
-    this._video.onDemandDownloadPrefetch(true);
+    this._video.onDemandDownloadPrefetch(this._video.currentFrame());
     this._video.refresh(true);
   }
 
