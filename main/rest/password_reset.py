@@ -29,11 +29,10 @@ class PasswordResetListAPI(BaseListView):
         if users.count() > 1:
             raise RuntimeError(f"Email {email} is in use by multiple users!")
         user = users[0]
-        reset = PasswordReset(user=user,
-                              reset_token=uuid.uuid1())
+        reset = PasswordReset(user=user, reset_token=uuid.uuid1())
         url = f"{os.getenv('MAIN_HOST')}/password-reset?reset_token={reset.reset_token}&user={user.id}"
         if settings.TATOR_EMAIL_ENABLED:
-            email_response = TatorSES().email(
+            TatorSES().email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=[email],
                 title=f"Tator password reset",
@@ -41,13 +40,11 @@ class PasswordResetListAPI(BaseListView):
                      f"If you did not initiate the reset this message can be ignored. "
                      f"To reset your password, please visit: \n\n{url}\n\n"
                       "This URL will expire in 24 hours.",
-                html=None,
-                attachments=[])
-            if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                logger.error(email_response)
-                raise ValueError(f"Unable to send email to {email}! Password reset creation failed.")
+                raise_on_failure=f"Unable to send email to {email}! Password reset creation failed."
+            )
         else:
-            raise RuntimeError("Password resets are not configured! Contact your system "
-                               "administrator.")
+            raise RuntimeError(
+                "Password resets are not configured! Contact your system administrator."
+            )
         reset.save()
         return {'message': "Password reset created successfully! An email was sent to {email}."}

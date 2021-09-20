@@ -72,16 +72,13 @@ class InvitationListAPI(BaseListView):
                 text = (f"You have been invited to collaborate with {organization} using Tator. "
                         f"To create an account, please visit: \n\n{url}")
             if settings.TATOR_EMAIL_ENABLED:
-                email_response = TatorSES().email(
+                TatorSES().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[email],
                     title=f"Tator invitation from {organization}",
                     text=text,
-                    html=None,
-                    attachments=[])
-                if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                    logger.error(email_response)
-                    raise ValueError(f"Unable to send email to {email}! Invitation creation failed.")
+                    raise_on_failure=f"Unable to send email to {email}! Invitation creation failed.",
+                )
             invite.save()
         return {'message': f"User can register at {url}",
                 'id': invite.id}

@@ -72,7 +72,7 @@ class TatorAuth(ModelBackend):
                 Notify.notify_admin_msg(msg)
             # Send an email if the failed login count has been reached.
             if (user.failed_login_count == LOCKOUT_LIMIT) and settings.TATOR_EMAIL_ENABLED:
-                email_response = TatorSES().email(
+                TatorSES().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[user.email],
                     title=f"Tator account has been locked",
@@ -82,7 +82,4 @@ class TatorAuth(ModelBackend):
                          "can unlock your account now by resetting your password. To reset your "
                          "password, follow the procedure described here:\n\n"
                          "https://tator.io/tutorials/2021-06-11-reset-your-password/",
-                    html=None,
-                    attachments=[])
-                if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                    logger.error(email_response)
+                )
