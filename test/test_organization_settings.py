@@ -98,16 +98,17 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
     url = base_url + "/rest/Buckets/" + str(organization_id)
     with page.expect_response(url) as response_info:
         page.click('bucket-edit button[value="Save"]')
-        page.wait_for_selector(f'text="Bucket 123456 created!"')
+        # page.wait_for_selector(f'text="Bucket 123456 created!"')
     response = response_info.value
     respObject = response.json()
+    print(respObject)
     bucketId = respObject["id"]
     print(f"Created bucket id {bucketId}")
     page.click('modal-dialog modal-close .modal__close')
 
     print(f'Testing aws bucket editing...')
-    page.fill(f'div[id="itemDivId-Affiliation-{bucketId}"] text-input[name="Access Key"] input', f"NewKey654321")
-    page.click('input[type="submit"]')
+    page.fill(f'div[id="itemDivId-Bucket-{bucketId}"] text-input[name="Access Key"] input', f"NewKey654321")
+    page.click(f'div[id="itemDivId-Bucket-{bucketId}"] input[type="submit"]')
     page.wait_for_selector(f'text="Bucket {bucketId} updated successfully!"')
 
     print("Testing gcs bucket creation (partial)...")
