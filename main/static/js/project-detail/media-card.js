@@ -16,12 +16,6 @@ class MediaCard extends TatorElement {
     this._img.setAttribute("class", "col-12 rounded-1");
     this._link.appendChild(this._img);
 
-    this._archiveImg = document.createElement("span");
-    this._archiveImg.setAttribute("class", "text-gray text-center col-12 rounded-1");
-    this._archiveImg.innerHTML = `<svg class="no-fill" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`;
-    this._archiveImg.hidden = true;
-    this._link.appendChild(this._archiveImg);
-
     const div = document.createElement("div");
     div.setAttribute("class", "flex-column py-2 px-2 lh-default");
     this._li.appendChild(div);
@@ -309,14 +303,10 @@ class MediaCard extends TatorElement {
     else if (this._media.archive_state == "archived") {
       this._archiveEmblem.style.display = "flex";
       this._archiveEmblem.setAttribute("tooltip", "Archived");
-      this._img.hidden = true;
-      this._archiveImg.hidden = false;
     }
     else if (this._media.archive_state == "to_live") {
       this._archiveUpEmblem.style.display = "flex";
       this._archiveUpEmblem.setAttribute("tooltip", "Pending Live");
-      this._img.hidden = true;
-      this._archiveImg.hidden = false;
     }
   }
 
