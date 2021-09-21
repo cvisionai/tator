@@ -38,9 +38,12 @@ class ImageCanvas extends AnnotationCanvas
         await new Promise(res => setTimeout(res, 10));
       }
 
+      // Height isn't available, so approximate with width
+      let display_size=this._canvas.offsetWidth;
+
       if (Number.isInteger(this._videoFrame)) {
         // Assume it's a video file. Get the appropriate frame and display that.
-        fetch(`/rest/GetFrame/${val.id}?frames=${this._videoFrame}`, {
+        fetch(`/rest/GetFrame/${val.id}?frames=${this._videoFrame}&quality=${display_size}`, {
           method: "GET",
           mode: "cors",
           credentials: "include",
