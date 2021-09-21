@@ -63,7 +63,7 @@ class OrganizationSettings extends TatorPage {
 
   /* Get personlized information when we have project-id, and fill page. */
   static get observedAttributes() {
-    return ["organization-id", "project-name"].concat(TatorPage.observedAttributes);
+    return ["organization-id", "project-name", "email_enabled"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
@@ -75,6 +75,8 @@ class OrganizationSettings extends TatorPage {
         this._breadcrumbs._settingsText.textContent = `Organization ${newValue} settings`;
 
         break;
+      case "email_enabled":
+        this._emailEnabled = newValue === "False" ? false : true;
     }
   }
 
@@ -209,6 +211,12 @@ class OrganizationSettings extends TatorPage {
           modal : this.modal, 
           sidenav: this.settingsNav,
         });
+
+        if (viewClass == "invitation-edit") {
+          console.log("Email enabled is: "+this._emailEnabled)
+          form.emailEnabled = this._emailEnabled;
+        }
+
       }
           
     });

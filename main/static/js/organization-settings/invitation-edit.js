@@ -4,10 +4,15 @@ class InvitationEdit extends OrganizationTypeForm {
     this.typeName = "Invitation";
     this.readableTypeName = "Invitation";
     this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>';
+    this._emailEnabled = false;
   }
 
   init(data) {
     this._data = data;
+  }
+
+  set emailEnabled(val) {
+    this._emailEnabled = val;
   }
 
   _getEmptyData() {
@@ -25,8 +30,8 @@ class InvitationEdit extends OrganizationTypeForm {
   }
 
   _getExistingForm(data) {
-    console.log("Get existing form");
-    console.log(data.id);
+    // console.log("Get existing form");
+    // console.log(data.id);
 
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
@@ -70,7 +75,7 @@ class InvitationEdit extends OrganizationTypeForm {
   }
 
   _getNewForm(data) {
-    console.log("Get new form");
+    // console.log("Get new form");
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
       } );
@@ -126,17 +131,18 @@ class InvitationEdit extends OrganizationTypeForm {
     this.loading.showSpinner();
 
     let formDataList = this._getFormData("New", true);
-    console.log("New form Data....");
-    console.log(formDataList);
+    // console.log("New form Data....");
+    // console.log(formDataList);
 
     let numSucceeded = 0;
     let numFailed = 0;
     let errorMessages = "";
+    let emailLinksHTML = '<ul class="pb-3">';
     const promises = [];
     for (const formData of formDataList) {
       const email = formData.email;
       const promise = this._data.createInvitation(formData).then(data => {
-        console.log(data.message);
+        // console.log(data.message);
         this.loading.hideSpinner();
 
         // Hide the add new form
@@ -169,12 +175,16 @@ class InvitationEdit extends OrganizationTypeForm {
 
         // Add the item to navigation
         this._updateNavEvent("new", email, data.id);
-
+        
+        if (!this._emailEnabled) {
+          let link = data.message.replace('User can register at ', '')
+          emailLinksHTML += `<li class="py-2"><span class="text-bold">${email}</span> can register at <a href="https://${link}" class="text-purple">${link}</a></li>`;
+        }
         // Increment succeeded.
         numSucceeded++;
       }).catch((err) => {
         console.error(err);
-        errorMessages = `${errorMessages}\n${err}`;
+        errorMessages = `${errorMessages}<p class="py-1">${err}</p>`;
         numFailed++;
       });
       promises.push(promise);
@@ -185,13 +195,24 @@ class InvitationEdit extends OrganizationTypeForm {
       this.loading.hideSpinner();
       let message;
       if (numSucceeded > 0) {
-        message = `Successfully created ${numSucceeded} invitations.`;
-        if (numFailed > 0) {
-          message = `${message} Failed to create ${numFailed}.\n${errorMessages}`;
+        let successIcon = document.createElement("modal-success");
+        message = `<p class="py-2">${successIcon.outerHTML} Successfully created ${numSucceeded} ${numSucceeded > 1 ? 'invitations' : 'invitation'}.</p>`;
+
+        if (!this._emailEnabled) {
+          message += emailLinksHTML + "</ul>";
         }
-        return this._modalSuccess(message);
+
+        if (numFailed > 0) {
+          let errorIcon = document.createElement("modal-warning");
+          message = `${message} <h3 class="py-1 f1 text-bold">Error Details:</h3><p class="py-2">${errorIcon.outerHTML} Failed to create ${numFailed} ${numFailed > 1 ? 'invitations' : 'invitation'}.</p>${errorMessages}`;
+        }
+        // Hide & Reset the add new form
+        this.sideNav.hide(`itemDivId-${this.typeName}-New`);
+        // console.log("Resetting new form after save....");
+        this.reset();
+        return this._modalComplete(message);
       } else {
-        return this._modalError(`Failed to create ${numFailed} invitations.\n${errorMessages}`);
+        return this._modalError(`Failed to create ${numFailed} ${numFailed > 1 ? 'invitations' : 'invitation'}.<br/>${errorMessages}`);
       }
     });
   }

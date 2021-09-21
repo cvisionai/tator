@@ -784,7 +784,7 @@ class OrganizationTypeForm extends TatorElement {
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     this.modal._footer.innerHTML = "";
-    this.modal._main.classList.remove("fixed-height-scroll");
+    this.modal._main.classList.add("fixed-height-scroll");
 
     return this.modal.setAttribute("is-open", "true");
   }

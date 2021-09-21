@@ -8,6 +8,8 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
+from django.conf import settings
+
 
 from rest_framework.authentication import TokenAuthentication
 import yaml
@@ -132,6 +134,7 @@ class OrganizationSettingsView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         organization = get_object_or_404(Organization, pk=self.kwargs['organization_id'])
         context['organization'] = organization
+        context['email_enabled'] = settings.TATOR_EMAIL_ENABLED
 
         # Check if user is part of project.
         if organization.user_permission(self.request.user.pk) != 'Admin':

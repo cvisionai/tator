@@ -36,7 +36,7 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
     page.fill(f'invitation-edit email-list-input input', user_email+';')
     with page.expect_response(url) as response_info:
         page.click('invitation-edit button[value="Save"]')
-        page.wait_for_selector(f'text="Successfully created 1 invitations."')
+        page.wait_for_selector(f'text="Successfully created 1 invitation."')
         page.click('modal-dialog modal-close .modal__close')
     response = response_info.value
     respObject = response.json()
@@ -72,7 +72,7 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
     page.select_option(f'affiliation-edit enum-input[name="Permission"] select', label="Member")
     with page.expect_response(url) as response_info:
         page.click('affiliation-edit button[value="Save"]')
-        page.wait_for_selector(f'text="Successfully created 1 affiliations."')
+        page.wait_for_selector(f'text="Successfully created 1 affiliation."')
     response = response_info.value
     respObject = response.json()
     affiliationId = respObject["id"]

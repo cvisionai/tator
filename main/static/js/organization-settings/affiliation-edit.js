@@ -182,13 +182,13 @@ class AffiliationEdit extends OrganizationTypeForm {
       this._userData.reset();
       let message;
       if (numSucceeded > 0) {
-        message = `Successfully created ${numSucceeded} affiliations.`;
+        message = `Successfully created ${numSucceeded} ${numSucceeded > 1 ? 'affiliations' : 'affiliation'}.`;
         if (numFailed > 0) {
-          message = `${message} Failed to create ${numFailed}.\n${errorMessages}`;
+          message = `${message} Failed to create ${numFailed} ${numFailed > 1 ? 'affiliations' : 'affiliation'}.\n${errorMessages}`;
         }
         return this._modalSuccess(message);
       } else {
-        return this._modalError(`Failed to create ${numFailed} affiliations.\n${errorMessages}`);
+        return this._modalError(`Failed to create ${numFailed > 1 ? 'affiliations' : 'affiliation'}.\n${errorMessages}`);
       }
     });
   }

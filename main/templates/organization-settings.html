@@ -11,6 +11,7 @@
 <organization-settings
   username="{{ user|stringformat:'s' }}"
   email="{{ user.email }}"
-  organization-id="{{ organization.id }}">
+  organization-id="{{ organization.id }}"
+  email_enabled="{{email_enabled}}">
 </organization-settings>
 {% endblock body %}
