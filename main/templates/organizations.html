@@ -3,16 +3,13 @@
 {% load static %}
 
 {% block head %}
-
-<title>Tator | Project Settings</title>
+<title>Tator | Organization Dashboard</title>
 {% endblock head %}
 
 {% block body %}
-<project-settings
+<organizations-dashboard
   username="{{ user|stringformat:'s' }}"
   email="{{ user.email }}"
-  project-id="{{ project.id }}"
-  is-staff="{{ user.is_staff }}"
-  >
-</project-settings>
+  is_staff={{ user.is_staff }}>
+</organizations-dashboard>
 {% endblock body %}

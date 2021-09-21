@@ -8,13 +8,19 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
+from django.conf import settings
+
 
 from rest_framework.authentication import TokenAuthentication
 import yaml
 
+from .models import Organization
 from .models import Project
 from .models import Media
 from .models import Membership
+from .models import Affiliation
+from .models import Invitation
+from .models import User
 from .notify import Notify
 from .cache import TatorCache
 
@@ -52,11 +58,37 @@ class MainRedirect(View):
 class RegistrationView(TemplateView):
     template_name = 'registration/registration.html'
 
+class AcceptView(TemplateView):
+    template_name = 'registration/accept.html'
+    def dispatch(self, request, *args, **kwargs):
+        if 'registration_token' in request.GET:
+            invites = Invitation.objects.filter(registration_token=request.GET['registration_token'],
+                                                status='Pending')
+            if invites.count() == 0:
+                return HttpResponse(status=403)
+            else:
+                invite = invites[0]
+                user = User.objects.filter(email=invite.email)
+                if user.count() == 0:
+                    return HttpResponse(status=403)
+                user = user[0]
+                Affiliation.objects.create(organization=invite.organization,
+                                           permission=invite.permission,
+                                           user=user)
+                invite.status = "Accepted"
+                invite.save()
+        else:
+            return HttpResponse(status=403)
+        return super().dispatch(request, *args, **kwargs)
+
 class PasswordResetRequestView(TemplateView):
     template_name = 'password-reset/password-reset-request.html'
 
 class PasswordResetView(TemplateView):
     template_name = 'password-reset/password-reset.html'
+
+class OrganizationsView(LoginRequiredMixin, TemplateView):
+    template_name = 'organizations.html'
 
 class ProjectsView(LoginRequiredMixin, TemplateView):
     template_name = 'projects.html'
@@ -94,6 +126,20 @@ class ProjectDetailView(ProjectBase, TemplateView):
 class ProjectSettingsView(ProjectBase, TemplateView):
     template_name = 'project-settings.html'
 
+class OrganizationSettingsView(LoginRequiredMixin, TemplateView):
+    template_name = 'organization-settings.html'
+
+    def get_context_data(self, **kwargs):
+        # Get organization info.
+        context = super().get_context_data(**kwargs)
+        organization = get_object_or_404(Organization, pk=self.kwargs['organization_id'])
+        context['organization'] = organization
+        context['email_enabled'] = settings.TATOR_EMAIL_ENABLED
+
+        # Check if user is part of project.
+        if organization.user_permission(self.request.user.pk) != 'Admin':
+            raise PermissionDenied
+        return context
 
 class AnalyticsDashboardView(ProjectBase, TemplateView):
     template_name = 'analytics/dashboard.html'

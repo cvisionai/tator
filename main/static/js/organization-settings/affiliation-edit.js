@@ -1,8 +1,8 @@
-class MembershipEdit extends TypeForm {
+class AffiliationEdit extends OrganizationTypeForm {
   constructor() {
     super();
-    this.typeName = "Membership";
-    this.readableTypeName = "Membership";
+    this.typeName = "Affiliation";
+    this.readableTypeName = "Affiliation";
     this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
   }
 
@@ -15,8 +15,7 @@ class MembershipEdit extends TypeForm {
       "id" : `New`,
       "user" : "",
       "permission": "",
-      "default_version": null,
-      "project" : this.projectId,
+      "organization" : this.organizationId,
       "form" : "empty"
     };
   }
@@ -38,36 +37,17 @@ class MembershipEdit extends TypeForm {
 
     // permission
     const permissionOptions = [
-      { "label": "View Only", "value": "View Only" },
-      { "label": "Can Edit", "value": "Can Edit" },
-      { "label": "Can Transfer", "value": "Can Transfer" },
-      { "label": "Can Execute", "value": "Can Execute" },
-      { "label": "Full Control", "value": "Full Control" },
+      { "label": "Member", "value": "Member" },
+      { "label": "Admin", "value": "Admin" },
     ];
     this._permissionSelect = document.createElement("enum-input");
     this._permissionSelect.setAttribute("name", "Permission");
     this._permissionSelect.choices = permissionOptions;
     this._permissionSelect._select.required = true;
     this._permissionSelect.setValue(data.permission);
-    this._permissionSelect.deafult = data.permission;
+    this._permissionSelect.default = data.permission;
     this._permissionSelect.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild( this._permissionSelect );
-
-    // default version
-    this._data.getVersionsPromise()
-    .then(versions => {
-      const versionOptions = versions.map(version => {return {"label": version.name,
-                                                              "value": version.id}});
-      
-      this._versionSelect = document.createElement("enum-input");;
-      this._versionSelect.setAttribute("name", "Version");
-      this._versionSelect.choices = versionOptions;
-      this._versionSelect._select.required = true;
-      this._versionSelect.setValue(data.default_version_id);
-      this._versionSelect.deafult = data.default_version_id;
-      this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
-      this._form.appendChild(this._versionSelect);
-    });
 
     current.appendChild(this._form);
 
@@ -90,22 +70,10 @@ class MembershipEdit extends TypeForm {
     this._permission = document.createElement("enum-input");
     this._permission.setAttribute("name", "Permission");
     this._permission.choices = [
-      {value: "View Only"},
-      {value: "Can Edit"},
-      {value: "Can Transfer"},
-      {value: "Can Execute"},
-      {value: "Full Control"},
+      {value: "Member"},
+      {value: "Admin"},
     ];
     this._form.appendChild(this._permission);
-
-    this._data.getVersionsPromise()
-    .then(versions => {
-      this._version = document.createElement("enum-input");
-      this._version.setAttribute("name", "Default version");
-      this._version.choices = versions.map(version => {return {value: version.id,
-                                                               label: version.name}});
-      this._form.appendChild(this._version);
-    });
 
     current.appendChild(this._form);
     return current;
@@ -128,10 +96,8 @@ class MembershipEdit extends TypeForm {
         formData.push({
           user: user.id,
           username: user.username, // ignored by BE, used by FE only
-          project: this.projectId,
+          organization: this.organizationId,
           permission: this._permission.getValue(),
-          default_version: Number(this._version.getValue()),
-          default_version_id: Number(this._version.getValue()) // ignored by BE, used by FE only
         });
       }
     } else {
@@ -140,10 +106,6 @@ class MembershipEdit extends TypeForm {
       if (this._permissionSelect.changed()) {
         formData.permission = this._permissionSelect.getValue();
       }
-
-      if (this._versionSelect.changed()) {
-        formData.default_version = Number(this._versionSelect.getValue());
-      }
     }
 
     return formData;
@@ -151,10 +113,6 @@ class MembershipEdit extends TypeForm {
 
   _savePost() {
     this.loading.showSpinner();
-    let addNew = new TypeNew({
-      "type" : this.typeName,
-      "projectId" : this.projectId
-    });
 
     let formDataList = this._getFormData("New", true);
     console.log("New form Data....");
@@ -167,7 +125,7 @@ class MembershipEdit extends TypeForm {
     for (const formData of formDataList) {
       const username = formData.username;
       //delete formData.username;
-      const promise = addNew.saveFetch(formData).then(([data, status]) => {
+      const promise = this._data.createAffiliation(formData).then(data => {
         console.log(data.message);
         this.loading.hideSpinner();
 
@@ -194,8 +152,7 @@ class MembershipEdit extends TypeForm {
 
           // init form with the data
           formData.id = data.id;
-          formData.project = this.projectId;
-          if(this.typeName == "LocalizationType" || this.typeName == "StateType") formData.media = formData.media_types;
+          formData.organization = this.organization;
           form._init({ 
             "data": formData, 
             "modal" : this.modal, 
@@ -225,16 +182,16 @@ class MembershipEdit extends TypeForm {
       this._userData.reset();
       let message;
       if (numSucceeded > 0) {
-        message = `Successfully created ${numSucceeded} memberships.`;
+        message = `Successfully created ${numSucceeded} ${numSucceeded > 1 ? 'affiliations' : 'affiliation'}.`;
         if (numFailed > 0) {
-          message = `${message} Failed to create ${numFailed}.\n${errorMessages}`;
+          message = `${message} Failed to create ${numFailed} ${numFailed > 1 ? 'affiliations' : 'affiliation'}.\n${errorMessages}`;
         }
         return this._modalSuccess(message);
       } else {
-        return this._modalError(`Failed to create ${numFailed} memberships.\n${errorMessages}`);
+        return this._modalError(`Failed to create ${numFailed > 1 ? 'affiliations' : 'affiliation'}.\n${errorMessages}`);
       }
     });
   }
 }
 
-customElements.define("membership-edit", MembershipEdit);
+customElements.define("affiliation-edit", AffiliationEdit);

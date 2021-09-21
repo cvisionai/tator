@@ -4,19 +4,22 @@ class DataJobClusters {
       this.el = document.createElement("div");
    }
 
-   _setList(data = "", update = false) {
+   async _setList(data = "", update = false) {
       let promise;
       if (data == "") {
-         promise = this.getJobClustersList(update);
+         promise = await this.getJobClustersList(update);
       } else {
-         promise = Promise.resolve(this.getListFromData(data));
+         promise = await Promise.resolve(this.getListFromData(data));
       }
-      if (promise == null) return Promise.resolve(null);
+
+      if (promise === null) return Promise.resolve(null);
+      if (typeof promise === "undefined") return Promise.resolve(403);
+
       return promise;
    }
 
    getListFromData(data) {
-      if (typeof data !== "undefined" && data !== null && data !== [] && data !== "Null") {
+      if (typeof data !== "undefined" && data !== null && data !== [] && data !== "Null" && data !== 403) {
          const clusterList = [];
          for (let d of data) {
             // create reference list for later
@@ -31,7 +34,10 @@ class DataJobClusters {
 
          return clusterList;
       } else {
+         // then there is an issue with the data, don't try to store it
          this._clear();
+         console.warn("Cannot get list from data.", data);
+         return data;
       }
    }
 
@@ -54,17 +60,16 @@ class DataJobClusters {
          return Promise.resolve(JSON.parse(jobClustersListData));
       } else {
          this.fetchJobClusters().then(resp => {
-            // console.log(resp);
             if (resp.status !== 200) {
-               return false;
+               return resp.status;
             }
 
             return resp.json()
          }).then(data => {
-            // console.log(data);
             return this.getListFromData(data);
          }).catch(e => {
-            return false;
+            console.warn("Cannot get job cluster list.", e);
+            return "ERROR";
          });
       }
    }
@@ -76,10 +81,9 @@ class DataJobClusters {
       let newList = [];
 
       return this._setList().then((clusterList) => {
-         // console.log(clusterList);
-         if (clusterList) {
+         console.log(clusterList);
+         if (typeof clusterList !== "undefined" && clusterList !== null && clusterList !== 403) {
             clusterList.forEach((cluster, i) => {
-               // console.log(cluster);
                const checkObj = {
                   value: cluster.id,
                   label: cluster.name,
@@ -93,7 +97,7 @@ class DataJobClusters {
 
             return newList;
          } else {
-            return null;
+            return Promise.resolve(clusterList);
          }
 
       });

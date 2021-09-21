@@ -8,7 +8,9 @@ from django.http import Http404
 
 from ..models import Invitation
 from ..models import Organization
+from ..models import Affiliation
 from ..models import User
+from ..models import database_qs
 from ..schema import InvitationListSchema
 from ..schema import InvitationDetailSchema
 from ..schema.components import invitation as invitation_schema
@@ -20,7 +22,14 @@ from ._permissions import OrganizationAdminPermission
 
 logger = logging.getLogger(__name__)
 
-INVITATION_PROPERTIES = list(invitation_schema['properties'].keys())
+INVITATION_PROPERTIES = list(invitation_schema['properties'].keys()).remove('created_username')
+
+def _serialize_invitations(invitations):
+    invitation_data = database_qs(invitations)
+    for idx, invitation in enumerate(invitations):
+        invitation_data[idx]['created_username'] = invitation.created_by.username
+    invitation_data.sort(key=lambda invitation: invitation['created_datetime'])
+    return invitation_data
 
 class InvitationListAPI(BaseListView):
     """ Create or retrieve a list of project invitations.
@@ -31,7 +40,7 @@ class InvitationListAPI(BaseListView):
 
     def _get(self, params):
         invites = Invitation.objects.filter(organization=params['organization'])
-        return list(invites.values(*INVITATION_PROPERTIES))
+        return _serialize_invitations(invites)
 
     def _post(self, params):
         organization = params['organization']
@@ -43,22 +52,31 @@ class InvitationListAPI(BaseListView):
         if existing.exists():
             raise RuntimeError(f"Pending invitation already exists for organization {organization}, email {email}!")
         users = User.objects.filter(email=email)
-        if users.count() > 0:
-            raise RuntimeError(f"User already exists with email {email}!")
+        if users.count() > 1:
+            raise RuntimeError(f"Multiple users exist with email {email}!")
         else:
             invite = Invitation(organization=organization,
                                 email=email,
                                 permission=permission,
                                 created_by=self.request.user,
                                 registration_token=uuid.uuid1())
-            url = f"{os.getenv('MAIN_HOST')}/registration?registration_token={invite.registration_token}"
+            if users.count() == 1:
+                affiliations = Affiliation.objects.filter(user=users[0], organization=organization)
+                if affiliations.count() > 0:
+                    raise RuntimeError(f"Affiliation already exists for email {email}!")
+                url = f"{os.getenv('MAIN_HOST')}/accept?registration_token={invite.registration_token}"
+                text = (f"You have been invited to collaborate with {organization} using Tator. "
+                        f"To accept this invitation, please visit: \n\n{url}")
+            else:
+                url = f"{os.getenv('MAIN_HOST')}/registration?registration_token={invite.registration_token}"
+                text = (f"You have been invited to collaborate with {organization} using Tator. "
+                        f"To create an account, please visit: \n\n{url}")
             if settings.TATOR_EMAIL_ENABLED:
                 email_response = TatorSES().email(
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=[email],
                     title=f"Tator invitation from {organization}",
-                    text=f"You have been invited to collaborate with {organization} using Tator. "
-                         f"To create an account, please visit: \n\n{url}",
+                    text=text,
                     html=None,
                     attachments=[])
                 if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
@@ -85,10 +103,12 @@ class InvitationDetailAPI(BaseDetailView):
         invites = Invitation.objects.filter(pk=params['id'])
         if invites.count() == 0:
             raise Http404
-        return list(invites.values(*INVITATION_PROPERTIES))[0]
+        return _serialize_invitations(invites)[0]
 
     def _patch(self, params):
         invitation = Invitation.objects.get(pk=params['id']) 
+        if 'permission' in params:
+            invitation.permission = params['permission']
         if 'status' in params:
             invitation.status = params['status']
         invitation.save()

@@ -111,11 +111,17 @@ class FileInput extends TatorElement {
 
   set permission(val) {
     if (hasPermission(val, "Can Edit")) {
-      this._input.removeAttribute("readonly");
-      this._input.classList.remove("disabled");
+      this._hiddenInput._input.removeAttribute("readonly");
+      this._hiddenInput._input.classList.remove("disabled");
+      this._editInput.removeAttribute("readonly");
+      this._editInput.classList.remove("disabled");
+      this.editButton.hidden = false;
     } else {
-      this._input.setAttribute("readonly", "");
-      this._input.classList.add("disabled");
+      this._hiddenInput._input.setAttribute("readonly", "");
+      this._hiddenInput._input.classList.add("disabled");
+      this._editInput.setAttribute("readonly", "");
+      this._editInput.classList.add("disabled");
+      this.editButton.hidden = true;
     }
   }
 

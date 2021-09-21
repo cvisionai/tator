@@ -4,15 +4,14 @@
 
 {% block head %}
 
-<title>Tator | Project Settings</title>
+<title>Tator | Organization Settings</title>
 {% endblock head %}
 
 {% block body %}
-<project-settings
+<organization-settings
   username="{{ user|stringformat:'s' }}"
   email="{{ user.email }}"
-  project-id="{{ project.id }}"
-  is-staff="{{ user.is_staff }}"
-  >
-</project-settings>
+  organization-id="{{ organization.id }}"
+  email_enabled="{{email_enabled}}">
+</organization-settings>
 {% endblock body %}

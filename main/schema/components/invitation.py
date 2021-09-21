@@ -24,6 +24,7 @@ invitation_update = {
             'type': 'string',
             'enum': ['Accepted'],
         },
+        'permission': invitation_properties['permission'],
     },
 }
 
