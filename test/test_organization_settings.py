@@ -55,7 +55,7 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
         page.fill('text-input[name="First name"] input', 'First')
         page.fill('text-input[name="Last name"] input', 'Last')
         page.fill('text-input[name="Email address"] input', user_email)
-        page.fill('text-input[name="Username"] input', 'NoReply2'+name)
+        page.fill('text-input[name="Username"] input', 'NoReply2'+name) #username must be unique
         page.fill('text-input[name="Password"] input', '123!@#abc123')
         page.fill('text-input[name="Password (confirm)"] input', '123!@#abc123')
         page.fill('text-input[name="First name"] input', 'Name')
@@ -68,7 +68,7 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
     url = base_url + "/rest/Affiliations/" + str(organization_id)
     page.click('.heading-for-Affiliation')
     page.click('.heading-for-Affiliation .Nav-action')
-    page.fill('affiliation-edit user-input input', 'no-reply2@cvisionai.com;')
+    page.fill('affiliation-edit user-input input', user_email+';')
     page.select_option(f'affiliation-edit enum-input[name="Permission"] select', label="Member")
     with page.expect_response(url) as response_info:
         page.click('affiliation-edit button[value="Save"]')
