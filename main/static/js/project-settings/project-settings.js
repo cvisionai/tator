@@ -340,6 +340,7 @@ class ProjectSettings extends TatorPage {
   }
 
   hideDimmer() {
+    this.modal._div.classList.remove("modal-wide"); // reset width
     return this.removeAttribute("has-open-modal");
   }
 

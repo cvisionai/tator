@@ -168,6 +168,7 @@ class AttributesMain extends HTMLElement {
         "buttonSave" : afObj.submitAttribute,
         "scroll" : true
       });
+      this.modal._div.classList.add("modal-wide");
       this.setAttribute("has-open-modal", "");
     });
 
@@ -287,11 +288,12 @@ class AttributesMain extends HTMLElement {
         });
         return cloneData.createClones().then((r) => {
           this.dispatchEvent(this.refreshTypeEvent);
-          this.boxHelper._modalComplete(r)
+          this.boxHelper._modalComplete(r);
         });               
       });
 
       this.loading.hideSpinner();
+      this.boxHelper.modal._div.classList.add("modal-wide");
       return this.boxHelper._modalConfirm({
         "titleText" : "Clone Attribute(s)",
         "mainText" : cloneForm,
