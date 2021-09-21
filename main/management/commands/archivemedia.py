@@ -2,8 +2,10 @@ from collections import defaultdict
 import datetime
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
-from main.models import Media, Resource
+from main.models import Affiliation, Media, Project, Resource
+from main.ses import TatorSES
 
 logger = logging.getLogger(__name__)
 FILES_TO_ARCHIVE = ["streaming", "archival", "audio", "image"]
@@ -68,7 +70,7 @@ def _get_clone_readiness(media, dtype):
     if dtype == "multi":
         return _get_multi_clone_readiness(media)
 
-    raise TypeError(f"Expected dtype in ['multi', 'image', 'video'], got {media.meta.dtype}")
+    raise ValueError(f"Expected dtype in ['multi', 'image', 'video'], got {dtype}")
 
 
 def _get_multi_clone_readiness(media):
@@ -163,9 +165,33 @@ class Command(BaseCommand):
         logger.info(f"Archived a total of {num_archived} media!")
 
         # Notify owners of blocked archive attempt
+        if settings.TATOR_EMAIL_ENABLED:
+            ses = TatorSES()
+
         for project_id, blocking_media in cloned_media_not_ready.items():
+            email_text_list = []
             for instance in blocking_media:
-                logger.warning(
+                msg = (
                     f"Archiving '{instance['media_requesting_archive'].id}' blocked by: "
                     f"{[m.id for m in instance['media_not_ready']]}."
+                )
+                logger.warning(msg)
+                email_text_list.append(msg)
+
+            if settings.TATOR_EMAIL_ENABLED:
+                project = Project.objects.get(pk=project_id)
+
+                # Get project administrators
+                recipient_ids = Affiliation.objects.filter(
+                    organization=project.organization, permission="Admin"
+                ).values_list("user", flat=True)
+                recipients = list(
+                    User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
+                )
+
+                ses.email(
+                    sender=settings.TATOR_EMAIL_SENDER,
+                    recipients=recipients,
+                    title=f"Nightly archive for {project.name} ({project.id}) failed",
+                    text="\n".join(email_text_list),
                 )
