@@ -17,12 +17,14 @@ class SeekBar extends TatorElement {
     var clickHandler=function(evt)
     {
       var width = that.offsetWidth;
+      var startX = that.offsetLeft;
       if (width == 0)
       {
         width =
           that.parentElement.offsetWidth;
+        startX = that.parentElement.offsetLeft;
       }
-      const percentage = (evt.offsetX/
+      const percentage = ((evt.clientX-startX)/
                           width);
       that.value = Math.round((percentage * (that._max - that._min) + that._min));
       that.dispatchEvent(
