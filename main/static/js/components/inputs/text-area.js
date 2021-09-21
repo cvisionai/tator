@@ -51,6 +51,12 @@ class TextArea extends TatorElement {
           case "string":
             this.getValue = this._validateString;
             break;
+          case "json":
+            this.getValue = this._validateJSON;
+            this._input.addEventListener("change", () => {
+              this._input.value = this._prettyPrint(this._input.value);
+            });
+            break;
         }
         break;
     }
@@ -83,12 +89,30 @@ class TextArea extends TatorElement {
     return this._input.value;
   }
 
+  _validateJSON() {
+    let val = this._input.value;
+    try{
+        JSON.parse(val);
+    }catch (e){
+        //Error
+        //JSON is not okay
+        return null;
+    }
+  
+    return val;
+  }
+
   setValue(val) {
     this._input.value = val;
   }
 
   changed() {
     return this.getValue() !== this._default;
+  }
+  
+  _prettyPrint(val) {
+    var obj = JSON.parse(val);
+    return JSON.stringify(obj, undefined, 4);
   }
 }
 

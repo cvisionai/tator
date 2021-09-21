@@ -148,9 +148,9 @@ class BucketEdit extends OrganizationTypeForm {
     this._form.appendChild(this._editLiveSc);
 
     // GCS key info
-    this._editGcsKeyInfo = document.createElement("text-input");
+    this._editGcsKeyInfo = document.createElement("text-area");
     this._editGcsKeyInfo.setAttribute("name", "GCS Key Info");
-    this._editGcsKeyInfo.setAttribute("type", "string");
+    this._editGcsKeyInfo.setAttribute("type", "json");
     this._editGcsKeyInfo.setValue(this.data.gcs_key_info);
     this._editGcsKeyInfo.default = this.data.gcs_key_info;
     this._editGcsKeyInfo.hidden = true;
