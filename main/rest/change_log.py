@@ -49,5 +49,5 @@ class ChangeLogListAPI(BaseListView):
         if entity_type is not None:
             cl_qs = cl_qs.filter(changetoobject__ref_table__model=entity_type)
 
-        response_data = list(cl_qs.values(*CHANGE_LOG_PROPERTIES))
+        response_data = list(cl_qs.distinct().values(*CHANGE_LOG_PROPERTIES))
         return response_data
