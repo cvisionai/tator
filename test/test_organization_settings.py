@@ -44,14 +44,19 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
     print("Invitation sent successful!")
 
     # Note: Existing user gets redirected to /organization, but new user gets form.
-    print(registration_link) 
+    if(base_url.find("https:") > -1):
+        protocol = "https://"
+    else:
+        protocol = "http://"
+    registration_link = protocol + registration_link
+    print(registration_link)
     if registration_link.find('accept') != -1:
-        print(f"Accepting invitation at: https://{registration_link}")
-        page.goto("https://" + registration_link)
+        print(f"Accepting invitation at: {registration_link}")
+        page.goto(registration_link)
         page.wait_for_url(f'{base_url}/organizations/')
     else:
-        print(f"Register user and accept invitation at: https://{registration_link}")
-        page.goto("https://" + registration_link)
+        print(f"Register user and accept invitation at: {registration_link}")
+        page.goto(registration_link)
         page.fill('text-input[name="First name"] input', 'First')
         page.fill('text-input[name="Last name"] input', 'Last')
         page.fill('text-input[name="Email address"] input', user_email)
