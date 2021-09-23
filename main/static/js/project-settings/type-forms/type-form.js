@@ -461,7 +461,7 @@ class TypeForm extends TatorElement {
 
 
 
-  _save({ id = -1, globalAttribute = false } = {}) {
+  async _save({ id = -1, globalAttribute = false } = {}) {
     // @TODO add back inline error messaging
     // If any fields still have errors don't submit the form.
     // const errorList = this._shadow.querySelectorAll(`.errored`);
@@ -488,7 +488,8 @@ class TypeForm extends TatorElement {
       if (Object.entries(formData).length === 0) {
         return console.error("No formData");
       } else {
-        promises.push(this._fetchPatchPromise({ id, formData }));
+        let patchPromise = await this._fetchPatchPromise({ id, formData });
+        promises.push(patchPromise);
         if (typeof formData.name !== "undefined") {
           this._nameEdit.edited = true;
           this._nameEdit.newName = formData.name;
@@ -508,7 +509,7 @@ class TypeForm extends TatorElement {
       if (attrFormsChanged && attrFormsChanged.length > 0) {
 
         for (let form of attrFormsChanged) {
-          let promiseInfo = form._getPromise({ id, entityType: this.typeName });
+          let promiseInfo = await form._getPromise({ id, entityType: this.typeName });
           attrPromises.promises.push(promiseInfo.promise);
           attrPromises.attrNamesNew.push(promiseInfo.newName);
           attrPromises.attrNames.push(promiseInfo.oldName);

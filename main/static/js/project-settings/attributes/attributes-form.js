@@ -827,7 +827,7 @@ class AttributesForm extends TatorElement {
     }); 
   }
 
-  _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
+  async _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
     const promiseInfo = {};
     const global = this.isGlobal() ? "true" : "false";
     const formData = {
@@ -848,13 +848,13 @@ class AttributesForm extends TatorElement {
     form.classList.remove("changed");
     this.changeReset();
 
-    promiseInfo.promise = this._fetchAttributePatchPromise(id, formData);
+    promiseInfo.promise = await this._fetchAttributePatchPromise(id, formData);
 
     return promiseInfo;
   }
 
   _fetchAttributePatchPromise(parentTypeId, formData) {
-    return fetch("/rest/AttributeType/" + parentTypeId, {
+    return fetchRetry("/rest/AttributeType/" + parentTypeId, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
