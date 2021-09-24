@@ -188,3 +188,10 @@ def image_file(request):
                         f.write(chunk)
     yield out_path
 
+@pytest.fixture(scope='session')
+def yaml_file(request):
+    out_path = '/tmp/TEST.yaml'
+    if not os.path.exists(out_path):
+        with open(out_path, 'w+') as f:
+            f.write("test")
+    yield out_path
