@@ -49,10 +49,10 @@ class EntityBrowser extends TatorElement {
     groupDiv.setAttribute("class", "text-gray f2");
     spacer.appendChild(groupDiv);
 
-    this._group = document.createElement("bool-input");
+    this._group = document.createElement("enum-input");
     this._group.setAttribute("name", "Grouping");
-    this._group.setAttribute("off-text", "Off");
-    this._group.setAttribute("on-text", "On");
+    this._group.choices = [{value: "Off"}];
+    this._group.default = "Off";
     groupDiv.appendChild(this._group);
 
     this._jumpFrame = document.createElement("bool-input");
@@ -93,6 +93,22 @@ class EntityBrowser extends TatorElement {
     this._identifier = identifyingAttribute(val);
     this._dataType = val;
     this._title.textContent = this._dataType.name;
+    let choices = [{value: "Off"}];
+    const sorted = this._dataType.attribute_types.sort((a, b) => a.order - b.order);
+    for (let choice of sorted)
+    {
+      choices.push({value: choice.name});
+    }
+    this._group.clear();
+    this._group.choices = choices;
+    if (this._dataType.grouping_default && this._identifier)
+    {
+      this._group.setValue(this._identifier.name);
+    }
+    else
+    {
+      this._group.setValue("Off");
+    }
   }
 
   set undoBuffer(val) {
@@ -105,7 +121,6 @@ class EntityBrowser extends TatorElement {
     this._data.addEventListener("freshData", evt => {
       if (evt.detail.typeObj.id === this._dataType.id) {
         if (!this._initialized) {
-          this._group.setValue(this._dataType.grouping_default);
           this._initialized = true;
         }
         this._evt = evt;
@@ -144,8 +159,8 @@ class EntityBrowser extends TatorElement {
   _drawControls() {
     const evt = this._evt;
     let groups;
-    if (this._identifier && this._group.getValue()) {
-      const key = this._identifier.name;
+    if (this._identifier && this._group.getValue() != "Off") {
+      const key = this._group.getValue();
       groups = evt.detail.data.reduce((sec, obj) => {
         (sec[obj["attributes"][key]] = sec[obj["attributes"][key]] || []).push(obj);
         return sec;
