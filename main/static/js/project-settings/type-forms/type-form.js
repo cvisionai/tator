@@ -479,11 +479,28 @@ class TypeForm extends TatorElement {
           // Main type form
           await this._typeFormChanged();
         }
+      } catch (err) {
+        console.error("Error saving.", err);
+        this.loading.hideSpinner();
+        return this._modalError("Error saving type form changes.\nError: " + err);
+      }
+      try {
         if (this.hasAttributeChanges) {
           // All attribute forms
-          await this._attrFormsChanged();
+          const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
+          if (attrFormsChanged && attrFormsChanged.length > 0) {
+            for (let form of attrFormsChanged) {
+              await this._attrFormsChanged(form);
+            }
+          }
         }
+      } catch (err) {
+        console.error("Error saving.", err);
+        this.loading.hideSpinner();
+        return this._modalError("Error saving attribute changes.\nError: " + err);
+      }
 
+      try {
         // Compiled messages from above
         await this._showSaveCompletModal();
 
@@ -506,7 +523,7 @@ class TypeForm extends TatorElement {
       } catch (err) {
         console.error("Error saving.", err);
         this.loading.hideSpinner();
-        return this._modalError("Error saving changes.");
+        return this._modalError("Error saving.\nError: " + err);
       }
     } else {
       this.loading.hideSpinner();
@@ -552,62 +569,61 @@ class TypeForm extends TatorElement {
 
   }
 
-  _attrFormsChanged() {
+  _attrFormsChanged(form) {
     let promise = Promise.resolve();
+    let attributeNewName = "";
+    let attributeOldName = "";
+    let response = null;
+    let data = null;
 
-      const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
-      if (attrFormsChanged && attrFormsChanged.length > 0) {
-        for (let form of attrFormsChanged) {
-          let data = form._attributeFormData({ id: this.typeId, entityType: this.typeName });
-          let attributeNewName = data.newName;
-          let attributeOldName = data.oldName;
-          let response = null;
-          console.log(data);
+    return promise.then(() => {
+      data = form._attributeFormData({ id: this.typeId, entityType: this.typeName });
+      attributeNewName = data.newName;
+      attributeOldName = data.oldName;
+      response = null;
+      console.log(data);
+      return data;
+    }).then(async (data) => {
+      return await form._fetchAttributePatchPromise(this.typeId, data.formData)
+  })
+      .then(resp => {
+        response = resp;
+        return resp.json()
+      })
+      .then(data => {
+        let obj = { response: response, data: data };
+        return obj;
+      })
+      .then(obj => {
+        let currentMessage = obj.data.message;
+        let response = obj.response;
+        let succussIcon = document.createElement("modal-success");
+        let iconWrap = document.createElement("span");
+        let warningIcon = document.createElement("modal-warning");
 
-          promise += form._fetchAttributePatchPromise(this.typeId, data.formData)
-            .then(resp => {
-              response = resp;
-              return resp.json()
-            })
-            .then(data => {
-              let obj = { response: response, data: data };
-              return obj;
-            })
-            .then(obj => {
-              let currentMessage = obj.data.message;
-              let response = obj.response;
-              let succussIcon = document.createElement("modal-success");
-              let iconWrap = document.createElement("span");
-              let warningIcon = document.createElement("modal-warning");
+        console.log(`currentMessage::::: ${currentMessage}`);
 
-              console.log(`currentMessage::::: ${currentMessage}`);
-
-              if (response.status == 200) {
-                //console.log("Return Message - It's a 200 response.");
-                iconWrap.appendChild(succussIcon);
-                this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-              } else if (response.status != 200) {
-                if (!this.hasAttributeChanges) {
-                  iconWrap.appendChild(warningIcon);
-                  //console.log("Return Message - It's a 400 response for main form.");
-                  this.failedMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-                } else if (this.hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-                  //console.log("Return Message - It's a 400 response for attr form.");
-                  let input = `<input type="checkbox" checked name="global" data-old-name="${attributeOldName}" class="checkbox"/>`;
-                  let newNameText = (attributeOldName == attributeNewName) ? "" : ` new name "${attributeNewName}"`
-                  this.confirmMessages += `<div class="py-2">${input} Attribute "${attributeOldName}" ${newNameText}</div>`
-                  this.requiresConfirmation = true;
-                } else {
-                  iconWrap.appendChild(warningIcon);
-                  this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div>`
-                  this.failedMessages += `<div class="f1">Error: ${currentMessage}</div>`
-                }
-              }
-
-            });
+        if (response.status == 200) {
+          //console.log("Return Message - It's a 200 response.");
+          iconWrap.appendChild(succussIcon);
+          this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
+        } else if (response.status != 200) {
+          if (!this.hasAttributeChanges) {
+            iconWrap.appendChild(warningIcon);
+            //console.log("Return Message - It's a 400 response for main form.");
+            this.failedMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
+          } else if (this.hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
+            //console.log("Return Message - It's a 400 response for attr form.");
+            let input = `<input type="checkbox" checked name="global" data-old-name="${attributeOldName}" class="checkbox"/>`;
+            let newNameText = (attributeOldName == attributeNewName) ? "" : ` new name "${attributeNewName}"`
+            this.confirmMessages += `<div class="py-2">${input} Attribute "${attributeOldName}" ${newNameText}</div>`
+            this.requiresConfirmation = true;
+          } else {
+            iconWrap.appendChild(warningIcon);
+            this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
+          }
         }
-      }
-    return promise.then(val => val);
+      });
   }
 
   _typeFormChanged() {

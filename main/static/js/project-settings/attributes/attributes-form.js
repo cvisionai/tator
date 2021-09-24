@@ -716,7 +716,7 @@ class AttributesForm extends TatorElement {
    * - Name
    * - Dtype
    * - Choices (if Dtype == Enum)
-   * - Default (if Dtype Changes and it isn't null)
+   * - Default (if Dtype Changes and it isn't null will be validated - leave null if it is "")
    * 
    * 
    * @returns {formData} as JSON object
@@ -755,11 +755,11 @@ class AttributesForm extends TatorElement {
   
     // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
     // Don't send if the value is null => invalid
+    // Don't send "" because it will fail as valid type for the default in some cases
     if (this.isClone || this._dtype.changed()) {
-      if (dtype === "enum" && this._enumDefault.changed && this._enumDefault.value !== null) {
+      if (dtype === "enum" && this._enumDefault !== {} && this._enumDefault.changed && this._enumDefault.value !== null && this._enumDefault.value !== "") {
         formData["default"] = this._enumDefault.value; 
-      } else if (this._default.changed() && this._default.getValue() !== null) {
-          
+      } else if (dtype !== "enum" && this._default.changed() && this._default.getValue() !== null && this._default.getValue() !== "") {
         let defaultVal = this._default.getValue();
         //backend does this but not when value is ""
         if (dtype == "int" || dtype == "float") defaultVal = Number(defaultVal);
@@ -896,7 +896,7 @@ class AttributesForm extends TatorElement {
   }
 
   _fetchAttributePatchPromise(parentTypeId, formData) {
-    return fetchRetry("/rest/AttributeType/" + parentTypeId, {
+    return fetch("/rest/AttributeType/" + parentTypeId, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",
