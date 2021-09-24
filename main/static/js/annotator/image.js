@@ -29,6 +29,7 @@ class ImageCanvas extends AnnotationCanvas
     this.resetRoi();
     this._videoObject = val;
     this._draw.clear();
+    this._draw.blank();
 
     // Have to wait for canvas to draw.
     new Promise(async resolve => {
