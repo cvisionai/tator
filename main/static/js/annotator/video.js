@@ -2207,6 +2207,11 @@ class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
+      let play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+      if (play_attempt)
+      {
+        return play_attempt;
+      }
       return this._videoElement[this._scrub_idx].forTime(time, bufferType, direction, this._numSeconds);
     }
   }
