@@ -6,6 +6,13 @@ class GalleryPanelLocalization extends TatorElement {
     this._versionLookup = {};
     this.panelData = document.createElement("annotation-panel-data");
     this.savedMediaData = {};
+    this._imageCanvas = document.createElement("annotation-image");
+    this._player = this._imageCanvas;
+    this._player.addDomParent({
+      "object": this.panelContainer,
+      "alignTo": this._shadow
+    });
+    this._shadow.appendChild(this._imageCanvas);
   }
 
   init({ pageModal, modelData, panelContainer }) {
@@ -38,21 +45,11 @@ class GalleryPanelLocalization extends TatorElement {
   }
 
   _setupCanvas(mediaData) {
-    this._player = this._setupImageCanvas();
-    this._player.addDomParent({
-      "object": this.panelContainer,
-      "alignTo": this._shadow
-    });
-
+    this._setupImageCanvas();
     this._getData(mediaData);
   }
 
   _clearExistingCanvas() {
-    if (typeof this._imageCanvas != "undefined") {
-      this._imageCanvas.remove();
-      delete this._imageCanvas;
-    }
-
     delete this._undo;
     delete this._data;
   }
@@ -63,14 +60,8 @@ class GalleryPanelLocalization extends TatorElement {
 
     this._undo = document.createElement("undo-buffer");
     this._data = document.createElement("annotation-data");
-    this._imageCanvas = document.createElement("annotation-image");
     this._imageCanvas.annotationData = this._data;
     this._imageCanvas.undoBuffer = this._undo;
-    this._shadow.appendChild(this._imageCanvas);
-
-    this._player = this._imageCanvas;
-
-    return this._imageCanvas;
   }
 
   _popModalWithPlayer(e, modal = this.pageModal) {
@@ -143,6 +134,10 @@ class GalleryPanelLocalization extends TatorElement {
       this._data.init(dataTypes, selected_version, this.modelData.getProjectId(), this._localization.media, false, false);
       if (mediaData.mediaTypeData.dtype == "video") {
         this._player.videoFrame = this._localization.frame;
+      }
+      else
+      {
+        this._player.videoFrame = null;
       }
       this._player.mediaInfo = mediaData.mediaInfo;
 
