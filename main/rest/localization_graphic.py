@@ -80,7 +80,7 @@ class LocalizationGraphicAPI(BaseDetailView):
                 margins = self.schema.DEFAULT_MARGIN_BOX
 
             elif localization_type == 'poly':
-                raise NotImplementedError('Error: poly dtype does not support localization graphics!')
+                margins = self.schema.DEFAULT_MARGIN_BOX
 
             else:
                 raise Exception(f'Error: Invalid meta.dtype detected {localization_type}')
@@ -183,6 +183,28 @@ class LocalizationGraphicAPI(BaseDetailView):
             roi_width = obj.width * media_width
             roi_height = obj.height * media_height
 
+            roi = [roi_width + 2*margins_pixels.x,
+                   roi_height + 2*margins_pixels.y,
+                   roi_x - margins_pixels.x,
+                   roi_y - margins_pixels.y]
+        elif localization_type == 'poly':
+            minX = 1.0
+            minY = 1.0
+            maxX = 0.0
+            maxY = 0.0
+            for point in obj.points:
+                if point[0] > maxX:
+                    maxX = point[0]
+                if point[0] < minX:
+                    minX = point[0]
+                if point[1] > maxY:
+                    maxY = point[1]
+                if point[1] < minY:
+                    minY = point[1]
+            roi_x = minX * media_width
+            roi_y = minY * media_height
+            roi_width = (maxX-minX) * media_width
+            roi_height = (maxY-minY) * media_height
             roi = [roi_width + 2*margins_pixels.x,
                    roi_height + 2*margins_pixels.y,
                    roi_x - margins_pixels.x,
