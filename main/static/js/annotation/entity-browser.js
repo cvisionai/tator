@@ -97,7 +97,10 @@ class EntityBrowser extends TatorElement {
     const sorted = this._dataType.attribute_types.sort((a, b) => a.order - b.order);
     for (let choice of sorted)
     {
-      choices.push({value: choice.name});
+      if ((choice.dtype == "string") || (choice.dtype == "enum"))
+      {
+        choices.push({value: choice.name});
+      }
     }
     this._group.clear();
     this._group.choices = choices;
