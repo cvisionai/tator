@@ -170,7 +170,7 @@ class TypeForm extends TatorElement {
         form.typeId = saveReturnId;
 
         // init form with the data
-        this._fetchByIdPromise({id : saveReturnId}).then(resp => resp.json()).then( data=> {
+        this._fetchByIdPromise({ id: saveReturnId }).then(resp => resp.json()).then(data => {
           console.log(data);
           form._init({
             data,
@@ -280,7 +280,7 @@ class TypeForm extends TatorElement {
     this.resetLink.setAttribute("class", `px-5 f1 text-gray hover-text-white`);
 
     let resetLinkText = document.createTextNode("Reset");
-    this.resetLink.appendChild( resetLinkText );
+    this.resetLink.appendChild(resetLinkText);
 
     // Form reset event
     this.resetLink.addEventListener("click", (event) => {
@@ -459,156 +459,187 @@ class TypeForm extends TatorElement {
     });
   }
 
-
-
-  async _save({ id = -1, globalAttribute = false } = {}) {
-    // @TODO add back inline error messaging
-    // If any fields still have errors don't submit the form.
-    // const errorList = this._shadow.querySelectorAll(`.errored`);
-    // if(errorList && errorList.length > 0) return this._modalError("Please fix form errors.");;
-
-    // Start spinner & Get promises list
-    // console.log("Settings _save method for id: " + id);
+  async _save({ id = -1 } = {}) {
     this.loading.showSpinner();
 
-    let promises = []
-    let errors = 0; // @TODO
+    //create form data & post promise array for the attribute forms, and submit
+    this.successMessages = "";
+    this.failedMessages = "";
+    this.confirmMessages = "";
+    this.nameChanged = false;
+    this.newName = null;
+    this.saveModalMessage = "";
+    this.requiresConfirmation = false;
+    this.hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
 
-    this._nameEdit = {
-      edited: false,
-      newName: "",
-      typeName: this.typeName,
-      typeId: this.typeId
-    }
 
-    // Main type form
-    if (this.isChanged()) {
-      // console.log("Main form was changed");
-      const formData = this._getFormData();
-      if (Object.entries(formData).length === 0) {
-        return console.error("No formData");
-      } else {
-        let patchPromise = await this._fetchPatchPromise({ id, formData });
-        promises.push(patchPromise);
-        if (typeof formData.name !== "undefined") {
-          this._nameEdit.edited = true;
-          this._nameEdit.newName = formData.name;
+    if (this.isChanged() || this.hasAttributeChanges) {
+      try {
+        if (this.isChanged()) {
+          // Main type form
+          await this._typeFormChanged();
         }
-      }
-    }
-
-    let hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
-    const attrPromises = {
-      promises: [],
-      attrNamesNew: [],
-      attrNames: []
-    };
-
-    if (hasAttributeChanges) {
-      const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
-      if (attrFormsChanged && attrFormsChanged.length > 0) {
-
-        for (let form of attrFormsChanged) {
-          let promiseInfo = await form._getPromise({ id, entityType: this.typeName });
-          attrPromises.promises.push(promiseInfo.promise);
-          attrPromises.attrNamesNew.push(promiseInfo.newName);
-          attrPromises.attrNames.push(promiseInfo.oldName);
+        if (this.hasAttributeChanges) {
+          // All attribute forms
+          await this._attrFormsChanged();
         }
 
-        if (attrPromises.promises.length > 0) {
-          promises = [...promises, ...attrPromises.promises];
+        // Compiled messages from above
+        await this._showSaveCompletModal();
+
+        // Clean up..................
+        // Reset changed flags
+        this.changed = false;
+        if (this.hasAttributeChanges) {
+          const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
+          if (attrFormsChanged.length > 0) {
+            for (let f of attrFormsChanged) {
+              f.changeReset();
+            }
+          }
         }
-      }
-    }
 
-    let messageObj = {};
-    if (promises.length > 0 && errors === 0) {
-      // Check if anything changed
-      Promise.all(promises).then(async (respArray) => {
-        let responses = [];
-        respArray.forEach((item, i) => {
-          responses.push(item.json())
-        });
-
-        Promise.all(responses)
-          .then(dataArray => {
-            messageObj = this._handleResponseWithAttributes({
-              id,
-              dataArray,
-              hasAttributeChanges,
-              attrPromises,
-              respArray
-            });
-
-            let message = "";
-            let success = false;
-            let error = false;
-            if (messageObj.messageSuccess) {
-              let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-              message += heading + messageObj.messageSuccess;
-              success = true;
-            }
-            if (messageObj.messageError) {
-              let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-              message += heading + messageObj.messageError;
-              error = true;
-            }
-
-            if (messageObj.requiresConfirmation) {
-              let buttonSave = this._getAttrGlobalTrigger(id);
-              let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-              let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-              let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
-              this.loading.hideSpinner();
-              this._modalConfirm({
-                "titleText": "Complete",
-                mainText,
-                buttonSave
-              });
-            } else {
-              let mainText = `${message}`;
-              this.loading.hideSpinner();
-              this._modalComplete(
-                mainText
-              );
-              // Reset forms to the saved data from model
-              this.resetHard();
-            }
-          }).then(() => {
-            // Reset changed flag
-            this.changed = false;
-
-            if (hasAttributeChanges) {
-              const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
-              if (attrFormsChanged.length > 0) {
-                for (let f of attrFormsChanged) {
-                  f.changeReset();
-                }
-              }
-            }
-
-            // Update related items with an event if required
-            if (this._nameEdit.edited) {
-              this._updateNavEvent("rename", this._nameEdit.newName)
-            }
-
-          });
-
-      }).catch(err => {
-        console.error("File " + err.fileName + " Line " + err.lineNumber + "\n" + err);
+        // Update related items with an event if required
+        if (this.nameChanged) {
+          this._updateNavEvent("rename", this.newName)
+        }
+      } catch (err) {
+        console.error("Error saving.", err);
         this.loading.hideSpinner();
-      });
-    } else if (!promises.length > 0) {
-      this.loading.hideSpinner();
-      console.error("Attempted to save but no promises found.");
-      return this._modalSuccess("Nothing new to save!");
-    } else if (!errors === 0) {
-      this.loading.hideSpinner();
-      return this._modalError("Please fix form errors.");
+        return this._modalError("Error saving changes.");
+      }
     } else {
       this.loading.hideSpinner();
-      return this._modalError("Problem saving form data.");
+      return this._modalSuccess("Nothing new to save!");
+    }
+  }
+
+  _showSaveCompletModal() {
+    let promise = Promise.resolve();
+
+    return promise.then(() => {
+      if (this.successMessages) {
+        let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
+        this.saveModalMessage += heading + this.successMessages;
+      }
+      if (this.failedMessages) {
+        let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
+        this.saveModalMessage += heading + this.failedMessages;
+      }
+
+      if (this.requiresConfirmation) {
+        let buttonSave = this._getAttrGlobalTrigger(this.typeId);
+        let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
+        let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
+
+        let mainText = `${this.saveModalMessage}${confirmHeading}${subText}${this.confirmMessages}`;
+        this.loading.hideSpinner();
+        this._modalConfirm({
+          "titleText": "Complete",
+          mainText,
+          buttonSave
+        });
+      } else {
+        let mainText = `${this.saveModalMessage}`;
+        this.loading.hideSpinner();
+        this._modalComplete(
+          mainText
+        );
+        // Reset forms to the saved data from model
+        this.resetHard();
+      }
+    });
+
+  }
+
+  _attrFormsChanged() {
+    let promise = Promise.resolve();
+
+      const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
+      if (attrFormsChanged && attrFormsChanged.length > 0) {
+        for (let form of attrFormsChanged) {
+          let data = form._attributeFormData({ id: this.typeId, entityType: this.typeName });
+          let attributeNewName = data.newName;
+          let attributeOldName = data.oldName;
+          let response = null;
+          console.log(data);
+
+          promise += form._fetchAttributePatchPromise(this.typeId, data.formData)
+            .then(resp => {
+              response = resp;
+              return resp.json()
+            })
+            .then(data => {
+              let obj = { response: response, data: data };
+              return obj;
+            })
+            .then(obj => {
+              let currentMessage = obj.data.message;
+              let response = obj.response;
+              let succussIcon = document.createElement("modal-success");
+              let iconWrap = document.createElement("span");
+              let warningIcon = document.createElement("modal-warning");
+
+              console.log(`currentMessage::::: ${currentMessage}`);
+
+              if (response.status == 200) {
+                //console.log("Return Message - It's a 200 response.");
+                iconWrap.appendChild(succussIcon);
+                this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
+              } else if (response.status != 200) {
+                if (!this.hasAttributeChanges) {
+                  iconWrap.appendChild(warningIcon);
+                  //console.log("Return Message - It's a 400 response for main form.");
+                  this.failedMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
+                } else if (this.hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
+                  //console.log("Return Message - It's a 400 response for attr form.");
+                  let input = `<input type="checkbox" checked name="global" data-old-name="${attributeOldName}" class="checkbox"/>`;
+                  let newNameText = (attributeOldName == attributeNewName) ? "" : ` new name "${attributeNewName}"`
+                  this.confirmMessages += `<div class="py-2">${input} Attribute "${attributeOldName}" ${newNameText}</div>`
+                  this.requiresConfirmation = true;
+                } else {
+                  iconWrap.appendChild(warningIcon);
+                  this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div>`
+                  this.failedMessages += `<div class="f1">Error: ${currentMessage}</div>`
+                }
+              }
+
+            });
+        }
+      }
+    return promise.then(val => val);
+  }
+
+  _typeFormChanged() {
+    const formData = this._getFormData();
+    let promise = Promise.resolve();
+    // console.log("Main form was changed");
+
+    if (Object.entries(formData).length === 0) {
+      return console.error("No formData");
+    } else {
+      return promise.then(() => {
+        //
+        if (typeof formData.name !== "undefined") {
+          this.nameChanged = true;
+          this.newName = formData.name;
+        }
+        return this._fetchPatchPromise({ id, formData });
+      })
+        .then(response => response.json().then(data => ({ response: response, data: data })))
+        .then(obj => {
+          let currentMessage = obj.data.message;
+          let succussIcon = document.createElement("modal-success");
+          let warningIcon = document.createElement("modal-warning");
+          let iconWrap = document.createElement("span");
+          if (obj.response.ok) {
+            iconWrap.appendChild(succussIcon);
+            this.successMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
+          } else {
+            iconWrap.appendChild(warningIcon);
+            this.failedMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
+          }
+        });
     }
   }
 
@@ -628,54 +659,6 @@ class TypeForm extends TatorElement {
   _formChanged(event) {
     // console.log(`Changed: ${event.target.tagName}`);
     return this.changed = true;
-  }
-
-  _handleResponseWithAttributes({
-    id = -1,
-    dataArray = [],
-    hasAttributeChanges = false,
-    attrPromises = [],
-    respArray = [] }
-    = {}) {
-
-    let messageSuccess = "";
-    let messageError = "";
-    let messageConfirm = "";
-    let requiresConfirmation = false;
-
-    respArray.forEach((item, i) => {
-      let currentMessage = dataArray[i].message;
-      let succussIcon = document.createElement("modal-success");
-      let iconWrap = document.createElement("span");
-      let warningIcon = document.createElement("modal-warning");
-      let index = (hasAttributeChanges && respArray[0].url.indexOf("Attribute") > 0) ? i : i - 1;
-      let formReadable = hasAttributeChanges ? attrPromises.attrNames[index] : "";
-      let formReadable2 = hasAttributeChanges ? attrPromises.attrNamesNew[index] : "";
-
-      if (item.status == 200) {
-        //console.log("Return Message - It's a 200 response.");
-        iconWrap.appendChild(succussIcon);
-        messageSuccess += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-      } else if (item.status != 200) {
-        if (!hasAttributeChanges) {
-          iconWrap.appendChild(warningIcon);
-          //console.log("Return Message - It's a 400 response for main form.");
-          messageError += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-        } else if (hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-          //console.log("Return Message - It's a 400 response for attr form.");
-          let input = `<input type="checkbox" checked name="global" data-old-name="${formReadable}" class="checkbox"/>`;
-          let newName = formReadable == formReadable2 ? "" : ` new name "${formReadable2}"`
-          messageConfirm += `<div class="py-2">${input} Attribute "${formReadable}" ${newName}</div>`
-          requiresConfirmation = true;
-        } else {
-          iconWrap.appendChild(warningIcon);
-          messageError += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${formReadable} not saved.</span></div>`
-          messageError += `<div class="f1">Error: ${currentMessage}</div>`
-        }
-      }
-    });
-
-    return { requiresConfirmation, messageSuccess, messageConfirm, messageError };
   }
 
   _getAttrGlobalTrigger(id) {
@@ -709,7 +692,7 @@ class TypeForm extends TatorElement {
       }
 
       //run the _save method again with global true
-      this._save({ "id": id, "globalAttribute": true })
+      this._save({ "id": id })
     });
 
     return buttonSave;
@@ -912,7 +895,7 @@ class TypeForm extends TatorElement {
           id: detail.typeId,
           name: detail.newName
         };
-        
+
         this._mediaCheckboxes._newInput(item);
       }
 
