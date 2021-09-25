@@ -18,6 +18,7 @@ ALLOWED_MUTATIONS = {
     'string': ['enum', 'string'],
     'datetime': ['enum', 'string', 'datetime'],
     'geopos': ['enum', 'string', 'geopos'],
+    'float_array': [],
 }
 
 # Used for duplicate ID storage
@@ -50,6 +51,8 @@ def _get_alias_type(attribute_type):
         return "date"
     if dtype == "geopos":
         return "geo_point"
+    if dtype == "float_array":
+        return "dense_vector"
 
 def _get_mapping_values(entity_type, attributes):
     """ For a given entity type and attribute values, determines mappings that should
@@ -93,6 +96,8 @@ def _get_mapping_values(entity_type, attributes):
                     mapping_values[mapping_name] = f"{value[1]},{value[0]}"
                 else:
                     mapping_values[mapping_name] = value
+            elif mapping_type == 'dense_vector':
+                mapping_values[mapping_name] = [float(val) for val in value]
     return mapping_values
 
 class TatorSearch:
@@ -263,6 +268,10 @@ class TatorSearch:
 
             # Create mappings depending on dtype.
             mapping = {mapping_name: {"type": mapping_type}}
+
+            # Dense vectors require size definition.
+            if mapping_type == "dense_vector":
+                mapping[mapping_name]["dims"] = mapping_type["size"]
 
             # Create mappings.
             self.es.indices.put_mapping(

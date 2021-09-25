@@ -30,7 +30,7 @@ attribute_type_properties = {
         'description': 'Data type of the attribute.',
         'type': 'string',
         'enum': ['bool', 'int', 'float', 'enum', 'string',
-                 'datetime', 'geopos'],
+                 'datetime', 'geopos', 'float_array'],
     },
     'required': {
         'description': 'True if this attribute is required for POST requests.',
