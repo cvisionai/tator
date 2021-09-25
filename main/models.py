@@ -713,7 +713,7 @@ class MediaType(Model):
         order: Order that the attribute should appear in web UI. Negative means
                do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
-               string, enum, datetime, geopos.
+               string, enum, datetime, geopos, float_array.
         default: (optional) Default value. Valid for all dtypes except datetime.
                  The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
@@ -786,7 +786,7 @@ class LocalizationType(Model):
         order: Order that the attribute should appear in web UI. Negative means
                do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
-               string, enum, datetime, geopos.
+               string, enum, datetime, geopos, float_array.
         default: (optional) Default value. Valid for all dtypes except datetime.
                  The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
@@ -834,7 +834,7 @@ class StateType(Model):
         order: Order that the attribute should appear in web UI. Negative means
                do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
-               string, enum, datetime, geopos.
+               string, enum, datetime, geopos, float_array.
         default: (optional) Default value. Valid for all dtypes except datetime.
                  The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
@@ -882,7 +882,7 @@ class LeafType(Model):
         order: Order that the attribute should appear in web UI. Negative means
                do not display.
         dtype: Data type of the attribute. Valid values are bool, int, float,
-               string, enum, datetime, geopos.
+               string, enum, datetime, geopos, float_array.
         default: (optional) Default value. Valid for all dtypes except datetime.
                  The type should correspond to the dtype (string/enum are strings,
                  int/float are numbers, geopos is a [lon, lat] list).
