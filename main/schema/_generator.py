@@ -112,6 +112,7 @@ class CustomGenerator(SchemaGenerator):
                 'MultiDefinition': multi_definition,
                 'NotifySpec': notify_spec,
                 'OrganizationSpec': organization_spec,
+                'OrganizationUpdate': organization_update,
                 'Organization': organization,
                 'PasswordResetSpec': password_reset_spec,
                 'ProjectSpec': project_spec,

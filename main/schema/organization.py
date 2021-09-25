@@ -106,10 +106,9 @@ class OrganizationDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/OrganizationSpec'},
+                'schema': {'$ref': '#/components/schemas/OrganizationUpdate'},
                 'example': {
                     'name': 'New name',
-                    'summary': 'New summary',
                 }
             }}}
         return body

@@ -226,6 +226,7 @@ class TwoDPlotType(Enum):
 
 class Organization(Model):
     name = CharField(max_length=128)
+    thumb = CharField(max_length=1024, null=True, blank=True)
     def user_permission(self, user_id):
         permission = None
         qs = self.affiliation_set.filter(user_id=user_id)
@@ -411,8 +412,9 @@ class Bucket(Model):
             try:
                 json.loads(kwargs["gcs_key_info"])
             except json.JSONDecodeError:
-                logger.warning("Received invalid json while creating bucket.")
-                raise
+                msg = f"Received invalid json while creating bucket: {kwargs['gcs_key_info']}"
+                logger.warning(msg)
+                raise ValueError(msg)
 
     @staticmethod
     def _sc_validator(

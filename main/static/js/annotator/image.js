@@ -28,6 +28,8 @@ class ImageCanvas extends AnnotationCanvas
     this._dims = [val.width, val.height];
     this.resetRoi();
     this._videoObject = val;
+    this._draw.clear();
+    this._draw.blank();
 
     // Have to wait for canvas to draw.
     new Promise(async resolve => {
@@ -38,9 +40,14 @@ class ImageCanvas extends AnnotationCanvas
         await new Promise(res => setTimeout(res, 10));
       }
 
+      // Height isn't available, so approximate with width
+      let display_size=this._canvas.offsetWidth;
+      let this_id = val.id;
+      let this_frame = this._videoFrame;
+
       if (Number.isInteger(this._videoFrame)) {
         // Assume it's a video file. Get the appropriate frame and display that.
-        fetch(`/rest/GetFrame/${val.id}?frames=${this._videoFrame}`, {
+        fetch(`/rest/GetFrame/${val.id}?frames=${this._videoFrame}&quality=${display_size}`, {
           method: "GET",
           mode: "cors",
           credentials: "include",
@@ -53,6 +60,10 @@ class ImageCanvas extends AnnotationCanvas
         .then(response => response.blob())
         .then(imageBlob => {
 
+          if (this_id != this._videoObject.id || this_frame != this._videoFrame)
+          {
+            console.warn(`Video ID or Frame Fetch has been received out of order.`);
+          }
           var reader = new FileReader();
           var that = this;
           reader.addEventListener("load", function () {

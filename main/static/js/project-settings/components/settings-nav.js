@@ -282,7 +282,7 @@ class SettingsNav extends TatorElement {
     //
     let itemId = obj.id; // ie. video type with ID of 62
     let subNavLink = document.createElement("a");
-    let subItemText = obj.name ? obj.name : obj.username;
+    let subItemText = obj.name ? obj.name : (obj.username ? obj.username : obj.email);
 
     subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
     subNavLink.style.paddingLeft = "44px";

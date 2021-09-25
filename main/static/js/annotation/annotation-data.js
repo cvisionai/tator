@@ -157,7 +157,7 @@ class AnnotationData extends HTMLElement {
       let isLocalization=false;
       if ("dtype" in dataType)
       {
-        isLocalization = ["box", "line", "dot"].includes(dataType.dtype);
+        isLocalization = ["box", "line", "dot", "poly"].includes(dataType.dtype);
       }
 
       if (isLocalization)

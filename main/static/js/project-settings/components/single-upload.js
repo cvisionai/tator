@@ -6,6 +6,7 @@ class SingleUpload {
     this.file = uploadData.file;
     this.validationType = typeof uploadData.validationType != undefined ? uploadData.validationType : "image";
     this.projectId = uploadData.projectId;
+    this.organizationId = uploadData.organizationId; // Only projectId or organizationId is needed.
     this.gid = uploadData.gid;
     this.section = uploadData.section;
     this.mediaTypeId = uploadData.mediaTypeId;
@@ -24,13 +25,19 @@ class SingleUpload {
     return this.getUploadInfo()
     .then(info => this.uploadSingle(info))
     .then(key => key)
-    //.then(url => this.createMedia(url))
-    //.catch(error => this.handleError(error));
   }
 
   // Returns promise resolving to upload.
   getUploadInfo() {
-    return fetch(`/rest/UploadInfo/${this.projectId}?num_parts=${this.numParts}`, {
+    let url;
+    if (this.projectId) {
+      url = `/rest/UploadInfo/${this.projectId}?num_parts=${this.numParts}`
+    } else if (this.organizationId) {
+      url = `/rest/OrganizationUploadInfo/${this.organizationId}?num_parts=${this.numParts}`
+    } else {
+      throw new Error("Upload requires organization ID or project ID!")
+    }
+    return fetch(url, {
       method: "GET",
       signal: this.controller.signal,
       credentials: "same-origin",

@@ -11,6 +11,17 @@ organization_spec = {
     'properties': organization_properties,
 }
 
+organization_update = {
+    'type': 'object',
+    'properties': {
+        **organization_properties,
+        'thumb': {
+            'type': 'string',
+            'description': 'S3 key of thumbnail used to represent the organization.',
+        },
+    },
+}
+
 organization = {
     'type': 'object',
     'description': 'Organization object.',

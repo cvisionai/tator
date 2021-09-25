@@ -1333,6 +1333,16 @@ class VideoCanvas extends AnnotationCanvas {
     this._textOverlay.toggleTextDisplay(this._videoDiagOverlay, false);
   }
 
+  playBufferDuration() {
+    let duration = 0.0;
+    const ranges = this._videoElement[this._play_idx].playBuffer().buffered;
+    for (let idx = 0; idx < ranges.length; idx++)
+    {
+      duration += ranges.end(idx) - ranges.start(idx);
+    }
+    return duration;
+  }
+
   refresh(forceSeekBuffer)
   {
     // Refresh defaults to high-res buffer
@@ -1547,6 +1557,11 @@ class VideoCanvas extends AnnotationCanvas {
       else if (type == "onDemand")
       {
         // Received the onDemand downloaded segments
+        if (that._onDemandId != e.data['id'])
+        {
+          console.warn(`On-Demand: Expected ${that._onDemandId} but got ${e.data['id']}`);
+          return;
+        }
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
@@ -1582,7 +1597,7 @@ class VideoCanvas extends AnnotationCanvas {
 
           var playCallback = function () {
             console.log("******* restarting onDemand: Playing");
-	          that.onDemandDownloadPrefetch(true);
+	          that.onDemandDownloadPrefetch(-1);
             that._playGenericOnDemand(that._direction)
           };
 
@@ -1667,6 +1682,16 @@ class VideoCanvas extends AnnotationCanvas {
                          appendBuffer(afterUpdate);
                        },0);
           }
+          const ranges = that._videoElement[that._play_idx].playBuffer().buffered;
+          let ranges_list = [];
+          for (let idx = 0; idx < ranges.length; idx++)
+          {
+            ranges_list.push([that.timeToFrame(ranges.start(idx)), that.timeToFrame(ranges.end(idx))]);
+          }
+          that.dispatchEvent(new CustomEvent("onDemandDetail",
+                                             {composed: true,
+                                              detail: {"ranges": ranges_list}
+                                              }));
         }
 
         if (e.data["id"] == that._onDemandId) {
@@ -2182,6 +2207,11 @@ class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
+      let play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+      if (play_attempt)
+      {
+        return play_attempt;
+      }
       return this._videoElement[this._scrub_idx].forTime(time, bufferType, direction, this._numSeconds);
     }
   }
@@ -2189,6 +2219,16 @@ class VideoCanvas extends AnnotationCanvas {
   frameToTime(frame)
   {
     return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
+  }
+
+  timeToFrame(time, bias)
+  {
+    let video_time = time - this._startBias;
+    if (bias)
+    {
+      video_time -= (1/(this._fps*4));
+    }
+    return Math.round(video_time * this._fps);
   }
 
   frameToAudioTime(frame)
@@ -2296,10 +2336,18 @@ class VideoCanvas extends AnnotationCanvas {
           callback(frame, video, that._dims[0], that._dims[1])
           resolve();
           video.oncanplay=null;
+          that.dispatchEvent(new CustomEvent("seekComplete",
+                                       {composed: true,
+                                        detail: {forceSeekBuffer: forceSeekBuffer,
+                                                 bufferType: bufferType
+                                        }}));
           if (forceSeekBuffer && that._audioPlayer)
           {
-            that._audioPlayer.currentTime = audio_time;
-            console.info("Setting audio to " + audio_time);
+            if (that._audioPlayer.currentTime != audio_time)
+            {
+              that._audioPlayer.currentTime = audio_time;
+              console.info("Setting audio to " + audio_time);
+            }
           }
 
           // Remove entries (if required to do so) now that we've drawn the frame
@@ -2767,7 +2815,7 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  onDemandDownloadPrefetch(reset)
+  onDemandDownloadPrefetch(reqFrame)
   {
     // This function can be called at anytime. If auto-download is disabled, then just stop
     // onDemand functionality completely
@@ -2775,9 +2823,14 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    if (reqFrame == undefined)
+    {
+      reqFrame = this.currentFrame();
+    }
+
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    if (this.videoBuffer(this.currentFrame(), "play") != null && reset != true) {
+    if (this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
@@ -2790,6 +2843,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return;
     }
+
     console.log("******* onDemandDownloadPrefetch");
     this.stopPlayerThread();
     this.shutdownOnDemandDownload();
@@ -2832,9 +2886,26 @@ class VideoCanvas extends AnnotationCanvas {
 
       video.recreateOnDemandBuffers(setupCallback);
     }
+
+    let timeToEnd = 0;
+    let ranges = this._videoElement[this._play_idx].playBuffer().buffered;
+    let absEnd = this.frameToTime(this._numFrames-1);
+    let timeToAbsEnd = Number.MAX_SAFE_INTEGER;
+    let this_time =  this.frameToTime(reqFrame);
+    timeToAbsEnd = absEnd - this_time;
+    for (let idx = 0; idx < ranges.length; idx++)
+    {
+      if (reqFrame >= ranges.start(idx) && reqFrame <= ranges.end(idx))
+      {
+        timeToEnd = ranges.end(idx) - this_time;
+      }
+    }
+
+    // If we moved out of the current on-demand buffer reload it.
+    if (reqFrame == -1 || (timeToEnd < 15 && timeToAbsEnd >= 15))
     setTimeout(function() {
       restartOnDemand();
-    },100);
+    },0);
     /*
     this._videoElement[this._play_idx].resetOnDemandBuffer().then(() => {
       that.onDemandDownload(true);
@@ -2942,10 +3013,9 @@ class VideoCanvas extends AnnotationCanvas {
       else
       {
         const currentTime = this.frameToTime(this._dispFrame);
-        const appendThreshold = 15; // Worth revisiting to make this configurable
-
-        // Adjust the playback threshold if we're close to the edge of the video
-        var playbackReadyThreshold = 10; // Seconds
+        // Make these scale to the selected playback rate
+        const appendThreshold = 45 * Math.max(1,this._playbackRate);
+        var playbackReadyThreshold = 10;
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
           (totalVideoTime - currentTime < playbackReadyThreshold))
@@ -3068,7 +3138,7 @@ class VideoCanvas extends AnnotationCanvas {
 
               if (this._direction == Direction.FORWARD)
               {
-                var trimEnd = currentTime - 2;
+                var trimEnd = currentTime - 10;
                 if (trimEnd > start && this._playing)
                 {
                   console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
@@ -3241,7 +3311,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > 4.0)
+      if (this._playbackRate > 8.0)
       {
         this._playGenericScrub(Direction.FORWARD);
       }

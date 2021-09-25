@@ -5,6 +5,7 @@ import logging
 import os
 from django.db import transaction
 from django.conf import settings
+from rest_framework.exceptions import PermissionDenied
 import yaml
 
 from ..models import Project
@@ -121,6 +122,10 @@ class AlgorithmListAPI(BaseListView):
         # Convert cluster to an object if not None.
         if cluster is not None:
             cluster = JobCluster.objects.get(pk=cluster, organization=project.organization)
+        elif cluster is None:
+            # user_entry = User.objects.get(pk=user)
+            if user.is_staff is not True:
+                raise PermissionDenied("Only staff users can save an algorithm with cluster: None.")
 
         # Register the algorithm workflow
         alg_obj = Algorithm(
@@ -223,6 +228,10 @@ class AlgorithmDetailAPI(BaseDetailView):
         if cluster is not None:
             cluster_obj = JobCluster.objects.get(pk=cluster, organization=obj.project.organization)
             obj.cluster = cluster_obj
+        elif cluster is None:
+            user_entry = User.objects.get(pk=user)
+            if user_entry.is_staff is not True:
+                raise PermissionDenied("Only staff users can save an algorithm with cluster: None.")
 
         files_per_job = params.get(fields.files_per_job, None)
         if files_per_job is not None:

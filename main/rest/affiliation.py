@@ -13,6 +13,19 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import OrganizationAdminPermission
 
+def _serialize_affiliations(affiliations):
+    affiliation_data = database_qs(affiliations)
+    for idx, affiliation in enumerate(affiliations):
+        affiliation_data[idx]['permission'] = str(affiliation.permission)
+        affiliation_data[idx]['username'] = affiliation.user.username
+        affiliation_data[idx]['first_name'] = affiliation.user.first_name
+        affiliation_data[idx]['last_name'] = affiliation.user.last_name
+        affiliation_data[idx]['email'] = affiliation.user.email
+    affiliation_data.sort(key=lambda affiliation: affiliation['last_name'].lower()
+                                                if affiliation['last_name']
+                                                else affiliation['username'].lower())
+    return affiliation_data
+
 class AffiliationListAPI(BaseListView):
     """ Create or retrieve a list of organization affiliations.
 
@@ -27,7 +40,7 @@ class AffiliationListAPI(BaseListView):
 
     def _get(self, params):
         members = Affiliation.objects.filter(organization=params['organization'])
-        return database_qs(members)
+        return _serialize_affiliations(members)
 
     def _post(self, params):
         organization = params['organization']
@@ -68,7 +81,7 @@ class AffiliationDetailAPI(BaseDetailView):
     http_method_names = ['get', 'patch', 'delete']
 
     def _get(self, params):
-        return database_qs(Affiliation.objects.filter(pk=params['id']))[0]
+        return _serialize_affiliations(Affiliation.objects.filter(pk=params['id']))[0]
 
     @transaction.atomic
     def _patch(self, params):

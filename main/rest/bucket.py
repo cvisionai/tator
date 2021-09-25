@@ -77,7 +77,7 @@ class BucketDetailAPI(BaseDetailView):
             Bucket.validate_kwargs(**params)
         except ValueError as err:
             # Allow for partial updates to S3 parameters
-            if "neither" not in err.message:
+            if "neither" not in str(err):
                 raise
         bucket = Bucket.objects.select_for_update().get(pk=params['id'])
         bucket.validate_storage_classes(params)

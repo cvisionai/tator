@@ -448,7 +448,7 @@ class AttributesForm extends TatorElement {
 
     this._choices.addEventListener("change", this._formChanged.bind(this));
     this._choices.addEventListener("new-input", () => {
-      this.appendDefaultRow();
+      this.appendDefaultRow({defaultFlag : false});
       this._labels._newInput("");
     });
 
@@ -470,7 +470,7 @@ class AttributesForm extends TatorElement {
 
     this._labels.addEventListener("change", this._formChanged.bind(this));
     this._labels.addEventListener("new-input", () => {
-      this.appendDefaultRow();
+      this.appendDefaultRow({defaultFlag : false});
       this._choices._newInput("");
     });
 
@@ -501,7 +501,7 @@ class AttributesForm extends TatorElement {
   }
 
   //
-  appendDefaultRow({defaultFlag}){
+  appendDefaultRow({ defaultFlag = false } = {}){
     let currentDefault = document.createElement("input");
     currentDefault.setAttribute("class", "radio")
     currentDefault.setAttribute("type", "radio");
@@ -517,7 +517,6 @@ class AttributesForm extends TatorElement {
       this._enumDefault.value = this._choices._inputs[index].getValue();
       this._enumDefault.changed = true;
     });
-
   }
 
   //
@@ -828,7 +827,7 @@ class AttributesForm extends TatorElement {
     }); 
   }
 
-  _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
+  async _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
     const promiseInfo = {};
     const global = this.isGlobal() ? "true" : "false";
     const formData = {
@@ -849,13 +848,13 @@ class AttributesForm extends TatorElement {
     form.classList.remove("changed");
     this.changeReset();
 
-    promiseInfo.promise = this._fetchAttributePatchPromise(id, formData);
+    promiseInfo.promise = await this._fetchAttributePatchPromise(id, formData);
 
     return promiseInfo;
   }
 
   _fetchAttributePatchPromise(parentTypeId, formData) {
-    return fetch("/rest/AttributeType/" + parentTypeId, {
+    return fetchRetry("/rest/AttributeType/" + parentTypeId, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",

@@ -494,6 +494,11 @@ class DrawGL
     this.indexBuffer = this.gl.createBuffer();
   };
 
+  blank()
+  {
+    this.clearRect(0,0, this.clientWidth, this.clientHeight, [0,0,0]);
+  }
+
   clearRect(x,y,width,height, rgb)
   {
     if (rgb == undefined)
@@ -781,15 +786,83 @@ class DrawGL
     }
 
     let start = [center[0]-radius, center[1]];
-    let finsh = [center[0]+radius, center[1]];
+    let finish = [center[0]+radius, center[1]];
     let width = radius*2;
     let effect = [4.0, innerRadius];
-    this.drawLine(start,finsh, penColor, width, alpha, effect);
+    this.drawLine(start,finish, penColor, width, alpha, effect);
+  }
+
+   // If the line will be drawn off screen
+  // correct for the actual vertex location due to
+  // viewable pixels
+  rectifyLine(start, finish)
+  {
+    let x0 = start[0];
+    let y0 = start[1];
+    let x1 = finish[0];
+    let y1 = finish[1];
+
+    let slope = (y1-y0)/(x1-x0);
+
+    if (x0 < 0)
+    {
+      y0 -= (slope*x0);
+      x0 = 0;
+    }
+    else if (x0 > this.clientWidth)
+    {
+      y0 -= (slope*(x0-this.clientWidth));
+      x0 = this.clientWidth;
+    }
+    if (y0 < 0)
+    {
+      x0 -= (y0/slope);
+      y0 = 0;
+    }
+    else if (y0 > this.clientHeight)
+    {
+      x0 -= ((y0-this.clientHeight)/slope);
+      y0 = this.clientHeight;
+    }
+    if (x1 > this.clientWidth)
+    {
+      y1 -= (slope*(x1-this.clientWidth));
+      x1 = this.clientWidth;
+    }
+    else if (x1 < 0)
+    {
+      y1 -= (slope*x1);
+      x1 = 0;
+    }
+    if (y1 > this.clientHeight)
+    {
+      x1 -= ((y1-this.clientHeight)/slope);
+      y1 = this.clientHeight;
+    }
+    else if (y1 < 0)
+    {
+      x1 -= (y1/slope);
+      y1 = 0;
+    }
+    return [[x0,y0],[x1,y1]];
   }
 
   // Draw a line at start to finish. Optionally supply pen info.
   drawLine(start, finish, penColor, width, alpha, effect)
   {
+    // If both start and finish are off-screen there isn't anything to draw
+    if (start[0] < 0 && finish[0] < 0 || start[1] < 0 && finish[1] < 0)
+    {
+      return;
+    }
+    if (start[0] > this.clientWidth && finish[0] > this.clientWidth || start[1] > this.clientHeight && finish[1] > this.clientHeight)
+    {
+      return;
+    }
+    let fixedLine = this.rectifyLine(start,finish);
+    start = fixedLine[0];
+    finish = fixedLine[1];
+
     if (this.drawBuffer == null)
     {
       this.beginDraw();
@@ -947,6 +1020,14 @@ class DrawGL
 
     for (var idx = 0; idx < length; idx++)
     {
+      if (idx == length - 1)
+      {
+         if (points[0][0] == points[idx][0] && points[0][1] == points[idx][1])
+         {
+           // Skip closing point in a closed poly
+           break;
+         }
+      }
       // Account for margin
       var start=points[idx % length];
       var dest=points[(idx+1)%length];
@@ -972,6 +1053,20 @@ class DrawGL
       console.error("Can't draw polygon with less than 3 points");
       return;
     }
+
+    // Temporary checks for filling of unexpected polygon shapes
+    if (points.length > 4)
+    {
+      console.warn("We only support rectangle fill");
+      return;
+    }
+    if (points.length == 4)
+    {
+      if (points[0][0] == points[3][0] && points[0][1] == points[3][1])
+      console.warn("We only support rectangle fill");
+      return;
+    }
+
 
     var maxX = 0;
     var maxY = 0;
