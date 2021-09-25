@@ -67,6 +67,7 @@ class CustomGenerator(SchemaGenerator):
                 'Favorite': favorite,
                 'FeedDefinition': feed_definition,
                 'FileDefinition': file_definition,
+                'FloatArrayQuery': float_array_query,
                 'LiveDefinition': live_definition,
                 'LiveUpdateDefinition': live_update_definition,
                 'ImageDefinition': image_definition,
