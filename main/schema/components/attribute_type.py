@@ -71,6 +71,11 @@ attribute_type_properties = {
                        'datetime dtype.',
         'type': 'boolean',
     },
+    'size': {
+        'description': 'Number of elements for `float_array` dtype.',
+        'type': 'integer',
+        'minimum': 1,
+    },
     'style': {
         'description': 'Available options: disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check   '
                        'Multiple options can be chained together separated by white space. '
