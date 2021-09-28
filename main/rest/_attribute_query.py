@@ -11,6 +11,7 @@ from ..models import Section
 from ..search import TatorSearch
 
 from ._attributes import KV_SEPARATOR
+from ._float_array_query import get_float_array_query
 
 logger = logging.getLogger(__name__)
 
@@ -192,7 +193,10 @@ def get_attribute_es_query(query_params, query, bools, project,
                 'minimum_should_match': 1,
             }}
             query['query']['bool']['filter'].append(modified_query)
-        
+
+    # Add float array queries - NOTE: because this adds a script_score to the query it
+    # should be the last step in query construction
+    query = get_float_array_query(params, query)
 
     return query
 
@@ -203,7 +207,7 @@ ALLOWED_TYPES = {
     'attribute_gt': ('long', 'double', 'date'),
     'attribute_gte': ('long', 'double', 'date'),
     'attribute_contains': ('keyword', 'text'),
-    'attribute_distance': ('geo_point',)
+    'attribute_distance': ('geo_point',),
 }
 
 OPERATOR_SUFFIXES = {
@@ -266,6 +270,8 @@ def get_attribute_filter_ops(project, params):
                     filter_ops.append((key, value, op))
     force_es = params.get('force_es')
     if force_es:
+        use_es = True
+    if 'float_array' in params:
         use_es = True
     return use_es, filter_ops
 

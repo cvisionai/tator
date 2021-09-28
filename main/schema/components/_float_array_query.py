@@ -1,5 +1,6 @@
 float_array_query = {
     'type': 'object',
+    'required': ['name', 'center'],
     'properties': {
         'name': {
             'description': 'Name of the attribute.',

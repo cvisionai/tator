@@ -271,7 +271,7 @@ class TatorSearch:
 
             # Dense vectors require size definition.
             if mapping_type == "dense_vector":
-                mapping[mapping_name]["dims"] = mapping_type["size"]
+                mapping[mapping_name]["dims"] = attribute_type["size"]
 
             # Create mappings.
             self.es.indices.put_mapping(
