@@ -1,5 +1,5 @@
 attribute_value = {
-    'description': 'Boolean, integer, float, string, datetime, or [lon, lat].',
+    'description': 'Boolean, integer, float, string, datetime, [lon, lat], float array.',
     'nullable': True,
     'oneOf': [
         {'type': 'boolean'},
@@ -7,8 +7,7 @@ attribute_value = {
         {'type': 'string'},
         {
             'type': 'array',
-            'minItems': 2,
-            'maxItems': 2,
+            'minItems': 1,
             'items': {'type': 'number'},
         },
     ]

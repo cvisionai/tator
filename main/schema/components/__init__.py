@@ -139,3 +139,4 @@ from ._common import create_list_response
 from ._common import message_response
 from ._errors import not_found_response
 from ._errors import bad_request_response
+from ._float_array_query import float_array_query

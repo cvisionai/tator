@@ -30,7 +30,7 @@ attribute_type_properties = {
         'description': 'Data type of the attribute.',
         'type': 'string',
         'enum': ['bool', 'int', 'float', 'enum', 'string',
-                 'datetime', 'geopos'],
+                 'datetime', 'geopos', 'float_array'],
     },
     'required': {
         'description': 'True if this attribute is required for POST requests.',
@@ -70,6 +70,11 @@ attribute_type_properties = {
         'description': 'True to use current datetime as default for '
                        'datetime dtype.',
         'type': 'boolean',
+    },
+    'size': {
+        'description': 'Number of elements for `float_array` dtype.',
+        'type': 'integer',
+        'minimum': 1,
     },
     'style': {
         'description': 'Available options: disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check   '

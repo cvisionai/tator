@@ -247,6 +247,11 @@ media_id_query = {
                 'minimum': 1,
             },
         },
+        'float_array': {
+            'description': 'Searches on `float_array` attributes.',
+            'type': 'array',
+            'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
+        },
     }
 }
 

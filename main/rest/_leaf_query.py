@@ -10,6 +10,7 @@ from ..models import Leaf
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attributes import KV_SEPARATOR
+from ._float_array_query import get_float_array_query
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,10 @@ def get_leaf_es_query(params):
     if search is not None:
         search_query = {'query_string': {'query': search}}
         query['query']['bool']['filter'].append(search_query)
+
+    # Add float array queries - NOTE: because this adds a script_score to the query it
+    # should be the last step in query construction
+    query = get_float_array_query(params, query)
 
     return query
 
