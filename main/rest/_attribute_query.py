@@ -196,7 +196,7 @@ def get_attribute_es_query(query_params, query, bools, project,
 
     # Add float array queries - NOTE: because this adds a script_score to the query it
     # should be the last step in query construction
-    query = get_float_array_query(params, query)
+    query = get_float_array_query(query_params, query)
 
     return query
 

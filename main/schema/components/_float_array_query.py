@@ -14,7 +14,7 @@ float_array_query = {
         'metric': {
             'description': 'Distance metric from center of query.',
             'type': 'string',
-            'enum': ['l2norm', 'l1norm', 'cosine_similarity', 'dot_product'],
+            'enum': ['l2norm', 'l1norm'],
             'default': 'l2norm',
         },
         'lower_bound': {
