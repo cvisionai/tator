@@ -7,7 +7,6 @@ from ..models import User
 from ..models import database_qs
 from ..schema import AffiliationListSchema
 from ..schema import AffiliationDetailSchema
-from ..ses import TatorSES
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -46,12 +45,12 @@ class AffiliationListAPI(BaseListView):
         organization = params['organization']
         user = params['user']
         permission = params['permission']
-        
+
         if permission not in ['Member', 'Admin']:
             raise ValueError(f"Permission must have one of the following values: Member, "
                               "Admin.")
         organization = Organization.objects.get(pk=organization)
-        user = User.objects.get(pk=user) 
+        user = User.objects.get(pk=user)
         affiliation = Affiliation.objects.create(
             organization=organization,
             user=user,
@@ -85,7 +84,7 @@ class AffiliationDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
-        affiliation = Affiliation.objects.select_for_update().get(pk=params['id']) 
+        affiliation = Affiliation.objects.select_for_update().get(pk=params['id'])
         if 'permission' in params:
             affiliation.permission = params['permission']
         affiliation.save()

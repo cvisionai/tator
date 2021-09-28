@@ -1,10 +1,15 @@
-import logging
+from collections import defaultdict
 import datetime
+import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
-from main.models import Media, Resource
+from main.models import Affiliation, Media, Project, Resource, User
+from main.ses import TatorSES
 
 logger = logging.getLogger(__name__)
+FILES_TO_ARCHIVE = ["streaming", "archival", "audio", "image"]
+READY_TO_ARCHIVE = ["to_archive", "archived"]
 
 
 def _archive_multi(multi):
@@ -36,7 +41,7 @@ def _archive_single(media):
     successful, the archive state of the media is changed from `to_archive` to `archived`.
     """
     media_archived = True
-    for key in ["streaming", "archival", "audio", "image"]:
+    for key in FILES_TO_ARCHIVE:
         if key not in media.media_files:
             continue
 
@@ -52,6 +57,52 @@ def _archive_single(media):
         media.save()
 
     return media_archived
+
+
+def _get_clone_readiness(media, dtype):
+    """
+    Checks the given media for clones and determines their readiness for archiving.
+    """
+    if dtype == "image":
+        return _get_single_clone_readiness(media, "image")
+    if dtype == "video":
+        return _get_single_clone_readiness(media, "archival")
+    if dtype == "multi":
+        return _get_multi_clone_readiness(media)
+
+    raise ValueError(f"Expected dtype in ['multi', 'image', 'video'], got {dtype}")
+
+
+def _get_multi_clone_readiness(media):
+    """
+    Checks the given multiview's individual media for clones.
+    """
+    multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
+    media_readiness = [_get_clone_readiness(obj, obj.meta.dtype) for obj in multi_qs]
+    return tuple(map(list, zip(*media_readiness)))
+
+
+def _get_single_clone_readiness(media, key):
+    """
+    Checks the given media for clones. Returns a tuple of lists, where the former is the list of
+    media whose `archive_state` is `to_archive` and the latter whose `archive_state` is anything
+    else.
+    """
+    if key not in media.media_files:
+        raise TypeError(f"Key '{key}' not found in media_files field")
+
+    path = media.media_files[key][0]["path"]
+
+    # Shared base queryset
+    media_qs = Media.objects.filter(resource_media__path=path)
+
+    # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
+    media_not_ready = list(media_qs.exclude(archive_state__in=READY_TO_ARCHIVE))
+
+    # Media ready for archive is in one of the READY_TO_ARCHIVE states
+    media_ready = list(media_qs.filter(archive_state__in=READY_TO_ARCHIVE))
+
+    return media_ready, media_not_ready
 
 
 class Command(BaseCommand):
@@ -76,6 +127,7 @@ class Command(BaseCommand):
             logger.info(f"No media to archive!")
             return
 
+        cloned_media_not_ready = defaultdict(list)
         for media in archived_qs:
             if not media.media_files:
                 # No files to move to archive storage, consider this media archived
@@ -84,13 +136,62 @@ class Command(BaseCommand):
                 continue
 
             media_dtype = media.meta.dtype
+            if media_dtype in ["multi", "image", "video"]:
+                media_ready, media_not_ready = _get_clone_readiness(media, media_dtype)
+            else:
+                logger.warning(
+                    f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
+                )
+                continue
+
+            if media_not_ready:
+                # Accumulate the lists of cloned media that are(n't) ready
+                cloned_media_not_ready[media.project.id].append(
+                    {
+                        "media_requesting_archive": media,
+                        "media_ready": media_ready,
+                        "media_not_ready": media_not_ready,
+                    }
+                )
+                continue
+
             num_media = 0
             if media_dtype == "multi":
                 num_media = _archive_multi(media)
             elif media_dtype in ["image", "video"]:
                 num_media = int(_archive_single(media))
-            else:
-                logger.warning(f"Unknown media dtype '{media_dtype}', skipping archive")
 
             num_archived += num_media
         logger.info(f"Archived a total of {num_archived} media!")
+
+        # Notify owners of blocked archive attempt
+        if settings.TATOR_EMAIL_ENABLED:
+            ses = TatorSES()
+
+        for project_id, blocking_media in cloned_media_not_ready.items():
+            email_text_list = []
+            for instance in blocking_media:
+                msg = (
+                    f"Archiving '{instance['media_requesting_archive'].id}' blocked by: "
+                    f"{[m.id for m in instance['media_not_ready']]}."
+                )
+                logger.warning(msg)
+                email_text_list.append(msg)
+
+            if settings.TATOR_EMAIL_ENABLED:
+                project = Project.objects.get(pk=project_id)
+
+                # Get project administrators
+                recipient_ids = Affiliation.objects.filter(
+                    organization=project.organization, permission="Admin"
+                ).values_list("user", flat=True)
+                recipients = list(
+                    User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
+                )
+
+                ses.email(
+                    sender=settings.TATOR_EMAIL_SENDER,
+                    recipients=recipients,
+                    title=f"Nightly archive for {project.name} ({project.id}) failed",
+                    text="\n".join(email_text_list),
+                )
