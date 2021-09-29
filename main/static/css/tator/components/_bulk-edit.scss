@@ -1,9 +1,16 @@
-.bulk-edit-bar {
-	position: fixed;
-	bottom: 0;
+.bulk-edit-bar_top {
+   position: fixed;
 	left: 0;
 	right: 0;
-	height: 200px;
+   top: 0;
+}
+
+.bulk-edit-bar {
+   position: fixed;
+	left: 0;
+	right: 0;
+   bottom: 0;
+   height: 200px;
 	background: $color-charcoal--light;
 	border-top: 1px solid $color-white;
    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
@@ -14,11 +21,11 @@
 	top: 0;
 	// X CANCEL
 	z-index: 1000;
-	button {
+	// button {
 		position: absolute;
 		top: 0;
 		left: 0;
-		height: 62px;
+
 		margin-bottom: $spacing-3;
 		margin-left: -$spacing-1; // SVG includes a bit of space around it
 		&:hover,
@@ -29,24 +36,30 @@
 		&.has-background svg {
 			background-color: $color-charcoal--light;
 		}
-	}
-	button:after {
-		content: "CANCEL";
+	// }
+	&:after {
+		content: "[Esc]";
 		color: $color-gray--light;
+      display: block;
+      font-size: 12px;
+      &:hover,
+		&:focus {
+			color: $color-white;
+		}
 	}
 }
 
-.bulk-edit--quick-select {
-	a {
-		padding-left: 10px;
-	}
-	a:first-child {
-		padding-left: 0;
-		padding-right: 10px;
-		border-right: 1px solid $color-gray--light;
-	}
-}
+// .bulk-edit--quick-select {
+// 	a {
+// 		padding-left: 10px;
+// 	}
+// 	a:first-child {
+// 		padding-left: 0;
+// 		padding-right: 10px;
+// 		border-right: 1px solid $color-gray--light;
+// 	}
+// }
 
-.is-selected {
+.entity-card.is-selected {
    border: 1px solid $color-purple;
 }
