@@ -55,4 +55,4 @@ def get_float_array_query(params, query):
         }
         # Sort by script score rather than what was used in the query.
         query['sort'] = {'_score': order}
-        return query
+    return query
