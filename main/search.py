@@ -18,7 +18,7 @@ ALLOWED_MUTATIONS = {
     'string': ['enum', 'string'],
     'datetime': ['enum', 'string', 'datetime'],
     'geopos': ['enum', 'string', 'geopos'],
-    'float_array': [],
+    'float_array': ['float_array'],
 }
 
 # Used for duplicate ID storage
@@ -59,6 +59,7 @@ def _get_mapping_values(entity_type, attributes):
         be set.
     """
     mapping_values = {}
+    mapping_types = {}
 
     # Handle tator_user_sections
     name = "tator_user_sections"
@@ -76,6 +77,7 @@ def _get_mapping_values(entity_type, attributes):
             uuid = entity_type.project.attribute_type_uuids[name]
             mapping_type = _get_alias_type(attribute_type)
             mapping_name = f'{uuid}_{mapping_type}'
+            mapping_types[mapping_name] = mapping_type
             if mapping_type == 'boolean':
                 mapping_values[mapping_name] = bool(value)
             elif mapping_type == 'long':
@@ -98,7 +100,7 @@ def _get_mapping_values(entity_type, attributes):
                     mapping_values[mapping_name] = value
             elif mapping_type == 'dense_vector':
                 mapping_values[mapping_name] = [float(val) for val in value]
-    return mapping_values
+    return mapping_values, mapping_types
 
 class TatorSearch:
     """ Interface for elasticsearch documents.
@@ -635,7 +637,7 @@ class TatorSearch:
             entity.save()
 
         # Index attributes for all supported dtype mutations.
-        mapping_values = _get_mapping_values(entity.meta, entity.attributes)
+        mapping_values, _ = _get_mapping_values(entity.meta, entity.attributes)
 
         results=[]
         results.append({
@@ -761,17 +763,22 @@ class TatorSearch:
         """Bulk update on search results.
         """
         query['script'] = ''
-        mapping_values = _get_mapping_values(entity_type, attrs)
+        mapping_values, mapping_types = _get_mapping_values(entity_type, attrs)
         for key, val in mapping_values.items():
+            mapping_type = mapping_types[key]
             if isinstance(val, bool):
                 if val:
                     val = 'true'
                 else:
                     val = 'false'
-            if isinstance(val, list): # This is a list geopos type
-                lon, lat = val # Lists are lon first
-                val = f'{lat},{lon}' # Convert to string geopos type, lat first
-            query['script'] += f"ctx._source['{key}']='{val}';"
+            if mapping_type == 'geo_point':
+                if isinstance(val, list): # This is a list geopos type
+                    lon, lat = val # Lists are lon first
+                    val = f'{lat},{lon}' # Convert to string geopos type, lat first
+            if mapping_type in ['boolean', 'long', 'double', 'dense_vector']:
+                query['script'] += f"ctx._source['{key}']={val};"
+            else:
+                query['script'] += f"ctx._source['{key}']='{val}';"
         self.es.update_by_query(
             index=self.index_name(project),
             body=query,
