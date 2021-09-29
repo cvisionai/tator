@@ -199,6 +199,10 @@ class AnnotationCardData extends HTMLElement {
       }
     }
   }
+
+  _bulkUpdate(cards, changes) {
+    
+  }
 }
 
 customElements.define("annotation-card-data", AnnotationCardData);

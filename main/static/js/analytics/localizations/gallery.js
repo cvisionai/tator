@@ -84,13 +84,16 @@ class AnnotationsGallery extends EntityCardGallery {
     panelContainer,
     pageModal,
     cardData,
-    modelData
+    modelData,
+    bulkEdit
   }){
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
+
+    this._bulkEdit = bulkEdit;
 
     // Listen for attribute changes
     this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
@@ -204,6 +207,19 @@ class AnnotationsGallery extends EntityCardGallery {
         // Open panel if a card is clicked
         card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
 
+        // Notifiy bulk edit about multi-select controls
+        card.addEventListener("ctrl-select", (e) => {
+          this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e, card: card } }));
+        });
+        card.addEventListener("shift-select", (e) => {
+          this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e, card: card } }));
+        });
+
+        this.addEventListener("end-edit-mode", () => {
+          card._li.classList.remove("is-selected");
+          card._multiSelectionToggle = false;
+        });
+
         // Update view
         card._li.classList.toggle("aspect-true");
         this.addEventListener("view-change", () => {
@@ -261,6 +277,10 @@ class AnnotationsGallery extends EntityCardGallery {
         this._cardElements[idx].card.style.display = "none";
       }
     }
+
+    // Replace card info so that shift select can get cards in between
+    this._bulkEdit.elementList = this._cardElements;
+    this._bulkEdit.elementIndexes = this._currentCardIndexes;
   }
 
   updateCardData(newCardData) {
@@ -349,10 +369,26 @@ class AnnotationsGallery extends EntityCardGallery {
     return data;
   }
 
+  startEditMode() {
+    this._bulkEdit._openEditMode();
+  }
+
   openClosedPanel(e){
-    console.log(e.target);
-    if(!this.panelContainer.open) this.panelContainer._toggleOpen();
-    this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
+    // console.log(e.target);
+    if (!this._bulkEdit._editMode) {
+      if (!this.panelContainer.open) this.panelContainer._toggleOpen();
+      this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
+    } else {
+      console.log("Ignoring openClosedPanel....");
+      this._bulkEdit._openEditMode(e);
+    }
+  }
+
+  cardInMultiSelect(id) {
+    if (id in this._currentCardIndexes) {
+      var info = this._cardElements[this._currentCardIndexes[id]];
+      info.card._multiSelectionToggle = true;
+    }
   }
 }
 

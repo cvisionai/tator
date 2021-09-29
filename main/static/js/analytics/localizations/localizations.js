@@ -67,6 +67,14 @@ class AnalyticsLocalizations extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
+          
+
+    // entity-gallery-bulk-edit
+    // Part of Gallery: Communicates between card + page
+    this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
+    this._bulkEdit.init(this);
+    this._shadow.appendChild(this._bulkEdit);
+
     //
     /* Other */
     // Class to hide and showing loading spinner
@@ -98,7 +106,8 @@ class AnalyticsLocalizations extends TatorPage {
           panelContainer: this._panelContainer,
           pageModal: this.modal,
           modelData: this._modelData,
-          cardData: this.cardData
+          cardData: this.cardData,
+          bulkEdit: this._bulkEdit
         });
 
 

@@ -39,6 +39,9 @@ class EntityPanelContainer extends TatorElement {
 
          this.gallery.cardNotSelected(e.detail.id);
       });
+      this.addEventListener("multi-select-true", (e) => {
+         this.gallery.cardInMultiSelect(e.detail.id);
+      });
    }
 
    cardClicked() {

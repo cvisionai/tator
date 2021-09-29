@@ -101,6 +101,9 @@ class EntityCard extends TatorElement {
   
       /* Holds attributes for the card */
       this.attributesDiv = document.createElement('div');
+
+      /* Sends events related to selection clicks */
+      this.addEventListener('contextmenu', this.contextMenuHandler.bind(this));
     }
   
     static get observedAttributes() {
@@ -285,20 +288,52 @@ class EntityCard extends TatorElement {
     togglePanel(e){
       e.preventDefault();
 
-      if(this._li.classList.contains("is-selected")) {
-        this._deselectedCardAndPanel();    
-      } else {
-        this._selectedCardAndPanel();
+      console.log("Toggle panel!")
+
+      /* @ "card-click"*/
+      if (e.shiftKey) {
+        console.log("Card was clicked with shift");
+        this._multiSelectionToggle = true;
+        this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id } })); //user is clicking specific cards
       }
+      
+      if (e.ctrlKey) {
+        console.log("Card was clicked with ctrl"); // usually context menu is hit, and not this keeping in case....
+        this._multiSelectionToggle = true;
+        this.dispatchEvent(new CustomEvent("ctrl-select", { detail: {  element : this, id: this.cardObj.id } })); //user is clicking specific cards
+      }
+
+      if(this._li.classList.contains("is-selected") && !this._multiSelectionToggle) {
+        this._deselectedCardAndPanel();    
+      } else if(!this._multiSelectionToggle){
+        this._selectedCardAndPanel();
+      } else if (this._multiSelectionToggle) {
+        const cardId = this.panelContainer._panelTop._panel.getAttribute("selected-id");
+
+        // if it exists, let it know its now in multiselect
+        if(typeof cardId !== "undefined" && cardId !== null) {
+          let evt = new CustomEvent("multi-select-true", { detail: { id: cardId } });
+          this.panelContainer.dispatchEvent(evt); // this even unselected related card
+        }   
+        if (this._li.classList.contains("is-selected")) {
+          this._li.classList.remove("is-selected");
+        } else {
+          this._li.classList.add("is-selected");
+        }      
+      }
+
+
     }
   
     _unselectOpen() {
       const cardId = this.panelContainer._panelTop._panel.getAttribute("selected-id");
 
       // if it exists, close it!
-      if(typeof cardId !== "undefined" && cardId !== null) {
-        let evt = new CustomEvent("unselected", { detail: { id: cardId } });
-        this.panelContainer.dispatchEvent(evt); // this even unselected related card
+      if (!this._multiSelectionToggle) {
+        if(typeof cardId !== "undefined" && cardId !== null) {
+          let evt = new CustomEvent("unselected", { detail: { id: cardId } });
+          this.panelContainer.dispatchEvent(evt); // this even unselected related card
+        }   
       }
     }
   
@@ -317,7 +352,6 @@ class EntityCard extends TatorElement {
     }
   
     cardClickEvent(openFlag = false){
-      /* @ "card-click"*/
       // Send event to panel to hide the localization canvas & title
       let cardClickEvent = new CustomEvent("card-click", { detail : { openFlag, cardObj : this.cardObj } });
       this.dispatchEvent( cardClickEvent );
@@ -328,6 +362,17 @@ class EntityCard extends TatorElement {
       let annotationEvent = new CustomEvent(evtName, { detail : { cardObj : this.cardObj } });
       this.panelContainer.dispatchEvent( annotationEvent );
     }
+  
+    contextMenuHandler(e) {
+      if (e.ctrlKey) {
+        console.log("Card was clicked with ctrl");
+        this._multiSelectionToggle = true;
+        e.preventDefault(); // stop contextmenu
+        // this.togglePanel(e);
+        this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element : this, id: this.cardObj.id } })); //user is clicking specific cards
+        this._li.classList.add("is-selected");
+      }
+   }
    
   }
   
