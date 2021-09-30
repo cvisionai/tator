@@ -51,8 +51,7 @@ class ProjectSettings extends TatorPage {
       "algorithm-edit",
     ];
 
-
-
+    this._userIsStaff = false;
 
     // Modal parent - to pass to page components
     this.modal = document.createElement("modal-dialog");
@@ -64,18 +63,25 @@ class ProjectSettings extends TatorPage {
     window.addEventListener("error", (evt) => {
       //
     });
-
   }
 
   /* Get personlized information when we have project-id, and fill page. */
   static get observedAttributes() {
-    return ["project-id"].concat(TatorPage.observedAttributes);
+    return ["project-id","is-staff"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "project-id":
         this._init();
+        break;
+      case "is-staff":
+        if (newValue == "True") {
+          this._userIsStaff = true;
+        } else if (newValue == "False") {
+          this._userIsStaff = false;
+        }
+        
         break;
     }
   }
@@ -92,7 +98,9 @@ class ProjectSettings extends TatorPage {
 
     // Data Handlers for Media and Version initialized below
     this._dataMediaList = new DataMediaList(this.projectId);
+    this._dataMediaList._clear();
     this._dataVersionList = new DataVersionList(this.projectId);
+    this._dataVersionList._clear();
     
 
     projectPromise
@@ -104,7 +112,7 @@ class ProjectSettings extends TatorPage {
 
         // Data Handler requires organization ID
         this._dataJobClusterList = new DataJobClusters(objData.organization);
-        // console.log("Organization ID: "+objData.organization)
+        this._dataJobClusterList._clear();
 
         this.loading.hideSpinner();
         this.makeContainer({
@@ -199,8 +207,7 @@ class ProjectSettings extends TatorPage {
           // Make Algorithm job cluster new list before we add an empty row
           if (typeClassView.typeName == "Algorithm") {
             this._dataJobClusterList._setList("", true);
-          }
-          
+          } 
 
           // init the form with the data
           typeClassView._init({
@@ -209,7 +216,8 @@ class ProjectSettings extends TatorPage {
             sidenav: this.settingsNav,
             versionListHandler: this._dataVersionList,
             mediaListHandler: this._dataMediaList,
-            clusterListHandler: this._dataJobClusterList
+            clusterListHandler: this._dataJobClusterList,
+            isStaff: this._userIsStaff
           });
 
           headingEl.addEventListener("click", () => {
@@ -303,7 +311,8 @@ class ProjectSettings extends TatorPage {
             sidenav: this.settingsNav,
             versionListHandler: this._dataVersionList,
             mediaListHandler: this._dataMediaList,
-            clusterListHandler: this._dataJobClusterList
+            clusterListHandler: this._dataJobClusterList,
+            isStaff: this._userIsStaff
           });
         }
 
@@ -331,6 +340,7 @@ class ProjectSettings extends TatorPage {
   }
 
   hideDimmer() {
+    this.modal._div.classList.remove("modal-wide"); // reset width
     return this.removeAttribute("has-open-modal");
   }
 

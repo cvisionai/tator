@@ -226,6 +226,7 @@ class TwoDPlotType(Enum):
 
 class Organization(Model):
     name = CharField(max_length=128)
+    thumb = CharField(max_length=1024, null=True, blank=True)
     def user_permission(self, user_id):
         permission = None
         qs = self.affiliation_set.filter(user_id=user_id)
@@ -359,7 +360,7 @@ def affiliation_save(sender, instance, created, **kwargs):
                                             .values_list('user', flat=True)
             recipients = User.objects.filter(pk__in=recipients).values_list('email', flat=True)
             recipients = list(recipients)
-            email_response = TatorSES().email(
+            TatorSES().email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=f"{user} added to {organization}",
@@ -367,12 +368,9 @@ def affiliation_save(sender, instance, created, **kwargs):
                      f"email {user.email}) has been added to the Tator organization "
                      f"{organization}. This message has been sent to all organization admins. "
                       "No action is required.",
-                html=None,
-                attachments=[])
+                )
             logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
-            if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                logger.error(email_response)
-                # Don't raise an error, email is not required for affiliation creation.
+
 
 class Bucket(Model):
     """ Stores info required for remote S3 buckets.
@@ -411,8 +409,9 @@ class Bucket(Model):
             try:
                 json.loads(kwargs["gcs_key_info"])
             except json.JSONDecodeError:
-                logger.warning("Received invalid json while creating bucket.")
-                raise
+                msg = f"Received invalid json while creating bucket: {kwargs['gcs_key_info']}"
+                logger.warning(msg)
+                raise ValueError(msg)
 
     @staticmethod
     def _sc_validator(

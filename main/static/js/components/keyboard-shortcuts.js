@@ -31,6 +31,7 @@ class KeyboardShortcuts extends TatorElement {
       ["Large Video Player", "M", "\u{2318}"],
       ["Zoom In", "+", null],
       ["Zoom Out", "-", null],
+      ["Toggle Text Overlay", "T", null],
       ["Skip Forward 1 Frame", "\u{2192}", null],
       ["Skip Backward 1 Frame", "\u{2190}", null],
       ["Play/Pause", "Space", null],

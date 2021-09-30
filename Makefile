@@ -204,19 +204,21 @@ FILES = \
     util/same-origin-credentials.js \
     components/tator-element.js \
     components/buttons/entity-frame-link-button.js \
-    components/inputs/feature/color-inputs.js \
-    components/inputs/feature/thumb-inputs.js \
-    components/inputs/feature/checkbox-set.js \
-    components/inputs/feature/file-input.js \
-    components/inputs/feature/array-object-input.js \
     components/inputs/array-input.js \
     components/inputs/user-input.js \
+    components/inputs/email-list-input.js \
     components/inputs/bool-input.js \
     components/inputs/checkbox-input.js \
     components/inputs/enum-input.js \
     components/inputs/text-area.js \
     components/inputs/datetime-input.js \
     components/inputs/text-input.js \
+    components/inputs/feature/color-inputs.js \
+    components/inputs/feature/thumb-inputs.js \
+    components/inputs/feature/radio-set.js \
+    components/inputs/feature/checkbox-set.js \
+    components/inputs/feature/file-input.js \
+    components/inputs/feature/array-object-input.js \
     components/labeled-checkbox.js \
     components/markdown-div.js \
     components/svg-definitions/chevron-right.js \
@@ -289,6 +291,9 @@ FILES = \
     projects/new-project-dialog.js \
     projects/delete-project.js \
     projects/projects-dashboard.js \
+    organizations/organization-summary.js \
+    organizations/new-organization.js \
+    organizations/organizations-dashboard.js \
     account-profile/account-profile.js \
     token/token-page.js \
     new-project/new-project-close.js \
@@ -359,6 +364,14 @@ FILES = \
     project-settings/settings-box-helpers.js \
     project-settings/type-form-validation.js \
     project-settings/project-settings.js \
+    organization-settings/organization-data.js \
+    organization-settings/organization-type-form.js \
+    organization-settings/organization-main-edit.js \
+    organization-settings/affiliation-edit.js \
+    organization-settings/invitation-edit.js \
+    organization-settings/bucket-edit.js \
+    organization-settings/job-cluster-edit.js \
+    organization-settings/organization-settings.js \
     annotation/annotation-breadcrumbs.js \
     annotation/lock-button.js \
     annotation/fill-boxes-button.js \

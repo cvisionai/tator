@@ -174,7 +174,7 @@ class MediaSection extends TatorElement {
     const recursiveFetch = (url, params, current) => {
       let after = "";
       if (this._after.has(current - 5000)) {
-        after = `&after=${this._after.get(current-5000)}`;
+        after = `&after_id=${this._after.get(current-5000)}`;
       }
       return fetch(`${url}?${params.toString()}&start=4999&stop=5000${after}&presigned=28800`, {
         method: "GET",
@@ -187,11 +187,11 @@ class MediaSection extends TatorElement {
       })
       .then(response => response.json())
       .then(data => {
-        this._after.set(current, data[0].name);
+        this._after.set(current, data[0].id);
         if (current < index) {
           return recursiveFetch(url, params, current + 5000);
         }
-        return Promise.resolve(data[0]['name']);
+        return Promise.resolve(data[0]['id']);
       });
     }
     if (this._after.has(index)) {
@@ -221,9 +221,9 @@ class MediaSection extends TatorElement {
       sectionQuery.append("stop", stop);
       afterPromise = this._getAfter(afterIndex);
     }
-    return afterPromise.then(afterName => {
-      if (afterName) {
-        sectionQuery.append("after", afterName);
+    return afterPromise.then(afterId => {
+      if (afterId) {
+        sectionQuery.append("after_id", afterId);
       }
       return fetch(`/rest/Medias/${this._project}?${sectionQuery.toString()}&presigned=28800`, {
         method: "GET",
@@ -297,7 +297,7 @@ class MediaSection extends TatorElement {
     })
     .then(response => response.json())
     .then(async mediaStats => {
-      let lastFilename = null;
+      let lastId = null;
       let numImages = 0;
       let numVideos = 0;
       let size = 0;
@@ -329,8 +329,8 @@ class MediaSection extends TatorElement {
       const readableZipStream = new ZIP({
         async pull(ctrl) {
           let url = `${getUrl("Medias")}&stop=${batchSize}&presigned=28800`;
-          if (lastFilename != null) {
-            url += "&after=" + encodeURIComponent(lastFilename);
+          if (lastId != null) {
+            url += "&after_id=" + encodeURIComponent(lastId);
           }
           await fetchRetry(url, {
             method: "GET",
@@ -343,7 +343,7 @@ class MediaSection extends TatorElement {
               ctrl.close();
             }
             for (const media of medias) {
-              lastFilename = media.name;
+              lastId = media.id;
               const basenameOrig = media.name.replace(/\.[^/.]+$/, "");
               const ext = re.exec(media.name)[0];
               let basename = basenameOrig;
@@ -437,7 +437,7 @@ class MediaSection extends TatorElement {
                                         baseFilename, lastId, idQuery) => {
           let url = baseUrl + "&type=" + type.id + "&stop=" + batchSize;
           if (lastId != null) {
-            url += "&after=" + encodeURIComponent(lastId);
+            url += "&after_id=" + encodeURIComponent(lastId);
           }
 
           let request;

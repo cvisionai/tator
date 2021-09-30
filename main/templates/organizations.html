@@ -1,0 +1,15 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Organization Dashboard</title>
+{% endblock head %}
+
+{% block body %}
+<organizations-dashboard
+  username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}"
+  is_staff={{ user.is_staff }}>
+</organizations-dashboard>
+{% endblock body %}

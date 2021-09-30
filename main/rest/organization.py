@@ -8,6 +8,7 @@ from ..models import Affiliation
 from ..models import database_qs
 from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
+from ..store import get_tator_store
 
 from ._permissions import OrganizationAdminPermission
 from ._base_views import BaseListView
@@ -16,7 +17,10 @@ from ._base_views import BaseDetailView
 def _serialize_organizations(organizations, user_id):
     organization_data = database_qs(organizations)
     for idx, organization in enumerate(organizations):
+        store = get_tator_store()
         organization_data[idx]['permission'] = str(organization.user_permission(user_id))
+        if organization_data[idx]['thumb']:
+            organization_data[idx]['thumb'] = store.get_download_url(organization_data[idx]['thumb'], 28800)
     return organization_data
 
 class OrganizationListAPI(BaseListView):
@@ -74,6 +78,18 @@ class OrganizationDetailAPI(BaseDetailView):
                 affiliation__user=self.request.user).filter(name__iexact=params['name']).exists():
                 raise Exception("Organization with this name already exists!")
             organization.name = params['name']
+        if 'thumb' in params:
+            organization_from_key = int(params['thumb'].split('/')[0])
+            if organization.pk != organization_from_key:
+                raise Exception("Invalid thumbnail path for this organization!")
+
+            tator_store = get_tator_store()
+            if not tator_store.check_key(params["thumb"]):
+                raise ValueError(f"Key {params['thumb']} not found in bucket")
+
+            if organization.thumb:
+                safe_delete(organization.thumb)
+            organization.thumb = params['thumb']
         organization.save()
         return {'message': f"Organization {params['id']} updated successfully!"}
 

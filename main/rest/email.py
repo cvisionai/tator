@@ -4,7 +4,6 @@ import os
 import traceback
 
 from django.conf import settings
-from django.http import response
 from ..models import User
 from ..models import Membership
 from ..schema import EmailSchema
@@ -73,17 +72,14 @@ class EmailAPI(BaseListView):
             attachments = params.get('attachments', [])
 
             # Send email
-            email_response = TatorSES().email(
+            TatorSES().email(
                 sender=settings.TATOR_EMAIL_SENDER,
                 recipients=recipients,
                 title=subject,
                 text=text_body,
-                html=None, #TODO Future work to allow HTML emails to be sent with templates
-                attachments=attachments)
-
-            if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                logger.error(email_response)
-                raise ValueError(f"Email response was not 200. Error occured")
+                attachments=attachments,
+                raise_on_failure="Email response was not 200. Error occured"
+            )
 
         except Exception as exc:
             logger.error(f"Exception in REST email POST endpoint:\n{traceback.format_exc()}")

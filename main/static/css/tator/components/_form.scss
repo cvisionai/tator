@@ -298,6 +298,18 @@ textarea.form-control {
   width: 0px;
 }
 
+.range-ondemand {
+  -webkit-appearance: none;
+  background-color: $color-white--25;
+  border-radius: 3px;
+  height: 3px;
+  &:focus {
+    outline: none;
+  }
+  position: absolute;
+  width: 0px;
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 10px;

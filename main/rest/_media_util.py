@@ -41,6 +41,7 @@ class MediaUtil:
                 for idx, media_info in enumerate(video.media_files["streaming"]):
                     delta = abs(quality-media_info['resolution'][0])
                     if delta < max_delta:
+                        max_delta = delta
                         quality_idx = idx
             self._video_file = video.media_files["streaming"][quality_idx]["path"]
             self._storage = store_lookup[self._video_file]

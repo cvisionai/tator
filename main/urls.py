@@ -14,13 +14,16 @@ from rest_framework.schemas import get_schema_view
 from .views import APIBrowserView
 from .views import MainRedirect
 from .views import RegistrationView
+from .views import AcceptView
 from .views import PasswordResetRequestView
 from .views import PasswordResetView
+from .views import OrganizationsView
 from .views import ProjectsView
 from .views import AccountProfileView
 from .views import TokenView
 from .views import ProjectDetailView
 from .views import ProjectSettingsView
+from .views import OrganizationSettingsView
 from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
@@ -64,6 +67,9 @@ urlpatterns = [
          AppsSpeciesView.as_view(), name='apps-species'),
     path('<int:project_id>/apps/verification',
          AppsVerificationView.as_view(), name='apps-verification'),
+    path('organizations/', OrganizationsView.as_view(), name='organizations'),
+    path('<int:organization_id>/organization-settings', OrganizationSettingsView.as_view(),
+         name='organization-settings'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
@@ -73,6 +79,7 @@ urlpatterns = [
     path('anonymous-gateway', AnonymousGatewayAPI.as_view(),
          name='anonymous-gateway'),
     path('registration', RegistrationView.as_view(), name='registration'),
+    path('accept', AcceptView.as_view(), name='accept'),
     path('token', TokenView.as_view(), name='token'),
     path('accounts/password_change/', PasswordChangeView.as_view()),
     path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
@@ -328,6 +335,10 @@ urlpatterns += [
     path(
         'rest/Organization/<int:id>',
         OrganizationDetailAPI.as_view(),
+    ),
+    path(
+        'rest/OrganizationUploadInfo/<int:organization>',
+        OrganizationUploadInfoAPI.as_view(),
     ),
     path(
         'rest/PasswordReset',

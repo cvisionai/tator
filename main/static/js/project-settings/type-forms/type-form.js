@@ -20,9 +20,13 @@ class TypeForm extends TatorElement {
 
     // Init hide attributes
     this._hideAttributes = false;
+
+    // Init button early
+    this.saveButton = document.createElement("input");
+    this.savePost = document.createElement("button");
   }
 
-  _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler }) {
+  _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler, isStaff }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
@@ -36,6 +40,7 @@ class TypeForm extends TatorElement {
     this.versionListHandler = versionListHandler;
     this.mediaListHandler = mediaListHandler;
     this.clusterListHandler = clusterListHandler;
+    this.isStaff = isStaff;
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox(this.modal);
@@ -77,19 +82,26 @@ class TypeForm extends TatorElement {
       const h1_id = document.createTextNode(` (ID ${this.data.id})`);
       this.id_span.appendChild(h1_id);
 
+      // creating submit button before form so we can "disable" from form, but append it after form
+
+      const submitNew = this._getSubmitDiv({ "id": this.data.id });
+
       // Add all elements to page
       this.typeFormDiv.appendChild(this.h1);
       const sectionForm = await this._getSectionForm(this.data);
       this.typeFormDiv.appendChild(sectionForm);
 
+      // attribute section
       if (typeof this._hideAttributes !== "undefined" && this._hideAttributes == false) {
         this.typeFormDiv.appendChild(this._getAttributeSection());
       }
 
-      const submitNew = this._getSubmitDiv({ "id": this.data.id });
+      // append save button
       this.typeFormDiv.appendChild(submitNew);
 
+      // delete section
       this.typeFormDiv.appendChild(this.deleteTypeSection());
+
       return this.typeFormDiv;
     } else {
       const t = document.createTextNode(`Add new ${this.readableTypeName}.`);
@@ -97,10 +109,12 @@ class TypeForm extends TatorElement {
 
       this.typeFormDiv.appendChild(this.h1);
 
+      const submitNew = this._getSubmitNewDiv({ "id": this.data.id });
+
       const sectionForm = await this._getSectionForm(this._getEmptyData());
       this.typeFormDiv.appendChild(this.h1);
       this.typeFormDiv.appendChild(sectionForm);
-      this.typeFormDiv.appendChild(this._getSubmitNewDiv({ "id": this.data.id }));
+      this.typeFormDiv.appendChild(submitNew);
 
       return this.typeFormDiv;
     }
@@ -108,7 +122,7 @@ class TypeForm extends TatorElement {
 
   _getSubmitNewDiv() {
     let text = document.createTextNode("Save");
-    this.savePost = document.createElement("Button");
+
     this.savePost.appendChild(text);
     this.savePost.setAttribute("value", "Save");
     this.savePost.setAttribute("class", `btn btn-clear text-center f1 text-semibold`);
@@ -129,8 +143,8 @@ class TypeForm extends TatorElement {
 
     addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();
-
-      if (status != 400) {
+      console.log(status);
+      if (status == 201 || status == 200) {
         // Hide the add new form
         this.sideNav.hide(`itemDivId-${this.typeName}-New`);
         // console.log("Resetting new form after save....");
@@ -164,7 +178,8 @@ class TypeForm extends TatorElement {
             sidenav: this.sideNav,
             mediaListHandler: this.mediaListHandler,
             versionListHandler: this.versionListHandler,
-            clusterListHandler: this.clusterListHandler
+            clusterListHandler: this.clusterListHandler,
+            isStaff: this.isStaff
           });
 
           // Add the item to navigation
@@ -237,22 +252,25 @@ class TypeForm extends TatorElement {
   }
 
   _saveEntityButton(id) {
-    this.saveButton = document.createElement("input");
     this.saveButton.setAttribute("type", "submit");
     this.saveButton.setAttribute("value", "Save");
     this.saveButton.setAttribute("class", `btn btn-clear f1 text-semibold`);
 
-    this.saveButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
-        // console.log("Save for id: " + id);
-        this._save({ "id": id })
-      } else {
-        // @TODO- UX Save button disabled until form change
-        let happyMsg = "Nothing new to save!";
-        this._modalSuccess(happyMsg);
-      }
-    });
+
+    if (!this.saveButton.disabled) {
+      this.saveButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
+          // console.log("Save for id: " + id);
+          this._save({ "id": id })
+        } else {
+          // @TODO- UX Save button disabled until form change
+          let happyMsg = "Nothing new to save!";
+          this._modalSuccess(happyMsg);
+        }
+      });
+    }
+
     return this.saveButton;
   }
 
@@ -443,7 +461,7 @@ class TypeForm extends TatorElement {
 
 
 
-  _save({ id = -1, globalAttribute = false } = {}) {
+  async _save({ id = -1, globalAttribute = false } = {}) {
     // @TODO add back inline error messaging
     // If any fields still have errors don't submit the form.
     // const errorList = this._shadow.querySelectorAll(`.errored`);
@@ -470,7 +488,8 @@ class TypeForm extends TatorElement {
       if (Object.entries(formData).length === 0) {
         return console.error("No formData");
       } else {
-        promises.push(this._fetchPatchPromise({ id, formData }));
+        let patchPromise = await this._fetchPatchPromise({ id, formData });
+        promises.push(patchPromise);
         if (typeof formData.name !== "undefined") {
           this._nameEdit.edited = true;
           this._nameEdit.newName = formData.name;
@@ -490,7 +509,7 @@ class TypeForm extends TatorElement {
       if (attrFormsChanged && attrFormsChanged.length > 0) {
 
         for (let form of attrFormsChanged) {
-          let promiseInfo = form._getPromise({ id, entityType: this.typeName });
+          let promiseInfo = await form._getPromise({ id, entityType: this.typeName });
           attrPromises.promises.push(promiseInfo.promise);
           attrPromises.attrNamesNew.push(promiseInfo.newName);
           attrPromises.attrNames.push(promiseInfo.oldName);
@@ -675,17 +694,17 @@ class TypeForm extends TatorElement {
         let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
 
         if (check.checked == true) {
-          console.log("User marked as global: " + name);
+          // console.log("User marked as global: " + name);
           for (let form of this.attributeSection.attrForms) {
             if (form.id == formId) {
               // add back changed flag
               form.changed = true;
               form.global = true;
-              console.log("set data set global to true");
+              // console.log("set data set global to true");
             }
           }
         } else {
-          console.log("User marked NOT global, do not resend: " + name);
+          // console.log("User marked NOT global, do not resend: " + name);
         }
       }
 

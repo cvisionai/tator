@@ -1,5 +1,3 @@
-import os
-
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -25,7 +23,7 @@ from ._permissions import ProjectFullControlPermission
 def _serialize_projects(projects, user_id):
     project_data = database_qs(projects)
     for idx, project in enumerate(projects):
-        store = get_tator_store(project.bucket)
+        store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
         if project.creator.pk == user_id:
             project_data[idx]['permission'] = 'Creator'
         else:

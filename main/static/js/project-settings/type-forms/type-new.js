@@ -1,9 +1,9 @@
 class TypeNew {
     constructor({
-        type, projectId, formData
+        type, projectId
       }){
         this.type = type;
-        this.projectId = projectId;
+      this.projectId = projectId; // this is sometimes sent as organization ID
     }
 
     async saveFetch(formData){     

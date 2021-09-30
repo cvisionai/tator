@@ -3,7 +3,6 @@ import logging
 from django.contrib.contenttypes.models import ContentType
 
 from ..models import ChangeLog
-from ..models import ChangeToObject
 from ..schema import ChangeLogListSchema
 
 from ._base_views import BaseListView
@@ -36,23 +35,19 @@ class ChangeLogListAPI(BaseListView):
 
         if all(value is None for value in [user_id, entity_id, entity_type]):
             raise ValueError(
-                f"At least one of the following fields need to be set: user_id, entity_id"
+                "At least one of the following fields need to be set: user_id, entity_id, entity_type"
             )
 
         cl_qs = ChangeLog.objects.filter(project=project)
-        cto_qs = ChangeToObject.objects.all()
 
         if user_id is not None:
             cl_qs = cl_qs.filter(user=user_id)
 
         if entity_id is not None:
-            cto_qs = cto_qs.filter(ref_id=entity_id)
+            cl_qs = cl_qs.filter(changetoobject__ref_id=entity_id)
 
         if entity_type is not None:
-            cto_qs = cto_qs.filter(ref_table__model=entity_type)
+            cl_qs = cl_qs.filter(changetoobject__ref_table__model=entity_type)
 
-        if (entity_id is not None) or (entity_type is not None):
-            cl_qs = cl_qs.filter(pk__in=[cto.change_id.id for cto in cto_qs if cto.change_id])
-
-        response_data = list(cl_qs.values(*CHANGE_LOG_PROPERTIES))
+        response_data = list(cl_qs.distinct().values(*CHANGE_LOG_PROPERTIES))
         return response_data
