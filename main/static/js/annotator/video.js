@@ -2789,6 +2789,7 @@ class VideoCanvas extends AnnotationCanvas {
         // Video isn't ready yet, wait and try again
         console.log(`video buffer not ready for loading - (ID:${this._videoObject.id}) frame: ` + frameIdx);
         this._loaderTimeout = setTimeout(loader, 250);
+        this.dispatchEvent(new CustomEvent("playbackStalled", {composed: true}));
       }
       else
       {

@@ -181,6 +181,11 @@ class AnnotationPlayer extends TatorElement {
       this.checkReady();
     });
 
+    // When a playback is stalled, pause the video
+    this._video.addEventListener("playbackStalled", evt => {
+      this.pause();
+    });
+
     this._video.addEventListener("rateChange", evt => {
       this.checkReady();
     });
