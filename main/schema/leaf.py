@@ -174,6 +174,14 @@ class LeafListSchema(AutoSchema):
                     '$ref': '#/components/schemas/LeafIdQuery',
                 },
             }}}
+        if method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/LeafIdQuery',
+                },
+            }}}
         return body
 
     def _get_responses(self, path, method):

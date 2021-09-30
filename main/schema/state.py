@@ -139,6 +139,14 @@ class StateListSchema(AutoSchema):
                     '$ref': '#/components/schemas/StateIdQuery',
                 },
             }}}
+        if method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/StateIdQuery',
+                },
+            }}}
         return body
 
     def _get_responses(self, path, method):
