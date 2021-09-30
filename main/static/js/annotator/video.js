@@ -2178,6 +2178,8 @@ class VideoCanvas extends AnnotationCanvas {
   /**
    * Get the video element associated with the given buffer type and frame number
    *
+   * A feature both scrub and play will return the best available buffer for the frame in question.
+   *
    * @param {integer} frame - Target frame number
    * @param {string} bufferType - "scrub" | "play" | "seek"
    * @returns {video HTMLelement}
@@ -2206,18 +2208,27 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return this._videoElement[this._seek_idx].returnSeekIfPresent(time, direction);
     }
-    else if (bufferType == "play")
-    {
-      return this._videoElement[this._play_idx].forTime(time, bufferType, direction, this._numSeconds);
-    }
     else
     {
+      // Treat play and scrub buffer as best available.
       let play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+
+      // To test degraded mode (every 10th frame is degraded):
+      //if (frame % 10 == 0)
+      //{
+      //  play_attempt = null;
+      //}
+
+      // Log every 5 frames if we go to degraded mode.
+      if (play_attempt == null && bufferType == "play" && frame % 5 == 0)
+      {
+        console.warn("Video degraded, attempting scrub buffer.");
+      }
       if (play_attempt)
       {
         return play_attempt;
       }
-      return this._videoElement[this._scrub_idx].forTime(time, bufferType, direction, this._numSeconds);
+      return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
     }
   }
 
