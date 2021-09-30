@@ -778,6 +778,7 @@ class AnnotationMulti extends TatorElement {
       // When a playback is stalled, pause all the videos.
       this._videos[idx].addEventListener("playbackStalled",
                             (evt) => {
+                                Utilities.warningAlert("Video playback stalled.");
                                 this.pause();
                              });
       this._videos[idx].addEventListener("frameChange",

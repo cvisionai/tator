@@ -2784,7 +2784,7 @@ class VideoCanvas extends AnnotationCanvas {
     // and then schedules the next frame to be loaded
     var pushAndGoToNextFrame=function(frameIdx, source, width, height)
     {
-      if (source == null)
+      if (source == null) // To test stalls: || Math.round(Math.random() * 50) == 5)
       {
         // Video isn't ready yet, wait and try again
         console.log(`video buffer not ready for loading - (ID:${this._videoObject.id}) frame: ` + frameIdx);
