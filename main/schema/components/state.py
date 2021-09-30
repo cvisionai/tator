@@ -90,23 +90,6 @@ state_spec = {
     },
 }
 
-state_bulk_update = {
-    'type': 'object',
-    'properties': {
-        'attributes': {
-            'description': 'Attribute values to bulk update an entity list.',
-            'type': 'object',
-            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-        },
-        'ids': {
-            'description': 'Specific IDs to update. This is applied in addition to query '
-                           'parameters.',
-            'type': 'array',
-            'items': {'type': 'integer'},
-        },
-    },
-}
-
 state_update = {
     'type': 'object',
     'properties': {
@@ -162,7 +145,24 @@ state_id_query = {
                 'minimum': 1,
             },
         },
+        'float_array': {
+            'description': 'Searches on `float_array` attributes.',
+            'type': 'array',
+            'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
+        },
     }
+}
+
+state_bulk_update = {
+    'type': 'object',
+    'properties': {
+        'attributes': {
+            'description': 'Attribute values to bulk update an entity list.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        **state_id_query['properties'],
+    },
 }
 
 state = {

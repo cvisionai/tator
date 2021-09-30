@@ -157,30 +157,6 @@ media_spec = {
     },
 }
 
-media_bulk_update = {
-    'type': 'object',
-    'properties': {
-        'attributes': {
-            'description': 'Attribute values to bulk update an entity list.',
-            'type': 'object',
-            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
-        },
-        'archive_state': {
-            'type': 'string',
-            'description': 'Marks media for archival or retrieval. Media may not be set directly '
-                           'to `live` or `archived`, the system performs that transition for the '
-                           'user.',
-            'enum': ['to_archive', 'to_live']
-        },
-        'ids': {
-            'description': 'Specific IDs to update. This is applied in addition to query '
-                           'parameters.',
-            'type': 'array',
-            'items': {'type': 'integer'},
-        },
-    },
-}
-
 media_update = {
     'type': 'object',
     'properties': {
@@ -253,6 +229,31 @@ media_id_query = {
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
     }
+}
+
+media_bulk_update = {
+    'type': 'object',
+    'properties': {
+        'attributes': {
+            'description': 'Attribute values to bulk update an entity list.',
+            'type': 'object',
+            'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+        },
+        'archive_state': {
+            'type': 'string',
+            'description': 'Marks media for archival or retrieval. Media may not be set directly '
+                           'to `live` or `archived`, the system performs that transition for the '
+                           'user.',
+            'enum': ['to_archive', 'to_live']
+        },
+        'ids': {
+            'description': 'Specific IDs to update. This is applied in addition to query '
+                           'parameters.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+        **media_id_query['properties'],
+    },
 }
 
 media = {
