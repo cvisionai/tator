@@ -1686,7 +1686,12 @@ class VideoCanvas extends AnnotationCanvas {
           let ranges_list = [];
           for (let idx = 0; idx < ranges.length; idx++)
           {
-            ranges_list.push([that.timeToFrame(ranges.start(idx)), that.timeToFrame(ranges.end(idx))]);
+            let startFrame = that.timeToFrame(ranges.start(idx));
+            let endFrame = that.timeToFrame(ranges.end(idx));
+            if (that.currentFrame() >= startFrame && that.currentFrame() <= endFrame)
+            {
+              ranges_list.push([startFrame, endFrame]);
+            }
           }
           that.dispatchEvent(new CustomEvent("onDemandDetail",
                                              {composed: true,
@@ -2830,7 +2835,8 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    if (this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
+    // Always prefetch if we pause after playing backwards.
+    if (this._direction != Direction.BACKWARDS && this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {

@@ -9,6 +9,7 @@ from ..models import Invitation
 from ..models import Affiliation
 from ..models import PasswordReset
 from ..serializers import UserSerializerBasic
+from ..ses import TatorSES
 from ..schema import UserExistsSchema
 from ..schema import UserListSchema
 from ..schema import UserDetailSchema
@@ -82,24 +83,21 @@ class UserListAPI(BaseListView):
                         user.is_active = False
                         user.confirmation_token = uuid.uuid1()
                         # Send email
-                        email_response = TatorSES().email(
+                        TatorSES().email(
                             sender=settings.TATOR_EMAIL_SENDER,
                             recipients=[email],
                             title="Tator email confirmation",
                             text="To confirm your email address and complete registration with "
                                  "Tator, please visit or click the following link: "
                                  "{os.getenv('MAIN_HOST')}/email-confirmation/{user.confirmation_token}",
-                            html=None,
-                            attachments=[])
-                        if email_response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                            logger.error(email_response)
-                            raise ValueError(f"Unable to send email to {email}! User creation failed.")
+                            raise_on_failure=f"Unable to send email to {email}! User creation failed.",
+                        )
                     else:
-                        raise ValueError(f"Cannot enable email confirmation without email service!")
+                        raise ValueError("Cannot enable email confirmation without email service!")
                 user.set_password(password)
                 user.save()
             else:
-                raise ValueError(f"Registration token must be supplied in URL!")
+                raise ValueError("Registration token must be supplied in URL!")
         else:
             # A registration token has been supplied, use it to find Invitation objects.
             invites = Invitation.objects.filter(registration_token=registration_token,
