@@ -178,6 +178,8 @@ class AnnotationPlayer extends TatorElement {
 
     // When a seek is complete check to make sure the display all set
     this._video.addEventListener("seekComplete", evt => {
+      clearTimeout(this._handleNotReadyTimeout)
+      this._handleNotReadyTimeout = null;
       this.checkReady();
     });
 
