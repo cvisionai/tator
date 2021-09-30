@@ -2182,9 +2182,10 @@ class VideoCanvas extends AnnotationCanvas {
    *
    * @param {integer} frame - Target frame number
    * @param {string} bufferType - "scrub" | "play" | "seek"
+   * @param {bool} force - true to force "play" over seek fallback.
    * @returns {video HTMLelement}
    */
-  videoBuffer(frame, bufferType)
+  videoBuffer(frame, bufferType, force)
   {
     if (frame == undefined)
     {
@@ -2224,7 +2225,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         console.warn("Video degraded, attempting scrub buffer.");
       }
-      if (play_attempt)
+      if (play_attempt || force)
       {
         return play_attempt;
       }
@@ -2848,7 +2849,7 @@ class VideoCanvas extends AnnotationCanvas {
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
     // Always prefetch if we pause after playing backwards.
-    if (this._direction != Direction.BACKWARDS && this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
+    if (this._direction != Direction.BACKWARDS && this.videoBuffer(this.currentFrame(), "play", true) != null && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
