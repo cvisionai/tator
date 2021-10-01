@@ -1369,7 +1369,7 @@ class AnnotationMulti extends TatorElement {
     }
     if (notReady)
     {
-      this.handleNotReadyEvent();
+      this.handleAllNotReadyEvents();
     }
   }
 
