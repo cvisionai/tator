@@ -398,10 +398,10 @@ class GalleryBulkEdit extends TatorElement {
       let formData = [];
       for (let r of inputValueArray) {
          console.log(this._currentMultiSelectionToId);
-         
-         if(r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined"){
+         console.log("THERE ARE THIS MANY IDS...."+this._currentMultiSelectionToId.get(Number(r.typeId)).size)
+         if(r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0){
             if (inputValueArray.length > 1) {
-               text += `<p class="py-2 text-bold text-gray">Updates to Localizations with Type ID: ${r.typeId}</p>`
+               text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
             }
             
             if (r.values !== {}) {
@@ -410,7 +410,7 @@ class GalleryBulkEdit extends TatorElement {
                }
                let formDataForType = {
                   attributes: r.values,
-                  ids: []
+                  ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId)))
                }
                formData.push(formDataForType)
             } else {
