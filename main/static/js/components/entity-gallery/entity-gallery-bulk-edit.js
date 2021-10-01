@@ -397,8 +397,6 @@ class GalleryBulkEdit extends TatorElement {
       let inputValueArray = this._editPanel.getValue();
       let formData = [];
       for (let r of inputValueArray) {
-         console.log(this._currentMultiSelectionToId);
-         console.log("THERE ARE THIS MANY IDS...."+this._currentMultiSelectionToId.get(Number(r.typeId)).size)
          if(r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0){
             if (inputValueArray.length > 1) {
                text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
