@@ -1417,7 +1417,11 @@ class VideoCanvas extends AnnotationCanvas {
         for (let vidBuffIdx=0; vidBuffIdx < that._videoElement.length; vidBuffIdx++) {
           totalMediaElementCount += that._videoElement[vidBuffIdx].getMediaElementCount();
         }
-        console.log(`(Media ID: ${that._videoObject.id}) Current mediaElementCount: ${totalMediaElementCount}`);
+
+        if (that._lastMediaElementCount != totalMediaElementCount) {
+          console.log(`(Media ID: ${that._videoObject.id}) mediaElementCount = ${totalMediaElementCount}`);
+          that._lastMediaElementCount = totalMediaElementCount;
+        }
 
         //console.log(`....downloaded: ${parseInt(100*e.data["percent_complete"])} (buf_idx: ${e.data["buf_idx"]})`)
         let video_buffer = that._videoElement[e.data["buf_idx"]];
