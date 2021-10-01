@@ -72,7 +72,6 @@ class AnalyticsLocalizations extends TatorPage {
     // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
-    this._bulkEdit.init(this);
     this._shadow.appendChild(this._bulkEdit);
 
     //
@@ -86,6 +85,9 @@ class AnalyticsLocalizations extends TatorPage {
     this._shadow.appendChild(this.modal);
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
+
+    // Init after modal is defined
+    this._bulkEdit.init(this);
   }
 
   async _init() {

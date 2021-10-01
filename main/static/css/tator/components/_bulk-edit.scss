@@ -1,26 +1,24 @@
-.bulk-edit-bar_top {
-   position: fixed;
-	left: 0;
-	right: 0;
-   top: 0;
-}
-
 .bulk-edit-bar {
    position: fixed;
 	left: 0;
 	right: 0;
    bottom: 0;
-   height: 200px;
+	// background: $color-gray--light;
 	background: $color-charcoal--light;
 	border-top: 1px solid $color-white;
    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
+	resize: horizontal;
 }
 
-.bulk-edit--cancel {
+entity-gallery-bulk-edit {
 	position: fixed;
 	top: 0;
+	z-index: 50;
+}
+.bulk-edit--cancel {
+
 	// X CANCEL
-	z-index: 1000;
+	
 	// button {
 		position: absolute;
 		top: 0;
@@ -62,4 +60,32 @@
 
 .entity-card.is-selected {
    border: 1px solid $color-purple;
+}
+
+.bulk-edit-bar--right_form {
+	padding-left: 5%;
+}
+
+.bulk-edit-attr-choices,
+.bulk-edit-form__panel-group{
+	background: $color-charcoal--medium-dark;
+	max-height: 300px;
+	overflow-y: scroll;
+}
+
+// .bulk-edit-form__panel-group {
+// 	width: 80%;
+// }
+
+.bulk-edit-attr-choices_bulk-edit {
+	height: 200px;
+	overflow-y: scroll;
+	.entity-gallery-labels {
+		background: $color-charcoal--medium-dark;
+	}
+}
+
+.scroll-comparison-panel {
+	height: 200px;
+	overflow-y: scroll;
 }
