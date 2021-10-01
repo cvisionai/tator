@@ -2833,6 +2833,16 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  onDemandBufferAvailable(frame)
+  {
+    return this.videoBuffer(frame, "play", true) != null;
+  }
+
+  scrubBufferAvailable(frame)
+  {
+    return this.videoBuffer(frame, "scrub") != null;
+  }
+
   onDemandDownloadPrefetch(reqFrame)
   {
     // This function can be called at anytime. If auto-download is disabled, then just stop
@@ -2849,7 +2859,7 @@ class VideoCanvas extends AnnotationCanvas {
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
     // Always prefetch if we pause after playing backwards.
-    if (this._direction != Direction.BACKWARDS && this.videoBuffer(this.currentFrame(), "play", true) != null && reqFrame == this._dispFrame) {
+    if (this._direction != Direction.BACKWARDS && this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
