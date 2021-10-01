@@ -209,8 +209,7 @@ class AnnotationsGallery extends EntityCardGallery {
 
         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
-          console.log(evt);
-          this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: evt.details.values });
+          this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: evt.detail.value });
           
 
           this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;     
@@ -243,10 +242,12 @@ class AnnotationsGallery extends EntityCardGallery {
 
         this._bulkEdit.addEventListener("multi-enabled", () => {
           card._multiSelectionToggle = true;
+          card._li.classList.add("multi-select");
         });
 
         this._bulkEdit.addEventListener("multi-disabled", () => {
           card._multiSelectionToggle = false;
+          card._li.classList.remove("multi-select");
         });
 
         // Update view

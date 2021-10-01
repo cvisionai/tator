@@ -4,11 +4,32 @@
 	right: 0;
    bottom: 0;
 	// background: $color-gray--light;
-	background: $color-charcoal--light;
-	border-top: 1px solid $color-white;
+	background: $color-charcoal--dark;
+	border-top: 1px solid $color-blue;
    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
 	resize: horizontal;
 }
+
+.bulk-edit-bar_top {
+	position: fixed;
+	left: 0;
+	right: 0;
+   top: 0;
+	background-color: $color-purple50;
+	content: "SELECTION MODE";
+	color: $color-white;
+	text-align: center;
+	padding: $spacing-3 $spacing-6;
+
+	kbd {
+		background: $color-blue;
+		font-family: monospace;
+		border-radius: 3px;
+		padding: 2px;
+	}
+}
+
+.resizer { width: 10px; height: 10px; background: blue; position:absolute; top: 0;}
 
 entity-gallery-bulk-edit {
 	position: fixed;
@@ -47,20 +68,29 @@ entity-gallery-bulk-edit {
 	}
 }
 
-// .bulk-edit--quick-select {
-// 	a {
-// 		padding-left: 10px;
-// 	}
-// 	a:first-child {
-// 		padding-left: 0;
-// 		padding-right: 10px;
-// 		border-right: 1px solid $color-gray--light;
-// 	}
-// }
-
-.entity-card.is-selected {
-   border: 1px solid $color-purple;
+.entity-card.multi-select {
+	position: realtive;
+	&:before {
+		content: " ";
+		width: 25px;
+		height: 25px;
+		background-color: $color-charcoal--medium-dark;
+		display: block;
+		position: absolute;
+		top: 0;
+		left: 0;
+		border-radius: 5px 0 5px 0;
+		border: 5px solid $color-charcoal--light;
+	}
+	&.is-selected {	
+		&:before {
+			background-color: $color-purple;
+			// border: 3px solid #696cff;
+			
+		}
+	}
 }
+
 
 .bulk-edit-bar--right_form {
 	padding-left: 5%;
@@ -88,4 +118,21 @@ entity-gallery-bulk-edit {
 .scroll-comparison-panel {
 	height: 200px;
 	overflow-y: scroll;
+}
+
+.annotation__panel-group_bulk-edit {
+	border: 1px solid $color-gray--light;
+	border-radius: 3px;
+	padding: 25px 10px;
+	position: relative
+}
+
+.bulk-edit-legend {
+	position: absolute;
+	left: 15px;
+	top: -9px;
+	background-color: $color-charcoal--medium-dark;
+	border-radius: 30px;
+	border: 1px solid $color-gray--light;
+	padding: 5px;
 }

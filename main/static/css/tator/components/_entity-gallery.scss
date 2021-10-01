@@ -91,6 +91,9 @@ entity-gallery-aspect-ratio {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  &.is-selected {
+		border: 1px solid $color-purple;
+  }
 }
 
 .entity-panel--div {

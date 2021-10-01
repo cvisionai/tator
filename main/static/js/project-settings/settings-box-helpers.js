@@ -125,6 +125,32 @@ class SettingsBox {
     return this.modal.setAttribute("is-open", "true")
   }
 
+  _modalSuccessConfirm({
+    mainText = "",
+    buttonContinue = document.createElement("button"),
+    buttonExit = document.createElement("button"),
+    scroll = true
+  } = {}){
+    
+    this._modalClear();
+    let text = document.createTextNode(" Success");
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._titleDiv.append( document.createElement("modal-success") );
+    this.modal._titleDiv.append(text);
+
+    if(mainText.nodeType == Node.ELEMENT_NODE){
+      this.modal._main.appendChild(mainText);
+    } else {
+      this.modal._main.innerHTML = mainText;
+    }
+    
+    if(scroll) this.modal._main.classList.add("fixed-height-scroll");
+
+    this.modal._footer.appendChild(buttonContinue);
+    this.modal._footer.appendChild(buttonExit);
+    return this.modal.setAttribute("is-open", "true");
+  }
+
   _modalError(message){
     
     this._modalClear();

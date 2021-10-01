@@ -245,6 +245,10 @@ FILES = \
     components/entity-gallery/entity-gallery_h-slide.js \
     components/entity-gallery/entity-gallery_grid.js \
     components/entity-gallery/entity-gallery-more-menu.js \
+    components/entity-gallery/bulk-edit/selection-panel.js \
+    components/entity-gallery/bulk-edit/comparison-panel.js \
+    components/entity-gallery/bulk-edit/edit-panel.js \
+    components/entity-gallery/entity-gallery-bulk-edit.js \
     components/entity-panel/entity-panel-navigation.js \
     components/entity-panel/entity-panel-localization.js \
     components/entity-panel/entity-panel-form.js \

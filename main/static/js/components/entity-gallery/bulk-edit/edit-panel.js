@@ -319,12 +319,19 @@ class MultiAttributeEditPanel extends TatorElement {
 
    // Loop through and add hidden inputs for each data type
    _addInputs(dataType) {
+
+
       const div = document.createElement("div");
-      div.setAttribute("class", "annotation__panel-group text-gray f2");
+      div.setAttribute("class", "annotation__panel-group_bulk-edit text-gray f2");
       div.setAttribute("id", dataType.id);
       this._bulkEditForm.appendChild(div);
       this._inputGroup.set(dataType.id, div);
       div.hidden = true;
+
+      let label = document.createElement("label");
+      label.setAttribute("class", "bulk-edit-legend");
+      label.textContent = `Type ID: ${dataType.id}`;
+      div.appendChild(label);
 
       // User defined attributes
       const sorted = dataType.attribute_types.sort((a, b) => {
@@ -438,28 +445,28 @@ class MultiAttributeEditPanel extends TatorElement {
 
    getValue() {
       //
-      const response = {}
-      const values = {};
-      const rejected = {};
+      const value = [];
+
       for (const group of this._bulkEditForm.children) {
          if (!group.hidden) {
+            let response = { typeId: group.id, values: {}, rejected: {} };
             for (const widget of group.children) {
-               if (!widget.hidden) {
+               if (!widget.hidden && widget.tagName !== "LABEL") {
                   let name = widget.getAttribute("name");
                   let val = widget.getValue()
                   if (val !== null) {
-                     values[name] = val;
+                     response.values[name] = val;
                   } else {
-                     rejected[name] = name;
+                     response.rejected[name] = name;
                   }
                   
                }
             }
+            value.push(response);
          }
       }
-      response.values = values;
-      response.rejected = rejected
-      return response;
+
+      return value;
    }
 
    shownAttrNames() {
@@ -467,8 +474,9 @@ class MultiAttributeEditPanel extends TatorElement {
       for (const group of this._bulkEditForm.children) {
          if (!group.hidden) {
             let typeId = group.id;
-            for (const widget of group.children) {            
-               if (!widget.hidden) {
+            for (const widget of group.children) {
+               
+               if (!widget.hidden && widget.tagName !== "LABEL") {
                   console.log(widget.getAttribute("name"));
                   //${e.detail.name} type_${e.detail.typeId}
                   values.set(`${widget.getAttribute("name")} type_${typeId}`, widget.getAttribute("name"));
