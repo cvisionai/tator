@@ -24,20 +24,20 @@ class AttributeComparisonPanel extends TatorElement {
       barRight.setAttribute("class", "py-2 bulk-edit-bar--right col-6")
       this._shadow.appendChild(barRight);
 
-      this._compareButton = document.createElement("button");
-      this._compareButton.setAttribute("class", "btn btn-clear btn-outline py-2 px-2")
-      this._compareButton.textContent = "Compare";
-      barLeft.appendChild(this._compareButton);
+      // this._compareButton = document.createElement("button");
+      // this._compareButton.setAttribute("class", "btn btn-clear btn-outline py-2 px-2")
+      // this._compareButton.textContent = "Compare";
+      // barLeft.appendChild(this._compareButton);
 
 
       this._data = null;
 
 
       /////
-      // this._back = document.createElement("a");
-      // this._back.setAttribute("class", "text-purple clickable");
-      // this._back.textContent = "< Back to Select";
-      // barTop.appendChild(this._back);
+      this._back = document.createElement("a");
+      this._back.setAttribute("class", "text-purple clickable");
+      this._back.textContent = "< Back to Edit";
+      barLeft.appendChild(this._back);
 
 
       // this._h2 = document.createElement("h2");
@@ -47,7 +47,6 @@ class AttributeComparisonPanel extends TatorElement {
 
       this._table = document.createElement("table");
       this._table.setAttribute("class", "apps__table col-12");
-      this._table.style.display = "none";
       barTop.appendChild(this._table);
 
       // fixed header
@@ -70,40 +69,23 @@ class AttributeComparisonPanel extends TatorElement {
       this._columnCount = 0;
 
       // Right = side
-      // this._selectionSummary = document.createElement("div");
-      // this._selectionSummary.setAttribute("class", "py-2 px-2 bulk-edit--quick-select")
-      // barTop.appendChild(this._selectionSummary);
+      this._selectionSummary = document.createElement("div");
+      this._selectionSummary.setAttribute("class", "py-2 px-2 bulk-edit--quick-select")
+      barTop.appendChild(this._selectionSummary);
 
-      // this._selectionCount = document.createElement("span");
-      // this._selectionCount.textContent = "0";
-      // this._selectionSummary.appendChild(this._selectionCount);
+      this._selectionCount = document.createElement("span");
+      this._selectionCount.textContent = "0";
+      this._selectionSummary.appendChild(this._selectionCount);
 
-      // this._selectionCountText = document.createElement("span");
-      // this._selectionCountText.textContent = " localizations selected.";
-      // this._selectionSummary.appendChild(this._selectionCountText);
+      this._selectionCountText = document.createElement("span");
+      this._selectionCountText.textContent = " localizations selected.";
+      this._selectionSummary.appendChild(this._selectionCountText);
 
-      // Pass panel and localization types to gallery
-      // this._table.init({
-      //    projectId: this.projectId, 
-      //    columns: tableColumns,
-      //    hasActionCol: true
-      // });
-
-      // this._data = await this._appData._getSubmissions();
-      // // console.log(this._data);
-
-      // // add data to table display
-      // this._displayData = this._data;
-      // this._table._refreshTable(this._displayData )
-      // this.loading.hideSpinner();
-
-      // // Listen for events
-      // // this._table.addEventListener("detail-click", this.openDetailsPanel.bind(this));
 
       // // Listen for events
       // this._input.addEventListener("input", this.frontEndSearch.bind(this));
       // // this._search.addEventListener("filterProject", this.frontEndSearch.bind(this));
-      // this._table.addEventListener("sort", this.frontEndSort.bind(this));
+      this._table.addEventListener("sort", this.frontEndSort.bind(this));
 
       // this._editButton = document.createElement("button");
       // this._editButton.setAttribute("class", "btn btn-clear py-2 px-2  col-12")
@@ -111,20 +93,12 @@ class AttributeComparisonPanel extends TatorElement {
       // barRight.appendChild(this._editButton);
 
       // ADD EVENT LISTENERS
-      // this._back.addEventListener("click", () => {
-      //    this.dispatchEvent(new Event("select-click"));
-      // });
+      this._back.addEventListener("click", () => {
+         this.dispatchEvent(new Event("save-edit-click"));
+      });
       // this._editButton.addEventListener("click", () => {
       //    this.dispatchEvent(new Event("save-edit-click"));
       // });
-      this._compareButton.addEventListener("click", () => {
-         if (this._table.style.display !== "none") {
-            this._table.style.display = "none";
-         } else {
-            this._table.style.display = "block";
-         }
-         
-      });
    }
 
    updateTableCount() {
@@ -147,9 +121,8 @@ class AttributeComparisonPanel extends TatorElement {
    init({ projectId = null, columns = null }) {
       // Create map of columns for attributes
       this.headerNameMap.clear();
-      this.headerNameMap = columns;
-
       this.headerNameMap.set("id", "id"); // show this for all (exception in refreshData)
+      this.headerNameMap = new Map([...this.headerNameMap, ...columns])
 
       // Add header row to table
       this._columnCount = this.headerNameMap.size;
@@ -185,15 +158,23 @@ class AttributeComparisonPanel extends TatorElement {
     */
    _addTable(data) {
       this._data = data;
-      console.log(data);
+
       // For each data object....
-      for (let item of data) {
+      for (let [id, item] of data) {
          let rowObject = item.attributes;
          let row = this.getRow(false);
          row.setAttribute("class", "table-row")
          row.setAttribute("data", JSON.stringify(rowObject));
-         row.setAttribute("id", item.id);
-         this._rowDataIndex[item.id] = row;
+         row.setAttribute("id", id);
+         this._rowDataIndex[id] = row;
+
+         // Add the data item
+         let colObjId = {
+            key: id,
+            value: id
+         };
+
+         this.addCol(colObjId, row);
 
          // #todo add key check against item.entityType.id
          for (let [key, value] of this.headerNameMap) {
@@ -377,6 +358,8 @@ class AttributeComparisonPanel extends TatorElement {
    }
 
    updateColumnsShown(e = null) {
+      this.headerNameMap.clear();
+      this.headerNameMap.set("id", "id");
       if (e !== null) {
          if (e.detail.added) {
             this.headerNameMap.set(e.detail.typeId, e.detail.name);
@@ -401,6 +384,52 @@ class AttributeComparisonPanel extends TatorElement {
       
       if(this._data !== null) this._refreshTable(this._data);
    }
+
+   frontEndSort(e) {
+      console.log(e);
+      // sort the current data, and refresh table
+      let selectedId = this._table.findSelected();
+      let attributeName = e.detail.sortData.name;
+      this._sortCompare = null;
+  
+      if (e.detail.sortData.sortType == "asc") {
+        this._sortCompare = (c, d) => {
+          if (c < d) return -1;
+          if (c > d) return 1;
+          return 0;
+        };
+      } else {
+        this._sortCompare = (c, d) => {
+          if (c < d) return 1;
+          if (c > d) return -1;
+          return 0;
+        };
+      }
+  
+      let sorted = this._displayData.sort((a, b) => {
+        let aAttr = a.attributes;
+        let bAttr = b.attributes;
+  
+        // find A and B values to compare
+        let aVal = aAttr[attributeName];
+        let bVal = bAttr[attributeName];
+  
+        return this._sortCompare(aVal, bVal);
+      });
+  
+      this._displayData = sorted;
+      this._table._refreshTable(this._displayData)
+  
+      if (selectedId) {
+        for (let r of this._table._rows) {
+          if (r.getAttribute("id") == selectedId) {
+            r.classList.add("selected");
+          }
+        }
+      }
+  
+      return;
+    }
 
 }
 customElements.define("entity-gallery-attribute-comparison-panel", AttributeComparisonPanel);

@@ -331,8 +331,10 @@ class AnnotationsGallery extends EntityCardGallery {
       values: { attributes: e.detail.values },
       type: "Localization"
     }).then((data) => {
-        this.updateCardData(data);
-    });
+      this.updateCardData(data);   
+    }).then(() => {
+      this._bulkEdit.updateCardData(this._cardElements);
+    })
   }
 
   mediaFormChange(e) {
@@ -349,6 +351,8 @@ class AnnotationsGallery extends EntityCardGallery {
             this._cardElements[idx].annotationPanel.setMediaData(card);
           }
         }
+      }).then(() => {
+        this._bulkEdit.updateCardData(this._cardElements);
       });
     });
   }

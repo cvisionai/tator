@@ -61,9 +61,10 @@ class MultiSelectionPanel extends TatorElement {
       // barLeft.appendChild(this._compareButton);
 
       this._editButton = document.createElement("button");
-      this._editButton.setAttribute("class", "btn btn-clear py-2 px-2  col-12");
+      this._editButton.setAttribute("class", "btn btn-clear py-2 px-2  col-12 disabled");
       let editText = document.createTextNode("Edit");
       this._editButton.appendChild(editText);
+      this._editButton.disabled = true;
       this._editButton.appendChild(this._selectionSummary);
 
       barLeftTop.appendChild(this._editButton);
@@ -83,6 +84,17 @@ class MultiSelectionPanel extends TatorElement {
       this._selectAllPage.addEventListener("click", () => {
          this.dispatchEvent(new Event("select-all"));
       });
+   }
+
+   setCount(count) {
+      if (count === 0 || count === "0") {
+         this._editButton.disabled = true;
+         this._editButton.classList.add("disabled");
+      } else {
+         this._editButton.disabled = false;
+         this._editButton.classList.remove("disabled");
+      }
+      this._selectionCount.textContent = count;
    }
 
    show(val) {

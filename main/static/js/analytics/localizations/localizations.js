@@ -67,7 +67,7 @@ class AnalyticsLocalizations extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
-          
+
 
     // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
@@ -91,26 +91,26 @@ class AnalyticsLocalizations extends TatorPage {
   }
 
   async _init() {
-        // Database interface. This should only be used by the viewModel/interface code.
-        this.projectId = Number(this.getAttribute("project-id"));
-        this._modelData = new TatorData(this.projectId);
-    
-        // Card Data class collects raw model and parses into view-model format
-        this.cardData = document.createElement("annotation-card-data");
-        await this.cardData.init(this._modelData);
-        
-        this.cardData.addEventListener("setCardImage", (evt) => {
-          this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
-        });
-    
-        // Pass panel and localization types to gallery
-        this._filterResults._initPanel({
-          panelContainer: this._panelContainer,
-          pageModal: this.modal,
-          modelData: this._modelData,
-          cardData: this.cardData,
-          bulkEdit: this._bulkEdit
-        });
+    // Database interface. This should only be used by the viewModel/interface code.
+    this.projectId = Number(this.getAttribute("project-id"));
+    this._modelData = new TatorData(this.projectId);
+
+    // Card Data class collects raw model and parses into view-model format
+    this.cardData = document.createElement("annotation-card-data");
+    await this.cardData.init(this._modelData);
+
+    this.cardData.addEventListener("setCardImage", (evt) => {
+      this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
+    });
+
+    // Pass panel and localization types to gallery
+    this._filterResults._initPanel({
+      panelContainer: this._panelContainer,
+      pageModal: this.modal,
+      modelData: this._modelData,
+      cardData: this.cardData,
+      bulkEdit: this._bulkEdit
+    });
 
 
     // Initialize the settings with the URL. The settings will be used later on.

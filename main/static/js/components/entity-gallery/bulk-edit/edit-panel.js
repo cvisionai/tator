@@ -29,6 +29,12 @@ class MultiAttributeEditPanel extends TatorElement {
       this._back.textContent = "< Back to Select";
       barLeftTop.appendChild(this._back);
 
+      /////
+      this._compare = document.createElement("a");
+      this._compare.setAttribute("class", "text-purple clickable pb-3 text-right");
+      this._compare.textContent = "Compare >";
+      barRightTop.appendChild(this._compare);
+
       //
       // this._h2 = document.createElement("h2");
       // this._h2.setAttribute("class", "py-2 px-2");
@@ -38,7 +44,7 @@ class MultiAttributeEditPanel extends TatorElement {
 
       // Attributes panel
       this.div = document.createElement("div");
-      this.div.setAttribute("class", "bulk-edit-attr-choices_bulk-edit rounded-2 my-2 py-2 px-2 mt-6");
+      this.div.setAttribute("class", "bulk-edit-attr-choices_bulk-edit rounded-2 my-2 py-2 px-2");
       barLeftTop.appendChild(this.div);
 
       let titleDiv = document.createElement("div");
@@ -64,34 +70,24 @@ class MultiAttributeEditPanel extends TatorElement {
       });
 
 
-      // Boolean
-      // this._miniComparisonBool = document.createElement("bool-input");
-      // this._miniComparisonBool.setAttribute("name", "Compare values?");
-      // barLeftTop.appendChild(this._miniComparisonBool);
-
-      // this._miniComparison = document.createElement("entity-gallery-attribute-comparison-panel");
-      // let compareTable = this._miniComparison._table;
-      // compareTable.hidden = true;
-      // barLeftTop.appendChild(compareTable);
-
-
       // Right = side
       this._selectionSummary = document.createElement("div");
       this._selectionSummary.setAttribute("class", "py-1 bulk-edit--quick-select")
       barRightTop.appendChild(this._selectionSummary);
 
       this._selectionCount = document.createElement("span");
+      this._selectionCount.setAttribute("class", "px-1 text-bold");
       this._selectionCount.textContent = "0";
       this._selectionSummary.appendChild(this._selectionCount);
 
       this._selectionCountText = document.createElement("span");
-      this._selectionCountText.textContent = " localizations selected.";
+      this._selectionCountText.textContent = "Localizations";
       this._selectionSummary.appendChild(this._selectionCountText);
 
 
       // //
       this._bulkEditForm = document.createElement("div");
-      this._bulkEditForm.setAttribute("class", "bulk-edit-form__panel-group mt-6 py-3 text-gray f2 px-6 rounded-2");
+      this._bulkEditForm.setAttribute("class", "bulk-edit-form__panel-group py-3 text-gray f2 px-6 rounded-2");
       barRightTop.appendChild(this._bulkEditForm);
 
       let heading = document.createElement("h3");
@@ -101,14 +97,21 @@ class MultiAttributeEditPanel extends TatorElement {
 
       this._editButton = document.createElement("button");
       this._editButton.setAttribute("class", "btn btn-clear py-2 px-2 mx-6 col-12")
-      this._editButton.textContent = "Save";
+      let editText = document.createTextNode("Edit ");
+      this._editButton.appendChild(editText);
       this._editButton.style.margin = "0 auto";
       this._editButton.style.width = "80%";
+      this._editButton.disabled = true;
+      this._editButton.appendChild(this._selectionSummary);
+
       barRightTop.appendChild(this._editButton);
 
       // ADD EVENT LISTENERS
       this._back.addEventListener("click", () => {
          this.dispatchEvent(new Event("select-click"));
+      });
+      this._compare.addEventListener("click", () => {
+         this.dispatchEvent(new Event("comparison-click"));
       });
       this._editButton.addEventListener("click", () => {
          this.dispatchEvent(new Event("save-edit-click"));
@@ -485,6 +488,17 @@ class MultiAttributeEditPanel extends TatorElement {
          }
       }
       return values;
+   }
+
+   setCount(count) {
+      if (count === 0 || count === "0") {
+         this._editButton.disabled = true;
+         this._editButton.classList.add("disabled");
+      } else {
+         this._editButton.disabled = false;
+         this._editButton.classList.remove("disabled");
+      }
+      this._selectionCount.textContent = count;
    }
 
 }

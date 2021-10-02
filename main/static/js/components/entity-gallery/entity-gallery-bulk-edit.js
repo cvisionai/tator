@@ -82,8 +82,8 @@ class GalleryBulkEdit extends TatorElement {
       // Comparison panel
       this._comparisonPanel = document.createElement("entity-gallery-attribute-comparison-panel");
       this._comparisonPanel.addEventListener("select-click", this._showSelectionPanel.bind(this)); // Back
-      this._comparisonPanel.addEventListener("save-edit-click", this._saveBulkEdit.bind(this));
-      this._comparisonPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
+      this._comparisonPanel.addEventListener("save-edit-click", this._showEditPanel.bind(this));
+      // this._comparisonPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
       this._comparisonPanel.hidden = true;
       this._bulkEditBar.appendChild(this._comparisonPanel);
 
@@ -120,10 +120,9 @@ class GalleryBulkEdit extends TatorElement {
       //
       this._currentMultiSelection = new Set();
       this._currentMultiSelectionToId = new Map();
-      this._currentSelectionObjects = new Set();
+      this._currentSelectionObjects = new Map();
       this._localizationTypes = new Set();
       this.setOfSelectedMetaIds = new Set();
-      this._attributeList = {};
    }
 
    set elementList(val) {
@@ -165,40 +164,41 @@ class GalleryBulkEdit extends TatorElement {
       }
    }
 
-   shiftSelect({element, id, isSelected}) {
-      if (!this._editMode) this.startEditMode();
+   shiftSelect({ element, id, isSelected }) {
+      console.log("Shift select");
+      // if (!this._editMode) this.startEditMode();
 
-      // clicked element
-      // first shift click is start, and if click isn't broken
-      if (this._shiftSelectedFirst == null) {
-         console.log('Saving shift click first el')
-         this._shiftSelectedFirst = element;
-      } else {
-         console.log('Saving shift click secon el')
-         this._shiftSelectedSecond = element;
+      // // clicked element
+      // // first shift click is start, and if click isn't broken
+      // if (this._shiftSelectedFirst == null) {
+      //    console.log('Saving shift click first el')
+      //    this._shiftSelectedFirst = element;
+      // } else {
+      //    console.log('Saving shift click secon el')
+      //    this._shiftSelectedSecond = element;
 
-         // firstIndex - secondIndex
-         let firstIndex = this._elementIndexes[this._shiftSelectedFirst.cardObj.id];
-         let secondIndex = this._elementIndexes[id];
-         let inBetween = secondIndex - firstIndex;
-         console.log(`inBetween secondIndex ${secondIndex} - firstIndex ${firstIndex} = ${inBetween} .... Math.sign(inBetween) = ${Math.sign(inBetween)}`);
+      //    // firstIndex - secondIndex
+      //    let firstIndex = this._elementIndexes[this._shiftSelectedFirst.cardObj.id];
+      //    let secondIndex = this._elementIndexes[id];
+      //    let inBetween = secondIndex - firstIndex;
+      //    console.log(`inBetween secondIndex ${secondIndex} - firstIndex ${firstIndex} = ${inBetween} .... Math.sign(inBetween) = ${Math.sign(inBetween)}`);
 
-         if (Math.sign(inBetween) == -1) {
-            let startIndex = secondIndex  - 1;
-            for (let i = startIndex; startIndex < firstIndex; i--){
-               if (!element._li.classList.contains("is-selected")) {
-                  this._addSelected({ element:element.card, id: element.card.cardObj.id, isSelected: element.card._li.classList.contains("is-selected") });
-               }
-            }
-         } else if (Math.sign(inBetween) == 1) {
-            let startIndex = firstIndex + 1;
-            for (let i = startIndex; startIndex < secondIndex; i++){
-               if (!element._li.classList.contains("is-selected")) {
-                  this._addSelected({ element:element.card, id: element.card.cardObj.id, isSelected: element.card._li.classList.contains("is-selected") });
-               }
-            }
-         }
-      }
+      //    if (Math.sign(inBetween) == -1) {
+      //       let startIndex = secondIndex  - 1;
+      //       for (let i = startIndex; startIndex < firstIndex; i--){
+      //          if (!element._li.classList.contains("is-selected")) {
+      //             this._addSelected({ element:element.card, id: element.card.cardObj.id, isSelected: element.card._li.classList.contains("is-selected") });
+      //          }
+      //       }
+      //    } else if (Math.sign(inBetween) == 1) {
+      //       let startIndex = firstIndex + 1;
+      //       for (let i = startIndex; startIndex < secondIndex; i++){
+      //          if (!element._li.classList.contains("is-selected")) {
+      //             this._addSelected({ element:element.card, id: element.card.cardObj.id, isSelected: element.card._li.classList.contains("is-selected") });
+      //          }
+      //       }
+      //    }
+      // }
    }
 
    selectAllOnPage() {
@@ -207,7 +207,7 @@ class GalleryBulkEdit extends TatorElement {
          let id = el.card.cardObj.id;
          if (!this._currentMultiSelection.has(id)) {
             if (el.card._li.classList.contains("is-selected")) {
-               this._removeSelected({ element:el.card, id, isSelected: el.card._li.classList.contains("is-selected") });
+               //this._removeSelected({ element:el.card, id, isSelected: el.card._li.classList.contains("is-selected") });
             } else {
                this._addSelected({ element:el.card, id, isSelected: el.card._li.classList.contains("is-selected") });
             }
@@ -222,9 +222,10 @@ class GalleryBulkEdit extends TatorElement {
       element._multiSelectionToggle = true
 
       this._currentMultiSelection.add(id);
-      this._currentSelectionObjects.add(element.cardObj);
+      this._currentSelectionObjects.set(id, element.cardObj);
       this.setOfSelectedMetaIds.add(element.cardObj.entityType.id);
       this._updatePanelCount(this._currentMultiSelection.size);
+      this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
       
       let list = typeof this._currentMultiSelectionToId.get(element.cardObj.entityType.id) !== "undefined" ? this._currentMultiSelectionToId.get(element.cardObj.entityType.id) : new Set();
       list.add(id);
@@ -241,10 +242,10 @@ class GalleryBulkEdit extends TatorElement {
       //    element._multiSelectionToggle = false;
       // }
       this._currentMultiSelection.delete(id);
-      this._currentSelectionObjects.delete(element.cardObj);
+      this._currentSelectionObjects.delete(id);
       this.setOfSelectedMetaIds.delete(element.cardObj.entityType.id);
       this._updatePanelCount(this._currentMultiSelection.size);
-
+      this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
 
       if (typeof this._currentMultiSelectionToId.get(element.cardObj.entityType.id) !== "undefined") {
          let list = this._currentMultiSelectionToId.get(element.cardObj.entityType.id);
@@ -254,8 +255,8 @@ class GalleryBulkEdit extends TatorElement {
 
    _updatePanelCount(count) {
       // this._comparisonPanel._selectionCount.textContent = count;
-      this._editPanel._selectionCount.textContent = count;
-      this._selectionPanel._selectionCount.textContent = count;
+      this._editPanel.setCount(count);
+      this._selectionPanel.setCount(count);
 
       // check on the table data too....
       this._comparisonPanel._refreshTable(this._currentSelectionObjects);
@@ -266,14 +267,14 @@ class GalleryBulkEdit extends TatorElement {
    _openEditMode(e) {
       let clickType = typeof e.detail.clickDetail == "undefined" ? e.type : e.detail.clickDetail.type;
 
-      if (e.detail.isSelected) {
-         this._removeSelected(e.detail);
-      } else {
-         this._addSelected(e.detail);
-      }     
-
       if (clickType == "shift-select") {
          this.shiftSelect(e.detail);
+      } else {
+         if (e.detail.isSelected) {
+            this._removeSelected(e.detail);
+         } else {
+            this._addSelected(e.detail);
+         } 
       }
 
       this._updatePanelCount(this._currentMultiSelection.size);
@@ -283,6 +284,10 @@ class GalleryBulkEdit extends TatorElement {
       console.log("CLEARING SELECTION!");
       this._currentMultiSelection.clear();
       this._currentSelectionObjects.clear();
+      this._currentSelectionObjects.clear();
+      this.setOfSelectedMetaIds.clear();
+      this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
+
       for (let el of this._elements) {
          el.card._li.classList.remove("is-selected");
          el.card._multiSelectionToggle = false;
@@ -374,7 +379,9 @@ class GalleryBulkEdit extends TatorElement {
       this._editPanel.toggleAttribute("hide");
       this._comparisonPanel.init({ columns: shownAttributes });
       
-      if (typeof this._currentSelectionObjects !== "undefined" || this._currentSelectionObjects !== null) this._comparisonPanel._refreshTable(this._currentSelectionObjects);
+      if (typeof this._currentSelectionObjects !== "undefined" || this._currentSelectionObjects !== null) {
+         this._comparisonPanel._refreshTable(this._currentSelectionObjects);
+      }
       this._comparisonPanel.show(val);
    }
    _saveBulkEdit() {
@@ -399,7 +406,7 @@ class GalleryBulkEdit extends TatorElement {
       for (let r of inputValueArray) {
          if(r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0){
             if (inputValueArray.length > 1) {
-               text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
+               text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).length} Localizations with Type ID: ${r.typeId}</p>`
             }
             
             if (r.values !== {}) {
@@ -410,6 +417,8 @@ class GalleryBulkEdit extends TatorElement {
                   attributes: r.values,
                   ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId)))
                }
+               console.log(formDataForType);
+
                formData.push(formDataForType)
             } else {
                return text += `<p class="text-red py-2 px-2">- No valid values to update for Type ID ${r.typeId}</p>`
@@ -448,12 +457,16 @@ class GalleryBulkEdit extends TatorElement {
          
          for (let jsonData of formData) {
             console.log(jsonData);
-            promise = promise.then( () => this._patchLocalizations(jsonData)).then(resp => resp.json()).then((data) => {
-               text += `${data.message} <br/><br/>`
-            })
+            promise = promise.then(() => this._patchLocalizations(jsonData)).then(resp => resp.json()).then((data) => {
+               text += `${data.message} <br/><br/>`;
+               this.updateSelectionObjects(jsonData);
+            });
+           
          }
 
          return promise.then(() => {
+            
+            this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
             this._clearSelection();
             this._page.loading.hideSpinner();
             this._page.hideDimmer();
@@ -461,8 +474,10 @@ class GalleryBulkEdit extends TatorElement {
                mainText: text,
                buttonContinue,
                buttonExit
-               });
+            });
+            
          }).catch(err => {
+            this._clearSelection();
             this._page.loading.hideSpinner();
             this._page.hideDimmer();
             return this.boxHelper._modalError("Error with update: "+err);
@@ -510,6 +525,38 @@ class GalleryBulkEdit extends TatorElement {
       console.log(values)
       this._editPanel.setSelectionBoxValue({ typeId, values });
       this._comparisonPanel.newColumns({ typeId, values });
+   }
+
+   updateSelectionObjects(formData) {
+      for (let id of formData.ids) {
+         let newCardData = this._currentSelectionObjects.get(id);
+
+         for (let [a, b] of Object.entries(formData.attributes)) {
+            console.log("Updating local attribute " + a + " to value " + b);
+            newCardData.attributes[a] = b;
+         }
+
+         this._page._filterResults.updateCardData(newCardData);
+      }
+   }
+
+   updateCardData(cardList) {
+      this.elementList = cardList;
+      let tmp = new Map();
+
+      // The cardObj might have changes... this isn't a new list bc of pagination
+      // Relevant to update re: Objects are used in comparison table
+      // Also used to get type id, but that should not have been edited
+      if (this._currentMultiSelection.size > 0) {
+         for (let el of cardList) {
+            if (this._currentMultiSelection.has(el.card.cardObj.id)) {
+               tmp.set(el.card.cardObj.id, el.card.cardObj);
+            }
+         }
+         this._currentSelectionObjects = tmp;
+         this._comparisonPanel._refreshTable(this._currentSelectionObjects);
+      }
+
    }
    
 }
