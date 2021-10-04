@@ -503,7 +503,7 @@ class AnnotationMulti extends TatorElement {
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
       video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
       video.shutdownOnDemandDownload();
-      const seekPromise = video.seekFrame(this_frame, video.drawFrame, true);
+      const seekPromise = video.seekFrame(this_frame, video.drawFrame);
       seekPromiseList.push(seekPromise);
     }
 
@@ -521,7 +521,7 @@ class AnnotationMulti extends TatorElement {
         let this_frame = Math.round(primeFrame * (this._fps[idx]/prime_fps));
         if (this_frame != video.currentFrame())
         {
-            video.seekFrame(this_frame, video.drawFrame, true).then(() => {
+            video.seekFrame(this_frame, video.drawFrame).then(() => {
 		this._lastScrub = Date.now();
 	    });
         }
@@ -1676,18 +1676,20 @@ class AnnotationMulti extends TatorElement {
     this.disablePlayUI(); // Wait for playbackReady checks to enable play
 
     const paused = this.is_paused();
+    var pausePromises = [];
     if (paused == false) {
       for (let video of this._videos)
       {
-        video.pause();
+        pausePromises.push(video.pause());
       }
       this._play.setAttribute("is-paused", "");
     }
     clearTimeout(this._syncThread);
-
-    // If we are in focus mode, sync to the focused video.
-    // Otherwise, use the video with the most data.
-    this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+    Promise.all(pausePromises).then(() => {
+      // If we are in focus mode, sync to the focused video.
+      // Otherwise, use the video with the most data.
+      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+    });
   }
 
   disablePlayUI() {
