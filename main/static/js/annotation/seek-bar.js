@@ -162,8 +162,6 @@ class SeekBar extends TatorElement {
 
   onDemandLoaded(evt)
   {
-    return; // #TODO Fix this
-
     if (evt.detail.ranges.length == 0)
     {
       return;

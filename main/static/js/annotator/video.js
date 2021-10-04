@@ -1376,6 +1376,19 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  isPlaybackReady() {
+    return this._onDemandPlaybackReady;
+  }
+
+  sendPlaybackReady() {
+    this.dispatchEvent(new CustomEvent(
+      "playbackReady",
+      {
+        composed: true,
+        detail: {playbackReadyId: this._waitId},
+      }));
+  }
+
   startDownload(streaming_files, offsite_config)
   {
     var that = this;
@@ -1546,6 +1559,7 @@ class VideoCanvas extends AnnotationCanvas {
                                            detail: {playbackReadyId: this._waitId},
                                            }));
         that._onDemandPlaybackReady = true; // fake it
+        that.sendPlaybackReady();
       }
       else if (type == "onDemandInit")
       {
@@ -1557,6 +1571,7 @@ class VideoCanvas extends AnnotationCanvas {
         console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
         that._onDemandPlaybackReady = true; //if we reached the end, we are done.
+        that.sendPlaybackReady();
       }
       else if (type == "onDemand")
       {
@@ -2868,6 +2883,7 @@ class VideoCanvas extends AnnotationCanvas {
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
       this._onDemandPlaybackReady = true;
+      this.sendPlaybackReady();
       return;
     }
 
@@ -3118,12 +3134,7 @@ class VideoCanvas extends AnnotationCanvas {
                 {
                   console.log(`(ID:${this._videoObject.id}) onDemandPlaybackReady (start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`);
                   this._onDemandPlaybackReady = true;
-                  this.dispatchEvent(new CustomEvent(
-                    "playbackReady",
-                    {
-                      composed: true,
-                      detail: {playbackReadyId: this._waitId},
-                    }));
+                  this.sendPlaybackReady();
                 }
               }
             }
