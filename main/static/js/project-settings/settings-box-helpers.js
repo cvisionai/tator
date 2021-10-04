@@ -151,12 +151,24 @@ class SettingsBox {
     return this.modal.setAttribute("is-open", "true");
   }
 
-  _modalError(message){
-    
+  _modalError(message, title = " Error saving project details"){  
     this._modalClear();
-    let text = document.createTextNode(" Error saving project details");
+    let text = document.createTextNode(title);
     this.modal._titleDiv.innerHTML = "";
     this.modal._titleDiv.append( document.createElement("modal-warning") );
+    this.modal._titleDiv.append(text);
+    this.modal._main.innerHTML = message;
+    return this.modal.setAttribute("is-open", "true")
+  }
+
+  _modalWarning(message){
+    this._modalClear();
+    let text = document.createTextNode(" Warning");
+    this.modal._titleDiv.innerHTML = "";
+    let warningIcon = document.createElement("modal-warning");
+    warningIcon.svg.classList.remove("text-red");
+    warningIcon.svg.classList.add("text-yellow");
+    this.modal._titleDiv.append( );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     return this.modal.setAttribute("is-open", "true")

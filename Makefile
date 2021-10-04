@@ -204,6 +204,7 @@ FILES = \
     util/same-origin-credentials.js \
     components/tator-element.js \
     components/buttons/entity-frame-link-button.js \
+    components/buttons/bulk-correct-button.js \
     components/inputs/feature/color-inputs.js \
     components/inputs/feature/thumb-inputs.js \
     components/inputs/feature/checkbox-set.js \

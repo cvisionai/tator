@@ -31,9 +31,9 @@ class MultiAttributeEditPanel extends TatorElement {
 
       /////
       this._compare = document.createElement("a");
-      this._compare.setAttribute("class", "text-purple clickable pb-3 text-right");
-      this._compare.textContent = "Compare >";
-      barRightTop.appendChild(this._compare);
+      // this._compare.setAttribute("class", "text-purple clickable pb-3 text-right");
+      // this._compare.textContent = "Compare >";
+      // barRightTop.appendChild(this._compare);
 
       //
       // this._h2 = document.createElement("h2");
@@ -219,14 +219,12 @@ class MultiAttributeEditPanel extends TatorElement {
 
    _boxValueChanged(checkBoxSet, typeId) {
       let attributeNames = checkBoxSet.getValue();
+      let inputs = this._shadow.getElementById(typeId);
       
-      for (let [key, input] of this._inputs.entries()) {
-         // key like ${attributeDef.name} type_${dataType.id}
-         let idx = key.indexOf("type_");
-         let name = key.slice(0, idx).trim();
-
+      for (let input of inputs.children) {
+         let name = input.getAttribute("name");
          // Update bulk edit form input visibility
-         if (attributeNames.includes(name)) {
+         if (input.tagName !== "LABEL" && attributeNames.includes(name)) {
             input.hidden = false;
          } else {
             input.hidden = true;
@@ -308,8 +306,6 @@ class MultiAttributeEditPanel extends TatorElement {
 
       for (let box of selectionBoxes._inputs) {
          let boxName = box.getAttribute("name");
-         console.log(`Selection boxes id ${typeId} BoxName... ${boxName} included? ${values.includes(boxName)}`);
-         console.log(values);
          if (values.includes(boxName)) {
             box._checked = true;
          } else {
@@ -322,8 +318,6 @@ class MultiAttributeEditPanel extends TatorElement {
 
    // Loop through and add hidden inputs for each data type
    _addInputs(dataType) {
-
-
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group_bulk-edit text-gray f2");
       div.setAttribute("id", dataType.id);
@@ -457,6 +451,9 @@ class MultiAttributeEditPanel extends TatorElement {
                if (!widget.hidden && widget.tagName !== "LABEL") {
                   let name = widget.getAttribute("name");
                   let val = widget.getValue()
+
+                  console.log(`Evaluating value of widget named ${name}. Value = ${val}`);
+
                   if (val !== null) {
                      response.values[name] = val;
                   } else {
@@ -468,7 +465,6 @@ class MultiAttributeEditPanel extends TatorElement {
             value.push(response);
          }
       }
-
       return value;
    }
 

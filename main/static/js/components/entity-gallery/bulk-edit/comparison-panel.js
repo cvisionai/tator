@@ -6,11 +6,9 @@ class AttributeComparisonPanel extends TatorElement {
       this._bulkEditBar.setAttribute("class", "px-6 py-2 d-flex flex-wrap")
       this._shadow.appendChild(this._bulkEditBar);
 
-
-
-      let barTop = document.createElement("div");
-      barTop.setAttribute("class", "py-2 bulk-edit-bar--left col-12")
-      this._shadow.appendChild(barTop);
+      // let barTop = document.createElement("div");
+      // barTop.setAttribute("class", "py-2 bulk-edit-bar--left col-12")
+      // this._shadow.appendChild(barTop);
 
       // let barRightTop = document.createElement("div");
       // barRightTop.setAttribute("class", "py-2 bulk-edit-bar--right col-6 d-flex flex-row flex-items-center flex-justify-right")
@@ -18,11 +16,15 @@ class AttributeComparisonPanel extends TatorElement {
 
       let barLeft = document.createElement("div");
       barLeft.setAttribute("class", "py-2 bulk-edit-bar--left col-6")
-      this._shadow.appendChild(barLeft);
+      this._bulkEditBar.appendChild(barLeft);
 
       let barRight = document.createElement("div");
-      barRight.setAttribute("class", "py-2 bulk-edit-bar--right col-6")
-      this._shadow.appendChild(barRight);
+      barRight.setAttribute("class", "py-2 bulk-edit-bar--right col-6 d-flex flex-justify-right")
+      this._bulkEditBar.appendChild(barRight);
+
+      let barBottom = document.createElement("div");
+      barBottom.setAttribute("class", "py-2 bulk-edit-bar--left col-12 d-flex flex-align-center")
+      this._shadow.appendChild(barBottom);
 
       // this._compareButton = document.createElement("button");
       // this._compareButton.setAttribute("class", "btn btn-clear btn-outline py-2 px-2")
@@ -46,8 +48,8 @@ class AttributeComparisonPanel extends TatorElement {
       // barTop.appendChild(this._h2);
 
       this._table = document.createElement("table");
-      this._table.setAttribute("class", "apps__table col-12");
-      barTop.appendChild(this._table);
+      this._table.setAttribute("class", "apps__table");
+      barBottom.appendChild(this._table);
 
       // fixed header
       this._fixedHeader = document.createElement("thead");
@@ -71,7 +73,7 @@ class AttributeComparisonPanel extends TatorElement {
       // Right = side
       this._selectionSummary = document.createElement("div");
       this._selectionSummary.setAttribute("class", "py-2 px-2 bulk-edit--quick-select")
-      barTop.appendChild(this._selectionSummary);
+      barRight.appendChild(this._selectionSummary);
 
       this._selectionCount = document.createElement("span");
       this._selectionCount.textContent = "0";
@@ -121,8 +123,11 @@ class AttributeComparisonPanel extends TatorElement {
    init({ projectId = null, columns = null }) {
       // Create map of columns for attributes
       this.headerNameMap.clear();
+      this._fixedHeader.innerHTML = "";
+
+      //
       this.headerNameMap.set("id", "id"); // show this for all (exception in refreshData)
-      this.headerNameMap = new Map([...this.headerNameMap, ...columns])
+      this.headerNameMap = new Map([...this.headerNameMap, ...columns]);
 
       // Add header row to table
       this._columnCount = this.headerNameMap.size;
@@ -168,17 +173,15 @@ class AttributeComparisonPanel extends TatorElement {
          row.setAttribute("id", id);
          this._rowDataIndex[id] = row;
 
-         // Add the data item
-         let colObjId = {
-            key: id,
-            value: id
-         };
-
-         this.addCol(colObjId, row);
-
          // #todo add key check against item.entityType.id
          for (let [key, value] of this.headerNameMap) {
-            let attrValue = rowObject[value];
+            let attrValue = "";
+            if (key == "id") {
+               attrValue = id;
+            } else {
+               attrValue = rowObject[value];
+            }
+            
 
             if (typeof attrValue === "undefined" || attrValue === null) {
                attrValue = "--";
@@ -240,6 +243,7 @@ class AttributeComparisonPanel extends TatorElement {
       this._addColumnSort(column);
 
       column.setAttribute("name", colObj.key);
+      column.style.width = `${normal}%`
 
       let textSpan = document.createElement("span")
       textSpan.appendChild(document.createTextNode(colObj.value));
@@ -345,7 +349,7 @@ class AttributeComparisonPanel extends TatorElement {
    }
 
    hideShowTypes(types) {
-      
+      // To do
    }
 
    newColumns({ typeId, values }) {
@@ -354,12 +358,15 @@ class AttributeComparisonPanel extends TatorElement {
       for (let val of values) {
          this.headerNameMap.set(val, `${val} type_${typeId}`);
       }
+      // console.log("newColumns -- headerNameMap..................");
+      // console.log(this.headerNameMap);
       this.updateColumnsShown();
    }
 
    updateColumnsShown(e = null) {
       this.headerNameMap.clear();
       this.headerNameMap.set("id", "id");
+
       if (e !== null) {
          if (e.detail.added) {
             this.headerNameMap.set(e.detail.typeId, e.detail.name);
@@ -375,7 +382,7 @@ class AttributeComparisonPanel extends TatorElement {
 
       for (let [name, typeId] of this.headerNameMap) {
          this.addHeaderCol({
-            name: name,
+            name: `${name} (${typeId})`,
             value: typeId
          }, headerRow);
       }

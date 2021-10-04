@@ -31,15 +31,15 @@ class MultiSelectionPanel extends TatorElement {
       this._quickSelectAllDiv.setAttribute("class", "py-2 px-2 bulk-edit--quick-select d-flex flex-row flex-items-center flex-justify-between");
       barLeftTop.appendChild(this._quickSelectAllDiv);
 
-      this._selectAllPage = document.createElement("a");
-      this._selectAllPage.setAttribute("class", "text-purple clickable");
-      this._selectAllPage.textContent = "Select all on page";
-      this._quickSelectAllDiv.appendChild(this._selectAllPage);
-
       this._clearSelection = document.createElement("a");
       this._clearSelection.setAttribute("class", "text-gray py-2 px-3 clickable");
       this._clearSelection.textContent = "X Clear all selected";
       this._quickSelectAllDiv.appendChild(this._clearSelection);
+
+      this._selectAllPage = document.createElement("a");
+      this._selectAllPage.setAttribute("class", "text-purple clickable");
+      this._selectAllPage.textContent = "Select all on page";
+      this._quickSelectAllDiv.appendChild(this._selectAllPage);
 
       this._selectionSummary = document.createElement("span");
       this._selectionSummary.setAttribute("class", "pr-3")

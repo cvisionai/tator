@@ -26,6 +26,8 @@ class AnalyticsLocalizations extends TatorPage {
     this._settings.style.marginLeft = "50px";
     div.appendChild(this._settings);
 
+    this._settings._bulkCorrect.hidden = false;
+
 
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
@@ -74,6 +76,8 @@ class AnalyticsLocalizations extends TatorPage {
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
     this._shadow.appendChild(this._bulkEdit);
 
+    this._settings._bulkCorrect.addEventListener("click", this._bulkEdit.startEditMode.bind(this._bulkEdit))
+
     //
     /* Other */
     // Class to hide and showing loading spinner
@@ -112,7 +116,6 @@ class AnalyticsLocalizations extends TatorPage {
       bulkEdit: this._bulkEdit
     });
 
-
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
 
@@ -128,6 +131,7 @@ class AnalyticsLocalizations extends TatorPage {
 
     // Init vars for filter state
     this._filterConditions = this._settings.getFilterConditionsObject();
+    this._bulkEdit.checkForFilters(this._filterConditions);
 
     // Init vars for pagination state
     let pageSize = this._settings.getPageSize();
@@ -240,6 +244,8 @@ class AnalyticsLocalizations extends TatorPage {
   // Reset the pagination back to page 0
   _updateFilterResults(evt) {
     this._filterConditions = evt.detail.conditions;
+    console.log("UPDATE FILTER RESULTS");
+    this._bulkEdit.checkForFilters(this._filterConditions);
 
     var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
     this._paginationState.init = true;

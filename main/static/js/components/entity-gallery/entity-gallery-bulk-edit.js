@@ -24,7 +24,6 @@ class GalleryBulkEdit extends TatorElement {
       this._h2.innerHTML = `<span class="text-bold">Selection Mode:</span> <kbd>Ctrl</kbd> + <kbd>A</kbd> to select all. <kbd>Esc</kbd> to exit.`;
       this._messageBar_top.appendChild(this._h2);
 
-
       // Escape Bulk Edit
       this.xClose = document.createElement("button");
       this.xClose.setAttribute("class", "text-white bulk-edit--cancel btn-clear px-2 py-2 h2 text-white");
@@ -44,12 +43,6 @@ class GalleryBulkEdit extends TatorElement {
       const path = document.createElementNS(svgNamespace, "path");
       path.setAttribute("d", "M5.293 6.707l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l5.293-5.293 5.293 5.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5.293-5.293 5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
       svg.appendChild(path);
-
-      //draggable
-      this.startX = null;
-      this.startY = null;
-      this.startWidth = null;
-      this.startHeight = null;
 
       // Message Panel
       this._bulkEditBar = document.createElement("div");
@@ -87,11 +80,6 @@ class GalleryBulkEdit extends TatorElement {
       this._comparisonPanel.hidden = true;
       this._bulkEditBar.appendChild(this._comparisonPanel);
 
-      //
-      this._editPanel.addEventListener("attribute-changed", (e) => {
-         this._comparisonPanel.updateColumnsShown(e)
-      });
-
       /**
        * Initially selection panel is shown
        */
@@ -117,12 +105,16 @@ class GalleryBulkEdit extends TatorElement {
       document.addEventListener("keydown", this._keyDownHandler.bind(this));
       this.xClose.addEventListener("click", this._escapeEditMode.bind(this));
 
-      //
+      // Data holders for maintaining panels
       this._currentMultiSelection = new Set();
       this._currentMultiSelectionToId = new Map();
       this._currentSelectionObjects = new Map();
       this._localizationTypes = new Set();
       this.setOfSelectedMetaIds = new Set();
+
+      // Flags for the UI
+      this._editPanelWasOpen = false;
+      this.resultsContainsAttributes = false;
    }
 
    set elementList(val) {
@@ -226,11 +218,13 @@ class GalleryBulkEdit extends TatorElement {
       this.setOfSelectedMetaIds.add(element.cardObj.entityType.id);
       this._updatePanelCount(this._currentMultiSelection.size);
       this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
+      let entityId = element.cardObj.entityType.id;
       
-      let list = typeof this._currentMultiSelectionToId.get(element.cardObj.entityType.id) !== "undefined" ? this._currentMultiSelectionToId.get(element.cardObj.entityType.id) : new Set();
+      // list is a set to ensure uniqueness of additions in list
+      let list = typeof this._currentMultiSelectionToId.get(entityId) !== "undefined" ? this._currentMultiSelectionToId.get(entityId) : new Set();
       list.add(id);
 
-      this._currentMultiSelectionToId.set(element.cardObj.entityType.id, list);
+      this._currentMultiSelectionToId.set(entityId, list);
    }
 
    _removeSelected({ element, id, isSelected }) {
@@ -243,18 +237,27 @@ class GalleryBulkEdit extends TatorElement {
       // }
       this._currentMultiSelection.delete(id);
       this._currentSelectionObjects.delete(id);
-      this.setOfSelectedMetaIds.delete(element.cardObj.entityType.id);
-      this._updatePanelCount(this._currentMultiSelection.size);
-      this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
 
-      if (typeof this._currentMultiSelectionToId.get(element.cardObj.entityType.id) !== "undefined") {
-         let list = this._currentMultiSelectionToId.get(element.cardObj.entityType.id);
-         list.delete(id);
+      let entityId = element.cardObj.entityType.id;
+      let idsInType = this._currentMultiSelectionToId.get(entityId);
+
+      
+      if (idsInType.length == 1) {
+         // if the only id selected for this type is this one, then clean it out and update view
+         this._currentMultiSelectionToId.delete(entityId);
+         this.setOfSelectedMetaIds.delete(entityId);
+         this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);        
+      } else {
+         // just remove it from the selection list
+         idsInType.delete(id);
+         this._currentMultiSelectionToId.set(entityId, idsInType);
       }
+
+      this._updatePanelCount(this._currentMultiSelection.size);
    }
 
    _updatePanelCount(count) {
-      // this._comparisonPanel._selectionCount.textContent = count;
+      this._comparisonPanel._selectionCount.textContent = count;
       this._editPanel.setCount(count);
       this._selectionPanel.setCount(count);
 
@@ -265,17 +268,17 @@ class GalleryBulkEdit extends TatorElement {
 
 
    _openEditMode(e) {
-      let clickType = typeof e.detail.clickDetail == "undefined" ? e.type : e.detail.clickDetail.type;
+      // let clickType = typeof e.detail.clickDetail == "undefined" ? e.type : e.detail.clickDetail.type;
 
-      if (clickType == "shift-select") {
-         this.shiftSelect(e.detail);
-      } else {
+      // if (clickType == "shift-select") {
+      //    this.shiftSelect(e.detail);
+      // } else {
          if (e.detail.isSelected) {
             this._removeSelected(e.detail);
          } else {
             this._addSelected(e.detail);
          } 
-      }
+      // }
 
       this._updatePanelCount(this._currentMultiSelection.size);
    }
@@ -301,12 +304,10 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    startEditMode() {
-      console.log("Edit mode started");
       this._editMode = true;
 
       for (let el of this._elements) {
          if (el.card._li.classList.contains("is-selected") && !this._currentMultiSelection.has(el.card.cardObj.id)) {
-            console.log("Bulk select sees this was already selected... _addSelected: "+ el.card.cardObj.id)
             this._addSelected({element: el.card, id: el.card.cardObj.id, isSelected: el.card._li.classList.contains("is-selected")})
          }
       }
@@ -314,20 +315,29 @@ class GalleryBulkEdit extends TatorElement {
       // show edit drawer and tools
       this._messageBar_top.classList.remove("hidden");
       this._bulkEditBar.classList.remove("hidden");
-      // this._messageBar_top.classList.remove("hidden");
+
+      if (this._page.main.classList.contains("col-9")) {
+         this._editPanelWasOpen = true;
+         this._page.main.classList.remove("col-9"); 
+         this._page.main.classList.add("col-12");
+      } else {
+         this._editPanelWasOpen = false;
+      }
 
       // hide page elements
       this._page._header.classList.add("hidden");
-      this._page.aside.classList.add("slide-close");
       this._page.aside.classList.add("hidden");
-      this._page.main.classList.remove("col-9"); 
-      this._page.main.classList.add("col-12");
+      
       // this._page.main.style.marginTop = "-100px";
       this._page.main.style.paddingBottom = "300px";
       this._page._filterView.classList.add("hidden");
       this._page._filterResults._ul.classList.add("multi-select-mode");
 
       this.dispatchEvent(new Event("multi-enabled"));
+
+      if (this.resultsContainsAttributes == true) {
+         this.boxHelper._modalWarning(`Current search results are filtered on an attribute. Which if edited will cause pagination to change.`)
+      }
    }
 
    _escapeEditMode(e) {
@@ -338,12 +348,17 @@ class GalleryBulkEdit extends TatorElement {
       // hide edit drawer and tools
       this._messageBar_top.classList.add("hidden");
       this._bulkEditBar.classList.add("hidden");
-      // this._messageBar_top.classList.add("hidden");
+
+      if (this._editPanelWasOpen) {
+         this._page.main.classList.add("col-9"); 
+         this._page.main.classList.remove("col-12");
+         // reset this 
+         this._editPanelWasOpen = false;
+      }
 
       // revert page elements
       this._page._header.classList.remove("hidden");
       this._page.aside.classList.remove("hidden");
-      this._page._filterView.classList.remove("hidden");
       this._page.main.style.marginTop = "0";
       this._page._filterResults._ul.classList.remove("multi-select-mode");
 
@@ -411,12 +426,14 @@ class GalleryBulkEdit extends TatorElement {
             
             if (r.values !== {}) {
                for (let [name, value] of  Object.entries(r.values)) {
-                  text += `<p class="py-2 px-2 text-gray">- Updating attribute '${name}'' to value: ${value}</p>`
+                  text += `<p class="py-2 px-2 text-gray">- Updating attribute '${name}' to value: <span class="text-italics ">${value}</span></p>`
                }
                let formDataForType = {
                   attributes: r.values,
                   ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId)))
                }
+
+               console.log(`Form Data For Type ${r.typeId} :::::::::::::::::::::::::::::::::::::::::::::::::::::::::`);
                console.log(formDataForType);
 
                formData.push(formDataForType)
@@ -426,14 +443,14 @@ class GalleryBulkEdit extends TatorElement {
             
             if (r.rejected !== {}) {
                for (let rej of Object.entries(r.rejected)) {
-                  text += `<p class="text-red py-2 px-2">- Will not update attribute '${rej}' - value is invalid, or null.</p>`
+                  text += `<p class="text-red py-2 px-2">- Will not update attribute '${rej[0]}' - value is invalid, or null.</p>`
                }
             }
          }
       }
 
       if (formData.length == 0) {
-         return this.boxHelper._modalError("Error with update.");
+         return this.boxHelper._modalError("Error with update.", "Error");
       }
 
       let buttonContinue = document.createElement("button");
@@ -454,34 +471,54 @@ class GalleryBulkEdit extends TatorElement {
          this._page.loading.showSpinner();
          let promise = Promise.resolve();
          let text = "";
+         let errorText = "";
+         let respCode = 0;
          
          for (let jsonData of formData) {
             console.log(jsonData);
-            promise = promise.then(() => this._patchLocalizations(jsonData)).then(resp => resp.json()).then((data) => {
-               text += `${data.message} <br/><br/>`;
-               this.updateSelectionObjects(jsonData);
+            promise = promise.then(() => this._patchLocalizations(jsonData)).then((resp) => {
+               respCode = resp.status;
+               console.log(respCode);
+               return resp.json();
+            }).then((data) => {
+               console.log("Then reading message");
+               if (respCode == "200" ) {
+                  text += `${data.message} <br/><br/>`;
+                  this.updateSelectionObjects(jsonData);            
+               } else {
+                  errorText += `${data.message} <br/><br/>`;
+                  // this.updateSelectionObjects(jsonData);            
+               }
+
             });
-           
          }
 
          return promise.then(() => {
-            
+            console.log("Then clean up");
             this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
             this._clearSelection();
             this._page.loading.hideSpinner();
             this._page.hideDimmer();
-            this.boxHelper._modalSuccessConfirm({
-               mainText: text,
-               buttonContinue,
-               buttonExit
-            });
-            
-         }).catch(err => {
-            this._clearSelection();
-            this._page.loading.hideSpinner();
-            this._page.hideDimmer();
-            return this.boxHelper._modalError("Error with update: "+err);
-         });
+
+            if (errorText === "" && text !== "") {
+               this.boxHelper._modalSuccessConfirm({
+                  mainText: text,
+                  buttonContinue,
+                  buttonExit
+               });           
+            } else if (errorText !== "" && text === "") {
+               this.boxHelper._modalError(errorText, "Error");                
+            } else if (errorText !== "" && text !== "") {
+               this.boxHelper._modalWarn(text+errorText);                
+            }
+
+         });  
+         // }).catch(err => {
+         //    this._clearSelection();
+         //    this._page.loading.hideSpinner();
+         //    this._page.hideDimmer();
+         //    return this.boxHelper._modalError("Error with update: "+err);
+         // });
          
       });
 
@@ -495,10 +532,6 @@ class GalleryBulkEdit extends TatorElement {
          this._escapeEditMode();
       });
 
-      let editPanelValues = this._editPanel.getValue();
-      console.log(editPanelValues);
-  
-      console.log(this.boxHelper.modal);
       this.boxHelper._modalConfirm({
         "titleText" : `Confirm`,
         "mainText" : text,
@@ -522,7 +555,6 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    _updateShownAttributes({typeId, values}) {
-      console.log(values)
       this._editPanel.setSelectionBoxValue({ typeId, values });
       this._comparisonPanel.newColumns({ typeId, values });
    }
@@ -531,12 +563,17 @@ class GalleryBulkEdit extends TatorElement {
       for (let id of formData.ids) {
          let newCardData = this._currentSelectionObjects.get(id);
 
-         for (let [a, b] of Object.entries(formData.attributes)) {
-            console.log("Updating local attribute " + a + " to value " + b);
-            newCardData.attributes[a] = b;
+         if (typeof newCardData !== "undefined") {
+            if (formData.attributes) {
+               for (let [a, b] of Object.entries(formData.attributes)) {
+                  newCardData.attributes[a] = b;
+               }
+            }
+            this._page._filterResults.updateCardData(newCardData);         
+         } else {
+            console.warn("Possibly an error with save. Could not find ID in currentSelectionObjects.")
          }
 
-         this._page._filterResults.updateCardData(newCardData);
       }
    }
 
@@ -557,6 +594,15 @@ class GalleryBulkEdit extends TatorElement {
          this._comparisonPanel._refreshTable(this._currentSelectionObjects);
       }
 
+   }
+
+   checkForFilters(filterObj) {
+      for (let filter of filterObj) {
+         if (filterObj.categoryGroup === "Annotation" && !filterObj.field.startsWith("_")) {
+            this.resultsContainsAttributes = true;
+            console.log("Results may contain attr");
+         }
+      }
    }
    
 }
