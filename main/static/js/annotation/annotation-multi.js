@@ -1765,6 +1765,9 @@ class AnnotationMulti extends TatorElement {
     }
     else {
       this._quality = quality;
+      if (this._qualityControl._select != null) {
+        this._qualityControl.quality = quality;
+      }
       for (let video of this._videos)
       {
         video.setQuality(quality, buffer);
