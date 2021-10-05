@@ -17,11 +17,11 @@ class InvitationEdit extends OrganizationTypeForm {
 
   _getEmptyData() {
     return {
-      "id" : `New`,
-      "user" : "",
+      "id": `New`,
+      "user": "",
       "permission": "",
-      "organization" : this.organizationId,
-      "form" : "empty"
+      "organization": this.organizationId,
+      "form": "empty"
     };
   }
 
@@ -31,11 +31,11 @@ class InvitationEdit extends OrganizationTypeForm {
 
   _getExistingForm(data) {
     // console.log("Get existing form");
-    // console.log(data.id);
+    // console.log(data);
 
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+    let current = this.boxHelper.boxWrapDefault({
+      "children": ""
+    });
 
     //
     this._setForm();
@@ -65,9 +65,19 @@ class InvitationEdit extends OrganizationTypeForm {
     this._statusSelect._select.required = true;
     this._statusSelect.setValue(data.status);
     this._statusSelect.default = data.status;
-    this._statusSelect.permission = "View Only"
+    this._statusSelect.permission = "View Only";
     this._statusSelect.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild( this._permissionSelect );
+    this._form.appendChild(this._permissionSelect);
+
+    // status
+    this._statusField = document.createElement("text-input");
+    this._statusField.setAttribute("name", "Status");
+    this._statusField.setAttribute("type", "string");
+    this._statusField.setValue(this.data.status);
+    this._statusField.default = this.data.status;
+    this._statusField.permission = "View Only";
+    // this._statusField.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._statusField);
 
     current.appendChild(this._form);
 
@@ -76,9 +86,9 @@ class InvitationEdit extends OrganizationTypeForm {
 
   _getNewForm(data) {
     // console.log("Get new form");
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+    let current = this.boxHelper.boxWrapDefault({
+      "children": ""
+    });
     this._setForm();
 
     this._emailInput = document.createElement("email-list-input");
@@ -88,8 +98,8 @@ class InvitationEdit extends OrganizationTypeForm {
     this._permission = document.createElement("enum-input");
     this._permission.setAttribute("name", "Permission");
     this._permission.choices = [
-      {value: "Member"},
-      {value: "Admin"},
+      { value: "Member" },
+      { value: "Admin" },
     ];
     this._form.appendChild(this._permission);
 
@@ -104,7 +114,7 @@ class InvitationEdit extends OrganizationTypeForm {
       return this._getExistingForm(data);
     }
   }
-  
+
   _getFormData(id) {
     let formData;
     if (id == "New") {
@@ -149,44 +159,64 @@ class InvitationEdit extends OrganizationTypeForm {
         this.sideNav.hide(`itemDivId-${this.typeName}-New`);
 
         // Create and show the container with new type
-        this.sideNav.addItemContainer({
-          "type" : this.typeName,
-          "id" : data.id,
-          "hidden" : false
-        });
-
-        let form = document.createElement( this._getTypeClass() );
-        form.init(this._data);
-
-        this.sideNav.fillContainer({
-          "type" : this.typeName,
-          "id" : data.id,
-          "itemContents" : form
-        });
-
-        // init form with the data
-        formData.id = data.id;
-        formData.organization = this.organization;
-        form._init({ 
-          "data": formData, 
-          "modal" : this.modal, 
-          "sidenav" : this.sideNav
-        });
-
-        // Add the item to navigation
         this._updateNavEvent("new", email, data.id);
-        
+        this.sideNav.addItemContainer({
+          "type": this.typeName,
+          "id": data.id,
+          "hidden": false
+        });
+
+        this._data = formData;
+        this._data.status = "PENDING";
+        this._data.id = data.id;
+        this._data.organization = this.organization;
+
         if (!this._emailEnabled) {
           let link = data.message.replace('User can register at ', '')
           emailLinksHTML += `<li class="py-2"><span class="text-bold">${email}</span> can register at <a href="https://${link}" class="text-purple">${link}</a></li>`;
         }
-        // Increment succeeded.
-        numSucceeded++;
-      }).catch((err) => {
-        console.error(err);
-        errorMessages = `${errorMessages}<p class="py-1">${err}</p>`;
-        numFailed++;
-      });
+
+        return data.id;
+      })
+        .then((id) => {
+          return fetch(`/rest/Invitation/${id}`, {
+            method: "GET",
+            credentials: "same-origin",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          });
+        }).then((resp) => {
+          return resp.json();
+        }).then((data) => {
+          if (typeof data.id !== "undefined" && data.id === this._data.id) {
+            // if we can can get the status from endpoint, it is hardcoded above as pending (assumed since it was just created)
+            this._data = data;
+          }
+
+          let form = document.createElement(this._getTypeClass());
+          this.sideNav.fillContainer({
+            "type": this.typeName,
+            "id": this._data.id,
+            "itemContents": form
+          });
+
+          // init form with the data
+          form._init({
+            "data": this._data,
+            "modal": this.modal,
+            "sidenav": this.sideNav
+          });
+
+          // Increment succeeded.
+          numSucceeded++;
+        }).catch((err) => {
+          console.error(err);
+          errorMessages = `${errorMessages}<p class="py-1">${err}</p>`;
+          numFailed++;
+        });
       promises.push(promise);
     }
 

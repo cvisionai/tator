@@ -29,7 +29,8 @@ class LocalizationEdit extends TypeForm {
       { "label": "Select", "value": "" },
       { "label": "Box", "value": "box" },
       { "label": "Line", "value": "line" },
-      { "label": "Dot", "value": "dot" }
+      { "label": "Dot", "value": "dot" },
+      { "label": "Poly", "value": "poly" }
     ];
     this.dtypeSelect = document.createElement("enum-input");
     this.dtypeSelect.setAttribute("name", "Data Type");
