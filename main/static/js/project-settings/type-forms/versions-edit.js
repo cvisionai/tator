@@ -14,7 +14,7 @@ class VersionsEdit extends TypeForm {
       });
 
       this.versionId = data.id;
-      console.log(this.versionId);
+      // console.log(this.versionId);
 
       //
       this._setForm();
@@ -52,7 +52,7 @@ class VersionsEdit extends TypeForm {
       this._number = document.createElement("text-input");
       this._number.setAttribute("name", "Number");
       this._number.setAttribute("type", "int");
-      if (typeof data.number == "undefined" || data.number == "") {
+      if (typeof data.number === "undefined") {
          this._number.setValue("Created on Save");
          this._number.default = "";
       } else {
@@ -67,7 +67,7 @@ class VersionsEdit extends TypeForm {
 
       // Bases
       const basesListWithChecked = await this.versionListHandler.getCompiledVersionList(data.bases, data.id);
-      console.log(basesListWithChecked);
+      // console.log(basesListWithChecked);
 
       this._basesCheckbox = document.createElement("checkbox-set");
       this._basesCheckbox.setAttribute("name", "Bases");
@@ -101,9 +101,9 @@ class VersionsEdit extends TypeForm {
          formData.show_empty = this._showEmpty.getValue();
       }
 
-      if (this._number.changed() || isNew) {
-         formData._number = this._number.getValue();
-      }
+      // if (this._number.changed() || isNew) {
+      //    formData.number = this._number.getValue();
+      // }
 
       if (this._basesCheckbox.changed() || isNew) {
          formData.bases = this._basesCheckbox.getValue();
@@ -214,7 +214,7 @@ class VersionsEdit extends TypeForm {
    _saveConfirmed({ id = this.versionId }) {
       this._modalCloseCallback();
       // Start spinner & Get promises list
-      console.log("Settings _save method for id: " + id);
+      // console.log("Settings _save method for id: " + id);
       // this.loading.showSpinner();
 
       let promises = []
