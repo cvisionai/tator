@@ -41,6 +41,7 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
     response = response_info.value
     respObject = response.json()
     registration_link = str(respObject["message"]).replace('User can register at ', '')
+    new_user_id = respObject["id"] 
     print("Invitation sent successful!")
 
     # Note: Existing user gets redirected to /organization, but new user gets form.
@@ -68,6 +69,15 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
         page.wait_for_selector(f'text="Continue"')
 
     page.goto(f'/{organization_id}/organization-settings')
+
+    print("Confirming invitation status")
+    page.click('.heading-for-Invitation')
+    page.click(f'text="{user_email}"')
+    page.wait_for_selector(f'#itemDivId-Invitation-{new_user_id} text-input[name="Status"] input')
+    statusInputValue = page.eval_on_selector(f'#itemDivId-Invitation-{new_user_id} text-input[name="Status"] input', "i => i.value")
+    print(statusInputValue)
+    assert  statusInputValue == "Accepted"
+    print("Invitation status shown as accepted!")
 
     print("Testing affiliation create...")
     url = base_url + "/rest/Affiliations/" + str(organization_id)
