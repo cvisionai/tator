@@ -125,14 +125,55 @@ class SettingsBox {
     return this.modal.setAttribute("is-open", "true")
   }
 
-  _modalError(message){
+  _modalSuccessConfirm({
+    mainText = "",
+    buttonContinue = document.createElement("button"),
+    buttonExit = document.createElement("button"),
+    scroll = true
+  } = {}){
     
     this._modalClear();
-    let text = document.createTextNode(" Error saving project details");
+    let text = document.createTextNode(" Success");
+    this.modal._titleDiv.innerHTML = "";
+    this.modal._titleDiv.append( document.createElement("modal-success") );
+    this.modal._titleDiv.append(text);
+
+    if(mainText.nodeType == Node.ELEMENT_NODE){
+      this.modal._main.appendChild(mainText);
+    } else {
+      this.modal._main.innerHTML = mainText;
+    }
+    
+    if(scroll) this.modal._main.classList.add("fixed-height-scroll");
+
+    this.modal._footer.appendChild(buttonContinue);
+    this.modal._footer.appendChild(buttonExit);
+    return this.modal.setAttribute("is-open", "true");
+  }
+
+  _modalError(message, title = " Error saving project details"){  
+    this._modalClear();
+    let text = document.createTextNode(title);
     this.modal._titleDiv.innerHTML = "";
     this.modal._titleDiv.append( document.createElement("modal-warning") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
+    return this.modal.setAttribute("is-open", "true")
+  }
+
+  _modalWarningConfirm(message, buttonClose, buttonSave){
+    this._modalClear();
+    let text = document.createTextNode(" Warning");
+    this.modal._titleDiv.innerHTML = "";
+    let warningIcon = document.createElement("modal-warning");
+    warningIcon.svg.setAttribute("class", "h3 text-yellow");
+    this.modal._titleDiv.append( );
+    this.modal._titleDiv.append(text);
+    this.modal._main.innerHTML = message;
+    
+    this.modal._footer.appendChild(buttonClose);
+    this.modal._footer.appendChild(buttonSave);
+    
     return this.modal.setAttribute("is-open", "true")
   }
 

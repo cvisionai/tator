@@ -62,7 +62,7 @@ class EntityGalleryLabels extends TatorElement {
    *
   */
   async add({ typeData, hideTypeName = false, checkedFirst = null }) {
-    console.log(typeData);
+    // console.log(typeData);
     let typeName = typeData.name ? typeData.name : "";
     if(this._shownTypes[typeData.id]) {
       // don't re-add this type...

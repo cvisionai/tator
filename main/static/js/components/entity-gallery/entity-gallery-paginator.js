@@ -268,6 +268,30 @@ class EntityGalleryPaginator extends TatorElement {
     }
     if (newValBool === true) return this._setPage(pageVal);
   }
+
+  editMode(val) {
+    if (val === true) {
+      this._prev.setAttribute("class", "is-disabled unselectable");
+      this._next.setAttribute("class", "is-disabled unselectable");
+      this.goToPageText.hidden = true;
+      this.goToPage.hidden = true;
+      for (let idx = 0; idx < this._pages.length; idx++) {
+        if ((idx + 1) !== this._page) {
+          this._pages[idx].hidden = true;  
+        }
+      }
+    } else {
+      this._setPage(this._page); // will reset next/prev based on location
+      this.goToPageText.hidden = false;
+      this.goToPage.hidden = false;
+      for (let idx = 0; idx < this._pages.length; idx++) {
+        if ((idx + 1) !== this._page) {
+          this._pages[idx].hidden = false;  
+        }
+      }
+    }
+
+  }
 }
 
 customElements.define("entity-gallery-paginator", EntityGalleryPaginator);

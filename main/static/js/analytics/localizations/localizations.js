@@ -26,6 +26,8 @@ class AnalyticsLocalizations extends TatorPage {
     this._settings.style.marginLeft = "50px";
     div.appendChild(this._settings);
 
+    this._settings._bulkCorrect.hidden = false;
+
 
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
@@ -67,6 +69,15 @@ class AnalyticsLocalizations extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
+
+
+    // entity-gallery-bulk-edit
+    // Part of Gallery: Communicates between card + page
+    this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
+    this._shadow.appendChild(this._bulkEdit);
+
+    this._settings._bulkCorrect.addEventListener("click", this._bulkEdit.startEditMode.bind(this._bulkEdit))
+
     //
     /* Other */
     // Class to hide and showing loading spinner
@@ -78,29 +89,32 @@ class AnalyticsLocalizations extends TatorPage {
     this._shadow.appendChild(this.modal);
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
+
+    // Init after modal is defined
+    this._bulkEdit.init(this);
   }
 
   async _init() {
-        // Database interface. This should only be used by the viewModel/interface code.
-        this.projectId = Number(this.getAttribute("project-id"));
-        this._modelData = new TatorData(this.projectId);
-    
-        // Card Data class collects raw model and parses into view-model format
-        this.cardData = document.createElement("annotation-card-data");
-        await this.cardData.init(this._modelData);
-        
-        this.cardData.addEventListener("setCardImage", (evt) => {
-          this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
-        });
-    
-        // Pass panel and localization types to gallery
-        this._filterResults._initPanel({
-          panelContainer: this._panelContainer,
-          pageModal: this.modal,
-          modelData: this._modelData,
-          cardData: this.cardData
-        });
+    // Database interface. This should only be used by the viewModel/interface code.
+    this.projectId = Number(this.getAttribute("project-id"));
+    this._modelData = new TatorData(this.projectId);
 
+    // Card Data class collects raw model and parses into view-model format
+    this.cardData = document.createElement("annotation-card-data");
+    await this.cardData.init(this._modelData);
+
+    this.cardData.addEventListener("setCardImage", (evt) => {
+      this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
+    });
+
+    // Pass panel and localization types to gallery
+    this._filterResults._initPanel({
+      panelContainer: this._panelContainer,
+      pageModal: this.modal,
+      modelData: this._modelData,
+      cardData: this.cardData,
+      bulkEdit: this._bulkEdit
+    });
 
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
@@ -117,6 +131,7 @@ class AnalyticsLocalizations extends TatorPage {
 
     // Init vars for filter state
     this._filterConditions = this._settings.getFilterConditionsObject();
+    this._bulkEdit.checkForFilters(this._filterConditions);
 
     // Init vars for pagination state
     let pageSize = this._settings.getPageSize();
@@ -229,6 +244,8 @@ class AnalyticsLocalizations extends TatorPage {
   // Reset the pagination back to page 0
   _updateFilterResults(evt) {
     this._filterConditions = evt.detail.conditions;
+    console.log("UPDATE FILTER RESULTS");
+    this._bulkEdit.checkForFilters(this._filterConditions);
 
     var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
     this._paginationState.init = true;

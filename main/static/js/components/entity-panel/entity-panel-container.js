@@ -36,7 +36,6 @@ class EntityPanelContainer extends TatorElement {
 
       // when lock changes set attribute on forms to "View Only" / "Can Edit"
       this.addEventListener("unselected", (e) => {
-
          this.gallery.cardNotSelected(e.detail.id);
       });
    }

@@ -98,9 +98,14 @@ class EntityCard extends TatorElement {
       this._tmpHidden = null;
       this.attributeDivs = {};
       this._currentShownAttributes = "";
+      this.multiEnabled = false;
+      this._multiSelectionToggle = false;
   
       /* Holds attributes for the card */
       this.attributesDiv = document.createElement('div');
+
+      /* Sends events related to selection clicks */
+      this.addEventListener('contextmenu', this.contextMenuHandler.bind(this));
     }
   
     static get observedAttributes() {
@@ -153,10 +158,11 @@ class EntityCard extends TatorElement {
   
     
 
-  init({ obj, panelContainer, cardLabelsChosen }) {
+  init({ obj, panelContainer, cardLabelsChosen, enableMultiselect = false }) {
       // Give card access to panel
       this.panelContainer = panelContainer;
-      this.cardObj = obj;
+    this.cardObj = obj;
+    this.multiEnabled = enableMultiselect;
   
       // ID is title
       this._id_text.innerHTML = `ID: ${this.cardObj.id}`;
@@ -285,10 +291,26 @@ class EntityCard extends TatorElement {
     togglePanel(e){
       e.preventDefault();
 
-      if(this._li.classList.contains("is-selected")) {
+      if (this.multiEnabled) {
+        /* @ "card-click"*/
+        if (e.shiftKey) {
+          this._multiSelectionToggle = true;
+          this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        }
+        
+        if (e.ctrlKey) {
+          // usually context menu is hit, and not this keeping in case....
+          this._multiSelectionToggle = true;
+          this.dispatchEvent(new CustomEvent("ctrl-select", { detail: {  element : this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        }      
+      }
+
+      if(this._li.classList.contains("is-selected") && !this._multiSelectionToggle) {
         this._deselectedCardAndPanel();    
-      } else {
+      } else if(!this._multiSelectionToggle){
         this._selectedCardAndPanel();
+      } else {
+        this.cardClickEvent(false);
       }
     }
   
@@ -296,9 +318,12 @@ class EntityCard extends TatorElement {
       const cardId = this.panelContainer._panelTop._panel.getAttribute("selected-id");
 
       // if it exists, close it!
-      if(typeof cardId !== "undefined" && cardId !== null) {
-        let evt = new CustomEvent("unselected", { detail: { id: cardId } });
-        this.panelContainer.dispatchEvent(evt); // this even unselected related card
+      if (!this._multiSelectionToggle) {
+        console.log("unselecting this cardId: "+cardId)
+        if(typeof cardId !== "undefined" && cardId !== null) {
+          let evt = new CustomEvent("unselected", { detail: { id: cardId } });
+          this.panelContainer.dispatchEvent(evt); // this even unselected related card
+        }   
       }
     }
   
@@ -317,7 +342,6 @@ class EntityCard extends TatorElement {
     }
   
     cardClickEvent(openFlag = false){
-      /* @ "card-click"*/
       // Send event to panel to hide the localization canvas & title
       let cardClickEvent = new CustomEvent("card-click", { detail : { openFlag, cardObj : this.cardObj } });
       this.dispatchEvent( cardClickEvent );
@@ -328,6 +352,17 @@ class EntityCard extends TatorElement {
       let annotationEvent = new CustomEvent(evtName, { detail : { cardObj : this.cardObj } });
       this.panelContainer.dispatchEvent( annotationEvent );
     }
+  
+    contextMenuHandler(e) {
+      if (e.ctrlKey) {
+        console.log("Card was clicked with ctrl");
+        this._multiSelectionToggle = true;
+        e.preventDefault(); // stop contextmenu
+        // this.togglePanel(e);
+        this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element : this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        // this._li.classList.add("is-selected");
+      }
+   }
    
   }
   
