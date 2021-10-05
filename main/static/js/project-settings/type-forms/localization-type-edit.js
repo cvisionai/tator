@@ -90,17 +90,16 @@ class LocalizationEdit extends TypeForm {
 
 
     // line_width
-    if (data.dtype != 'image') {
-      this._lineWidth = document.createElement("text-input");
-      this._lineWidth.setAttribute("name", "Line Width");
-      this._lineWidth.setAttribute("type", "number");
-      this._lineWidth.setValue(this.data.line_width);
-      this._lineWidth.default = this.data.line_width;
-      this._lineWidth._input.min = 1;
-      this._lineWidth._input.max = 10;
-      this._lineWidth.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._lineWidth);
-    }
+    this._lineWidth = document.createElement("text-input");
+    this._lineWidth.setAttribute("name", "Line Width");
+    this._lineWidth.setAttribute("type", "int");
+    this._lineWidth.setValue(this.data.line_width);
+    this._lineWidth.default = this.data.line_width;
+    this._lineWidth._input.min = 1;
+    this._lineWidth._input.max = 10;
+    this._lineWidth.addEventListener("change", this._formChanged.bind(this));
+    this._form.appendChild(this._lineWidth);
+
 
     // grouping default
     this._groupingDefault = document.createElement("bool-input");
