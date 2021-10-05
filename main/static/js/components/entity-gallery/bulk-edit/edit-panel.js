@@ -145,25 +145,27 @@ class MultiAttributeEditPanel extends TatorElement {
 
    show(val) {
       this.hidden = !val;
-      let nameIsFilteredOn = false;
-      let filterNames = [];
 
-      for (let input of this._inputs) {
-         let name = input.getAttribute("name");
-         // Update bulk edit form input visibility
-         if (input.hidden == false && this.resultsFilter.attributes.includes(name)) {
-            console.log("Warning: filter contains attribute.")
-            nameIsFilteredOn = true;
-            filterNames.push(name);
+
+      if(val){
+         let nameIsFilteredOn = false;
+         let filterNames = [];
+
+         for (let [id, input] of this._inputs) {
+            let name = input.getAttribute("name");
+            // Update bulk edit form input visibility
+            if (input.hidden == false && this.resultsFilter.attributes.includes(name)) {
+               console.log("Warning: filter contains attribute.")
+               nameIsFilteredOn = true;
+               filterNames.push(name);
+            }
+         }
+
+         // after looping set this message
+         if (nameIsFilteredOn) {
+            this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames }}))
          }
       }
-
-      // after looping set this message
-      if (nameIsFilteredOn) {
-         this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames }}))
-      }
-
-
    }
 
    isHidden() {
@@ -171,7 +173,7 @@ class MultiAttributeEditPanel extends TatorElement {
    }
 
    addLocType(typeData) {
-      console.log(typeData);
+      // console.log(typeData);
       let typeName = typeData.name ? typeData.name : "";
       if (this._shownTypes.has(typeData.id)) {
          // don't re-add this type...
@@ -241,6 +243,7 @@ class MultiAttributeEditPanel extends TatorElement {
    }
 
    _boxValueChanged(checkBoxSet, typeId) {
+      console.log("box value changed");
       let attributeNames = checkBoxSet.getValue();
       let inputs = this._shadow.getElementById(typeId);
 

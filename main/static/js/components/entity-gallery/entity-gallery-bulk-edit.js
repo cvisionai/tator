@@ -607,11 +607,11 @@ class GalleryBulkEdit extends TatorElement {
       // This will stay up to date with any filter on the page
       let tmpArray = [];
       for (let filter of filterObj) {
-         console.log(`Filter found: ${filter}`)
+         // console.log(`Filter found: ${filter}`)
          if (filter.categoryGroup === "Annotation" && !filter.field.startsWith("_")) {
             this.resultsFilter.containsAttributes = true;
             tmpArray.push(filter.field);
-            console.log(filter.field);
+            // console.log(filter.field);
          }
       }
       this.resultsFilter.attributes = tmpArray;
