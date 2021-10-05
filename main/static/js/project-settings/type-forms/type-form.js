@@ -601,7 +601,7 @@ class TypeForm extends TatorElement {
         let iconWrap = document.createElement("span");
         let warningIcon = document.createElement("modal-warning");
 
-        console.log(`currentMessage::::: ${currentMessage}`);
+        // console.log(`currentMessage::::: ${currentMessage}`);
 
         if (response.status == 200) {
           //console.log("Return Message - It's a 200 response.");
@@ -626,7 +626,7 @@ class TypeForm extends TatorElement {
       });
   }
 
-  _typeFormChanged() {
+  _typeFormChanged({ id = this.typeId } = {}) {
     const formData = this._getFormData();
     let promise = Promise.resolve();
 
@@ -642,7 +642,7 @@ class TypeForm extends TatorElement {
           this.nameChanged = true;
           this.newName = formData.name;
         }
-        return this._fetchPatchPromise({ id: this.typeId, formData });
+        return this._fetchPatchPromise({ id, formData });
       })
         .then(response => response.json().then(data => ({ response: response, data: data })))
         .then(obj => {
