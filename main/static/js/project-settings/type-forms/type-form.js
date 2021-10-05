@@ -640,7 +640,7 @@ class TypeForm extends TatorElement {
           this.nameChanged = true;
           this.newName = formData.name;
         }
-        return this._fetchPatchPromise({ id, formData });
+        return this._fetchPatchPromise({ id: this.typeId, formData });
       })
         .then(response => response.json().then(data => ({ response: response, data: data })))
         .then(obj => {
