@@ -629,13 +629,15 @@ class TypeForm extends TatorElement {
   _typeFormChanged() {
     const formData = this._getFormData();
     let promise = Promise.resolve();
-    // console.log("Main form was changed");
 
     if (Object.entries(formData).length === 0) {
       return console.error("No formData");
     } else {
       return promise.then(() => {
-        //
+        //reset message strings
+        this.successMessages = "";
+        this.failedMessages = "";
+        this.confirmMessages = "";
         if (typeof formData.name !== "undefined") {
           this.nameChanged = true;
           this.newName = formData.name;
