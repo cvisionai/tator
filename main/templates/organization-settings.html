@@ -1,0 +1,17 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+
+<title>Tator | Organization Settings</title>
+{% endblock head %}
+
+{% block body %}
+<organization-settings
+  username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}"
+  organization-id="{{ organization.id }}"
+  email_enabled="{{email_enabled}}">
+</organization-settings>
+{% endblock body %}

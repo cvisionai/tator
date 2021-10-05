@@ -494,6 +494,11 @@ class DrawGL
     this.indexBuffer = this.gl.createBuffer();
   };
 
+  blank()
+  {
+    this.clearRect(0,0, this.clientWidth, this.clientHeight, [0,0,0]);
+  }
+
   clearRect(x,y,width,height, rgb)
   {
     if (rgb == undefined)

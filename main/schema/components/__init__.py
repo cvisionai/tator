@@ -78,6 +78,7 @@ from .membership import membership_update
 from .membership import membership
 from .notify import notify_spec
 from .organization import organization_spec
+from .organization import organization_update
 from .organization import organization
 from .password_reset import password_reset_spec
 from .project import project_spec

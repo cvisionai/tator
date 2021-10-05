@@ -488,10 +488,20 @@ class WasabiStorage(MinIOStorage):
             RestoreRequest={"Days": min_exp_days},
         )
 
-def get_tator_store(bucket=None) -> TatorStorage:
+def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5) -> TatorStorage:
     """
     Determines the type of object store required by the given bucket and returns it. All returned
     objects are subclasses of the base class TatorStorage.
+
+    :param bucket: The bucket to use for accessing object storage.
+    :type bucket: models.Bucket
+    :param connect_timeout: The number of seconds to wait on connect before timing out.
+    :type connect_timeout: float or int
+    :param read_timeout: The number of seconds to wait on reading before timing out.
+    :type read_timeout: float or int
+    :param max_attempts: The max number of retries on any one request.
+    :type max_attempts: int
+    :rtype: TatorStorage
     """
     if bucket is None:
         endpoint = os.getenv("OBJECT_STORAGE_HOST")
@@ -519,7 +529,11 @@ def get_tator_store(bucket=None) -> TatorStorage:
     endpoint = endpoint.replace(f"{bucket_name}.", "")
 
     if endpoint:
-        config = Config(connect_timeout=5, read_timeout=5, retries={"max_attempts": 5})
+        config = Config(
+            connect_timeout=connect_timeout,
+            read_timeout=read_timeout,
+            retries={"max_attempts": max_attempts},
+        )
         client = boto3.client(
             "s3",
             endpoint_url=f"{endpoint}",
@@ -541,8 +555,6 @@ def get_tator_store(bucket=None) -> TatorStorage:
         )
         if "amazonaws" in endpoint:
             server = ObjectStore.AWS
-        elif "googleapis" in endpoint:
-            server = ObjectStore.GCP
         elif "wasabisys" in endpoint:
             server = ObjectStore.WASABI
         else:
@@ -553,8 +565,6 @@ def get_tator_store(bucket=None) -> TatorStorage:
             server = ObjectStore.AWS
         elif ObjectStore.MINIO.value in response_server:
             server = ObjectStore.MINIO
-        elif ObjectStore.GCP.value in response_server:
-            server = ObjectStore.GCP
         elif ObjectStore.WASABI.value in response_server:
             server = ObjectStore.WASABI
         else:

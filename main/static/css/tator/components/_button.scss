@@ -23,6 +23,11 @@
     background-color: $color-charcoal--light;
     color: $color-gray--dark;
     cursor: not-allowed;
+    &:hover,
+    &:focus {
+      background-color: $color-charcoal--light;
+      color: $color-gray--dark;
+    }
   }
 }
 

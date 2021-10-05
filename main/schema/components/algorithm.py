@@ -32,6 +32,7 @@ algorithm_post_properties = {
     alg_fields.cluster: {
         'type': 'integer',
         'description': 'Unique integer identifying the job cluster.',
+        'nullable': True,
     },
     alg_fields.files_per_job: {
         'type': 'integer',

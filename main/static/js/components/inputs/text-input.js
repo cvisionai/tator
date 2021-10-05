@@ -97,6 +97,18 @@ class TextInput extends TatorElement {
     this._default = val;
   }
 
+  /**
+   * @param {boolean} val
+   */
+  set disabled(val) {
+    if (val) {
+      this._input.classList.add("disabled");
+    } else {
+      this._input.classList.remove("disabled");
+    }
+    this._input.disabled = val;
+  }
+
   changed(){
     return this.getValue() !== this._default;
   }

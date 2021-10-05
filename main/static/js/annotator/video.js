@@ -1333,6 +1333,16 @@ class VideoCanvas extends AnnotationCanvas {
     this._textOverlay.toggleTextDisplay(this._videoDiagOverlay, false);
   }
 
+  playBufferDuration() {
+    let duration = 0.0;
+    const ranges = this._videoElement[this._play_idx].playBuffer().buffered;
+    for (let idx = 0; idx < ranges.length; idx++)
+    {
+      duration += ranges.end(idx) - ranges.start(idx);
+    }
+    return duration;
+  }
+
   refresh(forceSeekBuffer)
   {
     // Refresh defaults to high-res buffer
@@ -1364,6 +1374,19 @@ class VideoCanvas extends AnnotationCanvas {
     {
       this._audioPlayer.volume = volume / 100;
     }
+  }
+
+  isPlaybackReady() {
+    return this._onDemandPlaybackReady;
+  }
+
+  sendPlaybackReady() {
+    this.dispatchEvent(new CustomEvent(
+      "playbackReady",
+      {
+        composed: true,
+        detail: {playbackReadyId: this._waitId},
+      }));
   }
 
   startDownload(streaming_files, offsite_config)
@@ -1407,7 +1430,11 @@ class VideoCanvas extends AnnotationCanvas {
         for (let vidBuffIdx=0; vidBuffIdx < that._videoElement.length; vidBuffIdx++) {
           totalMediaElementCount += that._videoElement[vidBuffIdx].getMediaElementCount();
         }
-        console.log(`(Media ID: ${that._videoObject.id}) Current mediaElementCount: ${totalMediaElementCount}`);
+
+        if (that._lastMediaElementCount != totalMediaElementCount) {
+          console.log(`(Media ID: ${that._videoObject.id}) mediaElementCount = ${totalMediaElementCount}`);
+          that._lastMediaElementCount = totalMediaElementCount;
+        }
 
         //console.log(`....downloaded: ${parseInt(100*e.data["percent_complete"])} (buf_idx: ${e.data["buf_idx"]})`)
         let video_buffer = that._videoElement[e.data["buf_idx"]];
@@ -1532,6 +1559,7 @@ class VideoCanvas extends AnnotationCanvas {
                                            detail: {playbackReadyId: this._waitId},
                                            }));
         that._onDemandPlaybackReady = true; // fake it
+        that.sendPlaybackReady();
       }
       else if (type == "onDemandInit")
       {
@@ -1543,6 +1571,7 @@ class VideoCanvas extends AnnotationCanvas {
         console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
         that._onDemandPlaybackReady = true; //if we reached the end, we are done.
+        that.sendPlaybackReady();
       }
       else if (type == "onDemand")
       {
@@ -1672,6 +1701,21 @@ class VideoCanvas extends AnnotationCanvas {
                          appendBuffer(afterUpdate);
                        },0);
           }
+          const ranges = that._videoElement[that._play_idx].playBuffer().buffered;
+          let ranges_list = [];
+          for (let idx = 0; idx < ranges.length; idx++)
+          {
+            let startFrame = that.timeToFrame(ranges.start(idx));
+            let endFrame = that.timeToFrame(ranges.end(idx));
+            if (that.currentFrame() >= startFrame && that.currentFrame() <= endFrame)
+            {
+              ranges_list.push([startFrame, endFrame]);
+            }
+          }
+          that.dispatchEvent(new CustomEvent("onDemandDetail",
+                                             {composed: true,
+                                              detail: {"ranges": ranges_list}
+                                              }));
         }
 
         if (e.data["id"] == that._onDemandId) {
@@ -2153,11 +2197,14 @@ class VideoCanvas extends AnnotationCanvas {
   /**
    * Get the video element associated with the given buffer type and frame number
    *
+   * A feature both scrub and play will return the best available buffer for the frame in question.
+   *
    * @param {integer} frame - Target frame number
    * @param {string} bufferType - "scrub" | "play" | "seek"
+   * @param {bool} force - true to force "play" over seek fallback.
    * @returns {video HTMLelement}
    */
-  videoBuffer(frame, bufferType)
+  videoBuffer(frame, bufferType, force)
   {
     if (frame == undefined)
     {
@@ -2181,19 +2228,43 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return this._videoElement[this._seek_idx].returnSeekIfPresent(time, direction);
     }
-    else if (bufferType == "play")
-    {
-      return this._videoElement[this._play_idx].forTime(time, bufferType, direction, this._numSeconds);
-    }
     else
     {
-      return this._videoElement[this._scrub_idx].forTime(time, bufferType, direction, this._numSeconds);
+      // Treat play and scrub buffer as best available.
+      let play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+
+      // To test degraded mode (every 10th frame is degraded):
+      //if (frame % 10 == 0)
+      //{
+      //  play_attempt = null;
+      //}
+
+      // Log every 5 frames if we go to degraded mode.
+      if (play_attempt == null && bufferType == "play" && frame % 5 == 0)
+      {
+        console.warn("Video degraded, attempting scrub buffer.");
+      }
+      if (play_attempt || force)
+      {
+        return play_attempt;
+      }
+      return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
     }
   }
 
   frameToTime(frame)
   {
     return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
+  }
+
+  timeToFrame(time, bias)
+  {
+    let video_time = time - this._startBias;
+    if (bias)
+    {
+      video_time -= (1/(this._fps*4));
+    }
+    return Math.round(video_time * this._fps);
   }
 
   frameToAudioTime(frame)
@@ -2301,6 +2372,11 @@ class VideoCanvas extends AnnotationCanvas {
           callback(frame, video, that._dims[0], that._dims[1])
           resolve();
           video.oncanplay=null;
+          that.dispatchEvent(new CustomEvent("seekComplete",
+                                       {composed: true,
+                                        detail: {forceSeekBuffer: forceSeekBuffer,
+                                                 bufferType: bufferType
+                                        }}));
           if (forceSeekBuffer && that._audioPlayer)
           {
             if (that._audioPlayer.currentTime != audio_time)
@@ -2739,11 +2815,12 @@ class VideoCanvas extends AnnotationCanvas {
     // and then schedules the next frame to be loaded
     var pushAndGoToNextFrame=function(frameIdx, source, width, height)
     {
-      if (source == null)
+      if (source == null) // To test stalls: || Math.round(Math.random() * 50) == 5)
       {
         // Video isn't ready yet, wait and try again
         console.log(`video buffer not ready for loading - (ID:${this._videoObject.id}) frame: ` + frameIdx);
         this._loaderTimeout = setTimeout(loader, 250);
+        this.dispatchEvent(new CustomEvent("playbackStalled", {composed: true}));
       }
       else
       {
@@ -2775,6 +2852,16 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  onDemandBufferAvailable(frame)
+  {
+    return this.videoBuffer(frame, "play", true) != null;
+  }
+
+  scrubBufferAvailable(frame)
+  {
+    return this.videoBuffer(frame, "scrub") != null;
+  }
+
   onDemandDownloadPrefetch(reqFrame)
   {
     // This function can be called at anytime. If auto-download is disabled, then just stop
@@ -2783,13 +2870,20 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    if (reqFrame == undefined)
+    {
+      reqFrame = this.currentFrame();
+    }
+
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    if (this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
+    // Always prefetch if we pause after playing backwards.
+    if (this._direction != Direction.BACKWARDS && this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
       this._onDemandPlaybackReady = true;
+      this.sendPlaybackReady();
       return;
     }
 
@@ -2841,9 +2935,26 @@ class VideoCanvas extends AnnotationCanvas {
 
       video.recreateOnDemandBuffers(setupCallback);
     }
+
+    let timeToEnd = 0;
+    let ranges = this._videoElement[this._play_idx].playBuffer().buffered;
+    let absEnd = this.frameToTime(this._numFrames-1);
+    let timeToAbsEnd = Number.MAX_SAFE_INTEGER;
+    let this_time =  this.frameToTime(reqFrame);
+    timeToAbsEnd = absEnd - this_time;
+    for (let idx = 0; idx < ranges.length; idx++)
+    {
+      if (reqFrame >= ranges.start(idx) && reqFrame <= ranges.end(idx))
+      {
+        timeToEnd = ranges.end(idx) - this_time;
+      }
+    }
+
+    // If we moved out of the current on-demand buffer reload it.
+    if (reqFrame == -1 || (timeToEnd < 15 && timeToAbsEnd >= 15))
     setTimeout(function() {
       restartOnDemand();
-    },100);
+    },0);
     /*
     this._videoElement[this._play_idx].resetOnDemandBuffer().then(() => {
       that.onDemandDownload(true);
@@ -2951,10 +3062,9 @@ class VideoCanvas extends AnnotationCanvas {
       else
       {
         const currentTime = this.frameToTime(this._dispFrame);
-        const appendThreshold = 15; // Worth revisiting to make this configurable
-
-        // Adjust the playback threshold if we're close to the edge of the video
-        var playbackReadyThreshold = 10; // Seconds
+        // Make these scale to the selected playback rate
+        const appendThreshold = 45 * Math.max(1,this._playbackRate);
+        var playbackReadyThreshold = 10;
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
           (totalVideoTime - currentTime < playbackReadyThreshold))
@@ -3024,12 +3134,7 @@ class VideoCanvas extends AnnotationCanvas {
                 {
                   console.log(`(ID:${this._videoObject.id}) onDemandPlaybackReady (start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`);
                   this._onDemandPlaybackReady = true;
-                  this.dispatchEvent(new CustomEvent(
-                    "playbackReady",
-                    {
-                      composed: true,
-                      detail: {playbackReadyId: this._waitId},
-                    }));
+                  this.sendPlaybackReady();
                 }
               }
             }
@@ -3077,7 +3182,7 @@ class VideoCanvas extends AnnotationCanvas {
 
               if (this._direction == Direction.FORWARD)
               {
-                var trimEnd = currentTime - 2;
+                var trimEnd = currentTime - 10;
                 if (trimEnd > start && this._playing)
                 {
                   console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
@@ -3250,7 +3355,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > 4.0)
+      if (this._playbackRate > 8.0)
       {
         this._playGenericScrub(Direction.FORWARD);
       }

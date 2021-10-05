@@ -13,18 +13,50 @@ class AlgorithmEdit extends TypeForm {
 
    async _getSectionForm(data) {
       this.data = data;
+      this.algorithmId = data.id;
+      this._setForm();
       let current = this.boxHelper.boxWrapDefault({
          "children": ""
       });
 
-      this.algorithmId = data.id;
+      // Before we setup the form, check if the user will be able to do things
+      const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
+      this.userCantSaveCluster = !this.isStaff && (jobClusterWithChecked == null || jobClusterWithChecked.length == 0);
+      this.userCantSeeCluster = (jobClusterWithChecked === 403); // Non Auth user
 
-      //
-      this._setForm();
+      if (this.userCantSaveCluster || this.userCantSeeCluster) {
+         this._cannotEdit = document.createElement("p");
+         this._cannotEdit.setAttribute("class", "text-gray pb-3");
+         this._form.appendChild(this._cannotEdit);
+      
+         if (this.data.id == "New") {
+            // Wihtout authorization to see clusters, or if there are none
+            if (this.userCantSeeCluster) {
+               this._cannotEdit.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
+            } else {
+               this._cannotEdit.innerHTML = `Required: Add a Job Cluster via <a href="/${this.clusterListHandler.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
+            }
+            
+            this._form.appendChild(this._cannotEdit);
+            this.savePost.disabled = true;
+            this.savePost.hidden = true;
+            current.appendChild(this._form);
 
+            return current;
+         } else {
+            if (this.userCantSeeCluster) {
+               this._cannotEdit.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
+               this.userCantSaveCluster = false;
+            } else if (this.userCantSaveCluster) {
+               this.saveButton.disabled = true;
+               this._cannotEdit.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.clusterListHandler.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
+            }
+         }
+      }
 
       // append input for name
       this._editName = document.createElement("text-input");
+      this._editName.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._editName.setAttribute("name", "Name");
       this._editName.setAttribute("type", "string");
       this._editName.setValue(this.data.name);
@@ -34,6 +66,7 @@ class AlgorithmEdit extends TypeForm {
 
       // description
       this._editDescription = document.createElement("text-input");
+      this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._editDescription.setAttribute("name", "Description");
       this._editDescription.setAttribute("type", "string");
       this._editDescription.setValue(this.data.description);
@@ -60,23 +93,25 @@ class AlgorithmEdit extends TypeForm {
 
       // Visible input with readable name
       this._userEditVisible = document.createElement("text-input");
+      this._userEditVisible.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._userEditVisible.setAttribute("name", "Registering User");
-      this._userEditVisible.setValue(this._registeredUserName );
-      this._userEditVisible.default = this._registeredUserName ;
+      this._userEditVisible.setValue(this._registeredUserName);
+      this._userEditVisible.default = this._registeredUserName;
       this._userEditVisible.permission = null;
       this._userEditVisible.addEventListener("change", this._formChanged.bind(this));
       // this._userEditVisible.setAttribute("tooltip", "User registering algorithm cannot be edited.")
       this._form.appendChild(this._userEditVisible);
 
-      // Hidden input for formValue
+      // Note: HIDDEN input for formValue of ID; Name is for user only
       this._userEdit = document.createElement("text-input");
-      this._userEdit.setValue(this._registeredUserId );
-      this._userEdit.default = this._registeredUserId ;
+      this._userEdit.setValue(this._registeredUserId);
+      this._userEdit.default = this._registeredUserId;
       this._userEdit.permission = null;
       this._userEdit.addEventListener("change", this._formChanged.bind(this));
 
       // Path to manifest
       this._manifestPath = document.createElement("file-input");
+      this._manifestPath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._manifestPath.setAttribute("name", "Manifest");
       this._manifestPath.setAttribute("for", "manifest");
       this._manifestPath.setAttribute("type", "yaml");
@@ -87,22 +122,30 @@ class AlgorithmEdit extends TypeForm {
       this._form.appendChild(this._manifestPath);
 
       // Cluster
-      const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
-      this._clusterEnumInput = document.createElement("enum-input");
-      this._clusterEnumInput.setAttribute("name", "Job Cluster");
-      this._clusterEnumInput.choices = jobClusterWithChecked;
-      this._clusterEnumInput.default = this.data.cluster;
-      if (jobClusterWithChecked.length == 0) {
-         this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
-      } else {
-         this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
+      if (!this.userCantSeeCluster) {
+         // if they aren't a non auth user
+         // Check if there are going to be enum values first, show input with NULL
+         if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
+            this._clusterEnumInput = document.createElement("text-input");
+            this._clusterEnumInput.disabled = true;
+            this._clusterEnumInput.setAttribute("name", "Job Cluster");
+            this._clusterEnumInput.setValue("Null");
+            this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
+         } else {
+            this._clusterEnumInput = document.createElement("enum-input");
+            this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+            this._clusterEnumInput.setAttribute("name", "Job Cluster");
+            this._clusterEnumInput.choices = jobClusterWithChecked;
+            this._clusterEnumInput.default = this.data.cluster;
+            this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
+         }
+
+         this._form.appendChild(this._clusterEnumInput);
       }
-      
-      this._form.appendChild(this._clusterEnumInput);
-      
 
       // Files per job
       this._filesPerJob = document.createElement("text-input");
+      this._filesPerJob.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._filesPerJob.setAttribute("name", "Files Per Job");
       this._filesPerJob.setAttribute("type", "int");
       this._filesPerJob.setValue(this.data.files_per_job);
@@ -112,6 +155,7 @@ class AlgorithmEdit extends TypeForm {
 
       // Categories
       this._categoriesList = document.createElement("array-input");
+      this._categoriesList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._categoriesList.setAttribute("name", "Categories");
       this._categoriesList.setValue(this.data.categories);
       this._categoriesList.default = this.data.categories;
@@ -121,7 +165,9 @@ class AlgorithmEdit extends TypeForm {
       // Parameters
       let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
       let paramInputTemplate = JSON.stringify({ name: '', value: '' });
+
       this._parametersList = document.createElement("array-object-input");
+      this._parametersList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._parametersList.setAttribute("name", "Parameters");
       this._parametersList.setAttribute("properties", paramInputTypes);
       this._parametersList.setAttribute("empty-row", paramInputTemplate);
@@ -152,12 +198,22 @@ class AlgorithmEdit extends TypeForm {
          formData.description = this._editDescription.getValue();
       }
 
-      if (this._manifestPath.changed() || isNew) {
+      if (this._manifestPath.changed() || (this._manifestPath.getValue() !== "")) {
          formData.manifest = this._manifestPath.getValue();
+       } else if (isNew && !this._manifestPath.changed()) {
+         formData.manifest = null;         
       }
 
-      if (this._clusterEnumInput.changed() || isNew) {
-         formData.cluster = Number(this._clusterEnumInput.getValue());
+      if (!this.userCantSaveCluster || !this.userCantSeeCluster) {
+         if (this._clusterEnumInput.changed() || isNew) {
+            let clusterValue = this._clusterEnumInput.getValue();
+            // console.log(clusterValue);
+            if (clusterValue === null || clusterValue === "Null" || clusterValue == "") {
+               formData.cluster = null;
+            } else {
+               formData.cluster = Number(clusterValue);
+            }
+         }
       }
 
       if (this._userEdit.changed() || isNew) {
@@ -177,121 +233,6 @@ class AlgorithmEdit extends TypeForm {
       }
 
       return formData;
-   }
-
-   async _save({ id = -1, globalAttribute = false } = {}) {
-      this.loading.showSpinner();
-
-      id = this.algorithmId;
-      // Start spinner & Get promises list
-      console.log("Settings _save method for algorithm id: " + id);
-      // this.loading.showSpinner();
-
-      let promises = []
-      let errors = 0; // @TODO
-
-      this._nameEdit = {
-         edited: false,
-         newName: "",
-         typeName: this.typeName,
-         typeId: this.typeId
-      }
-
-      // Main type form
-      if (this.isChanged()) {
-         // console.log("Main form was changed");
-         const formData = this._getFormData();
-         if (Object.entries(formData).length === 0) {
-            return console.error("No formData");
-         } else {
-            promises.push(this._fetchPatchPromise({ id, formData }));
-            if (typeof formData.name !== "undefined") {
-               this._nameEdit.edited = true;
-               this._nameEdit.newName = formData.name;
-            }
-         }
-      }
-
-      let messageObj = {};
-      if (promises.length > 0 && errors === 0) {
-         // Check if anything changed
-         Promise.all(promises).then(async (respArray) => {
-            let responses = [];
-            respArray.forEach((item, i) => {
-               responses.push(item.json())
-            });
-
-            Promise.all(responses)
-               .then(dataArray => {
-                  messageObj = this._handleResponseWithAttributes({
-                     id,
-                     dataArray,
-                     hasAttributeChanges: false,
-                     attrPromises: [],
-                     respArray
-                  });
-
-                  let message = "";
-                  let success = false;
-                  let error = false;
-                  if (messageObj.messageSuccess) {
-                     let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-                     message += heading + messageObj.messageSuccess;
-                     success = true;
-                  }
-                  if (messageObj.messageError) {
-                     let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-                     message += heading + messageObj.messageError;
-                     error = true;
-                  }
-
-                  if (messageObj.requiresConfirmation) {
-                     let buttonSave = this._getAttrGlobalTrigger(id);
-                     let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-                     let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-                     let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
-                     this.loading.hideSpinner();
-                     this._modalConfirm({
-                        "titleText": "Complete",
-                        mainText,
-                        buttonSave
-                     });
-                  } else {
-                     let mainText = `${message}`;
-                     this.loading.hideSpinner();
-                     this._modalComplete(
-                        mainText
-                     );
-                     // Reset forms to the saved data from model
-                     this.resetHard();
-                  }
-               }).then(() => {
-                  // Reset changed flag
-                  this.changed = false;
-
-                  // Update anything related
-                  // Update related items with an event if required
-                  if (this._nameEdit.edited) {
-                     this._updateNavEvent("rename", this._nameEdit.newName)
-                  }
-               });
-
-         }).catch(err => {
-            console.error("File " + err.fileName + " Line " + err.lineNumber + "\n" + err);
-            this.loading.hideSpinner();
-         });
-      } else if (!promises.length > 0) {
-         this.loading.hideSpinner();
-         console.error("Attempted to save but no promises found.");
-         return this._modalSuccess("Nothing new to save!");
-      } else if (!errors === 0) {
-         this.loading.hideSpinner();
-         return this._modalError("Please fix form errors.");
-      } else {
-         this.loading.hideSpinner();
-         return this._modalError("Problem saving form data.");
-      }
    }
 
 }

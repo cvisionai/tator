@@ -741,6 +741,10 @@ class TextOverlay extends TatorElement {
     }
   }
 
+  getDisplayStatus() {
+    return this._display;
+  }
+
   /**
    * Toggles the text on/off for a partiular text overlay
    * @param {integer} idx - Index returned from addText
@@ -1973,6 +1977,11 @@ class AnnotationCanvas extends TatorElement
     // on is True if text overlays should be shown.
     // Fill will make all text overlays disappear
     this._textOverlay.display(on);
+  }
+
+  getTextOverlayDisplayStatus()
+  {
+    return this._textOverlay.getDisplayStatus();
   }
 
   determineLocalizationResizeType(location, localization)

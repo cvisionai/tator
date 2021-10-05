@@ -136,6 +136,10 @@ class ThumbInput extends TatorElement {
     this._projectId = val;
   }
 
+  set organizationId(val) {
+    this._organizationId = val;
+  }
+
     //
   _editListeners(e) {
     this.dispatchEvent(new Event("change"));
@@ -144,6 +148,7 @@ class ThumbInput extends TatorElement {
       let uploadData = {
         file,
         projectId : this._projectId,
+        organizationId: this._organizationId, // Only one of organizationId or projectId required
         gid : "",
         section : "",
         mediaTypeId : null,

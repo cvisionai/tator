@@ -172,6 +172,27 @@ class AnnotationPlayer extends TatorElement {
       this._slider.onBufferLoaded(evt);
     });
 
+    this._video.addEventListener("onDemandDetail", evt => {
+      this._slider.onDemandLoaded(evt);
+    });
+
+    // When a seek is complete check to make sure the display all set
+    this._video.addEventListener("seekComplete", evt => {
+      clearTimeout(this._handleNotReadyTimeout)
+      this._handleNotReadyTimeout = null;
+      this.checkReady();
+    });
+
+    // When a playback is stalled, pause the video
+    this._video.addEventListener("playbackStalled", evt => {
+      Utilities.warningAlert("Video playback stalled.");
+      this.pause();
+    });
+
+    this._video.addEventListener("rateChange", evt => {
+      this.checkReady();
+    });
+
     // #TODO Combine with this._slider.addEventListener
     this._zoomSlider.addEventListener("input", evt => {
       this.handleSliderInput(evt);
@@ -270,6 +291,15 @@ class AnnotationPlayer extends TatorElement {
       this.safeMode();
     });
 
+    this._video.addEventListener("playbackReady", () =>{
+      if (this.is_paused()) {
+        this._play._button.removeAttribute("disabled");
+        this._rewind.removeAttribute("disabled")
+        this._fastForward.removeAttribute("disabled");
+        this._play.removeAttribute("tooltip");
+      }
+    });
+
     this._timelineD3.addEventListener("zoomedTimeline", evt => {
       if (evt.detail.minFrame < 1 || evt.detail.maxFrame < 1) {
         // Reset the slider
@@ -281,7 +311,7 @@ class AnnotationPlayer extends TatorElement {
         this._zoomSliderDiv.hidden = false;
         this._zoomSlider.setAttribute("min", evt.detail.minFrame);
         this._zoomSlider.setAttribute("max", evt.detail.maxFrame);
-        this._zoomSlider.value = Number(this._currentFrameText.textContent);
+        this._zoomSlider.value = this._slider.value;
       }
     });
 
@@ -380,13 +410,13 @@ class AnnotationPlayer extends TatorElement {
       if (evt.ctrlKey && (evt.key == "m")) {
         fullscreen.click();
       }
+      else if (evt.key == "t") {
+        this.dispatchEvent(new Event("toggleTextOverlay", {composed: true}));
+      }
       else if (evt.code == "Space")
       {
         evt.preventDefault();
         if (this._play._button.hasAttribute("disabled")) {
-          return;
-        }
-        if (this._playbackDisabled) {
           return;
         }
         if (this.is_paused())
@@ -425,6 +455,8 @@ class AnnotationPlayer extends TatorElement {
         }
       }
     });
+
+    this._videoStatus = "paused"; // Possible values: playing | paused | scrubbing
   }
 
   static get observedAttributes() {
@@ -499,6 +531,9 @@ class AnnotationPlayer extends TatorElement {
     const frame = Number(evt.target.value);
     const waitOk = now - this._lastScrub > this._scrubInterval;
     if (waitOk) {
+
+      this._videoStatus = "scrubbing";
+
       this._play.setAttribute("is-paused","");
       this._video.stopPlayerThread();
       this._video.shutdownOnDemandDownload();
@@ -519,13 +554,17 @@ class AnnotationPlayer extends TatorElement {
     {
       frame = evt.detail.frame;
     }
+
+    this._videoStatus = "scrubbing";
+
     this._video.stopPlayerThread();
     this._video.shutdownOnDemandDownload();
 
     // Use the hq buffer when the input is finalized
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
-      this._video.onDemandDownloadPrefetch(true);
+      this._video.onDemandDownloadPrefetch(frame);
+      this._videoStatus = "paused";
       this.handleNotReadyEvent();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
@@ -539,6 +578,8 @@ class AnnotationPlayer extends TatorElement {
    * Process the frame input text field and attempts to jump to that frame
    */
   processFrameInput() {
+
+    this._videoStatus = "paused";
 
     var frame = parseInt(this._currentFrameInput.value);
     if (isNaN(frame)) {
@@ -568,6 +609,8 @@ class AnnotationPlayer extends TatorElement {
    * Process the time input text field and attempts to jump to the corresponding frame
    */
   processTimeInput() {
+
+    this._videoStatus = "paused";
 
     var timeTokens = this._currentTimeInput.value.split(":");
     if (timeTokens.length != 2)
@@ -756,9 +799,21 @@ class AnnotationPlayer extends TatorElement {
     const timeouts = [2000, 4000, 8000, 16000];
     var timeoutIndex = 0;
     var timeoutCounter = 0;
+    const clock_check = 100;
+    this._last_duration = this._video.playBufferDuration();
 
     let check_ready = (checkFrame) => {
-      timeoutCounter += 100;
+
+      if (this._videoStatus == "scrubbing") {
+        console.log(`Player status == scrubbing | Cancelling check_ready`);
+        return;
+      }
+      if (this._videoStatus == "playing") {
+        console.error(`Player status == playing | Cancelling check_ready`);
+        return;
+      }
+
+      timeoutCounter += clock_check;
 
       this._handleNotReadyTimeout = null;
       let not_ready = false;
@@ -778,17 +833,25 @@ class AnnotationPlayer extends TatorElement {
           timeoutCounter = 0;
           timeoutIndex += 1;
           console.log(`Video playback check - restart [Now: ${new Date().toISOString()}]`);
-          this._video.onDemandDownloadPrefetch(true);
+          this._video.onDemandDownloadPrefetch(-1);
         }
       }
       if (not_ready == true)
       {
-        if (timeoutIndex < timeouts.length) {
+        // Heal the buffer state if duration increases since the last time we looked
+        if (this._video.playBufferDuration() > this._last_duration)
+        {
+          this._last_duration = this._video.playBufferDuration();
+          timeoutIndex = 0;
+        }
+        // For this logic to work it is actually based off the worst case
+        // number of clocks in a given timeout attempt.
+        if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
           //console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
           this._handleNotReadyTimeout = setTimeout(() => {
             this._handleNotReadyTimeout = null;
             check_ready(checkFrame);
-          }, 100);
+          }, clock_check);
         }
         else {
           Utilities.warningAlert("Video player unable to reach ready state.", "#ff3e1d", false);
@@ -806,7 +869,7 @@ class AnnotationPlayer extends TatorElement {
     };
 
     // We can be faster in single play mode
-    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), timeouts[timeoutIndex]);
+    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), 0);
   }
 
   play()
@@ -842,6 +905,7 @@ class AnnotationPlayer extends TatorElement {
       this._video.rateChange(this._rate);
       if (this._video.play())
       {
+        this._videoStatus = "playing";
         this._play.removeAttribute("is-paused");
       }
     }
@@ -880,6 +944,7 @@ class AnnotationPlayer extends TatorElement {
       this._video.rateChange(this._rate);
       if (this._video.playBackwards())
       {
+        this._videoStatus = "playing";
         this._play.removeAttribute("is-paused");
       }
     }
@@ -896,6 +961,7 @@ class AnnotationPlayer extends TatorElement {
       this._video.pause();
       this._play.setAttribute("is-paused", "")
     }
+    this._videoStatus = "paused";
     this.checkReady();
   }
 
@@ -924,7 +990,7 @@ class AnnotationPlayer extends TatorElement {
       this.pause();
       this._video.setQuality(quality, buffer);
     }
-    this._video.onDemandDownloadPrefetch(true);
+    this._video.onDemandDownloadPrefetch(this._video.currentFrame());
     this._video.refresh(true);
   }
 
