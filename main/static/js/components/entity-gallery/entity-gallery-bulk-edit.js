@@ -72,6 +72,7 @@ class GalleryBulkEdit extends TatorElement {
 
 
 
+
       // Comparison panel
       this._comparisonPanel = document.createElement("entity-gallery-attribute-comparison-panel");
       this._comparisonPanel.addEventListener("select-click", this._showSelectionPanel.bind(this)); // Back
@@ -114,7 +115,11 @@ class GalleryBulkEdit extends TatorElement {
 
       // Flags for the UI
       this._editPanelWasOpen = false;
-      this.resultsContainsAttributes = false;
+      this.resultsFilter = {
+         containsAttributes: false,
+         attributes: [],
+         filterObj: {}
+      };
    }
 
    set elementList(val) {
@@ -335,14 +340,12 @@ class GalleryBulkEdit extends TatorElement {
 
       this.dispatchEvent(new Event("multi-enabled"));
 
-      if (this.resultsContainsAttributes == true) {
-         this.boxHelper._modalWarning(`Current search results are filtered on an attribute. Which if edited will cause pagination to change.`)
+      if (this.resultsFilter.containsAttributes == true) {
+         this._editPanel.addEventListener("attribute-is-filtered-on", this.prefetchWarning.bind(this));
       }
    }
 
-   _escapeEditMode(e) {
-      console.log("Edit mode closed");
-      console.log(e);
+   _escapeEditMode() {
       this._editMode = false;
 
       // hide edit drawer and tools
@@ -360,11 +363,14 @@ class GalleryBulkEdit extends TatorElement {
       this._page._header.classList.remove("hidden");
       this._page.aside.classList.remove("hidden");
       this._page.main.style.marginTop = "0";
+      this._page._filterView.classList.remove("hidden");
       this._page._filterResults._ul.classList.remove("multi-select-mode");
 
       this._clearSelection();
       // this.resetElements();
       this.dispatchEvent(new Event("multi-disabled"));
+
+      this._editPanel.removeEventListener("attribute-is-filtered-on", this.prefetchWarning.bind(this));
    }
 
    _showSelectionPanel(val = true) {
@@ -562,7 +568,8 @@ class GalleryBulkEdit extends TatorElement {
    updateSelectionObjects(formData) {
       for (let id of formData.ids) {
          let newCardData = this._currentSelectionObjects.get(id);
-
+         console.log(this._currentSelectionObjects);
+         console.log(id);
          if (typeof newCardData !== "undefined") {
             if (formData.attributes) {
                for (let [a, b] of Object.entries(formData.attributes)) {
@@ -597,11 +604,52 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    checkForFilters(filterObj) {
+      // This will stay up to date with any filter on the page
+      let tmpArray = [];
       for (let filter of filterObj) {
-         if (filterObj.categoryGroup === "Annotation" && !filterObj.field.startsWith("_")) {
-            this.resultsContainsAttributes = true;
-            console.log("Results may contain attr");
+         console.log(`Filter found: ${filter}`)
+         if (filter.categoryGroup === "Annotation" && !filter.field.startsWith("_")) {
+            this.resultsFilter.containsAttributes = true;
+            tmpArray.push(filter.field);
+            console.log(filter.field);
          }
+      }
+      this.resultsFilter.attributes = tmpArray;
+      this.resultsFilter.filterObj = filterObj;
+      this._editPanel.updateWarningList(this.resultsFilter);
+   }
+
+   prefetch() {
+      
+   }
+
+   prefetchWarning(e) {
+      if (this._editMode) {
+         let buttonContinue = document.createElement("button")
+         buttonContinue.setAttribute("class", "btn f1 text-semibold");
+         buttonContinue.innerHTML = "Continue";
+         buttonContinue.addEventListener("click", () => {
+            this.boxHelper.modal._closeCallback();
+            // this._page.loading.showSpinner();
+            // this.prefetch.then(() => {
+            //    this._page.loading.hideSpinner();
+            //    this._page.gallery._paginator
+            // });
+         });
+
+         let buttonExit = document.createElement("button")
+         buttonExit.setAttribute("class", "btn btn-clear btn-charcoal f1 text-semibold");
+         buttonExit.innerHTML = "Exit";
+         buttonExit.addEventListener("click", () => {
+            this.boxHelper.modal._closeCallback();
+            this._escapeEditMode();
+         });
+
+         let names = "";
+         for (let name of e.detail.names) {
+            names += `'${name}'`;
+         }
+         this.boxHelper._modalWarningConfirm(`Current search results are filtered on ${names} attribute. Editing may change pagination.`, buttonExit, buttonContinue);
       }
    }
    

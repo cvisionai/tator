@@ -123,6 +123,10 @@ class MultiAttributeEditPanel extends TatorElement {
       this._shownTypes = new Map();
       this._inputGroup = new Map();
       this._inputs = new Map();
+      this.resultsFilter = {
+         containsAttributes: false,
+         attributes: []
+      };
    }
    
    _toggleAttributes(hideFlag = null) {
@@ -141,6 +145,25 @@ class MultiAttributeEditPanel extends TatorElement {
 
    show(val) {
       this.hidden = !val;
+      let nameIsFilteredOn = false;
+      let filterNames = [];
+
+      for (let input of this._inputs) {
+         let name = input.getAttribute("name");
+         // Update bulk edit form input visibility
+         if (input.hidden == false && this.resultsFilter.attributes.includes(name)) {
+            console.log("Warning: filter contains attribute.")
+            nameIsFilteredOn = true;
+            filterNames.push(name);
+         }
+      }
+
+      // after looping set this message
+      if (nameIsFilteredOn) {
+         this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames }}))
+      }
+
+
    }
 
    isHidden() {
@@ -220,18 +243,33 @@ class MultiAttributeEditPanel extends TatorElement {
    _boxValueChanged(checkBoxSet, typeId) {
       let attributeNames = checkBoxSet.getValue();
       let inputs = this._shadow.getElementById(typeId);
+
+      let nameIsFilteredOn = false;
+      let filterNames = [];
       
       for (let input of inputs.children) {
          let name = input.getAttribute("name");
+         
          // Update bulk edit form input visibility
          if (input.tagName !== "LABEL" && attributeNames.includes(name)) {
             input.hidden = false;
          } else {
             input.hidden = true;
+            if (this.resultsFilter.attributes.includes(name)) {
+               console.log("Warning: filter containt attribute.")
+               nameIsFilteredOn = true;
+            }
          }
 
+
+
          //Update compare table via event
-         this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId }}))
+         this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
+      }
+
+      // after looping set this message
+      if (nameIsFilteredOn) {
+         this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames }}))
       }
    }
 
@@ -306,6 +344,7 @@ class MultiAttributeEditPanel extends TatorElement {
 
       for (let box of selectionBoxes._inputs) {
          let boxName = box.getAttribute("name");
+         
          if (values.includes(boxName)) {
             box._checked = true;
          } else {
@@ -495,6 +534,10 @@ class MultiAttributeEditPanel extends TatorElement {
          this._editButton.classList.remove("disabled");
       }
       this._selectionCount.textContent = count;
+   }
+
+   updateWarningList(resultsFilter) {
+      return this.resultsFilter = resultsFilter;
    }
 
 }

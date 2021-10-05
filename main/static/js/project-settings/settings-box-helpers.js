@@ -161,16 +161,19 @@ class SettingsBox {
     return this.modal.setAttribute("is-open", "true")
   }
 
-  _modalWarning(message){
+  _modalWarningConfirm(message, buttonClose, buttonSave){
     this._modalClear();
     let text = document.createTextNode(" Warning");
     this.modal._titleDiv.innerHTML = "";
     let warningIcon = document.createElement("modal-warning");
-    warningIcon.svg.classList.remove("text-red");
-    warningIcon.svg.classList.add("text-yellow");
+    warningIcon.svg.setAttribute("class", "h3 text-yellow");
     this.modal._titleDiv.append( );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
+    
+    this.modal._footer.appendChild(buttonClose);
+    this.modal._footer.appendChild(buttonSave);
+    
     return this.modal.setAttribute("is-open", "true")
   }
 
