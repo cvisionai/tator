@@ -257,8 +257,8 @@ class AnnotationPage extends TatorPage {
                     playbackQuality = Number(searchParams.get("playQuality"));
                   }
                   this._settings.quality = playbackQuality;
-                  this._player.setQuality(playbackQuality, null, true);
                   this._player.setAvailableQualities(primeMediaData);
+                  this._player.setQuality(playbackQuality, null, true);
                 }
               );
             } else if (type_data.dtype == "live") {
@@ -820,7 +820,8 @@ class AnnotationPage extends TatorPage {
             if (localizationTypeId === null) {
               throw "Could not find a localization type to use for track creation!";
             }
-            dataType.localizationType = dataTypes.filter(type => type.id == localizationTypeId)[0];
+            dataType.localizationType = dataTypes.filter(type => (type.id == localizationTypeId
+                                                                  || Number(type.id.split('_')[1]) == localizationTypeId))[0];
           }
         }
         this._data.init(dataTypes, this._version, projectId, mediaId, update, !block_signals);

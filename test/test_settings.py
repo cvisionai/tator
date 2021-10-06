@@ -78,54 +78,24 @@ def test_settings_localizationTypes(authenticated, project):
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
-    # Create Localization types
-    page.click('.heading-for-LocalizationType .Nav-action')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Name"] input', 'Auto Box Type')
-    page.select_option('#itemDivId-LocalizationType-New enum-input[name="Data Type"] select', label='Box')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Description"] input', 'Loc Type description for automated test.')
-    # page.click('#itemDivId-LocalizationType-New text-input[type="color"]')
-    # page.fill('#itemDivId-LocalizationType-New text-input[type="color"] input', '#FF69B4')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Visible"] label[for="on"]')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Drawable"] label[for="on"]')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Line Width"] input', '5')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Grouping Default"] label[for="on"]')
-    page.click('#itemDivId-LocalizationType-New span:text("Test Images")')
-    page.click('#itemDivId-LocalizationType-New button[value="Save"]')
-    page.wait_for_selector(f'text="Localization type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
-    print(f"Box - Localization type created successfully!!")
-    
-    page.click('.heading-for-LocalizationType .Nav-action')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Name"] input', 'Auto Line Type')
-    page.select_option('#itemDivId-LocalizationType-New enum-input[name="Data Type"] select', label='Line')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Description"] input', 'Loc Type description for automated test.')
-    # page.click('#itemDivId-LocalizationType-New text-input[type="color"]')
-    # page.fill('#itemDivId-LocalizationType-New text-input[type="color"] input', '#FF69B4')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Visible"] label[for="on"]')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Drawable"] label[for="on"]')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Line Width"] input', '5')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Grouping Default"] label[for="on"]')
-    page.click('#itemDivId-LocalizationType-New span:text("Test Images")')
-    page.click('#itemDivId-LocalizationType-New button[value="Save"]')
-    page.wait_for_selector(f'text="Localization type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
-    print(f"Line - Localization type created successfully!!")
-    
-    page.click('.heading-for-LocalizationType .Nav-action')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Name"] input', 'Auto Dot Type')
-    page.select_option('#itemDivId-LocalizationType-New enum-input[name="Data Type"] select', label='Dot')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Description"] input', 'Loc Type description for automated test.')
-    # page.click('#itemDivId-LocalizationType-New text-input[type="color"]')
-    # page.fill('#itemDivId-LocalizationType-New text-input[type="color"] input', '#FF69B4')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Visible"] label[for="on"]')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Drawable"] label[for="on"]')
-    page.fill('#itemDivId-LocalizationType-New text-input[name="Line Width"] input', '5')
-    page.click('#itemDivId-LocalizationType-New bool-input[name="Grouping Default"] label[for="on"]')
-    page.click('#itemDivId-LocalizationType-New span:text("Test Images")')
-    page.click('#itemDivId-LocalizationType-New button[value="Save"]')
-    page.wait_for_selector(f'text="Localization type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
-    print(f"Dot - Localization type created successfully!!")
+    localization_dtypeSet = {"Box","Line","Dot","Poly"}
+    for dtypeName in localization_dtypeSet:
+        # Create types
+        page.click('.heading-for-LocalizationType .Nav-action')
+        page.fill(f'#itemDivId-LocalizationType-New text-input[name="Name"] input', 'Auto {dtypeName} Type')
+        page.select_option(f'#itemDivId-LocalizationType-New enum-input[name="Data Type"] select', label=dtypeName)
+        page.fill('#itemDivId-LocalizationType-New text-input[name="Description"] input', 'Loc Type description for automated test.')
+        # page.click('#itemDivId-LocalizationType-New text-input[type="color"]')
+        # page.fill('#itemDivId-LocalizationType-New text-input[type="color"] input', '#FF69B4')
+        page.click('#itemDivId-LocalizationType-New bool-input[name="Visible"] label[for="on"]')
+        page.click('#itemDivId-LocalizationType-New bool-input[name="Drawable"] label[for="on"]')
+        page.fill('#itemDivId-LocalizationType-New text-input[name="Line Width"] input', '5')
+        page.click('#itemDivId-LocalizationType-New bool-input[name="Grouping Default"] label[for="on"]')
+        page.click('#itemDivId-LocalizationType-New span:text("Test Images")')
+        page.click('#itemDivId-LocalizationType-New button[value="Save"]')
+        page.wait_for_selector(f'text="Localization type created successfully!"')
+        page.click('modal-dialog modal-close .modal__close')
+        print(f"{dtypeName} - Localization type created successfully!!")
 
 def test_settings_leafType(authenticated, project):
     print("Leaf Type Tests...")
@@ -357,7 +327,7 @@ def test_settings_attributeTests(authenticated, project):
     successMessages = page.query_selector_all('modal-dialog modal-success')
 
     print(f'Changes saved successfully for: {len(successMessages)} attributes')
-    assert len(successMessages) > 0 # == 7
+    assert len(successMessages) == 7
 
     page.click('modal-dialog modal-close .modal__close')
 

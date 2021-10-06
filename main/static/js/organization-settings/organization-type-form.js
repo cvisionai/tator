@@ -38,7 +38,7 @@ class OrganizationTypeForm extends TatorElement {
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox(this.modal);
-    console.log(this.organizationId);
+    // console.log(this.organizationId);
     this._addNew = new TypeNew({
       "type": this.typeName,
       "projectId": this.organizationId

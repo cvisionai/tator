@@ -1376,6 +1376,19 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  isPlaybackReady() {
+    return this._onDemandPlaybackReady;
+  }
+
+  sendPlaybackReady() {
+    this.dispatchEvent(new CustomEvent(
+      "playbackReady",
+      {
+        composed: true,
+        detail: {playbackReadyId: this._waitId},
+      }));
+  }
+
   startDownload(streaming_files, offsite_config)
   {
     var that = this;
@@ -1417,7 +1430,11 @@ class VideoCanvas extends AnnotationCanvas {
         for (let vidBuffIdx=0; vidBuffIdx < that._videoElement.length; vidBuffIdx++) {
           totalMediaElementCount += that._videoElement[vidBuffIdx].getMediaElementCount();
         }
-        console.log(`(Media ID: ${that._videoObject.id}) Current mediaElementCount: ${totalMediaElementCount}`);
+
+        if (that._lastMediaElementCount != totalMediaElementCount) {
+          console.log(`(Media ID: ${that._videoObject.id}) mediaElementCount = ${totalMediaElementCount}`);
+          that._lastMediaElementCount = totalMediaElementCount;
+        }
 
         //console.log(`....downloaded: ${parseInt(100*e.data["percent_complete"])} (buf_idx: ${e.data["buf_idx"]})`)
         let video_buffer = that._videoElement[e.data["buf_idx"]];
@@ -1542,6 +1559,7 @@ class VideoCanvas extends AnnotationCanvas {
                                            detail: {playbackReadyId: this._waitId},
                                            }));
         that._onDemandPlaybackReady = true; // fake it
+        that.sendPlaybackReady();
       }
       else if (type == "onDemandInit")
       {
@@ -1553,6 +1571,7 @@ class VideoCanvas extends AnnotationCanvas {
         console.log("onDemand finished downloading. Reached end of video.");
         that._onDemandFinished = true;
         that._onDemandPlaybackReady = true; //if we reached the end, we are done.
+        that.sendPlaybackReady();
       }
       else if (type == "onDemand")
       {
@@ -2178,11 +2197,14 @@ class VideoCanvas extends AnnotationCanvas {
   /**
    * Get the video element associated with the given buffer type and frame number
    *
+   * A feature both scrub and play will return the best available buffer for the frame in question.
+   *
    * @param {integer} frame - Target frame number
    * @param {string} bufferType - "scrub" | "play" | "seek"
+   * @param {bool} force - true to force "play" over seek fallback.
    * @returns {video HTMLelement}
    */
-  videoBuffer(frame, bufferType)
+  videoBuffer(frame, bufferType, force)
   {
     if (frame == undefined)
     {
@@ -2206,18 +2228,27 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return this._videoElement[this._seek_idx].returnSeekIfPresent(time, direction);
     }
-    else if (bufferType == "play")
-    {
-      return this._videoElement[this._play_idx].forTime(time, bufferType, direction, this._numSeconds);
-    }
     else
     {
+      // Treat play and scrub buffer as best available.
       let play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
-      if (play_attempt)
+
+      // To test degraded mode (every 10th frame is degraded):
+      //if (frame % 10 == 0)
+      //{
+      //  play_attempt = null;
+      //}
+
+      // Log every 5 frames if we go to degraded mode.
+      if (play_attempt == null && bufferType == "play" && frame % 5 == 0)
+      {
+        console.warn("Video degraded, attempting scrub buffer.");
+      }
+      if (play_attempt || force)
       {
         return play_attempt;
       }
-      return this._videoElement[this._scrub_idx].forTime(time, bufferType, direction, this._numSeconds);
+      return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
     }
   }
 
@@ -2784,11 +2815,12 @@ class VideoCanvas extends AnnotationCanvas {
     // and then schedules the next frame to be loaded
     var pushAndGoToNextFrame=function(frameIdx, source, width, height)
     {
-      if (source == null)
+      if (source == null) // To test stalls: || Math.round(Math.random() * 50) == 5)
       {
         // Video isn't ready yet, wait and try again
         console.log(`video buffer not ready for loading - (ID:${this._videoObject.id}) frame: ` + frameIdx);
         this._loaderTimeout = setTimeout(loader, 250);
+        this.dispatchEvent(new CustomEvent("playbackStalled", {composed: true}));
       }
       else
       {
@@ -2820,6 +2852,16 @@ class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  onDemandBufferAvailable(frame)
+  {
+    return this.videoBuffer(frame, "play", true) != null;
+  }
+
+  scrubBufferAvailable(frame)
+  {
+    return this.videoBuffer(frame, "scrub") != null;
+  }
+
   onDemandDownloadPrefetch(reqFrame)
   {
     // This function can be called at anytime. If auto-download is disabled, then just stop
@@ -2836,11 +2878,12 @@ class VideoCanvas extends AnnotationCanvas {
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
     // Always prefetch if we pause after playing backwards.
-    if (this._direction != Direction.BACKWARDS && this.videoBuffer(this.currentFrame(), "play") != null && reqFrame == this._dispFrame) {
+    if (this._direction != Direction.BACKWARDS && this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
       this._onDemandPlaybackReady = true;
+      this.sendPlaybackReady();
       return;
     }
 
@@ -3091,12 +3134,7 @@ class VideoCanvas extends AnnotationCanvas {
                 {
                   console.log(`(ID:${this._videoObject.id}) onDemandPlaybackReady (start/end/current/timeToEnd): ${start} ${end} ${currentTime} ${timeToEnd}`);
                   this._onDemandPlaybackReady = true;
-                  this.dispatchEvent(new CustomEvent(
-                    "playbackReady",
-                    {
-                      composed: true,
-                      detail: {playbackReadyId: this._waitId},
-                    }));
+                  this.sendPlaybackReady();
                 }
               }
             }
