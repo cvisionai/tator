@@ -780,6 +780,8 @@ class AnnotationPage extends TatorPage {
         // Replace the data type IDs so they are guaranteed to be unique.
         for (let [idx,dataType] of dataTypes.entries()) {
           dataType.id = dataType.dtype + "_" + dataType.id;
+        }
+        for (let [idx,dataType] of dataTypes.entries()) {
           let isLocalization=false;
           let isTrack=false;
           let isTLState=false;
