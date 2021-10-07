@@ -17,6 +17,8 @@ from .bucket import BucketListAPI
 from .bucket import BucketDetailAPI
 from .change_log import ChangeLogListAPI
 from .clone_media import CloneMediaListAPI
+from .dashboard import DashboardListAPI
+from .dashboard import DashboardDetailAPI
 from .download_info import DownloadInfoAPI
 from .email import EmailAPI
 from .favorite import FavoriteListAPI
@@ -65,7 +67,7 @@ from .project import ProjectListAPI
 from .project import ProjectDetailAPI
 from .report import ReportListAPI
 from .report import ReportDetailAPI
-from .save_report_file import SaveReportFileAPI
+from .save_html_file import SaveHTMLFileAPI
 from .section import SectionListAPI
 from .section import SectionDetailAPI
 from .section_analysis import SectionAnalysisAPI

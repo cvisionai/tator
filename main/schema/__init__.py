@@ -18,6 +18,8 @@ from .bucket import BucketListSchema
 from .bucket import BucketDetailSchema
 from .change_log import ChangeLogListSchema
 from .clone_media import CloneMediaListSchema
+from .dashboard import DashboardListSchema
+from .dashboard import DashboardDetailSchema
 from .download_info import DownloadInfoSchema
 from .email import EmailSchema
 from .favorite import FavoriteListSchema
@@ -67,7 +69,7 @@ from .project import ProjectListSchema
 from .project import ProjectDetailSchema
 from .report import ReportListSchema
 from .report import ReportDetailSchema
-from .save_report_file import SaveReportFileSchema
+from .save_html_file import SaveHTMLFileSchema
 from .section import SectionListSchema
 from .section import SectionDetailSchema
 from .section_analysis import SectionAnalysisSchema

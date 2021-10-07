@@ -5,18 +5,18 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._errors import error_responses
 from ._message import message_with_id_schema
 
-class SaveReportFileSchema(AutoSchema):
+class SaveHTMLFileSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'SaveReportFile'
+            operation['operationId'] = 'SaveHTMLFile'
         operation['tags'] = ['Tator']
         return operation
 
     def get_description(self, path, method):
         return dedent("""\
-        Saves an uploaded report file to the desired project's permanent storage.
-        It is expected this manifest corresponds with a report file registered by another endpoint.
+        Saves an uploaded html file to the desired project's permanent storage.
+        It is expected that this file will be used in conjunction with either a Report or Dashboard object.
         """)
 
     def _get_path_parameters(self, path, method):
@@ -37,7 +37,7 @@ class SaveReportFileSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/ReportFileSpec'},
+                'schema': {'$ref': '#/components/schemas/HTMLFileSpec'},
             }}}
 
         return body
@@ -46,9 +46,9 @@ class SaveReportFileSchema(AutoSchema):
         responses = error_responses()
         if method == 'POST':
             responses['201'] = {
-            'description': 'Successful save of report file.',
+            'description': 'Successful save of html file.',
             'content': {'application/json': {'schema': {
-                '$ref': '#/components/schemas/ReportFile',
+                '$ref': '#/components/schemas/HTMLFile',
             }}}
         }
         return responses

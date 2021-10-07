@@ -57,6 +57,8 @@ class CustomGenerator(SchemaGenerator):
                 'Bucket': bucket,
                 'ChangeLog': change_log,
                 'CloneMediaSpec': clone_media_spec,
+                'Dashboard': dashboard,
+                'DashboardSpec': dashboard_spec,
                 'DownloadInfoSpec': download_info_spec,
                 'DownloadInfo': download_info,
                 'EmailSpec': email_spec,
@@ -67,7 +69,12 @@ class CustomGenerator(SchemaGenerator):
                 'Favorite': favorite,
                 'FeedDefinition': feed_definition,
                 'FileDefinition': file_definition,
+<<<<<<< HEAD
                 'FloatArrayQuery': float_array_query,
+=======
+                'HTMLFile': html_file,
+                'HTMLFileSpec': html_file_spec,
+>>>>>>> Renamed report_file to html_file. Added dashboard endpoints.
                 'LiveDefinition': live_definition,
                 'LiveUpdateDefinition': live_update_definition,
                 'ImageDefinition': image_definition,
@@ -121,8 +128,6 @@ class CustomGenerator(SchemaGenerator):
                 'Project': project,
                 'Report': report,
                 'ReportSpec': report_spec,
-                'ReportFile': report_file,
-                'ReportFileSpec': report_file_spec,
                 'ResolutionConfig': resolution_config,
                 'S3StorageConfig': s3_storage_config,
                 'SectionSpec': section_spec,

@@ -1478,14 +1478,40 @@ class AnnouncementToUser(Model):
     user = ForeignKey(User, on_delete=CASCADE)
 
 class Report(Model):
+    """ Standalone HTML page shown as a report within the analytics view of the project.
     """
-    """
-    created_datetime = DateTimeField(auto_now_add=True)
-    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
-    user = ForeignKey(User, on_delete=CASCADE, db_column='user')
-    name = CharField(max_length=128)
-    html_file = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    """ Datetime when report was created """
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='report_created_by', db_column='created_by')
+    """ User who originally created the report """
     description = CharField(max_length=1024, blank=True)
+    """Description of the report""" 
+    html_file = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    """ HTML file of the report """ 
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    """ Datetime when report was last modified """
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='report_modified_by', db_column='modified_by')
+    """ User who last modified the report """
+    name = CharField(max_length=128)
+    """ Project associated with the report """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    """ Project associated with the report """
+
+class Dashboard(Model):
+    """ Standalone HTML page shown as a dashboard within a project.
+    """
+    categories = ArrayField(CharField(max_length=128), default=list, null=True)
+    """ List of categories associated with the dashboard. This field is currently ignored. """
+    description = CharField(max_length=1024, blank=True)
+    """ Description of the dashboard. """
+    html_file = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    """ Dashboard's HTML file """
+    name = CharField(max_length=128)
+    """ Name of the dashboard """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    """ Project associated with the dashboard """
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

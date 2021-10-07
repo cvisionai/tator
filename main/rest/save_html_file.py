@@ -4,8 +4,8 @@ import shutil
 
 from django.conf import settings
 
-from ..schema import SaveReportFileSchema
-from ..schema.components.report import report_file_fields as fields
+from ..schema import SaveHTMLFileSchema
+from ..schema.components.html_file import html_file_fields as fields
 from ..download import download_file
 
 from ._base_views import BaseListView
@@ -13,11 +13,11 @@ from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
-class SaveReportFileAPI(BaseListView):
-    """ Saves a HTML report file
+class SaveHTMLFileAPI(BaseListView):
+    """ Saves a HTML file used for reports and dashboards
     """
 
-    schema = SaveReportFileSchema()
+    schema = SaveHTMLFileSchema()
     permission_clases = [ProjectExecutePermission]
     http_method_names = ['post']
 

@@ -2,12 +2,14 @@ from types import SimpleNamespace
 
 report_fields = SimpleNamespace(
     created_datetime="created_datetime",
+    created_by="created_by",
+    modified_datetime="modified_datetime",
+    modified_by="modified_by",
     description="description",
     html_file="html_file",
     id="id",
     name="name",
-    project="project",
-    user="user")
+    project="project")
 
 report_post_properties = {
     report_fields.name: {
@@ -50,41 +52,19 @@ report = {
             'format': 'date-time',
             'description': 'Datetime this report was created.',
         },
-        report_fields.user: {
+        report_fields.created_by: {
             'type': 'integer',
-            'description': 'Unique integer identifying the user who created this report.'
+            'description': 'User that created this report.'
+        },
+        report_fields.modified_datetime: {
+            'type': 'string',
+            'format': 'date-time',
+            'description': 'Datetime this report was created.',
+        },
+        report_fields.modified_by: {
+            'type': 'integer',
+            'description': 'User who last edited this report.'
         },
         **report_post_properties
-    },
-}
-
-report_file_fields = SimpleNamespace(
-    project="project",
-    name="name",
-    upload_url="upload_url",
-    url="url")
-
-report_file = {
-    'type': 'object',
-    'properties': {
-        report_file_fields.url: {
-            'description': 'Name of report file',
-            'type': 'string',
-        }
-    },
-}
-
-report_file_spec = {
-    'type': 'object',
-    'description': 'Report file save spec.',
-    'properties': {
-        report_file_fields.name: {
-            'description': 'Name of report file',
-            'type': 'string',
-        },
-        report_file_fields.upload_url: {
-            'description': 'URL of the uploaded file',
-            'type': 'string',
-        },
     },
 }

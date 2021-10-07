@@ -360,9 +360,9 @@ urlpatterns += [
         ReportDetailAPI.as_view(),
     ),
     path(
-        'rest/SaveReportFile/<int:project>',
-        SaveReportFileAPI.as_view(),
-        name='SaveReportFile',
+        'rest/SaveHTMLFile/<int:project>',
+        SaveHTMLFileAPI.as_view(),
+        name='SaveHTMLFile',
     ),
     path(
         'rest/Sections/<int:project>',
