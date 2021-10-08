@@ -134,6 +134,8 @@ class MultiAttributeEditPanel extends TatorElement {
       });
 
       // vars
+      this._attributeCheckBoxList = [];
+      this._attribute_types = new Map();
       this._selectionMain = new Map();
       this._selectionValues = new Map();
       this._shownTypes = new Map();
@@ -205,38 +207,38 @@ class MultiAttributeEditPanel extends TatorElement {
       } else {
          this._shownTypes.set(typeData.id, true);
       }
-      // Main labels box
-      let labelsMain = document.createElement("div");
-      labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
-      // if(!hideTypeName){
-      let _title = document.createElement("div");
-      _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-3");
-      _title.appendChild(document.createTextNode(`${typeName}`));
+      // // Main labels box
+      // let labelsMain = document.createElement("div");
+      // labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
-      if (typeof typeData.description !== "undefined" && typeData.description !== "") {
-         let descriptionText = document.createElement("div");
-         descriptionText.setAttribute("class", "f3 py-1 text-gray");
-         descriptionText.textContent = `${typeData.description}`;
-         _title.appendChild(descriptionText);
-      }
+      // // if(!hideTypeName){
+      // let _title = document.createElement("div");
+      // _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-3");
+      // _title.appendChild(document.createTextNode(`${typeName}`));
 
-      let idText = document.createElement("text");
-      idText.setAttribute("class", "d-flex py-1 text-gray f3");
-      idText.textContent = `Type ID: ${typeData.id}`;
-      _title.appendChild(idText);
-      labelsMain.appendChild(_title);
-      //  }
+      // if (typeof typeData.description !== "undefined" && typeData.description !== "") {
+      //    let descriptionText = document.createElement("div");
+      //    descriptionText.setAttribute("class", "f3 py-1 text-gray");
+      //    descriptionText.textContent = `${typeData.description}`;
+      //    _title.appendChild(descriptionText);
+      // }
 
-      // Labels details with checkboxes
-      let _labelDetails = document.createElement("div");
-      _labelDetails.setAttribute("class", "float-right col-10");
-      labelsMain.appendChild(_labelDetails);
+      // let idText = document.createElement("text");
+      // idText.setAttribute("class", "d-flex py-1 text-gray f3");
+      // idText.textContent = `Type ID: ${typeData.id}`;
+      // _title.appendChild(idText);
+      // labelsMain.appendChild(_title);
+      // //  }
+
+      // // Labels details with checkboxes
+      // let _labelDetails = document.createElement("div");
+      // _labelDetails.setAttribute("class", "float-right col-10");
+      // labelsMain.appendChild(_labelDetails);
 
       // Style div for checkbox set
       let styleDiv = document.createElement("div");
       styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
-      _labelDetails.appendChild(styleDiv);
 
       /**
     * Label Choice
@@ -251,7 +253,7 @@ class MultiAttributeEditPanel extends TatorElement {
 
       // Save to refer to in get/set later
       this._selectionValues.set(typeData.id, selectionBoxes);
-      this._selectionMain.set(typeData.id, labelsMain);
+      this._selectionMain.set(typeData.id, styleDiv);
 
       // Append to main box
       styleDiv.appendChild(selectionBoxes);
@@ -260,10 +262,11 @@ class MultiAttributeEditPanel extends TatorElement {
          this._boxValueChanged(selectionBoxes, typeData.id);
       });
 
-      this.div.appendChild(labelsMain)
+      this.div.innerHTML = "";
+      this.div.appendChild(styleDiv)
 
       // Now make the inputs
-      this._addInputs(typeData)
+      this._addInputs(this._attribute_types.entries())
    }
 
    _boxValueChanged(checkBoxSet, typeId) {
@@ -278,7 +281,7 @@ class MultiAttributeEditPanel extends TatorElement {
       // if( this._inputs && this._inputs.length > 0 ) {
       let filterNames = [];
 
-      // if (this._bulkEditForm.children.length !== 0) {
+      if (this._bulkEditForm.children.length !== 0) {
          for (let input of this._inputsOnly) {
             let name = input.getAttribute("name");
             input.hidden = true;
@@ -287,26 +290,30 @@ class MultiAttributeEditPanel extends TatorElement {
                input.hidden = false;
             }
          }
+      }
+      // }
+      // for (let group of this._bulkEditForm.children) {
+      //    if (group.id == typeId) {
+      //       group.hidden = false;
+      //          for (let input of group.children) {
+      //             let name = input.getAttribute("name");
+      //             console.log(input.tagName);
+      //             // Update bulk edit form input visibility
+      //             if (input.tagName !== "LABEL" && attributeNames.includes(name)) {
+      //                input.hidden = false;
+      //                if (this.resultsFilter.attributes.includes(name)) {
+      //                   console.log("Warning: filter containt attribute.")
+      //                   nameIsFilteredOn = true;
+      //                }
+      //             } else if (input.tagName !== "LABEL") {
+      //                input.hidden = true;
+      //             }
 
-         // for (let group of this._bulkEditForm.children) {
-         //    for (let input of group.children) {
-         //       let name = input.getAttribute("name");
-         //       console.log(input.tagName);
-         //       // Update bulk edit form input visibility
-         //       if (input.tagName !== "LABEL" && attributeNames.includes(name)) {
-         //          input.hidden = false;
-         //          if (this.resultsFilter.attributes.includes(name)) {
-         //             console.log("Warning: filter containt attribute.")
-         //             nameIsFilteredOn = true;
-         //          }
-         //       } else if (input.tagName !== "LABEL") {
-         //          input.hidden = true;
-         //       }
-
-         //       //Update compare table via event
-         //       this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
-         //    }
-         // }
+      //             //Update compare table via event
+      //             this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
+      //          }
+      //       }
+      //    }
 
          // after looping set this message
          if (nameIsFilteredOn) {
@@ -325,39 +332,38 @@ class MultiAttributeEditPanel extends TatorElement {
    * - - @param checked : boolean
   */
    makeListFrom(typeData) {
-      this.newList = [];
-      let tmpArray = [...typeData.attribute_types];
+      this.newList = [...this._attributeCheckBoxList];
 
       // Non-hidden attributes (ie order >= 0))
       let nonHiddenAttrs = [];
-      let hiddenAttrs = [];
       for (let attr of typeData.attribute_types) {
          if (attr.order >= 0) {
-            nonHiddenAttrs.push(attr);
-         }
-         else {
-            hiddenAttrs.push(attr);
+            if(!this._attribute_types.has(attr.name)) nonHiddenAttrs.push(attr);
          }
       }
 
-      // Show array by order, or alpha
-      const sorted = nonHiddenAttrs.sort((a, b) => {
-         return a.order - b.order || a.name - b.name;
-      });
-
-      sorted.push(...hiddenAttrs);
-
-      // Create an array for checkbox set el
-      for (let attr of sorted) {
-         this.newList.push({
-            id: encodeURI(attr.name),
-            name: attr.name,
-            checked: false
+      if (nonHiddenAttrs.length > 0) {
+         // Show array by order, or alpha
+         const sorted = nonHiddenAttrs.sort((a, b) => {
+            return a.order - b.order || a.name - b.name;
          });
 
-         // reset checked - only check the first one
-         //   if(checked) checked = false;
+         // Create an array for checkbox set el
+         for (let attr of sorted) {
+            let checkboxData = {
+               id: encodeURI(attr.name),
+               name: attr.name,
+               checked: false
+            };
+            this._attribute_types.set(attr.name, attr);
+            this.newList.push(checkboxData);
+
+            // reset checked - only check the first one
+            //   if(checked) checked = false;
+         }
       }
+      this._attributeCheckBoxList = this.newList;
+
       return this.newList;
    }
 
@@ -405,11 +411,13 @@ class MultiAttributeEditPanel extends TatorElement {
 
    // Loop through and add hidden inputs for each data type
    _addInputs(dataType) {
+      console.log(dataType);
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group_bulk-edit text-gray f2");
       div.setAttribute("id", dataType.id);
+      this._bulkEditForm.innerHTML = "";
       this._bulkEditForm.appendChild(div);
-      this._inputGroup.set(dataType.id, div);
+      // this._inputGroup.set(dataType.id, div);
       // div.hidden = true;
 
       // let label = document.createElement("label");
@@ -418,13 +426,15 @@ class MultiAttributeEditPanel extends TatorElement {
       // div.appendChild(label);
 
       // User defined attributes
-      const sorted = dataType.attribute_types.sort((a, b) => {
-         return a.order - b.order || a.name - b.name;
+      let array = Array.from(dataType);
+      const sorted = array.sort((a, b) => {
+         return a[1].order - b[1].order || a[1].name - b[1].name;
       });
 
-      for (const attributeDef of sorted) {
+      for (let a of sorted) {
          let widget;
          var ignorePermission = false;
+         let attributeDef = a[1];
 
          if (attributeDef.dtype == "bool") {
             widget = document.createElement("bool-input");
@@ -505,7 +515,7 @@ class MultiAttributeEditPanel extends TatorElement {
          if (typeof this._permission !== "undefined" && !ignorePermission) {
             widget.permission = this._permission;
          }
-
+         widget.hidden = true;
          div.appendChild(widget);
 
          this._inputs.set(`${attributeDef.name} type_${dataType.id}`, widget);

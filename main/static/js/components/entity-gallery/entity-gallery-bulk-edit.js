@@ -447,15 +447,15 @@ class GalleryBulkEdit extends TatorElement {
 
       let text = `<h2 class="py-2 h3">Edit ${this._currentMultiSelection.size} Localizations?</h2>`;
 
-      const editFormValues = this._editPanel.getValue();
-
       let inputValueArray = this._editPanel.getValue();
+      
       let formData = [];
       for (let r of inputValueArray) {
-         if(r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0){
-            if (inputValueArray.length > 1) {
-               text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
-            }
+         // console.log(test);
+         // if(r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0){
+            // if (inputValueArray.length > 1) {
+            //    text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
+            // }
             
             if (r.values !== {}) {
                for (let [name, value] of  Object.entries(r.values)) {
@@ -463,15 +463,15 @@ class GalleryBulkEdit extends TatorElement {
                }
                let formDataForType = {
                   attributes: r.values,
-                  ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId)))
+                  ids: Array.from(this._currentMultiSelection)
                }
 
-               console.log(`Form Data For Type ${r.typeId} :::::::::::::::::::::::::::::::::::::::::::::::::::::::::`);
+               // console.log(`Form Data For Type ${r.typeId} :::::::::::::::::::::::::::::::::::::::::::::::::::::::::`);
                console.log(formDataForType);
 
                formData.push(formDataForType)
             } else {
-               return text += `<p class="text-red py-2 px-2">- No valid values to update for Type ID ${r.typeId}</p>`
+               return text += `<p class="text-red py-2 px-2">- No valid values to update</p>`
             }
             
             if (r.rejected !== {}) {
@@ -479,7 +479,7 @@ class GalleryBulkEdit extends TatorElement {
                   text += `<p class="text-red py-2 px-2">- Will not update attribute '${rej[0]}' - value is invalid, or null.</p>`
                }
             }
-         }
+         // }
       }
 
       if (formData.length == 0) {
