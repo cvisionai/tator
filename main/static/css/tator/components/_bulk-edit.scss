@@ -5,7 +5,7 @@
    bottom: 0;
 	// background: $color-gray--light;
 	background: $color-charcoal--dark;
-	border-top: 1px solid $color-blue;
+	border-top: 1px solid $color-gray--light;
    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
 	resize: horizontal;
 }
@@ -22,7 +22,7 @@
 	padding: $spacing-3 $spacing-6;
 
 	kbd {
-		background: $color-blue;
+		background: $color-gray--light;
 		font-family: monospace;
 		border-radius: 3px;
 		padding: 2px;
@@ -108,7 +108,8 @@ entity-gallery-bulk-edit {
 // }
 
 .bulk-edit-attr-choices_bulk-edit {
-	height: 200px;
+	overflow: hidden;
+	max-height: 200px;
 	overflow-y: scroll;
 	.entity-gallery-labels {
 		background: $color-charcoal--medium-dark;
@@ -116,12 +117,12 @@ entity-gallery-bulk-edit {
 }
 
 .scroll-comparison-panel {
-	height: 200px;
+	max-height: 200px;
 	overflow-y: scroll;
 }
 
 .annotation__panel-group_bulk-edit {
-	border: 1px solid $color-gray--light;
+	// border: 1px solid $color-gray--light;
 	border-radius: 3px;
 	padding: 25px 10px;
 	position: relative
@@ -135,4 +136,10 @@ entity-gallery-bulk-edit {
 	border-radius: 30px;
 	border: 1px solid $color-gray--light;
 	padding: 5px;
+}
+
+.entity-card.multi-select {
+	&:focus {
+		border: 2px solid white;
+	}
 }

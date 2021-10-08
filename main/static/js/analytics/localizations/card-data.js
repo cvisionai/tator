@@ -200,9 +200,55 @@ class AnnotationCardData extends HTMLElement {
     }
   }
 
-  _bulkUpdate(cards, changes) {
-    
+  _bulkCaching(filterConditions, paginationState) {
+    console.log("Caching 500 at a time out of " + this.cardList.total);
+
   }
+
+    /**
+   * @param {array} filterConditions array of FilterConditionData objects
+   * @param {object} paginationState
+   * @returns {object}
+   */
+     async makeCardListFromBulk(filterConditions, paginationState) {
+      this.cardList.cards = [];
+      this.cardList.paginationState = paginationState;
+  
+      // Get the localizations for the current page
+       const localizations = [];
+       const pageStart = (paginationState.pageSize * page) + 1;
+       const pageEnd = (pageStart + paginationState.pageSize);
+       for (let x = pageStart; x < pageEnd; x++){
+         const loc = await this._modelData.getLocalization(this._bulkCache[x]);
+         localizations.push(loc);
+       }
+      // var localizations = await this._modelData.getFilteredLocalizations(
+      //   "objects",
+      //   filterConditions,
+      //   paginationState.start,
+      //   paginationState.stop,
+      //   this.afterMap);
+  
+      // Query the media data associated with each localization
+      var mediaPromises = [];
+      var mediaList = [];
+      for (let idx = 0; idx < localizations.length; idx++) {
+        if (!mediaList.includes(localizations[idx].media)) {
+          mediaList.push(localizations[idx].media);
+        }
+      }
+  
+      // #TODO change this to the put command to get the object list
+      //       this potentially could move to a separate async pathway
+      for (let idx = 0; idx < mediaList.length; idx++) {
+        mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
+      }
+      var medias = await Promise.all(mediaPromises);
+  
+      // Now gather all the card information
+      await this._getCardList(localizations, medias);
+      return this.cardList;
+    }
 }
 
 customElements.define("annotation-card-data", AnnotationCardData);

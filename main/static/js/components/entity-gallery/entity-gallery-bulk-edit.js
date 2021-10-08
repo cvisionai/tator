@@ -54,7 +54,8 @@ class GalleryBulkEdit extends TatorElement {
        * Listen for actions: edit and compare to change panel
        */
       this._selectionPanel = document.createElement("entity-gallery-multi-selection-panel");
-      this._selectionPanel.addEventListener("bulk-edit-click", this._showEditPanel.bind(this));
+      // this._selectionPanel.addEventListener("bulk-edit-click", this._showEditPanel.bind(this));
+      this._selectionPanel.addEventListener("bulk-edit-click", this._saveBulkEdit.bind(this));
       this._selectionPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
       this._selectionPanel.addEventListener("clear-selection", this._clearSelection.bind(this));
       this._selectionPanel.addEventListener("select-all", this.selectAllOnPage.bind(this));
@@ -80,6 +81,9 @@ class GalleryBulkEdit extends TatorElement {
       // this._comparisonPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
       this._comparisonPanel.hidden = true;
       this._bulkEditBar.appendChild(this._comparisonPanel);
+
+
+      this._selectionPanel.barRightTop.appendChild(this._editPanel._bulkEditForm);
 
       /**
        * Initially selection panel is shown
@@ -148,17 +152,41 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    _keyDownHandler(e) {
+      console.log(`Key: ${e.key}`);
+      console.log(`Code: ${e.key}`);
+
       if (e.key == "Escape") {
          console.log(`Escape!`)
          this._escapeEditMode();
       }
 
-      if (e.key == "a") {
-         if (e.ctrlKey) {
-            console.log("CTRL+A");
+      if (e.code == "Shift" && e.code == "A") {
+            console.log("SHIFTA+A");
             this.selectAllOnPage();
+      }
+      if (e.code.indexOf("Arrow") > -1) {
+         this._elements[0].card._li.focus();
+      }
+
+      if (e.code.indexOf("Arrow") > -1) {
+         this._elements[0].card._li.focus();
+      }
+      if (e.code == "Enter") {
+         console.log("KeyDown Enter!")
+         console.log(this._editPanel._bulkEditModal.hasAttributes("is-open"));
+         if (this._editPanel._bulkEditModal.hasAttributes("is-open")) {
+            console.log("Show selection panel!");
+            this._showSelectionPanel();
+         } else {
+            console.log(this._selectionPanel.hidden == false);
+            console.log(this._count);
+            if (this._selectionPanel.hidden == false && this._count != 0) {
+               console.log("Save with enter!");
+               this._saveBulkEdit();
+            }
          }
       }
+
    }
 
    shiftSelect({ element, id, isSelected }) {
@@ -262,12 +290,13 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    _updatePanelCount(count) {
-      this._comparisonPanel._selectionCount.textContent = count;
-      this._editPanel.setCount(count);
+      this._count = count;
+      // this._comparisonPanel._selectionCount.textContent = count;
+      // this._editPanel.setCount(count);
       this._selectionPanel.setCount(count);
 
       // check on the table data too....
-      this._comparisonPanel._refreshTable(this._currentSelectionObjects);
+      // this._comparisonPanel._refreshTable(this._currentSelectionObjects);
    }
 
 
@@ -374,12 +403,9 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    _showSelectionPanel(val = true) {
-      if (val) {
-         this._comparisonPanel.show(false);
-         this._editPanel.show(false);      
-      }
-
+      this._editPanel._bulkEditModal._closeCallback();
       this._selectionPanel.show(val);
+      if (!this._editMode) this.startEditMode();
    }
    _showEditPanel(val = true) {
       if (val) {
@@ -388,6 +414,7 @@ class GalleryBulkEdit extends TatorElement {
       }
       this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
       this._editPanel.show(val);
+      // this._page._bulkEditModal.setAttribute("is-open", "true");
    }
    _showComparisonPanel(val = true) {
       if (val) {
@@ -501,6 +528,7 @@ class GalleryBulkEdit extends TatorElement {
 
          return promise.then(() => {
             console.log("Then clean up");
+            this._editPanel.resetWidgets()
             this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
             this._clearSelection();
             this._page.loading.hideSpinner();
@@ -518,13 +546,13 @@ class GalleryBulkEdit extends TatorElement {
                this.boxHelper._modalWarn(text+errorText);                
             }
 
-         });  
-         // }).catch(err => {
-         //    this._clearSelection();
-         //    this._page.loading.hideSpinner();
-         //    this._page.hideDimmer();
-         //    return this.boxHelper._modalError("Error with update: "+err);
-         // });
+         // });  
+         }).catch(err => {
+            this._clearSelection();
+            this._page.loading.hideSpinner();
+            this._page.hideDimmer();
+            return this.boxHelper._modalError("Error with update: "+err);
+         });
          
       });
 

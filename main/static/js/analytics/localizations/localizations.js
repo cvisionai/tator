@@ -69,14 +69,15 @@ class AnalyticsLocalizations extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
-
-
     // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
     this._shadow.appendChild(this._bulkEdit);
 
-    this._settings._bulkCorrect.addEventListener("click", this._bulkEdit.startEditMode.bind(this._bulkEdit))
+    // this._bulkEditModal = this._bulkEdit._bulkEditModal; //document.createElement("modal-dialog");
+    this._shadow.appendChild(this._bulkEdit._editPanel._bulkEditModal);
+    // this._bulkEdit._editPanel.addEventListener("select-click", this._bulkEdit._editPanel._bulkEditModal.closeCallback)
+    this._settings._bulkCorrect.addEventListener("click", this._bulkEdit._showEditPanel.bind(this._bulkEdit))
 
     //
     /* Other */

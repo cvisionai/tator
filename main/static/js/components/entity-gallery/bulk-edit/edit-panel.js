@@ -2,32 +2,38 @@ class MultiAttributeEditPanel extends TatorElement {
    constructor() {
       super();
 
+      this._bulkEditModal = document.createElement("modal-dialog");
+
+      this._bulkEditModal._titleDiv.innerHTML = "Bulk Correct";
+
       this._bulkEditBar = document.createElement("div");
-      this._bulkEditBar.setAttribute("class", "px-3 py-2 d-flex flex-wrap")
-      this._shadow.appendChild(this._bulkEditBar);
+      this._bulkEditBar.setAttribute("class", " d-flex flex-wrap"); //px-3
+      this._bulkEditModal._main.appendChild(this._bulkEditBar);
+
+
 
       let barLeftTop = document.createElement("div");
-      barLeftTop.setAttribute("class", "py-2 bulk-edit-bar--left col-6")
+      barLeftTop.setAttribute("class", "bulk-edit-bar--left col-12")
       this._bulkEditBar.appendChild(barLeftTop);
 
       let barRightTop = document.createElement("div");
-      barRightTop.setAttribute("class", "py-2 bulk-edit-bar--right_form col-5 d-flex flex-column")
+      barRightTop.setAttribute("class", "bulk-edit-bar--right_form col-5 d-flex flex-column")
       this._bulkEditBar.appendChild(barRightTop);
 
-      let barLeft = document.createElement("div");
-      barLeft.setAttribute("class", "py-2 bulk-edit-bar--left col-6")
-      this._bulkEditBar.appendChild(barLeft);
+      // let barLeft = document.createElement("div");
+      // barLeft.setAttribute("class", "py-2 bulk-edit-bar--left col-12")
+      // this._bulkEditModal._footer.appendChild(barLeft);
 
-      let barRight = document.createElement("div");
-      barRight.setAttribute("class", "py-2 bulk-edit-bar--right col-6")
-      this._bulkEditBar.appendChild(barRight);
+      // let barRight = document.createElement("div");
+      // barRight.setAttribute("class", "py-2 bulk-edit-bar--right col-6")
+      // this._bulkEditModal._footer.appendChild(barRight);
 
 
       /////
       this._back = document.createElement("a");
-      this._back.setAttribute("class", "text-purple clickable");
-      this._back.textContent = "< Back to Select";
-      barLeftTop.appendChild(this._back);
+      // this._back.setAttribute("class", "text-purple clickable");
+      // this._back.textContent = "< Back to Select";
+      // barLeftTop.appendChild(this._back);
 
       /////
       this._compare = document.createElement("a");
@@ -44,77 +50,87 @@ class MultiAttributeEditPanel extends TatorElement {
 
       // Attributes panel
       this.div = document.createElement("div");
-      this.div.setAttribute("class", "bulk-edit-attr-choices_bulk-edit rounded-2 my-2 py-2 px-2");
+      this.div.setAttribute("class", "bulk-edit-attr-choices_bulk-edit rounded-2");
       barLeftTop.appendChild(this.div);
 
       let titleDiv = document.createElement("div");
-      titleDiv.setAttribute("class", "text-gray d-flex flex-row flex-items-center f1 py-2 px-2 clickable");
-      this._titleText = document.createTextNode("Select attributes to edit.");
-      this._chevron = document.createElementNS(svgNamespace, "svg");
-      this._chevron.setAttribute("class", "chevron chevron-trigger-90");
-      this._chevron.setAttribute("viewBox", "0 0 24 24");
-      this._chevron.setAttribute("height", "1em");
-      this._chevron.setAttribute("width", "1em");
-      const chevronPath = document.createElementNS(svgNamespace, "path");
-      chevronPath.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
-      this._chevron.appendChild(chevronPath);
+      // titleDiv.setAttribute("class", "text-gray d-flex flex-row flex-items-center f1 py-2 px-2 clickable");
+      // this._titleText = document.createTextNode("Select attributes to edit.");
+      // this._chevron = document.createElementNS(svgNamespace, "svg");
+      // this._chevron.setAttribute("class", "chevron chevron-trigger-90");
+      // this._chevron.setAttribute("viewBox", "0 0 24 24");
+      // this._chevron.setAttribute("height", "1em");
+      // this._chevron.setAttribute("width", "1em");
+      // const chevronPath = document.createElementNS(svgNamespace, "path");
+      // chevronPath.setAttribute("d", "M9.707 18.707l6-6c0.391-0.391 0.391-1.024 0-1.414l-6-6c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0z");
+      // this._chevron.appendChild(chevronPath);
 
-      titleDiv.appendChild(this._titleText);
-      titleDiv.appendChild(this._chevron);
-      this.div.append(titleDiv);
+      // titleDiv.appendChild(this._titleText);
+      // titleDiv.appendChild(this._chevron);
+      // this.div.append(titleDiv);
 
       // add listener
-      titleDiv.addEventListener("click", (e) => {
-         e.preventDefault();
-         this._toggleAttributes();
-      });
+      // titleDiv.addEventListener("click", (e) => {
+      //    e.preventDefault();
+      //    this._toggleAttributes();
+      // });
 
 
       // Right = side
-      this._selectionSummary = document.createElement("div");
-      this._selectionSummary.setAttribute("class", "py-1 bulk-edit--quick-select")
-      barRightTop.appendChild(this._selectionSummary);
+      // this._selectionSummary = document.createElement("div");
+      // this._selectionSummary.setAttribute("class", "py-1 bulk-edit--quick-select")
+      // barRightTop.appendChild(this._selectionSummary);
 
-      this._selectionCount = document.createElement("span");
-      this._selectionCount.setAttribute("class", "px-1 text-bold");
-      this._selectionCount.textContent = "0";
-      this._selectionSummary.appendChild(this._selectionCount);
+      // this._selectionCount = document.createElement("span");
+      // this._selectionCount.setAttribute("class", "px-1 text-bold");
+      // this._selectionCount.textContent = "0";
+      // this._selectionSummary.appendChild(this._selectionCount);
 
       this._selectionCountText = document.createElement("span");
-      this._selectionCountText.textContent = "Localizations";
-      this._selectionSummary.appendChild(this._selectionCountText);
+      // this._selectionCountText.textContent = "Localizations";
+      // this._selectionSummary.appendChild(this._selectionCountText);
 
 
       // //
       this._bulkEditForm = document.createElement("div");
       this._bulkEditForm.setAttribute("class", "bulk-edit-form__panel-group py-3 text-gray f2 px-6 rounded-2");
-      barRightTop.appendChild(this._bulkEditForm);
+      // barRightTop.appendChild(this._bulkEditForm);
 
-      let heading = document.createElement("h3");
-      heading.setAttribute("class", "py-3 text-white h3 text-semibold css-truncate heading");
-      heading.textContent = "Bulk Edit";
-      this._bulkEditForm.appendChild(heading);
+      // let heading = document.createElement("h3");
+      // heading.setAttribute("class", "py-3 text-white h3 text-semibold css-truncate heading");
+      // heading.textContent = "Bulk Edit";
+      // this._bulkEditForm.appendChild(heading);
 
       this._editButton = document.createElement("button");
-      this._editButton.setAttribute("class", "btn btn-clear py-2 px-2 mx-6 col-12")
-      let editText = document.createTextNode("Edit ");
-      this._editButton.appendChild(editText);
-      this._editButton.style.margin = "0 auto";
-      this._editButton.style.width = "80%";
-      this._editButton.disabled = true;
-      this._editButton.appendChild(this._selectionSummary);
+      // this._editButton.setAttribute("class", "btn btn-clear py-2 px-2 mx-6 col-12")
+      // let editText = document.createTextNode("Edit ");
+      // this._editButton.appendChild(editText);
+      // this._editButton.style.margin = "0 auto";
+      // this._editButton.style.width = "80%";
+      // this._editButton.disabled = true;
+      // this._editButton.appendChild(this._selectionSummary);
 
-      barRightTop.appendChild(this._editButton);
+
+      this._continueToSelect = document.createElement("button");
+      this._continueToSelect.setAttribute("class", "btn btn-clear py-2 col-12")
+      let _continueToSelectText = document.createTextNode("Select Localizations >");
+      this._continueToSelect.appendChild(_continueToSelectText);
+      // this._continueToSelect.style.margin = "0 auto";
+      // this._continueToSelect.style.width = "80%";
+      this._bulkEditModal._footer.appendChild(this._continueToSelect);
 
       // ADD EVENT LISTENERS
-      this._back.addEventListener("click", () => {
-         this.dispatchEvent(new Event("select-click"));
-      });
-      this._compare.addEventListener("click", () => {
-         this.dispatchEvent(new Event("comparison-click"));
-      });
-      this._editButton.addEventListener("click", () => {
-         this.dispatchEvent(new Event("save-edit-click"));
+      // this._back.addEventListener("click", () => {
+      //    this.dispatchEvent(new Event("select-click"));
+      // });
+      // this._compare.addEventListener("click", () => {
+      //    this.dispatchEvent(new Event("comparison-click"));
+      // });
+      // this._editButton.addEventListener("click", () => {
+      //    this.dispatchEvent(new Event("save-edit-click"));
+      // });
+      this._continueToSelect.addEventListener("click", () => {
+         return this.dispatchEvent(new Event("select-click"));
       });
 
       // vars
@@ -123,12 +139,17 @@ class MultiAttributeEditPanel extends TatorElement {
       this._shownTypes = new Map();
       this._inputGroup = new Map();
       this._inputs = new Map();
+      this._inputsOnly = [];
       this.resultsFilter = {
          containsAttributes: false,
          attributes: []
       };
    }
-   
+
+   close() {
+      this._bulkEditModal._closeCallback();
+   }
+
    _toggleAttributes(hideFlag = null) {
       for (let [id, element] of this._selectionMain.entries()) {
          if (hideFlag == "hide") {
@@ -138,16 +159,17 @@ class MultiAttributeEditPanel extends TatorElement {
             if (!element.classList.contains("not-in-use")) element.classList.toggle("hidden");
             this._chevron.classList.toggle('chevron-trigger-90')
          }
-         
+
       }
-     
+
    }
 
-   show(val) {
-      this.hidden = !val;
+   show(val = true) {
+      this.hidden = false;
 
+      console.log("SHOW!");
 
-      if(val){
+      if (true) {
          let nameIsFilteredOn = false;
          let filterNames = [];
 
@@ -163,9 +185,11 @@ class MultiAttributeEditPanel extends TatorElement {
 
          // after looping set this message
          if (nameIsFilteredOn) {
-            this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames }}))
+            this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames } }))
          }
       }
+
+      return this._bulkEditModal.setAttribute("is-open", "true");
    }
 
    isHidden() {
@@ -243,37 +267,52 @@ class MultiAttributeEditPanel extends TatorElement {
    }
 
    _boxValueChanged(checkBoxSet, typeId) {
-      console.log("box value changed");
       let attributeNames = checkBoxSet.getValue();
-      let inputs = this._shadow.getElementById(typeId);
-
+      attributeNames = Array.from(attributeNames)
+      // let inputs = this._bulkEditForm.querySelector(`#${typeId}`);
       let nameIsFilteredOn = false;
+
+      console.log("box value changed");
+      console.log(attributeNames);
+
+      // if( this._inputs && this._inputs.length > 0 ) {
       let filterNames = [];
-      
-      for (let input of inputs.children) {
-         let name = input.getAttribute("name");
-         
-         // Update bulk edit form input visibility
-         if (input.tagName !== "LABEL" && attributeNames.includes(name)) {
-            input.hidden = false;
-         } else {
+
+      // if (this._bulkEditForm.children.length !== 0) {
+         for (let input of this._inputsOnly) {
+            let name = input.getAttribute("name");
             input.hidden = true;
-            if (this.resultsFilter.attributes.includes(name)) {
-               console.log("Warning: filter containt attribute.")
-               nameIsFilteredOn = true;
+
+            if (attributeNames.includes(name)) {
+               input.hidden = false;
             }
          }
 
+         // for (let group of this._bulkEditForm.children) {
+         //    for (let input of group.children) {
+         //       let name = input.getAttribute("name");
+         //       console.log(input.tagName);
+         //       // Update bulk edit form input visibility
+         //       if (input.tagName !== "LABEL" && attributeNames.includes(name)) {
+         //          input.hidden = false;
+         //          if (this.resultsFilter.attributes.includes(name)) {
+         //             console.log("Warning: filter containt attribute.")
+         //             nameIsFilteredOn = true;
+         //          }
+         //       } else if (input.tagName !== "LABEL") {
+         //          input.hidden = true;
+         //       }
 
+         //       //Update compare table via event
+         //       this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
+         //    }
+         // }
 
-         //Update compare table via event
-         this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
-      }
-
-      // after looping set this message
-      if (nameIsFilteredOn) {
-         this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames }}))
-      }
+         // after looping set this message
+         if (nameIsFilteredOn) {
+            this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames } }))
+         }
+      // }
    }
 
    /*
@@ -323,32 +362,37 @@ class MultiAttributeEditPanel extends TatorElement {
    }
 
    hideShowTypes(setOfMetaIds) {
-      for (let [typeId, selectionDiv] of this._selectionMain.entries()) {
-         console.log(selectionDiv);
-         if (setOfMetaIds.has(typeId)) {
-            selectionDiv.classList.remove("hidden");
-            selectionDiv.classList.remove("not-in-use");
-            let inputDiv = this._inputGroup.get(typeId);
-            inputDiv.hidden = false;
-            
-         } else {
-            selectionDiv.classList.add("hidden");
-            selectionDiv.classList.add("not-in-use");
-            let inputDiv = this._inputGroup.get(typeId);
-            inputDiv.hidden = true;
-            
-         }
-      }
+      console.log(setOfMetaIds);
+      // for (let [typeId, selectionDiv] of this._selectionMain.entries()) {
+      //    console.log(`TYPE ID ${typeId}`)
+      //    if (setOfMetaIds.has(typeId)) {
+      //       selectionDiv.classList.remove("hidden");
+      //       selectionDiv.classList.remove("not-in-use");
+
+      //       let inputDiv = this._inputGroup.get(typeId);
+      //       inputDiv.hidden = false;
+
+      //    } else {
+      //       selectionDiv.classList.add("hidden");
+      //       selectionDiv.classList.add("not-in-use");
+      //       let inputDiv = this._inputGroup.get(typeId);
+      //       inputDiv.hidden = true;
+
+      //    }
+      // }
    }
 
    setSelectionBoxValue({ typeId, values }) {
       // sets checked  -- from listeners to attribute label change / default shown on card
       //
       let selectionBoxes = this._selectionValues.get(typeId);
+      console.log("setSelectionBoxValue values:");
+      console.log(values);
 
       for (let box of selectionBoxes._inputs) {
          let boxName = box.getAttribute("name");
-         
+         console.log(`values.includes(boxName) ${values.includes(boxName)}  .....${boxName}....`);
+
          if (values.includes(boxName)) {
             box._checked = true;
          } else {
@@ -366,22 +410,19 @@ class MultiAttributeEditPanel extends TatorElement {
       div.setAttribute("id", dataType.id);
       this._bulkEditForm.appendChild(div);
       this._inputGroup.set(dataType.id, div);
-      div.hidden = true;
+      // div.hidden = true;
 
-      let label = document.createElement("label");
-      label.setAttribute("class", "bulk-edit-legend");
-      label.textContent = `Type ID: ${dataType.id}`;
-      div.appendChild(label);
+      // let label = document.createElement("label");
+      // label.setAttribute("class", "bulk-edit-legend");
+      // label.textContent = `Type ID: ${dataType.id}`;
+      // div.appendChild(label);
 
       // User defined attributes
       const sorted = dataType.attribute_types.sort((a, b) => {
          return a.order - b.order || a.name - b.name;
       });
 
-      var attributeDefIdx = 0;
-
       for (const attributeDef of sorted) {
-         attributeDefIdx += 1;
          let widget;
          var ignorePermission = false;
 
@@ -415,7 +456,7 @@ class MultiAttributeEditPanel extends TatorElement {
                widget = document.createElement("text-input");
                widget.setAttribute("name", attributeDef.name);
                widget.setAttribute("type", attributeDef.dtype);
-               widget.autocomplete = attributeDef.autocomplete;
+               // widget.autocomplete = attributeDef.autocomplete;
             }
             //widget.autocomplete = attributeDef.autocomplete; #TODO can this use autocomplete?
             if (attributeDef.style) {
@@ -437,7 +478,7 @@ class MultiAttributeEditPanel extends TatorElement {
                widget = document.createElement("text-input");
                widget.setAttribute("name", attributeDef.name);
                widget.setAttribute("type", attributeDef.dtype);
-               widget.autocomplete = attributeDef.autocomplete;
+               // widget.autocomplete = attributeDef.autocomplete;
             }
 
             if (style_options.includes("disabled")) {
@@ -451,7 +492,7 @@ class MultiAttributeEditPanel extends TatorElement {
             widget = document.createElement("text-input");
             widget.setAttribute("name", attributeDef.name);
             widget.setAttribute("type", attributeDef.dtype);
-            widget.autocomplete = attributeDef.autocomplete;
+            // widget.autocomplete = attributeDef.autocomplete;
          }
 
          // Set whether this widget is required
@@ -467,12 +508,8 @@ class MultiAttributeEditPanel extends TatorElement {
 
          div.appendChild(widget);
 
-         // if (attributeDef.default) {
-         //    widget.default = attributeDef.default;
-         // }
          this._inputs.set(`${attributeDef.name} type_${dataType.id}`, widget);
-         widget.hidden = true;
-         widget.reset();
+         this._inputsOnly.push(widget);
 
          widget.addEventListener("change", () => {
             if (this._emitChanges) {
@@ -502,7 +539,7 @@ class MultiAttributeEditPanel extends TatorElement {
                   } else {
                      response.rejected[name] = name;
                   }
-                  
+
                }
             }
             value.push(response);
@@ -517,7 +554,7 @@ class MultiAttributeEditPanel extends TatorElement {
          if (!group.hidden) {
             let typeId = group.id;
             for (const widget of group.children) {
-               
+
                if (!widget.hidden && widget.tagName !== "LABEL") {
                   console.log(widget.getAttribute("name"));
                   //${e.detail.name} type_${e.detail.typeId}
@@ -544,5 +581,14 @@ class MultiAttributeEditPanel extends TatorElement {
       return this.resultsFilter = resultsFilter;
    }
 
+   resetWidgets() {
+      for (const group of this._bulkEditForm.children) {
+         for (const widget of group.children) {
+            if (widget.tagName !== "LABEL") widget.reset();
+         }
+      }
+   }
+
 }
+
 customElements.define("entity-gallery-multi-attribute-edit-panel", MultiAttributeEditPanel);
