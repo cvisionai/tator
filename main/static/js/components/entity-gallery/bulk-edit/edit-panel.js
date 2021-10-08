@@ -324,6 +324,7 @@ class MultiAttributeEditPanel extends TatorElement {
 
    hideShowTypes(setOfMetaIds) {
       for (let [typeId, selectionDiv] of this._selectionMain.entries()) {
+         console.log(selectionDiv);
          if (setOfMetaIds.has(typeId)) {
             selectionDiv.classList.remove("hidden");
             selectionDiv.classList.remove("not-in-use");
@@ -466,9 +467,9 @@ class MultiAttributeEditPanel extends TatorElement {
 
          div.appendChild(widget);
 
-         if (attributeDef.default) {
-            widget.default = attributeDef.default;
-         }
+         // if (attributeDef.default) {
+         //    widget.default = attributeDef.default;
+         // }
          this._inputs.set(`${attributeDef.name} type_${dataType.id}`, widget);
          widget.hidden = true;
          widget.reset();
