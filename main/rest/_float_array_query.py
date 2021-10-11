@@ -16,17 +16,17 @@ def get_float_array_query(params, query):
             upper_bound = float_array_query.get('upper_bound')
             order = float_array_query.get('order', 'asc')
             if metric == 'l2norm':
-                script += f"double val{idx} = l2norm(params.query_vector, doc['{name}']); "
+                script += f"double val{idx} = 1.0 + l2norm(params.query_vector, doc['{name}']); "
                 if lower_bound:
-                    script += f"val{idx} = val{idx} > {lower_bound} ? val{idx} : 0; "
+                    script += f"val{idx} = val{idx} > {1.0 + lower_bound} ? val{idx} : 0; "
                 if upper_bound:
-                    script += f"val{idx} = val{idx} < {upper_bound} ? val{idx} : 0; " 
+                    script += f"val{idx} = val{idx} < {1.0 + upper_bound} ? val{idx} : 0; " 
             elif metric == 'l1norm':
-                script += f"double val{idx} = l1norm(params.query_vector, doc['{name}']); "
+                script += f"double val{idx} = 1.0 + l1norm(params.query_vector, doc['{name}']); "
                 if lower_bound:
-                    script += f"val{idx} = val{idx} < {lower_bound} ? val{idx} : 0; "
+                    script += f"val{idx} = val{idx} < {1.0 + lower_bound} ? val{idx} : 0; "
                 if upper_bound:
-                    script += f"val{idx} = val{idx} > {upper_bound} ? val{idx} : 0; " 
+                    script += f"val{idx} = val{idx} > {1.0 + upper_bound} ? val{idx} : 0; " 
             elif metric == 'cosine_similarity':
                 script += f"double val{idx} = cosineSimilarity(params.query_vector, doc['{name}']) + 1.0; "
                 if lower_bound:
