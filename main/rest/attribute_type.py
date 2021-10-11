@@ -54,6 +54,8 @@ class AttributeTypeListAPI(BaseListView):
             raise ValueError("Attribute type definition missing 'dtype' field")
         if "enum" == attribute_type["dtype"] and "choices" not in attribute_type:
             raise ValueError("enum attribute type definition missing 'choices' field")
+        if "float_array" == attribute_type["dtype"] and "size" not in attribute_type:
+            raise ValueError("float_array attribute type definition missing 'size' field")
         if "default" in attribute_type:
             # Convert default value to this type to validate it.
             convert_attribute(attribute_type, attribute_type["default"])

@@ -204,6 +204,13 @@ def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
             raise Exception(f"Invalid longitude string {val} for geoposition attribute {attr_type['name']}, must be in range (-180.0, 180.0).") #pylint: disable=line-too-long
 
         val = Point(lon, lat) # Lon goes first in postgis
+    elif dtype == 'float_array':
+        if not isinstance(attr_val, list):
+            raise Exception(f"Invalid float array {val} for attribute {attr_type['name']}, must be an array.")
+        try:
+            val = [float(elem) for elem in attr_val]
+        except:
+            raise Exception(f"Invalid element in float array, all elements must be convertible to float.")
     return val
 
 def validate_attributes(params, obj):

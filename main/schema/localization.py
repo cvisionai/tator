@@ -285,6 +285,14 @@ class LocalizationListSchema(AutoSchema):
                     '$ref': '#/components/schemas/LocalizationIdQuery',
                 },
             }}}
+        if method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/LocalizationIdQuery',
+                },
+            }}}
         return body
 
     def _get_responses(self, path, method):
