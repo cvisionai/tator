@@ -2302,8 +2302,22 @@ class VideoCanvas extends AnnotationCanvas {
     {
       bufferType = "seek";
     }
-    //console.log(`seekFrame: ${frame} ${bufferType}`)
-    var video = this.videoBuffer(frame, bufferType);
+
+    // If the scrub buffer and the seek buffer are using the same resolution, then attempt
+    // to query the video frame using the scrub buffer. If it's not present, fall back to
+    // the seek buffer.
+    //
+    // Otherwise, utilize the requested buffer.
+    var video;
+    if (this._scrub_idx == this._seek_idx) {
+      video = this.videoBuffer(frame, "scrub");
+      if (video == null) {
+        video = this.videoBuffer(frame, "seek");
+      }
+    }
+    else {
+      video = this.videoBuffer(frame, bufferType);
+    }
 
     // Only support seeking if we are stopped (i.e. not playing) and we are not
     // attempting to seek to another frame
@@ -2374,8 +2388,8 @@ class VideoCanvas extends AnnotationCanvas {
           video.oncanplay=null;
           that.dispatchEvent(new CustomEvent("seekComplete",
                                        {composed: true,
-                                        detail: {forceSeekBuffer: forceSeekBuffer,
-                                                 bufferType: bufferType
+                                        detail: {
+                                          forceSeekBuffer: forceSeekBuffer
                                         }}));
           if (forceSeekBuffer && that._audioPlayer)
           {
