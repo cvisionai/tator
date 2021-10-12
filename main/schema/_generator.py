@@ -69,12 +69,9 @@ class CustomGenerator(SchemaGenerator):
                 'Favorite': favorite,
                 'FeedDefinition': feed_definition,
                 'FileDefinition': file_definition,
-<<<<<<< HEAD
                 'FloatArrayQuery': float_array_query,
-=======
                 'HTMLFile': html_file,
                 'HTMLFileSpec': html_file_spec,
->>>>>>> Renamed report_file to html_file. Added dashboard endpoints.
                 'LiveDefinition': live_definition,
                 'LiveUpdateDefinition': live_update_definition,
                 'ImageDefinition': image_definition,
