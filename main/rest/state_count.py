@@ -2,11 +2,11 @@ from collections import defaultdict
 
 from ..schema import StateCountSchema
 
-from ._base_views import BaseDetailView
+from ._base_views import BaseListView
 from ._annotation_query import get_annotation_count
 from ._permissions import ProjectViewOnlyPermission
 
-class StateCountAPI(BaseDetailView):
+class StateCountAPI(BaseListView):
     """ Retrieve number of states in a state list.
 
         This endpoint accepts the same query parameters as a GET request to the `States` endpoint,

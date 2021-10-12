@@ -2,11 +2,11 @@ from collections import defaultdict
 
 from ..schema import LocalizationCountSchema
 
-from ._base_views import BaseDetailView
+from ._base_views import BaseListView
 from ._annotation_query import get_annotation_count
 from ._permissions import ProjectViewOnlyPermission
 
-class LocalizationCountAPI(BaseDetailView):
+class LocalizationCountAPI(BaseListView):
     """ Retrieve number of localizations in a localization list.
 
         This endpoint accepts the same query parameters as a GET request to the `Localizations` endpoint,

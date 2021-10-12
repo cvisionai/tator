@@ -3,11 +3,11 @@ from collections import defaultdict
 from ..models import Media
 from ..schema import MediaCountSchema
 
-from ._base_views import BaseDetailView
+from ._base_views import BaseListView
 from ._media_query import get_media_count
 from ._permissions import ProjectViewOnlyPermission
 
-class MediaCountAPI(BaseDetailView):
+class MediaCountAPI(BaseListView):
     """ Retrieve number of media in a media list.
 
         This endpoint accepts the same query parameters as a GET request to the `Medias` endpoint,

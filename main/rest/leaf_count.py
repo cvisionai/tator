@@ -2,11 +2,11 @@ from collections import defaultdict
 
 from ..schema import LeafCountSchema
 
-from ._base_views import BaseDetailView
+from ._base_views import BaseListView
 from ._leaf_query import get_leaf_count
 from ._permissions import ProjectViewOnlyPermission
 
-class LeafCountAPI(BaseDetailView):
+class LeafCountAPI(BaseListView):
     """ Retrieve number of leaves in a leaf list.
 
         This endpoint accepts the same query parameters as a GET request to the `Leaves` endpoint,
