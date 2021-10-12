@@ -194,7 +194,7 @@ class AnnotationsGallery extends EntityCardGallery {
       * Card labels / attributes of localization or media type
       */
       this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
-      this._bulkEdit._updateShownAttributes({typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId]} );
+      // this._bulkEdit._updateShownAttributes({typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId]} );
 
       if (newCard) {
         card = document.createElement("entity-card");

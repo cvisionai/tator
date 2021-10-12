@@ -2,27 +2,35 @@ class MultiSelectionPanel extends TatorElement {
    constructor() {
       super();
 
+
+
       this._bulkEditBar = document.createElement("div");
       this._bulkEditBar.setAttribute("class", "px-6 py-2 d-flex flex-wrap")
       this._shadow.appendChild(this._bulkEditBar);
 
+      this._minimizeBar = document.createElement("div");
+      this._minimizeBar.setAttribute("class","col-12 text-center")
+      this._minimizeBar.style.height = "25px";
+      this._bulkEditBar.appendChild(this._minimizeBar);
+
+      this._minimize = document.createElement("span");
+      this._minimize.setAttribute("class","arr-down clickable")
+      // this._minimize.textContent = "Minimize!";
+      this._minimizeBar.appendChild(this._minimize);
+
       let barLeftTop = document.createElement("div");
-      barLeftTop.setAttribute("class", "pb-2 bulk-edit-bar--left col-6")
+      barLeftTop.setAttribute("class", "pb-2 bulk-edit-bar--left col-3")
       this._bulkEditBar.appendChild(barLeftTop);
 
+      this._bulkEditMiddle = document.createElement("div");
+      this._bulkEditMiddle.setAttribute("class", "pb-2 bulk-edit-bar--middle col-6 position-relative");
+      this._bulkEditBar.appendChild(this._bulkEditMiddle);
 
       this.barRightTop = document.createElement("div");
-      this.barRightTop.setAttribute("class", "bulk-edit-bar--right col-6")
+      this.barRightTop.setAttribute("class", "bulk-edit-bar--right col-3")
       this._bulkEditBar.appendChild(this.barRightTop);
 
 
-      let barLeft = document.createElement("div");
-      barLeft.setAttribute("class", "py-2 bulk-edit-bar--left col-6")
-      this._bulkEditBar.appendChild(barLeft);
-
-      let barRight = document.createElement("div");
-      barRight.setAttribute("class", "bulk-edit-bar--right col-6")
-      this._bulkEditBar.appendChild(barRight);
 
       // this._h2 = document.createElement("h2");
       // this._h2.setAttribute("class", "py-2 px-2");
@@ -36,12 +44,12 @@ class MultiSelectionPanel extends TatorElement {
       this._selectAllPage = document.createElement("a");
       this._selectAllPage.setAttribute("class", "text-purple py-2 px-3 clickable");
       this._selectAllPage.textContent = "Select all on page";
-      this._quickSelectAllDiv.appendChild(this._selectAllPage);
+      barLeftTop.appendChild(this._selectAllPage);
 
       this._clearSelection = document.createElement("a");
-      this._clearSelection.setAttribute("class", "text-gray py-2 px-3 clickable");
+      this._clearSelection.setAttribute("class", "text-gray py-2 px-3 clickable float-right");
       this._clearSelection.textContent = "X Clear all selected";
-      this._quickSelectAllDiv.appendChild(this._clearSelection);
+      this.barRightTop.appendChild(this._clearSelection);
 
       this._selectionSummary = document.createElement("span");
       this._selectionSummary.setAttribute("class", "pr-3")
@@ -70,7 +78,7 @@ class MultiSelectionPanel extends TatorElement {
       this._editButton.disabled = true;
       this._editButton.appendChild(this._selectionSummary);
 
-      barRight.appendChild(this._editButton);
+      this._bulkEditMiddle.appendChild(this._editButton);
 
 
       // EVENT LISTENERS

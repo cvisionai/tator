@@ -10,8 +10,6 @@ class MultiAttributeEditPanel extends TatorElement {
       this._bulkEditBar.setAttribute("class", " d-flex flex-wrap"); //px-3
       this._bulkEditModal._main.appendChild(this._bulkEditBar);
 
-
-
       let barLeftTop = document.createElement("div");
       barLeftTop.setAttribute("class", "bulk-edit-bar--left col-12")
       this._bulkEditBar.appendChild(barLeftTop);
@@ -96,6 +94,7 @@ class MultiAttributeEditPanel extends TatorElement {
       this._bulkEditForm.setAttribute("class", "bulk-edit-form__panel-group py-3 text-gray f2 px-6 rounded-2");
       // barRightTop.appendChild(this._bulkEditForm);
 
+
       // let heading = document.createElement("h3");
       // heading.setAttribute("class", "py-3 text-white h3 text-semibold css-truncate heading");
       // heading.textContent = "Bulk Edit";
@@ -112,11 +111,10 @@ class MultiAttributeEditPanel extends TatorElement {
 
 
       this._continueToSelect = document.createElement("button");
-      this._continueToSelect.setAttribute("class", "btn btn-clear py-2 col-12")
+      this._continueToSelect.setAttribute("class", "btn btn-clear py-2 col-12 disabled")
       let _continueToSelectText = document.createTextNode("Select Localizations >");
       this._continueToSelect.appendChild(_continueToSelectText);
-      // this._continueToSelect.style.margin = "0 auto";
-      // this._continueToSelect.style.width = "80%";
+      this._continueToSelect.disabled = true;
       this._bulkEditModal._footer.appendChild(this._continueToSelect);
 
       // ADD EVENT LISTENERS
@@ -132,6 +130,7 @@ class MultiAttributeEditPanel extends TatorElement {
       this._continueToSelect.addEventListener("click", () => {
          return this.dispatchEvent(new Event("select-click"));
       });
+
 
       // vars
       this._attributeCheckBoxList = [];
@@ -169,30 +168,43 @@ class MultiAttributeEditPanel extends TatorElement {
    show(val = true) {
       this.hidden = false;
 
+      return this._bulkEditModal.setAttribute("is-open", "true");
+   }
+   /*
+         let nameIsFilteredOn = false;
       console.log("SHOW!");
 
       if (true) {
-         let nameIsFilteredOn = false;
          let filterNames = [];
 
          for (let [id, input] of this._inputs) {
-            let name = input.getAttribute("name");
+            // let name = input.getAttribute("name");
             // Update bulk edit form input visibility
-            if (input.hidden == false && this.resultsFilter.attributes.includes(name)) {
-               console.log("Warning: filter contains attribute.")
-               nameIsFilteredOn = true;
-               filterNames.push(name);
+
+
+            for (let set of this._selectionValues) {
+               let vals = set.getValue();
+               for (let name of Array.from(vals)) {
+                  if (input.hidden !== false && this.resultsFilter.attributes.includes(name)) {
+                     console.log("test");
+                     nameIsFilteredOn = true;
+                     filterNames.push(name);
+                  }
+               }
             }
          }
 
+         console.log(filterNames);
+
          // after looping set this message
          if (nameIsFilteredOn) {
+            console.log("Warning: filter contains attribute.")
+            this._warningConfirmation.hidden = false;
             this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames } }))
+         } else {
+            this._warningConfirmation.hidden = true;
          }
-      }
-
-      return this._bulkEditModal.setAttribute("is-open", "true");
-   }
+      }*/
 
    isHidden() {
       return this.hidden;
@@ -240,6 +252,24 @@ class MultiAttributeEditPanel extends TatorElement {
       let styleDiv = document.createElement("div");
       styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
 
+      this._warningConfirmation = document.createElement("div");
+      this._warningConfirmation.setAttribute("class", "pb-3");
+      this._warningConfirmation.style.borderBottom = "1px solid white";
+      this._warningConfirmation.hidden = true;
+      styleDiv.appendChild(this._warningConfirmation);
+
+      let warning = document.createElement("span");
+      warning.textContent = "Editing this attribute impacts filtered result set.";
+      warning.setAttribute("class", "text-warning");   
+      this._warningConfirmation.appendChild(warning);
+
+      this._prefetchBool = document.createElement("bool-input");
+      this._prefetchBool.setAttribute("name", "Do you want to preserve results before editing?");
+      this._prefetchBool.setAttribute("on-text", "Yes");
+      this._prefetchBool.setAttribute("off-text", "No");
+      this._warningConfirmation.appendChild(this._prefetchBool);
+   
+
       /**
     * Label Choice
     */
@@ -262,8 +292,10 @@ class MultiAttributeEditPanel extends TatorElement {
          this._boxValueChanged(selectionBoxes, typeData.id);
       });
 
+
+
       this.div.innerHTML = "";
-      this.div.appendChild(styleDiv)
+      this.div.appendChild(styleDiv);
 
       // Now make the inputs
       this._addInputs(this._attribute_types.entries())
@@ -277,48 +309,47 @@ class MultiAttributeEditPanel extends TatorElement {
 
       console.log("box value changed");
       console.log(attributeNames);
-
-      // if( this._inputs && this._inputs.length > 0 ) {
-      let filterNames = [];
+      if (attributeNames.length > 0) {
+         this._continueToSelect.disabled = false;
+         this._continueToSelect.classList.remove("disabled");
+      } else {
+         this._continueToSelect.disabled = true;
+         this._continueToSelect.classList.add("disabled");
+      }
 
       if (this._bulkEditForm.children.length !== 0) {
          for (let input of this._inputsOnly) {
             let name = input.getAttribute("name");
-            input.hidden = true;
+            
 
             if (attributeNames.includes(name)) {
                input.hidden = false;
+            } else {
+               input.hidden = true;
             }
+
+            // //Update compare table via event
+            // this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
          }
       }
-      // }
-      // for (let group of this._bulkEditForm.children) {
-      //    if (group.id == typeId) {
-      //       group.hidden = false;
-      //          for (let input of group.children) {
-      //             let name = input.getAttribute("name");
-      //             console.log(input.tagName);
-      //             // Update bulk edit form input visibility
-      //             if (input.tagName !== "LABEL" && attributeNames.includes(name)) {
-      //                input.hidden = false;
-      //                if (this.resultsFilter.attributes.includes(name)) {
-      //                   console.log("Warning: filter containt attribute.")
-      //                   nameIsFilteredOn = true;
-      //                }
-      //             } else if (input.tagName !== "LABEL") {
-      //                input.hidden = true;
-      //             }
 
-      //             //Update compare table via event
-      //             this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
-      //          }
-      //       }
-      //    }
+      let filterNames = [];
+      for (let name of attributeNames) {
+         if (this.resultsFilter.attributes.includes(name)) {
+            console.log("Warning: filter contains attribute.")
+            nameIsFilteredOn = true;
+            filterNames.push(name);
+         } 
+      }
 
-         // after looping set this message
-         if (nameIsFilteredOn) {
-            this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames } }))
-         }
+
+      // after looping set this message
+      if (nameIsFilteredOn) {
+         this._warningConfirmation.hidden = false;
+         this.dispatchEvent(new CustomEvent("attribute-is-filtered-on", { detail: { names: filterNames } }))
+      } else {
+         this._warningConfirmation.hidden = true;
+      }
       // }
    }
 
@@ -338,7 +369,7 @@ class MultiAttributeEditPanel extends TatorElement {
       let nonHiddenAttrs = [];
       for (let attr of typeData.attribute_types) {
          if (attr.order >= 0) {
-            if(!this._attribute_types.has(attr.name)) nonHiddenAttrs.push(attr);
+            if (!this._attribute_types.has(attr.name)) nonHiddenAttrs.push(attr);
          }
       }
 
@@ -368,7 +399,7 @@ class MultiAttributeEditPanel extends TatorElement {
    }
 
    hideShowTypes(setOfMetaIds) {
-      console.log(setOfMetaIds);
+      // console.log(setOfMetaIds);
       // for (let [typeId, selectionDiv] of this._selectionMain.entries()) {
       //    console.log(`TYPE ID ${typeId}`)
       //    if (setOfMetaIds.has(typeId)) {
@@ -391,22 +422,24 @@ class MultiAttributeEditPanel extends TatorElement {
    setSelectionBoxValue({ typeId, values }) {
       // sets checked  -- from listeners to attribute label change / default shown on card
       //
-      let selectionBoxes = this._selectionValues.get(typeId);
-      console.log("setSelectionBoxValue values:");
-      console.log(values);
+      for (let [key, selectionBoxes] of Object.entries(this._selectionValues)) {
+         console.log("setSelectionBoxValue values:");
+         console.log(values);
 
-      for (let box of selectionBoxes._inputs) {
-         let boxName = box.getAttribute("name");
-         console.log(`values.includes(boxName) ${values.includes(boxName)}  .....${boxName}....`);
+         for (let box of selectionBoxes._inputs) {
+            let boxName = box.getAttribute("name");
+            console.log(`values.includes(boxName) ${values.includes(boxName)}  .....${boxName}....`);
 
-         if (values.includes(boxName)) {
-            box._checked = true;
-         } else {
-            box._checked = false;
+            if (values.includes(boxName)) {
+               box._checked = true;
+               console.log(box);
+            } else {
+               box._checked = false;
+            }
          }
-      }
 
-      this._boxValueChanged(selectionBoxes, typeId);
+         this._boxValueChanged(selectionBoxes, typeId);
+      }
    }
 
    // Loop through and add hidden inputs for each data type

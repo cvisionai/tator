@@ -293,12 +293,13 @@ class EntityCard extends TatorElement {
 
       if (this.multiEnabled) {
         /* @ "card-click"*/
-        if (e.shiftKey) {
+        if (e.shiftKey ) {
+          console.log("Shift click!");
           this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         }
         
-        if (e.ctrlKey) {
+        if (e.ctrlKey || e.code == "Control") {
           // usually context menu is hit, and not this keeping in case....
           this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: {  element : this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards

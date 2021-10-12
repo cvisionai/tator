@@ -5,9 +5,14 @@
    bottom: 0;
 	// background: $color-gray--light;
 	background: $color-charcoal--dark;
-	border-top: 1px solid $color-gray--light;
+	border-top: 1px solid $color-blue;
    box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
 	resize: horizontal;
+	transition: height 500ms ease-out;
+
+	&.minimized {
+		height: 30px;
+	}
 }
 
 .bulk-edit-bar_top {
@@ -22,7 +27,7 @@
 	padding: $spacing-3 $spacing-6;
 
 	kbd {
-		background: $color-gray--light;
+		background: $color-blue;
 		font-family: monospace;
 		border-radius: 3px;
 		padding: 2px;
@@ -124,7 +129,7 @@ entity-gallery-bulk-edit {
 .annotation__panel-group_bulk-edit {
 	// border: 1px solid $color-gray--light;
 	border-radius: 3px;
-	padding: 25px 10px;
+	// padding: 25px 10px;
 	position: relative
 }
 
@@ -143,3 +148,18 @@ entity-gallery-bulk-edit {
 		border: 2px solid white;
 	}
 }
+
+.collapse-bulk-edit-bar {
+	height: 50px;
+}
+
+[class^=arr-]{
+	border:       solid $color-charcoal--light;
+	border-width: 0 .1em .1em 0;
+	display:      inline-block;
+	padding:      .20em;
+ }
+ .arr-right {transform:rotate(-45deg);}
+ .arr-left  {transform:rotate(135deg);}
+ .arr-down  {transform:rotate(45deg);}
+ .arr-up    {transform:rotate(-135deg);}
