@@ -15,10 +15,12 @@ class MediaCountAPI(BaseDetailView):
     """
     schema = MediaCountSchema()
     permission_classes = [ProjectViewOnlyPermission]
-    http_method_names = ['get']
+    http_method_names = ['get', 'put']
 
     def _get(self, params):
         """ Retrieve number of media in list of media.
         """
         return get_media_count(params['project'], params)
 
+    def _put(self, params):
+        return self._get(params)

@@ -14,10 +14,13 @@ class LocalizationCountAPI(BaseDetailView):
     """
     schema = LocalizationCountSchema()
     permission_classes = [ProjectViewOnlyPermission]
-    http_method_names = ['get']
+    http_method_names = ['get', 'put']
 
     def _get(self, params):
         """ Retrieve number of media in list of media.
         """
         return get_annotation_count(params['project'], params, 'localization')
+
+    def _put(self, params):
+        return self._get(params)
 
