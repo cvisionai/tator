@@ -1477,6 +1477,19 @@ class AnnouncementToUser(Model):
     announcement = ForeignKey(Announcement, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
 
+class ReportType(Model):
+    """ Type associated with generating a report
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    """ Project associated with the report type """
+    name = CharField(max_length=64)
+    """ Name of the report type""" 
+    description = CharField(max_length=256, blank=True)
+    """ Description of the report type""" 
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ Refer to the attribute_types field for the other *Type models
+    """
+
 class Report(Model):
     """ Standalone HTML page shown as a report within the analytics view of the project.
     """
@@ -1498,6 +1511,8 @@ class Report(Model):
     """ Project associated with the report """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     """ Project associated with the report """
+    meta = ForeignKey(ReportType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    """ Type associated with report """
 
 class Dashboard(Model):
     """ Standalone HTML page shown as a dashboard within a project.
