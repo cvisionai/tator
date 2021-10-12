@@ -1513,6 +1513,8 @@ class Report(Model):
     """ Project associated with the report """
     meta = ForeignKey(ReportType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Type associated with report """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
 
 class Dashboard(Model):
     """ Standalone HTML page shown as a dashboard within a project.
