@@ -446,6 +446,8 @@ FILES = \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
     analytics/analytics-settings.js \
+    analytics/dashboard/dashboard-portal.js \
+    analytics/dashboard/dashboard-summary.js \
     analytics/dashboard/dashboard.js \
     analytics/localizations/card.js \
     analytics/localizations/gallery.js \
@@ -457,7 +459,7 @@ FILES = \
     analytics/collections/gallery.js \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
-    analytics/visualization/visualization.js \
+    analytics/portal/portal.js \
     analytics/reports/report-card.js \
     analytics/reports/reports.js \
     third_party/autocomplete.js \
