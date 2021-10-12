@@ -222,6 +222,7 @@ class SettingsBox {
     this.modal._titleDiv.innerHTML = "";
     this.modal._main.innerHTML = "";
     this.modal._footer.innerHTML = "";
+    this.modal._main.classList.remove("fixed-height-scroll");
     
     return this.modal;
   }

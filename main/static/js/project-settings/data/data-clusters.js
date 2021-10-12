@@ -81,7 +81,7 @@ class DataJobClusters {
       let newList = [];
 
       return this._setList().then((clusterList) => {
-         console.log(clusterList);
+         // console.log(clusterList);
          if (typeof clusterList !== "undefined" && clusterList !== null && clusterList !== 403) {
             clusterList.forEach((cluster, i) => {
                const checkObj = {

@@ -124,6 +124,14 @@ class MediaListSchema(AutoSchema):
                     '$ref': '#/components/schemas/MediaIdQuery',
                 },
             }}}
+        elif method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/MediaIdQuery',
+                },
+            }}}
         return body
 
     def _get_responses(self, path, method):

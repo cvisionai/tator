@@ -26,8 +26,8 @@ class MembershipEdit extends TypeForm {
   }
 
   _getExistingForm(data) {
-    console.log("Get existing form");
-    console.log(data.id);
+    // console.log("Get existing form");
+    // console.log(data.id);
 
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""

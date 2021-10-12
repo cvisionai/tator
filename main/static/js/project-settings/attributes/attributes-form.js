@@ -354,9 +354,15 @@ class AttributesForm extends TatorElement {
 
       this._default.setAttribute("on-text", "Yes");
       this._default.setAttribute("off-text", "No");
+      this._default.default = value;
+      this._default.setValue(value);
+  
+      this._default.addEventListener("change", this._formChanged.bind(this));
     } else if (dtype == "enum") {
       // enum default set in place, hide default input
       this.placeholderDefault.classList.add("hidden");
+      this._default = document.createElement("text-input");
+      this.placeholderDefault.appendChild(this._default);
       return;
     } else {
       this._default = document.createElement("text-input");
@@ -364,13 +370,14 @@ class AttributesForm extends TatorElement {
       this._default.setAttribute("name", "Default");
 
       // attribute endpoint converts to correct type
-      this._default.setAttribute("type", "text")
+      this._default.setAttribute("type", "text");
+      this._default.default = value;
+      this._default.setValue(value);
+  
+      this._default.addEventListener("change", this._formChanged.bind(this));
     }
 
-    this._default.default = value;
-    this._default.setValue(value);
 
-    this._default.addEventListener("change", this._formChanged.bind(this));
 
     return this._default;
   }
@@ -700,59 +707,77 @@ class AttributesForm extends TatorElement {
     });
   }
 
+   /**
+   * This will check for changed inputs, but some are required for patch call
+   * POST - Only required and if changed; UNLESS it is a clone, then pass all values
+   * PATCH - Only required and if changed
+   * 
+   * Required: (See: _check_attribute_type in attribute_type.py)
+   * - Name
+   * - Dtype
+   * - Choices (if Dtype == Enum)
+   * - Default (if Dtype Changes and it isn't null will be validated - leave null if it is "")
+   * 
+   * 
+   * @returns {formData} as JSON object
+   */
   _getAttributeFormData() {
     const formData = {};
-
-    // always send name (re: _check_attribute_type)
+  
+    // Name: Always sent
     formData.name = this._name.getValue();
-
-    // 
-    if ((this._description.changed()  || this.isClone)  && this._order.getValue() !== null) {
+  
+    // Description: Only when changed, or when it is a Clone pass the value along
+    // Don't send if the value is null => invalid
+    if ((this._description.changed() || this.isClone) && this._order.getValue() !== null) {
       formData.description = this._description.getValue();
     }
-
-    //
+  
+    // Order: Only when changed, or when it is a Clone pass the value along
+    // Don't send if the value is null => invalid
     if ((this._order.changed() || this.isClone) && this._order.getValue() !== null) {
       formData.order = this._order.getValue();
     }
-
-    //
+  
+    // Required: Only when changed, or when it is a Clone pass the value along
     if ((this._required.changed() || this.isClone)) {
       formData.required = this._required.getValue();
     }
-
-    //
+  
+    // Visible: Only when changed, or when it is a Clone pass the value along
     if ((this._visible.changed() || this.isClone)) {
       formData.visible = this._visible.getValue();
     }
-
-    // always send (re: _check_attribute_type)
+  
+    // Dtype: Always sent
     formData.dtype = this._dtype.getValue();
     const dtype = this._dtype.getValue();
-
-    if(dtype === "enum"){
-      if ((this._enumDefault.changed || (this.isClone && this._enumDefault.value !== "")) && this._enumDefault.value !== null) {
-        formData["default"] = this._enumDefault.value;
-      }
-    } else {
-      if ((this._default.changed() || (this.isClone && this._default.getValue() !== "")) && this._default.getValue() !== null) {
+  
+    // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
+    // Don't send if the value is null => invalid
+    // Don't send "" because it will fail as valid type for the default in some cases
+    if (this.isClone || this._dtype.changed()) {
+      if (dtype === "enum" && this._enumDefault !== {} && this._enumDefault.changed && this._enumDefault.value !== null && this._enumDefault.value !== "") {
+        formData["default"] = this._enumDefault.value; 
+      } else if (dtype !== "enum" && this._default.changed() && this._default.getValue() !== null && this._default.getValue() !== "") {
         let defaultVal = this._default.getValue();
         //backend does this but not when value is ""
         if (dtype == "int" || dtype == "float") defaultVal = Number(defaultVal);
         formData["default"] = defaultVal;
       }
     }
-
+  
+    // Datetime: Only when changed, or when it is a Clone pass the value along
     if (dtype === "datetime") {
-      if (this._useCurrent.changed()) {
+      if (this._useCurrent.changed() || this.isClone) {
         formData.use_current = this._useCurrent.getValue();
       }
     }
-    
-
-    // 
+  
+    // Min and Max: Only dtype in numeric & (changed, or when it is a Clone pass the value along)
+    // Don't send if the value is null => invalid
     if (dtype === "int" || dtype === "float") {
-    // getValue for text-input int comes back as null when default is undefined bc it is NaN
+      // getValue for text-input int comes back as null when default is undefined bc it is NaN
       if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
         formData.minimum = Number(this._minimum.getValue());
       }
@@ -760,16 +785,16 @@ class AttributesForm extends TatorElement {
         formData.maximum = Number(this._maximum.getValue());
       }
     }
-
+  
+    // Choices: Always send when dtype enum
     if (dtype === "enum") {
-      // always send (re: _check_attribute_type)
       formData.choices = this._choices.getValue();
-
+  
       if ((this._labels.changed() || this.isClone)) {
         formData.labels = this._labels.getValue();
       }
     }
-
+    console.log(formData);
     return formData;
   }
 
@@ -827,6 +852,23 @@ class AttributesForm extends TatorElement {
     }); 
   }
 
+  _attributeFormData({ form = this.form, id = -1, entityType = null } = {}) {
+    const data = {};
+    const global = this.isGlobal() ? "true" : "false";
+    const formData = {
+      "entity_type": entityType,
+      "global": global,
+      "old_attribute_type_name": this.dataset.oldName,
+      "new_attribute_type": this._getAttributeFormData(form)
+    };
+
+    data.newName = this._name.getValue();
+    data.oldName = this.dataset.oldName;
+    data.formData = formData;
+
+    return data;
+  }
+
   async _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
     const promiseInfo = {};
     const global = this.isGlobal() ? "true" : "false";
@@ -845,7 +887,7 @@ class AttributesForm extends TatorElement {
 
     // Hand of the data, and call this form unchanged
     formData.new_attribute_type = this._getAttributeFormData(form);
-    form.classList.remove("changed");
+    this.form.classList.remove("changed");
     this.changeReset();
 
     promiseInfo.promise = await this._fetchAttributePatchPromise(id, formData);
@@ -854,7 +896,7 @@ class AttributesForm extends TatorElement {
   }
 
   _fetchAttributePatchPromise(parentTypeId, formData) {
-    return fetchRetry("/rest/AttributeType/" + parentTypeId, {
+    return fetch("/rest/AttributeType/" + parentTypeId, {
       method: "PATCH",
       mode: "cors",
       credentials: "include",

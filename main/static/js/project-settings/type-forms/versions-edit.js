@@ -14,7 +14,7 @@ class VersionsEdit extends TypeForm {
       });
 
       this.versionId = data.id;
-      console.log(this.versionId);
+      // console.log(this.versionId);
 
       //
       this._setForm();
@@ -52,7 +52,7 @@ class VersionsEdit extends TypeForm {
       this._number = document.createElement("text-input");
       this._number.setAttribute("name", "Number");
       this._number.setAttribute("type", "int");
-      if (typeof data.number == "undefined" || data.number == "") {
+      if (typeof data.number === "undefined") {
          this._number.setValue("Created on Save");
          this._number.default = "";
       } else {
@@ -67,7 +67,7 @@ class VersionsEdit extends TypeForm {
 
       // Bases
       const basesListWithChecked = await this.versionListHandler.getCompiledVersionList(data.bases, data.id);
-      console.log(basesListWithChecked);
+      // console.log(basesListWithChecked);
 
       this._basesCheckbox = document.createElement("checkbox-set");
       this._basesCheckbox.setAttribute("name", "Bases");
@@ -101,9 +101,9 @@ class VersionsEdit extends TypeForm {
          formData.show_empty = this._showEmpty.getValue();
       }
 
-      if (this._number.changed() || isNew) {
-         formData._number = this._number.getValue();
-      }
+      // if (this._number.changed() || isNew) {
+      //    formData.number = this._number.getValue();
+      // }
 
       if (this._basesCheckbox.changed() || isNew) {
          formData.bases = this._basesCheckbox.getValue();
@@ -211,118 +211,77 @@ class VersionsEdit extends TypeForm {
          });
    }
 
-   _saveConfirmed({ id = this.versionId }) {
-      this._modalCloseCallback();
-      // Start spinner & Get promises list
-      console.log("Settings _save method for id: " + id);
-      // this.loading.showSpinner();
-
-      let promises = []
-      let errors = 0; // @TODO
-
-      this._nameEdit = {
-         edited: false,
-         newName: "",
-         typeName: this.typeName,
-         typeId: this.typeId
-       }
-
-      // Main type form
-      if (this.isChanged()) {
-         // console.log("Main form was changed");
-         const formData = this._getFormData();
-         if (Object.entries(formData).length === 0) {
-            return console.error("No formData");
-         } else {
-            promises.push(this._fetchPatchPromise({ id, formData }));
-            if (typeof formData.name !== "undefined") {
-               this._nameEdit.edited = true;
-               this._nameEdit.newName = formData.name;
-             }
-         }
-      }
-
-      let messageObj = {};
-      if (promises.length > 0 && errors === 0) {
-         // Check if anything changed
-         Promise.all(promises).then(async (respArray) => {
-            let responses = [];
-            respArray.forEach((item, i) => {
-               responses.push(item.json())
-            });
-
-            Promise.all(responses)
-               .then(dataArray => {
-                  messageObj = this._handleResponseWithAttributes({
-                     id,
-                     dataArray,
-                     hasAttributeChanges: false,
-                     attrPromises: [],
-                     respArray
-                  });
-
-                  let message = "";
-                  let success = false;
-                  let error = false;
-                  if (messageObj.messageSuccess) {
-                     let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-                     message += heading + messageObj.messageSuccess;
-                     success = true;
-                  }
-                  if (messageObj.messageError) {
-                     let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-                     message += heading + messageObj.messageError;
-                     error = true;
-                  }
-
-                  if (messageObj.requiresConfirmation) {
-                     let buttonSave = this._getAttrGlobalTrigger(id);
-                     let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-                     let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-                     let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
-                     this.loading.hideSpinner();
-                     this._modalConfirm({
-                        "titleText": "Complete",
-                        mainText,
-                        buttonSave
-                     });
-                  } else {
-                     let mainText = `${message}`;
-                     this.loading.hideSpinner();
-                     this._modalComplete(
-                        mainText
-                     );
-                     // Reset forms to the saved data from model
-                     this.resetHard();
-                  }
-               }).then(() => {
-                  // Reset changed flag
-                  this.changed = false;
-
-                  // Update anything related
-                  // Update related items with an event if required
-                  if (this._nameEdit.edited) {
-                     this._updateNavEvent("rename", this._nameEdit.newName)
-                  }
-               });
-
-         }).catch(err => {
-            console.error("File " + err.fileName + " Line " + err.lineNumber + "\n" + err);
-            this.loading.hideSpinner();
-         });
-      } else if (!promises.length > 0) {
-         this.loading.hideSpinner();
-         console.error("Attempted to save but no promises found.");
-         return this._modalSuccess("Nothing new to save!");
-      } else if (!errors === 0) {
-         this.loading.hideSpinner();
-         return this._modalError("Please fix form errors.");
+   async _saveConfirmed({ id = this.versionId }) {
+      this.loading.showSpinner();
+  
+      //create form data & post promise array for the attribute forms, and submit
+      this.successMessages = "";
+      this.failedMessages = "";
+      this.confirmMessages = "";
+      this.nameChanged = false;
+      this.newName = null;
+      this.saveModalMessage = "";
+      this.requiresConfirmation = false;
+      this.hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
+  
+  
+      if (this.isChanged() || this.hasAttributeChanges) {
+        try {
+          if (this.isChanged()) {
+            // Main type form
+            await this._typeFormChanged({ id });
+          }
+        } catch (err) {
+          console.error("Error saving.", err);
+          this.loading.hideSpinner();
+          return this._modalError("Error saving type form changes.\nError: " + err);
+        }
+        try {
+          if (this.hasAttributeChanges) {
+            // All attribute forms
+            const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
+            if (attrFormsChanged && attrFormsChanged.length > 0) {
+              for (let form of attrFormsChanged) {
+                await this._attrFormsChanged(form);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error saving.", err);
+          this.loading.hideSpinner();
+          return this._modalError("Error saving attribute changes.\nError: " + err);
+        }
+  
+        try {
+          // Compiled messages from above
+          await this._showSaveCompletModal();
+  
+          // Clean up..................
+          // Reset changed flags
+          this.changed = false;
+          if (this.hasAttributeChanges) {
+            const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
+            if (attrFormsChanged.length > 0) {
+              for (let f of attrFormsChanged) {
+                f.changeReset();
+              }
+            }
+          }
+  
+          // Update related items with an event if required
+          if (this.nameChanged) {
+            this._updateNavEvent("rename", this.newName)
+          }
+        } catch (err) {
+          console.error("Error saving.", err);
+          this.loading.hideSpinner();
+          return this._modalError("Error saving.\nError: " + err);
+        }
       } else {
-         this.loading.hideSpinner();
-         return this._modalError("Problem saving form data.");
+        this.loading.hideSpinner();
+        return this._modalSuccess("Nothing new to save!");
       }
-   }
+    }
 
 }
 
