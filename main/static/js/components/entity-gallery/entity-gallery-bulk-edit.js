@@ -342,7 +342,7 @@ class GalleryBulkEdit extends TatorElement {
       console.log("CLEARING SELECTION!");
       this._currentMultiSelection.clear();
       this._currentSelectionObjects.clear();
-      this._currentSelectionObjects.clear();
+      // this._currentSelectionObjects.clear();
       this.setOfSelectedMetaIds.clear();
       this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
 
@@ -644,17 +644,17 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    updateSelectionObjects(formData) {
-      for (let id of formData.ids) {
+      for (let id of this._currentMultiSelection) {
          let newCardData = this._currentSelectionObjects.get(id);
-         console.log(this._currentSelectionObjects);
-         console.log(id);
          if (typeof newCardData !== "undefined") {
             if (formData.attributes) {
                for (let [a, b] of Object.entries(formData.attributes)) {
                   newCardData.attributes[a] = b;
                }
             }
-            this._page._filterResults.updateCardData(newCardData);         
+            console.log(newCardData);
+            this._page._filterResults.updateCardData(newCardData);
+            this._page.cardData.updateBulkCache(newCardData);
          } else {
             console.warn("Possibly an error with save. Could not find ID in currentSelectionObjects.")
          }
@@ -704,7 +704,7 @@ class GalleryBulkEdit extends TatorElement {
       this._page._filterView.addCachedPill(condition);
 
 
-      await this._page.cardData._bulkCaching();
+      await this._page.cardData._bulkCaching(this._page._filterConditions);
 
       this._page.hideDimmer();
       this._selectionPanel.show(true);

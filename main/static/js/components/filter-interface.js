@@ -211,7 +211,9 @@ class FilterInterface extends TatorElement {
   setFilterBar() {
     // Remove all the children (if there are any)
     while (this._filterStringDiv.firstChild) {
-      this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
+      if (this._filterStringDiv.firstChild.id !== "CACHED") {
+        this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
+      }
     }
 
     // Loop through all the conditions and create the string

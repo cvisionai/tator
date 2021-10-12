@@ -200,8 +200,10 @@ class AnnotationCardData extends HTMLElement {
     }
   }
 
-  async _bulkCaching(filterConditions, paginationState) {
+  async _bulkCaching(filterConditions) {
     let promise = Promise.resolve();
+
+    console.log(filterConditions);
     if (this._needReload(filterConditions)) {
       this._bulkCache = await this._modelData.getFilteredLocalizations(
         "objects",
@@ -264,6 +266,15 @@ class AnnotationCardData extends HTMLElement {
     // Now gather all the card information
     await this._getCardList(localizations, medias);
     return this.cardList;
+  }
+
+  updateBulkCache(data) {
+    console.log(data);
+    for (let loc of this._bulkCache) {
+      if (loc.id == data.id) {
+        loc = data.localization;
+      }
+    }
   }
 }
 
