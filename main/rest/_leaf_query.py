@@ -213,7 +213,7 @@ def get_leaf_queryset(project, params):
 
 def get_leaf_count(project, params):
     # Determine whether to use ES or not.
-    use_es, filter_ops = _use_es(params)
+    use_es, filter_ops = _use_es(project, params)
 
     if use_es:
         # If using ES, do the search and get the count.
