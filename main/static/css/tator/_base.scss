@@ -109,7 +109,7 @@ summary {
   transition-property: opacity;
   z-index: 1;
   &.has-open-modal {
-    opacity: 1;
+    opacity: 100;
     pointer-events: initial;
   }
 }

@@ -141,6 +141,8 @@ class GalleryBulkEdit extends TatorElement {
          attributes: [],
          filterObj: {}
       };
+
+      this._requiresPrefetch = false;
    }
 
    set elementList(val) {
@@ -160,17 +162,17 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    _keyUpHandler(e) {
-      if (e.key == "Control") {
-         this._ctrlSelect = false;
-      }
-      if (e.key == "Shift") {
-         this._shiftSelect = false;
-      }
+      // if (e.key == "Control") {
+      //    this._ctrlSelect = false;
+      // }
+      // if (e.key == "Shift") {
+      //    this._shiftSelect = false;
+      // }
    }
 
    _keyDownHandler(e) {
-      console.log(`Key: ${e.key}`);
-      console.log(`Code: ${e.key}`);
+      // console.log(`Key: ${e.key}`);
+      // console.log(`Code: ${e.key}`);
 
       if (e.key == "Escape") {
          console.log(`Escape!`)
@@ -179,7 +181,7 @@ class GalleryBulkEdit extends TatorElement {
 
       if (e.code == "Control") {
          if (e.code == "a" || e.code == "A") {
-            console.log("Control+A");
+            console.log("asdasdasdasdasd+A");
             this.selectAllOnPage();
          }         
       }
@@ -190,21 +192,21 @@ class GalleryBulkEdit extends TatorElement {
          this.selectAllOnPage();       
       }
 
-      if (e.code == "Enter") {
-         console.log("KeyDown Enter!")
-         console.log(this._editPanel._bulkEditModal.hasAttribute("is-open"));
-         if (this._editPanel._bulkEditModal.hasAttribute("is-open")) {
-            console.log("Show selection panel!");
-            this._showSelectionPanel();
-         } else {
-            console.log(this._selectionPanel.hidden == false);
-            console.log(this._count);
-            if (this._selectionPanel.hidden == false && this._count != 0) {
-               console.log("Save with enter!");
-               this._saveBulkEdit();
-            }
-         }
-      }
+      // if (e.code == "Enter") {
+      //    console.log("KeyDown Enter!")
+      //    console.log(this._editPanel._bulkEditModal.hasAttribute("is-open"));
+      //    if (this._editPanel._bulkEditModal.hasAttribute("is-open")) {
+      //       console.log("Show selection panel!");
+      //       this._showSelectionPanel();
+      //    } else {
+      //       console.log(this._selectionPanel.hidden == false);
+      //       console.log(this._count);
+      //       if (this._selectionPanel.hidden == false && this._count != 0) {
+      //          console.log("Save with enter!");
+      //          this._saveBulkEdit();
+      //       }
+      //    }
+      // }
 
    }
 
@@ -389,8 +391,14 @@ class GalleryBulkEdit extends TatorElement {
       this.dispatchEvent(new Event("multi-enabled"));
 
       if (this.resultsFilter.containsAttributes == true) {
-         this._editPanel.addEventListener("attribute-is-filtered-on", () => {
-            this._requiresPrefetch = true;
+         this._editPanel.addEventListener("attribute-is-filtered-on", (e) => {
+            if (e.detail.names.length > 0 ){
+               console.log("Setting this._requiresPrefetch = true");
+               this._requiresPrefetch = true;
+            } else {
+               console.log("Setting this._requiresPrefetch = false");
+               this._requiresPrefetch = false;
+            }
          });
       }
    }
@@ -420,17 +428,27 @@ class GalleryBulkEdit extends TatorElement {
       // this.resetElements();
       this.dispatchEvent(new Event("multi-disabled"));
 
-      this._editPanel.removeEventListener("attribute-is-filtered-on", () => {
-         this._requiresPrefetch = true;
+      this._editPanel.removeEventListener("attribute-is-filtered-on", (e) => {
+         if (e.detail.names.length > 0 ){
+            console.log("Setting this._requiresPrefetch = true");
+            this._requiresPrefetch = true;
+         } else {
+            console.log("Setting this._requiresPrefetch = false");
+            this._requiresPrefetch = false;
+         }
       });
    }
 
    _showSelectionPanel(val = true) {
       
       this._editPanel._bulkEditModal._closeCallback();
-      if (this._requiresPrefetch && this._editPanel._prefetchBool.getValue()) {
+      console.log(`this._warningConfirmation.hidden != true; && this._editPanel._prefetchBool.getValue() ${this._editPanel._warningConfirmation.hidden != true && this._editPanel._prefetchBool.getValue()} anndddasda ${this._editPanel._warningConfirmation.hidden != true} ${this._editPanel._prefetchBool.getValue()}`);
+      if (this._editPanel._warningConfirmation.hidden != true && this._editPanel._prefetchBool.getValue()) {
          this._page.loading.showSpinner();
-         this._prefetch();
+         return this._prefetch().then(() => {
+            this._page.loading.hideSpinner();
+            this._page.hideDimmer();
+         });
       } else {
          this._page.hideDimmer();
          this._selectionPanel.show(val);
@@ -679,11 +697,18 @@ class GalleryBulkEdit extends TatorElement {
       this._editPanel.updateWarningList(this.resultsFilter);
    }
 
-   prefetch() {
-      this._page.filterConditions.add("CACHED==True");
-      this._page.cardData._bulkCaching((resp) => {
-         console.log(resp);
-      }).catch(err => console.warn(err));
+   async _prefetch() {
+      console.log("PREFETCH");
+      let condition = new FilterConditionData("", "results", "==", "true", "CACHED");
+      this._page._useCachedResults = true;
+      this._page._filterView.addCachedPill(condition);
+
+
+      await this._page.cardData._bulkCaching();
+
+      this._page.hideDimmer();
+      this._selectionPanel.show(true);
+      if (!this._editMode) this.startEditMode();
    }
 
    prefetchWarning() {    

@@ -209,7 +209,6 @@ class FilterInterface extends TatorElement {
    * Sets the information displayed in the filter bar based on the
    */
   setFilterBar() {
-
     // Remove all the children (if there are any)
     while (this._filterStringDiv.firstChild) {
       this._filterStringDiv.removeChild(this._filterStringDiv.firstChild);
@@ -217,6 +216,7 @@ class FilterInterface extends TatorElement {
 
     // Loop through all the conditions and create the string
     var conditions = this._filterConditionGroup.getConditions();
+
     for (const [index, condition] of conditions.entries()) {
       const pill = document.createElement("removable-pill");
       this._filterStringDiv.appendChild(pill);
@@ -230,6 +230,25 @@ class FilterInterface extends TatorElement {
         this.applyFilterData();
       });
     }
+  }
+
+  addCachedPill(condition) {
+    // just add it once
+    if(this._filterStringDiv.querySelector("#CACHED") == null) {
+      console.log("ADDING A PILL FOR CACHED RESULTS!");
+      const pill = document.createElement("removable-pill");
+      this._filterStringDiv.appendChild(pill);
+      pill.id = "CACHED";
+
+      pill.setAttribute("class", "py-1 d-flex text-orange border-orange");
+      pill.style.marginRight = "5px";
+      pill.init(condition.getString(), 0);
+      pill.addEventListener("removeId", evt => {        
+        this.dispatchEvent(new Event("cached-cancelled"));
+        this._filterStringDiv.querySelector("#CACHED").remove();
+      });
+    }
+
   }
 
   /**

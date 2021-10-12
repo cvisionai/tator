@@ -133,6 +133,7 @@ class AnalyticsLocalizations extends TatorPage {
     // Init vars for filter state
     this._filterConditions = this._settings.getFilterConditionsObject();
     this._bulkEdit.checkForFilters(this._filterConditions);
+    this._useCachedResults = false;
 
     // Init vars for pagination state
     let pageSize = this._settings.getPageSize();
@@ -231,15 +232,26 @@ class AnalyticsLocalizations extends TatorPage {
   _cardGallery(filterConditions, paginationState) {
     this.showDimmer();
     this.loading.showSpinner();
+    this._useCachedResults = this._filterView._filterStringDiv.querySelector("#CACHED") != null;
 
+    if (this._useCachedResults) {
+      // Initial view-modal "Cardlist" from fetched localizations
+      this.cardData.makeCardListFromBulk(filterConditions, paginationState).then((cardList) => {
+        // CardList inits Gallery component with cards & pagination on page
+        this._filterResults.show(cardList);
+        this.loading.hideSpinner();
+        this.hideDimmer();
+      });      
+    } else {
+      // Initial view-modal "Cardlist" from fetched localizations
+      this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {
+        // CardList inits Gallery component with cards & pagination on page
+        this._filterResults.show(cardList);
+        this.loading.hideSpinner();
+        this.hideDimmer();
+      });
+    }
 
-    // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {
-      // CardList inits Gallery component with cards & pagination on page
-      this._filterResults.show(cardList);
-      this.loading.hideSpinner();
-      this.hideDimmer();
-    });
   }
 
   // Reset the pagination back to page 0

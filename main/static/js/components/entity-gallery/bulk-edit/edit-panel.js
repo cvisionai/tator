@@ -444,7 +444,7 @@ class MultiAttributeEditPanel extends TatorElement {
 
    // Loop through and add hidden inputs for each data type
    _addInputs(dataType) {
-      console.log(dataType);
+      // console.log(dataType);
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group_bulk-edit text-gray f2");
       div.setAttribute("id", dataType.id);
