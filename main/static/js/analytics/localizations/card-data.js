@@ -233,9 +233,10 @@ class AnnotationCardData extends HTMLElement {
 
     // Get the localizations for the current page
     const localizations = [];
-    const pageStart = (paginationState.pageSize * paginationState.page) + 1;
-    const pageEnd = (pageStart + paginationState.pageSize);
-    for (let x = pageStart; x < pageEnd; x++) {
+    console.log(paginationState);
+
+    console.log(`let x = pageStart ${pageStart}; x < pageEnd ${pageEnd}`);
+    for (let x = paginationState.start; x <= paginationState.stop; x++) {
       // const loc = await this._modelData.getLocalization(this._bulkCache[x]);
       const loc = this._bulkCache[x];
       localizations.push(loc);
@@ -269,16 +270,17 @@ class AnnotationCardData extends HTMLElement {
   }
 
   async updateBulkCache(data) {
-    console.log(data);
-    
-    
-    if (typeof this._bulkCache == "undefined" || this._bulkCache == null) {
-      await this._bulkCaching(this._filterConditions);
-    }
-
-    for (let loc of this._bulkCache) {
-      if (loc.id == data.id) {
-        loc = data.localization;
+    if (typeof this._bulkCache !== "undefined" || this._bulkCache !== null) {
+      //await this._bulkCaching(this._filterConditions);
+      for (let i in this._bulkCache) {
+        if (this._bulkCache[i].id == data.localization.id) {
+          console.log(`updating loc ${this._bulkCache[i].id}`);
+          console.log(data);
+          console.log(this._bulkCache[i]);
+          this._bulkCache[i] = data.localization;
+          console.log(`updated`);
+          console.log(this._bulkCache[i]);
+        }
       }
     }
   }

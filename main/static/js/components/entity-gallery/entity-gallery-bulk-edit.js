@@ -437,6 +437,7 @@ class GalleryBulkEdit extends TatorElement {
             this._requiresPrefetch = false;
          }
       });
+
    }
 
    _showSelectionPanel(val = true) {
@@ -700,7 +701,6 @@ class GalleryBulkEdit extends TatorElement {
    async _prefetch() {
       console.log("PREFETCH");
       let condition = new FilterConditionData("", "results", "==", "true", "CACHED");
-      this._page._useCachedResults = true;
       this._page._filterView.addCachedPill(condition);
 
 
