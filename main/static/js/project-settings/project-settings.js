@@ -184,12 +184,12 @@ class ProjectSettings extends TatorPage {
           const usesMediaList = ["StateType", "LocalizationType"];
           if (usesMediaList.includes(typeClassView.typeName)) {
             this._dataMediaList.el.addEventListener("change", (e) => {
-              console.log(e.detail);
+              // console.log(e.detail);
               typeClassView.updateMediaList(e.detail);
             });
           } else if (typeClassView.typeName == "Version") {
             this._dataVersionList.el.addEventListener("change", (e) => {
-              console.log(e.detail);
+              // console.log(e.detail);
               typeClassView.updateVersionList(e.detail);
             });
           }
@@ -231,7 +231,7 @@ class ProjectSettings extends TatorPage {
   /* Run when project-id is set to run fetch the page content. */
   _sectionInit({ viewClass }) {
     const formView = document.createElement(viewClass);
-    console.log(viewClass);
+    // console.log(viewClass);
 
     formView._fetchGetPromise({ "id": this.projectId })
       .then((data) => {
@@ -294,12 +294,12 @@ class ProjectSettings extends TatorPage {
           const usesMediaList = ["StateType", "LocalizationType"];
           if (usesMediaList.includes(form.typeName)) {
             this._dataMediaList.el.addEventListener("change", (e) => {
-              console.log(e.detail);
+              // console.log(e.detail);
               form.updateMediaList(e.detail);
             });
           } else if (form.typeName == "Version") {
             this._dataVersionList.el.addEventListener("change", (e) => {
-              console.log(e.detail);
+              // console.log(e.detail);
               form.updateVersionList(e.detail);
             });
           }

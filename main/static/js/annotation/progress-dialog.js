@@ -10,10 +10,11 @@ class ProgressDialog extends ModalDialog {
     this._footer.remove();
 
     // Loading Icon
-    this._loadingImg = document.createElement("img");
-    this._loadingImg.setAttribute("src", "/static/images/spinner-transparent.svg");
-    this._loadingImg.style.margin = "auto";
-    this._header.appendChild(this._loadingImg);
+    //this._loadingImg = document.createElement("img");
+    //this._loadingImg.setAttribute("src", "/static/images/spinner-transparent.svg");
+    //this._loadingImg.style.margin = "auto";
+    //this._loadingImg.style.display = "none";
+    //this._header.appendChild(this._loadingImg);
 
     // Success Icon
     // Note: Scaled up version of success-light.js
@@ -195,7 +196,7 @@ class ProgressDialog extends ModalDialog {
 
     this._failedSvg.style.display = "none";
     this._successSvg.style.display = "none";
-    this._loadingImg.style.display = "block";
+    //this._loadingImg.style.display = "block";
     this._msg.textContent = msg;
 
     var newJob = {
@@ -211,34 +212,6 @@ class ProgressDialog extends ModalDialog {
     else {
       this._newJobList.push(newJob);
     }
-
-    /*
-
-    var promise = new Promise((resolve) => {
-      this._okButton.setAttribute("disabled", "");
-      this._failedSvg.style.display = "none";
-      this._successSvg.style.display = "none";
-      this._loadingImg.style.display = "block";
-      this._msg.textContent = runningMsg;
-
-      this.getJobCompleteStatus(jobUid)
-      .then(jobStatus => {
-        this._loadingImg.style.display = "none";
-        this._okButton.removeAttribute("disabled", "");
-        if (jobStatus) {
-          this._successSvg.style.display = "block";
-          this._msg.textContent = successfulMsg;
-        }
-        else {
-          this._failedSvg.style.display = "block";
-          this._msg.textContent = failedMsg;
-        }
-        resolve(jobStatus);
-      });
-    });
-
-    return promise;
-    */
   }
 
   /**

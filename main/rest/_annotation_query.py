@@ -101,7 +101,6 @@ def get_annotation_es_query(project, params, annotation_type):
         annotation_bools.append({'match': {'_meta': {'query': int(filter_type)}}})
 
     if version is not None:
-        logger.info(f"version = {version}")
         annotation_bools.append({'terms': {'_annotation_version': version}})
 
     if frame is not None:

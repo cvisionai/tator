@@ -461,23 +461,24 @@ class TypeForm extends TatorElement {
 
   async _save({ id = -1 } = {}) {
     this.loading.showSpinner();
-
     //create form data & post promise array for the attribute forms, and submit
     this.successMessages = "";
     this.failedMessages = "";
     this.confirmMessages = "";
+    this.saveModalMessage = "";
+
     this.nameChanged = false;
     this.newName = null;
-    this.saveModalMessage = "";
     this.requiresConfirmation = false;
     this.hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
-
 
     if (this.isChanged() || this.hasAttributeChanges) {
       try {
         if (this.isChanged()) {
           // Main type form
           await this._typeFormChanged();
+          console.log(this.successMessages);
+          console.log(this.saveModalMessage);
         }
       } catch (err) {
         console.error("Error saving.", err);
@@ -533,6 +534,7 @@ class TypeForm extends TatorElement {
 
   _showSaveCompletModal() {
     let promise = Promise.resolve();
+    this.saveModalMessage = "";
 
     return promise.then(() => {
       if (this.successMessages) {
@@ -558,13 +560,17 @@ class TypeForm extends TatorElement {
         });
       } else {
         let mainText = `${this.saveModalMessage}`;
-        this.loading.hideSpinner();
+        
         this._modalComplete(
           mainText
         );
         // Reset forms to the saved data from model
-        this.resetHard();
+        
       }
+    }).then(() => {
+      return this.resetHard();
+    }).then(() => {
+      this.loading.hideSpinner();
     });
 
   }
@@ -585,7 +591,7 @@ class TypeForm extends TatorElement {
       return data;
     }).then(async (data) => {
       return await form._fetchAttributePatchPromise(this.typeId, data.formData)
-  })
+    })
       .then(resp => {
         response = resp;
         return resp.json()
@@ -601,7 +607,7 @@ class TypeForm extends TatorElement {
         let iconWrap = document.createElement("span");
         let warningIcon = document.createElement("modal-warning");
 
-        console.log(`currentMessage::::: ${currentMessage}`);
+        // console.log(`currentMessage::::: ${currentMessage}`);
 
         if (response.status == 200) {
           //console.log("Return Message - It's a 200 response.");
@@ -626,7 +632,7 @@ class TypeForm extends TatorElement {
       });
   }
 
-  _typeFormChanged() {
+  _typeFormChanged({ id = this.typeId } = {}) {
     const formData = this._getFormData();
     let promise = Promise.resolve();
 
@@ -634,15 +640,11 @@ class TypeForm extends TatorElement {
       return console.error("No formData");
     } else {
       return promise.then(() => {
-        //reset message strings
-        this.successMessages = "";
-        this.failedMessages = "";
-        this.confirmMessages = "";
         if (typeof formData.name !== "undefined") {
           this.nameChanged = true;
           this.newName = formData.name;
         }
-        return this._fetchPatchPromise({ id: this.typeId, formData });
+        return this._fetchPatchPromise({ id, formData });
       })
         .then(response => response.json().then(data => ({ response: response, data: data })))
         .then(obj => {
@@ -737,6 +739,10 @@ class TypeForm extends TatorElement {
   async resetHard() {
     console.log("Hard reset...");
     this.loading.showSpinner();
+    this.successMessages = "";
+    this.failedMessages = "";
+    this.confirmMessages = "";
+    this.saveModalMessage = "";
     //Utilities.warningAlert("Refreshing data", "#fff", false);
     //const response = await this._fetchGetPromise();
     const response = await this._fetchByIdPromise();

@@ -6,21 +6,27 @@ from ._errors import error_responses
 from ._annotation_query import annotation_filter_parameter_schema
 from ._attributes import attribute_filter_parameter_schema
 
+boilerplate = dedent("""\
+This endpoint accepts the same query parameters as a GET or PUT request to the `Localizations`
+endpoint, but only returns the number of localizations.
+""")
+
 class LocalizationCountSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
             operation['operationId'] = 'GetLocalizationCount'
+        elif method == 'PUT':
+            operation['operationId'] = 'GetLocalizationCountById'
         operation['tags'] = ['Tator']
         return operation
 
     def get_description(self, path, method):
-        return dedent("""\
-        Retrieve count of localizations in a localization list.
-
-        This endpoint accepts the same query parameters as a GET request to the `Localizations` endpoint,
-        but only returns the number of localizations.
-        """)
+        if method == 'GET':
+            short_desc = "Get localization list count."
+        elif method == 'PUT':
+            short_desc = "Get localization list count by ID."
+        return f"{short_desc}\n\n{boilerplate}"
 
     def _get_path_parameters(self, path, method):
         return [{
@@ -33,16 +39,25 @@ class LocalizationCountSchema(AutoSchema):
 
     def _get_filter_parameters(self, path, method):
         params = []
-        if method  == 'GET':
+        if method in ['GET', 'PUT']:
             params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
         return params
 
     def _get_request_body(self, path, method):
-        return {}
+        body = {}
+        if method == 'PUT':
+            body = {
+                'required': True,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/LocalizationIdQuery',
+                },
+            }}}
+        return body
 
     def _get_responses(self, path, method):
         responses = error_responses()
-        if method == 'GET':
+        if method in ['GET', 'PUT']:
             responses['200'] = {
                 'description': 'Number of localizations in the list corresponding to query.',
                 'content': {'application/json': {'schema': {

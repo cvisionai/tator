@@ -136,7 +136,15 @@ class StateListSchema(AutoSchema):
                 'required': True,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/LocalizationIdQuery',
+                    '$ref': '#/components/schemas/StateIdQuery',
+                },
+            }}}
+        if method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/StateIdQuery',
                 },
             }}}
         return body
