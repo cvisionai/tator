@@ -67,6 +67,8 @@ from .project import ProjectListAPI
 from .project import ProjectDetailAPI
 from .report import ReportListAPI
 from .report import ReportDetailAPI
+from .report_type import ReportTypeListAPI
+from .report_type import ReportTypeDetailAPI
 from .save_html_file import SaveHTMLFileAPI
 from .section import SectionListAPI
 from .section import SectionDetailAPI

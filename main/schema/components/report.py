@@ -9,7 +9,8 @@ report_fields = SimpleNamespace(
     html_file="html_file",
     id="id",
     name="name",
-    project="project")
+    project="project",
+    attributes="attributes")
 
 report_post_properties = {
     report_fields.name: {
@@ -23,6 +24,11 @@ report_post_properties = {
     report_fields.description: {
         "type": "string",
         "description": "Description of report"
+    },
+    report_fields.attributes: {
+        'description': 'Object containing attribute values.',
+        'type': 'object',
+        'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
 }
 

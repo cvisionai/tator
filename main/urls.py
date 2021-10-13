@@ -369,6 +369,14 @@ urlpatterns += [
         ReportDetailAPI.as_view(),
     ),
     path(
+        'rest/ReportTypes/<int:project>',
+        ReportTypeListAPI.as_view(),
+    ),
+    path(
+        'rest/ReportType/<int:id>',
+        ReportTypeDetailAPI.as_view(),
+    ),
+    path(
         'rest/SaveHTMLFile/<int:project>',
         SaveHTMLFileAPI.as_view(),
         name='SaveHTMLFile',

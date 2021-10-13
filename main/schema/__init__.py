@@ -69,6 +69,8 @@ from .project import ProjectListSchema
 from .project import ProjectDetailSchema
 from .report import ReportListSchema
 from .report import ReportDetailSchema
+from .report_type import ReportTypeListSchema
+from .report_type import ReportTypeDetailSchema
 from .save_html_file import SaveHTMLFileSchema
 from .section import SectionListSchema
 from .section import SectionDetailSchema
