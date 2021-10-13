@@ -125,6 +125,8 @@ class CustomGenerator(SchemaGenerator):
                 'Project': project,
                 'Report': report,
                 'ReportSpec': report_spec,
+                'ReportType': report,
+                'ReportTypeSpec': report_type_spec,
                 'ResolutionConfig': resolution_config,
                 'S3StorageConfig': s3_storage_config,
                 'SectionSpec': section_spec,
