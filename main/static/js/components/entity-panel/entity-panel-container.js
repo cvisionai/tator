@@ -19,7 +19,12 @@ class EntityPanelContainer extends TatorElement {
       this.gallery = gallery;
 
       // listener to close panelContainer
-      this._panelTop.init({ pageModal, modelData, panelContainer: this });
+      if (this.gallery._customContent) {
+         this._panelTop.init({ pageModal, modelData, panelContainer: this, customContentHandler: this.gallery.customContentHandler});
+      } else {
+         this._panelTop.init({ pageModal, modelData, panelContainer: this });
+      }
+      
       this._panelTop._topBarArrow.addEventListener("click", this._toggleRightOnClick.bind(this));
 
       // Check and set current permission level on annotationPanel

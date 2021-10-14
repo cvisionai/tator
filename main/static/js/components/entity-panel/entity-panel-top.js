@@ -76,14 +76,16 @@ class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  init({ pageModal, modelData, panelContainer }) {
-    //if (this.localizationType) {
-    if (this._locImage == undefined) {
-      this._locImage = document.createElement("entity-panel-localization");
-      this._box.insertBefore(this._locImage, this._staticImage);
+  init({ pageModal, modelData, panelContainer, customContentHandler = false }) {
+    if (!customContentHandler) {
+      if (this._locImage == undefined) {
+        this._locImage = document.createElement("entity-panel-localization");
+        this._box.insertBefore(this._locImage, this._staticImage);
+      }
+      this._locImage.init({ pageModal, modelData, panelContainer });
+    } else {
+      this.openHandler = customContentHandler;
     }
-    this._locImage.init({ pageModal, modelData, panelContainer });
-    //}
   }
 
   setImage(imageSource) {

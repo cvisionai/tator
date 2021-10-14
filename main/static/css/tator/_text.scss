@@ -117,6 +117,12 @@
   text-decoration: underline;
 }
 
+.text-warning {
+  background-color: $color-red;
+  padding: 1px;
+  color: $color-white;
+}
+
 .hover-text-white {
   &:hover,
   &:focus {

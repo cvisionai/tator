@@ -456,7 +456,9 @@ FILES = \
     analytics/localizations/panel-data.js \
     analytics/localizations/card-data.js \
     analytics/localizations/localizations.js \
-    analytics/collections/slide-data.js \
+    analytics/corrections/localizations.js \
+    analytics/corrections/gallery.js \
+    analytics/collections/collections.js \
     analytics/collections/gallery.js \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \

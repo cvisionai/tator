@@ -29,6 +29,7 @@ from .views import AuthProjectView
 from .views import AuthAdminView
 from .views import AnalyticsDashboardView
 from .views import AnalyticsLocalizationsView
+from .views import AnalyticsCorrectionsView
 from .views import AnalyticsCollectionsView
 from .views import AnalyticsVisualizationView
 from .views import AnalyticsReportsView
@@ -59,6 +60,8 @@ urlpatterns = [
          AnalyticsLocalizationsView.as_view(), name='analytics-localizations'),
     path('<int:project_id>/analytics/collections',
          AnalyticsCollectionsView.as_view(), name='analytics-collections'),
+    path('<int:project_id>/analytics/corrections',
+         AnalyticsCorrectionsView.as_view(), name='analytics-corrections'),
     path('<int:project_id>/analytics/visualization',
          AnalyticsVisualizationView.as_view(), name='analytics-visualization'),
     path('<int:project_id>/analytics/reports',
