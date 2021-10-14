@@ -255,3 +255,41 @@ body.analysis-annotations-body {
     background-color: $color-charcoal--medium70;
   }
 }
+
+.reports_list {
+  box-sizing: border-box;
+  height: calc(100vh - 62px);
+  overflow: auto;
+  width: 450px;
+}
+
+.reports_main {
+  border-left: 1px solid $color-charcoal--light;
+  box-sizing: border-box;
+  height: calc(100vh - 62px);
+  overflow: auto;
+  width: 100%;
+}
+.dashboard_main {
+  overflow: auto;
+  height: calc(100vh - 62px);
+  width: 100%;
+  position: fixed;
+}
+
+.dashboard_summary-icon {
+  align-items: stretch;
+  background: $color-charcoal--medium;
+  width: 50px;
+  height: 50px;
+  border: 2px solid;
+  border-color: $color-charcoal--light;
+  transition: all 300ms linear;
+  color: $color-gray--light;
+
+  &:hover{
+    border-color: $color-white--50;
+    background-color: $color-charcoal--light;
+    color: $color-white;
+  }
+}

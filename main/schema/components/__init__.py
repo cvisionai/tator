@@ -27,6 +27,8 @@ from .bucket import bucket_update
 from .bucket import bucket
 from .change_log import change_log
 from .clone_media import clone_media_spec
+from .dashboard import dashboard
+from .dashboard import dashboard_spec
 from .download_info import download_info_spec
 from .download_info import download_info
 from .email import email_spec
@@ -34,6 +36,8 @@ from .email import email_attachment_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite
+from .html_file import html_file
+from .html_file import html_file_spec
 from .invitation import (
     invitation_spec,
     invitation_update,
@@ -84,6 +88,10 @@ from .password_reset import password_reset_spec
 from .project import project_spec
 from .project import project_update
 from .project import project
+from .report import report
+from .report import report_spec
+from .report_type import report_type_spec
+from .report_type import report_type
 from .section import section_spec
 from .section import section_update
 from .section import section

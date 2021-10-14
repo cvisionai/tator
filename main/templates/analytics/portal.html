@@ -3,15 +3,16 @@
 {% load static %}
 
 {% block head %}
-<title>Tator | Analytics | Reports</title>
+<title>Tator | Registered Dashboards</title>
 {% endblock head %}
 
 {% block body %}
-<h1>Reports</h1>
-<analytics-reports 
+
+<analytics-portal
     username="{{ user|stringformat:'s' }}"
     email="{{ user.email }}"
     project-id="{{ project.id }}"
+    project-name="{{ project.name }}"
     token="{{ token }}">
-</analytics-reports>
+</analytics-portal>
 {% endblock body %}
