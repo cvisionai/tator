@@ -21,7 +21,7 @@ class MultiAttributeEditPanel extends TatorElement {
       this._bulkEditBar.appendChild(barMiddleTop);
 
       let barRightTop = document.createElement("div");
-      barRightTop.setAttribute("class", "bulk-edit-bar--right_form col-3 d-flex flex-items-center")
+      barRightTop.setAttribute("class", "bulk-edit-bar--right_form col-3 d-flex")
       this._bulkEditBar.appendChild(barRightTop);
 
       // let barLeft = document.createElement("div");

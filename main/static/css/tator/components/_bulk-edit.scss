@@ -106,7 +106,7 @@ entity-gallery-bulk-edit {
 .bulk-edit-attr-choices,
 .bulk-edit-form__panel-group{
 	background: $color-charcoal--medium-dark;
-	// max-height: 300px;
+	max-height: 300px;
 	overflow-y: scroll;
 }
 
@@ -116,7 +116,7 @@ entity-gallery-bulk-edit {
 
 .bulk-edit-attr-choices_bulk-edit {
 	overflow: hidden;
-	// max-height: 200px;
+	max-height: 200px;
 	overflow-y: scroll;
 	.entity-gallery-labels {
 		background: $color-charcoal--medium-dark;

@@ -41,6 +41,8 @@ class AnnotationCardData extends HTMLElement {
     this.cardList.cards = [];
     this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
     this.afterMap = new Map();
+
+    return true;
   }
 
   /**
@@ -131,6 +133,7 @@ class AnnotationCardData extends HTMLElement {
    * @returns {object}
    */
   async makeCardList(filterConditions, paginationState) {
+    console.log(filterConditions)
     console.log(paginationState);
     if (this._needReload(filterConditions)) {
       await this._reload(filterConditions);
@@ -206,7 +209,11 @@ class AnnotationCardData extends HTMLElement {
 
     console.log(filterConditions);
     if (this._needReload(filterConditions) || (typeof this._bulkCache == "undefined" || this._bulkCache == null)) {
-      await this._reload(filterConditions);
+      this.filterConditions = filterConditions;
+      this.cardList = { cards : [], total : null };
+      this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
+      this.afterMap = new Map();
+
       this._bulkCache = await this._modelData.getFilteredLocalizations(
         "objects",
         filterConditions,
