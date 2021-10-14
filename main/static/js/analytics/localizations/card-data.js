@@ -131,6 +131,7 @@ class AnnotationCardData extends HTMLElement {
    * @returns {object}
    */
   async makeCardList(filterConditions, paginationState) {
+    console.log(paginationState);
     if (this._needReload(filterConditions)) {
       await this._reload(filterConditions);
     }
@@ -204,7 +205,8 @@ class AnnotationCardData extends HTMLElement {
     let promise = Promise.resolve();
 
     console.log(filterConditions);
-    if (this._needReload(filterConditions) || (typeof this._bulkCache == "undefined" || this._bulkCache == null) ) {
+    if (this._needReload(filterConditions) || (typeof this._bulkCache == "undefined" || this._bulkCache == null)) {
+      await this._reload(filterConditions);
       this._bulkCache = await this._modelData.getFilteredLocalizations(
         "objects",
         filterConditions,
@@ -228,18 +230,24 @@ class AnnotationCardData extends HTMLElement {
  * @returns {object}
  */
   async makeCardListFromBulk(filterConditions, paginationState) {
+    // this will create a cached list if the filter is new, or if we haven't made it
+    await this._bulkCaching(filterConditions);
+    
+    console.log(paginationState);
     this.cardList.cards = [];
     this.cardList.paginationState = paginationState;
 
+
+
     // Get the localizations for the current page
     const localizations = [];
-    console.log(paginationState);
-
-    console.log(`let x = pageStart ${pageStart}; x < pageEnd ${pageEnd}`);
-    for (let x = paginationState.start; x <= paginationState.stop; x++) {
+    for (let x = paginationState.start; x < paginationState.stop; x++) {
       // const loc = await this._modelData.getLocalization(this._bulkCache[x]);
-      const loc = this._bulkCache[x];
-      localizations.push(loc);
+      if (this._bulkCache[x]) {
+        const loc = this._bulkCache[x];
+        localizations.push(loc);      
+      }
+
     }
     // var localizations = await this._modelData.getFilteredLocalizations(
     //   "objects",
@@ -249,23 +257,26 @@ class AnnotationCardData extends HTMLElement {
     //   this.afterMap);
 
     // Query the media data associated with each localization
-    var mediaPromises = [];
-    var mediaList = [];
-    for (let idx = 0; idx < localizations.length; idx++) {
-      if (!mediaList.includes(localizations[idx].media)) {
-        mediaList.push(localizations[idx].media);
+    if (localizations.length > 0) {
+      var mediaPromises = [];
+      var mediaList = [];
+      for (let idx = 0; idx < localizations.length; idx++) {
+        if (localizations[idx] && !mediaList.includes(localizations[idx].media)) {
+          mediaList.push(localizations[idx].media);
+        }
       }
-    }
 
-    // #TODO change this to the put command to get the object list
-    //       this potentially could move to a separate async pathway
-    for (let idx = 0; idx < mediaList.length; idx++) {
-      mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
-    }
-    var medias = await Promise.all(mediaPromises);
+      // #TODO change this to the put command to get the object list
+      //       this potentially could move to a separate async pathway
+      for (let idx = 0; idx < mediaList.length; idx++) {
+        mediaPromises.push(this._modelData.getMedia(mediaList[idx]));
+      }
+      var medias = await Promise.all(mediaPromises);
 
-    // Now gather all the card information
-    await this._getCardList(localizations, medias);
+      // Now gather all the card information
+      await this._getCardList(localizations, medias);
+    }
+    
     return this.cardList;
   }
 

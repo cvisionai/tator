@@ -2,20 +2,26 @@ class MultiAttributeEditPanel extends TatorElement {
    constructor() {
       super();
 
+      // TODO deprecate _bulkEditModal
       this._bulkEditModal = document.createElement("modal-dialog");
-
-      this._bulkEditModal._titleDiv.innerHTML = "Bulk Correct";
+      this._bulkEditModal._titleDiv.innerHTML = "Select Attribute(s)";
 
       this._bulkEditBar = document.createElement("div");
       this._bulkEditBar.setAttribute("class", " d-flex flex-wrap"); //px-3
-      this._bulkEditModal._main.appendChild(this._bulkEditBar);
+      // this._bulkEditModal._main.appendChild(this._bulkEditBar);
+      this._shadow.appendChild(this._bulkEditBar);
 
       let barLeftTop = document.createElement("div");
-      barLeftTop.setAttribute("class", "bulk-edit-bar--left col-12")
+      barLeftTop.setAttribute("class", "bulk-edit-bar--left col-4")
       this._bulkEditBar.appendChild(barLeftTop);
 
+
+      let barMiddleTop = document.createElement("div");
+      barMiddleTop.setAttribute("class", "bulk-edit-bar--middle col-4")
+      this._bulkEditBar.appendChild(barMiddleTop);
+
       let barRightTop = document.createElement("div");
-      barRightTop.setAttribute("class", "bulk-edit-bar--right_form col-5 d-flex flex-column")
+      barRightTop.setAttribute("class", "bulk-edit-bar--right_form col-3 d-flex flex-items-center")
       this._bulkEditBar.appendChild(barRightTop);
 
       // let barLeft = document.createElement("div");
@@ -84,15 +90,21 @@ class MultiAttributeEditPanel extends TatorElement {
       // this._selectionCount.textContent = "0";
       // this._selectionSummary.appendChild(this._selectionCount);
 
-      this._selectionCountText = document.createElement("span");
+      // this._selectionCountText = document.createElement("span");
       // this._selectionCountText.textContent = "Localizations";
       // this._selectionSummary.appendChild(this._selectionCountText);
 
+      // this._topBarH3 = document.createElement("h3");
+      // this._topBarH3.setAttribute("class", "entity-panel--container--top-bar--h3 text-semibold h3 ");
+      // this._headingText = document.createElement("span");
+      // this._headingText.appendChild(document.createTextNode("Edit Attributes"));
+      // this._topBarH3.appendChild(this._headingText);
+      // this._bulkEditBar.appendChild(this._topBarH3);
 
       // //
       this._bulkEditForm = document.createElement("div");
       this._bulkEditForm.setAttribute("class", "bulk-edit-form__panel-group py-3 text-gray f2 px-6 rounded-2");
-      // barRightTop.appendChild(this._bulkEditForm);
+      barMiddleTop.appendChild(this._bulkEditForm);
 
 
       // let heading = document.createElement("h3");
@@ -100,22 +112,41 @@ class MultiAttributeEditPanel extends TatorElement {
       // heading.textContent = "Bulk Edit";
       // this._bulkEditForm.appendChild(heading);
 
+      this._selectionSummary = document.createElement("span");
+      this._selectionSummary.setAttribute("class", "pr-3")
+      // this._quickSelectAllDiv.appendChild(this._selectionSummary);
+
+      this._selectionPreCountText = document.createElement("span");
+      this._selectionPreCountText.textContent = "Bulk Edit ";
+      this._selectionSummary.appendChild(this._selectionPreCountText);
+      
+      this._selectionCount = document.createElement("span");
+      this._selectionCount.setAttribute("class", "px-1 text-bold");
+      this._selectionCount.textContent = "0";
+      this._selectionSummary.appendChild(this._selectionCount);
+
+      this._selectionCountText = document.createElement("span");
+      this._selectionCountText.textContent = "Localizations";
+      this._selectionSummary.appendChild(this._selectionCountText);
+
+      this._compareButton = document.createElement("button");
+      // this._compareButton.setAttribute("class", "btn btn-clear btn-outline py-2 px-2")
+      // this._compareButton.textContent = "Compare";
+      // barLeft.appendChild(this._compareButton);
+
       this._editButton = document.createElement("button");
-      // this._editButton.setAttribute("class", "btn btn-clear py-2 px-2 mx-6 col-12")
-      // let editText = document.createTextNode("Edit ");
-      // this._editButton.appendChild(editText);
-      // this._editButton.style.margin = "0 auto";
-      // this._editButton.style.width = "80%";
-      // this._editButton.disabled = true;
-      // this._editButton.appendChild(this._selectionSummary);
+      this._editButton.setAttribute("class", "btn btn-clear py-2 px-2 disabled col-12");
+      // this._editButton.style.width = "250px";
+      this._editButton.disabled = true;
+      this._editButton.appendChild(this._selectionSummary);
+      barRightTop.appendChild(this._editButton);
 
-
-      this._continueToSelect = document.createElement("button");
-      this._continueToSelect.setAttribute("class", "btn btn-clear py-2 col-12 disabled")
-      let _continueToSelectText = document.createTextNode("Select Localizations >");
-      this._continueToSelect.appendChild(_continueToSelectText);
-      this._continueToSelect.disabled = true;
-      this._bulkEditModal._footer.appendChild(this._continueToSelect);
+      // this._continueToSelect = document.createElement("button");
+      // this._continueToSelect.setAttribute("class", "btn btn-clear py-2 col-12 disabled")
+      // let _continueToSelectText = document.createTextNode("Select Localizations >");
+      // this._continueToSelect.appendChild(_continueToSelectText);
+      // this._continueToSelect.disabled = true;
+      // this._bulkEditModal._footer.appendChild(this._continueToSelect);
 
       // ADD EVENT LISTENERS
       // this._back.addEventListener("click", () => {
@@ -124,12 +155,12 @@ class MultiAttributeEditPanel extends TatorElement {
       // this._compare.addEventListener("click", () => {
       //    this.dispatchEvent(new Event("comparison-click"));
       // });
-      // this._editButton.addEventListener("click", () => {
-      //    this.dispatchEvent(new Event("save-edit-click"));
-      // });
-      this._continueToSelect.addEventListener("click", () => {
-         return this.dispatchEvent(new Event("select-click"));
+      this._editButton.addEventListener("click", () => {
+         this.dispatchEvent(new Event("save-edit-click"));
       });
+      // this._continueToSelect.addEventListener("click", () => {
+      //    return this.dispatchEvent(new Event("select-click"));
+      // });
 
 
       // vars
@@ -253,21 +284,23 @@ class MultiAttributeEditPanel extends TatorElement {
       styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
 
       this._warningConfirmation = document.createElement("div");
-      this._warningConfirmation.setAttribute("class", "pb-3");
-      this._warningConfirmation.style.borderBottom = "1px solid white";
-      this._warningConfirmation.hidden = true;
-      styleDiv.appendChild(this._warningConfirmation);
+      // this._warningConfirmation.setAttribute("class", "pb-3");
+      // this._warningConfirmation.style.borderBottom = "1px solid white";
+      // this._warningConfirmation.hidden = true;
+      // styleDiv.appendChild(this._warningConfirmation);
 
-      let warning = document.createElement("span");
-      warning.textContent = "Editing this attribute impacts filtered result set.";
-      warning.setAttribute("class", "text-warning");   
-      this._warningConfirmation.appendChild(warning);
+      // let warning = document.createElement("span");
+      // warning.textContent = "Note: For bulk edit review purposes, a temporary 'CACHED' filter is being used to preserve pagination. To remove click 'x', filter again, or refresh.";
+      // warning.setAttribute("class", "text-gray");   
+      // this._warningConfirmation.appendChild(warning);
 
       this._prefetchBool = document.createElement("bool-input");
-      this._prefetchBool.setAttribute("name", "Do you want to preserve results before editing?");
+      this._prefetchBool.setAttribute("name", "Keep default behavior?");
       this._prefetchBool.setAttribute("on-text", "Yes");
       this._prefetchBool.setAttribute("off-text", "No");
-      this._warningConfirmation.appendChild(this._prefetchBool);
+      this._prefetchBool.setValue(true);
+      this._prefetchBool.hidden = true;
+      // this._warningConfirmation.appendChild(this._prefetchBool);
    
 
       /**
@@ -292,10 +325,10 @@ class MultiAttributeEditPanel extends TatorElement {
          this._boxValueChanged(selectionBoxes, typeData.id);
       });
 
-
-
       this.div.innerHTML = "";
       this.div.appendChild(styleDiv);
+
+      console.log(selectionBoxes);
 
       // Now make the inputs
       this._addInputs(this._attribute_types.entries())
@@ -309,13 +342,6 @@ class MultiAttributeEditPanel extends TatorElement {
 
       console.log("box value changed");
       console.log(attributeNames);
-      if (attributeNames.length > 0) {
-         this._continueToSelect.disabled = false;
-         this._continueToSelect.classList.remove("disabled");
-      } else {
-         this._continueToSelect.disabled = true;
-         this._continueToSelect.classList.add("disabled");
-      }
 
       if (this._bulkEditForm.children.length !== 0) {
          for (let input of this._inputsOnly) {
@@ -422,11 +448,8 @@ class MultiAttributeEditPanel extends TatorElement {
    setSelectionBoxValue({ typeId, values }) {
       // sets checked  -- from listeners to attribute label change / default shown on card
       //
-      for (let [key, selectionBoxes] of Object.entries(this._selectionValues)) {
-         console.log("setSelectionBoxValue values:");
-         console.log(values);
-
-         for (let box of selectionBoxes._inputs) {
+      for (let selectionBoxes of Array.from(this._selectionValues)) {
+         for (let box of selectionBoxes[1]._inputs) {
             let boxName = box.getAttribute("name");
             console.log(`values.includes(boxName) ${values.includes(boxName)}  .....${boxName}....`);
 
@@ -438,7 +461,7 @@ class MultiAttributeEditPanel extends TatorElement {
             }
          }
 
-         this._boxValueChanged(selectionBoxes, typeId);
+         this._boxValueChanged(selectionBoxes[1], typeId);
       }
    }
 

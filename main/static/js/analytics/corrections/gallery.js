@@ -1,19 +1,25 @@
-class AnnotationsGallery extends EntityCardGallery {
+class AnnotationsCorrectionsGallery extends EntityCardGallery {
   constructor() {
     super();
     /*
     * Add tools, headings and pagination for gallery here
     *
     */
+    this._main.setAttribute("class", "enitity-gallery--main ml-1 mt-6 px-5 rounded-1");
 
+    this._customContent = true;
 
     // * hook to add filter interface
     this._filterDiv = document.createElement("div");
     this._filterDiv.setAttribute("class", "analysis__filter");
     this._mainTop.appendChild(this._filterDiv);
 
+    // Bulk edit attribute selection
+    // this._editPanel = document.createElement("div");
+    // this._mainTop.appendChild(this._editPanel);
+
     // Custom width for annotations gallery
-    this.colSize = 272;
+    this.colSize = 232;
     this._ul.style.gridTemplateColumns = `repeat(auto-fill,minmax(${this.colSize}px,1fr))`;
 
     // Heading
@@ -27,8 +33,10 @@ class AnnotationsGallery extends EntityCardGallery {
 
     this._name = document.createElement("h2");
     this._name.setAttribute("class", "h3 text-white"); //not a typo
-    this._name.textContent = "Localizations";
+    this._name.textContent = "Corrections";
     header.appendChild(this._name);
+
+
 
     this._numFiles = document.createElement("span");
     this._numFiles.setAttribute("class", "text-gray px-2");
@@ -84,7 +92,8 @@ class AnnotationsGallery extends EntityCardGallery {
     panelContainer,
     pageModal,
     cardData,
-    modelData
+    modelData,
+    bulkEdit
   }){
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
@@ -92,17 +101,32 @@ class AnnotationsGallery extends EntityCardGallery {
     this.cardData = cardData;
     this.modelData = modelData;
 
+    this.panelControls._headingText.innerHTML = `Select Attributes`;
+
+    this._bulkEdit = bulkEdit;
+
     // Listen for attribute changes
     this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
     this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
-    // Initialize labels selection
-    for (let locTypeData of this.modelData._localizationTypes){
+    // Initialize
+    for (let locTypeData of this.modelData._localizationTypes) {
+
+      //init card labels with localization entity type definitions
       this._cardAtributeLabels.add({ 
          typeData: locTypeData,
          checkedFirst: true
       });
-   }
+
+      //init panel with localization entity type definitions
+      console.log("ADDING LOC TYPE")
+      this._bulkEdit._editPanel.addLocType(locTypeData);
+    }
+    
+    // this.panelControls._box.appendChild(this._bulkEdit._editPanel);
+    this._mainTop.appendChild(this._bulkEdit._selectionPanel);
+    this._bulkEdit._showEditPanel();
+    this._bulkEdit._showSelectionPanel();
   }
 
   /* Init function to show and populate gallery w/ pagination */
@@ -129,7 +153,11 @@ class AnnotationsGallery extends EntityCardGallery {
 
     // Hide all cards' panels and de-select
     for (let idx = 0; idx < this._cardElements.length; idx++) {
-      this._cardElements[idx].card._deselectedCardAndPanel();
+      if (!this._bulkEdit._editMode) {
+        this._cardElements[idx].card._deselectedCardAndPanel();
+      } else {
+        this._cardElements[idx].card._li.classList.remove("is-selected");
+      }
     }
 
     // Append the cardList
@@ -182,6 +210,7 @@ class AnnotationsGallery extends EntityCardGallery {
       * Card labels / attributes of localization or media type
       */
       this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
+      this._bulkEdit._updateShownAttributes({typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId]} );
 
       if (newCard) {
         card = document.createElement("entity-card");
@@ -196,13 +225,46 @@ class AnnotationsGallery extends EntityCardGallery {
 
         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
-          this.cardLabelsChosenByType[entityTypeId] =  evt.detail.value;
+          this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: evt.detail.value });
+          
+
+          this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;     
           let msg = `Entry labels updated`;
           Utilities.showSuccessIcon(msg);
         });
 
         // Open panel if a card is clicked
-        card.addEventListener("card-click", this.openClosedPanel.bind(this)); // open if panel is closed
+        card.addEventListener("card-click", (e) => {
+          if (!this._bulkEdit._editMode) {
+            this.openClosedPanel(e);
+          } else {
+            // For regular clicks while edit mode is true
+            this._bulkEdit._openEditMode({ detail: { element : card, id: card.cardObj.id, isSelected:  card._li.classList.contains("is-selected") } });
+          }
+          
+        }); // open if panel is closed
+
+        // Notifiy bulk edit about multi-select controls
+        card.addEventListener("ctrl-select", (e) => {
+          console.log("Opening edit mode");
+          this._bulkEdit._openEditMode(e);
+          // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
+        });
+        card.addEventListener("shift-select", (e) => {
+          // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
+          console.log("Opening edit mode");
+          this._bulkEdit._openEditMode(e);
+        });
+
+        this._bulkEdit.addEventListener("multi-enabled", () => {
+          card._multiSelectionToggle = true;
+          card._li.classList.add("multi-select");
+        });
+
+        this._bulkEdit.addEventListener("multi-disabled", () => {
+          card._multiSelectionToggle = false;
+          card._li.classList.remove("multi-select");
+        });
 
         // Update view
         card._li.classList.toggle("aspect-true");
@@ -242,7 +304,9 @@ class AnnotationsGallery extends EntityCardGallery {
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
+      console.log(cardObj);
       card.init({
+        idx: index,
         obj: cardObj,
         panelContainer : this.panelContainer,
         cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
@@ -261,6 +325,12 @@ class AnnotationsGallery extends EntityCardGallery {
         this._cardElements[idx].card.style.display = "none";
       }
     }
+
+    // Replace card info so that shift select can get cards in between
+    console.log("New list of card elements......");
+    this._bulkEdit.elementList = this._cardElements;
+    this._bulkEdit.elementIndexes = this._currentCardIndexes;
+    this._bulkEdit.startEditMode();
   }
 
   updateCardData(newCardData) {
@@ -280,8 +350,10 @@ class AnnotationsGallery extends EntityCardGallery {
       values: { attributes: e.detail.values },
       type: "Localization"
     }).then((data) => {
-        this.updateCardData(data);
-    });
+      this.updateCardData(data);   
+    }).then(() => {
+      this._bulkEdit.updateCardData(this._cardElements);
+    })
   }
 
   mediaFormChange(e) {
@@ -298,6 +370,8 @@ class AnnotationsGallery extends EntityCardGallery {
             this._cardElements[idx].annotationPanel.setMediaData(card);
           }
         }
+      }).then(() => {
+        this._bulkEdit.updateCardData(this._cardElements);
       });
     });
   }
@@ -350,10 +424,23 @@ class AnnotationsGallery extends EntityCardGallery {
   }
 
   openClosedPanel(e){
-    console.log(e.target);
-    if(!this.panelContainer.open) this.panelContainer._toggleOpen();
+      // For all regular clicks while edit mode is false
+      if (!this.panelContainer.open) this.panelContainer._toggleOpen();
     this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
+
   }
+
+  // cardInMultiSelect(id) {
+  //   if (id in this._currentCardIndexes) {
+  //     var info = this._cardElements[this._currentCardIndexes[id]];
+  //     info.card._multiSelectionToggle = true;
+  //   }
+  // }
+
+  customContentHandler() {
+    console.log(this);
+  }
+
 }
 
-customElements.define("annotations-gallery", AnnotationsGallery);
+customElements.define("annotations-corrections-gallery", AnnotationsCorrectionsGallery);

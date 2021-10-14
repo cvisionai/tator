@@ -148,6 +148,8 @@ class AnalyticsDashboardView(ProjectBase, TemplateView):
 class AnalyticsLocalizationsView(ProjectBase, TemplateView):
     template_name = 'analytics/localizations.html'
 
+class AnalyticsCorrectionsView(ProjectBase, TemplateView):
+    template_name = 'analytics/corrections.html'
 
 class AnalyticsCollectionsView(ProjectBase, TemplateView):
     template_name = 'analytics/collections.html'

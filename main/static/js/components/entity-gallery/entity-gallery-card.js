@@ -158,11 +158,17 @@ class EntityCard extends TatorElement {
   
     
 
-  init({ obj, panelContainer, cardLabelsChosen, enableMultiselect = false }) {
-      // Give card access to panel
-      this.panelContainer = panelContainer;
+  init({ obj, panelContainer, cardLabelsChosen, enableMultiselect = false, idx = null }) {
+    // Give card access to panel
+    this.panelContainer = panelContainer;
     this.cardObj = obj;
     this.multiEnabled = enableMultiselect;
+    this._idx = idx;
+
+    if (this._idx !== null) {
+      console.log(`Tab index ${this._idx}`);
+      this._li.setAttribute("tabindex", this._idx )
+    }
   
       // ID is title
       this._id_text.innerHTML = `ID: ${this.cardObj.id}`;
@@ -295,6 +301,15 @@ class EntityCard extends TatorElement {
         /* @ "card-click"*/
         if (e.shiftKey ) {
           console.log("Shift click!");
+          this._multiSelectionToggle = true;
+          this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        }
+
+        if (e.code == "Enter" ) {
+          console.log("Enter click!... "+this._li.hasFocus());
+          if (this._li.hasFocus()) {
+            //
+          }
           this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         }

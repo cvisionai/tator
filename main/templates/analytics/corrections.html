@@ -1,0 +1,18 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Analytics | Corrections</title>
+{% endblock head %}
+
+{% block body %}
+
+<analytics-localizations-corrections
+    username="{{ user|stringformat:'s' }}"
+    email="{{ user.email }}"
+    project-id="{{ project.id }}"
+    project-name="{{ project.name }}"
+    token="{{ token }}">
+</analytics-localizations-corrections>
+{% endblock body %}

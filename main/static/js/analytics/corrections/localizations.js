@@ -1,7 +1,7 @@
 /**
  * Page that displays a grid view of selected annotations
  */
-class AnalyticsLocalizations extends TatorPage {
+class AnalyticsLocalizationsCorrections extends TatorPage {
   constructor() {
     super();
 
@@ -20,17 +20,23 @@ class AnalyticsLocalizations extends TatorPage {
 
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
     div.appendChild(this._breadcrumbs);
-    this._breadcrumbs.setAttribute("analytics-name", "Localization Gallery");
+    this._breadcrumbs.setAttribute("analytics-name", "Corrections");
 
     this._settings = document.createElement("analytics-settings");
     this._settings.style.marginLeft = "50px";
     div.appendChild(this._settings);
 
+    // this._settings._bulkCorrect.hidden = false;
+        // entity-gallery-bulk-edit
+    // Part of Gallery: Communicates between card + page
+    this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
+    this._shadow.appendChild(this._bulkEdit);
 
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
     this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-12 d-flex");
     this._shadow.appendChild(this.mainWrapper);
+    this.mainWrapper.style.paddingBottom = "200px";
 
     //
     // Define the main section of the page
@@ -39,11 +45,18 @@ class AnalyticsLocalizations extends TatorPage {
     this.main.setAttribute("class", "enitity-gallery--main col-12");
     this.mainWrapper.appendChild(this.main);
 
+    // this._bulkEditModal = this._bulkEdit._bulkEditModal; //document.createElement("modal-dialog");
+    // this.mainWrapper.appendChild(this._bulkEdit._editPanel);
+    // this._bulkEdit._editPanel.addEventListener("select-click", this._bulkEdit._editPanel._bulkEditModal.closeCallback)
+    // this._settings._bulkCorrect.addEventListener("click", this._bulkEdit._showSelectionPanel.bind(this._bulkEdit))  
+
     //
     /* Card Gallery */
     // Gallery of cards showing filter results
-    this._filterResults = document.createElement("annotations-gallery");
+    this._filterResults = document.createElement("annotations-corrections-gallery");
     this.main.appendChild(this._filterResults);
+
+    
 
     // Localizations Filter
     /* Filter interface part of gallery */
@@ -53,13 +66,10 @@ class AnalyticsLocalizations extends TatorPage {
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
 
-    this._filterResults._filterDiv.before(this._bulkEdit._selectionPanel);
-
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "entity-panel--container slide-close col-3")
-    this.aside.hidden = true;
+    this.aside.setAttribute("class", "hidden entity-panel--container slide-close col-3")
     this.mainWrapper.appendChild(this.aside);
 
     // Gallery navigation panel
@@ -68,6 +78,8 @@ class AnalyticsLocalizations extends TatorPage {
 
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
+
+
 
     //
     /* Other */
@@ -80,29 +92,32 @@ class AnalyticsLocalizations extends TatorPage {
     this._shadow.appendChild(this.modal);
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
+
+    // Init after modal is defined
+    this._bulkEdit.init(this);
   }
 
   async _init() {
-        // Database interface. This should only be used by the viewModel/interface code.
-        this.projectId = Number(this.getAttribute("project-id"));
-        this._modelData = new TatorData(this.projectId);
-    
-        // Card Data class collects raw model and parses into view-model format
-        this.cardData = document.createElement("annotation-card-data");
-        await this.cardData.init(this._modelData);
-        
-        this.cardData.addEventListener("setCardImage", (evt) => {
-          this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
-        });
-    
-        // Pass panel and localization types to gallery
-        this._filterResults._initPanel({
-          panelContainer: this._panelContainer,
-          pageModal: this.modal,
-          modelData: this._modelData,
-          cardData: this.cardData
-        });
+    // Database interface. This should only be used by the viewModel/interface code.
+    this.projectId = Number(this.getAttribute("project-id"));
+    this._modelData = new TatorData(this.projectId);
 
+    // Card Data class collects raw model and parses into view-model format
+    this.cardData = document.createElement("annotation-card-data");
+    await this.cardData.init(this._modelData);
+
+    this.cardData.addEventListener("setCardImage", (evt) => {
+      this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
+    });
+
+    // Pass panel and localization types to gallery
+    this._filterResults._initPanel({
+      panelContainer: this._panelContainer,
+      pageModal: this.modal,
+      modelData: this._modelData,
+      cardData: this.cardData,
+      bulkEdit: this._bulkEdit
+    });
 
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
@@ -119,6 +134,8 @@ class AnalyticsLocalizations extends TatorPage {
 
     // Init vars for filter state
     this._filterConditions = this._settings.getFilterConditionsObject();
+    this._bulkEdit.checkForFilters(this._filterConditions);
+    this._useCachedResults = false;
 
     // Init vars for pagination state
     let pageSize = this._settings.getPageSize();
@@ -144,7 +161,7 @@ class AnalyticsLocalizations extends TatorPage {
 
 
     // Init Card Gallery and Right Panel
-    this._cardGallery(
+    await this._cardGallery(
       this._filterConditions,
       this._paginationState
     );
@@ -196,6 +213,8 @@ class AnalyticsLocalizations extends TatorPage {
       // Listen for filter events
       this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
     });
+
+    
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -218,19 +237,34 @@ class AnalyticsLocalizations extends TatorPage {
     this.showDimmer();
     this.loading.showSpinner();
 
-
-    // Initial view-modal "Cardlist" from fetched localizations
-    this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {
-      // CardList inits Gallery component with cards & pagination on page
-      this._filterResults.show(cardList);
-      this.loading.hideSpinner();
-      this.hideDimmer();
-    });
+    /**
+     * Always use a cached list when fetching cards for any pagination state
+     */
+    // if (this._filterView._useCachedResults) {
+      // Initial view-modal "Cardlist" from fetched localizations
+      return this.cardData.makeCardListFromBulk(filterConditions, paginationState).then((cardList) => {
+        // CardList inits Gallery component with cards & pagination on page
+        this._filterResults.show(cardList);
+        this.loading.hideSpinner();
+        this.hideDimmer();
+      });      
+    // } else {
+    //   // Initial view-modal "Cardlist" from fetched localizations
+    //   this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {
+    //     // CardList inits Gallery component with cards & pagination on page
+    //     this._filterResults.show(cardList);
+    //     this.loading.hideSpinner();
+    //     this.hideDimmer();
+    //   });
+    // }
+    
   }
 
   // Reset the pagination back to page 0
-  _updateFilterResults(evt) {
+  async _updateFilterResults(evt) {
     this._filterConditions = evt.detail.conditions;
+    console.log("UPDATE FILTER RESULTS");
+    this._bulkEdit.checkForFilters(this._filterConditions);
 
     var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
     this._paginationState.init = true;
@@ -242,7 +276,7 @@ class AnalyticsLocalizations extends TatorPage {
     this._paginationState.stop = this._paginationState.pageSize;
 
     // updated the card gallery
-    this._cardGallery(
+    await this._cardGallery(
       this._filterConditions,
       this._paginationState
     );
@@ -254,7 +288,7 @@ class AnalyticsLocalizations extends TatorPage {
   }
 
   // Handler for pagination click
-  _paginateFilterResults(evt) {
+  async _paginateFilterResults(evt) {
     // set state
     this._paginationState.start = evt.detail.start;
     this._paginationState.stop = evt.detail.stop;
@@ -263,7 +297,7 @@ class AnalyticsLocalizations extends TatorPage {
     this._paginationState.init = false;
 
     // get the gallery
-    this._cardGallery(
+    await this._cardGallery(
       this._filterConditions,
       this._paginationState
     );
@@ -287,4 +321,4 @@ class AnalyticsLocalizations extends TatorPage {
   }
 }
 
-customElements.define("analytics-localizations", AnalyticsLocalizations);
+customElements.define("analytics-localizations-corrections", AnalyticsLocalizationsCorrections);
