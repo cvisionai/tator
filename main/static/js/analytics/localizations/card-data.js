@@ -5,6 +5,8 @@
 class AnnotationCardData extends HTMLElement {
   constructor() {
     super();
+
+    this._stopChunk = 4000;
   }
 
   /**
@@ -214,7 +216,6 @@ class AnnotationCardData extends HTMLElement {
       this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
       this.afterMap = new Map();
 
-      this._stopChunk = 2000;
       let stop = this.cardList.total > this._stopChunk ? this._stopChunk : this.cardList.total;
 
       this._bulkCache = await this._modelData.getFilteredLocalizations(
@@ -262,6 +263,10 @@ class AnnotationCardData extends HTMLElement {
  * @returns {object}
  */
   async makeCardListFromBulk(filterConditions, paginationState) {
+
+    if (filterConditions.length == 0) {
+      return this.makeCardList(filterConditions, paginationState);
+    }
     // this will create a cached list if the filter is new, or if we haven't made it
     await this._bulkCaching(filterConditions);
     

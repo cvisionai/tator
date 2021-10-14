@@ -30,6 +30,14 @@ class AnalyticsSettings extends TatorElement {
     this._bulkCorrect.hidden = true;
     div.appendChild(this._bulkCorrect);
 
+    this._bulkCorrect.addEventListener("click", () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      let url = window.location.origin + window.location.pathname;
+      url = url.replace("localizations", "corrections");
+      url += "?" + this._queryParams(searchParams).toString();
+      console.log(url)
+      window.location.href = url;
+    });
 
 
     this._link.addEventListener("click", () => {

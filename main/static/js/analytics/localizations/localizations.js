@@ -175,6 +175,7 @@ class AnalyticsLocalizations extends TatorPage {
       //window.history.pushState({}, "", this._settings.getURL());
     });
 
+    this._settings._bulkCorrect.hidden = false; // #TODO
 
 
     // this.loading.showSpinner();
