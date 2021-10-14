@@ -117,12 +117,6 @@
   text-decoration: underline;
 }
 
-.text-warning {
-  background-color: $color-red;
-  padding: 1px;
-  color: $color-white;
-}
-
 .hover-text-white {
   &:hover,
   &:focus {
@@ -150,4 +144,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.background-green {
+  background-color: $color-green;
+}
+
+.background-red {
+  background-color: $color-red;
+}
+
+.background-orange {
+  background-color: $color-orange;
+}
+
+.background-purple {
+  background-color: $color-purple;
 }

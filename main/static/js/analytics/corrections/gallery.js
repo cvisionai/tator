@@ -37,7 +37,6 @@ class AnnotationsCorrectionsGallery extends EntityCardGallery {
     header.appendChild(this._name);
 
 
-
     this._numFiles = document.createElement("span");
     this._numFiles.setAttribute("class", "text-gray px-2");
     header.appendChild(this._numFiles);
@@ -126,7 +125,7 @@ class AnnotationsCorrectionsGallery extends EntityCardGallery {
     // this.panelControls._box.appendChild(this._bulkEdit._editPanel);
     this._mainTop.appendChild(this._bulkEdit._selectionPanel);
     this._bulkEdit._showEditPanel();
-    this._bulkEdit._showSelectionPanel();
+    // this._bulkEdit._showSelectionPanel();
   }
 
   /* Init function to show and populate gallery w/ pagination */
