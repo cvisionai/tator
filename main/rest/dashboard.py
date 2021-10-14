@@ -85,7 +85,7 @@ class DashboardDetailAPI(BaseDetailView):
         dashboard.delete()
 
         # Delete the correlated file
-        path = os.path.join(settings.MEDIA_ROOT, html_file)
+        path = os.path.join(settings.MEDIA_ROOT, html_file.name)
         self.safe_delete(path=path)
 
         msg = 'Registered dashboard deleted successfully!'
@@ -114,14 +114,14 @@ class DashboardDetailAPI(BaseDetailView):
         html_file = params.get(fields.html_file, None)
         if html_file is not None:
             dashboard_file = os.path.basename(html_file)
-            dashboard_url = os.path.join(str(project_id), dashboard_file)
+            dashboard_url = os.path.join(str(obj.project.id), dashboard_file)
             dashboard_path = os.path.join(settings.MEDIA_ROOT, dashboard_url)
             if not os.path.exists(dashboard_path):
-                log_msg = f'Provided dashboard ({dashboard_file}) does not exist in {settings.MEDIA_ROOT}'
+                log_msg = f'Provided dashboard ({dashboard_path}) does not exist'
                 logging.error(log_msg)
-                raise ValueError(log_msg)
+                raise ValueError("Dashboard file does not exist in expected location.")
 
-            delete_path = os.path.join(settings.MEDIA_ROOT, obj.html_file)
+            delete_path = os.path.join(settings.MEDIA_ROOT, obj.html_file.name)
             self.safe_delete(path=delete_path)
             obj.html_file = dashboard_path
 
