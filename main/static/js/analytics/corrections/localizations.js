@@ -123,14 +123,16 @@ class AnalyticsLocalizationsCorrections extends TatorPage {
     this._settings.processURL();
 
     // Set lock value
-    if (this._settings.hasAttribute("lock")) {
-      let settingsLock = this._settings.getAttribute("lock");
+    this._settings._lock.hidden = true; // #TODO
 
-      if (settingsLock === "1") {
-        this._settings._lock.unlock();
-        this._panelContainer.setAttribute("permissionValue", "Can Edit");
-      }
-    }
+    // if (this._settings.hasAttribute("lock")) {
+    //   let settingsLock = this._settings.getAttribute("lock");
+
+    //   if (settingsLock === "1") {
+    //     this._settings._lock.unlock();
+    //     this._panelContainer.setAttribute("permissionValue", "Can Edit");
+    //   }
+    // }
 
     // Init vars for filter state
     this._filterConditions = this._settings.getFilterConditionsObject();
@@ -180,19 +182,19 @@ class AnalyticsLocalizationsCorrections extends TatorPage {
     });
 
     // Settings lock value
-    this._settings._lock.addEventListener("click", evt => {
-      const locked = this._settings._lock._pathLocked.style.display != "none";
-      const permissionValue = locked ? "View Only" : "Can Edit";
-      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-      this._panelContainer.dispatchEvent(panelPermissionEvt);
+    // this._settings._lock.addEventListener("click", evt => {
+    //   const locked = this._settings._lock._pathLocked.style.display != "none";
+    //   const permissionValue = locked ? "View Only" : "Can Edit";
+    //   const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+    //   this._panelContainer.dispatchEvent(panelPermissionEvt);
 
-      if (locked) {
-        this._settings.setAttribute("lock", 0);
-      } else {
-        this._settings.setAttribute("lock", 1);
-      }
-      //window.history.pushState({}, "", this._settings.getURL());
-    });
+    //   if (locked) {
+    //     this._settings.setAttribute("lock", 0);
+    //   } else {
+    //     this._settings.setAttribute("lock", 1);
+    //   }
+    //   //window.history.pushState({}, "", this._settings.getURL());
+    // });
 
 
 

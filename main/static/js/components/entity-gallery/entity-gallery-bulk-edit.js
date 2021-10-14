@@ -446,19 +446,19 @@ class GalleryBulkEdit extends TatorElement {
    }
 
    _showSelectionPanel(val = true) {
-      this._editPanel._bulkEditModal._closeCallback();
-      console.log(`this._warningConfirmation.hidden != true; && this._editPanel._prefetchBool.getValue() ${this._editPanel._warningConfirmation.hidden != true && this._editPanel._prefetchBool.getValue()} anndddasda ${this._editPanel._warningConfirmation.hidden != true} ${this._editPanel._prefetchBool.getValue()}`);
-      if (this._editPanel._warningConfirmation.hidden != true && this._editPanel._prefetchBool.getValue()) {
-         this._page.loading.showSpinner();
-         return this._prefetch().then(() => {
-            this._page.loading.hideSpinner();
-            this._page.hideDimmer();
-         });
-      } else {
-         this._page.hideDimmer();
+      // this._editPanel._bulkEditModal._closeCallback();
+      // // console.log(`this._warningConfirmation.hidden != true; && this._editPanel._prefetchBool.getValue() ${this._editPanel._warningConfirmation.hidden != true && this._editPanel._prefetchBool.getValue()} anndddasda ${this._editPanel._warningConfirmation.hidden != true} ${this._editPanel._prefetchBool.getValue()}`);
+      // // if (this._editPanel._warningConfirmation.hidden != true && this._editPanel._prefetchBool.getValue()) {
+      // //    this._page.loading.showSpinner();
+      // //    return this._prefetch().then(() => {
+      // //       this._page.loading.hideSpinner();
+      // //       this._page.hideDimmer();
+      // //    });
+      // // } else {
+         // this._page.hideDimmer();
          this._selectionPanel.show(val);
          if (!this._editMode) this.startEditMode();
-      }
+      // }
 
    }
    _showEditPanel(val = true) {
@@ -590,11 +590,7 @@ class GalleryBulkEdit extends TatorElement {
             this._page.hideDimmer();
 
             if (errorText === "" && text !== "") {
-               this.boxHelper._modalSuccessConfirm({
-                  mainText: text,
-                  buttonContinue,
-                  buttonExit
-               });           
+               this.boxHelper._modalSuccess(text);           
             } else if (errorText !== "" && text === "") {
                this.boxHelper._modalError(errorText, "Error");                
             } else if (errorText !== "" && text !== "") {

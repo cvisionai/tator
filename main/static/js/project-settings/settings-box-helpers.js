@@ -122,6 +122,13 @@ class SettingsBox {
     this.modal._main.innerHTML = message;
     //this.modal._main.classList.add("fixed-height-scroll");
 
+    let buttonContinue = document.createElement("button");
+    buttonContinue.setAttribute("class", "btn background-green f1 text-semibold");
+    let confirmTextContinue = document.createTextNode("OK")
+    buttonContinue.appendChild(confirmTextContinue);
+    this.modal._footer.appendChild(buttonContinue);
+    buttonContinue.addEventListener("click", this.modal._closeCallback);
+
     return this.modal.setAttribute("is-open", "true")
   }
 
@@ -158,6 +165,14 @@ class SettingsBox {
     this.modal._titleDiv.append( document.createElement("modal-warning") );
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
+
+    let buttonContinue = document.createElement("button");
+    buttonContinue.setAttribute("class", "btn f1 text-semibold");
+    let confirmTextContinue = document.createTextNode("OK")
+    buttonContinue.appendChild(confirmTextContinue);
+    this.modal._footer.appendChild(buttonContinue);
+    buttonContinue.addEventListener("click", this.modal._closeCallback);
+
     return this.modal.setAttribute("is-open", "true")
   }
 
@@ -214,6 +229,13 @@ class SettingsBox {
     this.modal._titleDiv.append(text);
     this.modal._main.innerHTML = message;
     this.modal._footer.innerHTML = "";
+
+    let buttonContinue = document.createElement("button");
+    buttonContinue.setAttribute("class", "btn f1 text-semibold");
+    let confirmTextContinue = document.createTextNode("OK")
+    buttonContinue.appendChild(confirmTextContinue);
+    this.modal._footer.appendChild(buttonContinue);
+    buttonContinue.addEventListener("click", this.modal._closeCallback);
 
     return this.modal.setAttribute("is-open", "true");
   }
