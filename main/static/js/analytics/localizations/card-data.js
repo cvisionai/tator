@@ -238,7 +238,7 @@ class AnnotationCardData extends HTMLElement {
             filterConditions,
             start,
             stop,
-            this.afterMap);
+            null);
           this._bulkCache = [...this._bulkCache, ...next];
           start += this._stopChunk;
           stop += this._stopChunk;
