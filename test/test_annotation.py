@@ -8,6 +8,7 @@ def test_annotation(authenticated, project, video):
     page = authenticated.new_page()
     page.goto(f"/{project}/annotation/{video}")
     page.on("pageerror", print_page_error)
+    page.wait_for_selector('video-canvas')
     canvas = page.query_selector('video-canvas')
     canvas_box = canvas.bounding_box()
     canvas_center_x = canvas_box['x'] + canvas_box['width'] / 2
