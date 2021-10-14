@@ -53,8 +53,6 @@ class AnalyticsLocalizations extends TatorPage {
     // Custom gallery more menu added into filter interface tools ares
     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
 
-    this._filterResults._filterDiv.before(this._bulkEdit._selectionPanel);
-
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
