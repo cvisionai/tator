@@ -214,15 +214,40 @@ class AnnotationCardData extends HTMLElement {
       this.cardList.total = await this._modelData.getFilteredLocalizations("count", filterConditions);
       this.afterMap = new Map();
 
+      this._stopChunk = 2000;
+      let stop = this.cardList.total > this._stopChunk ? this._stopChunk : this.cardList.total;
+
       this._bulkCache = await this._modelData.getFilteredLocalizations(
         "objects",
         filterConditions,
         0,
-        this.cardList.total,
+        stop,
         this.afterMap);
-  
+      
       console.log("This is the prefetch results:");
-      console.log(this._bulkCache);
+      console.log(this._bulkCache);        
+      
+      if (this.cardList.total > this._stopChunk) {
+        let loops = Math.ceil(this.cardList.total / this._stopChunk);
+        let start = this._stopChunk + 1;
+        let stop = this._stopChunk + this._stopChunk;
+        for (let x = 0; x < loops; x++){
+          console.log(`Getting next (chunk size ${this._stopChunk}) start: ${start} and stop: ${stop}`)
+          let next = await this._modelData.getFilteredLocalizations(
+            "objects",
+            filterConditions,
+            start,
+            stop,
+            this.afterMap);
+          this._bulkCache = [...this._bulkCache, ...next];
+          start += this._stopChunk;
+          stop += this._stopChunk;
+        }
+        console.log("This is the prefetch results after loops:");
+        console.log(this._bulkCache);
+      }
+  
+
       this.filterConditions = filterConditions;
     } else {
       console.log("No change in filter condition.");
