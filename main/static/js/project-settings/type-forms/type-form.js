@@ -18,7 +18,7 @@ class TypeForm extends TatorElement {
 
     // Attribute Container
     this._attributeContainer = document.createElement("div");
-    this._attributeContainer.setAttribute("class", "col-4 py-4");
+    this._attributeContainer.setAttribute("class", "col-4");
     this._attributeContainer.hidden = true; // not alway in use
     this._formContainer.appendChild(this._attributeContainer);
 
@@ -64,7 +64,7 @@ class TypeForm extends TatorElement {
     // Section h1.
     // New heading element.
     this.h1 = document.createElement("h1");
-    this.h1.setAttribute("class", "h3 pb-3 px-4 edit-project__h1");
+    this.h1.setAttribute("class", "h3 pb-3 edit-project__h1");
 
     // Create a form with values, or empty editable form
     if (!this.data.form && !this.data.form != "empty") {

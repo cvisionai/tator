@@ -41,15 +41,18 @@ class AttributesMain extends HTMLElement {
     this.boxHelper = new SettingsBox( this.modal );
     this.refreshTypeEvent = new Event('settings-refresh');
 
+    // Section h1.
+    this._h2 = document.createElement("h2");
+    this._h2.setAttribute("class", "h3 pb-3 edit-project__h1 text-normal text-gray");
+    const t = document.createTextNode(`Attributes`); 
+    this._h2.appendChild(t);
+    this.attributeDiv.appendChild(this._h2);
+
     // Create a styled box & Add box to page
     this.attributeBox = this.boxHelper.boxWrapDefault( {"children" : ""} );
     this.attributeDiv.appendChild(this.attributeBox);
 
-    // Section h1.
-    // const h2 = document.createElement("h2");
-    // h2.setAttribute("class", "h3 py-6 pb-3 edit-project__h1");
-    // const t = document.createTextNode(`Attributes`); 
-    // h2.appendChild(t);
+ 
 
     // this.separate_span = document.createElement("span");
     // this.separate_span.setAttribute("class", "px-2");
@@ -73,7 +76,7 @@ class AttributesMain extends HTMLElement {
     // span2.appendChild( document.createTextNode(`${this.typeName} (ID ${this.fromId})`) );
     // h2.appendChild(span2);
 
-    // this.attributeBox.appendChild(h2);
+    
 
 
     // Add the form and +Add links
@@ -89,44 +92,34 @@ class AttributesMain extends HTMLElement {
 
     if(attributeTypes && attributeTypes.length > 0){
       // Attributes list main heading and trigger
-      let heading = this.boxHelper.headingWrap({
-          "headingText" : `Edit Attributes (${attributeTypes.length})`,
-          "descriptionText" : "Edit media type.",
-          "level": 2,
-          "collapsed": true
-        });
-      heading.setAttribute("class", `py-4 toggle-attribute text-semibold`);
+      // let heading = this.boxHelper.headingWrap({
+      //     "headingText" : `Edit Attributes (${attributeTypes.length})`,
+      //     "descriptionText" : "Edit media type.",
+      //     "level": 2,
+      //     "collapsed": true
+      //   });
+      // heading.setAttribute("class", `py-4 toggle-attribute text-semibold`);
 
-      // const heading = document.createElement("a");
-      // heading.setAttribute("class", "toggle-attribute clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
+      const heading = document.createElement("h3");
+      heading.setAttribute("class", "f1 text-gray pb-3");
   
       // const addPlus = document.createElement("span");
       // addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
       // const editSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>`;
       // addPlus.innerHTML = editSvg;
   
-      // const addText = document.createElement("span");
-      // addText.setAttribute("class", "px-3");
-      // addText.appendChild(document.createTextNode(` Edit Attributes (${attributeTypes.length})`));
+      const addText = document.createElement("span");
+      addText.setAttribute("class", "");
+      addText.appendChild(document.createTextNode(` Edit Attributes (${attributeTypes.length})`));
   
       // heading.appendChild(addPlus);
-      // heading.appendChild(addText);
+      heading.appendChild(addText);
 
-      // attributesSection.appendChild(heading);
+      attributesSection.appendChild(heading);
 
-      let hiddenContent = document.createElement("div");
-      hiddenContent.setAttribute("class", `attribute-list`);
-      hiddenContent.style.maxHeight = "50vh";
-      hiddenContent.style.overflow = "hidden scroll";
-      // hiddenContent.hidden = true;
-      attributesSection.appendChild(hiddenContent);
-
-      // Attribute List toggle
-      heading.addEventListener("click", (event) => {
-        event.preventDefault();
-        this._toggleAttributes(hiddenContent);
-        this._toggleChevron(event);
-      });
+      let attributeList = document.createElement("div");
+      attributeList.setAttribute("class", `attributes-edit--list`);
+      attributesSection.appendChild(attributeList);
 
       // Loop through and output attribute forms
       for(let a in attributeTypes){
@@ -134,7 +127,7 @@ class AttributesMain extends HTMLElement {
           "attributes": attributeTypes[a],
           "attributeId": a
         });
-        hiddenContent.appendChild( attributeContent );
+        attributeList.appendChild( attributeContent );
       }
     }
 
