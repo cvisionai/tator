@@ -99,7 +99,7 @@ class EnumInput extends TatorElement {
 
   // checks if the current value equals the default
   changed(){
-    return this.getValue() !== this._default;
+    return String(this.getValue()) !== String(this._default);
   }
 
   reset() {

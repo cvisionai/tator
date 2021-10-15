@@ -49,7 +49,7 @@ class MembershipEdit extends TypeForm {
     this._permissionSelect.choices = permissionOptions;
     this._permissionSelect._select.required = true;
     this._permissionSelect.setValue(data.permission);
-    this._permissionSelect.deafult = data.permission;
+    this._permissionSelect.default = data.permission;
     this._permissionSelect.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild( this._permissionSelect );
 
@@ -64,7 +64,7 @@ class MembershipEdit extends TypeForm {
       this._versionSelect.choices = versionOptions;
       this._versionSelect._select.required = true;
       this._versionSelect.setValue(data.default_version_id);
-      this._versionSelect.deafult = data.default_version_id;
+      this._versionSelect.default = data.default_version_id;
       this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
       this._form.appendChild(this._versionSelect);
     });
