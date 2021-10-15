@@ -581,9 +581,6 @@ class AttributesMain extends HTMLElement {
     let attributeNewName = dataObject.newName;
     let attributeOldName = dataObject.oldName;
 
-    console.log(parentTypeId);
-    console.log(formData);
-
     if (global === "true") {
       formData.global = "true";
     }

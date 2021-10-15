@@ -795,7 +795,7 @@ class AttributesForm extends TatorElement {
         formData.labels = this._labels.getValue();
       }
     }
-    console.log(formData);
+    // console.log(formData);
     return formData;
   }
 
