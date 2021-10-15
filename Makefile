@@ -446,9 +446,9 @@ FILES = \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
     analytics/analytics-settings.js \
-    analytics/dashboard/dashboard-portal.js \
-    analytics/dashboard/dashboard-summary.js \
-    analytics/dashboard/dashboard.js \
+    analytics/dashboards/dashboard-portal.js \
+    analytics/dashboards/dashboard-summary.js \
+    analytics/dashboards/dashboard.js \
     analytics/localizations/card.js \
     analytics/localizations/gallery.js \
     analytics/localizations/panel-data.js \
