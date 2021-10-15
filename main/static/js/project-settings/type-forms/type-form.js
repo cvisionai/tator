@@ -13,7 +13,7 @@ class TypeForm extends TatorElement {
 
     // Main Div
     this.typeFormDiv = document.createElement("div");
-    this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
+    this.typeFormDiv.setAttribute("class", "pl-md-6 col-12 px-6")
     this._formContainer.appendChild(this.typeFormDiv);
 
     // Attribute Container
@@ -103,6 +103,7 @@ class TypeForm extends TatorElement {
 
       // attribute section
       if (typeof this._hideAttributes !== "undefined" && this._hideAttributes == false) {
+        this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
         this._attributeContainer.hidden = false;
         this._attributeContainer.appendChild(this._getAttributeSection());
       }
