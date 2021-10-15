@@ -555,6 +555,9 @@ python-bindings: tator-image
 	cd scripts/packages/tator-py
 	rm -rf dist
 	python3 setup.py sdist bdist_wheel
+	if [ ! -f dist/*.whl ]; then
+		exit 1
+	fi
 	cd ../../..
 
 .PHONY: r-docs
