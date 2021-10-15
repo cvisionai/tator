@@ -271,10 +271,15 @@ class TypeForm extends TatorElement {
 
     if (!this.saveButton.disabled) {
       this.saveButton.addEventListener("click", (event) => {
+        this.saveButton.disabled = true;
+        this.saveButton.classList.add("disabled");
         event.preventDefault();
-        if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
+        if (this.isChanged()) {
           // console.log("Save for id: " + id);
-          this._save({ "id": id })
+          this._save({ "id": id }).then(() => {
+            this.saveButton.disabled = false;
+            this.saveButton.classList.remove("disabled");
+          })
         } else {
           // @TODO- UX Save button disabled until form change
           let happyMsg = "Nothing new to save!";
