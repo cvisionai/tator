@@ -6,10 +6,21 @@ class TypeForm extends TatorElement {
     this.typeName = "";
     this.readableTypeName = "";
 
+    // Main Div wrapper
+    this._formContainer = document.createElement("div");
+    this._formContainer.setAttribute("class", "d-flex flex-row");
+    this._shadow.appendChild(this._formContainer);
+
     // Main Div
     this.typeFormDiv = document.createElement("div");
-    this.typeFormDiv.setAttribute("class", "pl-md-6")
-    this._shadow.appendChild(this.typeFormDiv);
+    this.typeFormDiv.setAttribute("class", "pl-md-6 col-12 px-6")
+    this._formContainer.appendChild(this.typeFormDiv);
+
+    // Attribute Container
+    this._attributeContainer = document.createElement("div");
+    this._attributeContainer.setAttribute("class", "col-4");
+    this._attributeContainer.hidden = true; // not alway in use
+    this._formContainer.appendChild(this._attributeContainer);
 
     // Required helpers.
     this.attributeFormHelper = new AttributesForm();
@@ -83,7 +94,6 @@ class TypeForm extends TatorElement {
       this.id_span.appendChild(h1_id);
 
       // creating submit button before form so we can "disable" from form, but append it after form
-
       const submitNew = this._getSubmitDiv({ "id": this.data.id });
 
       // Add all elements to page
@@ -93,7 +103,9 @@ class TypeForm extends TatorElement {
 
       // attribute section
       if (typeof this._hideAttributes !== "undefined" && this._hideAttributes == false) {
-        this.typeFormDiv.appendChild(this._getAttributeSection());
+        this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
+        this._attributeContainer.hidden = false;
+        this._attributeContainer.appendChild(this._getAttributeSection());
       }
 
       // append save button
@@ -259,10 +271,15 @@ class TypeForm extends TatorElement {
 
     if (!this.saveButton.disabled) {
       this.saveButton.addEventListener("click", (event) => {
+        this.saveButton.disabled = true;
+        this.saveButton.classList.add("disabled");
         event.preventDefault();
-        if (this.isChanged() || (this.attributeSection && this.attributeSection.hasChanges)) {
+        if (this.isChanged()) {
           // console.log("Save for id: " + id);
-          this._save({ "id": id })
+          this._save({ "id": id }).then(() => {
+            this.saveButton.disabled = false;
+            this.saveButton.classList.remove("disabled");
+          })
         } else {
           // @TODO- UX Save button disabled until form change
           let happyMsg = "Nothing new to save!";
@@ -470,35 +487,18 @@ class TypeForm extends TatorElement {
     this.nameChanged = false;
     this.newName = null;
     this.requiresConfirmation = false;
-    this.hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
+    // this.hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
 
-    if (this.isChanged() || this.hasAttributeChanges) {
+    if (this.isChanged() ) {
       try {
         if (this.isChanged()) {
           // Main type form
           await this._typeFormChanged();
-          console.log(this.successMessages);
-          console.log(this.saveModalMessage);
         }
       } catch (err) {
         console.error("Error saving.", err);
         this.loading.hideSpinner();
         return this._modalError("Error saving type form changes.\nError: " + err);
-      }
-      try {
-        if (this.hasAttributeChanges) {
-          // All attribute forms
-          const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
-          if (attrFormsChanged && attrFormsChanged.length > 0) {
-            for (let form of attrFormsChanged) {
-              await this._attrFormsChanged(form);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error saving.", err);
-        this.loading.hideSpinner();
-        return this._modalError("Error saving attribute changes.\nError: " + err);
       }
 
       try {
@@ -508,14 +508,6 @@ class TypeForm extends TatorElement {
         // Clean up..................
         // Reset changed flags
         this.changed = false;
-        if (this.hasAttributeChanges) {
-          const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
-          if (attrFormsChanged.length > 0) {
-            for (let f of attrFormsChanged) {
-              f.changeReset();
-            }
-          }
-        }
 
         // Update related items with an event if required
         if (this.nameChanged) {
@@ -532,104 +524,25 @@ class TypeForm extends TatorElement {
     }
   }
 
-  _showSaveCompletModal() {
-    let promise = Promise.resolve();
+  async _showSaveCompletModal() {
     this.saveModalMessage = "";
 
-    return promise.then(() => {
-      if (this.successMessages) {
-        let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-        this.saveModalMessage += heading + this.successMessages;
-      }
-      if (this.failedMessages) {
-        let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-        this.saveModalMessage += heading + this.failedMessages;
-      }
+    if (this.successMessages) {
+      let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
+      this.saveModalMessage += heading + this.successMessages;
+    }
+    if (this.failedMessages) {
+      let heading_1 = `<div class=" pt-4 h3 pt-4">Error</div>`;
+      this.saveModalMessage += heading_1 + this.failedMessages;
+    }
+    let mainText = `${this.saveModalMessage}`;
+    this._modalComplete(
+      mainText
+    );
+    
+    await this.resetHard();
 
-      if (this.requiresConfirmation) {
-        let buttonSave = this._getAttrGlobalTrigger(this.typeId);
-        let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-        let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-        let mainText = `${this.saveModalMessage}${confirmHeading}${subText}${this.confirmMessages}`;
-        this.loading.hideSpinner();
-        this._modalConfirm({
-          "titleText": "Complete",
-          mainText,
-          buttonSave
-        });
-      } else {
-        let mainText = `${this.saveModalMessage}`;
-        
-        this._modalComplete(
-          mainText
-        );
-        // Reset forms to the saved data from model
-        
-      }
-    }).then(() => {
-      return this.resetHard();
-    }).then(() => {
-      this.loading.hideSpinner();
-    });
-
-  }
-
-  _attrFormsChanged(form) {
-    let promise = Promise.resolve();
-    let attributeNewName = "";
-    let attributeOldName = "";
-    let response = null;
-    let data = null;
-
-    return promise.then(() => {
-      data = form._attributeFormData({ id: this.typeId, entityType: this.typeName });
-      attributeNewName = data.newName;
-      attributeOldName = data.oldName;
-      response = null;
-      console.log(data);
-      return data;
-    }).then(async (data) => {
-      return await form._fetchAttributePatchPromise(this.typeId, data.formData)
-    })
-      .then(resp => {
-        response = resp;
-        return resp.json()
-      })
-      .then(data => {
-        let obj = { response: response, data: data };
-        return obj;
-      })
-      .then(obj => {
-        let currentMessage = obj.data.message;
-        let response = obj.response;
-        let succussIcon = document.createElement("modal-success");
-        let iconWrap = document.createElement("span");
-        let warningIcon = document.createElement("modal-warning");
-
-        // console.log(`currentMessage::::: ${currentMessage}`);
-
-        if (response.status == 200) {
-          //console.log("Return Message - It's a 200 response.");
-          iconWrap.appendChild(succussIcon);
-          this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-        } else if (response.status != 200) {
-          if (!this.hasAttributeChanges) {
-            iconWrap.appendChild(warningIcon);
-            //console.log("Return Message - It's a 400 response for main form.");
-            this.failedMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-          } else if (this.hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-            //console.log("Return Message - It's a 400 response for attr form.");
-            let input = `<input type="checkbox" checked name="global" data-old-name="${attributeOldName}" class="checkbox"/>`;
-            let newNameText = (attributeOldName == attributeNewName) ? "" : ` new name "${attributeNewName}"`
-            this.confirmMessages += `<div class="py-2">${input} Attribute "${attributeOldName}" ${newNameText}</div>`
-            this.requiresConfirmation = true;
-          } else {
-            iconWrap.appendChild(warningIcon);
-            this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
-          }
-        }
-      });
+    return this.loading.hideSpinner();
   }
 
   _typeFormChanged({ id = this.typeId } = {}) {
@@ -681,43 +594,6 @@ class TypeForm extends TatorElement {
     return this.changed = true;
   }
 
-  _getAttrGlobalTrigger(id) {
-    let buttonSave = document.createElement("button")
-    buttonSave.setAttribute("class", "btn btn-clear f1 text-semibold");
-    buttonSave.innerHTML = "Confirm";
-
-    buttonSave.addEventListener("click", (e) => {
-      e.preventDefault();
-      let confirmCheckboxes = this.modal._shadow.querySelectorAll('[name="global"]');
-      this._modalCloseCallback();
-
-      for (let check of confirmCheckboxes) {
-        //add and changed flag back to this one
-        let name = check.dataset.oldName;
-        let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
-
-        if (check.checked == true) {
-          // console.log("User marked as global: " + name);
-          for (let form of this.attributeSection.attrForms) {
-            if (form.id == formId) {
-              // add back changed flag
-              form.changed = true;
-              form.global = true;
-              // console.log("set data set global to true");
-            }
-          }
-        } else {
-          // console.log("User marked NOT global, do not resend: " + name);
-        }
-      }
-
-      //run the _save method again with global true
-      this._save({ "id": id })
-    });
-
-    return buttonSave;
-  }
-
   _toggleChevron(e) {
     var el = e.target;
     return el.classList.toggle('chevron-trigger-90');
@@ -733,6 +609,7 @@ class TypeForm extends TatorElement {
   // RESET FUNCTIONS
   reset(data = this.data) {
     this.typeFormDiv.innerHTML = "";
+    this._attributeContainer.innerHTML = "";
     return this.setupFormPage(data);
   }
 
