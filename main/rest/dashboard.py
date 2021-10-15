@@ -26,7 +26,7 @@ class DashboardListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params: dict) -> dict:
-        qs = Dashboard.objects.filter(project=params['project'])
+        qs = Dashboard.objects.filter(project=params['project']).order_by('id')
         return database_qs(qs)
 
     def get_queryset(self) -> dict:
