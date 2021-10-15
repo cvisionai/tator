@@ -1477,6 +1477,20 @@ class AnnouncementToUser(Model):
     announcement = ForeignKey(Announcement, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
 
+class Dashboard(Model):
+    """ Standalone HTML page shown as a dashboard within a project.
+    """
+    categories = ArrayField(CharField(max_length=128), default=list, null=True)
+    """ List of categories associated with the dashboard. This field is currently ignored. """
+    description = CharField(max_length=1024, blank=True)
+    """ Description of the dashboard. """
+    html_file = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    """ Dashboard's HTML file """
+    name = CharField(max_length=128)
+    """ Name of the dashboard """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    """ Project associated with the dashboard """
+
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {

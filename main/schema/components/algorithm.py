@@ -102,7 +102,7 @@ algorithm_manifest_spec = {
             'type': 'string',
         },
         manifest_fields.upload_url: {
-            'description': 'URL of the uploaded file returned from tus upload',
+            'description': 'URL of the uploaded file',
             'type': 'string',
         },
     },

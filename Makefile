@@ -446,7 +446,9 @@ FILES = \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
     analytics/analytics-settings.js \
-    analytics/dashboard/dashboard.js \
+    analytics/dashboards/dashboard-portal.js \
+    analytics/dashboards/dashboard-summary.js \
+    analytics/dashboards/dashboard.js \
     analytics/localizations/card.js \
     analytics/localizations/gallery.js \
     analytics/localizations/panel-data.js \
@@ -457,8 +459,7 @@ FILES = \
     analytics/collections/gallery.js \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
-    analytics/visualization/visualization.js \
-    analytics/reports/reports.js \
+    analytics/portal/portal.js \
     third_party/autocomplete.js \
     third_party/webrtcstreamer.js \
     utilities.js
@@ -554,6 +555,9 @@ python-bindings: tator-image
 	cd scripts/packages/tator-py
 	rm -rf dist
 	python3 setup.py sdist bdist_wheel
+	if [ ! -f dist/*.whl ]; then
+		exit 1
+	fi
 	cd ../../..
 
 .PHONY: r-docs

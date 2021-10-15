@@ -437,7 +437,13 @@ class MediaSection extends TatorElement {
                                         baseFilename, lastId, idQuery) => {
           let url = baseUrl + "&type=" + type.id + "&stop=" + batchSize;
           if (lastId != null) {
-            url += "&after_id=" + encodeURIComponent(lastId);
+            let param;
+            if (url.includes("Medias")) {
+              param = "after_id";
+            } else {
+              param = "after";
+            }
+            url += `&${param}=` + encodeURIComponent(lastId);
           }
 
           let request;
@@ -528,7 +534,7 @@ class MediaSection extends TatorElement {
         if (mediaTypes == null) {
           // Get media types.
           mediaTypes = await getTypes("MediaTypes", "media_types.json");
-          mediaFetcher = new MetadataFetcher(mediaTypes, mediaUrl, "medias__", "name");
+          mediaFetcher = new MetadataFetcher(mediaTypes, mediaUrl, "medias__", "id");
         }
         else if (localizationTypes == null) {
           // Get localization types.
