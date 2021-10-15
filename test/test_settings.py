@@ -40,37 +40,19 @@ def test_settings_mediaTypes(authenticated, project):
     page.on("pageerror", print_page_error)
 
     print("Start: Creating Media Types via Project Settings")
-    # Create Media types ##todo why are multiple of each being created?
-    page.click('.heading-for-MediaType .Nav-action')
-    page.fill('#itemDivId-MediaType-New text-input[name="Name"] input', 'My Video Type')
-    page.select_option('#itemDivId-MediaType-New enum-input[name="Data Type"] select', label='Video')
-    page.fill('#itemDivId-MediaType-New text-input[name="Description"] input', 'Media description for automated test.')
-    page.fill('#itemDivId-MediaType-New text-input[name="Default volume"] input', '50')
-    page.click('#itemDivId-MediaType-New bool-input[name="Visible"] label[for="on"]')
-    page.click('#itemDivId-MediaType-New button[value="Save"]')
-    page.wait_for_selector(f'text="Media type created successfully!"')
-    print(f"Video Media type created successfully!")
-    page.click('modal-dialog modal-close .modal__close')
-    page.click('.heading-for-MediaType .Nav-action')
-    page.fill('#itemDivId-MediaType-New text-input[name="Name"] input', 'My Image Type')
-    page.select_option('#itemDivId-MediaType-New enum-input[name="Data Type"] select', label='Image')
-    page.fill('#itemDivId-MediaType-New text-input[name="Description"] input', 'Media description for automated test.')
-    page.fill('#itemDivId-MediaType-New text-input[name="Default volume"] input', '50')
-    page.click('#itemDivId-MediaType-New bool-input[name="Visible"] label[for="on"]')
-    page.click('#itemDivId-MediaType-New button[value="Save"]')
-    page.wait_for_selector(f'text="Media type created successfully!"')
-    print(f"Image Media type created successfully!")
-    page.click('modal-dialog modal-close .modal__close')
-    page.click('.heading-for-MediaType .Nav-action')
-    page.fill('#itemDivId-MediaType-New text-input[name="Name"] input', 'My Multiview Type')
-    page.select_option('#itemDivId-MediaType-New enum-input[name="Data Type"] select', label='Multiview')
-    page.fill('#itemDivId-MediaType-New text-input[name="Description"] input', 'Media description for automated test.')
-    page.fill('#itemDivId-MediaType-New text-input[name="Default volume"] input', '50')
-    page.click('#itemDivId-MediaType-New bool-input[name="Visible"] label[for="on"]')
-    page.click('#itemDivId-MediaType-New button[value="Save"]')
-    page.wait_for_selector(f'text="Media type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
-    print(f"Multiview Media type created successfully!")
+
+    dtypeSet = {"Video","Image","Multiview"}
+    for dtypeName in dtypeSet:
+        page.click('.heading-for-MediaType .Nav-action')
+        page.fill('#itemDivId-MediaType-New text-input[name="Name"] input', 'My '+dtypeName+' Type')
+        page.select_option('#itemDivId-MediaType-New enum-input[name="Data Type"] select', label=dtypeName)
+        page.fill('#itemDivId-MediaType-New text-input[name="Description"] input', 'Media description for automated test.')
+        page.fill('#itemDivId-MediaType-New text-input[name="Default volume"] input', '50')
+        page.click('#itemDivId-MediaType-New bool-input[name="Visible"] label[for="on"]')
+        page.click('#itemDivId-MediaType-New button[value="Save"]')
+        page.wait_for_selector(f'text="Media type created successfully!"')
+        page.click('modal-dialog modal-close .modal__close')
+        print(f"{dtypeName} Media type created successfully!")
     
 def test_settings_localizationTypes(authenticated, project):
     print("Localization Types Tests...")
@@ -269,7 +251,7 @@ def test_settings_algorithmTests(authenticated, project, base_url, yaml_file):
     print(f"Successfully registered algorithm argo workflow!")
 
 def test_settings_attributeTests(authenticated, project):
-    print("Attribute Settings Tests...")
+    print("Attribute Settings...")
     page = authenticated.new_page()
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
@@ -292,7 +274,7 @@ def test_settings_attributeTests(authenticated, project):
         page.fill('modal-dialog text-input[name="Description"] input', 'Attr description for automated test.')
         if dtype == 'enum':
             #requires choices
-            page.wait_for_selector('text="Enum Choices"')
+            # page.wait_for_selector('text="Enum Choices"')
             page.click('text="+ Add New"')
             page.fill('modal-dialog array-input[name="Label"] text-input input', "One")
             page.fill('modal-dialog array-input[name="Value"] text-input input', "1")
@@ -303,33 +285,25 @@ def test_settings_attributeTests(authenticated, project):
         print(f"New {dtype} type attribute added to Image!")
 
     # Edit Attribute Types
-    print("Editing Atributes...")
-    page.click(f'{formSelector} .toggle-attribute h2')
+    print("Editing Attributes...")
 
     #open the attribute forms
     dtypeSet = {"Test Bool","Test Int","Test Float","Test String","Test Enum","Test Datetime","Test Geoposition"}
     for dtypeName in dtypeSet:
         page.click(f'text="{dtypeName}"')
+        page.wait_for_selector(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input')
         page.fill(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input', dtypeName + ' updated')
-        print(f"Edited {dtypeName}")
-    
-    print("Submitting dtype edits")
-    page.click(f'{formSelector} input[type="submit"]')
-    page.wait_for_selector('modal-dialog div input[type="checkbox"]')
-    successMessages = page.query_selector_all('modal-dialog div input[type="checkbox"]')
+        page.click(f'.modal__footer input[type="submit"]')
+        page.wait_for_selector('modal-dialog div input[type="checkbox"]')
+        successMessages = page.query_selector_all('modal-dialog div input[type="checkbox"]')
+        assert len(successMessages) == 1
+        page.click('text="Confirm"')
 
-    print(f'Confirm global changes for: {len(successMessages)} attributes')
-    #assert len(successMessages) > 0 # == 7
-
-    page.click('text="Confirm"')
-
-    page.wait_for_selector('modal-dialog modal-success')
-    successMessages = page.query_selector_all('modal-dialog modal-success')
-
-    print(f'Changes saved successfully for: {len(successMessages)} attributes')
-    #assert len(successMessages) == 7
-
-    page.click('modal-dialog modal-close .modal__close')
+        page.wait_for_selector('modal-dialog modal-success')
+        successMessages = page.query_selector_all('modal-dialog modal-success')
+        assert len(successMessages) == 1
+        page.click('modal-dialog modal-close .modal__close')
+        print(f'Successfully edited {len(successMessages)} global attribute named {dtypeName}!')
 
 
 
