@@ -14,6 +14,7 @@ from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
 import yaml
 
+from .models import Dashboard
 from .models import Organization
 from .models import Project
 from .models import Media
@@ -141,8 +142,18 @@ class OrganizationSettingsView(LoginRequiredMixin, TemplateView):
             raise PermissionDenied
         return context
 
-class AnalyticsDashboardView(ProjectBase, TemplateView):
+class DashboardPortalView(ProjectBase, TemplateView):
+    template_name = 'analytics/dashboard-portal.html'
+
+
+class DashboardView(ProjectBase, TemplateView):
     template_name = 'analytics/dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        dashboard = get_object_or_404(Dashboard, pk=self.kwargs['id'])
+        context['dashboard'] = dashboard
+        return context
 
 
 class AnalyticsLocalizationsView(ProjectBase, TemplateView):
@@ -154,13 +165,8 @@ class AnalyticsCorrectionsView(ProjectBase, TemplateView):
 class AnalyticsCollectionsView(ProjectBase, TemplateView):
     template_name = 'analytics/collections.html'
 
-
-class AnalyticsVisualizationView(ProjectBase, TemplateView):
-    template_name = 'analytics/visualization.html'
-
-
-class AnalyticsReportsView(ProjectBase, TemplateView):
-    template_name = 'analytics/reports.html'
+class AnalyticsPortalView(ProjectBase, TemplateView):
+    template_name = 'analytics/portal.html'
 
 class AppsSpeciesView(ProjectBase, TemplateView):
     template_name = 'apps/species.html'

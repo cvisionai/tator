@@ -27,14 +27,14 @@ from .views import OrganizationSettingsView
 from .views import AnnotationView
 from .views import AuthProjectView
 from .views import AuthAdminView
-from .views import AnalyticsDashboardView
+from .views import DashboardPortalView
+from .views import DashboardView
 from .views import AnalyticsLocalizationsView
 from .views import AnalyticsCorrectionsView
 from .views import AnalyticsCollectionsView
-from .views import AnalyticsVisualizationView
-from .views import AnalyticsReportsView
 from .views import AppsSpeciesView
 from .views import AppsVerificationView
+from .views import AnalyticsPortalView
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -55,21 +55,21 @@ urlpatterns = [
     path('accounts/account-profile/',
          AccountProfileView.as_view(), name='account-profile'),
     path('<int:project_id>/analytics/',
-         AnalyticsDashboardView.as_view(), name='analytics-dashboard'),
+         AnalyticsPortalView.as_view(), name='analytics-portal'),
     path('<int:project_id>/analytics/localizations',
          AnalyticsLocalizationsView.as_view(), name='analytics-localizations'),
     path('<int:project_id>/analytics/collections',
          AnalyticsCollectionsView.as_view(), name='analytics-collections'),
     path('<int:project_id>/analytics/corrections',
          AnalyticsCorrectionsView.as_view(), name='analytics-corrections'),
-    path('<int:project_id>/analytics/visualization',
-         AnalyticsVisualizationView.as_view(), name='analytics-visualization'),
-    path('<int:project_id>/analytics/reports',
-         AnalyticsReportsView.as_view(), name='analytics-reports'),
     path('<int:project_id>/apps/species',
          AppsSpeciesView.as_view(), name='apps-species'),
     path('<int:project_id>/apps/verification',
          AppsVerificationView.as_view(), name='apps-verification'),
+    path('<int:project_id>/dashboards',
+         DashboardPortalView.as_view(), name='dashboard-portal'),
+    path('<int:project_id>/dashboards/<int:id>',
+         DashboardView.as_view(), name='dashboard'),
     path('organizations/', OrganizationsView.as_view(), name='organizations'),
     path('<int:organization_id>/organization-settings', OrganizationSettingsView.as_view(),
          name='organization-settings'),
@@ -177,6 +177,12 @@ urlpatterns += [
     path('rest/CloneMedia/<int:project>',
          CloneMediaListAPI.as_view(),
          ),
+    path('rest/Dashboards/<int:project>',
+        DashboardListAPI.as_view(),
+    ),
+    path('rest/Dashboard/<int:id>',
+        DashboardDetailAPI.as_view(),
+    ),
     path('rest/DownloadInfo/<int:project>',
          DownloadInfoAPI.as_view(),
          ),
@@ -359,6 +365,11 @@ urlpatterns += [
     path(
         'rest/Project/<int:id>',
         ProjectDetailAPI.as_view(),
+    ),
+    path(
+        'rest/SaveHTMLFile/<int:project>',
+        SaveHTMLFileAPI.as_view(),
+        name='SaveHTMLFile',
     ),
     path(
         'rest/Sections/<int:project>',

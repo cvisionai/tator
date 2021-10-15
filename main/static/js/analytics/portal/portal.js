@@ -1,10 +1,10 @@
-class AnalyticsDashboard extends TatorPage {
+class AnalyticsPortal extends TatorPage {
   constructor() {
     super();
 
     this.projectId = window.location.pathname.split("/")[1];
 
-          //
+    //
     // Header
     //
     const header = document.createElement("div");
@@ -49,25 +49,22 @@ class AnalyticsDashboard extends TatorPage {
     });
       this.main.appendChild(correctionsBox);
 
-    // Visualization
-    /*
-    const visualizationBox = this._getDashboardBox({
-        name : "Data Visualization",
-        href : `/${this.projectId}/analytics/visualization`,
-        iconName: "bar-chart-icon"
+    // Dashboards
+    const dashboardsBox = this._getDashboardBox({
+        name : "Dashboards",
+        href : `/${this.projectId}/dashboards`,
+        iconName: "monitor"
       });
-    this.main.appendChild(visualizationBox);
-  */
+    this.main.appendChild(dashboardsBox);
 
     // Reports
     /*
     const reportsBox = this._getDashboardBox({
         name : "Reports",
-        href : ``,
+        href : `/${this.projectId}/analytics/reports`,
         iconName: "file-text-icon"
       });
     this.main.appendChild(reportsBox);
-    reportsBox.setAttribute("disabled", "");
     */
   }
 
@@ -100,7 +97,13 @@ class AnalyticsDashboard extends TatorPage {
       dashboardIcon.svg.setAttribute("width", width);
       dashboardIcon.svg.setAttribute("stroke", "white");
       iconDiv.appendChild(dashboardIcon);
-    } else {
+    }
+    else if (iconName == "monitor") {
+      const dashboardIcon = document.createElement("div");
+      dashboardIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
+      iconDiv.appendChild(dashboardIcon);
+    } 
+    else {
       const dashboardIcon = new SvgDefinition({ iconName, height, width });
       iconDiv.appendChild(dashboardIcon);
     }
@@ -131,4 +134,4 @@ class AnalyticsDashboard extends TatorPage {
 
 }
 
-customElements.define("analytics-dashboard", AnalyticsDashboard);
+customElements.define("analytics-portal", AnalyticsPortal);

@@ -29,27 +29,39 @@ class AnalyticsBreadcrumbs extends TatorElement {
     this._analyticsText = document.createElement("a");
     this._analyticsText.setAttribute("class", "text-gray");
     div.appendChild(this._analyticsText);
+
+    this.chevron3 = document.createElement("chevron-right");
+    this.chevron3.setAttribute("class", "px-2");
+    div.appendChild(this.chevron3);
+
+    this._subAnalyticsText = document.createElement("a");
+    this._subAnalyticsText.setAttribute("class", "text-gray");
+    div.appendChild(this._subAnalyticsText);
+
+    this.chevron3.hidden = true;
+    this._subAnalyticsText.hidden = true;
   }
 
   static get observedAttributes() {
-    return ["project-name", "analytics-name"];
+    return["project-name", "analytics-name", "analytics-name-link", "analytics-sub-name"].concat(TatorPage.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "project-name":
-
         this._projectText.textContent = newValue;
         this._projectText.setAttribute("href", this._detailUrl());
-
-
         break;
       case "analytics-name":
-        if (newValue != "Dashboard") {
-          this._analyticsText.textContent = newValue;
-        } else {
-          this.chevron2.hidden = true;
-        }
+        this._analyticsText.textContent = newValue;
+        break;
+      case "analytics-name-link":
+        this._analyticsText.setAttribute("href", newValue);
+        break;
+      case "analytics-sub-name":
+        this._subAnalyticsText.textContent = newValue;
+        this.chevron3.hidden = false;
+        this._subAnalyticsText.hidden = false;
         break;
     }
   }
