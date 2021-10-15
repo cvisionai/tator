@@ -258,3 +258,13 @@
     margin-bottom: $spacing-6;
   }
 }
+
+.attributes-edit {
+  background: #262e3d;
+  // padding: $spacing-3 $spacing-4;
+  margin: 15px auto;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
