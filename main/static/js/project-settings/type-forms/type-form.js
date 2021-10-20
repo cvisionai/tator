@@ -60,11 +60,15 @@ class TypeForm extends TatorElement {
     this.setupFormPage(data)
   }
 
-  async setupFormPage(data = this.data) {
-    // Section h1.
-    // New heading element.
-    this.h1 = document.createElement("h1");
-    this.h1.setAttribute("class", "h3 pb-3 edit-project__h1");
+  async setupFormPage(data = this.data, isReset = false) {
+    if (!isReset) {
+      // New heading element.
+      this.h1 = document.createElement("h1");
+      this.h1.setAttribute("class", "h3 pb-3 edit-project__h1");
+      this.typeFormDiv.appendChild(this.h1);
+    } else {
+      this.h1.innerHTML = "";
+    }
 
     // Create a form with values, or empty editable form
     if (!this.data.form && !this.data.form != "empty") {
@@ -93,40 +97,60 @@ class TypeForm extends TatorElement {
       const h1_id = document.createTextNode(` (ID ${this.data.id})`);
       this.id_span.appendChild(h1_id);
 
-      // creating submit button before form so we can "disable" from form, but append it after form
-      const submitNew = this._getSubmitDiv({ "id": this.data.id });
 
-      // Add all elements to page
-      this.typeFormDiv.appendChild(this.h1);
+      // Add form element to page
+      if (!isReset) {
+        // New form wrapper element.
+        this._formWrapper = document.createElement("div");
+        this.typeFormDiv.appendChild(this._formWrapper);
+      } else {
+        this._formWrapper.innerHTML = "";
+      }
       const sectionForm = await this._getSectionForm(this.data);
-      this.typeFormDiv.appendChild(sectionForm);
+      this._formWrapper.appendChild(sectionForm);
 
       // attribute section
       if (typeof this._hideAttributes !== "undefined" && this._hideAttributes == false) {
         this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
         this._attributeContainer.hidden = false;
+        if (isReset) this._attributeContainer.innerHTML = "";
         this._attributeContainer.appendChild(this._getAttributeSection());
       }
 
       // append save button
-      this.typeFormDiv.appendChild(submitNew);
+      if (!isReset) {
+        const submitNew = this._getSubmitDiv({ "id": this.data.id });
+        this.typeFormDiv.appendChild(submitNew);
+      }
 
       // delete section
-      this.typeFormDiv.appendChild(this.deleteTypeSection());
+      if (!isReset) {
+        this.typeFormDiv.appendChild(this.deleteTypeSection());
+      }
 
       return this.typeFormDiv;
     } else {
+      // Update heading
       const t = document.createTextNode(`Add new ${this.readableTypeName}.`);
       this.h1.appendChild(t);
-
-      this.typeFormDiv.appendChild(this.h1);
-
-      const submitNew = this._getSubmitNewDiv({ "id": this.data.id });
-
+            
+      // Add form element to page
+      if (!isReset) {
+        // New form wrapper element.
+        this._formWrapper = document.createElement("div");
+        this.typeFormDiv.appendChild(this._formWrapper);
+      } else {
+        this._formWrapper.innerHTML = "";
+      }
       const sectionForm = await this._getSectionForm(this._getEmptyData());
-      this.typeFormDiv.appendChild(this.h1);
-      this.typeFormDiv.appendChild(sectionForm);
-      this.typeFormDiv.appendChild(submitNew);
+      this._formWrapper.appendChild(sectionForm);
+      
+      // Add save button
+      if (!isReset) {
+        const submitNew = this._getSubmitNewDiv({ "id": this.data.id });
+        this.typeFormDiv.appendChild(submitNew);
+      }
+   
 
       return this.typeFormDiv;
     }
@@ -155,7 +179,7 @@ class TypeForm extends TatorElement {
 
     addNew.saveFetch(formData).then(([data, status]) => {
       this.loading.hideSpinner();
-      console.log(status);
+      // console.log(status);
       if (status == 201 || status == 200) {
         // Hide the add new form
         this.sideNav.hide(`itemDivId-${this.typeName}-New`);
@@ -183,7 +207,7 @@ class TypeForm extends TatorElement {
 
         // init form with the data
         this._fetchByIdPromise({ id: saveReturnId }).then(resp => resp.json()).then(data => {
-          console.log(data);
+          // console.log(data);
           form._init({
             data,
             modal: this.modal,
@@ -195,7 +219,7 @@ class TypeForm extends TatorElement {
           });
 
           // Add the item to navigation
-          console.log(data)
+          // console.log(data)
           this._updateNavEvent("new", data.name, saveReturnId);
         });
         // Let user know everything's all set!
@@ -608,9 +632,7 @@ class TypeForm extends TatorElement {
 
   // RESET FUNCTIONS
   reset(data = this.data) {
-    this.typeFormDiv.innerHTML = "";
-    this._attributeContainer.innerHTML = "";
-    return this.setupFormPage(data);
+    return this.setupFormPage(data, true); // flag isReset=true
   }
 
   async resetHard() {
