@@ -467,7 +467,7 @@ FILES = \
     utilities.js
 
 JSDIR = main/static/js
-OUTDIR = main/static/js/tator
+OUTDIR = main/static/js
 
 define generate_minjs
 .min_js/${1:.js=.min.js}: $(JSDIR)/${1}
