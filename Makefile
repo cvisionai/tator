@@ -481,9 +481,9 @@ ifeq ($(USE_MIN_JS),True)
 min-js:
 	@echo "Building min-js file, because USE_MIN_JS is true"
 	mkdir -p $(OUTDIR)
-	rm -f $(OUTDIR)/tator.min.js
+	rm -f $(OUTDIR)/tator-ui.min.js
 	mkdir -p .min_js
-	@$(foreach file,$(FILES),make --no-print-directory .min_js/$(file:.js=.min.js); cat .min_js/$(file:.js=.min.js) >> $(OUTDIR)/tator.min.js;)
+	@$(foreach file,$(FILES),make --no-print-directory .min_js/$(file:.js=.min.js); cat .min_js/$(file:.js=.min.js) >> $(OUTDIR)/tator-ui.min.js;)
 else
 min-js:
 	@echo "Skipping min-js, because USE_MIN_JS is false"
