@@ -562,18 +562,18 @@ python-bindings: tator-image
 
 .PHONY: js-bindings
 js-bindings:
-	rm -f scripts/packages/tator-js/schema.yaml
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-js/schema.yaml
+	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
+	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-js/tator-openapi-schema.yaml
 	cd scripts/packages/tator-js
 	rm -rf pkg
 	mkdir pkg
 	mkdir pkg/src
-	./codegen.py schema.yaml
+	./codegen.py tator-openapi-schema.yaml
 	docker run -it --rm \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
 		openapitools/openapi-generator-cli:v5.2.1 \
 		generate -c /pwd/config.json \
-		-i /pwd/schema.yaml \
+		-i /pwd/tator-openapi-schema.yaml \
 		-g javascript -o /pwd/pkg -t /pwd/templates
 	docker run -it --rm \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
