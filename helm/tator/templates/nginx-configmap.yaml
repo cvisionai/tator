@@ -144,7 +144,12 @@ data:
           alias /media/;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
+          
+          {{- if hasKey .Values "allowCors" }}
+          {{- if $.Values.allowCors }}
           add_header Access-Control-Allow-Origin *;
+          {{- end }}
+          {{- end }}
           add_header 'Access-Control-Allow-Headers' 'Authorization' always;
 
           # Send CORS response from nginx
@@ -183,7 +188,11 @@ data:
         {{- if .Values.minio.enabled }}
         location /objects/ {
           proxy_pass http://tator-minio:9000/;
+          {{- if hasKey .Values "allowCors" }}
+          {{- if $.Values.allowCors }}
           add_header Access-Control-Allow-Origin *;
+          {{- end }}
+          {{- end }}
         }
         {{- end }}
         {{- if .Values.kibana.enabled }}
@@ -232,7 +241,11 @@ data:
           proxy_set_header X-Forwarded-Proto https;
           {{- end }}
           add_header Cache-Control "max-age=0, must-revalidate";
+          {{- if hasKey .Values "allowCors" }}
+          {{- if $.Values.allowCors }}
           add_header Access-Control-Allow-Origin *;
+          {{- end }}
+          {{- end }}
 
           gzip on;
           gzip_types application/json;

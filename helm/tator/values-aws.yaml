@@ -10,6 +10,8 @@ redirects:
     tlsKeySecretName: mysite-tls-key
     # Cert secret name that will be used in secret for this domain.
     tlsCertSecretName: mysite-tls-cert
+# Enable this to allow cross origin resource sharring (CORS).
+allowCors: false
 # Enable this to turn on "down for maintenance" page.
 maintenance: false
 nginxReplicas: 5

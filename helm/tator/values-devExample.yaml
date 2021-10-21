@@ -18,6 +18,8 @@ domain: &domain localhost
 tatorDebug: true
 # Enables javascript minification.
 useMinJs: false
+# Enable this to allow cross origin resource sharring (CORS).
+allowCors: false
 # Enable this to turn on "down for maintenance" page.
 maintenance: false
 # Secret key for django. Feel free to change this.
