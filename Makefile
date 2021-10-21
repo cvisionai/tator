@@ -560,6 +560,38 @@ python-bindings: tator-image
 	fi
 	cd ../../..
 
+.PHONY: js-bindings
+js-bindings:
+	rm -f scripts/packages/tator-js/schema.yaml
+	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-js/schema.yaml
+	cd scripts/packages/tator-js
+	rm -rf pkg
+	mkdir pkg
+	mkdir pkg/src
+	./codegen.py schema.yaml
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
+		openapitools/openapi-generator-cli:v5.2.1 \
+		generate -c /pwd/config.json \
+		-i /pwd/schema.yaml \
+		-g javascript -o /pwd/pkg -t /pwd/templates
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
+		openapitools/openapi-generator-cli:v5.2.1 \
+		chmod -R 777 /pwd/pkg
+	cp -r examples pkg/examples
+	cp -r utils pkg/src/utils
+	cp webpack* pkg/.
+	cd pkg && npm install
+	npm install querystring webpack webpack-cli --save-dev
+	npx webpack --config webpack.prod.js
+	mv dist/tator.min.js .
+	npx webpack --config webpack.dev.js
+	mv tator.min.js dist/.
+	cd ../../..
+	cp scripts/packages/tator-js/dist/tator.min.js main/static/js/.
+	cp scripts/packages/tator-js/dist/tator.js main/static/js/.
+
 .PHONY: r-docs
 r-docs:
 	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
