@@ -588,9 +588,9 @@ js-bindings:
 	mv dist/tator.min.js .
 	npx webpack --config webpack.dev.js
 	mv tator.min.js dist/.
-	cd ../../..
-	cp scripts/packages/tator-js/dist/tator.min.js main/static/js/.
-	cp scripts/packages/tator-js/dist/tator.js main/static/js/.
+	cd ../../../..
+	cp scripts/packages/tator-js/pkg/dist/tator.min.js main/static/js/.
+	cp scripts/packages/tator-js/pkg/dist/tator.js main/static/js/.
 
 .PHONY: r-docs
 r-docs:
