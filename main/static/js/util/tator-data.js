@@ -742,7 +742,7 @@ class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
+            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
@@ -865,7 +865,7 @@ class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
+            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
