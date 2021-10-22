@@ -456,7 +456,6 @@ FILES = \
     analytics/dashboards/dashboard-portal.js \
     analytics/dashboards/dashboard-summary.js \
     analytics/dashboards/dashboard.js \
-    analytics/localizations/card.js \
     analytics/localizations/gallery.js \
     analytics/localizations/panel-data.js \
     analytics/localizations/card-data.js \
