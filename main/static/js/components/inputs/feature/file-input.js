@@ -219,25 +219,7 @@ class FileInput extends TatorElement {
             name: data[0].key,
             upload_url: data[0].url
           }
-          fetch(`/rest/SaveAlgorithmManifest/${this._projectId}`,
-            {
-              method: "POST",
-              credentials: "same-origin",
-              body: JSON.stringify(bodyData),
-              headers: {
-                "X-CSRFToken": getCookie("csrftoken"),
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-              }
-            }
-          ).then(resp => resp.json()).then(
-            manifestData => {
-              // console.log(manifestData);
-              this.setValue(manifestData.url);
-              Utilities.showSuccessIcon(`Manifest file uploaded to: ${manifestData.url}`);
-
-            }
-          );
+          return this._fetchCall(bodyData);
 
         });
       }

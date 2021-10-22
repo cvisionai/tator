@@ -118,6 +118,28 @@ class AlgorithmEdit extends TypeForm {
       this._manifestPath.projectId = this.projectId;
       this._manifestPath.setValue(this.data.manifest);
       this._manifestPath.default = this.data.manifest;
+      
+      this._manifestPath._fetchCall = (bodyData) => {
+         return fetch(`/rest/SaveAlgorithmManifest/${this.projectId}`,
+            {
+               method: "POST",
+               credentials: "same-origin",
+               body: JSON.stringify(bodyData),
+               headers: {
+                  "X-CSRFToken": getCookie("csrftoken"),
+                  "Accept": "application/json",
+                  "Content-Type": "application/json"
+               }
+            }
+         ).then(resp => resp.json()).then(
+            manifestData => {
+               // console.log(manifestData);
+               this._manifestPath.setValue(manifestData.url);
+               Utilities.showSuccessIcon(`Manifest file uploaded to: ${manifestData.url}`);
+            }
+         );
+      };
+
       this._manifestPath.addEventListener("change", this._formChanged.bind(this));
       this._form.appendChild(this._manifestPath);
 

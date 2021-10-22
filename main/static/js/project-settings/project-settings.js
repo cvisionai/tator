@@ -42,13 +42,15 @@ class ProjectSettings extends TatorPage {
     this.main.appendChild(this.settingsNav);
 
     // Web Components for this page
-    this.settingsViewClasses = ["media-type-main-edit",
+    this.settingsViewClasses = [
+      "media-type-main-edit",
       "localization-edit",
       "leaf-type-edit",
       "state-type-edit",
       "membership-edit",
       "versions-edit",
       "algorithm-edit",
+      "dashboard-edit",
     ];
 
     this._userIsStaff = false;
