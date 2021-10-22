@@ -36,6 +36,10 @@ from .email import email_attachment_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite
+from .file import file
+from .file import file_spec
+from. file_type import file_type_spec
+from .file_type import file_type
 from .html_file import html_file
 from .html_file import html_file_spec
 from .invitation import (
