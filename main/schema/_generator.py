@@ -68,7 +68,7 @@ class CustomGenerator(SchemaGenerator):
                 'FavoriteUpdate': favorite_update,
                 'Favorite': favorite,
                 'FeedDefinition': feed_definition,
-                'FileDefinition': file_definition,
+                'AuxiliaryFileDefinition': auxiliary_file_definition,
                 'FloatArrayQuery': float_array_query,
                 'HTMLFile': html_file,
                 'HTMLFileSpec': html_file_spec,
