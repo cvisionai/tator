@@ -85,6 +85,7 @@ class FilterData {
       let user = this.users[idx];
       userNames.push(`${user.username} (ID:${user.user})`);
     }
+    userNames.sort();
 
     // Versions aren't typically part of the localization type's user attribute list.
     // Pretend that it's an attribute with the name _version and apply it to each
