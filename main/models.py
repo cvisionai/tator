@@ -1491,6 +1491,45 @@ class Dashboard(Model):
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     """ Project associated with the dashboard """
 
+class FileType(Model):
+    """ Non-media generic file. Has user-defined attributes.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    """ Project associated with the file type """
+    name = CharField(max_length=64)
+    """ Name of the file type"""
+    description = CharField(max_length=256, blank=True)
+    """ Description of the file type"""
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ Refer to the attribute_types field for the other *Type models
+    """
+
+class File(Model):
+    """ Non-media generic file stored within a project
+    """
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    """ Datetime when file was created """
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='file_created_by', db_column='created_by')
+    """ User who originally created the file """
+    description = CharField(max_length=1024, blank=True)
+    """Description of the file"""
+    path = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    """ Path of file """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    """ Datetime when file was last modified """
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='file_modified_by', db_column='modified_by')
+    """ User who last modified the file """
+    name = CharField(max_length=128)
+    """ Project associated with the file """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    """ Project associated with the file """
+    meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    """ Type associated with file """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
+
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {

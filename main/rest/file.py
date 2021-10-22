@@ -1,125 +1,134 @@
-from django.db import transaction
-from django.http import Http404
+import datetime
+import logging
+import os
 
-from ..models import Media
-from ..models import Resource
-from ..models import safe_delete
-from ..models import drop_media_from_resource
+from django.db import transaction
+from django.conf import settings
+
+from ..models import Project
+from ..models import File
+from ..models import User
+from ..models import database_qs
 from ..schema import FileListSchema
 from ..schema import FileDetailSchema
-from ..search import TatorSearch
+from ..schema import parse
+from ..schema.components.file import file_fields as fields
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
-from ._permissions import ProjectTransferPermission
+from ._permissions import ProjectExecutePermission
+
+logger = logging.getLogger(__name__)
 
 class FileListAPI(BaseListView):
     schema = FileListSchema()
-    permission_classes = [ProjectTransferPermission]
+    permission_classes = [ProjectExecutePermission]
     http_method_names = ['get', 'post']
 
-    def _get(self, params):
-        media = Media.objects.get(pk=params['id'])
-        response_data = []
-        if media.media_files:
-            if 'attachment' in media.media_files:
-                response_data = media.media_files['attachment']
-        return response_data
+    def _get(self, params: dict) -> dict:
+        qs = File.objects.filter(project=params['project'])
+        return database_qs(qs)
 
-    def _post(self, params):
-        with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(pk=params['id'])
-            if qs.count() != 1:
-                raise Http404
-            media_files = qs[0].media_files
-            body = params['body']
-            index = params.get('index')
-            if not media_files:
-                media_files = {}
-            if 'attachment' not in media_files:
-                media_files['attachment'] = []
-            if index is None:
-                media_files['attachment'].append(body)
-            else:
-                if index >= len(media_files['attachment']):
-                    raise ValueError(f"Supplied index {index} is larger than current array size "
-                                     f"{len(media_files['attachment'])}")
-                media_files['attachment'].insert(index, body)
-            qs.update(media_files=media_files)
-        media = Media.objects.get(pk=params['id'])
-        Resource.add_resource(body['path'], media)
-        TatorSearch().create_document(media)
-        return {'message': f"Media file in media object {media.id} created!"}
+    def get_queryset(self) -> dict:
+        params = parse(self.request)
+        qs = File.objects.filter(project__id=params['project'])
+        return qs
 
-    def get_queryset(self):
-        return Media.objects.all()
+    def _post(self, params: dict) -> dict:
+        # Does the project ID exist?
+        project_id = params[fields.project]
+        try:
+            project = Project.objects.get(pk=project_id)
+        except Exception as exc:
+            log_msg = f'Provided project ID ({project_id}) does not exist'
+            logger.error(log_msg)
+            raise exc
+
+        # Gather the file file and verify it exists on the server in the right project
+        file_param = os.path.basename(params[fields.path])
+        file_url = os.path.join(str(project_id), file_param)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url)
+        if not os.path.exists(file_path):
+            log_msg = f'Provided file ({file_param}) does not exist in {settings.MEDIA_ROOT}'
+            logging.error(log_msg)
+            raise ValueError(log_msg)
+
+        # Get the optional fields and to null if need be
+        description = params.get(fields.description, None)
+
+        new_file = File.objects.create(
+            project=project,
+            name=params[fields.name],
+            description=description,
+            file=file_path,
+            created_by=self.request.user,
+            modified_by=self.request.user)
+
+        return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
 class FileDetailAPI(BaseDetailView):
     schema = FileDetailSchema()
-    permission_classes = [ProjectTransferPermission]
-    lookup_field = 'id'
+    permission_classes = [ProjectExecutePermission]
     http_method_names = ['get', 'patch', 'delete']
 
+    def safe_delete(self, path: str) -> None:
+        try:
+            logger.info(f"Deleting {path}")
+            os.remove(path)
+        except:
+            logger.warning(f"Could not remove {path}")
+
+    def _delete(self, params: dict) -> dict:
+        # Grab the file object and delete it from the database
+        obj = File.objects.get(pk=params['id'])
+        file_param = obj.path
+        obj.delete()
+
+        # Delete the correlated file
+        path = os.path.join(settings.MEDIA_ROOT, file_param)
+        self.safe_delete(path=path)
+
+        msg = 'Registered file deleted successfully!'
+        return {'message': msg}
+
     def _get(self, params):
-        media = Media.objects.get(pk=params['id'])
-        index = params['index']
-        response_data = []
-        if media.media_files:
-            if 'attachment' in media.media_files:
-                response_data = media.media_files['attachment']
-        if index >= len(response_data):
-            raise ValueError(f"Supplied index {index} is larger than current array size "
-                             f"{len(response_data)}")
-        return response_data[index]
+        return database_qs(File.objects.filter(pk=params['id']))[0]
 
-    def _patch(self, params):
-        with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(pk=params['id'])
-            if qs.count() != 1:
-                raise Http404
-            media_files = qs[0].media_files
-            body = params['body']
-            index = params['index']
-            if not media_files:
-                raise Http404
-            if 'attachment' not in media_files:
-                raise Http404
-            if index >= len(media_files['attachment']):
-                raise ValueError(f"Supplied index {index} is larger than current array size "
-                                 f"{len(media_files['attachment'])}")
-            old_path = media_files['attachment'][index]['path']
-            new_path = body['path']
-            media_files['attachment'][index] = body
-            qs.update(media_files=media_files)
-        media = Media.objects.get(pk=params['id'])
-        if old_path != new_path:
-            drop_media_from_resource(old_path, media)
-            safe_delete(old_path)
-            Resource.add_resource(new_path, media)
-        TatorSearch().create_document(media)
-        return {'message': f"Media file in media object {media.id} successfully updated!"}
+    @transaction.atomic
+    def _patch(self, params) -> dict:
+        file_id = params["id"]
+        obj = File.objects.get(pk=file_id)
 
-    def _delete(self, params):
-        with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(pk=params['id'])
-            if qs.count() != 1:
-                raise Http404
-            media_files = qs[0].media_files
-            index = params['index']
-            if not media_files:
-                raise Http404
-            if 'attachment' not in media_files:
-                raise Http404
-            if index >= len(media_files['attachment']):
-                raise ValueError(f"Supplied index {index} is larger than current array size "
-                                 f"{len(media_files['attachment'])}")
-            deleted =  media_files['attachment'].pop(index)
-            qs.update(media_files=media_files)
-        media = Media.objects.get(pk=params['id'])
-        drop_media_from_resource(deleted['path'], media)
-        safe_delete(deleted['path'])
-        TatorSearch().create_document(media)
-        return {'message': f'Media file in media object {params["id"]} successfully deleted!'}
+        name = params.get(fields.name, None)
+        if name is not None:
+            obj.name = name
+
+        description = params.get(fields.description, None)
+        if description is not None:
+            obj.description = description
+
+        file_param = params.get(fields.path, None)
+        if file_param is not None:
+            file_param = os.path.basename(file_param)
+            file_url = os.path.join(str(project_id), file_param)
+            file_path = os.path.join(settings.MEDIA_ROOT, file_url)
+            if not os.path.exists(file_path):
+                log_msg = f'Provided file ({file_param}) does not exist in {settings.MEDIA_ROOT}'
+                logging.error(log_msg)
+                raise ValueError(log_msg)
+
+            delete_path = os.path.join(settings.MEDIA_ROOT, obj.path)
+            self.safe_delete(path=delete_path)
+            obj.path = file_path
+
+        obj.modified_by = self.request.user
+        obj.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+
+        obj.save()
+
+        return {'message': f'File {file_id} successfully updated!'}
 
     def get_queryset(self):
-        return Media.objects.all()
+        """ Returns a queryset of all registered file files
+        """
+        return File.objects.all()

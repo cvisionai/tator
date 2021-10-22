@@ -27,6 +27,8 @@ from .favorite import FavoriteListAPI
 from .favorite import FavoriteDetailAPI
 from .file import FileListAPI
 from .file import FileDetailAPI
+from .file_type import FileTypeListAPI
+from .file_type import FileTypeDetailAPI
 from .get_clip import GetClipAPI
 from .get_frame import GetFrameAPI
 from .image_file import ImageFileListAPI

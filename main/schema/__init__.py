@@ -28,6 +28,8 @@ from .favorite import FavoriteListSchema
 from .favorite import FavoriteDetailSchema
 from .file import FileListSchema
 from .file import FileDetailSchema
+from .file_type import FileTypeListSchema
+from .file_type import FileTypeDetailSchema
 from .get_frame import GetFrameSchema
 from .get_clip import GetClipSchema
 from .image_file import ImageFileListSchema
