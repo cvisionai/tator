@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings postgis-image client-image
+IMAGES=python-bindings js-bindings postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -180,15 +180,17 @@ main/version.py:
 collect-static: min-css min-js
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -rf /tator_online/main/static
 	kubectl cp main/static $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///'):/tator_online/main
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator/tator.min.js
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/css/tator/tator.min.css
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator.js
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator.min.js
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator-ui.min.js
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/css/tator-ui.min.css
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- python3 manage.py collectstatic --noinput
 
 dev-push:
 	@scripts/dev-push.sh
 
 min-css:
-	node_modules/.bin/sass main/static/css/tator/styles.scss:main/static/css/tator/tator.min.css --style compressed
+	node_modules/.bin/sass main/static/css/tator/styles.scss:main/static/css/tator-ui.min.css --style compressed
 
 FILES = \
     node-uuid.js \
@@ -451,9 +453,10 @@ FILES = \
     annotation/volume-control.js \
     analytics/analytics-breadcrumbs.js \
     analytics/analytics-settings.js \
-    analytics/dashboard/dashboard-portal.js \
-    analytics/dashboard/dashboard-summary.js \
-    analytics/dashboard/dashboard.js \
+    analytics/dashboards/dashboard-portal.js \
+    analytics/dashboards/dashboard-summary.js \
+    analytics/dashboards/dashboard.js \
+    analytics/localizations/card.js \
     analytics/localizations/gallery.js \
     analytics/localizations/panel-data.js \
     analytics/localizations/card-data.js \
@@ -476,7 +479,7 @@ FILES = \
     utilities.js
 
 JSDIR = main/static/js
-OUTDIR = main/static/js/tator
+OUTDIR = main/static/js
 
 define generate_minjs
 .min_js/${1:.js=.min.js}: $(JSDIR)/${1}
@@ -492,9 +495,9 @@ ifeq ($(USE_MIN_JS),True)
 min-js:
 	@echo "Building min-js file, because USE_MIN_JS is true"
 	mkdir -p $(OUTDIR)
-	rm -f $(OUTDIR)/tator.min.js
+	rm -f $(OUTDIR)/tator-ui.min.js
 	mkdir -p .min_js
-	@$(foreach file,$(FILES),make --no-print-directory .min_js/$(file:.js=.min.js); cat .min_js/$(file:.js=.min.js) >> $(OUTDIR)/tator.min.js;)
+	@$(foreach file,$(FILES),make --no-print-directory .min_js/$(file:.js=.min.js); cat .min_js/$(file:.js=.min.js) >> $(OUTDIR)/tator-ui.min.js;)
 else
 min-js:
 	@echo "Skipping min-js, because USE_MIN_JS is false"
@@ -570,6 +573,38 @@ python-bindings: tator-image
 		exit 1
 	fi
 	cd ../../..
+
+.PHONY: js-bindings
+js-bindings:
+	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
+	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-js/tator-openapi-schema.yaml
+	cd scripts/packages/tator-js
+	rm -rf pkg
+	mkdir pkg
+	mkdir pkg/src
+	./codegen.py tator-openapi-schema.yaml
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
+		openapitools/openapi-generator-cli:v5.2.1 \
+		generate -c /pwd/config.json \
+		-i /pwd/tator-openapi-schema.yaml \
+		-g javascript -o /pwd/pkg -t /pwd/templates
+	docker run -it --rm \
+		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
+		openapitools/openapi-generator-cli:v5.2.1 \
+		chmod -R 777 /pwd/pkg
+	cp -r examples pkg/examples
+	cp -r utils pkg/src/utils
+	cp webpack* pkg/.
+	cd pkg && npm install
+	npm install querystring webpack webpack-cli --save-dev
+	npx webpack --config webpack.prod.js
+	mv dist/tator.min.js .
+	npx webpack --config webpack.dev.js
+	mv tator.min.js dist/.
+	cd ../../../..
+	cp scripts/packages/tator-js/pkg/dist/tator.min.js main/static/js/.
+	cp scripts/packages/tator-js/pkg/dist/tator.js main/static/js/.
 
 .PHONY: r-docs
 r-docs:

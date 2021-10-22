@@ -7,7 +7,7 @@ class TatorElement extends HTMLElement {
     
     const css = document.createElement("link");
     css.setAttribute("rel", "stylesheet");
-    css.setAttribute("href", "/static/css/tator/tator.min.css");
+    css.setAttribute("href", "/static/css/tator-ui.min.css");
     this._shadow.appendChild(css);
 
     css.addEventListener("load", evt => {

@@ -4,3 +4,6 @@
 [submodule "scripts/packages/tator-r"]
 	path = scripts/packages/tator-r
 	url = ../tator-r.git
+[submodule "scripts/packages/tator-js"]
+	path = scripts/packages/tator-js
+	url = ../tator-js

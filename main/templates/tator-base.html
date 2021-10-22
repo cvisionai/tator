@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" type="text/css" href={% static "css/tator/tator.min.css" %} />
+    <link rel="stylesheet" type="text/css" href={% static "css/tator-ui.min.css" %} />
     {% settings_value "USE_MIN_JS" as settings_min_js %}
     {% if not settings_min_js %}
     <script src={% static "js/components/tator-element.js" %}></script>
@@ -298,7 +298,7 @@
     {% else %}
     <script src={% static "js/third_party/d3.v6.min.js" %}></script>
     <script src={% static "js/third_party/marked.min.js" %}></script>
-    <script src={% static "js/tator/tator.min.js" %}></script>
+    <script src={% static "js/tator-ui.min.js" %}></script>
     {% endif %}
     {% block head %}
     {% endblock head %}
