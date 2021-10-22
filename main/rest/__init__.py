@@ -11,6 +11,8 @@ from .announcement import AnnouncementDetailAPI
 from .attribute_type import AttributeTypeListAPI
 from .audio_file import AudioFileListAPI
 from .audio_file import AudioFileDetailAPI
+from .auxiliary_file import AuxiliaryFileListAPI
+from .auxiliary_file import AuxiliaryFileDetailAPI
 from .bookmark import BookmarkListAPI
 from .bookmark import BookmarkDetailAPI
 from .bucket import BucketListAPI

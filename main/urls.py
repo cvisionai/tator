@@ -148,6 +148,12 @@ urlpatterns += [
         'rest/AudioFile/<int:id>',
         AudioFileDetailAPI.as_view(),
     ),
+    path('rest/AuxiliaryFiles/<int:id>',
+         AuxiliaryFileListAPI.as_view(),
+    ),
+    path('rest/AuxiliaryFile/<int:id>',
+         AuxiliaryFileDetailAPI.as_view(),
+    ),
     path(
         'rest/Bookmarks/<int:project>',
         BookmarkListAPI.as_view(),

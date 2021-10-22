@@ -12,6 +12,8 @@ from .announcement import AnnouncementListSchema
 from .announcement import AnnouncementDetailSchema
 from .audio_file import AudioFileListSchema
 from .audio_file import AudioFileDetailSchema
+from .auxiliary_file import AuxiliaryFileListSchema
+from .auxiliary_file import AuxiliaryFileDetailSchema
 from .bookmark import BookmarkListSchema
 from .bookmark import BookmarkDetailSchema
 from .bucket import BucketListSchema
