@@ -43,6 +43,13 @@ class SectionFiles extends TatorElement {
   _updateCard(card, media, pos_text) {
     card.setAttribute("media-id", media.id);
 
+    if (typeof media.num_frames !== "undefined" && media.num_frames !== null && typeof media.fps !== "undefined" && media.fps !== null) {
+      // Add duration to card
+      let seconds = Number(media.num_frames) / Number(media.fps);
+      let duration = new Date(seconds * 1000).toISOString().substr(11, 8);
+      card.setAttribute("duration", duration);
+    }
+
     card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
     if (media.media_files) {
       if (media.media_files.thumbnail) {
