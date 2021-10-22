@@ -81,26 +81,6 @@ class AnalyticsLocalizations extends TatorPage {
   }
 
   async _init() {
-        // Database interface. This should only be used by the viewModel/interface code.
-        this.projectId = Number(this.getAttribute("project-id"));
-        this._modelData = new TatorData(this.projectId);
-    
-        // Card Data class collects raw model and parses into view-model format
-        this.cardData = document.createElement("annotation-card-data");
-        await this.cardData.init(this._modelData);
-        
-        this.cardData.addEventListener("setCardImage", (evt) => {
-          this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
-        });
-    
-        // Pass panel and localization types to gallery
-        this._filterResults._initPanel({
-          panelContainer: this._panelContainer,
-          pageModal: this.modal,
-          modelData: this._modelData,
-          cardData: this.cardData
-        });
-
 
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
@@ -114,51 +94,6 @@ class AnalyticsLocalizations extends TatorPage {
         this._panelContainer.setAttribute("permissionValue", "Can Edit");
       }
     }
-
-    // Init vars for filter state
-    this._filterConditions = this._settings.getFilterConditionsObject();
-
-    // Init vars for pagination state
-    let pageSize = this._settings.getPageSize();
-    if (Number.isNaN(pageSize)) {
-      pageSize = this._filterResults._paginator.getPageSize();
-    }
-
-    let page = this._settings.getPage();
-    if (Number.isNaN(page)) {
-      page = 1;
-    }
-
-    let pageStart = (page - 1) * pageSize;
-    let pageStop = pageStart + pageSize;
-    this._paginationState = {
-      pageSize: pageSize,
-      page: page,
-      start: pageStart,
-      stop: pageStop,
-      init: true
-    };
-
-
-
-    // Init Card Gallery and Right Panel
-    this._cardGallery(
-      this._filterConditions,
-      this._paginationState
-    );
-
-    // Filter interface
-    this._filterDataView = new FilterData(
-      this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
-
-    // Init panel side behavior
-    this._panelContainer.init({
-      main: this.main,
-      aside: this.aside,
-      pageModal: this.modal,
-      modelData: this._modelData,
-      gallery: this._filterResults
-    });
 
     // Settings lock value
     this._settings._lock.addEventListener("click", evt => {
@@ -177,10 +112,42 @@ class AnalyticsLocalizations extends TatorPage {
 
     this._settings._bulkCorrect.hidden = false; // #TODO
 
+    // Database interface. This should only be used by the viewModel/interface code.
+    this.projectId = Number(this.getAttribute("project-id"));
+    this._modelData = new TatorData(this.projectId);
 
-    // this.loading.showSpinner();
-    // this.showDimmer();
+    this.loading.showSpinner();
+    this.showDimmer();
     this._modelData.init().then(() => {
+
+      // Init vars for pagination state
+      let pageSize = this._settings.getPageSize();
+      if (Number.isNaN(pageSize)) {
+        pageSize = this._filterResults._paginator.getPageSize();
+      }
+
+      let page = this._settings.getPage();
+      if (Number.isNaN(page)) {
+        page = 1;
+      }
+
+      let pageStart = (page - 1) * pageSize;
+      let pageStop = pageStart + pageSize;
+      this._paginationState = {
+        pageSize: pageSize,
+        page: page,
+        start: pageStart,
+        stop: pageStop,
+        init: true
+      };
+
+      // Init vars for filter state
+      this._filterConditions = this._settings.getFilterConditionsObject();
+
+      // Filter interface
+      this._filterDataView = new FilterData(
+        this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
+
       this._filterDataView.init(); // requires model data to be init
       this._filterView.dataView = this._filterDataView;
       this._filterView.setFilterConditions(this._filterConditions);
@@ -194,6 +161,41 @@ class AnalyticsLocalizations extends TatorPage {
 
       // Listen for filter events
       this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
+
+      // Card Data class collects raw model and parses into view-model format
+      this.cardData = document.createElement("annotation-card-data");
+      this.cardData.init(this._modelData).then(() => {
+
+        this.cardData.addEventListener("setCardImage", (evt) => {
+          this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
+        });
+
+        // Pass panel and localization types to gallery
+        this._filterResults._initPanel({
+          panelContainer: this._panelContainer,
+          pageModal: this.modal,
+          modelData: this._modelData,
+          cardData: this.cardData
+        });
+
+        // Init panel side behavior
+        this._panelContainer.init({
+          main: this.main,
+          aside: this.aside,
+          pageModal: this.modal,
+          modelData: this._modelData,
+          gallery: this._filterResults
+        });
+
+        // Init Card Gallery and Right Panel. cardData required to be initialized.
+        this._cardGallery(
+          this._filterConditions,
+          this._paginationState
+        );
+        
+        this.loading.hideSpinner();
+        this.hideDimmer();
+      });
     });
   }
 
