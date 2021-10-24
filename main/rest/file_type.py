@@ -3,6 +3,7 @@ from django.db import transaction
 from ..models import FileType
 from ..models import File
 from ..models import Project
+from ..models import database_qs
 from ..schema import FileTypeListSchema
 from ..schema import FileTypeDetailSchema
 
@@ -20,15 +21,16 @@ class FileTypeListAPI(BaseListView):
     """
     schema = FileTypeListSchema()
     permission_classes = [ProjectFullControlPermission]
-    queryset = FileType.objects.all()
     http_method_names = ['get', 'post']
 
-    def _get(self, params):
-        """ Retrieve file types.
-        """
-        response_data = FileType.objects.filter(
-            project=self.kwargs['project']).order_by('name').values(*fields)
-        return list(response_data)
+    def _get(self, params: dict) -> dict:
+        qs = FileType.objects.filter(project=params['project']).order_by('id')
+        return database_qs(qs)
+
+    def get_queryset(self) -> dict:
+        params = parse(self.request)
+        qs = FileType.objects.filter(project__id=params['project'])
+        return qs
 
     def _post(self, params):
         """ Create file type.
