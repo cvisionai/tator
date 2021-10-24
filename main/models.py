@@ -520,6 +520,7 @@ class Project(Model):
         LocalizationType.objects.filter(project=self).delete()
         StateType.objects.filter(project=self).delete()
         LeafType.objects.filter(project=self).delete()
+        FileType.objects.filter(project=self).delete()
         super().delete(*args, **kwargs)
 
 class Version(Model):
@@ -1504,7 +1505,11 @@ class FileType(Model):
     """ Refer to the attribute_types field for the other *Type models
     """
 
-class File(Model):
+@receiver(post_save, sender=FileType)
+def file_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
+class File(Model, ModelDiffMixin):
     """ Non-media generic file stored within a project
     """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -1530,9 +1535,18 @@ class File(Model):
     attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
 
+@receiver(post_save, sender=File)
+def file_save(sender, instance, created, **kwargs):
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=File)
+def file_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
+
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {
+        FileType: File,
         MediaType: Media,
         LocalizationType: Localization,
         StateType: State,

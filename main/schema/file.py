@@ -20,7 +20,7 @@ class FileListSchema(AutoSchema):
         if method == 'GET':
             operation['operationId'] = 'GetFileList'
         elif method == 'POST':
-            operation['operationId'] = 'RegisterFile'
+            operation['operationId'] = 'CreateFile'
         operation['tags'] = ['Tator']
         return operation
 
@@ -86,11 +86,11 @@ class FileDetailSchema(AutoSchema):
     def get_description(self, path, method) -> str:
         description = ''
         if method == 'GET':
-            description = 'Get registered non-media project File object'
+            description = 'Get registered non-media File object'
         elif method == 'PATCH':
-            description = 'Updated registered non-media project File object'
+            description = 'Updated registered non-media File object'
         elif method == 'DELETE':
-            description = 'Delete registered non-media project File object'
+            description = 'Delete registered non-media File object'
         return description
 
     def _get_path_parameters(self, path, method) -> list:
@@ -104,7 +104,7 @@ class FileDetailSchema(AutoSchema):
 
         return parameters
 
-    def _get_filter_parameters(self, path, method):
+    def _get_filter_parameters(self, path, method) -> list:
         return []
 
     def _get_request_body(self, path, method) -> dict:
