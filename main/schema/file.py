@@ -2,6 +2,7 @@ from textwrap import dedent
 
 from rest_framework.schemas.openapi import AutoSchema
 
+from ._attributes import attribute_filter_parameter_schema
 from ._message import message_schema
 from ._message import message_with_id_schema
 from ._errors import error_responses
@@ -42,8 +43,11 @@ class FileListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
-        return {}
+    def _get_filter_parameters(self, path, method) -> list:
+        params = []
+        if method in ['GET']:
+            params = attribute_filter_parameter_schema
+        return params
 
     def _get_request_body(self, path, method):
         body = {}
