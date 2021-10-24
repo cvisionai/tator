@@ -7,6 +7,7 @@ from django.conf import settings
 
 from ..models import Project
 from ..models import File
+from ..models import FileType
 from ..models import User
 from ..models import database_qs
 from ..schema import FileListSchema
@@ -24,6 +25,7 @@ class FileListAPI(BaseListView):
     schema = FileListSchema()
     permission_classes = [ProjectExecutePermission]
     http_method_names = ['get', 'post']
+    entity_type = FileType
 
     def _get(self, params: dict) -> dict:
         qs = File.objects.filter(project=params['project'])
