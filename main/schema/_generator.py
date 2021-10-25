@@ -71,6 +71,7 @@ class CustomGenerator(SchemaGenerator):
                 'FeedDefinition': feed_definition,
                 'FloatArrayQuery': float_array_query,
                 'FileType': file_type,
+                'FileTypeUpdate': file_type_update,
                 'FileTypeSpec': file_type_spec,
                 'File': file,
                 'FileSpec': file_spec,
