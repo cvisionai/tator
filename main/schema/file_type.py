@@ -112,7 +112,7 @@ class FileTypeDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/FileTypeSpec'},
+                'schema': {'$ref': '#/components/schemas/FileTypeUpdate'},
                 'example': {
                     'name': 'New name',
                     'description': 'New description',

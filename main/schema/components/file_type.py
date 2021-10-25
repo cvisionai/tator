@@ -1,4 +1,4 @@
-file_type_properties = {
+file_type_update_properties = {
     'name': {
         'description': 'Name of the file type.',
         'type': 'string',
@@ -8,6 +8,10 @@ file_type_properties = {
         'type': 'string',
         'default': '',
     },
+}
+
+file_type_properties = {
+    **file_type_update_properties,
     'attribute_types': {
         'description': 'Attribute type definitions.',
         'type': 'array',
@@ -17,8 +21,12 @@ file_type_properties = {
 
 file_type_spec = {
     'type': 'object',
-    'required': ['name'],
     'properties': file_type_properties,
+}
+
+file_type_update = {
+    'type': 'object',
+    'properties': file_type_update_properties,
 }
 
 file_type = {

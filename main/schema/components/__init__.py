@@ -38,6 +38,7 @@ from .favorite import favorite_update
 from .favorite import favorite
 from .file import file
 from .file import file_spec
+from. file_type import file_type_update
 from. file_type import file_type_spec
 from .file_type import file_type
 from .generic_file import generic_file
