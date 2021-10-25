@@ -69,7 +69,7 @@ from .password_reset import PasswordResetListAPI
 from .permalink import PermalinkAPI
 from .project import ProjectListAPI
 from .project import ProjectDetailAPI
-from .save_html_file import SaveHTMLFileAPI
+from .save_generic_file import SaveGenericFileAPI
 from .section import SectionListAPI
 from .section import SectionDetailAPI
 from .section_analysis import SectionAnalysisAPI

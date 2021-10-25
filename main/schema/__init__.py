@@ -71,7 +71,7 @@ from .password_reset import PasswordResetListSchema
 from .permalink import PermalinkSchema
 from .project import ProjectListSchema
 from .project import ProjectDetailSchema
-from .save_html_file import SaveHTMLFileSchema
+from .save_generic_file import SaveGenericFileSchema
 from .section import SectionListSchema
 from .section import SectionDetailSchema
 from .section_analysis import SectionAnalysisSchema
