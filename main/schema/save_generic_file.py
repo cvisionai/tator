@@ -48,7 +48,7 @@ class SaveGenericFileSchema(AutoSchema):
             responses['201'] = {
             'description': 'Successful save of non-media file.',
             'content': {'application/json': {'schema': {
-                '$ref': '#/components/schemas/GenericFileSpec',
+                '$ref': '#/components/schemas/GenericFile',
             }}}
         }
         return responses
