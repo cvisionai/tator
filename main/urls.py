@@ -370,9 +370,9 @@ urlpatterns += [
         ProjectDetailAPI.as_view(),
     ),
     path(
-        'rest/SaveHTMLFile/<int:project>',
-        SaveHTMLFileAPI.as_view(),
-        name='SaveHTMLFile',
+        'rest/SaveGenericFile/<int:project>',
+        SaveGenericFileAPI.as_view(),
+        name='SaveGenericFile',
     ),
     path(
         'rest/Sections/<int:project>',
