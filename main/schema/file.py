@@ -8,6 +8,7 @@ from ._message import message_with_id_schema
 from ._errors import error_responses
 
 from .components.file import file_fields as fields
+from .components.file import file_filter_parameter_schema
 
 boilerplate = dedent("""\
 Non-media assocaited files can be stored within the project along with user-defined attributes.
@@ -46,7 +47,7 @@ class FileListSchema(AutoSchema):
     def _get_filter_parameters(self, path, method) -> list:
         params = []
         if method in ['GET']:
-            params = attribute_filter_parameter_schema
+            params = file_filter_parameter_schema + attribute_filter_parameter_schema
         return params
 
     def _get_request_body(self, path, method):

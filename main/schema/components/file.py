@@ -74,3 +74,22 @@ file = {
         **file_post_properties
     },
 }
+
+file_filter_parameter_schema = [
+    {
+        'name': 'type',
+        'in': 'query',
+        'required': False,
+        'description': 'Unique integer identifying a FileType.',
+        'schema': {'type': 'integer'},
+    },
+    {
+        'name': 'after',
+        'in': 'query',
+        'required': False,
+        'description': 'If given, all results returned will be after the '
+                       'File object with this ID. The `start` and `stop` '
+                       'parameters are relative to this modified range.',
+        'schema': {'type': 'integer'},
+    },
+]
