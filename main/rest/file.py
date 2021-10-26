@@ -10,16 +10,23 @@ from ..models import File
 from ..models import FileType
 from ..models import User
 from ..models import database_qs
+from ..search import TatorSearch
 from ..schema import FileListSchema
 from ..schema import FileDetailSchema
 from ..schema import parse
+from ..schema.components.file import file
 from ..schema.components.file import file_fields as fields
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
+from ._file_query import get_file_queryset
 from ._permissions import ProjectExecutePermission
+from ._util import computeRequiredFields
+from ._util import check_required_fields
 
 logger = logging.getLogger(__name__)
+
+FILE_PROPERTIES = list(file['properties'].keys())
 
 class FileListAPI(BaseListView):
     schema = FileListSchema()
@@ -28,13 +35,9 @@ class FileListAPI(BaseListView):
     entity_type = FileType
 
     def _get(self, params: dict) -> dict:
-        qs = File.objects.filter(project=params['project'])
-        return database_qs(qs)
-
-    def get_queryset(self) -> dict:
-        params = parse(self.request)
-        qs = File.objects.filter(project__id=params['project'])
-        return qs
+        qs = get_file_queryset(params['project'], params)
+        response_data = list(qs.values(*FILE_PROPERTIES))
+        return response_data
 
     def _post(self, params: dict) -> dict:
         # Does the project ID exist?
@@ -46,8 +49,15 @@ class FileListAPI(BaseListView):
             logger.error(log_msg)
             raise exc
 
+        # Description required
+        description = params.get(fields.description, None)
+        if description is None:
+            log_msg = f"File description required"
+            logging.error(log_msg)
+            raise ValueError(log_msg)
+
         # Does the FileType ID exist?
-        entity_type = params['meta']
+        entity_type = params[fields.meta]
         try:
             associated_file_type = FileType.objects.get(pk=int(entity_type))
             if associated_file_type.project.id != project.id:
@@ -71,6 +81,22 @@ class FileListAPI(BaseListView):
         # Get the optional fields and to null if need be
         description = params.get(fields.description, None)
 
+        # Find unique foreign keys.
+        meta_ids = [entity_type]
+
+        # Make foreign key querysets.
+        meta_qs = FileType.objects.filter(pk__in=meta_ids)
+
+        # Construct foreign key dictionaries.
+        metas = {obj.id:obj for obj in meta_qs.iterator()}
+
+        # Get required fields for attributes.
+        required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
+        attrs = check_required_fields(required_fields[params[fields.meta]][0],
+                                      required_fields[params[fields.meta]][2],
+                                      params[fields.attributes])
+
+        # Create File object
         new_file = File.objects.create(
             project=project,
             name=params[fields.name],
@@ -78,7 +104,14 @@ class FileListAPI(BaseListView):
             path=file_path,
             meta=associated_file_type,
             created_by=self.request.user,
-            modified_by=self.request.user)
+            modified_by=self.request.user,
+            attributes=attrs)
+
+        # Build ES document
+        ts = TatorSearch()
+        documents = []
+        documents += ts.build_document(new_file)
+        ts.bulk_add_documents(documents)
 
         return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
@@ -96,19 +129,24 @@ class FileDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         # Grab the file object and delete it from the database
-        obj = File.objects.get(pk=params['id'])
+        obj = File.objects.get(pk=params[fields.id])
         file_param = obj.path
-        obj.delete()
 
         # Delete the correlated file
         path = os.path.join(settings.MEDIA_ROOT, file_param.name)
         self.safe_delete(path=path)
 
+        # Delete ES document
+        TatorSearch().delete_document(obj)
+
+        # Delete from database
+        obj.delete()
+
         msg = 'Registered file deleted successfully!'
         return {'message': msg}
 
     def _get(self, params):
-        return database_qs(File.objects.filter(pk=params['id']))[0]
+        return database_qs(File.objects.filter(pk=params[fields.id]))[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:

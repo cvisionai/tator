@@ -1,4 +1,4 @@
-from collections import default
+from collections import defaultdict
 import logging
 
 from django.db.models.functions import Coalesce
@@ -19,7 +19,7 @@ def get_file_es_query(params):
     file_id = params.get('file_id', None)
     file_id_put = params.get('ids', None) # PUT request only
     project = params['project']
-    filter_type = params.get('type', None)
+    filter_type = params.get('meta', None)
     start = params.get('start', None)
     stop = params.get('stop', None)
     after = params.get('after', None)
@@ -39,13 +39,7 @@ def get_file_es_query(params):
         bools.append({'ids': {'values': ids}})
 
     if filter_type is not None:
-        annotation_bools.append({'match': {'_meta': {'query': int(filter_type)}}})
-
-    if version is not None:
-        annotation_bools.append({'terms': {'_annotation_version': version}})
-
-    if frame is not None:
-        annotation_bools.append({'match': {'_frame': {'query': int(frame)}}})
+        bools.append({'match': {'_meta': {'query': int(filter_type)}}})
 
     if start is not None:
         query['from'] = int(start)
@@ -64,7 +58,7 @@ def get_file_es_query(params):
                              "'after'.")
 
     if after is not None:
-        annotation_bools.append({'range': {'_postgres_id': {'gt': after}}})
+        bools.append({'range': {'_postgres_id': {'gt': after}}})
 
     # Get attribute filter parameters.
     attr_filter_params = {
@@ -140,12 +134,12 @@ def _get_file_psql_queryset(project, filter_ops, params):
     file_id = params.get('file_id')
     file_id_put = params.get('ids', None) # PUT request only
     project = params['project']
-    filter_type = params.get('type')
+    filter_type = params.get('meta')
     name = params.get('name')
     start = params.get('start')
     stop = params.get('stop')
 
-    qs = File.objects.filter(project=project, deleted=False)
+    qs = File.objects.filter(project=project)
 
     file_ids = []
     if file_id is not None:
@@ -180,7 +174,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
     return qs
   
 def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'depth', 'after']
+    ES_ONLY_PARAMS = ['search', 'after']
     use_es = False
     for es_param in ES_ONLY_PARAMS:
         if es_param in params:
@@ -201,7 +195,7 @@ def get_file_queryset(project, params):
         # If using ES, do the search and construct the queryset.
         query = get_file_es_query(params)
         file_ids, _  = TatorSearch().search(project, query)
-        qs = File.objects.filter(pk__in=file_ids, deleted=False).order_by('id')
+        qs = File.objects.filter(pk__in=file_ids).order_by('id')
     else:
         # If using PSQL, construct the queryset.
         qs = _get_file_psql_queryset(project, filter_ops, params)
