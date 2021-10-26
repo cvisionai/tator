@@ -13,7 +13,7 @@ file_fields = SimpleNamespace(
     attributes="attributes",
     meta="meta")
 
-file_post_properties = {
+file_update_properties = {
     file_fields.name: {
         "type": "string",
         "description": "Name of file"
@@ -31,6 +31,10 @@ file_post_properties = {
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
     },
+}
+
+file_post_properties = {
+    **file_update_properties,
     file_fields.meta: {
         'type': 'integer',
         'description': 'Unique integer identifying FileType of this File object.',
@@ -44,6 +48,14 @@ file_spec = {
     'properties': {
         **file_post_properties,
     },
+}
+
+file_update = {
+    "type": "object",
+    "description": "Non-media file spec.",
+    "properties": {
+        **file_update_properties
+    }
 }
 
 file = {

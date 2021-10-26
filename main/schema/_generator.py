@@ -75,6 +75,7 @@ class CustomGenerator(SchemaGenerator):
                 'FileTypeSpec': file_type_spec,
                 'File': file,
                 'FileSpec': file_spec,
+                'FileUpdate': file_update,
                 'GenericFile': generic_file,
                 'GenericFileSpec': generic_file_spec,
                 'LiveDefinition': live_definition,
