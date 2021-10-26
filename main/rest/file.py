@@ -101,7 +101,7 @@ class FileDetailAPI(BaseDetailView):
         obj.delete()
 
         # Delete the correlated file
-        path = os.path.join(settings.MEDIA_ROOT, file_param)
+        path = os.path.join(settings.MEDIA_ROOT, file_param.name)
         self.safe_delete(path=path)
 
         msg = 'Registered file deleted successfully!'

@@ -82,7 +82,7 @@ file = {
 
 file_filter_parameter_schema = [
     {
-        'name': 'type',
+        'name': file_fields.meta,
         'in': 'query',
         'required': False,
         'description': 'Unique integer identifying a FileType.',
