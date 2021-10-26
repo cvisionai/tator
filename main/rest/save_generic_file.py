@@ -50,5 +50,9 @@ class SaveGenericFileAPI(BaseListView):
 
         # Create the response back to the user
         new_url = os.path.join(project_id, new_filename)
-        response = {fields.url: new_url}
+        response = {
+            fields.name: params[fields.name],
+            fields.project: project_id,
+            fields.upload_url: upload_url,
+            fields.url: new_url}
         return response

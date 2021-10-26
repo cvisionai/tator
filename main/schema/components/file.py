@@ -10,7 +10,8 @@ file_fields = SimpleNamespace(
     id="id",
     name="name",
     project="project",
-    attributes="attributes")
+    attributes="attributes",
+    meta="meta")
 
 file_post_properties = {
     file_fields.name: {
@@ -29,6 +30,10 @@ file_post_properties = {
         'description': 'Object containing attribute values',
         'type': 'object',
         'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
+    },
+    file_fields.meta: {
+        'type': 'integer',
+        'description': 'Unique integer identifying FileType of this File object.',
     },
 }
 

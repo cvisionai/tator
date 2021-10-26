@@ -46,6 +46,19 @@ class FileListAPI(BaseListView):
             logger.error(log_msg)
             raise exc
 
+        # Does the FileType ID exist?
+        entity_type = params['meta']
+        try:
+            associated_file_type = FileType.objects.get(pk=int(entity_type))
+            if associated_file_type.project.id != project.id:
+                log_msg = f"Provided meta not associated with given project"
+                logging.error(log_msg)
+                raise ValueError(log_msg)
+        except:
+            log_msg = f"Invalid meta provided - {entity_type}"
+            logging.error(log_msg)
+            raise ValueError(log_msg)
+
         # Gather the file file and verify it exists on the server in the right project
         file_param = os.path.basename(params[fields.path])
         file_url = os.path.join(str(project_id), file_param)
@@ -62,7 +75,8 @@ class FileListAPI(BaseListView):
             project=project,
             name=params[fields.name],
             description=description,
-            file=file_path,
+            path=file_path,
+            meta=associated_file_type,
             created_by=self.request.user,
             modified_by=self.request.user)
 

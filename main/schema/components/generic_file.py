@@ -21,6 +21,10 @@ generic_file = {
     'type': 'object',
     'properties': {
         **generic_file_post_properties,
+        generic_file_fields.project: {
+            'type': 'integer',
+            'description': 'Unique integer identifying project to store the file in',
+        },
         generic_file_fields.url: {
             'description': 'Name of generic, non-media file',
             'type': 'string',
