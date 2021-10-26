@@ -118,7 +118,7 @@ class FileDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/FileSpec'},
+                'schema': {'$ref': '#/components/schemas/FileUpdate'},
                 'example': {
                     fields.name: 'New file name',
                 }

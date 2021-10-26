@@ -20,6 +20,8 @@ from ..schema.components.file import file_fields as fields
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._file_query import get_file_queryset
+from ._attributes import patch_attributes
+from ._attributes import validate_attributes
 from ._permissions import ProjectExecutePermission
 from ._util import computeRequiredFields
 from ._util import check_required_fields
@@ -174,6 +176,9 @@ class FileDetailAPI(BaseDetailView):
             delete_path = os.path.join(settings.MEDIA_ROOT, obj.path)
             self.safe_delete(path=delete_path)
             obj.path = file_path
+
+        new_attrs = validate_attributes(params, obj)
+        obj = patch_attributes(new_attrs, obj)
 
         obj.modified_by = self.request.user
         obj.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
