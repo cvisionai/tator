@@ -1504,6 +1504,9 @@ class FileType(Model):
     attribute_types = JSONField(default=list, null=True, blank=True)
     """ Refer to the attribute_types field for the other *Type models
     """
+    dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
+    """ Required as part of building the TatorSearch documents
+    """
 
 @receiver(post_save, sender=FileType)
 def file_type_save(sender, instance, **kwargs):
