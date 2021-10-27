@@ -166,14 +166,14 @@ class FileDetailAPI(BaseDetailView):
         file_param = params.get(fields.path, None)
         if file_param is not None:
             file_param = os.path.basename(file_param)
-            file_url = os.path.join(str(project_id), file_param)
+            file_url = os.path.join(str(obj.project.id), file_param)
             file_path = os.path.join(settings.MEDIA_ROOT, file_url)
             if not os.path.exists(file_path):
                 log_msg = f'Provided file ({file_param}) does not exist in {settings.MEDIA_ROOT}'
                 logging.error(log_msg)
                 raise ValueError(log_msg)
 
-            delete_path = os.path.join(settings.MEDIA_ROOT, obj.path)
+            delete_path = os.path.join(settings.MEDIA_ROOT, obj.path.name)
             self.safe_delete(path=delete_path)
             obj.path = file_path
 
