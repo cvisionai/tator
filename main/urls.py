@@ -32,6 +32,7 @@ from .views import DashboardView
 from .views import AnalyticsLocalizationsView
 from .views import AnalyticsCollectionsView
 from .views import AnalyticsPortalView
+from .views import FilesView
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -57,6 +58,8 @@ urlpatterns = [
          AnalyticsLocalizationsView.as_view(), name='analytics-localizations'),
     path('<int:project_id>/analytics/collections',
          AnalyticsCollectionsView.as_view(), name='analytics-collections'),
+    path('<int:project_id>/analytics/files',
+         FilesView.as_view(), name='files'),
     path('<int:project_id>/dashboards',
          DashboardPortalView.as_view(), name='dashboard-portal'),
     path('<int:project_id>/dashboards/<int:id>',
