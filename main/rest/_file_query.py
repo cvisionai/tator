@@ -185,6 +185,10 @@ def _use_es(project, params):
     use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
     use_es = use_es or use_es_for_attributes
 
+    force_es = params.get('force_es')
+    if force_es:
+        use_es = True
+
     return use_es, filter_ops
 
 def get_file_queryset(project, params):
