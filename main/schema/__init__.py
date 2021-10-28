@@ -20,8 +20,8 @@ from .bucket import BucketListSchema
 from .bucket import BucketDetailSchema
 from .change_log import ChangeLogListSchema
 from .clone_media import CloneMediaListSchema
-from .dashboard import DashboardListSchema
-from .dashboard import DashboardDetailSchema
+from .applet import AppletListSchema
+from .applet import AppletDetailSchema
 from .download_info import DownloadInfoSchema
 from .email import EmailSchema
 from .favorite import FavoriteListSchema

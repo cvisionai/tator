@@ -6,28 +6,28 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._errors import error_responses
 
-from .components.dashboard import dashboard_fields as fields
+from .components.applet import applet_fields as fields
 
 boilerplate = dedent("""\
-Dashboards are customized interfaces (i.e. html files) displayed within the Tator projects.
+Applets are customized interfaces (i.e. html files) displayed within the Tator projects.
 """)
 
-class DashboardListSchema(AutoSchema):
+class AppletListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetDashboardList'
+            operation['operationId'] = 'GetAppletList'
         elif method == 'POST':
-            operation['operationId'] = 'RegisterDashboard'
+            operation['operationId'] = 'RegisterApplet'
         operation['tags'] = ['Tator']
         return operation
 
     def get_description(self, path, method):
         if method == 'GET':
-            short_desc = "Get dashboard list."
+            short_desc = "Get applet list."
 
         elif method == "POST":
-            short_desc = "Create dashboard."
+            short_desc = "Create applet."
 
         return f"{short_desc}\n\n{boilerplate}"
 
@@ -49,7 +49,7 @@ class DashboardListSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/DashboardSpec'},
+                'schema': {'$ref': '#/components/schemas/AppletSpec'},
             }}}
 
         return body
@@ -58,37 +58,37 @@ class DashboardListSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of dashboard list.',
+                'description': 'Successful retrieval of applet list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schemas/Dashboard'},
+                    'items': {'$ref': '#/components/schemas/Applet'},
                 }}},
             }
         elif method == 'POST':
-            responses['201'] = message_with_id_schema('registered dashboard')
+            responses['201'] = message_with_id_schema('registered applet')
         return responses
 
-class DashboardDetailSchema(AutoSchema):
+class AppletDetailSchema(AutoSchema):
 
     def get_operation(self, path, method) -> dict:
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetDashboard'
+            operation['operationId'] = 'GetApplet'
         elif method == 'PATCH':
-            operation['operationId'] = 'UpdateDashboard'
+            operation['operationId'] = 'UpdateApplet'
         elif method == 'DELETE':
-            operation['operationId'] = 'DeleteDashboard'
+            operation['operationId'] = 'DeleteApplet'
         operation['tags'] = ['Tator']
         return operation
     
     def get_description(self, path, method) -> str:
         description = ''
         if method == 'GET':
-            description = 'Get registered dashboard file'
+            description = 'Get registered applet file'
         elif method == 'PATCH':
-            description = 'Updated registered dashboard file'
+            description = 'Updated registered applet file'
         elif method == 'DELETE':
-            description = 'Delete registered dashboard file'
+            description = 'Delete registered applet file'
         return description
 
     def _get_path_parameters(self, path, method) -> list:
@@ -96,7 +96,7 @@ class DashboardDetailSchema(AutoSchema):
             'name': 'id',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying a registered dashboard file.',
+            'description': 'A unique integer identifying a registered applet file.',
             'schema': {'type': 'integer'},
             }]
 
@@ -111,9 +111,9 @@ class DashboardDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/DashboardSpec'},
+                'schema': {'$ref': '#/components/schemas/AppletSpec'},
                 'example': {
-                    fields.name: 'New dashboard name',
+                    fields.name: 'New applet name',
                 }
             }}}
         return body
@@ -122,11 +122,11 @@ class DashboardDetailSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of dashboard.',
+                'description': 'Successful retrieval of applet.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/Dashboard',
+                    '$ref': '#/components/schemas/Applet',
                 }}},
             }
         elif method == 'DELETE':
-            responses['200'] = message_schema('deletion', 'registered dashboard')
+            responses['200'] = message_schema('deletion', 'registered applet')
         return responses

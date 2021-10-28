@@ -27,8 +27,8 @@ from .bucket import bucket_update
 from .bucket import bucket
 from .change_log import change_log
 from .clone_media import clone_media_spec
-from .dashboard import dashboard
-from .dashboard import dashboard_spec
+from .applet import applet
+from .applet import applet_spec
 from .download_info import download_info_spec
 from .download_info import download_info
 from .email import email_spec

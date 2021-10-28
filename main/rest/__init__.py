@@ -19,8 +19,8 @@ from .bucket import BucketListAPI
 from .bucket import BucketDetailAPI
 from .change_log import ChangeLogListAPI
 from .clone_media import CloneMediaListAPI
-from .dashboard import DashboardListAPI
-from .dashboard import DashboardDetailAPI
+from .applet import AppletListAPI
+from .applet import AppletDetailAPI
 from .download_info import DownloadInfoAPI
 from .email import EmailAPI
 from .favorite import FavoriteListAPI
