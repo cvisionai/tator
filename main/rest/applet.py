@@ -6,7 +6,7 @@ from django.db import transaction
 from django.conf import settings
 
 from ..models import Project
-from ..models import Applet
+from ..models import Dashboard
 from ..models import User
 from ..models import database_qs
 from ..schema import AppletListSchema
@@ -26,12 +26,12 @@ class AppletListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _get(self, params: dict) -> dict:
-        qs = Applet.objects.filter(project=params['project']).order_by('id')
+        qs = Dashboard.objects.filter(project=params['project']).order_by('id')
         return database_qs(qs)
 
     def get_queryset(self) -> dict:
         params = parse(self.request)
-        qs = Applet.objects.filter(project__id=params['project'])
+        qs = Dashboard.objects.filter(project__id=params['project'])
         return qs
 
     def _post(self, params: dict) -> dict:
@@ -57,7 +57,7 @@ class AppletListAPI(BaseListView):
         description = params.get(fields.description, None)
         categories = params.get(fields.categories, None)
 
-        new_applet = Applet.objects.create(
+        new_applet = Dashboard.objects.create(
             categories=categories,
             description=description,
             html_file=applet_path,
@@ -80,7 +80,7 @@ class AppletDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         # Grab the applet object and delete it from the database
-        applet = Applet.objects.get(pk=params['id'])
+        applet = Dashboard.objects.get(pk=params['id'])
         html_file = applet.html_file
         applet.delete()
 
@@ -92,12 +92,12 @@ class AppletDetailAPI(BaseDetailView):
         return {'message': msg}
 
     def _get(self, params):
-        return database_qs(Applet.objects.filter(pk=params['id']))[0]
+        return database_qs(Dashboard.objects.filter(pk=params['id']))[0]
 
     @transaction.atomic
     def _patch(self, params) -> dict:
         applet_id = params["id"]
-        obj = Applet.objects.get(pk=applet_id)
+        obj = Dashboard.objects.get(pk=applet_id)
 
         name = params.get(fields.name, None)
         if name is not None:
@@ -132,4 +132,4 @@ class AppletDetailAPI(BaseDetailView):
     def get_queryset(self):
         """ Returns a queryset of all registered applet files
         """
-        return Applet.objects.all()
+        return Dashboard.objects.all()

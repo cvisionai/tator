@@ -1478,15 +1478,15 @@ class AnnouncementToUser(Model):
     announcement = ForeignKey(Announcement, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=CASCADE)
 
-class Applet(Model):
-    """ Standalone HTML page shown as an applet within a project.
+class Dashboard(Model):
+    """ Standalone HTML page shown as an dashboard/applet within a project.
     """
     categories = ArrayField(CharField(max_length=128), default=list, null=True)
     """ List of categories associated with the applet. This field is currently ignored. """
     description = CharField(max_length=1024, blank=True)
     """ Description of the applet. """
     html_file = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
-    """ Applet's HTML file """
+    """ Dashboard/Applet's HTML file """
     name = CharField(max_length=128)
     """ Name of the applet """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
