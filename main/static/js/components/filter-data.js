@@ -40,6 +40,7 @@ class FilterData {
     this.mediaTypes = this._modelData.getStoredMediaTypes();
     this.versions = this._modelData.getStoredVersions();
     this.sections = this._modelData.getStoredSections();
+    this.users = this._modelData.getStoredMemberships();
 
     this.algorithms = [];
     var algorithms = this._modelData.getStoredAlgorithms();
@@ -77,6 +78,14 @@ class FilterData {
       let locType = this.localizationTypes[idx];
       localizationTypeOptions.push(`${locType.dtype}/${locType.name} (ID:${locType.id})`);
     }
+
+    // Allow options to filter by users
+    var userNames = [];
+    for (let idx = 0; idx < this.users.length; idx++) {
+      let user = this.users[idx];
+      userNames.push(`${user.username} (ID:${user.user})`);
+    }
+    userNames.sort();
 
     // Versions aren't typically part of the localization type's user attribute list.
     // Pretend that it's an attribute with the name _version and apply it to each
@@ -140,8 +149,15 @@ class FilterData {
           choices: localizationTypeOptions,
           name: "_dtype",
           dtype: "enum"
-        }
+        };
         entityType.attribute_types.push(dtypeAttribute);
+
+        var userAttribute = {
+          choices: userNames,
+          name: "_user",
+          dtype: "enum"
+        };
+        entityType.attribute_types.push(userAttribute);
 
         this._allTypes.push(entityType);
       }

@@ -17,6 +17,7 @@ class TatorData {
     this._stateTypes = [];
     this._stateTypeNames = [];
     this._stateTypeAssociations = {media: [], frame: [], localization: []};
+    this._memberships = [];
 
     this._maxFetchCount = 100000;
   }
@@ -27,6 +28,10 @@ class TatorData {
 
   getProjectId() {
     return this._project;
+  }
+
+  getStoredMemberships() {
+    return this._memberships;
   }
 
   getStoredLocalizationTypes() {
@@ -73,6 +78,35 @@ class TatorData {
     await this.getAllSections();
     await this.getAllAlgorithms();
     await this.getAllStateTypes();
+    await this.getAllUsers();
+  }
+
+  /**
+   *
+   */
+  async getAllUsers() {
+
+    var donePromise = new Promise(resolve => {
+      const restUrl = "/rest/Memberships/" + this._project;
+      const dataPromise = fetchRetry(restUrl, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+      });
+
+      dataPromise
+      .then(response => response.json())
+      .then(memberships => {
+        this._memberships = memberships;
+        resolve();
+      });
+    });
+
+    await donePromise;
   }
 
   /**
@@ -708,7 +742,7 @@ class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
+            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
@@ -724,6 +758,12 @@ class TatorData {
           }
           else if (filter.field == "_dtype") {
             dtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
+          }
+          else if (filter.field == "_user") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "_user";
+            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            localizationFilters.push(newFilter);
           }
           else {
             localizationFilters.push(filter);
@@ -825,7 +865,7 @@ class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(filter.value.split('(ID:')[1].replace(")",""));
+            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
@@ -848,7 +888,7 @@ class TatorData {
         }
       });
     }
-     
+
      // If we're given a map of state typeIds, and user hasn't filtered on a type
      if (stateMap !== null && typeIds.length === 0) {
        console.log(stateMap);

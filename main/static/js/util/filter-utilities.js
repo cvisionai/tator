@@ -44,6 +44,7 @@ class FilterUtilities {
     // #TODO Add more options for the different dtypes
     if (selectedAttributeType.name == "_version" ||
         selectedAttributeType.name == "_section" ||
+        selectedAttributeType.name == "_user" ||
         selectedAttributeType.name == "_dtype") {
       choices.push({"value": "=="});
     }
