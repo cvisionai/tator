@@ -14,7 +14,7 @@ from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
 import yaml
 
-from .models import Applet
+from .models import Dashboard
 from .models import Organization
 from .models import Project
 from .models import Media
@@ -151,7 +151,7 @@ class DashboardView(ProjectBase, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        dashboard = get_object_or_404(Applet, pk=self.kwargs['id'])
+        dashboard = get_object_or_404(Dashboard, pk=self.kwargs['id'])
         context['dashboard'] = dashboard
         return context
 
