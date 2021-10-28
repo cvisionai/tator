@@ -14,7 +14,7 @@ from ._permissions import ProjectExecutePermission
 logger = logging.getLogger(__name__)
 
 class SaveGenericFileAPI(BaseListView):
-    """ Saves a generic non-media file used for reports and dashboards
+    """ Saves a generic non-media file used for reports and applets
     """
 
     schema = SaveGenericFileSchema()
