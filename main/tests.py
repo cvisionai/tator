@@ -2495,7 +2495,7 @@ class AudioFileTestCase(APITestCase, FileMixin):
     def test_audio(self):
         self._test_methods('audio')
 
-class FileTestCase(APITestCase, FileMixin):
+class AuxiliaryFileTestCase(APITestCase, FileMixin):
     def setUp(self):
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
@@ -2511,8 +2511,8 @@ class FileTestCase(APITestCase, FileMixin):
             attribute_types=create_test_attribute_types(),
         )
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
-        self.list_uri = 'Files'
-        self.detail_uri = 'File'
+        self.list_uri = 'AuxiliaryFiles'
+        self.detail_uri = 'AuxiliaryFile'
         self.create_json = {'path': 'asdf', 'name': 'asdf1'}
         self.patch_json = {'path': 'asdf', 'name': 'asdf'}
 
@@ -2527,7 +2527,7 @@ class ResourceTestCase(APITestCase):
                    'image': 'ImageFiles',
                    'thumbnail': 'ImageFiles',
                    'thumbnail_gif': 'ImageFiles',
-                   'attachment': 'Files'}
+                   'attachment': 'AuxiliaryFiles'}
 
     def setUp(self):
         logging.disable(logging.CRITICAL)
