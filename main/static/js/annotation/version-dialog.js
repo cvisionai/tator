@@ -32,7 +32,12 @@ class VersionDialog extends ModalDialog {
     tr.appendChild(thName);
 
     const thView = document.createElement("th");
+    thView.textContent = "Viewable";
     tr.appendChild(thView);
+
+    const thSelect = document.createElement("th");
+    thSelect.textContent = "Editable";
+    tr.appendChild(thSelect);
 
     const spanView = document.createElement("span");
     spanView.setAttribute("class", "sr-only");
@@ -40,9 +45,11 @@ class VersionDialog extends ModalDialog {
     thView.appendChild(spanView);
 
     this._buttons = [];
+    this._viewables = [];
   }
 
   init(versions, selected_idx) {
+    this._versions = versions;
     // Initializes the dialog.
     // versions: returned object from Version endpoint.
     for (const version of versions) {
@@ -57,6 +64,13 @@ class VersionDialog extends ModalDialog {
       tdName.textContent = version.name;
       tr.appendChild(tdName);
 
+      const tdViewable = document.createElement("td");
+      tdViewable.setAttribute("class", "px-2");
+      tr.appendChild(tdViewable);
+      let viewable = document.createElement("bool-input");
+      viewable.setValue(false);
+      tdViewable.appendChild(viewable);
+
       const tdSelect = document.createElement("td");
       tdSelect.setAttribute("class", "px-2");
       tr.appendChild(tdSelect);
@@ -66,19 +80,28 @@ class VersionDialog extends ModalDialog {
       select.init(version, false);
       tdSelect.appendChild(select);
       this._buttons.push(select);
+      this._viewables.push(viewable);
     }
 
     this._buttons[selected_idx].select(true);
+    this._viewables[selected_idx].setValue(true);
+    this._viewables[selected_idx].setDisable(true);
   }
 
   _handleSelect(evt) {
     const id = evt.detail.version.id;
-    for (const button of this._buttons) {
+    for (let idx = 0; idx < this._buttons.length; idx++) {
+      const button = this._buttons[idx];
+      const viewable = this._viewables[idx];
       const sameVersion = button._version.id == id;
       if (!sameVersion) {
         button.deselect();
+        viewable.setValue(false);
+        viewable.setDisable(false);
       } else {
         button.select(true);
+        viewable.setValue(true);
+        viewable.setDisable(true);
       }
     }
     this.dispatchEvent(new CustomEvent("versionSelect", {
