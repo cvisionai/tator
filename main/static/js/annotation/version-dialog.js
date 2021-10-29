@@ -86,10 +86,37 @@ class VersionDialog extends ModalDialog {
     this._buttons[selected_idx].select(true);
     this._viewables[selected_idx].setValue(true);
     this._viewables[selected_idx].setDisable(true);
+    this._updatedDependentLayers(selected_idx);
   }
 
+  // A selected layer might have dependent layers that come for the ride.
+  _updatedDependentLayers(selected_idx)
+  {
+    const selected_version = this._versions[selected_idx];
+    const bases = selected_version.bases;
+    for (let idx = 0; idx < this._viewables.length; idx++) {
+      const button = this._buttons[idx];
+      const viewable = this._viewables[idx];
+      // If this row is included make it read only as well
+      if (bases.indexOf(button._version.id) >= 0)
+      {
+        viewable.setDisable(true);
+        viewable.setValue(true);
+      }
+      else if (button._version.id == selected_version.id)
+      {
+        // no-op
+      }
+      else
+      {
+        viewable.setDisable(false);
+        viewable.setValue(false);
+      }
+    }
+  }
   _handleSelect(evt) {
     const id = evt.detail.version.id;
+    let selected_idx = null;
     for (let idx = 0; idx < this._buttons.length; idx++) {
       const button = this._buttons[idx];
       const viewable = this._viewables[idx];
@@ -102,8 +129,10 @@ class VersionDialog extends ModalDialog {
         button.select(true);
         viewable.setValue(true);
         viewable.setDisable(true);
+        selected_idx = idx;
       }
     }
+    this._updatedDependentLayers(selected_idx);
     this.dispatchEvent(new CustomEvent("versionSelect", {
       "detail": {
         "version": evt.detail.version,
