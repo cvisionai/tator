@@ -69,6 +69,7 @@ class VersionDialog extends ModalDialog {
       tr.appendChild(tdViewable);
       let viewable = document.createElement("bool-input");
       viewable.setValue(false);
+      viewable.addEventListener("change", this._handleViewableChange.bind(this));
       tdViewable.appendChild(viewable);
 
       const tdSelect = document.createElement("td");
@@ -83,6 +84,7 @@ class VersionDialog extends ModalDialog {
       this._viewables.push(viewable);
     }
 
+    this._selected_idx = selected_idx;
     this._buttons[selected_idx].select(true);
     this._viewables[selected_idx].setValue(true);
     this._viewables[selected_idx].setDisable(true);
@@ -113,6 +115,24 @@ class VersionDialog extends ModalDialog {
         viewable.setValue(false);
       }
     }
+  }
+
+  _handleViewableChange(evt) {
+    let viewables = [];
+    for (let idx = 0; idx < this._viewables.length; idx++) {
+      const viewable = this._viewables[idx];
+      const version = this._versions[idx];
+      if (viewable.getValue() == true)
+      {
+        viewables.push(version.id);
+      }
+    }
+    this.dispatchEvent(new CustomEvent("versionSelect", {
+      "detail": {
+        "version": this._versions[this._selected_idx],
+        "viewables": viewables
+      }
+    }));
   }
   _handleSelect(evt) {
     const id = evt.detail.version.id;
