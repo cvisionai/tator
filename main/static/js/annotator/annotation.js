@@ -1162,8 +1162,21 @@ class AnnotationCanvas extends TatorElement
     this._canEdit = hasPermission(val, "Can Edit");
   }
 
-  _determineCanEdit() {
-    return this._canEdit;
+  _determineCanEdit(localization) {
+    if (localization == undefined)
+    {
+      localization = this.activeLocalization;
+    }
+    if (localization == undefined)
+    {
+      return this._canEdit;
+    }
+    else
+    {
+      let validVersion = this._data.getVersion().bases.indexOf(localization.version) >= 0;
+      validVersion |= this._data.getVersion().id == localization.version;
+      return this._canEdit && validVersion;
+    }
   }
 
   displayErrorMessage(message) {
@@ -1741,7 +1754,7 @@ class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.SELECT)
     {
-      if (event.code == 'Delete' && this._determineCanEdit())
+      if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
       {
         this.deleteLocalization(this.activeLocalization);
         this.activeLocalization=null;
@@ -1784,7 +1797,7 @@ class AnnotationCanvas extends TatorElement
     }
 
     if ((this._mouseMode == MouseMode.SELECT ||
-        this._mouseMode == MouseMode.MOVE ) && this._determineCanEdit())
+        this._mouseMode == MouseMode.MOVE ) && this._determineCanEdit(this.activeLocalization))
     {
       if (event.key == 'ArrowRight' ||
           event.key == 'ArrowLeft' ||
@@ -2541,7 +2554,7 @@ class AnnotationCanvas extends TatorElement
         }
       }
     }
-    if (this._mouseMode == MouseMode.SELECT && this._determineCanEdit())
+    if (this._mouseMode == MouseMode.SELECT && this._determineCanEdit(this.activeLocalization))
     {
       this._impactVector = null;
       var resizeType = this.determineLocalizationResizeType(location, this.activeLocalization);
@@ -2758,7 +2771,7 @@ class AnnotationCanvas extends TatorElement
           this._textOverlay.classList.add("select-not-allowed");
         }
         // Grab the target
-        else if (this._determineCanEdit()) {
+        else if (this._determineCanEdit(localization)) {
             this._textOverlay.classList.add("select-grabbing");
         }
       }
@@ -2767,7 +2780,7 @@ class AnnotationCanvas extends TatorElement
     {
       var resizeType = null;
       this._impactVector=null;
-      if (this._determineCanEdit()) {
+      if (this._determineCanEdit(this.activeLocalization)) {
         resizeType = this.determineLocalizationResizeType(clickLocation, this.activeLocalization);
       }
 
@@ -2783,7 +2796,7 @@ class AnnotationCanvas extends TatorElement
         this._impactVector=resizeType[1];
         this._textOverlay.classList.add("select-"+resizeType[0]);
       }
-      else if (localization == this.activeLocalization && this._determineCanEdit())
+      else if (localization == this.activeLocalization && this._determineCanEdit(localization))
       {
         this._textOverlay.classList.add("select-grabbing");
       }
