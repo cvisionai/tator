@@ -3440,7 +3440,8 @@ class AnnotationCanvas extends TatorElement
     }
 
     if (this._redrawObj !== null && typeof this._redrawObj !== "undefined") {
-      if (this._data.getVersion().id != this._redrawObj.version)
+      // Only do cloning if the object selected is in a parent layer to the selected version.
+      if (this._data.getVersion().bases.indexOf(this._redrawObj.version) >= 0)
       {
         let tempObj = Object.assign({}, this._redrawObj);
         tempObj.x = requestObj.x;
@@ -3668,7 +3669,7 @@ class AnnotationCanvas extends TatorElement
     }
     const objDescription = this.getObjectDescription(localization);
     let original_meta = localization.meta;
-    if (this._data.getVersion().id != localization.version)
+    if (this._data.getVersion().bases.indexOf(localization.version) >= 0)
     {
       console.info("Modifying a localization from another layer!");
       this.cloneToNewVersion(localization, this._data.getVersion().id);
