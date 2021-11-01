@@ -149,6 +149,7 @@ class AttributePanel extends TatorElement {
   }
 
   _setBuiltInAttributes(values) {
+
     for (const widget of this._builtInAttrsDiv.children) {
       const name = widget.getAttribute("name");
 
@@ -539,6 +540,13 @@ class AttributePanel extends TatorElement {
       } else {
         widget.required = column.required;
       }
+
+      // Show description hover text (if existing)
+      if (typeof column.description !== "undefined" && column.description !== "") {
+        widget.setAttribute("title", column.description);
+      } //else {
+        //widget.setAttribute("title", `Accepts "${column.dtype}" data input`);
+      //}
 
       if (typeof this._permission !== "undefined" && !ignorePermission) {
         widget.permission = this._permission;
