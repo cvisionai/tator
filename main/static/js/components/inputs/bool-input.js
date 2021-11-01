@@ -42,6 +42,7 @@ class BoolInput extends TatorElement {
     const span = document.createElement("span");
     span.setAttribute("class", "radio-slide rounded-2");
     controls.appendChild(span);
+    this._span = span;
 
     this._on.addEventListener("change", () => {
       this.dispatchEvent(new Event("change"));
@@ -128,6 +129,24 @@ class BoolInput extends TatorElement {
       this._off.checked = true;
       this._on.removeAttribute("checked");
       this._off.setAttribute("checked", "");
+    }
+  }
+
+  setDisable(val)
+  {
+    if (val)
+    {
+      this._on.setAttribute("disabled", true);
+      this._off.setAttribute("disabled", true);
+      this._span.style.backgroundColor = "#6d7a96";
+      this._span.style.cursor = "not-allowed";
+    }
+    else
+    {
+      this._on.removeAttribute("disabled");
+      this._off.removeAttribute("disabled");
+      this._span.style.backgroundColor = null;
+      this._span.style.cursor = null;
     }
   }
 

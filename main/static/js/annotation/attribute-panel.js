@@ -31,6 +31,10 @@ class AttributePanel extends TatorElement {
     this._innerDiv.appendChild(this._innerDiv2);
 
     this._attrColumns = 1;
+    this._versionWidget = document.createElement("text-input");
+    this._versionWidget.setAttribute("name", "Version");
+    this._versionWidget.permission = "View Only";
+    this._div.appendChild(this._versionWidget);
 
     this._builtInAttrLabel = document.createElement("div");
     this._builtInAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
@@ -115,7 +119,7 @@ class AttributePanel extends TatorElement {
     this._permission = val;
     for (const widget of this._div.children) {
       // Specific attribute fields in this panel are always disabled
-      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By") {
+      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By" && widget.getAttribute("name") != "Version") {
         // Widget may have been marked as disabled, and its permission have already been
         // set appropriately.
         if (!widget.disabled) {
@@ -151,11 +155,6 @@ class AttributePanel extends TatorElement {
     this._builtInAttrsDiv.appendChild(widget);
 
     widget = document.createElement("text-input");
-    widget.setAttribute("name", "Version");
-    widget.permission = "View Only";
-    this._builtInAttrsDiv.appendChild(widget);
-
-    widget = document.createElement("text-input");
     widget.setAttribute("name", "Created Datetime");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
@@ -180,25 +179,6 @@ class AttributePanel extends TatorElement {
       }
       else if (name == "Type") {
         widget.setValue(values.meta);
-      }
-      else if (name == "Version") {
-
-        let version = null;
-        let foundVersion = false;
-        for (let index = 0; index < this._versionList.length; index++) {
-          if (this._versionList[index].result.id == values.modified_by) {
-            foundVersion = true;
-            version = this._versionList[index].result.name;
-            break;
-          }
-        }
-
-        if (!foundVersion) {
-          this._getVersion(values.version, widget);
-        }
-        else {
-          widget.setValue(version);
-        }
       }
       else if (name == "Created Datetime") {
         widget.setValue(values.created_datetime);
@@ -319,7 +299,7 @@ class AttributePanel extends TatorElement {
     // Remove existing attribute widgets.
     while (true) {
       const child = this._div.lastChild;
-      if (child === this._idWidget || child === this._createdByWidget) {
+      if (child === this._idWidget || child === this._createdByWidget || child == this._versionWidget) {
         break;
       }
       this._div.removeChild(child);
@@ -819,6 +799,24 @@ class AttributePanel extends TatorElement {
       this._createdByWidget.setValue(createdByUsername);
     }
 
+
+    let version = null;
+    let foundVersion = false;
+    for (let index = 0; index < this._versionList.length; index++) {
+      if (this._versionList[index].result.id == values.modified_by) {
+        foundVersion = true;
+        version = this._versionList[index].result.name;
+        break;
+      }
+    }
+
+    if (!foundVersion) {
+      this._getVersion(values.version, this._versionWidget);
+    }
+    else {
+      this._versionWidget.setValue(version);
+    }
+
     // Check if the slider needs to be updated if there's different track data now.
     // If so, then update it.
     let trackSegmentsUpdated = false;
@@ -874,7 +872,7 @@ class AttributePanel extends TatorElement {
       // Only set the name if it is defined
       if (value != undefined) {
         widget.setValue(values.attributes[name]);
-      } else if (!["ID", "Created By"].includes(name)) {
+      } else if (!["ID", "Created By", "Version"].includes(name)) {
         widget.reset();
       }
     }
