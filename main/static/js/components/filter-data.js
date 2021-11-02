@@ -129,6 +129,18 @@ class FilterData {
         };
         entityType.attribute_types.push(mediaIdAttribute);
 
+        var createdDatetimeAttribute = {
+          name: "_created_datetime",
+          dtype: "datetime"
+        };
+        entityType.attribute_types.push(createdDatetimeAttribute);
+
+        var modifiedDatetimeAttribute = {
+          name: "_modified_datetime",
+          dtype: "datetime"
+        };
+        entityType.attribute_types.push(modifiedDatetimeAttribute);
+
         this._allTypes.push(entityType);
       }
     }
@@ -158,6 +170,18 @@ class FilterData {
           dtype: "enum"
         };
         entityType.attribute_types.push(userAttribute);
+
+        var createdDatetimeAttribute = {
+          name: "_created_datetime",
+          dtype: "datetime"
+        };
+        entityType.attribute_types.push(createdDatetimeAttribute);
+
+        var modifiedDatetimeAttribute = {
+          name: "_modified_datetime",
+          dtype: "datetime"
+        };
+        entityType.attribute_types.push(modifiedDatetimeAttribute);
 
         this._allTypes.push(entityType);
       }

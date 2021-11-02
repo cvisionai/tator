@@ -58,6 +58,10 @@ class FilterUtilities {
     else if (dtype == "bool") {
       choices.push({"value": "=="});
     }
+    else if (dtype == "datetime") {
+      choices.push({"value": "After"});
+      choices.push({"value": "Before"});
+    }
     else {
       choices.push({"value": "Includes"});
       choices.push({"value": "=="});

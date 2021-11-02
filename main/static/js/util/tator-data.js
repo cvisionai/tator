@@ -529,8 +529,75 @@ class TatorData {
   }
 
   /**
+   * Converts the given attribute name to a Tator search compliant string
+   * @param {*} attrName - Name of attribute to convert
+   * @returns {string} - Tator search compliant attribute name
+   */
+   _convertAttributeNameForSearch(attrName) {
+    var searchName = attrName.replace(/ /g,"\\ ")
+    searchName = searchName.replace(/\(/g,"\\(")
+    searchName = searchName.replace(/\)/g,"\\)")
+    return searchName;
+  }
+
+  /**
+   * Utility function to process date filters
+   *
+   * @param {array} dateArray - array of objects representing a date range for the search
+   * @param {string} attrName - associated attribute name
+   * @param {string} endType - start|end
+   * @param {string} value - isoformatted date
+   * @returns {array} - dateArray modified with given inputs
+   */
+   _applyDateRange(dateArray, attrName, endType, value) {
+    let idx = 0;
+    while (idx < dateArray.length) {
+      if (dateArray[idx].name == attrName) {
+        if (endType == "start") {
+          dateArray[idx].start = value;
+        }
+        else if (endType == "end") {
+          dateArray[idx].end = value;
+        }
+        break;
+      }
+      idx++;
+    }
+
+    if (idx == dateArray.length) {
+      if (endType == "start") {
+        dateArray.push({
+          name: attrName,
+          start: value,
+          end: "*"
+        });
+      }
+      else if (endType == "end") {
+        dateArray.push({
+          name: attrName,
+          start: "*",
+          end: value
+        });
+      }
+    }
+
+    return dateArray;
+  }
+
+  /**
+   * Converts given date range object to a Tator search compliant string
+   * @param {Object} dateRange - see _applyDateRange output
+   * @returns {string} - corresponding search compliant string
+   */
+  _convertDateRangeForTator(dateRange) {
+    var attrName = this._convertAttributeNameForSearch(dateRange.name);
+    var paramStr = `${attrName}:{${dateRange.start} TO ${dateRange.end}}`;
+    return paramStr;
+  }
+
+  /**
    * @param {FilterConditionData} filter - Filter to convert
-   * @returns {string} Tator REST compliant parameter string
+   * @returns {string} - Tator REST compliant parameter string
    */
   _convertFilterForTator(filter) {
 
@@ -547,9 +614,7 @@ class TatorData {
     }
 
     // Lucene search string requires spaces to have the backlash preceding it
-    var field = filter.field.replace(/ /g,"\\ ")
-    field = field.replace(/\(/g,"\\(")
-    field = field.replace(/\)/g,"\\)")
+    var field = this._convertAttributeNameForSearch(filter.field);
     var value = filter.value.replace(/ /g,"\\ ")
     value = value.replace(/\(/g,"\\(")
     value = value.replace(/\)/g,"\\)")
@@ -587,11 +652,28 @@ class TatorData {
 
     var paramString = "";
 
+    var finalAnnotationFilters = [];
+    var annotationDateFilters = [];
+    for (const filter of annotationFilterData) {
+      if (filter.modifier == "Before") {
+        annotationDateFilters = this._applyDateRange(annotationDateFilters, filter.field, "end", filter.value);
+      }
+      else if (filter.modifier == "After") {
+        annotationDateFilters = this._applyDateRange(annotationDateFilters, filter.field, "start", filter.value);
+      }
+      else {
+        finalAnnotationFilters.push(this._convertFilterForTator(filter));
+      }
+    }
+    for (const dateFilter of annotationDateFilters) {
+      finalAnnotationFilters.push(this._convertDateRangeForTator(dateFilter));
+    }
+
     var annotationSearch = "";
-    for (let idx = 0; idx < annotationFilterData.length; idx++) {
-      var filter = annotationFilterData[idx];
-      annotationSearch += encodeURIComponent(this._convertFilterForTator(filter));
-      if (idx < annotationFilterData.length - 1) {
+    for (let idx = 0; idx < finalAnnotationFilters.length; idx++) {
+      var filter = finalAnnotationFilters[idx];
+      annotationSearch += encodeURIComponent(filter);
+      if (idx < finalAnnotationFilters.length - 1) {
         annotationSearch += encodeURIComponent(" AND ");
       }
     }
@@ -600,11 +682,29 @@ class TatorData {
       paramString += "&search=" + annotationSearch;
     }
 
+    var finalMediaFilters = [];
+    var mediaDateFilters = [];
+    for (const filter of mediaFilterData) {
+      if (filter.modifier == "Before") {
+        mediaDateFilters = this._applyDateRange(mediaDateFilters, filter.field, "end", filter.value);
+      }
+      else if (filter.modifier == "After") {
+        mediaDateFilters = this._applyDateRange(mediaDateFilters, filter.field, "start", filter.value);
+      }
+      else {
+        finalMediaFilters.push(this._convertFilterForTator(filter));
+      }
+    }
+    for (const dateFilter of mediaDateFilters) {
+      finalMediaFilters.push(this._convertDateRangeForTator(dateFilter));
+    }
+
+
     var mediaSearch = "";
-    for (let idx = 0; idx < mediaFilterData.length; idx++) {
-      var filter = mediaFilterData[idx];
-      mediaSearch += encodeURIComponent(this._convertFilterForTator(filter));
-      if (idx < mediaFilterData.length - 1) {
+    for (let idx = 0; idx < finalMediaFilters.length; idx++) {
+      var filter = finalMediaFilters[idx];
+      mediaSearch += encodeURIComponent(filter);
+      if (idx < finalMediaFilters.length - 1) {
         mediaSearch += encodeURIComponent(" AND ");
       }
     }
