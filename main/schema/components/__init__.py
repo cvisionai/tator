@@ -27,8 +27,8 @@ from .bucket import bucket_update
 from .bucket import bucket
 from .change_log import change_log
 from .clone_media import clone_media_spec
-from .dashboard import dashboard
-from .dashboard import dashboard_spec
+from .applet import applet
+from .applet import applet_spec
 from .download_info import download_info_spec
 from .download_info import download_info
 from .email import email_spec
@@ -36,8 +36,14 @@ from .email import email_attachment_spec
 from .favorite import favorite_spec
 from .favorite import favorite_update
 from .favorite import favorite
-from .html_file import html_file
-from .html_file import html_file_spec
+from .file import file
+from .file import file_spec
+from .file import file_update
+from. file_type import file_type_update
+from. file_type import file_type_spec
+from .file_type import file_type
+from .generic_file import generic_file
+from .generic_file import generic_file_spec
 from .invitation import (
     invitation_spec,
     invitation_update,
@@ -125,7 +131,7 @@ from ._media_definitions import video_definition
 from ._media_definitions import audio_definition
 from ._media_definitions import image_definition
 from ._media_definitions import multi_definition
-from ._media_definitions import file_definition
+from ._media_definitions import auxiliary_file_definition
 from ._media_definitions import feed_definition
 from ._media_definitions import live_definition
 from ._media_definitions import live_update_definition

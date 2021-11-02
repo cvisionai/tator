@@ -3,6 +3,8 @@ from django.db import transaction
 import logging
 
 from ..models import (
+    FileType,
+    File,
     MediaType,
     Media,
     LocalizationType,
@@ -28,6 +30,7 @@ from ._permissions import ProjectFullControlPermission
 logger = logging.getLogger(__name__)
 
 ENTITY_TYPES = {
+    "FileType": (FileType, File),
     "MediaType": (MediaType, Media),
     "LocalizationType": (LocalizationType, Localization),
     "StateType": (StateType, State),

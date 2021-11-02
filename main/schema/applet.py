@@ -2,36 +2,32 @@ from textwrap import dedent
 
 from rest_framework.schemas.openapi import AutoSchema
 
-from ._attributes import attribute_filter_parameter_schema
 from ._message import message_schema
 from ._message import message_with_id_schema
 from ._errors import error_responses
 
-from .components.file import file_fields as fields
-from .components.file import file_filter_parameter_schema
+from .components.applet import applet_fields as fields
 
 boilerplate = dedent("""\
-Non-media assocaited files can be stored within the project along with user-defined attributes.
-Unlike temporary files, these are permanent. These do not include applet files and algorithm
-workflow files.
+Applets are customized interfaces (i.e. html files) displayed within the Tator projects.
 """)
 
-class FileListSchema(AutoSchema):
+class AppletListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetFileList'
+            operation['operationId'] = 'GetAppletList'
         elif method == 'POST':
-            operation['operationId'] = 'CreateFile'
+            operation['operationId'] = 'RegisterApplet'
         operation['tags'] = ['Tator']
         return operation
 
     def get_description(self, path, method):
         if method == 'GET':
-            short_desc = "Get non-media associated File object list."
+            short_desc = "Get applet list."
 
         elif method == "POST":
-            short_desc = "Create generic, non-media associated File object."
+            short_desc = "Create applet."
 
         return f"{short_desc}\n\n{boilerplate}"
 
@@ -44,11 +40,8 @@ class FileListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method) -> list:
-        params = []
-        if method in ['GET']:
-            params = file_filter_parameter_schema + attribute_filter_parameter_schema
-        return params
+    def _get_filter_parameters(self, path, method):
+        return {}
 
     def _get_request_body(self, path, method):
         body = {}
@@ -56,7 +49,7 @@ class FileListSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/FileSpec'},
+                'schema': {'$ref': '#/components/schemas/AppletSpec'},
             }}}
 
         return body
@@ -65,37 +58,37 @@ class FileListSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of list.',
+                'description': 'Successful retrieval of applet list.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
-                    'items': {'$ref': '#/components/schemas/File'},
+                    'items': {'$ref': '#/components/schemas/Applet'},
                 }}},
             }
         elif method == 'POST':
-            responses['201'] = message_with_id_schema('registered file')
+            responses['201'] = message_with_id_schema('registered applet')
         return responses
 
-class FileDetailSchema(AutoSchema):
+class AppletDetailSchema(AutoSchema):
 
     def get_operation(self, path, method) -> dict:
         operation = super().get_operation(path, method)
         if method == 'GET':
-            operation['operationId'] = 'GetFile'
+            operation['operationId'] = 'GetApplet'
         elif method == 'PATCH':
-            operation['operationId'] = 'UpdateFile'
+            operation['operationId'] = 'UpdateApplet'
         elif method == 'DELETE':
-            operation['operationId'] = 'DeleteFile'
+            operation['operationId'] = 'DeleteApplet'
         operation['tags'] = ['Tator']
         return operation
     
     def get_description(self, path, method) -> str:
         description = ''
         if method == 'GET':
-            description = 'Get registered non-media File object'
+            description = 'Get registered applet file'
         elif method == 'PATCH':
-            description = 'Updated registered non-media File object'
+            description = 'Updated registered applet file'
         elif method == 'DELETE':
-            description = 'Delete registered non-media File object'
+            description = 'Delete registered applet file'
         return description
 
     def _get_path_parameters(self, path, method) -> list:
@@ -103,13 +96,13 @@ class FileDetailSchema(AutoSchema):
             'name': 'id',
             'in': 'path',
             'required': True,
-            'description': 'A unique integer identifying a registered File object.',
+            'description': 'A unique integer identifying a registered applet file.',
             'schema': {'type': 'integer'},
             }]
 
         return parameters
 
-    def _get_filter_parameters(self, path, method) -> list:
+    def _get_filter_parameters(self, path, method):
         return []
 
     def _get_request_body(self, path, method) -> dict:
@@ -118,9 +111,9 @@ class FileDetailSchema(AutoSchema):
             body = {
                 'required': True,
                 'content': {'application/json': {
-                'schema': {'$ref': '#/components/schemas/FileUpdate'},
+                'schema': {'$ref': '#/components/schemas/AppletSpec'},
                 'example': {
-                    fields.name: 'New file name',
+                    fields.name: 'New applet name',
                 }
             }}}
         return body
@@ -129,11 +122,11 @@ class FileDetailSchema(AutoSchema):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
-                'description': 'Successful retrieval of file object.',
+                'description': 'Successful retrieval of applet.',
                 'content': {'application/json': {'schema': {
-                    '$ref': '#/components/schemas/File',
+                    '$ref': '#/components/schemas/Applet',
                 }}},
             }
         elif method == 'DELETE':
-            responses['200'] = message_schema('deletion', 'registered file')
+            responses['200'] = message_schema('deletion', 'registered applet')
         return responses

@@ -160,7 +160,36 @@ class VersionsEdit extends TypeForm {
          });
    }
 
-   async _save({ id = -1, globalAttribute = false } = {}) {
+   _saveEntityButton(id) {
+      // console.log("Creating Save button from Version");
+      this.saveButton.setAttribute("type", "submit");
+      this.saveButton.setAttribute("value", "Save");
+      this.saveButton.setAttribute("class", `btn btn-clear f1 text-semibold`);
+  
+  
+      if (!this.saveButton.disabled) {
+        this.saveButton.addEventListener("click", (event) => {
+          this.saveButton.disabled = true;
+          this.saveButton.classList.add("disabled");
+          event.preventDefault();
+          if (this.isChanged()) {
+            // console.log("Save for id: " + id);
+            this._saveWithConfirm({ "id": id }).then(() => {
+              this.saveButton.disabled = false;
+              this.saveButton.classList.remove("disabled");
+            })
+          } else {
+            // @TODO- UX Save button disabled until form change
+            let happyMsg = "Nothing new to save!";
+            this._modalSuccess(happyMsg);
+          }
+        });
+      }
+  
+      return this.saveButton;
+    }
+
+   async _saveWithConfirm({ id = -1, globalAttribute = false } = {}) {
       this.loading.showSpinner();
 
       // Overriding save to show prompt
@@ -169,7 +198,7 @@ class VersionsEdit extends TypeForm {
       button.appendChild(confirmText);
       button.setAttribute("class", "btn btn-clear f1 text-semibold")
 
-      button.addEventListener("click", this._saveConfirmed.bind(this));
+      button.addEventListener("click", this._save.bind(this));
 
       // Check the related state types
       const [sc, lc] = await Promise.all(
@@ -210,78 +239,6 @@ class VersionsEdit extends TypeForm {
             });
          });
    }
-
-   async _saveConfirmed({ id = this.versionId }) {
-      this.loading.showSpinner();
-  
-      //create form data & post promise array for the attribute forms, and submit
-      this.successMessages = "";
-      this.failedMessages = "";
-      this.confirmMessages = "";
-      this.nameChanged = false;
-      this.newName = null;
-      this.saveModalMessage = "";
-      this.requiresConfirmation = false;
-      this.hasAttributeChanges = this.attributeSection && this.attributeSection.hasChanges ? true : false;
-  
-  
-      if (this.isChanged() || this.hasAttributeChanges) {
-        try {
-          if (this.isChanged()) {
-            // Main type form
-            await this._typeFormChanged({ id });
-          }
-        } catch (err) {
-          console.error("Error saving.", err);
-          this.loading.hideSpinner();
-          return this._modalError("Error saving type form changes.\nError: " + err);
-        }
-        try {
-          if (this.hasAttributeChanges) {
-            // All attribute forms
-            const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
-            if (attrFormsChanged && attrFormsChanged.length > 0) {
-              for (let form of attrFormsChanged) {
-                await this._attrFormsChanged(form);
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Error saving.", err);
-          this.loading.hideSpinner();
-          return this._modalError("Error saving attribute changes.\nError: " + err);
-        }
-  
-        try {
-          // Compiled messages from above
-          await this._showSaveCompletModal();
-  
-          // Clean up..................
-          // Reset changed flags
-          this.changed = false;
-          if (this.hasAttributeChanges) {
-            const attrFormsChanged = this.attributeSection.attrForms.filter(form => form._changed);
-            if (attrFormsChanged.length > 0) {
-              for (let f of attrFormsChanged) {
-                f.changeReset();
-              }
-            }
-          }
-  
-          // Update related items with an event if required
-          if (this.nameChanged) {
-            this._updateNavEvent("rename", this.newName)
-          }
-        } catch (err) {
-          console.error("Error saving.", err);
-          this.loading.hideSpinner();
-          return this._modalError("Error saving.\nError: " + err);
-        }
-      } else {
-        this.loading.hideSpinner();
-        return this._modalSuccess("Nothing new to save!");
-      }
-    }
 
 }
 

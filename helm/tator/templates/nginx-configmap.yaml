@@ -134,6 +134,24 @@ data:
           alias /static/;
           autoindex off;
           add_header Cache-Control "max-age=0, must-revalidate";
+          {{- if hasKey .Values "allowCors" }}
+          {{- if $.Values.allowCors }}
+          add_header Access-Control-Allow-Origin *;
+          add_header Access-Control-Allow-Methods *;
+          add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+          add_header Access-Control-Allow-Credentials true;
+          if ($request_method = OPTIONS)
+          {
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods *;
+            add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+            add_header Access-Control-Allow-Credentials true;
+            return 200;
+          }
+          {{- end }}
+          {{- end }}
         }
         location /docs {
           alias /static/docs;
@@ -144,20 +162,26 @@ data:
           alias /media/;
           autoindex off;
           add_header Cache-Control "max-age=3600, must-revalidate";
-          add_header 'Access-Control-Allow-Origin' 'https://www.tatorapp.com' always;
           add_header 'Access-Control-Allow-Headers' 'Authorization' always;
-
-          # Send CORS response from nginx
+          
+          {{- if hasKey .Values "allowCors" }}
+          {{- if $.Values.allowCors }}
+          add_header Access-Control-Allow-Origin *;
+          add_header Access-Control-Allow-Methods *;
+          add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+          add_header Access-Control-Allow-Credentials true;
           if ($request_method = OPTIONS)
           {
             add_header Content-Length 0;
             add_header Content-Type text/plain;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS";
-            add_header Access-Control-Allow-Origin 'https://www.tatorapp.com';
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type";
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods *;
+            add_header Access-Control-Allow-Headers "Authorization,Content-Type";
             add_header Access-Control-Allow-Credentials true;
             return 200;
           }
+          {{- end }}
+          {{- end }}
           auth_request /auth-project;
         }
         location /media/working
@@ -184,6 +208,24 @@ data:
         {{- if .Values.minio.enabled }}
         location /objects/ {
           proxy_pass http://tator-minio:9000/;
+          {{- if hasKey .Values "allowCors" }}
+          {{- if $.Values.allowCors }}
+          add_header Access-Control-Allow-Origin *;
+          add_header Access-Control-Allow-Methods *;
+          add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+          add_header Access-Control-Allow-Credentials true;
+          if ($request_method = OPTIONS)
+          {
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods *;
+            add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+            add_header Access-Control-Allow-Credentials true;
+            return 200;
+          }
+          {{- end }}
+          {{- end }}
         }
         {{- end }}
         {{- if .Values.kibana.enabled }}
@@ -232,6 +274,24 @@ data:
           proxy_set_header X-Forwarded-Proto https;
           {{- end }}
           add_header Cache-Control "max-age=0, must-revalidate";
+          {{- if hasKey .Values "allowCors" }}
+          {{- if $.Values.allowCors }}
+          add_header Access-Control-Allow-Origin *;
+          add_header Access-Control-Allow-Methods *;
+          add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+          add_header Access-Control-Allow-Credentials true;
+          if ($request_method = OPTIONS)
+          {
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            add_header Access-Control-Allow-Origin *;
+            add_header Access-Control-Allow-Methods *;
+            add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+            add_header Access-Control-Allow-Credentials true;
+            return 200;
+          }
+          {{- end }}
+          {{- end }}
 
           gzip on;
           gzip_types application/json;

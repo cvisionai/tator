@@ -258,3 +258,20 @@
     margin-bottom: $spacing-6;
   }
 }
+
+.attributes-edit {
+  background: #262e3d;
+  // padding: $spacing-3 $spacing-4;
+  margin: 15px auto;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.attributes-edit--list {
+  max-height: 50vh;
+  overflow: hidden scroll;
+  -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+}

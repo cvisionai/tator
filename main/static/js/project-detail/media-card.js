@@ -35,8 +35,16 @@ class MediaCard extends TatorElement {
     titleDiv.appendChild(this._more);
 
     const lowerDiv = document.createElement("div");
-    lowerDiv.setAttribute("class", "d-flex flex-justify-between");
+    lowerDiv.setAttribute("class", "");
     div.appendChild(lowerDiv);
+
+    const durationDiv = document.createElement("div");
+    durationDiv.setAttribute("class", "d-flex flex-items-center");
+    lowerDiv.appendChild(durationDiv);
+
+    this._duration = document.createElement("span");
+    this._duration.setAttribute("class", "f3 text-gray");
+    durationDiv.appendChild(this._duration);
 
     const extDiv = document.createElement("div");
     extDiv.setAttribute("class", "d-flex flex-items-center");
@@ -159,7 +167,7 @@ class MediaCard extends TatorElement {
   }
 
   static get observedAttributes() {
-    return ["thumb", "thumb-gif", "name", "processing", "pos-text"];
+    return ["thumb", "thumb-gif", "name", "processing", "pos-text", "duration"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -201,6 +209,9 @@ class MediaCard extends TatorElement {
           this._more.setAttribute("processing", "");
         }
         break;
+      case "duration":
+        console.log(newValue);
+        this._duration.textContent = newValue;
       case "pos-text":
         this._pos_text.textContent = newValue;
     }

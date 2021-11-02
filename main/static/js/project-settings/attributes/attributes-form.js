@@ -5,6 +5,7 @@ class AttributesForm extends TatorElement {
     // Flag values
     this._changed = false;
     this._global = false;
+
   }
 
   set changed(val) {
@@ -794,7 +795,7 @@ class AttributesForm extends TatorElement {
         formData.labels = this._labels.getValue();
       }
     }
-    console.log(formData);
+    // console.log(formData);
     return formData;
   }
 
@@ -895,19 +896,7 @@ class AttributesForm extends TatorElement {
     return promiseInfo;
   }
 
-  _fetchAttributePatchPromise(parentTypeId, formData) {
-    return fetch("/rest/AttributeType/" + parentTypeId, {
-      method: "PATCH",
-      mode: "cors",
-      credentials: "include",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(formData)
-    });
-  }
+  
 }
 
 customElements.define("attributes-form", AttributesForm);

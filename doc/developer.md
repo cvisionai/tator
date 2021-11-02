@@ -78,7 +78,7 @@ ubuntu@ip-172-26-2-211:~/tator$ make dev-push && make collect-static
 Updating gunicorn-deployment-b7dcdcf9c-nm5wp
 
 212 static files copied to '/static', 199 unmodified.
-node_modules/.bin/sass main/static/css/tator/styles.scss:main/static/css/tator/tator.min.css
+node_modules/.bin/sass main/static/css/tator/styles.scss:main/static/css/tator-ui.min.css
     --style compressed
 Skipping min-js, because USE_MIN_JS is false
 kubectl exec -it $(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') --
@@ -86,9 +86,9 @@ kubectl exec -it $(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's
 kubectl cp main/static $(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///'):
     /tator_online/main
 kubectl exec -it $(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') --
-    rm -f /data/static/js/tator/tator.min.js
+    rm -f /data/static/js/tator-ui.min.js
 kubectl exec -it $(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') --
-    rm -f /data/static/css/tator/tator.min.css
+    rm -f /data/static/css/tator-ui.min.css
 kubectl exec -it $(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') --
     python3 manage.py collectstatic --noinput
 

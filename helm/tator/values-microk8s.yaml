@@ -17,6 +17,8 @@ domain: &domain <Insert static IP or domain>
 tatorDebug: false
 # Enables javascript minification.
 useMinJs: true
+# Enable this to allow cross origin resource sharring (CORS).
+allowCors: false
 # Enable this to turn on "down for maintenance" page.
 maintenance: false
 # Secret key for django. Feel free to change this.
