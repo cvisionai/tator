@@ -266,6 +266,7 @@ class LocalizationListAPI(BaseListView):
             first_id = obj.id
             entity_type = obj.meta
             new_attrs = validate_attributes(params, qs[0])
+            bulk_patch_attributes(new_attrs, qs)
             qs.update(modified_by=self.request.user)
 
             # Get one object from the queryset to create the change log
