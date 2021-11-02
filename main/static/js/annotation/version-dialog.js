@@ -53,9 +53,12 @@ class VersionDialog extends ModalDialog {
       tbody.appendChild(tr);
 
       const tdName = document.createElement("td");
-      tdName.setAttribute("title", version.description);
-      tdName.textContent = version.name;
       tr.appendChild(tdName);
+
+      const tdNameSpan = document.createElement("span");
+      tdNameSpan.setAttribute("tooltip", version.description);
+      tdNameSpan.textContent = version.name;
+      tdName.appendChild(tdNameSpan);  
 
       const tdSelect = document.createElement("td");
       tdSelect.setAttribute("class", "px-2");
