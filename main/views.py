@@ -156,6 +156,10 @@ class DashboardView(ProjectBase, TemplateView):
         return context
 
 
+class FilesView(ProjectBase, TemplateView):
+    template_name = 'analytics/files.html'
+
+
 class AnalyticsLocalizationsView(ProjectBase, TemplateView):
     template_name = 'analytics/localizations.html'
 

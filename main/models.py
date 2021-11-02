@@ -520,6 +520,7 @@ class Project(Model):
         LocalizationType.objects.filter(project=self).delete()
         StateType.objects.filter(project=self).delete()
         LeafType.objects.filter(project=self).delete()
+        FileType.objects.filter(project=self).delete()
         super().delete(*args, **kwargs)
 
 class Version(Model):
@@ -1478,22 +1479,77 @@ class AnnouncementToUser(Model):
     user = ForeignKey(User, on_delete=CASCADE)
 
 class Dashboard(Model):
-    """ Standalone HTML page shown as a dashboard within a project.
+    """ Standalone HTML page shown as an dashboard/applet within a project.
     """
     categories = ArrayField(CharField(max_length=128), default=list, null=True)
-    """ List of categories associated with the dashboard. This field is currently ignored. """
+    """ List of categories associated with the applet. This field is currently ignored. """
     description = CharField(max_length=1024, blank=True)
-    """ Description of the dashboard. """
+    """ Description of the applet. """
     html_file = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
-    """ Dashboard's HTML file """
+    """ Dashboard/Applet's HTML file """
     name = CharField(max_length=128)
-    """ Name of the dashboard """
+    """ Name of the applet """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
-    """ Project associated with the dashboard """
+    """ Project associated with the applet """
+
+class FileType(Model):
+    """ Non-media generic file. Has user-defined attributes.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    """ Project associated with the file type """
+    name = CharField(max_length=64)
+    """ Name of the file type"""
+    description = CharField(max_length=256, blank=True)
+    """ Description of the file type"""
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ Refer to the attribute_types field for the other *Type models
+    """
+    dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
+    """ Required as part of building the TatorSearch documents
+    """
+
+@receiver(post_save, sender=FileType)
+def file_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
+class File(Model, ModelDiffMixin):
+    """ Non-media generic file stored within a project
+    """
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    """ Datetime when file was created """
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='file_created_by', db_column='created_by')
+    """ User who originally created the file """
+    description = CharField(max_length=1024, blank=True)
+    """Description of the file"""
+    path = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    """ Path of file """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    """ Datetime when file was last modified """
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='file_modified_by', db_column='modified_by')
+    """ User who last modified the file """
+    name = CharField(max_length=128)
+    """ Project associated with the file """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    """ Project associated with the file """
+    meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    """ Type associated with file """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
+
+@receiver(post_save, sender=File)
+def file_save(sender, instance, created, **kwargs):
+    TatorSearch().create_document(instance)
+
+@receiver(pre_delete, sender=File)
+def file_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""
     _dict = {
+        FileType: File,
         MediaType: Media,
         LocalizationType: Localization,
         StateType: State,

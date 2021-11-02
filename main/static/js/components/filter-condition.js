@@ -54,6 +54,14 @@ class FilterCondition extends TatorElement {
     this._valueEnum.style.display = "none";
     this._div.appendChild(this._valueEnum);
 
+    this._valueDate = document.createElement("datetime-input");
+    this._valueDate.setAttribute("class", "col-4");
+    this._valueDate.style.marginLeft = "15px";
+    this._valueDate.setAttribute("name", "Value");
+    this._valueDate.permission = "View Only";
+    this._valueDate.style.display = "none";
+    this._div.appendChild(this._valueDate);
+
     var removeButton = document.createElement("entity-delete-button");
     removeButton.style.marginLeft = "15px";
     removeButton.style.marginRight = "8px";
@@ -114,6 +122,7 @@ class FilterCondition extends TatorElement {
     this._value.permission = "View Only";
     this._valueBool.permission = "View Only";
     this._valueEnum.permission = "View Only";
+    this._valueDate.permission = "View Only";
     this._userSelectedField();
   }
 
@@ -162,21 +171,31 @@ class FilterCondition extends TatorElement {
     this._value.style.display = "block";
     this._valueBool.style.display = "none";
     this._valueEnum.style.display = "none";
+    this._valueDate.style.display = "none";
 
     if (this._currentDtype == "enum" && modifier == "==") {
       this._value.style.display = "none";
       this._valueBool.style.display = "none";
       this._valueEnum.style.display = "block";
+      this._valueDate.style.display = "none";
     }
     else if (this._currentDtype == "bool") {
       this._value.style.display = "none";
       this._valueBool.style.display = "block";
       this._valueEnum.style.display = "none";
+      this._valueDate.style.display = "none";
+    }
+    else if (this._currentDtype == "datetime") {
+      this._value.style.display = "none";
+      this._valueBool.style.display = "none";
+      this._valueEnum.style.display = "none";
+      this._valueDate.style.display = "block";
     }
 
     this._value.permission = "Can Edit";
     this._valueBool.permission = "Can Edit";
     this._valueEnum.permission = "Can Edit";
+    this._valueDate.permission = "Can Edit";
   }
 
   /**
@@ -234,6 +253,10 @@ class FilterCondition extends TatorElement {
       {
         value = this._valueEnum.getValue();
       }
+      else if (this._valueDate.style.display == "block")
+      {
+        value = this._valueDate.getValue();
+      }
 
       if (category && field && modifier && value)
       {
@@ -282,6 +305,9 @@ class FilterCondition extends TatorElement {
     }
     if (this._valueEnum.style.display == "block") {
       this._valueEnum.setValue(val.value);
+    }
+    if (this._valueDate.style.display == "block") {
+      this._valueDate.setValue(val.value);
     }
   }
 }

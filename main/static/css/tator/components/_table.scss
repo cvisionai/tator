@@ -188,3 +188,29 @@
     }
   }
 }
+
+
+.file-table {
+  width: 100%;
+  tr:nth-child(even) {
+    background-color: #00070d;
+  }
+  tr.selected, tr:hover {
+    background-color: #1e2129;
+    color: #ffffff;
+  }
+  tr.selected, tr:hover {
+    fill: #a2afcd;
+  }
+  th {
+    background-color: #696cff;
+  }
+
+  th,
+  td {
+    text-align: center;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border: 1px solid #a2afcd;
+  }
+}

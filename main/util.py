@@ -113,6 +113,7 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None, max_ag
         'states' - create documents for states
         'localizations' - create documents for localizations
         'treeleaves' - create documents for treeleaves
+        'files' - create documents for files
     """
     project_name = Project.objects.get(pk=project_number).name
     logger.info(f"Building search indices for project {project_number}: {project_name}")
@@ -137,6 +138,9 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None, max_ag
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for leaf types...")
         for type_ in progressbar(list(LeafType.objects.filter(project=project_number))):
+            TatorSearch().create_mapping(type_)
+        logger.info("Building mappings for file types...")
+        for type_ in progressbar(list(FileType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Build mappings complete!")
         return

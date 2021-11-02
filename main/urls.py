@@ -35,6 +35,7 @@ from .views import AnalyticsCollectionsView
 from .views import AppsSpeciesView
 from .views import AppsVerificationView
 from .views import AnalyticsPortalView
+from .views import FilesView
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -66,6 +67,8 @@ urlpatterns = [
          AppsSpeciesView.as_view(), name='apps-species'),
     path('<int:project_id>/apps/verification',
          AppsVerificationView.as_view(), name='apps-verification'),
+    path('<int:project_id>/analytics/files',
+         FilesView.as_view(), name='files'),
     path('<int:project_id>/dashboards',
          DashboardPortalView.as_view(), name='dashboard-portal'),
     path('<int:project_id>/dashboards/<int:id>',
@@ -157,6 +160,12 @@ urlpatterns += [
         'rest/AudioFile/<int:id>',
         AudioFileDetailAPI.as_view(),
     ),
+    path('rest/AuxiliaryFiles/<int:id>',
+         AuxiliaryFileListAPI.as_view(),
+    ),
+    path('rest/AuxiliaryFile/<int:id>',
+         AuxiliaryFileDetailAPI.as_view(),
+    ),
     path(
         'rest/Bookmarks/<int:project>',
         BookmarkListAPI.as_view(),
@@ -177,11 +186,11 @@ urlpatterns += [
     path('rest/CloneMedia/<int:project>',
          CloneMediaListAPI.as_view(),
          ),
-    path('rest/Dashboards/<int:project>',
-        DashboardListAPI.as_view(),
+    path('rest/Applets/<int:project>',
+        AppletListAPI.as_view(),
     ),
-    path('rest/Dashboard/<int:id>',
-        DashboardDetailAPI.as_view(),
+    path('rest/Applet/<int:id>',
+        AppletDetailAPI.as_view(),
     ),
     path('rest/DownloadInfo/<int:project>',
          DownloadInfoAPI.as_view(),
@@ -196,11 +205,17 @@ urlpatterns += [
     path('rest/Favorite/<int:id>',
          FavoriteDetailAPI.as_view(),
     ),
-    path('rest/Files/<int:id>',
+    path('rest/Files/<int:project>',
          FileListAPI.as_view(),
     ),
     path('rest/File/<int:id>',
          FileDetailAPI.as_view(),
+    ),
+    path('rest/FileTypes/<int:project>',
+         FileTypeListAPI.as_view(),
+    ),
+    path('rest/FileType/<int:id>',
+         FileTypeDetailAPI.as_view(),
     ),
     path('rest/GetFrame/<int:id>',
          GetFrameAPI.as_view(),
@@ -367,9 +382,9 @@ urlpatterns += [
         ProjectDetailAPI.as_view(),
     ),
     path(
-        'rest/SaveHTMLFile/<int:project>',
-        SaveHTMLFileAPI.as_view(),
-        name='SaveHTMLFile',
+        'rest/SaveGenericFile/<int:project>',
+        SaveGenericFileAPI.as_view(),
+        name='SaveGenericFile',
     ),
     path(
         'rest/Sections/<int:project>',

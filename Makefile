@@ -473,6 +473,10 @@ FILES = \
     apps/verification/apps-species-page.js \
     apps/verification/apps-verification-page.js \
     analytics/portal/portal.js \
+    analytics/files/files-page.js \
+    analytics/files/file-type-dialog.js \
+    analytics/files/file-type-button.js \
+    analytics/files/file-type-select.js \
     third_party/autocomplete.js \
     third_party/webrtcstreamer.js \
     utilities.js
