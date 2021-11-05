@@ -5,6 +5,9 @@ class RegisteredDashboard extends TatorPage {
     this._loading.setAttribute("class", "loading");
     this._loading.setAttribute("src", "/static/images/tator_loading.gif");
     this._shadow.appendChild(this._loading);
+
+    // Init params
+    this._username = "";
     
     //
     // Header
@@ -36,7 +39,7 @@ class RegisteredDashboard extends TatorPage {
   }
 
   static get observedAttributes() {
-    return["project-name", "project-id", "dashboard-id"].concat(TatorPage.observedAttributes);
+    return["project-name", "project-id", "dashboard-id", "username"].concat(TatorPage.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -47,6 +50,9 @@ class RegisteredDashboard extends TatorPage {
         break;
       case "project-id":
         this._breadcrumbs.setAttribute("analytics-name-link", window.location.origin + `/${newValue}/dashboards`);
+        break;
+      case "username":
+        this._username = newValue;
         break;
       case "dashboard-id":
         this._init(newValue);
@@ -69,7 +75,7 @@ class RegisteredDashboard extends TatorPage {
       const dashboardData = response.json();
       dashboardData.then((dashboard) => {
         this._dashboard = dashboard;
-        this._dashboardView.src = dashboard.html_file;
+        this._dashboardView.src = `${dashboard.html_file}${window.location.search}&username=${this._username}`;
         this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
         this._loading.style.display = "none";
       });
