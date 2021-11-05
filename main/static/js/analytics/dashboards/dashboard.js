@@ -75,7 +75,7 @@ class RegisteredDashboard extends TatorPage {
       const dashboardData = response.json();
       dashboardData.then((dashboard) => {
         this._dashboard = dashboard;
-        this._dashboardView.src = `${dashboard.html_file}${window.location.search}&username=${this._username}`;
+        this._dashboardView.src = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
         this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
         this._loading.style.display = "none";
       });
