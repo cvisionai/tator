@@ -607,6 +607,7 @@ class TatorData {
     // Adjust the modifier to be lucene compliant
     var modifier = filter.modifier;
     var modifierEnd = "";
+    var modifierStart = "";
     var doNotReplace = false;
     var value = filter.value;
     var field = filter.field;
@@ -621,6 +622,10 @@ class TatorData {
     else if (modifier == "OR") {
       modifier = "";
       doNotReplace = true;
+    } else if(modifier == "NOT"){
+      modifier = "";
+      modifierStart = "NOT ";
+      doNotReplace = true;    
     }
 
     if (!doNotReplace) {
@@ -629,13 +634,13 @@ class TatorData {
       field = field.replace(/\(/g, "\\(")
       field = field.replace(/\)/g, "\\)")
     
-      value = filter.value.replace(/ /g, "\\ ")
+      value = String(filter.value).replace(/ /g, "\\ ")
       value = value.replace(/\(/g, "\\(")
       value = value.replace(/\)/g, "\\)")
     }
 
     // Finally generate the final parameter string compliant with Tator's REST call
-    var paramStr = `${field}:${modifier}${value}${modifierEnd}`;
+    var paramStr = `${modifierStart}${field}:${modifier}${value}${modifierEnd}`;
     return paramStr;
   }
 
@@ -689,7 +694,13 @@ class TatorData {
       var filter = finalAnnotationFilters[idx];
       annotationSearch += encodeURIComponent(filter);
       if (idx < finalAnnotationFilters.length - 1) {
-        annotationSearch += encodeURIComponent(" AND ");
+        if (filter.indexOf("NOT") > -1) {
+          console.log(`filter.indexOf("NOT") = ${filter.indexOf("NOT")}`)
+          annotationSearch += encodeURIComponent(" NOT ");
+        } else {
+          annotationSearch += encodeURIComponent(" AND ");
+        }
+        
       }
     }
 
@@ -976,6 +987,8 @@ class TatorData {
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
       filters.forEach(filter => {
+        console.log(filter);
+        console.log(`Filter category = ${filter.category}`)
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
@@ -1006,6 +1019,8 @@ class TatorData {
         }
       });
     }
+
+     console.log(stateFilters);
 
     if (typeIds.length > 0) {
       typeIds.forEach(dtypeId => {
