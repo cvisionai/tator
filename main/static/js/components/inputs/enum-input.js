@@ -34,22 +34,22 @@ class EnumInput extends TatorElement {
     this._undefined.textContent = "undefined";
     this._select.appendChild(this._undefined);
 
-    const svg = document.createElementNS(svgNamespace, "svg");
-    svg.setAttribute("class", "text-gray");
-    svg.setAttribute("id", "icon-chevron-down");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("height", "1em");
-    svg.setAttribute("width", "1em");
-    this.label.appendChild(svg);
+    this._svg = document.createElementNS(svgNamespace, "svg");
+    this._svg.setAttribute("class", "text-gray");
+    this._svg.setAttribute("id", "icon-chevron-down");
+    this._svg.setAttribute("viewBox", "0 0 24 24");
+    this._svg.setAttribute("height", "1em");
+    this._svg.setAttribute("width", "1em");
+    this.label.appendChild(this._svg);
 
     const path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M5.293 9.707l6 6c0.391 0.391 1.024 0.391 1.414 0l6-6c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
-    svg.appendChild(path);
+    this._svg.appendChild(path);
 
     this._select.addEventListener("change", () => {
       this.dispatchEvent(new Event("change"));
     });
-
+    this._isMultiple = false;
   }
 
   static get observedAttributes() {
@@ -70,6 +70,13 @@ class EnumInput extends TatorElement {
     } else {
       this._select.setAttribute("disabled", "");
     }
+  }
+
+  set multiple(val) {
+    this._select.multiple = true;
+    this._isMultiple = true;
+    this._select.style.height = "100px";
+    this._svg.hidden = true;
   }
 
   set choices(val) {
@@ -113,10 +120,21 @@ class EnumInput extends TatorElement {
 
   getValue() {
     if (this._select.options.length !== 0) {
-      const selected = this._select.selectedIndex;
-      if(typeof this._select.options[selected] !== "undefined"){
-        return this._select.options[selected].value;
+      if (this._isMultiple) {
+        let result = [];
+        for (let option of this._select.options) {
+          if (option.selected) {
+            result.push(option.value);
+          }
+        }
+        return result;
+      } else {
+        const selected = this._select.selectedIndex;
+        if (typeof this._select.options[selected] !== "undefined") {
+          return this._select.options[selected].value;
+        }
       }
+
     }
     
     return null;
@@ -129,12 +147,18 @@ class EnumInput extends TatorElement {
     } else if (val === null) {
       this._null.setAttribute("selected", "");
     } else {
-      for (const option of this._select.options) {
-        if (option.value == val) {
-          this._select.selectedIndex = idx;
-          break;
+      if (this._isMultiple && Array.isArray(val)) {
+        for (let selected of value) {
+          this.setValue(selected);
         }
-        idx++;
+      } else {
+        for (const option of this._select.options) {
+          if (option.value == val) {
+            this._select.selectedIndex = idx;
+            break;
+          }
+          idx++;
+        }
       }
     }
   }
