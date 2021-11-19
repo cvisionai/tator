@@ -134,3 +134,30 @@
 .btn-auto-width {
   width: auto;
 }
+
+.btn.background-green,
+.background-green {
+  background-color: $color-green;
+
+  &:hover,
+  &:focus {
+    color: $color-green;
+  }
+  &:disabled,
+  [disabled] {
+    background-color: $color-charcoal--brown;
+    color: $color-gray--dark;
+  }
+}
+
+.background-red {
+  background-color: $color-red !important;
+}
+
+.background-orange {
+  background-color: $color-orange !important;
+}
+
+.background-purple {
+  background-color: $color-purple !important;
+}
