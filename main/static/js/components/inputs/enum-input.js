@@ -127,7 +127,7 @@ class EnumInput extends TatorElement {
             result.push(option.value);
           }
         }
-        return result;
+        return result.join();
       } else {
         const selected = this._select.selectedIndex;
         if (typeof this._select.options[selected] !== "undefined") {
@@ -147,9 +147,16 @@ class EnumInput extends TatorElement {
     } else if (val === null) {
       this._null.setAttribute("selected", "");
     } else {
-      if (this._isMultiple && Array.isArray(val)) {
-        for (let selected of value) {
-          this.setValue(selected);
+      if (this._isMultiple) {
+        let valueArray = Array.isArray(val) ? val : [val];
+        for (let selected of valueArray) {
+          for (const option of this._select.options) {
+            if (option.value == selected) {
+              this._select.selectedIndex = idx;
+              break;
+            }
+            idx++;
+          }
         }
       } else {
         for (const option of this._select.options) {
