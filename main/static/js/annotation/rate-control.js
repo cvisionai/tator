@@ -56,22 +56,36 @@ class RateControl extends TatorElement {
    * @param {Number} rate
    */
   setValue(rate) {
+    this._value = rate;
     for (let idx = 0; idx < this._rates.length; idx++) {
       if (this._rates[idx] == rate) {
 
-        // Change the UI element
-        this._select.selectedIndex = idx;
-
-        // Send out the rate change event
-        this.dispatchEvent(new CustomEvent("rateChange", {
-          detail: {rate: rate},
-          composed: true
-        }));
-
+        this.setIdx(idx);
         // Done here
         return;
       }
     }
+  }
+
+  setIdx(idx)
+  {
+    if (idx < 0 || idx >= this._rates.length)
+    {
+      return;
+    }
+    // Change the UI element
+    this._select.selectedIndex = idx;
+
+    // Send out the rate change event
+    this.dispatchEvent(new CustomEvent("rateChange", {
+      detail: {rate: this._rates[idx]},
+      composed: true
+    }));
+  }
+
+  getIdx()
+  {
+    return this._select.selectedIndex;
   }
 }
 

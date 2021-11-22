@@ -454,6 +454,18 @@ class AnnotationPlayer extends TatorElement {
           this._rateControl.setValue(4);
         }
       }
+      else if (evt.key == 'ArrowUp' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          this._rateControl.setIdx(this._rateControl.getIdx()+1);
+        }
+      }
+      else if (evt.key == 'ArrowDown' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          this._rateControl.setIdx(this._rateControl.getIdx()-1);
+        }
+      }
     });
 
     this._videoStatus = "paused"; // Possible values: playing | paused | scrubbing
