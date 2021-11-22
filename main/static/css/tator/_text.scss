@@ -94,7 +94,7 @@
 }
 
 .text-purple {
-  color: $color-purple;
+  color: $color-purple !important;
 }
 
 .text-green {
@@ -144,20 +144,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.background-green {
-  background-color: $color-green;
-}
-
-.background-red {
-  background-color: $color-red;
-}
-
-.background-orange {
-  background-color: $color-orange;
-}
-
-.background-purple {
-  background-color: $color-purple;
 }

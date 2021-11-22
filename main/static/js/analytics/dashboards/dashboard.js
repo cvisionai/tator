@@ -36,6 +36,22 @@ class RegisteredDashboard extends TatorPage {
     this._dashboardView = document.createElement("iframe");
     this._dashboardView.setAttribute("class", "d-flex flex-grow")
     main.appendChild(this._dashboardView);
+
+    // Listen for URL param events
+    console.log(window.history.state);
+    window.document.addEventListener('bookmark-update', handleEvent, false)
+    function handleEvent(e) {
+      let params = ""; // e.detail { paramsList: [ { name: "foo", value: "bar"} ] }
+      for (let pair of e.detail.paramsList) {
+        params += `${pair.name}=${pair.value}&`
+      }
+
+      window.history.pushState(e.detail.state, '', `${window.location.origin}${window.location.pathname}?${params}`);
+    }
+
+
+
+    window.addEventListener('hashchange', this.hashHandler.bind(this), false);
   }
 
   static get observedAttributes() {
@@ -75,12 +91,20 @@ class RegisteredDashboard extends TatorPage {
       const dashboardData = response.json();
       dashboardData.then((dashboard) => {
         this._dashboard = dashboard;
-        this._dashboardView.src = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
+        this._dashbordSource = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
+        this._dashboardView.src = this._dashbordSource;
         this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
         this._loading.style.display = "none";
       });
     });
   }
+
+  hashHandler(e) {
+      console.log('The hash has changed!');
+    console.log(window.history.state);
+    this._dashbordSource = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
+    this._dashboardView.src = this._dashbordSource;
+   }
 }
 
 customElements.define("registered-dashboard", RegisteredDashboard);
