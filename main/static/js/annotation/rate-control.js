@@ -16,7 +16,7 @@ class RateControl extends TatorElement {
     div.appendChild(select);
     this._select = select;
 
-    this._rates = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32];
+    this._rates = [0.125, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 6, 8, 16, 32, 64, 128, 256];
     for (const rate of this._rates)
     {
       let option = document.createElement("option");
@@ -24,7 +24,7 @@ class RateControl extends TatorElement {
       option.textContent = `${rate}x`;
       select.append(option);
     }
-    select.selectedIndex = 3; //represents 1x
+    select.selectedIndex = 4; //represents 1x
 
     select.addEventListener("change", evt => {
       const rate = Number(evt.target.value);
@@ -56,22 +56,36 @@ class RateControl extends TatorElement {
    * @param {Number} rate
    */
   setValue(rate) {
+    this._value = rate;
     for (let idx = 0; idx < this._rates.length; idx++) {
       if (this._rates[idx] == rate) {
 
-        // Change the UI element
-        this._select.selectedIndex = idx;
-
-        // Send out the rate change event
-        this.dispatchEvent(new CustomEvent("rateChange", {
-          detail: {rate: rate},
-          composed: true
-        }));
-
+        this.setIdx(idx);
         // Done here
         return;
       }
     }
+  }
+
+  setIdx(idx)
+  {
+    if (idx < 0 || idx >= this._rates.length)
+    {
+      return;
+    }
+    // Change the UI element
+    this._select.selectedIndex = idx;
+
+    // Send out the rate change event
+    this.dispatchEvent(new CustomEvent("rateChange", {
+      detail: {rate: this._rates[idx]},
+      composed: true
+    }));
+  }
+
+  getIdx()
+  {
+    return this._select.selectedIndex;
   }
 }
 

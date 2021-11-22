@@ -454,6 +454,18 @@ class AnnotationPlayer extends TatorElement {
           this._rateControl.setValue(4);
         }
       }
+      else if (evt.key == 'ArrowUp' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          this._rateControl.setIdx(this._rateControl.getIdx()+1);
+        }
+      }
+      else if (evt.key == 'ArrowDown' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          this._rateControl.setIdx(this._rateControl.getIdx()-1);
+        }
+      }
     });
 
     this._videoStatus = "paused"; // Possible values: playing | paused | scrubbing
@@ -874,7 +886,7 @@ class AnnotationPlayer extends TatorElement {
 
   play()
   {
-    if (this._rate > 4.0)
+    if (this._rate > 8.0)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
@@ -913,7 +925,7 @@ class AnnotationPlayer extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > 4.0)
+    if (this._rate > 8.0)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
