@@ -987,8 +987,6 @@ class TatorData {
     // Separate out the filter conditions into their groups
     if (Array.isArray(filters)) {
       filters.forEach(filter => {
-        console.log(filter);
-        console.log(`Filter category = ${filter.category}`)
         if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
