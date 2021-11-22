@@ -17,7 +17,7 @@ class BoolInput extends TatorElement {
     div.appendChild(controls);
 
     this._on = document.createElement("input");
-    this._on.setAttribute("class", "sr-only");
+    this._on.setAttribute("class", "hidden");
     this._on.setAttribute("type", "radio");
     this._on.setAttribute("id", "on");
     this._on.setAttribute("name", "asdf");
@@ -29,7 +29,7 @@ class BoolInput extends TatorElement {
     controls.appendChild(this._onLabel);
 
     this._off = document.createElement("input");
-    this._off.setAttribute("class", "sr-only");
+    this._off.setAttribute("class", "hidden");
     this._off.setAttribute("type", "radio");
     this._off.setAttribute("id", "off");
     this._off.setAttribute("name", "asdf");
