@@ -141,6 +141,7 @@
 
   &:hover,
   &:focus {
+    background-color: $color-white;
     color: $color-green;
   }
   &:disabled,
