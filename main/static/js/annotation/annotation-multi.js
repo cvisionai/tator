@@ -1571,7 +1571,7 @@ class AnnotationMulti extends TatorElement {
 
   play()
   {
-    if (this._rate > 4.0)
+    if (this._rate > 8.0)
     {
       let playing = false;
       // Check to see if the video player can play at this rate
@@ -1600,6 +1600,7 @@ class AnnotationMulti extends TatorElement {
         this._syncThread = setTimeout(() => {this.syncCheck()},
                                       500);
       }
+      return;
     }
 
     for (let idx = 0; idx < this._videos.length; idx++)
@@ -1638,7 +1639,7 @@ class AnnotationMulti extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > 4.0)
+    if (this._rate > 8.0)
     {
       let playing = false;
       // Check to see if the video player can play at this rate
@@ -1666,6 +1667,7 @@ class AnnotationMulti extends TatorElement {
         this._syncThread = setTimeout(() => {this.syncCheck()},
                                       500);
       }
+      return;
     }
 
     for (let idx = 0; idx < this._videos.length; idx++)
