@@ -16,7 +16,7 @@ class RateControl extends TatorElement {
     div.appendChild(select);
     this._select = select;
 
-    this._rates = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32];
+    this._rates = [0.125, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 6, 8, 16, 32, 64, 128, 256];
     for (const rate of this._rates)
     {
       let option = document.createElement("option");
@@ -24,7 +24,7 @@ class RateControl extends TatorElement {
       option.textContent = `${rate}x`;
       select.append(option);
     }
-    select.selectedIndex = 3; //represents 1x
+    select.selectedIndex = 4; //represents 1x
 
     select.addEventListener("change", evt => {
       const rate = Number(evt.target.value);
