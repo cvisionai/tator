@@ -3360,6 +3360,35 @@ class VideoCanvas extends AnnotationCanvas {
     return video != null;
   }
 
+  /**
+   * @returns {object} Returns an object specifying the current playback settings
+   */
+  playbackRatesAvailable()
+  {
+    let onDemandLogic = true;
+    if (this._playbackRate > 8.0)
+    {
+      onDemandLogic = false;
+    }
+    else if (this._play_idx == this._scrub_idx && this.videoBuffer(this.currentFrame(), "scrub") != null)
+    {
+      onDemandLogic = false;
+    }
+
+    if (onDemandLogic == true)
+    {
+      return {"frameInterval": 1, //Growth for segmentation optimization
+              "minimum": 0,
+              "maximum": Infinity};
+    }
+    else
+    {
+      return {"frameInterval": 1, //On-demand always uses 1
+              "minimum": 0,
+              "maximum": 8.0};
+    }
+  }
+
   play()
   {
     if (this._dispFrame >= (this._numFrames))
