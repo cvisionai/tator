@@ -512,11 +512,9 @@ class AnnotationPage extends TatorPage {
     });
 
     canvas.addEventListener("playing", () => {
-      this._player.disableRateChange();
       this._player.disableQualityChange();
     });
     canvas.addEventListener("paused", () => {
-      this._player.enableRateChange();
       this._player.enableQualityChange();
     });
 
