@@ -80,6 +80,18 @@ class RateControl extends TatorElement {
   {
     return this._select.selectedIndex;
   }
+
+  rateForIdx(idx)
+  {
+    if (idx < 0 || idx >= this._rates.length)
+    {
+      return null;
+    }
+    else
+    {
+      return this._rates[idx];
+    }
+  }
 }
 
 customElements.define("rate-control", RateControl);

@@ -457,13 +457,23 @@ class AnnotationPlayer extends TatorElement {
       else if (evt.key == 'ArrowUp' && evt.ctrlKey)
       {
         if (!this._rateControl.hasAttribute("disabled")) {
-          this._rateControl.setIdx(this._rateControl.getIdx()+1);
+          const newIdx = this._rateControl.getIdx()+1;
+          const newRate = this._rateControl.rateForIdx(newIdx);
+          if (this._ratesAvailable == null || (newRate >= this._ratesAvailable.minimum && newRate <= this._ratesAvailable.maximum))
+          {
+            this._rateControl.setIdx(newIdx);
+          }
         }
       }
       else if (evt.key == 'ArrowDown' && evt.ctrlKey)
       {
         if (!this._rateControl.hasAttribute("disabled")) {
-          this._rateControl.setIdx(this._rateControl.getIdx()-1);
+          const newIdx = this._rateControl.getIdx()-1;
+          const newRate = this._rateControl.rateForIdx(newIdx);
+          if (this._ratesAvailable == null || (newRate >= this._ratesAvailable.minimum && newRate <= this._ratesAvailable.maximum))
+          {
+            this._rateControl.setIdx(newIdx);
+          }
         }
       }
     });
