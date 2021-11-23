@@ -1571,6 +1571,7 @@ class AnnotationMulti extends TatorElement {
 
   play()
   {
+    this._ratesAvailable = this._videos[0].playbackRatesAvailable();
     if (this._rate > 8.0)
     {
       let playing = false;
@@ -1639,6 +1640,7 @@ class AnnotationMulti extends TatorElement {
 
   playBackwards()
   {
+    this._ratesAvailable = this._videos[0].playbackRatesAvailable();
     if (this._rate > 8.0)
     {
       let playing = false;
@@ -1708,6 +1710,7 @@ class AnnotationMulti extends TatorElement {
 
   pause()
   {
+    this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
     this.disablePlayUI(); // Wait for playbackReady checks to enable play
 

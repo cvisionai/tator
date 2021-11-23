@@ -896,6 +896,7 @@ class AnnotationPlayer extends TatorElement {
         return;
       }
     }
+    this._ratesAvailable = this._video.playbackRatesAvailable();
 
     if (this._video._onDemandPlaybackReady != true)
     {
@@ -935,6 +936,7 @@ class AnnotationPlayer extends TatorElement {
         return;
       }
     }
+    this._ratesAvailable = this._video.playbackRatesAvailable();
 
     if (this._video._onDemandPlaybackReady != true)
     {
@@ -964,6 +966,7 @@ class AnnotationPlayer extends TatorElement {
 
   pause()
   {
+    this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
