@@ -2463,7 +2463,14 @@ class VideoCanvas extends AnnotationCanvas {
     this._playbackRate=newRate;
     if (this._direction != Direction.STOPPED)
     {
+      // If we are playing trim the frame buffer to a quarter second to make the rate change
+      // feel responsive.
       this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+      const oldLoad = this._loadFrame;
+      this._loadFrame = this._draw.trimBuffer(Math.round(this._fps*0.5));
+      console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
+      clearTimeout(this._loaderTimeout);
+      this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
     }
     this.dispatchEvent(new CustomEvent("rateChange", {
       detail: {rate: newRate},
@@ -2806,6 +2813,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       bufferName = "seek";
     }
+    this._loaderBuffer = bufferName;
     let loader = () => {this.loaderThread(false, bufferName)};
     // Loader thread that seeks to the current frame and continually kicks off seeking
     // to the next frame.
@@ -3375,7 +3383,7 @@ class VideoCanvas extends AnnotationCanvas {
       onDemandLogic = false;
     }
 
-    if (onDemandLogic == true)
+    if (onDemandLogic == false)
     {
       return {"frameInterval": 1, //Growth for segmentation optimization
               "minimum": 0,
@@ -3522,6 +3530,8 @@ class VideoCanvas extends AnnotationCanvas {
   {
     // Stoping the player thread sets the direction to stop
     const currentDirection = this._direction;
+
+    this._playing = false;
 
     // Stop the player thread first
     this.stopPlayerThread();
