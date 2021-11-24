@@ -1162,6 +1162,23 @@ class AnnotationCanvas extends TatorElement
     this._canEdit = hasPermission(val, "Can Edit");
   }
 
+  _determineCanEdit(localization) {
+    if (localization == undefined)
+    {
+      localization = this.activeLocalization;
+    }
+    if (localization == undefined)
+    {
+      return this._canEdit;
+    }
+    else
+    {
+      let validVersion = this._data.getVersion().bases.indexOf(localization.version) >= 0;
+      validVersion |= this._data.getVersion().id == localization.version;
+      return this._canEdit && validVersion;
+    }
+  }
+
   displayErrorMessage(message) {
     this._textOverlay.modifyText(this._errorTextId, {content: message}, true);
   }
@@ -1737,7 +1754,7 @@ class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.SELECT)
     {
-      if (event.code == 'Delete' && this._canEdit)
+      if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
       {
         this.deleteLocalization(this.activeLocalization);
         this.activeLocalization=null;
@@ -1780,7 +1797,7 @@ class AnnotationCanvas extends TatorElement
     }
 
     if ((this._mouseMode == MouseMode.SELECT ||
-        this._mouseMode == MouseMode.MOVE ) && this._canEdit)
+        this._mouseMode == MouseMode.MOVE ) && this._determineCanEdit(this.activeLocalization))
     {
       if (event.key == 'ArrowRight' ||
           event.key == 'ArrowLeft' ||
@@ -2537,7 +2554,7 @@ class AnnotationCanvas extends TatorElement
         }
       }
     }
-    if (this._mouseMode == MouseMode.SELECT && this._canEdit)
+    if (this._mouseMode == MouseMode.SELECT && this._determineCanEdit(this.activeLocalization))
     {
       this._impactVector = null;
       var resizeType = this.determineLocalizationResizeType(location, this.activeLocalization);
@@ -2754,7 +2771,7 @@ class AnnotationCanvas extends TatorElement
           this._textOverlay.classList.add("select-not-allowed");
         }
         // Grab the target
-        else if (this._canEdit) {
+        else if (this._determineCanEdit(localization)) {
             this._textOverlay.classList.add("select-grabbing");
         }
       }
@@ -2763,7 +2780,7 @@ class AnnotationCanvas extends TatorElement
     {
       var resizeType = null;
       this._impactVector=null;
-      if (this._canEdit) {
+      if (this._determineCanEdit(this.activeLocalization)) {
         resizeType = this.determineLocalizationResizeType(clickLocation, this.activeLocalization);
       }
 
@@ -2779,7 +2796,7 @@ class AnnotationCanvas extends TatorElement
         this._impactVector=resizeType[1];
         this._textOverlay.classList.add("select-"+resizeType[0]);
       }
-      else if (localization == this.activeLocalization && this._canEdit)
+      else if (localization == this.activeLocalization && this._determineCanEdit(localization))
       {
         this._textOverlay.classList.add("select-grabbing");
       }
@@ -3440,7 +3457,8 @@ class AnnotationCanvas extends TatorElement
     }
 
     if (this._redrawObj !== null && typeof this._redrawObj !== "undefined") {
-      if (this._data.getVersion().id != this._redrawObj.version)
+      // Only do cloning if the object selected is in a parent layer to the selected version.
+      if (this._data.getVersion().bases.indexOf(this._redrawObj.version) >= 0)
       {
         let tempObj = Object.assign({}, this._redrawObj);
         tempObj.x = requestObj.x;
@@ -3668,7 +3686,7 @@ class AnnotationCanvas extends TatorElement
     }
     const objDescription = this.getObjectDescription(localization);
     let original_meta = localization.meta;
-    if (this._data.getVersion().id != localization.version)
+    if (this._data.getVersion().bases.indexOf(localization.version) >= 0)
     {
       console.info("Modifying a localization from another layer!");
       this.cloneToNewVersion(localization, this._data.getVersion().id);
@@ -4078,7 +4096,7 @@ class AnnotationCanvas extends TatorElement
         console.info(`ERROR: Unsupported Localization type '${type}'`);
       }
     }
-    else if (this._canEdit)
+    else if (this._determineCanEdit())
     {
       var that = this;
       //We are moving or resizing

@@ -32,7 +32,12 @@ class VersionDialog extends ModalDialog {
     tr.appendChild(thName);
 
     const thView = document.createElement("th");
+    thView.textContent = "Viewable";
     tr.appendChild(thView);
+
+    const thSelect = document.createElement("th");
+    thSelect.textContent = "Editable";
+    tr.appendChild(thSelect);
 
     const spanView = document.createElement("span");
     spanView.setAttribute("class", "sr-only");
@@ -40,9 +45,11 @@ class VersionDialog extends ModalDialog {
     thView.appendChild(spanView);
 
     this._buttons = [];
+    this._viewables = [];
   }
 
   init(versions, selected_idx) {
+    this._versions = versions;
     // Initializes the dialog.
     // versions: returned object from Version endpoint.
     for (const version of versions) {
@@ -57,6 +64,14 @@ class VersionDialog extends ModalDialog {
       tdName.textContent = version.name;
       tr.appendChild(tdName);
 
+      const tdViewable = document.createElement("td");
+      tdViewable.setAttribute("class", "px-2");
+      tr.appendChild(tdViewable);
+      let viewable = document.createElement("bool-input");
+      viewable.setValue(false);
+      viewable.addEventListener("change", this._handleViewableChange.bind(this));
+      tdViewable.appendChild(viewable);
+
       const tdSelect = document.createElement("td");
       tdSelect.setAttribute("class", "px-2");
       tr.appendChild(tdSelect);
@@ -66,21 +81,78 @@ class VersionDialog extends ModalDialog {
       select.init(version, false);
       tdSelect.appendChild(select);
       this._buttons.push(select);
+      this._viewables.push(viewable);
     }
 
+    this._selected_idx = selected_idx;
     this._buttons[selected_idx].select(true);
+    this._viewables[selected_idx].setValue(true);
+    this._viewables[selected_idx].setDisable(true);
+    this._updatedDependentLayers(selected_idx);
   }
 
+  // A selected layer might have dependent layers that come for the ride.
+  _updatedDependentLayers(selected_idx)
+  {
+    const selected_version = this._versions[selected_idx];
+    const bases = selected_version.bases;
+    for (let idx = 0; idx < this._viewables.length; idx++) {
+      const button = this._buttons[idx];
+      const viewable = this._viewables[idx];
+      // If this row is included make it read only as well
+      if (bases.indexOf(button._version.id) >= 0)
+      {
+        viewable.setDisable(true);
+        viewable.setValue(true);
+      }
+      else if (button._version.id == selected_version.id)
+      {
+        // no-op
+      }
+      else
+      {
+        viewable.setDisable(false);
+        viewable.setValue(false);
+      }
+    }
+  }
+
+  _handleViewableChange(evt) {
+    let viewables = [];
+    for (let idx = 0; idx < this._viewables.length; idx++) {
+      const viewable = this._viewables[idx];
+      const version = this._versions[idx];
+      if (viewable.getValue() == true)
+      {
+        viewables.push(version.id);
+      }
+    }
+    this.dispatchEvent(new CustomEvent("versionSelect", {
+      "detail": {
+        "version": this._versions[this._selected_idx],
+        "viewables": viewables
+      }
+    }));
+  }
   _handleSelect(evt) {
     const id = evt.detail.version.id;
-    for (const button of this._buttons) {
+    let selected_idx = null;
+    for (let idx = 0; idx < this._buttons.length; idx++) {
+      const button = this._buttons[idx];
+      const viewable = this._viewables[idx];
       const sameVersion = button._version.id == id;
       if (!sameVersion) {
         button.deselect();
+        viewable.setValue(false);
+        viewable.setDisable(false);
       } else {
         button.select(true);
+        viewable.setValue(true);
+        viewable.setDisable(true);
+        selected_idx = idx;
       }
     }
+    this._updatedDependentLayers(selected_idx);
     this.dispatchEvent(new CustomEvent("versionSelect", {
       "detail": {
         "version": evt.detail.version,
