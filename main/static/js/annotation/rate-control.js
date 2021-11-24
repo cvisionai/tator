@@ -57,14 +57,7 @@ class RateControl extends TatorElement {
    */
   setValue(rate) {
     this._value = rate;
-    for (let idx = 0; idx < this._rates.length; idx++) {
-      if (this._rates[idx] == rate) {
-
-        this.setIdx(idx);
-        // Done here
-        return;
-      }
-    }
+    this.setIdx(this._rates.findIndex(rate));
   }
 
   setIdx(idx)
@@ -86,6 +79,18 @@ class RateControl extends TatorElement {
   getIdx()
   {
     return this._select.selectedIndex;
+  }
+
+  rateForIdx(idx)
+  {
+    if (idx < 0 || idx >= this._rates.length)
+    {
+      return null;
+    }
+    else
+    {
+      return this._rates[idx];
+    }
   }
 }
 
