@@ -112,15 +112,21 @@ class LocalizationEdit extends TypeForm {
     this._form.appendChild(this._groupingDefault);
 
     // const MEDIA = "Media"; 
-    // const mediaList = new DataMediaList( this.projectId );
-    const mediaListWithChecked = await this.mediaListHandler.getCompiledMediaList( data.media );
-    this._mediaCheckboxes = document.createElement("checkbox-set");
-    this._mediaCheckboxes.setAttribute("name", "Media");
-    this._mediaCheckboxes.setAttribute("type", "number");
-    this._mediaCheckboxes.setValue( mediaListWithChecked );
-    this._mediaCheckboxes.default = mediaListWithChecked;
-    this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._mediaCheckboxes);
+    if (typeof data.media !== "undefined") {
+      try {
+        const mediaListWithChecked = await this.mediaListHandler.getCompiledMediaList( data.media );
+        this._mediaCheckboxes = document.createElement("checkbox-set");
+        this._mediaCheckboxes.setAttribute("name", "Media");
+        this._mediaCheckboxes.setAttribute("type", "number");
+        this._mediaCheckboxes.setValue( mediaListWithChecked );
+        this._mediaCheckboxes.default = mediaListWithChecked;
+        this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
+        this._form.appendChild(this._mediaCheckboxes);   
+      } catch (err) {
+        console.error("Error populating media list.", err);
+      }
+    }
+
 
     current.appendChild(this._form);
 
