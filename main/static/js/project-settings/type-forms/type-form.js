@@ -223,7 +223,6 @@ class TypeForm extends TatorElement {
           });
 
           // Add the item to navigation
-          // console.log(data)
           this._updateNavEvent("new", data.name, saveReturnId);
         });
         // Let user know everything's all set!
@@ -756,6 +755,7 @@ class TypeForm extends TatorElement {
 
   // Update the navigation
   _updateNavEvent(whatChanged, newName = "", newId = -1) {
+    const updateTypeId = newId !== -1 ? newId : this.typeId;
     if (whatChanged == "remove") {
       let event = this.sideNav.removeItemEvent(this.typeId, this.typeName);
       this.sideNav.dispatchEvent(event);
@@ -764,10 +764,10 @@ class TypeForm extends TatorElement {
       // If this item is a MEDIA or VERSION
       // Then remove the related media list inputs
       if (this.typeName == "MediaType") {
-        const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: this.typeId } });
+        const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: updateTypeId } });
         this.mediaListHandler.el.dispatchEvent(deleteEvt);
       } else if (this.typeName == "Version") {
-        const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: this.typeId } });
+        const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: updateTypeId } });
         this.versionListHandler.el.dispatchEvent(deleteEvt);
       }
 
@@ -775,16 +775,16 @@ class TypeForm extends TatorElement {
       // console.log("Rename event");
 
       // Renames the item in the side navigation
-      let event = this.sideNav.renameItemEvent(this.typeId, this.typeName, newName);
+      let event = this.sideNav.renameItemEvent(updateTypeId, this.typeName, newName);
       this.sideNav.dispatchEvent(event);
 
       // If this item is a MEDIA or VERSION
       // Then update the related media list inputs
       if (this.typeName == "MediaType") {
-        const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: this.typeId, newName } });
+        const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: updateTypeId, newName } });
         this.mediaListHandler.el.dispatchEvent(renameEvt);
       } else if (this.typeName == "Version") {
-        const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: this.typeId, newName } });
+        const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: updateTypeId, newName } });
         this.versionListHandler.el.dispatchEvent(renameEvt);
       }
 
@@ -795,10 +795,10 @@ class TypeForm extends TatorElement {
       // If this item is a MEDIA or VERSION
       // Then update the related media list inputs
       if (this.typeName == "MediaType") {
-        const evt = new CustomEvent("change", { detail: { changed: "new", typeId: this.typeId, newName } });
+        const evt = new CustomEvent("change", { detail: { changed: "new", typeId: updateTypeId, newName } });
         this.mediaListHandler.el.dispatchEvent(evt);
       } else if (this.typeName == "Version") {
-        const evt = new CustomEvent("change", { detail: { changed: "new", typeId: this.typeId, newName } });
+        const evt = new CustomEvent("change", { detail: { changed: "new", typeId: updateTypeId, newName } });
         this.versionListHandler.el.dispatchEvent(evt);
       }
     } else {
