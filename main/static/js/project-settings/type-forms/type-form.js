@@ -142,7 +142,11 @@ class TypeForm extends TatorElement {
       } else {
         this._formWrapper.innerHTML = "";
       }
-      const sectionForm = await this._getSectionForm(this._getEmptyData());
+      if (typeof this.mediaListHandler !== "undefined") {
+        await this.mediaListHandler.getProjectMediaList(true);
+      }
+      const emptyData = this._getEmptyData();
+      const sectionForm = await this._getSectionForm(emptyData);
       this._formWrapper.appendChild(sectionForm);
       
       // Add save button
@@ -434,6 +438,7 @@ class TypeForm extends TatorElement {
   }
 
   _getEmptyData() {
+
     return {
       id: `New`,
       name: "",
