@@ -512,11 +512,9 @@ class AnnotationPage extends TatorPage {
     });
 
     canvas.addEventListener("playing", () => {
-      this._player.disableRateChange();
       this._player.disableQualityChange();
     });
     canvas.addEventListener("paused", () => {
-      this._player.enableRateChange();
       this._player.enableQualityChange();
     });
 
@@ -595,7 +593,7 @@ class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", evt => {
-      this._data.setVersion(evt.detail.version).then(() => {
+      this._data.setVersion(evt.detail.version, evt.detail.viewables).then(() => {
         this._settings.setAttribute("version", evt.detail.version.id);
         this._canvas.refresh();
       });

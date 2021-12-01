@@ -65,9 +65,10 @@ class AnnotationData extends HTMLElement {
   }
 
   // Returns a promise when done
-  setVersion(version) {
+  setVersion(version, viewables) {
     this._version = version;
-    return this.updateAll(this._dataTypesRaw, version);
+    this._viewables = viewables;
+    return this.updateAll(this._dataTypesRaw, version, viewables);
   }
 
   getVersion()
@@ -76,7 +77,7 @@ class AnnotationData extends HTMLElement {
   }
 
   // Returns a promise when done
-  updateAll(dataTypes, version) {
+  updateAll(dataTypes, version, viewables) {
     const trackTypeIds=[];
     const localTypeIds=[];
 
@@ -266,7 +267,12 @@ class AnnotationData extends HTMLElement {
         searchParams.set('search',query);
     }
 
-    searchParams.set('version',[...this._version.bases,this._version.id]);
+    let requested_versions=[...this._version.bases,this._version.id];
+    if (this._viewables)
+    {
+      requested_versions=[...new Set(requested_versions.concat(this._viewables))];
+    }
+    searchParams.set('version',requested_versions);
     url.search = searchParams;
 
     // Fetch new ones from server

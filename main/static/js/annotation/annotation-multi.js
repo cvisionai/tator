@@ -415,6 +415,28 @@ class AnnotationMulti extends TatorElement {
           this._rateControl.setValue(4);
         }
       }
+      else if (evt.key == 'ArrowUp' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          const newIdx = this._rateControl.getIdx()+1;
+          const newRate = this._rateControl.rateForIdx(newIdx);
+          if (this._ratesAvailable == null || (newRate >= this._ratesAvailable.minimum && newRate <= this._ratesAvailable.maximum))
+          {
+            this._rateControl.setIdx(newIdx);
+          }
+        }
+      }
+      else if (evt.key == 'ArrowDown' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          const newIdx = this._rateControl.getIdx()-1;
+          const newRate = this._rateControl.rateForIdx(newIdx);
+          if (this._ratesAvailable == null || (newRate >= this._ratesAvailable.minimum && newRate <= this._ratesAvailable.maximum))
+          {
+            this._rateControl.setIdx(newIdx);
+          }
+        }
+      }
     });
   }
 
@@ -1559,7 +1581,8 @@ class AnnotationMulti extends TatorElement {
 
   play()
   {
-    if (this._rate > 4.0)
+    this._ratesAvailable = this.computeRatesAvailable();
+    if (this._rate > 8.0)
     {
       let playing = false;
       // Check to see if the video player can play at this rate
@@ -1588,6 +1611,7 @@ class AnnotationMulti extends TatorElement {
         this._syncThread = setTimeout(() => {this.syncCheck()},
                                       500);
       }
+      return;
     }
 
     for (let idx = 0; idx < this._videos.length; idx++)
@@ -1626,7 +1650,8 @@ class AnnotationMulti extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > 4.0)
+    this._ratesAvailable = this.computeRatesAvailable();
+    if (this._rate > 8.0)
     {
       let playing = false;
       // Check to see if the video player can play at this rate
@@ -1654,6 +1679,7 @@ class AnnotationMulti extends TatorElement {
         this._syncThread = setTimeout(() => {this.syncCheck()},
                                       500);
       }
+      return;
     }
 
     for (let idx = 0; idx < this._videos.length; idx++)
@@ -1692,8 +1718,22 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  computeRatesAvailable()
+  {
+    let prime = this._videos[0].playbackRatesAvailable();
+    for (let idx = 1; idx < this._videos.length; idx++)
+    {
+      let this_vid = this._videos[idx].playbackRatesAvailable();
+      prime.minimum = Math.max(prime.minimum, this_vid.minimum);
+      prime.maximum = Math.min(prime.maximum, this_vid.maximum);
+      prime.frameInterval = Math.max(prime.frameInterval, this_vid.frameInterval);
+    }
+    return prime;
+  }
+
   pause()
   {
+    this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
     this.disablePlayUI(); // Wait for playbackReady checks to enable play
 

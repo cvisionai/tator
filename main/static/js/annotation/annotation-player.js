@@ -454,6 +454,28 @@ class AnnotationPlayer extends TatorElement {
           this._rateControl.setValue(4);
         }
       }
+      else if (evt.key == 'ArrowUp' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          const newIdx = this._rateControl.getIdx()+1;
+          const newRate = this._rateControl.rateForIdx(newIdx);
+          if (this._ratesAvailable == null || (newRate >= this._ratesAvailable.minimum && newRate <= this._ratesAvailable.maximum))
+          {
+            this._rateControl.setIdx(newIdx);
+          }
+        }
+      }
+      else if (evt.key == 'ArrowDown' && evt.ctrlKey)
+      {
+        if (!this._rateControl.hasAttribute("disabled")) {
+          const newIdx = this._rateControl.getIdx()-1;
+          const newRate = this._rateControl.rateForIdx(newIdx);
+          if (this._ratesAvailable == null || (newRate >= this._ratesAvailable.minimum && newRate <= this._ratesAvailable.maximum))
+          {
+            this._rateControl.setIdx(newIdx);
+          }
+        }
+      }
     });
 
     this._videoStatus = "paused"; // Possible values: playing | paused | scrubbing
@@ -874,7 +896,7 @@ class AnnotationPlayer extends TatorElement {
 
   play()
   {
-    if (this._rate > 4.0)
+    if (this._rate > 8.0)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
@@ -884,6 +906,7 @@ class AnnotationPlayer extends TatorElement {
         return;
       }
     }
+    this._ratesAvailable = this._video.playbackRatesAvailable();
 
     if (this._video._onDemandPlaybackReady != true)
     {
@@ -913,7 +936,7 @@ class AnnotationPlayer extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > 4.0)
+    if (this._rate > 8.0)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
@@ -923,6 +946,7 @@ class AnnotationPlayer extends TatorElement {
         return;
       }
     }
+    this._ratesAvailable = this._video.playbackRatesAvailable();
 
     if (this._video._onDemandPlaybackReady != true)
     {
@@ -952,6 +976,7 @@ class AnnotationPlayer extends TatorElement {
 
   pause()
   {
+    this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");

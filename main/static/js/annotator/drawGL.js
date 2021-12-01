@@ -745,6 +745,12 @@ class DrawGL
     this.frameBuffer.reset();
   }
 
+  // Returns back the frame to start loading from
+  trimBuffer(count)
+  {
+    return this.frameBuffer.trim(count);
+  }
+
   // Returns true if there is room for loading frames
   canLoad()
   {

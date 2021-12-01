@@ -78,17 +78,21 @@ class AlgorithmEdit extends TypeForm {
       // User
       this._registeredUserName = "";
       this._registeredUserId = "";
-      if (this.data.id == "New") {
-         //use current user
-         let userData = await this._userData.getCurrentUser();
-         // console.log(userData);
-         this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
-         this._registeredUserId = userData.id;
-      } else {
-         let userData = await this._userData.getUserById(this.data.user);
-         // console.log(userData);
-         this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
-         this._registeredUserId = userData.id;
+      try {
+         if (this.data.id == "New") {
+            //use current user
+            let userData = await this._userData.getCurrentUser();
+            // console.log(userData);
+            this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
+            this._registeredUserId = userData.id;
+         } else {
+            let userData = await this._userData.getUserById(this.data.user);
+            // console.log(userData);
+            this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
+            this._registeredUserId = userData.id;
+         }
+      } catch (err) {
+         console.error("Couldn't get user data.", err);
       }
 
       // Visible input with readable name
