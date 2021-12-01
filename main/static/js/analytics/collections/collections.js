@@ -20,6 +20,7 @@ class AnalyticsCollections extends TatorPage {
       this._breadcrumbs.setAttribute("analytics-name", "Collections Gallery");
 
       this._settings = document.createElement("analytics-settings");
+      this._settings.pageSize = 5;
       this._settings.style.marginLeft = "50px";
       div.appendChild(this._settings);
 
@@ -119,12 +120,7 @@ class AnalyticsCollections extends TatorPage {
 
         // Pass panel and localization types to gallery
         this._collectionsGallery.init({
-          panelContainer: this._panelContainer,
-          pageModal: this.modal,
-          modelData: this._modelData,
-          collectionsData: this._collectionsData,
-          galleryContainer: this._collectionsGallery,
-          analyticsSettings: this._settings
+          parentPage: this
         });
 
         // Filter interface

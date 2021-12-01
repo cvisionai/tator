@@ -91,6 +91,21 @@ class EntityCard extends TatorElement {
       this.addEventListener("mouseleave", () => {
         this._more.style.opacity = 0;
       });
+
+      this.addEventListener("click", this.togglePanel.bind(this) );
+
+      // prep this var
+      this._tmpHidden = null;
+      this.attributeDivs = {};
+      this._currentShownAttributes = "";
+      this.multiEnabled = false;
+      this._multiSelectionToggle = false;
+  
+      /* Holds attributes for the card */
+      this.attributesDiv = document.createElement('div');
+
+      /* Sends events related to selection clicks */
+      this.addEventListener('contextmenu', this.contextMenuHandler.bind(this));
     }
   
     static get observedAttributes() {
@@ -140,6 +155,230 @@ class EntityCard extends TatorElement {
           this._pos_text.textContent = newValue;
       }
     }
+  
+    
+
+  init({ obj, panelContainer, cardLabelsChosen, enableMultiselect = false, idx = null }) {
+    // Give card access to panel
+    this.panelContainer = panelContainer;
+    this.cardObj = obj;
+    this.multiEnabled = enableMultiselect;
+    this._idx = idx;
+
+    if (this._idx !== null) {
+      console.log(`Tab index ${this._idx}`);
+      this._li.setAttribute("tabindex", this._idx )
+    }
+  
+      // ID is title
+      this._id_text.innerHTML = `ID: ${this.cardObj.id}`;
+  
+      // Graphic
+      if(typeof this.cardObj.image !== "undefined" && this.cardObj.image !== null) {
+        //this.setAttribute("thumb", obj.image);
+        this.setImageStatic(obj.image);
+      } else if(typeof obj.graphic !== "undefined" && obj.graphic !== null) {
+        this.reader = new FileReader();
+        this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
+        this.reader.addEventListener("load", this._setImgSrc.bind(this));
+      } else {
+        //this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+        this.setImageStatic("/static/images/spinner-transparent.svg");
+      }
+  
+      // Add position text related to pagination
+      this.setAttribute("pos-text", obj.posText);
+  
+  
+      /**
+       * Attributes hidden on card are controlled by outer menu 
+      */
+    if (obj.attributeOrder && obj.attributeOrder.length > 0) {
+        // Clear this in case of reuse / re-init
+        this.attributesDiv.innerHTML = "";
+        for(const attr of obj.attributeOrder){
+          let attrStyleDiv = document.createElement("div");
+          attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
+          
+          let attrLabel = document.createElement("span");
+          attrLabel.setAttribute("class", "f3 text-gray text-normal");
+          attrStyleDiv.appendChild(attrLabel);
+  
+          let key = attr.name;
+          if(obj.attributes !== null && typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== ""){
+            attrLabel.appendChild( document.createTextNode(`${obj.attributes[key]}`) );
+          } else {
+            attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+          }
+  
+          // add to the card & keep a list
+          this.attributeDivs[key] = {};
+          this.attributeDivs[key].div = attrStyleDiv;
+          this.attributeDivs[key].value = attrLabel;
+  
+          if(cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0){
+            // If we have any preferences saved check against it
+            if(cardLabelsChosen.indexOf(key) > -1) {     
+              // console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
+            } else {
+              attrStyleDiv.classList.add("hidden");
+            }
+          }       
+  
+          this.attributesDiv.appendChild(attrStyleDiv);
+        }
+  
+        if(this.attributeDivs){       
+          // Show description div
+          this.descDiv.appendChild(this.attributesDiv);
+          this.descDiv.hidden = false;
+        }
+      }
+    }
+  
+    /**
+    * Custom label display update
+    */
+    _updateShownAttributes(evt){
+      let labelValues = evt.detail.value;
+      
+      if(this.attributeDivs){
+        // show selected
+        for (let [key, value] of Object.entries(this.attributeDivs)) {
+          if(labelValues.includes(key)){
+            value.div.classList.remove("hidden");
+          } else {
+            value.div.classList.add("hidden");
+          }
+        } 
+      }
+    }
+  
+    /**
+     * Update Attribute Values
+     * - If side panel is edited the card needs to update attributes
+     */
+     _updateAttributeValues(data) {
+      for (let [attr, value] of Object.entries(data.attributes)) {
+        if(this.attributeDivs[attr] != null){
+          this.attributeDivs[attr].value.innerHTML = value;
+        } else {
+          attrLabel.innerHTML =`<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+        }
+      }
+    }
+  
+    set posText(val){
+      this.setAttribute("pos-text", val);
+    }
+  
+    /**
+     * Set the card's main image thumbnail
+     * @param {image} image
+     */
+    setImage(image) {
+      this.reader = new FileReader();
+      this.reader.readAsDataURL(image); // converts the blob to base64
+      this.reader.addEventListener("load", this._setImgSrcReader.bind(this));
+    }
+  
+    _setImgSrcReader() {
+      this._img.setAttribute("src", this.reader.result);
+      this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
+    }
+  
+    setImageStatic(image) {
+      //this.setAttribute("thumb", image);
+      this._img.setAttribute("src", image);
+      this.cardObj.image = image;
+      this._img.onload = () => {this.dispatchEvent(new Event("loaded"))};
+    }
+  
+    togglePanel(e){
+      e.preventDefault();
+
+      if (this.multiEnabled) {
+        /* @ "card-click"*/
+        if (e.shiftKey ) {
+          console.log("Shift click!");
+          this._multiSelectionToggle = true;
+          this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        }
+
+        if (e.code == "Enter" ) {
+          console.log("Enter click!... "+this._li.hasFocus());
+          if (this._li.hasFocus()) {
+            //
+          }
+          this._multiSelectionToggle = true;
+          this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        }
+        
+        if (e.ctrlKey || e.code == "Control") {
+          // usually context menu is hit, and not this keeping in case....
+          this._multiSelectionToggle = true;
+          this.dispatchEvent(new CustomEvent("ctrl-select", { detail: {  element : this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        }      
+      }
+
+      if(this._li.classList.contains("is-selected") && !this._multiSelectionToggle) {
+        this._deselectedCardAndPanel();    
+      } else if(!this._multiSelectionToggle){
+        this._selectedCardAndPanel();
+      } else {
+        this.cardClickEvent(false);
+      }
+    }
+  
+    _unselectOpen() {
+      const cardId = this.panelContainer._panelTop._panel.getAttribute("selected-id");
+
+      // if it exists, close it!
+      if (!this._multiSelectionToggle) {
+        console.log("unselecting this cardId: "+cardId)
+        if(typeof cardId !== "undefined" && cardId !== null) {
+          let evt = new CustomEvent("unselected", { detail: { id: cardId } });
+          this.panelContainer.dispatchEvent(evt); // this even unselected related card
+        }   
+      }
+    }
+  
+    _deselectedCardAndPanel(){
+      this.cardClickEvent(false); 
+      this._li.classList.remove("is-selected");
+      this.annotationEvent("hide-annotation");
+    }
+  
+  _selectedCardAndPanel() {
+    // Hide open panels
+    this._unselectOpen();
+      this.cardClickEvent(true);
+      this.annotationEvent("open-annotation");
+      this._li.classList.add("is-selected");
+    }
+  
+    cardClickEvent(openFlag = false){
+      // Send event to panel to hide the localization canvas & title
+      let cardClickEvent = new CustomEvent("card-click", { detail : { openFlag, cardObj : this.cardObj } });
+      this.dispatchEvent( cardClickEvent );
+    }
+  
+    annotationEvent(evtName){
+      // Send event to panel to hide the localization
+      let annotationEvent = new CustomEvent(evtName, { detail : { cardObj : this.cardObj } });
+      this.panelContainer.dispatchEvent( annotationEvent );
+    }
+  
+    contextMenuHandler(e) {
+      if (e.ctrlKey) {
+        console.log("Card was clicked with ctrl");
+        this._multiSelectionToggle = true;
+        e.preventDefault(); // stop contextmenu
+        // this.togglePanel(e);
+        this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element : this, id: this.cardObj.id, isSelected:  this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        // this._li.classList.add("is-selected");
+      }
+   }
    
   }
   

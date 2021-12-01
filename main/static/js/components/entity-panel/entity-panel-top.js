@@ -40,16 +40,6 @@ class EntityGalleryPanelTop extends TatorElement {
     this._topBarID.setAttribute("class", "entity-panel--container--top-bar--id text-normal text-gray h3 ");
     this._topBarH3.appendChild(this._topBarID);
 
-    // Panel text
-    // this._topBarP = document.createElement("p");
-    // this._topBarP.setAttribute("class", "entity-panel--container--top-bar--p text-gray py-2 ");
-    // this._topBarP.appendChild( document.createTextNode("Hover over localizations in gallery to preview annotations. Click to pin in the viewer.") );
-    // this._box.appendChild(this._topBarP);
-
-    // Panel Img Canvas
-    this._locImage = document.createElement("entity-panel-localization");
-    this._box.appendChild(this._locImage);
-
     // Optional static image
     this._staticImage = document.createElement("img");
     this._staticImage.hidden = true;
@@ -58,33 +48,19 @@ class EntityGalleryPanelTop extends TatorElement {
     /* Media Prev/Next and Go To Frame*/
     // Hidden until initialized
     this._navigation = document.createElement("entity-panel-navigation");
-    this._navigation.hidden = true;
+    this._navigation.classList.add("hidden");
     this._navigation.controls.marginTop = "-20px"
     this._box.appendChild(this._navigation);
-
-    // Image modal link container @TODO styling
-    const modalLinkDiv = document.createElement("div");
-    modalLinkDiv.setAttribute("class", "d-flex flex-items-center py-1");
-    this._shadow.appendChild(modalLinkDiv);
-
-    // Modal link @TODO styling & copy
-    // this._modalLink = document.createElement("a");
-    // this._modalLink.setAttribute("class", "btn btn-clear btn-charcoal h3")
-    // this._modalLink.setAttribute("href", "#");
-    // this._modalLink.textContent = "View in Modal";
-    // modalLinkDiv.appendChild(this._modalLink); 
-
-    // Modal CTA
-    //this._modalLink.addEventListener("click", this._locImage._popModalWithPlayer.bind(this))
 
     // If the panel is showing a localization default is true
     this.localizationType = true;
 
-    /* #TODO
+    /* 
      * Create 1 panel, and init it / reuse it from card sending it cardObj data (currently done on card creation) 
      */
-    // this._panel = document.createElement("entity-gallery-panel");
-    // this._box.appendChild(this._panel);
+    this._panel = document.createElement("entity-gallery-panel");
+    this._panel.hidden = true;
+    this._box.appendChild(this._panel);
   }
 
   static get observedAttributes() {
@@ -100,9 +76,15 @@ class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  init({ pageModal, modelData, panelContainer }) {
-    if (this.localizationType) {
+  init({ pageModal, modelData, panelContainer, customContentHandler = false }) {
+    if (!customContentHandler) {
+      if (this._locImage == undefined) {
+        this._locImage = document.createElement("entity-panel-localization");
+        this._box.insertBefore(this._locImage, this._staticImage);
+      }
       this._locImage.init({ pageModal, modelData, panelContainer });
+    } else {
+      this.openHandler = customContentHandler;
     }
   }
 
@@ -116,7 +98,7 @@ class EntityGalleryPanelTop extends TatorElement {
       this.locDataHandler(evtDetail);
     }
     this.headingHandler(evtDetail);
-    //this.panelDataHandler(evtDetail);
+    this.panelDataHandler(evtDetail);
     this.navigationHandler(evtDetail, cardElements, cardIndexes);
   }
 
@@ -133,9 +115,13 @@ class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  panelDataHandler(evtDetail){
-    let cardObj = evtDetail.cardObj
-    this._panel.init({cardObj});
+  panelDataHandler(evtDetail) {
+    if (evtDetail.openFlag) {
+      this._panel.init({ cardObj: evtDetail.cardObj });
+      this._panel.hidden = false;
+    } else {
+      this._panel.hidden = true;
+    }
   }
 
   locDataHandler(evtDetail) {
@@ -156,8 +142,8 @@ class EntityGalleryPanelTop extends TatorElement {
       /* Get panel name */
       let panelName = "";
       // Localization or Media Type name
-      if(cardObj.stateType && cardObj.stateType == "Media"){
-        panelName = evtDetail.cardObj.mediaInfo.entityType.name;
+      if(cardObj.stateInfo){
+        panelName = cardObj.stateInfo.entityType.name;
       } else {
         panelName = evtDetail.cardObj.entityType.name;
       }

@@ -206,6 +206,7 @@ FILES = \
     util/same-origin-credentials.js \
     components/tator-element.js \
     components/buttons/entity-frame-link-button.js \
+    components/buttons/bulk-correct-button.js \
     components/inputs/array-input.js \
     components/inputs/user-input.js \
     components/inputs/email-list-input.js \
@@ -249,6 +250,10 @@ FILES = \
     components/entity-gallery/entity-gallery_h-slide.js \
     components/entity-gallery/entity-gallery_grid.js \
     components/entity-gallery/entity-gallery-more-menu.js \
+    components/entity-gallery/bulk-edit/selection-panel.js \
+    components/entity-gallery/bulk-edit/comparison-panel.js \
+    components/entity-gallery/bulk-edit/edit-panel.js \
+    components/entity-gallery/entity-gallery-bulk-edit.js \
     components/entity-panel/entity-panel-navigation.js \
     components/entity-panel/entity-panel-localization.js \
     components/entity-panel/entity-panel-form.js \
@@ -452,16 +457,22 @@ FILES = \
     analytics/dashboards/dashboard-portal.js \
     analytics/dashboards/dashboard-summary.js \
     analytics/dashboards/dashboard.js \
-    analytics/localizations/card.js \
     analytics/localizations/gallery.js \
     analytics/localizations/panel-data.js \
     analytics/localizations/card-data.js \
     analytics/localizations/localizations.js \
-    analytics/collections/slide-data.js \
-    analytics/collections/card.js \
-    analytics/collections/gallery.js \
+    analytics/corrections/localizations.js \
+    analytics/corrections/gallery.js \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
+    analytics/reports/reports.js \
+    apps/verification/components/apps-species-gallery.js \
+    apps/verification/components/apps-species-panel.js \
+    apps/verification/components/apps-verification-breadcrumbs.js \
+    apps/verification/components/apps-verification-table.js \
+    apps/verification/data/apps-verification-api.js \
+    apps/verification/apps-species-page.js \
+    apps/verification/apps-verification-page.js \
     analytics/portal/portal.js \
     analytics/files/files-page.js \
     analytics/files/file-type-dialog.js \

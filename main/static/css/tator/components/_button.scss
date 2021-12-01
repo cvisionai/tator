@@ -114,3 +114,51 @@
   position: absolute;
   bottom: 10px;
 }
+
+.border-green {
+  border: 1px solid $color-green;
+}
+
+.border-red {
+  border: 1px solid $color-red;
+}
+
+.border-orange {
+  border: 1px solid $color-orange;
+}
+
+.border-purple {
+  border: 1px solid $color-purple;
+}
+
+.btn-auto-width {
+  width: auto;
+}
+
+.btn.background-green,
+.background-green {
+  background-color: $color-green;
+
+  &:hover,
+  &:focus {
+    background-color: $color-white;
+    color: $color-green;
+  }
+  &:disabled,
+  [disabled] {
+    background-color: $color-charcoal--brown;
+    color: $color-gray--dark;
+  }
+}
+
+.background-red {
+  background-color: $color-red !important;
+}
+
+.background-orange {
+  background-color: $color-orange !important;
+}
+
+.background-purple {
+  background-color: $color-purple !important;
+}

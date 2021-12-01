@@ -34,15 +34,20 @@ class AnalyticsPortal extends TatorPage {
     this.main.appendChild(localizationsBox);
 
     // Collections
-    /*
     const collectionsBox = this._getDashboardBox({
         name : "Collections",
         href : `/${this.projectId}/analytics/collections`,
-      iconName: "track-icon",
-        disabled: true,
+        iconName: "track-icon"
       });
     this.main.appendChild(collectionsBox);
-    */
+
+    // Collections
+    const correctionsBox = this._getDashboardBox({
+      name : "Corrections",
+      href : `/${this.projectId}/analytics/corrections`,
+      iconName: "pencil-icon"
+    });
+      this.main.appendChild(correctionsBox);
 
     // Dashboards
     const dashboardsBox = this._getDashboardBox({

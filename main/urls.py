@@ -30,7 +30,10 @@ from .views import AuthAdminView
 from .views import DashboardPortalView
 from .views import DashboardView
 from .views import AnalyticsLocalizationsView
+from .views import AnalyticsCorrectionsView
 from .views import AnalyticsCollectionsView
+from .views import AppsSpeciesView
+from .views import AppsVerificationView
 from .views import AnalyticsPortalView
 from .views import FilesView
 
@@ -58,6 +61,12 @@ urlpatterns = [
          AnalyticsLocalizationsView.as_view(), name='analytics-localizations'),
     path('<int:project_id>/analytics/collections',
          AnalyticsCollectionsView.as_view(), name='analytics-collections'),
+    path('<int:project_id>/analytics/corrections',
+         AnalyticsCorrectionsView.as_view(), name='analytics-corrections'),
+    path('<int:project_id>/apps/species',
+         AppsSpeciesView.as_view(), name='apps-species'),
+    path('<int:project_id>/apps/verification',
+         AppsVerificationView.as_view(), name='apps-verification'),
     path('<int:project_id>/analytics/files',
          FilesView.as_view(), name='files'),
     path('<int:project_id>/dashboards',

@@ -52,11 +52,18 @@ class EntityGalleryPanel extends TatorElement {
     this._main.appendChild(this.mediaData);
   }
 
+  set permission(val) {
+    this.entityData.setAttribute("permission", val);
+    this.stateData.setAttribute("permission", val);
+    this.mediaData.setAttribute("permission", val);
+  }
+
   /**
    * Updates both the entity and the media data with the given card object
    * @param {Object} cardObj
    */
   async init({ cardObj }) {
+    this.setAttribute("selected-id", cardObj.id)
     this.cardObj = cardObj;
     //console.log(this.cardObj);
     // Setup linkout and the entity data for panel here

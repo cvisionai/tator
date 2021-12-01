@@ -25,6 +25,7 @@ class CollectionsData extends HTMLElement {
       this._stateTypesMap.set(stateType.id, stateType);
     }
 
+    this.getCollectionsFilter()
     this._totalStateCount = 0;
     this.filterConditions = null;
     this.afterMap = new Map();
@@ -34,8 +35,8 @@ class CollectionsData extends HTMLElement {
    * @param {array} filterConditions array of FilterConditionData objects
    */
   async _reload(filterConditions) {
-    this.filterConditions = filterConditions;
-    this._totalStateCount = await this._modelData.getFilteredStates("count", filterConditions);
+    this.filterConditions = filterConditions !== null && Array.isArray(filterConditions) ? filterConditions.concat(this.collectionsFilter) : this.collectionsFilter;
+    this._totalStateCount = await this._modelData.getFilteredStates("count", this.filterConditions);
     this.afterMap = new Map();
   }
 
@@ -45,7 +46,8 @@ class CollectionsData extends HTMLElement {
    * @returns True if reload() needs to be called
    */
   _needReload(filterConditions) {
-    return JSON.stringify(filterConditions) != JSON.stringify(this.filterConditions);
+    let compareConditions = filterConditions !== null && Array.isArray(filterConditions) ? filterConditions.concat(this.collectionsFilter) : this.collectionsFilter;
+    return JSON.stringify(this.filterConditions) != JSON.stringify(compareConditions);
   }
 
   /**
@@ -55,22 +57,53 @@ class CollectionsData extends HTMLElement {
    *   getState
    */
   async updateData(filterConditions) {
-    if (this._needReload(filterConditions)) {
-      await this._reload(filterConditions);
+    if (this._stateTypesMap.size !== 0) {
+      if (this._needReload(filterConditions)) {
+        await this._reload(filterConditions);
+      }
+
+      this._states = await this._modelData.getFilteredStates(
+        "objects",
+        this.filterConditions,
+        this._paginationState.start,
+        this._paginationState.stop,
+        this.afterMap
+      );
+
+      this._states = this._states.map(state => {
+        return { ...state, typeData: this._stateTypesMap.get(state.meta) }
+      });
+    } else {
+      this._states = [];
     }
 
-    this._states = await this._modelData.getFilteredStates(
-      "objects",
-      filterConditions,
-      this._paginationState.start,
-      this._paginationState.stop,
-      this.afterMap,
-      this._stateTypesMap
-    );
+    return this._states;
+  }
 
-    for (let idx = 0; idx < this._states.length; idx++) {
-      this._states[idx].typeData = this._stateTypesMap.get(this._states[idx].meta);
+  getCollectionsFilter() {
+    this.collectionsFilter = [];
+    let count = 0;
+    let string = "( ";
+
+    for (let [key, value] of this._stateTypesMap.entries()) {
+      if (count == 0) {
+        string += `${key}`;
+      } else {
+        string += ` OR ${key}`;
+      }
+      count++
     }
+    string += ` )`;
+
+    this.collectionsFilter.push({
+      category: "State",
+      field: "_meta",
+      modifier: "OR",
+      value: string
+    });
+    // console.log(this.collectionsFilter)
+
+    return this.collectionsFilter;
   }
 
   getStates() {
