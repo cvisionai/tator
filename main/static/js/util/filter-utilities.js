@@ -44,6 +44,7 @@ class FilterUtilities {
     // #TODO Add more options for the different dtypes
     if (selectedAttributeType.name == "_version" ||
         selectedAttributeType.name == "_section" ||
+        selectedAttributeType.name == "_user" ||
         selectedAttributeType.name == "_dtype") {
       choices.push({"value": "=="});
     }
@@ -56,6 +57,10 @@ class FilterUtilities {
     }
     else if (dtype == "bool") {
       choices.push({"value": "=="});
+    }
+    else if (dtype == "datetime") {
+      choices.push({"value": "After"});
+      choices.push({"value": "Before"});
     }
     else {
       choices.push({"value": "Includes"});

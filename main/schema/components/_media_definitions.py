@@ -153,7 +153,7 @@ multi_definition = {
     },
 }
 
-file_definition = {
+auxiliary_file_definition = {
     'type': 'object',
     'required': ['path'],
     'properties': {
@@ -241,7 +241,7 @@ media_files = {
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
         'image': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
-        'attachment': {'type': 'array', 'items': {'$ref': '#/components/schemas/FileDefinition'}},
+        'attachment': {'type': 'array', 'items': {'$ref': '#/components/schemas/AuxiliaryFileDefinition'}},
         'thumbnail': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         'thumbnail_gif': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         'live': {'type': 'array', 'items': {'$ref': '#/components/schemas/LiveDefinition'}},

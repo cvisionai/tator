@@ -56,7 +56,7 @@ class RegisteredDashboard extends TatorPage {
 
   _init(dashboardId) {
     this._dashboardId = dashboardId;
-    const dashboardPromise = fetch("/rest/Dashboard/" + dashboardId, {
+    const dashboardPromise = fetch("/rest/Applet/" + dashboardId, {
       method: "GET",
       credentials: "same-origin",
       headers: {

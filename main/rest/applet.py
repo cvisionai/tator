@@ -9,10 +9,10 @@ from ..models import Project
 from ..models import Dashboard
 from ..models import User
 from ..models import database_qs
-from ..schema import DashboardListSchema
-from ..schema import DashboardDetailSchema
+from ..schema import AppletListSchema
+from ..schema import AppletDetailSchema
 from ..schema import parse
-from ..schema.components.dashboard import dashboard_fields as fields
+from ..schema.components.applet import applet_fields as fields
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
@@ -20,8 +20,8 @@ from ._permissions import ProjectExecutePermission
 
 logger = logging.getLogger(__name__)
 
-class DashboardListAPI(BaseListView):
-    schema = DashboardListSchema()
+class AppletListAPI(BaseListView):
+    schema = AppletListSchema()
     permission_classes = [ProjectExecutePermission]
     http_method_names = ['get', 'post']
 
@@ -44,12 +44,12 @@ class DashboardListAPI(BaseListView):
             logger.error(log_msg)
             raise exc
 
-        # Gather the dashboard file and verify it exists on the server in the right project
-        dashboard_file = os.path.basename(params[fields.html_file])
-        dashboard_url = os.path.join(str(project_id), dashboard_file)
-        dashboard_path = os.path.join(settings.MEDIA_ROOT, dashboard_url)
-        if not os.path.exists(dashboard_path):
-            log_msg = f'Provided dashboard ({dashboard_file}) does not exist in {settings.MEDIA_ROOT}'
+        # Gather the applet file and verify it exists on the server in the right project
+        applet_file = os.path.basename(params[fields.html_file])
+        applet_url = os.path.join(str(project_id), applet_file)
+        applet_path = os.path.join(settings.MEDIA_ROOT, applet_url)
+        if not os.path.exists(applet_path):
+            log_msg = f'Provided applet ({applet_file}) does not exist in {settings.MEDIA_ROOT}'
             logging.error(log_msg)
             raise ValueError(log_msg)
 
@@ -57,17 +57,17 @@ class DashboardListAPI(BaseListView):
         description = params.get(fields.description, None)
         categories = params.get(fields.categories, None)
 
-        new_dashboard = Dashboard.objects.create(
+        new_applet = Dashboard.objects.create(
             categories=categories,
             description=description,
-            html_file=dashboard_path,
+            html_file=applet_path,
             name=params[fields.name],
             project=project)
 
-        return {"message": f"Successfully created dashboard {new_dashboard.id}!", "id": new_dashboard.id}
+        return {"message": f"Successfully created applet {new_applet.id}!", "id": new_applet.id}
 
-class DashboardDetailAPI(BaseDetailView):
-    schema = DashboardDetailSchema()
+class AppletDetailAPI(BaseDetailView):
+    schema = AppletDetailSchema()
     permission_classes = [ProjectExecutePermission]
     http_method_names = ['get', 'patch', 'delete']
 
@@ -79,16 +79,16 @@ class DashboardDetailAPI(BaseDetailView):
             logger.warning(f"Could not remove {path}")
 
     def _delete(self, params: dict) -> dict:
-        # Grab the dashboard object and delete it from the database
-        dashboard = Dashboard.objects.get(pk=params['id'])
-        html_file = dashboard.html_file
-        dashboard.delete()
+        # Grab the applet object and delete it from the database
+        applet = Dashboard.objects.get(pk=params['id'])
+        html_file = applet.html_file
+        applet.delete()
 
         # Delete the correlated file
         path = os.path.join(settings.MEDIA_ROOT, html_file.name)
         self.safe_delete(path=path)
 
-        msg = 'Registered dashboard deleted successfully!'
+        msg = 'Registered applet deleted successfully!'
         return {'message': msg}
 
     def _get(self, params):
@@ -96,8 +96,8 @@ class DashboardDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params) -> dict:
-        dashboard_id = params["id"]
-        obj = Dashboard.objects.get(pk=dashboard_id)
+        applet_id = params["id"]
+        obj = Dashboard.objects.get(pk=applet_id)
 
         name = params.get(fields.name, None)
         if name is not None:
@@ -113,23 +113,23 @@ class DashboardDetailAPI(BaseDetailView):
 
         html_file = params.get(fields.html_file, None)
         if html_file is not None:
-            dashboard_file = os.path.basename(html_file)
-            dashboard_url = os.path.join(str(obj.project.id), dashboard_file)
-            dashboard_path = os.path.join(settings.MEDIA_ROOT, dashboard_url)
-            if not os.path.exists(dashboard_path):
-                log_msg = f'Provided dashboard ({dashboard_path}) does not exist'
+            applet_file = os.path.basename(html_file)
+            applet_url = os.path.join(str(obj.project.id), applet_file)
+            applet_path = os.path.join(settings.MEDIA_ROOT, applet_url)
+            if not os.path.exists(applet_path):
+                log_msg = f'Provided applet ({applet_path}) does not exist'
                 logging.error(log_msg)
-                raise ValueError("Dashboard file does not exist in expected location.")
+                raise ValueError("Applet file does not exist in expected location.")
 
             delete_path = os.path.join(settings.MEDIA_ROOT, obj.html_file.name)
             self.safe_delete(path=delete_path)
-            obj.html_file = dashboard_path
+            obj.html_file = applet_path
 
         obj.save()
 
-        return {'message': f'Dashboard {dashboard_id} successfully updated!'}
+        return {'message': f'Applet {applet_id} successfully updated!'}
 
     def get_queryset(self):
-        """ Returns a queryset of all registered dashboard files
+        """ Returns a queryset of all registered applet files
         """
         return Dashboard.objects.all()

@@ -1,11 +1,11 @@
-class VersionSelect extends TatorElement {
+class FileTypeSelect extends TatorElement {
   constructor() {
     super();
 
     this._button = document.createElement("a");
     this._button.setAttribute("class", "btn btn-outline btn-small f2");
     this._button.style.width = "initial";
-    this._button.textContent = "Select";
+    this._button.textContent = "View files";
     this._shadow.appendChild(this._button);
 
     this._icon = document.createElement("div");
@@ -26,7 +26,7 @@ class VersionSelect extends TatorElement {
     
     const span = document.createElement("span");
     span.setAttribute("class", "px-2 f3 text-uppercase text-gray text-semibold");
-    span.textContent = "Selected";
+    span.textContent = "Viewing";
     this._icon.appendChild(span);
 
     this._button.addEventListener("click", () => {
@@ -34,9 +34,8 @@ class VersionSelect extends TatorElement {
     });
   }
 
-  init(version) {
-    // version: Version corresponding to this button
-    this._version = version;
+  init(fileType) {
+    this._fileType = fileType;
   }
 
   select(suppressEvent) {
@@ -45,7 +44,7 @@ class VersionSelect extends TatorElement {
     if (!suppressEvent) {
       this.dispatchEvent(new CustomEvent("select", {
         detail: {
-          "version": this._version,
+          fileType: this._fileType,
         },
       }));
     }
@@ -57,4 +56,4 @@ class VersionSelect extends TatorElement {
   }
 }
 
-customElements.define("version-select", VersionSelect);
+customElements.define("file-type-select", FileTypeSelect);

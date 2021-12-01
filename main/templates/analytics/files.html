@@ -1,0 +1,17 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+<title>Tator | Files</title>
+{% endblock head %}
+
+{% block body %}
+<files-page
+    username="{{ user|stringformat:'s' }}"
+    email="{{ user.email }}"
+    project-id="{{ project.id }}"
+    project-name="{{ project.name }}"
+    token="{{ token }}">
+</files-page>
+{% endblock body %}

@@ -68,7 +68,7 @@ class DashboardPortal extends TatorPage {
     }
 
     _getDashboards() {
-      fetch("/rest/Dashboards/" + this._projectId, {
+      fetch("/rest/Applets/" + this._projectId, {
         method: "GET",
         credentials: "same-origin",
         headers: {
