@@ -174,6 +174,7 @@ class MediaListAPI(BaseListView):
         gid = params.get('gid', None)
         uid = params.get('uid', None)
         new_attributes = params.get('attributes', None)
+        url = params.get('url')
         if gid is not None:
             gid = str(gid)
         project_obj = Project.objects.get(pk=project)
@@ -230,6 +231,9 @@ class MediaListAPI(BaseListView):
         attributes.update({'tator_user_sections': tator_user_sections})
 
         if media_type.dtype == 'image':
+            # Get image only parameters.
+            thumbnail_url = params.get('thumbnail_url')
+
             # Create the media object.
             media_obj = Media.objects.create(
                 project=project_obj,
@@ -241,12 +245,9 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
+                source_url=url,
             )
             media_obj.media_files = {}
-
-            # Get image only parameters.
-            url = params.get('url')
-            thumbnail_url = params.get('thumbnail_url')
 
             if url:
                 # Download the image file and load it.
@@ -320,6 +321,7 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
+                source_url=url,
             )
 
             # Add optional parameters.
