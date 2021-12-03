@@ -72,6 +72,12 @@ class ProjectListAPI(BaseListView):
             if params['bucket'].organization.pk != params['organization']:
                 raise PermissionDenied
 
+        # Make sure upload bucket can be set by this user.
+        if 'upload_bucket' in params:
+            params['upload_bucket'] = get_object_or_404(Bucket, pk=params['upload_bucket'])
+            if params['upload_bucket'].organization.pk != params['organization']:
+                raise PermissionDenied
+
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
         project = Project.objects.create(
@@ -141,6 +147,10 @@ class ProjectDetailAPI(BaseDetailView):
         if 'bucket' in params:
             project.bucket = get_object_or_404(Bucket, pk=params['bucket'])
             if project.bucket.organization != project.organization:
+                raise PermissionDenied
+        if 'upload_bucket' in params:
+            project.upload_bucket = get_object_or_404(Bucket, pk=params['upload_bucket'])
+            if project.upload_bucket.organization != project.organization:
                 raise PermissionDenied
         project.save()
         return {'message': f"Project {params['id']} updated successfully!"}

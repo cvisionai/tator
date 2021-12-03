@@ -499,6 +499,9 @@ class Project(Model):
     bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
     """ If set, media will use this bucket by default.
     """
+    upload_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
+    """ If set, uploads will use this bucket by default.
+    """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
                                related_name='+')
     """ Default media type for uploads.
