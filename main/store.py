@@ -488,13 +488,15 @@ class WasabiStorage(MinIOStorage):
             RestoreRequest={"Days": min_exp_days},
         )
 
-def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5) -> TatorStorage:
+def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5, upload=False) -> TatorStorage:
     """
     Determines the type of object store required by the given bucket and returns it. All returned
     objects are subclasses of the base class TatorStorage.
 
     :param bucket: The bucket to use for accessing object storage.
     :type bucket: models.Bucket
+    :param upload: True if the upload bucket should be used.
+    :type upload: bool
     :param connect_timeout: The number of seconds to wait on connect before timing out.
     :type connect_timeout: float or int
     :param read_timeout: The number of seconds to wait on reading before timing out.
@@ -504,12 +506,20 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
     :rtype: TatorStorage
     """
     if bucket is None:
-        endpoint = os.getenv("OBJECT_STORAGE_HOST")
-        region = os.getenv("OBJECT_STORAGE_REGION_NAME")
-        access_key = os.getenv("OBJECT_STORAGE_ACCESS_KEY")
-        secret_key = os.getenv("OBJECT_STORAGE_SECRET_KEY")
-        bucket_name = os.getenv("BUCKET_NAME")
-        external_host = os.getenv("OBJECT_STORAGE_EXTERNAL_HOST")
+        if upload:
+            endpoint = os.getenv("UPLOAD_STORAGE_HOST")
+            region = os.getenv("UPLOAD_STORAGE_REGION_NAME")
+            access_key = os.getenv("UPLOAD_STORAGE_ACCESS_KEY")
+            secret_key = os.getenv("UPLOAD_STORAGE_SECRET_KEY")
+            bucket_name = os.getenv("UPLOAD_BUCKET_NAME")
+            external_host = os.getenv("UPLOAD_STORAGE_EXTERNAL_HOST")
+        else: 
+            endpoint = os.getenv("OBJECT_STORAGE_HOST")
+            region = os.getenv("OBJECT_STORAGE_REGION_NAME")
+            access_key = os.getenv("OBJECT_STORAGE_ACCESS_KEY")
+            secret_key = os.getenv("OBJECT_STORAGE_SECRET_KEY")
+            bucket_name = os.getenv("BUCKET_NAME")
+            external_host = os.getenv("OBJECT_STORAGE_EXTERNAL_HOST")
     elif bucket.gcs_key_info:
         gcs_key_info = json.loads(bucket.gcs_key_info)
         gcs_project = gcs_key_info["project_id"]
