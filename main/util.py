@@ -25,9 +25,6 @@ from elasticsearch.helpers import streaming_bulk
 
 logger = logging.getLogger(__name__)
 
-def upload_prefix_from_project(project):
-    return f"{project.organization.pk}/{project.pk}/upload"
-
 """ Utility scripts for data management in django-shell """
 
 def clearDataAboutMedia(id):
@@ -279,42 +276,6 @@ def clearOldFilebeatIndices():
         if delta.days > 7:
             logger.info(f"Deleting old filebeat index {index}")
             es.indices.delete(str(index))
-
-def cleanup_object_uploads(max_age_days=1):
-    """ Removes s3 uploads that are greater than a day old.
-    """
-    items = Project.objects.values('bucket', 'pk')
-    now = datetime.datetime.now(datetime.timezone.utc)
-    for item in items:
-        project = Project.objects.get(pk=item["pk"])
-
-        logger.info(f"Searching project {project.id} | {project.name} for stale uploads...")
-        if project.organization is None:
-            logger.info(f"Skipping because this project has no organization!")
-            continue
-
-        bucket = Bucket.objects.get(pk=item["bucket"]) if item["bucket"] else None
-        tator_store = get_tator_store(bucket)
-
-        prefix = upload_prefix_from_project(project)
-        last_key = None
-        num_deleted = 0
-        while True:
-            kwargs = {}
-            if last_key:
-                kwargs["StartAfter"] = last_key
-            obj_list = tator_store.list_objects_v2(prefix, **kwargs)
-            if not obj_list:
-                break
-            key_age_list = [(obj["Key"], now - obj["LastModified"]) for obj in obj_list]
-            last_key = key_age_list[-1][0]
-            for key, age in key_age_list:
-                not_resource = not Resource.objects.filter(path=key).exists()
-                if age > datetime.timedelta(days=max_age_days) and not_resource:
-                    tator_store.delete_object(key)
-                    num_deleted += 1
-        logger.info(f"Deleted {num_deleted} objects in project {project.id}!")
-    logger.info("Object cleanup finished!")
 
 def make_sections():
     for project in Project.objects.all().iterator():
