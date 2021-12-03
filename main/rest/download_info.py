@@ -27,17 +27,19 @@ class DownloadInfoAPI(BaseListView):
         keys = params['keys']
         expiration = params['expiration']
         project = params['project']
+        project_obj = Project.objects.get(pk=project)
 
         # Get resource objects for these keys.
         resources = Resource.objects.filter(path__in=keys)
         store_lookup = get_storage_lookup(resources)
 
-        # Uploads without resources saved will use the default project bucket.
-        store_default = get_tator_store(Project.objects.get(pk=project).bucket)
-
         # Set up S3 interfaces.
         response_data = []
         for key in keys:
+            upload = key.startswith('_uploads')
+            bucket = project_obj.upload_bucket if upload else project_obj.bucket
+            store_default = get_tator_store(bucket, upload)
+
             tator_store = store_lookup.get(key, store_default)
             # Make sure the key corresponds to the correct project.
             project_from_key = int(key.split('/')[1])

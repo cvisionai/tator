@@ -2,6 +2,7 @@ import os
 import logging
 import random
 import string
+import datetime
 from uuid import uuid1
 from urllib.parse import urlsplit, urlunsplit
 
@@ -9,7 +10,6 @@ from ..models import Project
 from ..models import Media
 from ..schema import UploadInfoSchema
 from ..store import get_tator_store
-from ..util import upload_prefix_from_project
 
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
@@ -43,25 +43,29 @@ class UploadInfoAPI(BaseDetailView):
 
         # Check if media exists in this project (if media ID given).
         name = str(uuid1())
+        if filename:
+            name = filename
+            # If name was specified append a random string to it, to prevent eventual
+            # collisions
+            rand_str = ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(10))
+            components = os.path.splitext(name)
+            name = f"{components[0]}_{rand_str}{components[1]}"
+
         if media_id is None:
             # Generate an object name
-            key = f"{upload_prefix_from_project(project_obj)}/{name}"
+            today = datetime.datetime.now().strftime('%Y-%m-%d')
+            user = self.request.user.pk
+            key = f"_uploads/{today}/{organization}/{project}/{user}/{name}"
+            tator_store = get_tator_store(project_obj.upload_bucket, upload=True)
         else:
-            if filename:
-                name = filename
-                # If name was specified append a random string to it, to prevent eventual
-                # collisions
-                rand_str = ''.join(random.SystemRandom().choice(string.ascii_letters) for _ in range(10))
-                components = os.path.splitext(name)
-                name = f"{components[0]}_{rand_str}{components[1]}"
             qs = Media.objects.filter(project=project, pk=media_id)
             if qs.exists():
                 key = f"{organization}/{project}/{media_id}/{name}"
             else:
                 raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
+            tator_store = get_tator_store(project_obj.bucket)
 
         # Generate presigned urls.
-        tator_store = get_tator_store(project_obj.bucket)
         urls, upload_id = tator_store.get_upload_urls(
             key, expiration, num_parts, self.request.build_absolute_uri("/")[:-1]
         )
