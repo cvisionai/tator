@@ -91,6 +91,20 @@ spec:
             - name: OBJECT_STORAGE_SECRET_KEY
               value: {{ .Values.objectStorageSecretKey }}
             {{- end }}
+            {{- if hasKey .Values "uploadBucket" }}
+            {{- if .Values.uploadBucket.enabled }}
+            - name: UPLOAD_STORAGE_HOST
+              value: {{ .Values.uploadBucket.host }}
+            - name: UPLOAD_STORAGE_BUCKET_NAME
+              value: {{ .Values.uploadBucket.name }}
+            - name: UPLOAD_STORAGE_REGION_NAME
+              value: {{ .Values.uploadBucket.region }}
+            - name: UPLOAD_STORAGE_ACCESS_KEY
+              value: {{ .Values.uploadBucket.accessKey }}
+            - name: UPLOAD_STORAGE_SECRET_KEY
+              value: {{ .Values.uploadBucket.secretKey }}
+            {{- end }}
+            {{- end }}
             - name: TATOR_DEBUG
             {{- if .Values.tatorDebug }}
               value: "true"
