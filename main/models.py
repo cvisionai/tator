@@ -694,6 +694,8 @@ class MediaType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
+    source_url = CharField(max_length=512, blank=True, null=True)
+    """ URL where original media was hosted. """
     editTriggers = JSONField(null=True,
                              blank=True)
     file_format = CharField(max_length=4,
