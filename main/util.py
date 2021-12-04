@@ -27,20 +27,6 @@ logger = logging.getLogger(__name__)
 
 """ Utility scripts for data management in django-shell """
 
-def clearDataAboutMedia(id):
-    """
-    Given an id Delete all states, localizations that apply.
-
-    :param id: The id of the media element to purge metadata about.
-    """
-    #Delete all states by hitting associations which auto delete states
-    qs=State.objects.filter(media__in=[id])
-    qs.delete()
-
-    #Delete all localizations
-    qs=Localization.objects.filter(media=id)
-    qs.delete()
-
 def updateProjectTotals(force=False):
     projects=Project.objects.all()
     for project in projects:
@@ -197,13 +183,6 @@ def makeDefaultVersion(project_number):
     logger.info("Updating states...")
     qs = State.objects.filter(project=project)
     qs.update(version=version)
-
-def clearStaleProgress(project, ptype):
-    from redis import Redis
-    if ptype not in ['upload', 'algorithm', 'transcode']:
-        print("Unknown progress type")
-
-    Redis(host=os.getenv('REDIS_HOST')).delete(f'{ptype}_latest_{project}')
 
 from pprint import pprint
 
