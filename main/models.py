@@ -496,10 +496,12 @@ class Project(Model):
     """ Mapping between attribute type names and UUIDs. Used internally for
         maintaining elasticsearch field aliases.
     """
-    bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
+    bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
+                        related_name='+')
     """ If set, media will use this bucket by default.
     """
-    upload_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
+    upload_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
+                               related_name='+')
     """ If set, uploads will use this bucket by default.
     """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
