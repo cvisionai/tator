@@ -506,7 +506,7 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
     :rtype: TatorStorage
     """
     if bucket is None:
-        if upload:
+        if upload and os.getenv("UPLOAD_STORAGE_HOST"):
             endpoint = os.getenv("UPLOAD_STORAGE_HOST")
             region = os.getenv("UPLOAD_STORAGE_REGION_NAME")
             access_key = os.getenv("UPLOAD_STORAGE_ACCESS_KEY")
