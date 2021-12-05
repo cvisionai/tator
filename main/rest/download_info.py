@@ -38,11 +38,14 @@ class DownloadInfoAPI(BaseListView):
         for key in keys:
             upload = key.startswith('_uploads')
             bucket = project_obj.upload_bucket if upload else project_obj.bucket
-            store_default = get_tator_store(bucket, upload)
+            store_default = get_tator_store(bucket, upload=upload)
 
             tator_store = store_lookup.get(key, store_default)
             # Make sure the key corresponds to the correct project.
-            project_from_key = int(key.split('/')[1])
+            if upload:
+                project_from_key = int(key.split('/')[3])
+            else:
+                project_from_key = int(key.split('/')[1])
             if project != project_from_key:
                 raise PermissionDenied
             # Generate presigned url.
