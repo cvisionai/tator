@@ -699,8 +699,6 @@ class MediaType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    source_url = CharField(max_length=512, blank=True, null=True)
-    """ URL where original media was hosted. """
     editTriggers = JSONField(null=True,
                              blank=True)
     file_format = CharField(max_length=4,
@@ -1019,6 +1017,8 @@ class Media(Model, ModelDiffMixin):
     recycled_from = ForeignKey(
         Project, on_delete=SET_NULL, null=True, blank=True, related_name='recycled_from'
     )
+    source_url = CharField(max_length=512, blank=True, null=True)
+    """ URL where original media was hosted. """
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.
