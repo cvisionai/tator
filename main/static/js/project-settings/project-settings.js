@@ -50,7 +50,7 @@ class ProjectSettings extends TatorPage {
       "membership-edit",
       "versions-edit",
       "algorithm-edit",
-      "dashboard-edit",
+      "applet-edit",
     ];
 
     this._userIsStaff = false;

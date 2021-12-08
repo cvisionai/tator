@@ -87,8 +87,14 @@
   &:disabled,
   [disabled] {
     background-color: transparent;
-    border: 1px solid $color-gray--dark50;
-    color: $color-gray--dark;
+    color: $color-gray--dark !important;
+    border: 1px solid $color-gray--dark50 !important;
+    &:hover,
+    &:focus {
+      background-color: transparent;
+      color: $color-gray--dark !important;
+      border: 1px solid $color-gray--dark50 !important;
+    }
   }
 }
 

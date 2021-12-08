@@ -53,6 +53,7 @@ class FileInput extends TatorElement {
     this._shadow.appendChild(this.uploadWarningRow);
 
     // Validate file size / show warning
+    this._isImage = true;
     this.validate = new TypeFormValidation(); // @TODO move validation in here
     const warning = new InlineWarning();
     this.uploadWarningRow.appendChild(warning.div());
@@ -105,6 +106,10 @@ class FileInput extends TatorElement {
       case "type":
         if (newValue === "yaml") {
           this._validate = this.yamlValidate;
+        }
+        if (newValue === "html") {
+          this._validate = this.htmlValidate;
+          this._isImage = null;
         }
     }
   }
@@ -166,23 +171,26 @@ class FileInput extends TatorElement {
   //
   _editListeners(e) {
     this.dispatchEvent(new Event("change"));
-    const file = e.target.files[0];
+    const blob = e.target.files[0];
+    console.log(blob);
+
     let uploadData = {
-      file,
+      file: blob,
       projectId: this._projectId,
+      organizationId: null,
       gid: "",
       section: "",
       mediaTypeId: null,
       username: "",
       token: getCookie("csrftoken"),
-      isImage: true
+      isImage: this._isImage
     };
 
     // upload file and set input
     let uploader = new SingleUpload(uploadData);
     uploader.start().then((key) => {
 
-      let hasError = this._validate(file);
+      let hasError = this._validate(blob);
 
       if (hasError) {
         let errorEvent = new CustomEvent("input-invalid", {
@@ -214,17 +222,18 @@ class FileInput extends TatorElement {
           return resp.json();
         }).then((data) => {
           // Check the related state types
-
+          console.log(data);
           const bodyData = {
             name: data[0].key,
             upload_url: data[0].url
           }
-          return this._fetchCall(bodyData);
+          
+          // _fetchCall is defined in the instantiating page or parent element
+          this._fetchCall(bodyData);
 
         });
       }
     });
-
   }
 
   _validate() {
@@ -233,6 +242,17 @@ class FileInput extends TatorElement {
 
   getFileName() {
     return this._nameInput.getValue();
+  }
+
+  htmlValidate(file) {
+    var extension = String(file.name).substr(-4, 4);
+    // console.log(extension);
+
+    if (!(extension === "html")) {
+      return "HTML file format required."
+    } else {
+      return false;
+    }
   }
 
   yamlValidate(file) {

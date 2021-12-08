@@ -45,7 +45,7 @@ class ProjectTypesData {
         this._getMembershipDataPromise();
         this._getVersionsDataPromise();
         this._getAlgoDataPromise();
-        this._getDashboardDataPromise();
+        this._getAppletDataPromise();
     
         return [
           this.mediaTypesPromise,
@@ -55,7 +55,7 @@ class ProjectTypesData {
           this.membershipPromise,
           this.versionsPromise,
           this.algoPromise,
-          this.dashboardPromise 
+          this.appletPromise 
         ];
       }
 
@@ -94,8 +94,8 @@ class ProjectTypesData {
         return this.algoPromise = this.algoBlock._fetchGetPromise({"id": this.projectId} );
       }
   
-      _getDashboardDataPromise(){
-        this.dashboardBlock = document.createElement("dashboard-edit");
-        return this.dashboardPromise = this.dashboardBlock._fetchGetPromise({"id": this.projectId} );
+      _getAppletDataPromise(){
+        this.appletBlock = document.createElement("applet-edit");
+        return this.appletPromise = this.appletBlock._fetchGetPromise({"id": this.projectId} );
       }
 }

@@ -1,8 +1,8 @@
-class DashboardEdit extends TypeForm {
+class AppletEdit extends TypeForm {
    constructor() {
       super();
-      this.typeName = "Dashboard";
-      this.readableTypeName = "Dashboard";
+      this.typeName = "Applet";
+      this.readableTypeName = "Applet";
       this.icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="SideNav-icon icon-cpu no-fill"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
       this._hideAttributes = true;
       this.versionId = null;
@@ -13,7 +13,7 @@ class DashboardEdit extends TypeForm {
 
    async _getSectionForm(data) {
       this.data = data;
-      this.dashboardId = data.id;
+      this.appletId = data.id;
       this._setForm();
       let current = this.boxHelper.boxWrapDefault({
          "children": ""
@@ -43,14 +43,15 @@ class DashboardEdit extends TypeForm {
       this._htmlFilePath = document.createElement("file-input");
       // this._htmlFilePath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._htmlFilePath.setAttribute("name", "HTML File");
-      this._htmlFilePath.setAttribute("for", "manifest");
-      // this._htmlFilePath.setAttribute("type", "html");
+      this._htmlFilePath.setAttribute("for", "applet");
+      this._htmlFilePath.setAttribute("type", "html");
       this._htmlFilePath.projectId = this.projectId;
       this._htmlFilePath.setValue(this.data.html_file);
       this._htmlFilePath.default = this.data.html_file;
 
       this._htmlFilePath._fetchCall = (bodyData) => {
-         return fetch(`/rest/SaveHTMLFile/${this.projectId}`,
+         console.log(bodyData)
+         fetch(`/rest/SaveGenericFile/${this.projectId}`,
             {
                method: "POST",
                credentials: "same-origin",
@@ -66,8 +67,31 @@ class DashboardEdit extends TypeForm {
                console.log(htmlData);
                this._htmlFilePath.setValue(htmlData.url);
                Utilities.showSuccessIcon(`HTML file uploaded to: ${htmlData.url}`);
+               return htmlData;
             }
-         );
+         ).then((data) => {
+            // Create the new algorithm configuration
+            var postBody = {
+               name:"test name",
+               path: data.url,
+               description: "",
+               meta: 2,
+               attributes: {}
+            }
+            
+            fetchRetry("/rest/Files/" + this.projectId, {
+               method: "POST",
+               credentials: "same-origin",
+               headers: {
+               "X-CSRFToken": getCookie("csrftoken"),
+               "Accept": "application/json",
+               "Content-Type": "application/json"
+               },
+               body: JSON.stringify(postBody),
+            }).then(data => {
+               console.log(data);
+            })
+         })
       };
 
       this._htmlFilePath.addEventListener("change", this._formChanged.bind(this));
@@ -118,4 +142,4 @@ class DashboardEdit extends TypeForm {
 
 }
 
-customElements.define("dashboard-edit", DashboardEdit);
+customElements.define("applet-edit", AppletEdit);
