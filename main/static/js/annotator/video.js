@@ -2884,6 +2884,11 @@ class VideoCanvas extends AnnotationCanvas {
     return this.videoBuffer(frame, "scrub") != null;
   }
 
+  bufferDelayRequired()
+  {
+    return this._play_idx != this._scrub_idx;
+  }
+
   onDemandDownloadPrefetch(reqFrame)
   {
     // This function can be called at anytime. If auto-download is disabled, then just stop

@@ -789,7 +789,7 @@ class AnnotationPlayer extends TatorElement {
 
   checkReady()
   {
-    if (this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
     }
