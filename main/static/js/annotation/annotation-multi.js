@@ -1397,7 +1397,7 @@ class AnnotationMulti extends TatorElement {
     let notReady;
     for (let video of this._videos)
     {
-      notReady |= !(video._onDemandPlaybackReady);
+      notReady |= video.bufferDelayRequired() && !(video._onDemandPlaybackReady);
     }
     if (notReady)
     {
