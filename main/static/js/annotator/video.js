@@ -2231,7 +2231,14 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       // Treat play and scrub buffer as best available.
-      let play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+      let play_attempt = null;
+
+      // If our play and scrub buffer are different, opportunistically fetch the higher
+      // quality frame out of the on-demand buffer.
+      if (this._play_idx != this._scrub_idx)
+      {
+        this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+      }
 
       // To test degraded mode (every 10th frame is degraded):
       //if (frame % 10 == 0)
