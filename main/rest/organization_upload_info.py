@@ -25,7 +25,6 @@ class OrganizationUploadInfoAPI(BaseDetailView):
         num_parts = params['num_parts']
         organization = params['organization']
         filename = params.get('filename')
-        external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
         if os.getenv('REQUIRE_HTTPS') == 'TRUE':
             PROTO = 'https'
         else:
@@ -42,9 +41,9 @@ class OrganizationUploadInfoAPI(BaseDetailView):
         )
 
         # Replace host if external host is given.
-        if external_host:
+        if tator_store.external_host:
             urls = [
-                urlunsplit(urlsplit(url)._replace(netloc=external_host, scheme=PROTO))
+                urlunsplit(urlsplit(url)._replace(netloc=tator_store.external_host, scheme=PROTO))
                 for url in urls
             ]
 

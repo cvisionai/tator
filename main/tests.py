@@ -1100,6 +1100,8 @@ class FileMixin:
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
+    def _generate_key(self):
+        return f'{self.organization.pk}/{self.project.pk}/{self.media.pk}/{uuid1()}'
 
 class CurrentUserTestCase(APITestCase):
     def test_get(self):
@@ -2432,8 +2434,8 @@ class ImageFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'ImageFiles'
         self.detail_uri = 'ImageFile'
-        self.create_json = {'path': 'asdf', 'resolution': [1, 1]}
-        self.patch_json = {'path': 'asdf', 'resolution': [2, 2]}
+        self.create_json = {'path': self._generate_key(), 'resolution': [1, 1]}
+        self.patch_json = {'path': self._generate_key(), 'resolution': [2, 2]}
 
     def test_image(self):
         self._test_methods('image')
@@ -2462,8 +2464,8 @@ class VideoFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'VideoFiles'
         self.detail_uri = 'VideoFile'
-        self.create_json = {'path': 'asdf', 'resolution': [1, 1], 'codec': 'h264', 'segment_info': 'asdf'}
-        self.patch_json = {'path': 'asdf', 'resolution': [2, 2], 'codec': 'h264', 'segment_info': 'asdf'}
+        self.create_json = {'path': self._generate_key(), 'resolution': [1, 1], 'codec': 'h264', 'segment_info': 'asdf'}
+        self.patch_json = {'path': self._generate_key(), 'resolution': [2, 2], 'codec': 'h264', 'segment_info': 'asdf'}
 
     def test_streaming(self):
         self._test_methods('streaming')
@@ -2489,8 +2491,8 @@ class AudioFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'AudioFiles'
         self.detail_uri = 'AudioFile'
-        self.create_json = {'path': 'asdf', 'codec': 'h264'}
-        self.patch_json = {'path': 'asdf', 'codec': 'h264'}
+        self.create_json = {'path': self._generate_key(), 'codec': 'h264'}
+        self.patch_json = {'path': self._generate_key(), 'codec': 'h264'}
 
     def test_audio(self):
         self._test_methods('audio')
@@ -2513,8 +2515,8 @@ class AuxiliaryFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'AuxiliaryFiles'
         self.detail_uri = 'AuxiliaryFile'
-        self.create_json = {'path': 'asdf', 'name': 'asdf1'}
-        self.patch_json = {'path': 'asdf', 'name': 'asdf'}
+        self.create_json = {'path': self._generate_key(), 'name': 'asdf1'}
+        self.patch_json = {'path': self._generate_key(), 'name': 'asdf'}
 
     def test_attachment(self):
         self._test_methods('attachment')
@@ -2545,10 +2547,10 @@ class ResourceTestCase(APITestCase):
         )
         self.store = get_tator_store()
 
-    def _random_store_obj(self):
+    def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
         """
-        key = f"test/{str(uuid1())}"
+        key = f"{self.organization.pk}/{self.project.pk}/{media.pk}/{str(uuid1())}"
         self.store.put_string(key, b"\x00" + os.urandom(16) + b"\x00")
         return key
 
@@ -2562,9 +2564,9 @@ class ResourceTestCase(APITestCase):
         else:
             return True
 
-    def _generate_keys(self):
-        keys = {role:self._random_store_obj() for role in ResourceTestCase.MEDIA_ROLES}
-        segment_key = self._random_store_obj()
+    def _generate_keys(self, media):
+        keys = {role:self._random_store_obj(media) for role in ResourceTestCase.MEDIA_ROLES}
+        segment_key = self._random_store_obj(media)
         return keys, segment_key
 
     def _get_media_def(self, role, keys, segment_key):
@@ -2594,7 +2596,7 @@ class ResourceTestCase(APITestCase):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
 
         # Post one file of each role.
-        keys, segment_key = self._generate_keys()
+        keys, segment_key = self._generate_keys(media)
         for role in ResourceTestCase.MEDIA_ROLES:
             endpoint = ResourceTestCase.MEDIA_ROLES[role]
             media_def = self._get_media_def(role, keys, segment_key)
@@ -2602,7 +2604,7 @@ class ResourceTestCase(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Patch in a new value for each role.
-        patch_keys, patch_segment_key = self._generate_keys()
+        patch_keys, patch_segment_key = self._generate_keys(media)
         for role in ResourceTestCase.MEDIA_ROLES:
             endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
             media_def = self._get_media_def(role, patch_keys, patch_segment_key)
@@ -2626,7 +2628,7 @@ class ResourceTestCase(APITestCase):
         TatorSearch().refresh(self.project.pk)
 
         # Post one file of each role.
-        keys, segment_key = self._generate_keys()
+        keys, segment_key = self._generate_keys(media)
         for role in ResourceTestCase.MEDIA_ROLES:
             endpoint = ResourceTestCase.MEDIA_ROLES[role]
             media_def = self._get_media_def(role, keys, segment_key)

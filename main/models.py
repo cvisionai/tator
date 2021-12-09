@@ -496,8 +496,13 @@ class Project(Model):
     """ Mapping between attribute type names and UUIDs. Used internally for
         maintaining elasticsearch field aliases.
     """
-    bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL)
+    bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
+                        related_name='+')
     """ If set, media will use this bucket by default.
+    """
+    upload_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
+                               related_name='+')
+    """ If set, uploads will use this bucket by default.
     """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
                                related_name='+')
@@ -1012,6 +1017,8 @@ class Media(Model, ModelDiffMixin):
     recycled_from = ForeignKey(
         Project, on_delete=SET_NULL, null=True, blank=True, related_name='recycled_from'
     )
+    source_url = CharField(max_length=512, blank=True, null=True)
+    """ URL where original media was hosted. """
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.
