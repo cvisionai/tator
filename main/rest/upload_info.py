@@ -31,7 +31,6 @@ class UploadInfoAPI(BaseDetailView):
         project = params['project']
         media_id = params.get('media_id')
         filename = params.get('filename')
-        external_host = os.getenv('OBJECT_STORAGE_EXTERNAL_HOST')
         if os.getenv('REQUIRE_HTTPS') == 'TRUE':
             PROTO = 'https'
         else:
@@ -71,9 +70,9 @@ class UploadInfoAPI(BaseDetailView):
         )
 
         # Replace host if external host is given.
-        if external_host and project_obj.bucket is None:
+        if tator_store.external_host and project_obj.bucket is None:
             urls = [
-                urlunsplit(urlsplit(url)._replace(netloc=external_host, scheme=PROTO))
+                urlunsplit(urlsplit(url)._replace(netloc=tator_store.external_host, scheme=PROTO))
                 for url in urls
             ]
 

@@ -25,22 +25,22 @@ class ObjectStore(Enum):
 class TatorStorage(ABC):
     """Interface for object storage."""
 
-    def __init__(self, bucket, client, external_host=None):
+    def __init__(self, bucket, client, bucket_name, external_host=None):
         self.bucket = bucket
-        self.bucket_name = bucket.name if bucket else os.getenv("BUCKET_NAME")
+        self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
         self.external_host = external_host
 
     @classmethod
-    def get_tator_store(cls, server, bucket, client, external_host=None):
+    def get_tator_store(cls, server, bucket, client, bucket_name, external_host=None):
         if server is ObjectStore.AWS:
-            return S3Storage(bucket, client, external_host)
+            return S3Storage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.GCP:
-            return GCPStorage(bucket, client, external_host)
+            return GCPStorage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.MINIO:
-            return MinIOStorage(bucket, client, external_host)
+            return MinIOStorage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.WASABI:
-            return WasabiStorage(bucket, client, external_host)
+            return WasabiStorage(bucket, client, bucket_name, external_host)
 
         raise ValueError(f"Server type '{server}' is not supported")
 
@@ -254,8 +254,8 @@ class TatorStorage(ABC):
 
 
 class MinIOStorage(TatorStorage):
-    def __init__(self, bucket, client, external_host=None):
-        super().__init__(bucket, client, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.MINIO
 
     def check_key(self, path):
@@ -365,8 +365,8 @@ class MinIOStorage(TatorStorage):
 
 
 class S3Storage(MinIOStorage):
-    def __init__(self, bucket, client, external_host=None):
-        super().__init__(bucket, client, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.AWS
 
     def _path_to_key(self, path):
@@ -381,8 +381,8 @@ class S3Storage(MinIOStorage):
 
 
 class GCPStorage(TatorStorage):
-    def __init__(self, bucket, client, external_host=None):
-        super().__init__(bucket, client, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.GCP
         self.gcs_bucket = self.client.get_bucket(self.bucket_name)
 
@@ -477,8 +477,8 @@ class GCPStorage(TatorStorage):
         self._update_storage_class(path, desired_storage_class)
 
 class WasabiStorage(MinIOStorage):
-    def __init__(self, bucket, client, external_host=None):
-        super().__init__(bucket, client, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.WASABI
 
     def _restore_object(self, path, desired_storage_class, min_exp_days):
@@ -511,7 +511,7 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
             region = os.getenv("UPLOAD_STORAGE_REGION_NAME")
             access_key = os.getenv("UPLOAD_STORAGE_ACCESS_KEY")
             secret_key = os.getenv("UPLOAD_STORAGE_SECRET_KEY")
-            bucket_name = os.getenv("UPLOAD_BUCKET_NAME")
+            bucket_name = os.getenv("UPLOAD_STORAGE_BUCKET_NAME")
             external_host = os.getenv("UPLOAD_STORAGE_EXTERNAL_HOST")
         else: 
             endpoint = os.getenv("OBJECT_STORAGE_HOST")
@@ -524,7 +524,7 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
         gcs_key_info = json.loads(bucket.gcs_key_info)
         gcs_project = gcs_key_info["project_id"]
         client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
-        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client)
+        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
     else:
         endpoint = bucket.endpoint_url
         region = bucket.region
@@ -580,7 +580,7 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
         else:
             raise ValueError(f"Received unhandled server type '{response_server}'")
 
-    return TatorStorage.get_tator_store(server, bucket, client, external_host)
+    return TatorStorage.get_tator_store(server, bucket, client, bucket_name, external_host)
 
 
 def get_storage_lookup(resources):
