@@ -153,6 +153,7 @@ class VersionDialog extends ModalDialog {
       }
     }
     this._updatedDependentLayers(selected_idx);
+    this._selected_idx = selected_idx;
     this.dispatchEvent(new CustomEvent("versionSelect", {
       "detail": {
         "version": evt.detail.version,
