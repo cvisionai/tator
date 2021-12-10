@@ -789,7 +789,7 @@ class AnnotationPlayer extends TatorElement {
 
   checkReady()
   {
-    if (this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
     }
@@ -896,7 +896,7 @@ class AnnotationPlayer extends TatorElement {
 
   play()
   {
-    if (this._rate > 8.0)
+    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
@@ -936,7 +936,7 @@ class AnnotationPlayer extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > 8.0)
+    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
