@@ -465,13 +465,6 @@ FILES = \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
     analytics/reports/reports.js \
-    apps/verification/components/apps-species-gallery.js \
-    apps/verification/components/apps-species-panel.js \
-    apps/verification/components/apps-verification-breadcrumbs.js \
-    apps/verification/components/apps-verification-table.js \
-    apps/verification/data/apps-verification-api.js \
-    apps/verification/apps-species-page.js \
-    apps/verification/apps-verification-page.js \
     analytics/portal/portal.js \
     analytics/files/files-page.js \
     analytics/files/file-type-dialog.js \

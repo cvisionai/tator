@@ -172,12 +172,6 @@ class AnalyticsCollectionsView(ProjectBase, TemplateView):
 class AnalyticsPortalView(ProjectBase, TemplateView):
     template_name = 'analytics/portal.html'
 
-class AppsSpeciesView(ProjectBase, TemplateView):
-    template_name = 'apps/species.html'
-
-class AppsVerificationView(ProjectBase, TemplateView):
-    template_name = 'apps/verification.html'
-
 class AnnotationView(ProjectBase, TemplateView):
     template_name = 'annotation.html'
 
