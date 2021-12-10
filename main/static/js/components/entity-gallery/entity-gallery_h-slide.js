@@ -34,8 +34,8 @@ class EntityCardSlideGallery extends TatorElement {
       this._paginator_top = document.createElement("entity-gallery-paginator");
       this._paginator_top.div.classList.add("mt-3");
       this._paginator_top.div.classList.add("pb-2");
-      this._paginator_top.pageSizeEl.hidden = true;
-      this._paginator_top.pageSizeText.hidden = true;
+      // this._paginator_top.pageSizeEl.hidden = true;
+      // this._paginator_top.pageSizeText.hidden = true;
       this._paginator_top.hidden = true;
       this._main.appendChild(this._paginator_top);
 
@@ -48,8 +48,8 @@ class EntityCardSlideGallery extends TatorElement {
       // // Gallery Pagination Bottom
       this._paginator = document.createElement("entity-gallery-paginator");
       //this._paginator.div.classList.add("py-5");
-      this._paginator.pageSizeEl.hidden = true;
-      this._paginator.pageSizeText.hidden = true;
+      // this._paginator.pageSizeEl.hidden = true;
+      // this._paginator.pageSizeText.hidden = true;
       this._paginator.hidden = true;
       this._main.appendChild(this._paginator);
    }

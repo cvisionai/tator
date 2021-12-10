@@ -17,6 +17,20 @@ class AttributePanel extends TatorElement {
     this._createdByWidget.setAttribute("name", "Created By");
     this._div.appendChild(this._createdByWidget);
 
+    this._innerDiv = document.createElement("div");
+    this._innerDiv.setAttribute("class", "d-flex");
+    this._shadow.appendChild(this._innerDiv);
+
+    this._innerDiv1 = document.createElement("div");
+    this._innerDiv1.setAttribute("class", "d-flex flex-column text-gray f2 col-6");
+    this._innerDiv.appendChild(this._innerDiv1);
+
+    this._innerDiv2 = document.createElement("div");
+    this._innerDiv2.setAttribute("class", "d-flex flex-column text-gray f2 col-6");
+    this._innerDiv2.style.marginLeft = "10px";
+    this._innerDiv.appendChild(this._innerDiv2);
+
+    this._attrColumns = 1;
     this._versionWidget = document.createElement("text-input");
     this._versionWidget.setAttribute("name", "Version");
     this._versionWidget.permission = "View Only";
@@ -91,6 +105,14 @@ class AttributePanel extends TatorElement {
       case "in-entity-browser":
         this._div.classList.add("px-4");
     }
+  }
+
+  /**
+   * @param {Number} val - 1 or 2 are valid. This will set how many columns to display for
+   *                       the user defined attributes.
+   */
+  set attributeColumns(val) {
+    this._attrColumns = val;
   }
 
   set permission(val) {
@@ -442,7 +464,9 @@ class AttributePanel extends TatorElement {
     const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
+    var columnIdx = 0;
     for (const column of sorted) {
+      columnIdx += 1;
       let widget;
       var ignorePermission = false;
 
@@ -537,7 +561,17 @@ class AttributePanel extends TatorElement {
         this._hiddenAttrsDiv.appendChild(widget);
       }
       else {
-        this._div.appendChild(widget);
+        if (this._attrColumns == 2) {
+          if (columnIdx / sorted.length > 0.5) {
+            this._innerDiv1.appendChild(widget);
+          }
+          else {
+            this._innerDiv2.appendChild(widget);
+          }
+        }
+        else {
+          this._div.appendChild(widget);
+        }
       }
 
       if (column.default) {
@@ -832,7 +866,15 @@ class AttributePanel extends TatorElement {
       this.displayGoToLocalization(true);
     }
 
-    for (const widget of this._div.children) {
+    var widgets;
+    if (this._attrColumns == 2) {
+      widgets = [...this._innerDiv1.children, ...this._innerDiv2.children];
+    }
+    else {
+      widgets = this._div.children;
+    }
+
+    for (const widget of widgets) {
       const name = widget.getAttribute("name");
       const value = values.attributes[name];
       // Only set the name if it is defined

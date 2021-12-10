@@ -1,7 +1,7 @@
 class EntityCardGallery extends TatorElement {
     constructor() {
       super();
-      
+
       // Gallery Container
       this._main = document.createElement("div");
       this._main.setAttribute("class", "enitity-gallery--main ml-1 mt-6 mr-6 px-5 rounded-1");
@@ -43,14 +43,19 @@ class EntityCardGallery extends TatorElement {
       this._paginator = document.createElement("entity-gallery-paginator");
       this._paginator.div.classList.add("py-2");
       this._main.appendChild(this._paginator);
+
+
+
     }
 
-    init(cardList){
-      for(let card of cardList){
-        this._ul.appendChild(card);
-      }
-      return this._ul;
+  init(cardList) {
+    
+    for (let card of cardList) {
+      this._ul.appendChild(card);
     }
+
+    return this._ul;
+  }
 
     updateCards(cardList){
       this._ul.innerHTML = "";

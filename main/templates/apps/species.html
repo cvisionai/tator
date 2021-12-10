@@ -3,16 +3,15 @@
 {% load static %}
 
 {% block head %}
-<title>Tator | Analytics Portal</title>
+<title>Species Verification | Review</title>
 {% endblock head %}
 
 {% block body %}
-
-<analytics-portal
+<apps-species
     username="{{ user|stringformat:'s' }}"
     email="{{ user.email }}"
     project-id="{{ project.id }}"
     project-name="{{ project.name }}"
     token="{{ token }}">
-</analytics-portal>
+</apps-species>
 {% endblock body %}

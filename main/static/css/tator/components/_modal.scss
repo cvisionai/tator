@@ -11,7 +11,7 @@
   transition-duration: .25s;
   transition-property: transform, opacity;
   width: 620px;
-  z-index: 2;
+  z-index: 100;
   &.is-open {
     opacity: 1;
     pointer-events: initial;
@@ -115,7 +115,7 @@
   width: 300px;
   height: 300px;
   margin-left: -150px;
-  z-index: 1;
+  z-index: 100;
 }
 
 .modal__main {

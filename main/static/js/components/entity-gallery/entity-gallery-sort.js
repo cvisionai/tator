@@ -24,11 +24,17 @@ class EntityGallerySort extends TatorElement {
     this.div.setAttribute("class", "enitity-gallery__labels-div rounded-1 my-2 py-2 px-2 hidden");
     this._shadow.appendChild(this.div);
 
+    let titleDiv = document.createElement("div");
+    titleDiv.setAttribute("class", "text-gray d-flex flex-row flex-items-center f2 py-2 px-2");
+    this._titleText = document.createTextNode("Select sort options for gallery entries.");
+    titleDiv.appendChild(this._titleText);
+    this.div.append(titleDiv);
+
     // Hide and showing the attribute div
     let xClose = document.createElement("nav-close");
-    xClose.setAttribute("class", "float-right");
-    xClose.style.height = "40px";
-    this.div.appendChild(xClose);
+    xClose.style.marginLeft = "auto";
+    xClose.style.height = "20px";
+    titleDiv.appendChild(xClose);
 
     // Listeners
     xClose.addEventListener("click", () => {
@@ -47,7 +53,9 @@ class EntityGallerySort extends TatorElement {
     this._sortOrderValues = {};
   }
 
- 
+  set titleEntityTypeName(val) {
+    this._titleText.textContent = `Select sort options for gallery ${val}.`;
+  }
 
   /**
    * Add a section of labels to main label div
@@ -67,6 +75,29 @@ class EntityGallerySort extends TatorElement {
     let labelsMain = document.createElement("div");
     labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
+    if(!hideTypeName){
+      let _title = document.createElement("div");
+      _title.setAttribute("class", "entity-gallery-labels--title py-3 px-2 col-3");
+      _title.appendChild(document.createTextNode(`${typeName}`));
+
+      if (typeof typeData.description !== "undefined" && typeData.description !== "") {
+        let descriptionText = document.createElement("div");
+        descriptionText.setAttribute("class", "f3 py-1 text-gray");
+        descriptionText.textContent = `${typeData.description}`;
+        _title.appendChild(descriptionText);
+      }
+
+      
+      let idText = document.createElement("text");
+      idText.setAttribute("class", "d-flex py-1 text-gray f3");
+      idText.textContent = `Type ID: ${typeData.id}`;
+      _title.appendChild(idText);
+      
+      
+      labelsMain.appendChild(_title);
+    }
+
+
     // Labels details with checkboxes
     let _labelDetails = document.createElement("div");
     _labelDetails.setAttribute("class", "float-right col-10");
@@ -84,7 +115,7 @@ class EntityGallerySort extends TatorElement {
     const labelsList = this.makeListFrom(typeData);
 
     const labelSelectionBox = document.createElement("enum-input");
-    labelSelectionBox.setAttribute("name", `Sort ${typeName} By`);
+    labelSelectionBox.setAttribute("name", `Sort By`);
     labelSelectionBox.choices = labelsList;
     styleDiv.appendChild(labelSelectionBox);
 

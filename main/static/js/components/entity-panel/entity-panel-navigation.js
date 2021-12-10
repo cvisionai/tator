@@ -31,17 +31,17 @@ class EntityPanelNavigation extends TatorElement {
       styleDiv.setAttribute("class", "files__main files-wrap");
       details.appendChild(styleDiv);
 
-      const div = document.createElement("div");
-      div.setAttribute("class", "more d-flex flex-column f2 py-3 px-2");
-      styleDiv.appendChild(div);
+      // const div = document.createElement("div");
+      // div.setAttribute("class", "more d-flex flex-column f2 py-3 px-2");
+      // styleDiv.appendChild(div);
 
-      this._slider = document.createElement("input");
-      this._slider.setAttribute("class", "range flex-grow");
-      this._slider.setAttribute("type", "range");
-      this._slider.setAttribute("step", "1");
-      this._slider.setAttribute("min", "0");
-      this._slider.setAttribute("value", "0");
-      div.appendChild(this._slider);
+      // this._slider = document.createElement("input");
+      // this._slider.setAttribute("class", "range flex-grow");
+      // this._slider.setAttribute("type", "range");
+      // this._slider.setAttribute("step", "1");
+      // this._slider.setAttribute("min", "0");
+      // this._slider.setAttribute("value", "0");
+      // div.appendChild(this._slider);
 
       this.next = document.createElement("entity-next-button");
       this.controls.appendChild(this.next);
@@ -54,10 +54,10 @@ class EntityPanelNavigation extends TatorElement {
          this._emitSelection("next");
       });
 
-      this._slider.addEventListener("input", () => {
-         let newIndex = Number(this._slider.value);
-         this._emitSelection("slider", newIndex);
-      });
+      // this._slider.addEventListener("input", () => {
+      //    let newIndex = Number(this._slider.value);
+      //    this._emitSelection("slider", newIndex);
+      // });
 
       this._goToFrameButton = document.createElement("entity-frame-link-button");
       this._goToFrameButton.button.classList.add("ml-3");
@@ -75,7 +75,7 @@ class EntityPanelNavigation extends TatorElement {
    }
 
    _emitSelection(action, value = null) {
-      console.log("updated via emit selection");
+      // console.log("updated via emit selection");
       let newCardIndex = null;
       let total = this._data.length;
 
@@ -88,7 +88,7 @@ class EntityPanelNavigation extends TatorElement {
          newCardIndex = value;
       }
 
-      console.log(`newCardIndex ${newCardIndex} and current index is this._cardIndex ${this._cardIndex} (displayed should be +1)`);
+      // console.log(`newCardIndex ${newCardIndex} and current index is this._cardIndex ${this._cardIndex} (displayed should be +1)`);
 
       if (newCardIndex < 0) {
          console.log(`But oops we're out of range! [START -1]  setting to end of the line`);
@@ -118,7 +118,7 @@ class EntityPanelNavigation extends TatorElement {
    }
 
    handle({ cardElements, cardIndexes, cardObj }) {
-      console.log("handled via panel top");
+      // console.log("handled via panel top");
       // Setup next/prev/slider nav
       this._data = cardElements;
       this._cardIndex = cardIndexes[cardObj.id];
@@ -131,11 +131,11 @@ class EntityPanelNavigation extends TatorElement {
       let start = Number(cardIndex) + 1;
       let total = this._data.length;
 
-      console.log("Navigation Init at card index: " + cardIndex);
+      // console.log("Navigation Init at card index: " + cardIndex);
 
       this._current.textContent = start;
-      this._slider.setAttribute("value", start);
-      this._slider.setAttribute("max", total);
+      // this._slider.setAttribute("value", start);
+      // this._slider.setAttribute("max", total);
 
       // Update go to frame destination
       let mediaLink = this._selectedCardEl.card.cardObj.mediaLink;
