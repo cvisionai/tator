@@ -64,6 +64,13 @@ pv:
     - retrans=2
     - noresvport
   path: "/"
+uploadBucket:
+  enable: true
+  host: "https://<Your S3 bucket endpoint>"
+  name: "<Your S3 bucket name>"
+  region: "<Your S3 bucket region>"
+  accessKey: "<Your S3 bucket access key>"
+  secretKey: "<Your S3 bucket secret key>"
 hpa:
   nginxMinReplicas: 2
   nginxMaxReplicas: 10

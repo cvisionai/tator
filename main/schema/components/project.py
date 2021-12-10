@@ -23,6 +23,11 @@ project_properties = {
         'type': 'integer',
         'minimum': 1,
     },
+    'upload_bucket': {
+        'description': 'Unique integer identifying a bucket for uploads.',
+        'type': 'integer',
+        'minimum': 1,
+    },
 }
 
 project_spec = {
@@ -48,6 +53,7 @@ project_update = {
             'type': 'boolean',
         },
         'bucket': project_properties['bucket'],
+        'upload_bucket': project_properties['upload_bucket'],
     },
 }
 

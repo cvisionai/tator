@@ -1,14 +1,14 @@
 encode_config = {
     'type': 'object',
     'description': 'Settings for archival video encode. Any additional properties will '
-                   'be passed as command line arguments to ffmpeg. If set to null, the '
-                   'raw file will be used (no transcode).',
+                   'be passed as command line arguments to ffmpeg. The copy setting '
+                   'does no encoding and simply copies the original file.',
     'additionalProperties': True,
     'properties': {
         'vcodec': {
             'type': 'string',
             'description': 'Video codec.',
-            'enum': ['h264', 'hevc'],
+            'enum': ['copy', 'h264', 'hevc'],
             'default': 'hevc',
         },
         'crf': {
@@ -57,6 +57,7 @@ s3_storage_config = {
 
 archive_config = {
     'type': 'object',
+    'required': ['encode'],
     'description': 'Settings for archival video encode and storage. If not set, the raw video '
                    'will be stored in Tator.',
     'properties': {

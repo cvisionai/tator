@@ -61,6 +61,9 @@ var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
+const RATE_CUTOFF_FOR_ON_DEMAND = 4.0;
+const RATE_CUTOFF_FOR_AUDIO = 4.0;
+
 /// Support multiple off-screen videos at varying resolutions
 /// the intention is this class is used to store raw video
 /// frames as they are downloaded.
@@ -2231,7 +2234,14 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       // Treat play and scrub buffer as best available.
-      let play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+      let play_attempt = null;
+
+      // If our play and scrub buffer are different, opportunistically fetch the higher
+      // quality frame out of the on-demand buffer.
+      if (this._play_idx != this._scrub_idx)
+      {
+        this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+      }
 
       // To test degraded mode (every 10th frame is degraded):
       //if (frame % 10 == 0)
@@ -2550,7 +2560,7 @@ class VideoCanvas extends AnnotationCanvas {
     // have audio, and are going forward.
     this._audioEligible=false;
     if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= 4.0 &&
+        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
         this._audioPlayer &&
         direction == Direction.FORWARD)
     {
@@ -2575,7 +2585,7 @@ class VideoCanvas extends AnnotationCanvas {
     // have audio, and are going forward.
     this._audioEligible=false;
     if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= 4.0 &&
+        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
         this._audioPlayer &&
         direction == Direction.FORWARD)
     {
@@ -2638,7 +2648,7 @@ class VideoCanvas extends AnnotationCanvas {
     // have audio, and are going forward.
     this._audioEligible=false;
     if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= 4.0 &&
+        this._playbackRate <= RATE_CUTOFF_FOR_ON_DEMAND &&
         this._audioPlayer &&
         direction == Direction.FORWARD)
     {
@@ -2882,6 +2892,11 @@ class VideoCanvas extends AnnotationCanvas {
   scrubBufferAvailable(frame)
   {
     return this.videoBuffer(frame, "scrub") != null;
+  }
+
+  bufferDelayRequired()
+  {
+    return this._play_idx != this._scrub_idx;
   }
 
   onDemandDownloadPrefetch(reqFrame)
@@ -3357,7 +3372,7 @@ class VideoCanvas extends AnnotationCanvas {
   canPlayRate(rate, frame)
   {
     // If the rate is 1.0 or less, we will use the onDemand buffer so we're good to go.
-    if (rate <= 4.0)
+    if (rate <= RATE_CUTOFF_FOR_ON_DEMAND)
     {
       return true;
     }
@@ -3374,7 +3389,7 @@ class VideoCanvas extends AnnotationCanvas {
   playbackRatesAvailable()
   {
     let onDemandLogic = true;
-    if (this._playbackRate > 8.0)
+    if (this._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       onDemandLogic = false;
     }
@@ -3393,7 +3408,7 @@ class VideoCanvas extends AnnotationCanvas {
     {
       return {"frameInterval": 1, //On-demand always uses 1
               "minimum": 0,
-              "maximum": 8.0};
+              "maximum": RATE_CUTOFF_FOR_ON_DEMAND};
     }
   }
 
@@ -3406,7 +3421,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > 8.0)
+      if (this._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND)
       {
         this._playGenericScrub(Direction.FORWARD);
       }
@@ -3444,7 +3459,7 @@ class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > 4.0)
+      if (this._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND)
       {
         this._playGenericScrub(Direction.BACKWARDS);
       }

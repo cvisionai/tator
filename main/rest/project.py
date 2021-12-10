@@ -1,3 +1,6 @@
+import logging
+import io
+
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -20,6 +23,8 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 
+logger = logging.getLogger(__name__)
+
 def _serialize_projects(projects, user_id):
     project_data = database_qs(projects)
     for idx, project in enumerate(projects):
@@ -30,7 +35,10 @@ def _serialize_projects(projects, user_id):
             project_data[idx]['permission'] = str(project.user_permission(user_id))
         del project_data[idx]['attribute_type_uuids']
         if project_data[idx]['thumb']:
-            project_data[idx]['thumb'] = store.get_download_url(project_data[idx]['thumb'], 28800)
+            thumb_store = get_tator_store()
+            if not thumb_store.check_key(project_data[idx]['thumb']):
+                thumb_store = store
+            project_data[idx]['thumb'] = thumb_store.get_download_url(project_data[idx]['thumb'], 28800)
     return project_data
 
 class ProjectListAPI(BaseListView):
@@ -70,6 +78,12 @@ class ProjectListAPI(BaseListView):
         if 'bucket' in params:
             params['bucket'] = get_object_or_404(Bucket, pk=params['bucket'])
             if params['bucket'].organization.pk != params['organization']:
+                raise PermissionDenied
+
+        # Make sure upload bucket can be set by this user.
+        if 'upload_bucket' in params:
+            params['upload_bucket'] = get_object_or_404(Bucket, pk=params['upload_bucket'])
+            if params['upload_bucket'].organization.pk != params['organization']:
                 raise PermissionDenied
 
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
@@ -125,22 +139,47 @@ class ProjectDetailAPI(BaseDetailView):
         if 'summary' in params:
             project.summary = params['summary']
         if 'thumb' in params:
-            project_from_key = int(params['thumb'].split('/')[1])
+            # Get filename from url.
+            tokens = params['thumb'].split('/')
+            fname = tokens[-1]
+
+            # Set up S3 clients.
+            upload_store = get_tator_store(project.upload_bucket, upload=True)
+            generic_store = get_tator_store()
+
+            # Check prefix.
+            org_from_key = int(tokens[2])
+            project_from_key = int(tokens[3])
+            user_from_key = int(tokens[4])
+            if project.organization.pk != org_from_key:
+                raise Exception("Invalid thumbnail path for this organization!")
             if project.pk != project_from_key:
                 raise Exception("Invalid thumbnail path for this project!")
+            if self.request.user.pk != user_from_key:
+                raise Exception("Invalid thumbnail path for this user!")
 
-            tator_store = get_tator_store(project.bucket)
-            if not tator_store.check_key(params["thumb"]):
+            # Check existence of file.
+            if not upload_store.check_key(params["thumb"]):
                 raise ValueError(f"Key {params['thumb']} not found in bucket")
+
+            # Download the image file and load it to new prefix.
+            new_key = f"{org_from_key}/{project_from_key}/{fname}"
+            fp = io.BytesIO()
+            upload_store.download_fileobj(params['thumb'], fp)
+            generic_store.put_object(new_key, fp)
 
             if project.thumb:
                 safe_delete(project.thumb)
-            project.thumb = params['thumb']
+            project.thumb = new_key
         if 'enable_downloads' in params:
             project.enable_downloads = params['enable_downloads']
         if 'bucket' in params:
             project.bucket = get_object_or_404(Bucket, pk=params['bucket'])
             if project.bucket.organization != project.organization:
+                raise PermissionDenied
+        if 'upload_bucket' in params:
+            project.upload_bucket = get_object_or_404(Bucket, pk=params['upload_bucket'])
+            if project.upload_bucket.organization != project.organization:
                 raise PermissionDenied
         project.save()
         return {'message': f"Project {params['id']} updated successfully!"}
