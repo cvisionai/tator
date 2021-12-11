@@ -46,7 +46,7 @@ class FilterUtilities {
         selectedAttributeType.name == "_section" ||
         selectedAttributeType.name == "_user" ||
         selectedAttributeType.name == "_dtype") {
-      choices.push({"value": "=="});
+        choices.push({"value": "=="});
     }
     else if (dtype == "int" || dtype == "float") {
       choices.push({"value": "=="});
@@ -64,7 +64,8 @@ class FilterUtilities {
     }
     else {
       choices.push({"value": "Includes"});
-      choices.push({"value": "=="});
+      choices.push({ "value": "==" });
+      choices.push({"value": "NOT"});
     }
 
     return choices;

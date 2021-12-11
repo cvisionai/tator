@@ -243,6 +243,13 @@ class FilterData {
           }
           entityType.attribute_types.push(typeAttribute);
 
+          var typeAttribute = {
+            choices: stateTypeOptions,
+            name: "_modfied_by",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(typeAttribute);
+
           this._allTypes.push(entityType);
         }
       }
