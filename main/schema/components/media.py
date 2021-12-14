@@ -185,6 +185,7 @@ media_update = {
         },
         'multi': {'$ref': '#/components/schemas/MultiDefinition'},
         'live': {'$ref': '#/components/schemas/LiveUpdateDefinition'},
+        'concat': {'$ref': '#/components/schemas/ConcatDefinition'},
         'archive_state': {
             'type': 'string',
             'description': 'Marks media for archival or retrieval. Media may not be set directly '
