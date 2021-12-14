@@ -153,6 +153,17 @@ multi_definition = {
     },
 }
 
+concat_definition = {
+    'description': 'Object containing information needed for a concating videos together',
+    'type': 'object',
+    'properties': {
+        'id': {'type': 'integer',
+                    'description': 'Primary key of video in append series'},
+        'numFrames': {'type': 'integer',
+                    'description': 'Number of frames to load from this video'},
+    },
+}
+
 auxiliary_file_definition = {
     'type': 'object',
     'required': ['path'],
@@ -239,6 +250,7 @@ media_files = {
     'properties': {
         'archival': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
+        'concat': {'type': 'array', 'items': {'$ref': '#/components/schemas/ConcatDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
         'image': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         'attachment': {'type': 'array', 'items': {'$ref': '#/components/schemas/AuxiliaryFileDefinition'}},
