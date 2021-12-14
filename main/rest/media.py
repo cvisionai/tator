@@ -682,16 +682,18 @@ class MediaDetailAPI(BaseDetailView):
                 # Check values of IDs (that they exist and are part of the same project).
                 concat_ids = [x['id'] for x in params['concat']]
                 sub_media = Media.objects.filter(project=qs[0].project, pk__in=concat_ids)
-                if len(concat_ids) != sub_media.count():
-                    raise ValueError(f"One or more media IDs in multi definition is not part of "
-                                      "project {qs[0].project.pk} or does not exist!")
                 valid_ids = [x.id for x in sub_media]
+                valid_objs = [x for x in params['concat'] if x['id'] in valid_ids]
+                if len(valid_objs) != len(concat_ids):
+                    raise ValueError(f"One or more media IDs in concat definition is not part of "
+                                     f"project {qs[0].project.pk} or does not exist! "
+                                     f"req={concat_ids}, found={valid_ids}")
+
                 if media_files is None:
                     media_files = {}
 
                 # Only add valid media to the concat structure
                 media_files['concat'] = []
-                valid_objs = [x for x in params['concat'] if x['id'] in valid_ids]
                 for concat_obj in valid_objs:
                     media_files['concat'].append(concat_obj)
 
