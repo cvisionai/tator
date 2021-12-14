@@ -59,16 +59,17 @@ class MediaCard extends TatorElement {
     extDiv.appendChild(this._pos_text);
 
     this._emblemDiv = document.createElement("div");
+    this._emblemDiv.setAttribute("class", "d-flex flex-items-center");
     lowerDiv.appendChild(this._emblemDiv);
 
     this._attachmentButton = document.createElement("button");
-    this._attachmentButton.setAttribute("class", "px-0 btn-clear h2 text-gray hover-text-white");
+    this._attachmentButton.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white");
     this._attachmentButton.style.display = "none";
     this._emblemDiv.appendChild(this._attachmentButton);
 
-    const svg = document.createElementNS(svgNamespace, "svg");
-    svg.setAttribute("width", "16");
-    svg.setAttribute("height", "16");
+    var svg = document.createElementNS(svgNamespace, "svg");
+    svg.setAttribute("width", "14");
+    svg.setAttribute("height", "14");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("stroke", "currentColor");
     svg.setAttribute("stroke-width", "2");
@@ -80,6 +81,27 @@ class MediaCard extends TatorElement {
     const path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48");
     svg.appendChild(path);
+
+    let archiveSvg = `<svg class="no-fill" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>`;
+    let archiveUpSvg = `<svg class="no-fill" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
+    let archiveDownSvg = `<svg class="no-fill" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>`;
+    this._archiveEmblem = document.createElement("button");
+    this._archiveEmblem.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white d-flex");
+    this._archiveEmblem.innerHTML = archiveSvg;
+    this._archiveEmblem.style.display = "none";
+    this._emblemDiv.appendChild(this._archiveEmblem);
+
+    this._archiveUpEmblem = document.createElement("button");
+    this._archiveUpEmblem.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white d-flex");
+    this._archiveUpEmblem.innerHTML = archiveSvg + archiveUpSvg;
+    this._archiveUpEmblem.style.display = "none";
+    this._emblemDiv.appendChild(this._archiveUpEmblem);
+
+    this._archiveDownEmblem = document.createElement("button");
+    this._archiveDownEmblem.setAttribute("class", "px-1 btn-clear h2 text-gray hover-text-white d-flex");
+    this._archiveDownEmblem.innerHTML = archiveSvg + archiveDownSvg;
+    this._archiveDownEmblem.style.display = "none";
+    this._emblemDiv.appendChild(this._archiveDownEmblem);
 
     this.addEventListener("mouseenter", () => {
       this._more.style.opacity = 1;
@@ -272,6 +294,19 @@ class MediaCard extends TatorElement {
       this._link.style.opacity = 1;
       this._name.style.cursor = "pointer";
       this._link.style.cursor = "pointer";
+    }
+
+    if (this._media.archive_state == "to_archive") {
+      this._archiveDownEmblem.style.display = "flex";
+      this._archiveDownEmblem.setAttribute("tooltip", "Pending Archival");
+    }
+    else if (this._media.archive_state == "archived") {
+      this._archiveEmblem.style.display = "flex";
+      this._archiveEmblem.setAttribute("tooltip", "Archived");
+    }
+    else if (this._media.archive_state == "to_live") {
+      this._archiveUpEmblem.style.display = "flex";
+      this._archiveUpEmblem.setAttribute("tooltip", "Pending Live");
     }
   }
 
