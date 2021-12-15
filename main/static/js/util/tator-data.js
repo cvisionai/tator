@@ -622,10 +622,10 @@ class TatorData {
     else if (modifier == "OR") {
       modifier = "";
       doNotReplace = true;
-    } else if(modifier == "NOT"){
+    } else if (modifier == "NOT") {
       modifier = "";
-      modifierStart = "NOT ";
-      doNotReplace = true;    
+      modifierStart = "NOT("
+      modifierEnd = ")";
     }
 
     if (!doNotReplace) {

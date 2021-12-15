@@ -244,9 +244,8 @@ class FilterData {
           entityType.attribute_types.push(typeAttribute);
 
           var typeAttribute = {
-            choices: stateTypeOptions,
             name: "_modfied_by",
-            dtype: "enum"
+            dtype: "string"
           }
           entityType.attribute_types.push(typeAttribute);
 
