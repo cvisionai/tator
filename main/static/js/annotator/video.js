@@ -2240,7 +2240,7 @@ class VideoCanvas extends AnnotationCanvas {
       // quality frame out of the on-demand buffer.
       if (this._play_idx != this._scrub_idx)
       {
-        this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+        play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
       }
 
       // To test degraded mode (every 10th frame is degraded):
