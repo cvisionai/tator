@@ -1666,6 +1666,153 @@ class StateTestCase(
     def tearDown(self):
         self.project.delete()
 
+class StateDeleteCase(APITestCase):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.image_type = MediaType.objects.create(
+            name="images",
+            dtype='image',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.entity_type = StateType.objects.create(
+            name="states",
+            dtype='state',
+            project=self.project,
+            association="Media",
+            interpolation="none",
+            attribute_types=create_test_attribute_types(),
+        )
+        self.entity_type.media.add(self.image_type)
+
+    def test_single_media_delete(self):
+        # Tests deleting a state's associated media (1). The corresponding
+        # state must also be deleted. Delete via the endpoint.
+
+        unique_string_attr_val = 'super_unique_string_to_search_for_1'
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id = response.data['id']
+
+        create_json = [{
+            'project': self.project.pk,
+            'type': self.entity_type.pk,
+            'frame': 0,
+            'name': 'asdf',
+            'media_ids': [media_id],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        }]
+        response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 1)
+
+        response = self.client.delete(f"/rest/Media/{media_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 0)
+
+    def test_multiple_media_delete(self):
+        # Tests deleting states where it's associated with multiple media.
+        # The media is deleted and the subsequent states should also be deleted.
+
+        unique_string_attr_val = 'super_unique_string_to_search_for_2'
+
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id1 = response.data['id']
+
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id2 = response.data['id']
+
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'String Test': unique_string_attr_val}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id3 = response.data['id']
+
+        create_json = [{
+            'project': self.project.pk,
+            'type': self.entity_type.pk,
+            'frame': 0,
+            'name': 'asdf',
+            'media_ids': [media_id1],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        },{
+            'project': self.project.pk,
+            'type': self.entity_type.pk,
+            'frame': 0,
+            'name': 'asdf',
+            'media_ids': [media_id2, media_id3],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        }]
+        response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 2)
+
+        response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 2)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?media_search=String%5C%20Test%3A{unique_string_attr_val}")
+        self.assertEqual(len(response.data), 2)
+
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?attribute=String%20Test%3A%3A{unique_string_attr_val}")
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?media_search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 0)
+
+    def tearDown(self):
+        self.project.delete()
+
 class LeafTestCase(
         APITestCase,
         AttributeTestMixin,
