@@ -51,13 +51,13 @@ class AnalyticsLocalizations extends TatorPage {
     this._filterResults._filterDiv.appendChild(this._filterView);
 
     // Custom gallery more menu added into filter interface tools ares
-     this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
-
+    this._filterView._moreNavDiv.appendChild(this._filterResults._moreMenu);
 
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
     this.aside.setAttribute("class", "entity-panel--container slide-close col-3")
+    this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 
     // Gallery navigation panel
@@ -80,10 +80,7 @@ class AnalyticsLocalizations extends TatorPage {
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
   }
 
-  _init() {
-
-    this.loading.showSpinner();
-    this.showDimmer();
+  async _init() {
 
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
@@ -98,13 +95,30 @@ class AnalyticsLocalizations extends TatorPage {
       }
     }
 
+    // Settings lock value
+    this._settings._lock.addEventListener("click", evt => {
+      const locked = this._settings._lock._pathLocked.style.display != "none";
+      const permissionValue = locked ? "View Only" : "Can Edit";
+      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+      this._panelContainer.dispatchEvent(panelPermissionEvt);
+
+      if (locked) {
+        this._settings.setAttribute("lock", 0);
+      } else {
+        this._settings.setAttribute("lock", 1);
+      }
+      //window.history.pushState({}, "", this._settings.getURL());
+    });
+
+    this._settings._bulkCorrect.hidden = false; // #TODO
+
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
-    this._modelData.init().then(() => {
 
-      // Init vars for filter state
-      this._filterConditions = this._settings.getFilterConditionsObject();
+    this.loading.showSpinner();
+    this.showDimmer();
+    this._modelData.init().then(() => {
 
       // Init vars for pagination state
       let pageSize = this._settings.getPageSize();
@@ -127,43 +141,16 @@ class AnalyticsLocalizations extends TatorPage {
         init: true
       };
 
+      // Init vars for filter state
+      this._filterConditions = this._settings.getFilterConditionsObject();
+
       // Filter interface
       this._filterDataView = new FilterData(
         this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
-      this._filterDataView.init();
+
+      this._filterDataView.init(); // requires model data to be init
       this._filterView.dataView = this._filterDataView;
       this._filterView.setFilterConditions(this._filterConditions);
-
-      // Card Data class collects raw model and parses into view-model format
-      this.cardData = document.createElement("annotation-card-data");
-      this.cardData.init(this._modelData);
-
-      this.cardData.addEventListener("setCardImage", (evt) => {
-        this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
-      });
-
-      // Init panel side behavior
-      this._panelContainer.init({ 
-          main: this.main, 
-          aside: this.aside, 
-          pageModal: this.modal, 
-          modelData: this._modelData,
-          gallery: this._filterResults 
-        });
-
-      // Pass panel and localization types to gallery
-      this._filterResults._initPanel({
-        panelContainer: this._panelContainer,
-        pageModal: this.modal,
-        modelData: this._modelData,
-        cardData: this.cardData
-      });
-
-      // Init Card Gallery and Right Panel
-      this._cardGallery(
-        this._filterConditions,
-        this._paginationState
-      );
 
       // Listen for pagination events
       this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
@@ -175,19 +162,39 @@ class AnalyticsLocalizations extends TatorPage {
       // Listen for filter events
       this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
 
-      // Settings lock value
-      this._settings._lock.addEventListener("click", evt => {
-        const locked = this._settings._lock._pathLocked.style.display != "none";
-        const permissionValue = locked ? "View Only" : "Can Edit";
-        const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-        this._panelContainer.dispatchEvent(panelPermissionEvt);
+      // Card Data class collects raw model and parses into view-model format
+      this.cardData = document.createElement("annotation-card-data");
+      this.cardData.init(this._modelData).then(() => {
 
-        if (locked) {
-          this._settings.setAttribute("lock", 0);
-        } else {
-          this._settings.setAttribute("lock", 1);
-        }
-        //window.history.pushState({}, "", this._settings.getURL());
+        this.cardData.addEventListener("setCardImage", (evt) => {
+          this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
+        });
+
+        // Pass panel and localization types to gallery
+        this._filterResults._initPanel({
+          panelContainer: this._panelContainer,
+          pageModal: this.modal,
+          modelData: this._modelData,
+          cardData: this.cardData
+        });
+
+        // Init panel side behavior
+        this._panelContainer.init({
+          main: this.main,
+          aside: this.aside,
+          pageModal: this.modal,
+          modelData: this._modelData,
+          gallery: this._filterResults
+        });
+
+        // Init Card Gallery and Right Panel. cardData required to be initialized.
+        this._cardGallery(
+          this._filterConditions,
+          this._paginationState
+        );
+        
+        this.loading.hideSpinner();
+        this.hideDimmer();
       });
     });
   }
@@ -209,8 +216,9 @@ class AnalyticsLocalizations extends TatorPage {
   }
 
   _cardGallery(filterConditions, paginationState) {
-    this.loading.showSpinner();
     this.showDimmer();
+    this.loading.showSpinner();
+
 
     // Initial view-modal "Cardlist" from fetched localizations
     this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {

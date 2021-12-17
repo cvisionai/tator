@@ -19,8 +19,30 @@ class EntityPanelContainer extends TatorElement {
       this.gallery = gallery;
 
       // listener to close panelContainer
-      this._panelTop.init({ pageModal, modelData, panelContainer: this });
+      if (this.gallery._customContent) {
+         this._panelTop.init({ pageModal, modelData, panelContainer: this, customContentHandler: this.gallery.customContentHandler});
+      } else {
+         this._panelTop.init({ pageModal, modelData, panelContainer: this });
+      }
+      
       this._panelTop._topBarArrow.addEventListener("click", this._toggleRightOnClick.bind(this));
+
+      // Check and set current permission level on annotationPanel
+      if (this.hasAttribute("permissionValue")) {
+         let permissionVal = this.getAttribute("permissionValue");
+         this._panelTop._panel.permission = permissionVal;
+      }
+
+      // when lock changes set attribute on forms to "View Only" / "Can Edit"
+      this.addEventListener("permission-update", (e) => {
+         this.setAttribute("permissionValue", e.detail.permissionValue);
+         this._panelTop._panel.permission = e.detail.permissionValue;
+      });
+
+      // when lock changes set attribute on forms to "View Only" / "Can Edit"
+      this.addEventListener("unselected", (e) => {
+         this.gallery.cardNotSelected(e.detail.id);
+      });
    }
 
    cardClicked() {

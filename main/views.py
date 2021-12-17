@@ -163,14 +163,14 @@ class FilesView(ProjectBase, TemplateView):
 class AnalyticsLocalizationsView(ProjectBase, TemplateView):
     template_name = 'analytics/localizations.html'
 
+class AnalyticsCorrectionsView(ProjectBase, TemplateView):
+    template_name = 'analytics/corrections.html'
 
 class AnalyticsCollectionsView(ProjectBase, TemplateView):
     template_name = 'analytics/collections.html'
 
-
 class AnalyticsPortalView(ProjectBase, TemplateView):
     template_name = 'analytics/portal.html'
-
 
 class AnnotationView(ProjectBase, TemplateView):
     template_name = 'annotation.html'

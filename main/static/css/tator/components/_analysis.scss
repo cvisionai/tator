@@ -119,7 +119,7 @@ body.analysis-annotations-body {
       ),
       linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
     background-size: 10px 10px;
-    transition: all 300ms linear;
+    // transition: all 300ms linear;
   }
 
   & > span {
@@ -244,7 +244,7 @@ body.analysis-annotations-body {
   height: 250px;
   margin: 100px 25px;
   border: 2px solid transparent;
-  transition: all 300ms linear;
+  // transition: all 300ms linear;
 
   svg {
     color: $color-white;

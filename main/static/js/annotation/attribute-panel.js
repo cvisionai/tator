@@ -17,6 +17,25 @@ class AttributePanel extends TatorElement {
     this._createdByWidget.setAttribute("name", "Created By");
     this._div.appendChild(this._createdByWidget);
 
+    this._innerDiv = document.createElement("div");
+    this._innerDiv.setAttribute("class", "d-flex");
+    this._shadow.appendChild(this._innerDiv);
+
+    this._innerDiv1 = document.createElement("div");
+    this._innerDiv1.setAttribute("class", "d-flex flex-column text-gray f2 col-6");
+    this._innerDiv.appendChild(this._innerDiv1);
+
+    this._innerDiv2 = document.createElement("div");
+    this._innerDiv2.setAttribute("class", "d-flex flex-column text-gray f2 col-6");
+    this._innerDiv2.style.marginLeft = "10px";
+    this._innerDiv.appendChild(this._innerDiv2);
+
+    this._attrColumns = 1;
+    this._versionWidget = document.createElement("text-input");
+    this._versionWidget.setAttribute("name", "Version");
+    this._versionWidget.permission = "View Only";
+    this._div.appendChild(this._versionWidget);
+
     this._builtInAttrLabel = document.createElement("div");
     this._builtInAttrLabel.setAttribute("class", "f2 text-gray clickable py-2");
     this._builtInAttrLabel.textContent = "Built-in Attributes";
@@ -88,11 +107,19 @@ class AttributePanel extends TatorElement {
     }
   }
 
+  /**
+   * @param {Number} val - 1 or 2 are valid. This will set how many columns to display for
+   *                       the user defined attributes.
+   */
+  set attributeColumns(val) {
+    this._attrColumns = val;
+  }
+
   set permission(val) {
     this._permission = val;
     for (const widget of this._div.children) {
       // Specific attribute fields in this panel are always disabled
-      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By") {
+      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By" && widget.getAttribute("name") != "Version") {
         // Widget may have been marked as disabled, and its permission have already been
         // set appropriately.
         if (!widget.disabled) {
@@ -128,11 +155,6 @@ class AttributePanel extends TatorElement {
     this._builtInAttrsDiv.appendChild(widget);
 
     widget = document.createElement("text-input");
-    widget.setAttribute("name", "Version");
-    widget.permission = "View Only";
-    this._builtInAttrsDiv.appendChild(widget);
-
-    widget = document.createElement("text-input");
     widget.setAttribute("name", "Created Datetime");
     widget.permission = "View Only";
     this._builtInAttrsDiv.appendChild(widget);
@@ -149,6 +171,7 @@ class AttributePanel extends TatorElement {
   }
 
   _setBuiltInAttributes(values) {
+
     for (const widget of this._builtInAttrsDiv.children) {
       const name = widget.getAttribute("name");
 
@@ -157,25 +180,6 @@ class AttributePanel extends TatorElement {
       }
       else if (name == "Type") {
         widget.setValue(values.meta);
-      }
-      else if (name == "Version") {
-
-        let version = null;
-        let foundVersion = false;
-        for (let index = 0; index < this._versionList.length; index++) {
-          if (this._versionList[index].result.id == values.modified_by) {
-            foundVersion = true;
-            version = this._versionList[index].result.name;
-            break;
-          }
-        }
-
-        if (!foundVersion) {
-          this._getVersion(values.version, widget);
-        }
-        else {
-          widget.setValue(version);
-        }
       }
       else if (name == "Created Datetime") {
         widget.setValue(values.created_datetime);
@@ -296,7 +300,7 @@ class AttributePanel extends TatorElement {
     // Remove existing attribute widgets.
     while (true) {
       const child = this._div.lastChild;
-      if (child === this._idWidget || child === this._createdByWidget) {
+      if (child === this._idWidget || child === this._createdByWidget || child == this._versionWidget) {
         break;
       }
       this._div.removeChild(child);
@@ -460,7 +464,9 @@ class AttributePanel extends TatorElement {
     const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
+    var columnIdx = 0;
     for (const column of sorted) {
+      columnIdx += 1;
       let widget;
       var ignorePermission = false;
 
@@ -540,6 +546,13 @@ class AttributePanel extends TatorElement {
         widget.required = column.required;
       }
 
+      // Show description hover text (if existing)
+      if (typeof column.description !== "undefined" && column.description !== "") {
+        widget.setAttribute("title", column.description);
+      } //else {
+        //widget.setAttribute("title", `Accepts "${column.dtype}" data input`);
+      //}
+
       if (typeof this._permission !== "undefined" && !ignorePermission) {
         widget.permission = this._permission;
       }
@@ -548,7 +561,17 @@ class AttributePanel extends TatorElement {
         this._hiddenAttrsDiv.appendChild(widget);
       }
       else {
-        this._div.appendChild(widget);
+        if (this._attrColumns == 2) {
+          if (columnIdx / sorted.length > 0.5) {
+            this._innerDiv1.appendChild(widget);
+          }
+          else {
+            this._innerDiv2.appendChild(widget);
+          }
+        }
+        else {
+          this._div.appendChild(widget);
+        }
       }
 
       if (column.default) {
@@ -585,7 +608,7 @@ class AttributePanel extends TatorElement {
   getValues() {
     let values = {};
     for (const widget of this._div.children) {
-      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By") {
+      if (widget.getAttribute("name") != "ID" && widget.getAttribute("name") != "Created By" && widget.getAttribute("name") != "Version") {
         const val = widget.getValue();
         if ((val === null) && (widget.required)) {
           values = null;
@@ -784,6 +807,24 @@ class AttributePanel extends TatorElement {
       this._createdByWidget.setValue(createdByUsername);
     }
 
+
+    let version = null;
+    let foundVersion = false;
+    for (let index = 0; index < this._versionList.length; index++) {
+      if (this._versionList[index].result.id == values.modified_by) {
+        foundVersion = true;
+        version = this._versionList[index].result.name;
+        break;
+      }
+    }
+
+    if (!foundVersion) {
+      this._getVersion(values.version, this._versionWidget);
+    }
+    else {
+      this._versionWidget.setValue(version);
+    }
+
     // Check if the slider needs to be updated if there's different track data now.
     // If so, then update it.
     let trackSegmentsUpdated = false;
@@ -825,13 +866,21 @@ class AttributePanel extends TatorElement {
       this.displayGoToLocalization(true);
     }
 
-    for (const widget of this._div.children) {
+    var widgets;
+    if (this._attrColumns == 2) {
+      widgets = [...this._innerDiv1.children, ...this._innerDiv2.children];
+    }
+    else {
+      widgets = this._div.children;
+    }
+
+    for (const widget of widgets) {
       const name = widget.getAttribute("name");
       const value = values.attributes[name];
       // Only set the name if it is defined
       if (value != undefined) {
         widget.setValue(values.attributes[name]);
-      } else if (!["ID", "Created By"].includes(name)) {
+      } else if (!["ID", "Created By", "Version"].includes(name)) {
         widget.reset();
       }
     }

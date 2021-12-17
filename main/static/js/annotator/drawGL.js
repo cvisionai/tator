@@ -745,6 +745,12 @@ class DrawGL
     this.frameBuffer.reset();
   }
 
+  // Returns back the frame to start loading from
+  trimBuffer(count)
+  {
+    return this.frameBuffer.trim(count);
+  }
+
   // Returns true if there is room for loading frames
   canLoad()
   {
@@ -1051,6 +1057,11 @@ class DrawGL
     if (points.length < 3)
     {
       console.error("Can't draw polygon with less than 3 points");
+      return;
+    }
+    if (points.length > 4)
+    {
+      console.warn("We only support rectangle fill");
       return;
     }
 

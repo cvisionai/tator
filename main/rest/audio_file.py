@@ -12,6 +12,7 @@ from ..search import TatorSearch
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+from ._util import check_resource_prefix
 
 class AudioFileListAPI(BaseListView):
     schema = AudioFileListSchema()
@@ -34,6 +35,7 @@ class AudioFileListAPI(BaseListView):
             media_files = qs[0].media_files
             body = params['body']
             index = params.get('index')
+            check_resource_prefix(body['path'], qs[0])
             if not media_files:
                 media_files = {}
             if 'audio' not in media_files:
@@ -89,6 +91,7 @@ class AudioFileDetailAPI(BaseDetailView):
                                  f"{len(media_files['audio'])}")
             old_path = media_files['audio'][index]['path']
             new_path = body['path']
+            check_resource_prefix(new_path, qs[0])
             media_files['audio'][index] = body
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params['id'])

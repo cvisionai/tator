@@ -194,6 +194,8 @@ class TatorData {
 
     this._localizationTypeNames = [];
     this._localizationTypes.forEach(typeElem => this._localizationTypeNames.push(typeElem.name));
+
+    return this._localizationTypes;
   }
 
   /**
@@ -230,6 +232,7 @@ class TatorData {
 
     this._mediaTypeNames = [];
     this._mediaTypes.forEach(typeElem => this._mediaTypeNames.push(typeElem.name));
+    return this._mediaTypes;
   }
 
   /**
@@ -604,6 +607,10 @@ class TatorData {
     // Adjust the modifier to be lucene compliant
     var modifier = filter.modifier;
     var modifierEnd = "";
+    var modifierStart = "";
+    var doNotReplace = false;
+    var value = filter.value;
+    var field = filter.field;
 
     if (modifier == "==") {
       modifier = "";
@@ -612,15 +619,28 @@ class TatorData {
       modifier = "*";
       modifierEnd = "*";
     }
+    else if (modifier == "OR") {
+      modifier = "";
+      doNotReplace = true;
+    } else if(modifier == "NOT"){
+      modifier = "";
+      modifierStart = "NOT ";
+      doNotReplace = true;    
+    }
 
-    // Lucene search string requires spaces to have the backlash preceding it
-    var field = this._convertAttributeNameForSearch(filter.field);
-    var value = filter.value.replace(/ /g,"\\ ")
-    value = value.replace(/\(/g,"\\(")
-    value = value.replace(/\)/g,"\\)")
+    if (!doNotReplace) {
+      // Lucene search string requires spaces to have the backlash preceding it
+      field = filter.field.replace(/ /g, "\\ ")
+      field = field.replace(/\(/g, "\\(")
+      field = field.replace(/\)/g, "\\)")
+    
+      value = String(filter.value).replace(/ /g, "\\ ")
+      value = value.replace(/\(/g, "\\(")
+      value = value.replace(/\)/g, "\\)")
+    }
 
     // Finally generate the final parameter string compliant with Tator's REST call
-    var paramStr = `${field}:${modifier}${value}${modifierEnd}`;
+    var paramStr = `${modifierStart}${field}:${modifier}${value}${modifierEnd}`;
     return paramStr;
   }
 
@@ -674,7 +694,13 @@ class TatorData {
       var filter = finalAnnotationFilters[idx];
       annotationSearch += encodeURIComponent(filter);
       if (idx < finalAnnotationFilters.length - 1) {
-        annotationSearch += encodeURIComponent(" AND ");
+        if (filter.indexOf("NOT") > -1) {
+          console.log(`filter.indexOf("NOT") = ${filter.indexOf("NOT")}`)
+          annotationSearch += encodeURIComponent(" NOT ");
+        } else {
+          annotationSearch += encodeURIComponent(" AND ");
+        }
+        
       }
     }
 
@@ -948,7 +974,7 @@ class TatorData {
    * @returns {array of integers}
    *    List of localization IDs matching the filter criteria
    */
-   async getFilteredStates(outputType, filters, listStart, listStop, afterMap, stateMap = null) {
+   async getFilteredStates(outputType, filters, listStart, listStop, afterMap) {
 
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
@@ -975,6 +1001,9 @@ class TatorData {
             mediaFilters.push(filter);
           }
         }
+        else if (filter.category == "State") {
+          stateFilters.push(filter);
+        }
         else if (this._stateTypeNames.indexOf(filter.category) >= 0) {
           if (filter.field == "_version") {
             versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
@@ -989,15 +1018,7 @@ class TatorData {
       });
     }
 
-     // If we're given a map of state typeIds, and user hasn't filtered on a type
-     if (stateMap !== null && typeIds.length === 0) {
-       console.log(stateMap);
-       stateMap.forEach(
-         (value, key, map) => {
-          typeIds.push(key)
-         }
-       )
-     }
+     console.log(stateFilters);
 
     if (typeIds.length > 0) {
       typeIds.forEach(dtypeId => {

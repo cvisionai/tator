@@ -18,6 +18,7 @@ class EntityGalleryPanelForm extends TatorElement {
     this._div.appendChild(this._attributes);
 
     this._attributes.addEventListener("change", this._emitChangedData.bind(this));
+  
   }
 
   static get observedAttributes() {
@@ -49,8 +50,12 @@ class EntityGalleryPanelForm extends TatorElement {
     }
 
     this._data = data;
-    this._attributes.setValues(attributePanelData);
-    this._attributes.style.display = "block";
+    if (attributePanelData.attributes !== null) {
+      this._attributes.setValues(attributePanelData);
+      this._attributes.style.display = "block";
+    } else {
+      console.warn("Missing attributes.", attributePanelData);
+    }
   }
 
   _emitChangedData() {
@@ -73,6 +78,7 @@ class EntityGalleryPanelForm extends TatorElement {
   setValues(data) {
     this._attributes.setValues(data);
   }
+
 }
 
 customElements.define("entity-panel-form", EntityGalleryPanelForm);

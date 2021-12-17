@@ -140,7 +140,20 @@ class AnnotationPage extends TatorPage {
         })
         .then(response => response.json())
         .then(data => {
-          if (data.media_files == null ||
+          this._archive_state = data.archive_state;
+          if (this._archive_state == "archived") {
+            this._loading.style.display = "none";
+            window.alert("Media has been archived and cannot be viewed in the annotator.");
+            Utilities.warningAlert("Media has been archived.", "#ff3e1d", true);
+            return;
+          }
+          else if (this._archive_state == "to_live") {
+            this._loading.style.display = "none";
+            window.alert("Archived media is not live yet and cannot be viewed in the annotator.");
+            Utilities.warningAlert("Media has been archived.", "#ff3e1d", true);
+            return;
+          }
+          else if (data.media_files == null ||
               (data.media_files &&
                !('streaming' in data.media_files) &&
                !('layout' in data.media_files) &&
@@ -477,6 +490,10 @@ class AnnotationPage extends TatorPage {
           this._loading.style.display = "none";
           this.removeAttribute("has-open-modal");
           window.dispatchEvent(new Event("resize"));
+
+          if (this._archive_state == "to_archive") {
+            Utilities.warningAlert("Warning: This media has been marked for archival!", "#ff3e1d", false);
+          }
         }
         catch(exception)
         {
@@ -512,11 +529,9 @@ class AnnotationPage extends TatorPage {
     });
 
     canvas.addEventListener("playing", () => {
-      this._player.disableRateChange();
       this._player.disableQualityChange();
     });
     canvas.addEventListener("paused", () => {
-      this._player.enableRateChange();
       this._player.enableQualityChange();
     });
 
@@ -595,7 +610,7 @@ class AnnotationPage extends TatorPage {
     });
 
     this._versionDialog.addEventListener("versionSelect", evt => {
-      this._data.setVersion(evt.detail.version).then(() => {
+      this._data.setVersion(evt.detail.version, evt.detail.viewables).then(() => {
         this._settings.setAttribute("version", evt.detail.version.id);
         this._canvas.refresh();
       });

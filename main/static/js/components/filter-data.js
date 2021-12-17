@@ -14,8 +14,11 @@ class FilterData {
    * @param {array} excludeTypesList
    *    List of types to exclude from creating filter options for
    *    Available options: Medias|Localizations|MediaStates|TrackStates
+   * @param {array} skipTypeIds
+   *    List of type ids to skip when creating filter options for
+   *    Available options: Any Int ID
    */
-  constructor (modelData, algorithmCategories, excludeTypesList) {
+  constructor(modelData, algorithmCategories, excludeTypesList, skipTypeIds) {
 
     this._modelData = modelData;
 
@@ -27,13 +30,17 @@ class FilterData {
     if (excludeTypesList) {
       this.excludeTypesList = excludeTypesList;
     }
+
+    this.skipTypeIds = [];
+    if (skipTypeIds) {
+      this.skipTypeIds = skipTypeIds;
+    }
   }
 
   /**
    * @precondition The provided modelData must have been initialized
    */
-  init()
-  {
+  init() {
     this.mediaStateTypes = this._modelData.getStoredMediaStateTypes();
     this.localizationStateTypes = this._modelData.getStoredLocalizationStateTypes();
     this.localizationTypes = this._modelData.getStoredLocalizationTypes();
@@ -115,33 +122,35 @@ class FilterData {
         let entityType = JSON.parse(JSON.stringify(this.mediaTypes[idx]));
         entityType.typeGroupName = "Media";
 
-        var sectionAttribute = {
-          choices: sectionNames,
-          name: "_section",
-          dtype: "enum"
-        };
-        entityType.attribute_types.push(sectionAttribute);
+        if (this.skipTypeIds.indexOf(this.mediaTypes[idx].id) < 0) {
+          var sectionAttribute = {
+            choices: sectionNames,
+            name: "_section",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(sectionAttribute);
 
-        var mediaIdAttribute = {
-          choices: sectionNames,
-          name: "_id",
-          dtype: "int"
-        };
-        entityType.attribute_types.push(mediaIdAttribute);
+          var mediaIdAttribute = {
+            choices: sectionNames,
+            name: "_id",
+            dtype: "int"
+          };
+          entityType.attribute_types.push(mediaIdAttribute);
 
-        var createdDatetimeAttribute = {
-          name: "_created_datetime",
-          dtype: "datetime"
-        };
-        entityType.attribute_types.push(createdDatetimeAttribute);
+          var createdDatetimeAttribute = {
+            name: "_created_datetime",
+            dtype: "datetime"
+          };
+          entityType.attribute_types.push(createdDatetimeAttribute);
 
-        var modifiedDatetimeAttribute = {
-          name: "_modified_datetime",
-          dtype: "datetime"
-        };
-        entityType.attribute_types.push(modifiedDatetimeAttribute);
+          var modifiedDatetimeAttribute = {
+            name: "_modified_datetime",
+            dtype: "datetime"
+          };
+          entityType.attribute_types.push(modifiedDatetimeAttribute);
 
-        this._allTypes.push(entityType);
+          this._allTypes.push(entityType);
+        }
       }
     }
 
@@ -150,86 +159,92 @@ class FilterData {
         let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
         entityType.typeGroupName = "Annotation";
 
-        var versionAttribute = {
-          choices: versionNames,
-          name: "_version",
-          dtype: "enum"
-        };
-        entityType.attribute_types.push(versionAttribute);
+        if (this.skipTypeIds.indexOf(this.localizationTypes[idx].id) < 0) {
+          var versionAttribute = {
+            choices: versionNames,
+            name: "_version",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(versionAttribute);
 
-        var dtypeAttribute = {
-          choices: localizationTypeOptions,
-          name: "_dtype",
-          dtype: "enum"
-        };
-        entityType.attribute_types.push(dtypeAttribute);
+          var dtypeAttribute = {
+            choices: localizationTypeOptions,
+            name: "_dtype",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(dtypeAttribute);
 
-        var userAttribute = {
-          choices: userNames,
-          name: "_user",
-          dtype: "enum"
-        };
-        entityType.attribute_types.push(userAttribute);
+          var userAttribute = {
+            choices: userNames,
+            name: "_user",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(userAttribute);
 
-        var createdDatetimeAttribute = {
-          name: "_created_datetime",
-          dtype: "datetime"
-        };
-        entityType.attribute_types.push(createdDatetimeAttribute);
+          var createdDatetimeAttribute = {
+            name: "_created_datetime",
+            dtype: "datetime"
+          };
+          entityType.attribute_types.push(createdDatetimeAttribute);
 
-        var modifiedDatetimeAttribute = {
-          name: "_modified_datetime",
-          dtype: "datetime"
-        };
-        entityType.attribute_types.push(modifiedDatetimeAttribute);
+          var modifiedDatetimeAttribute = {
+            name: "_modified_datetime",
+            dtype: "datetime"
+          };
+          entityType.attribute_types.push(modifiedDatetimeAttribute);
 
-        this._allTypes.push(entityType);
+          this._allTypes.push(entityType);
+        }
       }
     }
 
     if (this.excludeTypesList.indexOf("MediaStates") < 0) {
-      for (let idx=0; idx < this.mediaStateTypes.length; idx++) {
+      for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.mediaStateTypes[idx]));
         entityType.typeGroupName = "Collection";
 
-        var versionAttribute = {
-          choices: versionNames,
-          name: "_version",
-          dtype: "enum"
-        };
-        entityType.attribute_types.push(versionAttribute);
+        if (this.skipTypeIds.indexOf(this.mediaStateTypes[idx].id) < 0) {
+          var versionAttribute = {
+            choices: versionNames,
+            name: "_version",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(versionAttribute);
 
-        var typeAttribute = {
-          choices: stateTypeOptions,
-          name: "_type",
-          dtype: "enum"
+          var typeAttribute = {
+            choices: stateTypeOptions,
+            name: "_type",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(typeAttribute);
+
+          this._allTypes.push(entityType);
         }
-        entityType.attribute_types.push(typeAttribute);
-
-        this._allTypes.push(entityType);
       }
     }
 
     if (this.excludeTypesList.indexOf("LocalizationStates") < 0) {
-      for (let idx=0; idx < this.localizationStateTypes.length; idx++) {
+      for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.localizationStateTypes[idx]));
         entityType.typeGroupName = "Collection";
 
-        var versionAttribute = {
-          choices: versionNames,
-          name: "_version",
-          dtype: "enum"
-        };
-        entityType.attribute_types.push(versionAttribute);
+        if (this.skipTypeIds.indexOf(this.localizationStateTypes[idx].id) < 0) {
+          var versionAttribute = {
+            choices: versionNames,
+            name: "_version",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(versionAttribute);
 
-        var typeAttribute = {
-          choices: stateTypeOptions,
-          name: "_type",
-          dtype: "enum"
+          var typeAttribute = {
+            choices: stateTypeOptions,
+            name: "_type",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(typeAttribute);
+
+          this._allTypes.push(entityType);
         }
-        entityType.attribute_types.push(typeAttribute);
-
-        this._allTypes.push(entityType);
       }
     }
   }
@@ -243,8 +258,7 @@ class FilterData {
    * #TODO Add more types
    * #TODO Add built in attributes (created by, versions, name, section)
    */
-  getAllTypes()
-  {
+  getAllTypes() {
     return this._allTypes;
   }
 

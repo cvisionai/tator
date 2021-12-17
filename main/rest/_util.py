@@ -6,6 +6,7 @@ from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
+from rest_framework.exceptions import PermissionDenied
 
 from ..models import type_to_obj
 
@@ -109,3 +110,23 @@ def bulk_create_from_generator(obj_generator, model, batch_size=1000):
         saved_objects += model.objects.bulk_create(batch, batch_size)
 
     return saved_objects
+
+def check_resource_prefix(prefix, obj):
+    """ Checks that a prefix corresponding to a resource has the form
+        <organization>/<project>/<object>/<name> and that the IDs line
+        up with what is expected for the object associated with the .
+    """
+    parts = prefix.split('/')
+    if len(parts) != 4:
+        raise PermissionDenied("Incorrect prefix format for file resource! Required format is "
+                               "<organization>/<project>/<object>/<name>.")
+    organization = obj.project.organization.pk
+    project = obj.project.pk
+    obj_id = obj.pk
+    if organization != int(parts[0]):
+        raise PermissionDenied("Prefix does not match expected organization!")
+    if project != int(parts[1]):
+        raise PermissionDenied("Prefix does not match expected project!")
+    if obj_id != int(parts[2]):
+        raise PermissionDenied("Prefix does not match expected object!")
+    

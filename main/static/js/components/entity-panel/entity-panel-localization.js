@@ -27,7 +27,12 @@ class GalleryPanelLocalization extends TatorElement {
     const mediaId = cardObj.mediaId;
 
     // Make a copy since we will be modifying this for annotator object
-    this._localization = Object.assign({}, cardObj.localization);
+    if (cardObj.localization != null) {
+      this._localization = Object.assign({}, cardObj.localization);
+    }
+    else {
+      this._localization = null;
+    }
 
     if (typeof this.savedMediaData[mediaId] !== "undefined" && this.savedMediaData[mediaId] !== null) {
       //  --> init the canvas from saved data
@@ -111,10 +116,18 @@ class GalleryPanelLocalization extends TatorElement {
       this._versionLookup[version.id] = version;
     }
 
-    let selected_version;
+    let selected_version = null;
     for (const version of versions) {
-      if (version.id == this._localization.version) {
+      if (this._localization != null && version.id == this._localization.version) {
         selected_version = this._versionLookup[version.id];
+      }
+    }
+    if (selected_version == null) {
+      for (const version of versions) {
+        if (version.name == "Baseline") {
+          selected_version = version;
+          break;
+        }
       }
     }
 
@@ -123,31 +136,33 @@ class GalleryPanelLocalization extends TatorElement {
     // the localization is in that format.
     var locDataType;
     for (let dataType of dataTypes) {
-      if (dataType.id.split("_")[1] == this._localization.meta) {
+      if (this._localization != null && dataType.id.split("_")[1] == this._localization.meta) {
         this._localization.meta = dataType.id;
         locDataType = dataType;
         break;
       }
     }
 
-    if (locDataType) {
-      this._data.init(dataTypes, selected_version, this.modelData.getProjectId(), this._localization.media, false, false);
-      if (mediaData.mediaTypeData.dtype == "video") {
+    this._data.init(dataTypes, selected_version, this.modelData.getProjectId(), mediaData.mediaInfo.id, false, false);
+    if (mediaData.mediaTypeData.dtype == "video") {
+      if (this._localization != null) {
         this._player.videoFrame = this._localization.frame;
       }
-      else
-      {
-        this._player.videoFrame = null;
+      else {
+        this._player.videoFrame = 0;
       }
-      this._player.mediaInfo = mediaData.mediaInfo;
+    }
+    this._player.mediaInfo = mediaData.mediaInfo;
 
-      this._player.addEventListener("canvasReady", () => {
-          this._player.undoBuffer = this._undo;
-          this._player.annotationData = this._data;
+    this._player.addEventListener("canvasReady", () => {
+        this._player.undoBuffer = this._undo;
+        this._player.annotationData = this._data;
+
+        if (this._localization != null) {
           this._data.updateTypeWithData(locDataType, this._localization)
           this._player.selectLocalization(this._localization);
-      });
-    }
+        }
+    });
   }
 }
 customElements.define("entity-panel-localization", GalleryPanelLocalization);

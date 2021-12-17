@@ -1,0 +1,20 @@
+{% extends "tator-base.html" %}
+
+{% load static %}
+
+{% block head %}
+
+
+<title>Species Verification</title>
+{% endblock head %}
+
+{% block body %}
+<apps-verification-page
+  username="{{ user|stringformat:'s' }}"
+  email="{{ user.email }}"
+  project-id="{{ project.id }}"
+  project-name="{{ project.name }}">
+</apps-verification-page>
+{% endblock body %}
+
+

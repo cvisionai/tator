@@ -24,9 +24,6 @@
 {{- $filebeatSettings := dict "Values" .Values "name" "prune-filebeat-cron" "app" "prune-filebeat" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"prunefilebeat\"]" "schedule" "40 4 * * *" }}
 {{include "tatorCron.template" $filebeatSettings }}
 ---
-{{- $uploadCleanupSettings := dict "Values" .Values "name" "upload-cleanup-cron" "app" "upload-cleanup" "selector" "webServer: \"yes\"" "command" "[python3]" "args" "[\"manage.py\", \"uploadcleanup\"]" "schedule" "40 5 * * *" }}
-{{include "tatorCron.template" $uploadCleanupSettings }}
----
 {{- $backupSettings := dict "Values" .Values "name" "backup-cron" "app" "backup" "selector" "webServer: \"yes\"" "command" "[/bin/sh]" "args" "[\"-c\", \"pg_dump -Fc -h $POSTGRES_HOST -U $POSTGRES_USERNAME -d tator_online -f /backup/tator_online_$(date +%Y_%m_%d__%H_%M_%S)_$(GIT_VERSION).sql;\"]" "schedule" "40 6 * * *" }}
 {{include "dbCron.template" $backupSettings }}
 ---
