@@ -415,11 +415,11 @@ class MediaListAPI(BaseListView):
             # not accept queries with size, and has_parent also does not accept ids queries.
             query = get_media_es_query(self.kwargs['project'], params)
             TatorSearch().delete(self.kwargs['project'], query)
-            loc_ids = [f'box_{id_}' for id_ in loc_qs.iterator()] \
-                    + [f'line_{id_}' for id_ in loc_qs.iterator()] \
-                    + [f'dot_{id_}' for id_ in loc_qs.iterator()]
+            loc_ids = [f'box_{val.id}' for val in loc_qs.iterator()] \
+                    + [f'line_{val.id}' for val in loc_qs.iterator()] \
+                    + [f'dot_{val.id}' for val in loc_qs.iterator()]
             TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': loc_ids}}})
-            state_ids = [f'state_{id_}' for id_ in state_qs.iterator()]
+            state_ids = [f'state_{val.id}' for val in state_qs.iterator()]
             TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': state_ids}}})
 
             # Create ChangeLogs
@@ -713,6 +713,16 @@ class MediaDetailAPI(BaseDetailView):
         loc_qs.update(deleted=True,
                       modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                       modified_by=self.request.user)
+
+        # Clear elasticsearch entries for both media and its children.
+        # Note that clearing children cannot be done using has_parent because it does
+        # not accept queries with size, and has_parent also does not accept ids queries.
+        loc_ids = [f'box_{val.id}' for val in loc_qs.iterator()] \
+                + [f'line_{val.id}' for val in loc_qs.iterator()] \
+                + [f'dot_{val.id}' for val in loc_qs.iterator()]
+        TatorSearch().delete(project.id, {'query': {'ids': {'values': loc_ids}}})
+        state_ids = [f'state_{val.id}' for val in state_qs.iterator()]
+        TatorSearch().delete(project.id, {'query': {'ids': {'values': state_ids}}})
 
         return {'message': f'Media {params["id"]} successfully deleted!'}
 
