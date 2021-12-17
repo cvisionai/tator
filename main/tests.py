@@ -1741,6 +1741,7 @@ class StateDeleteCase(APITestCase):
                 'attributes': {'String Test': unique_string_attr_val}}
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id1 = response.data['id']
+        print(f"Media created: {response.data['id']}")
 
         body = {'type': self.image_type.pk,
                 'section': 'asdf',
@@ -1749,6 +1750,7 @@ class StateDeleteCase(APITestCase):
                 'attributes': {'String Test': unique_string_attr_val}}
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id2 = response.data['id']
+        print(f"Media created: {response.data['id']}")
 
         body = {'type': self.image_type.pk,
                 'section': 'asdf',
@@ -1757,6 +1759,7 @@ class StateDeleteCase(APITestCase):
                 'String Test': unique_string_attr_val}
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
         media_id3 = response.data['id']
+        print(f"Media created: {response.data['id']}")
 
         create_json = [{
             'project': self.project.pk,
@@ -1788,6 +1791,7 @@ class StateDeleteCase(APITestCase):
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 2)
+        print(f"States created: {response.data['id']}")
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 2)
@@ -1795,11 +1799,30 @@ class StateDeleteCase(APITestCase):
         response = self.client.get(f"/rest/States/{self.project.pk}?media_search=String%5C%20Test%3A{unique_string_attr_val}")
         self.assertEqual(len(response.data), 2)
 
+
+        not_deleted = State.objects.filter(project=self.project.pk, media__deleted=False)\
+                                    .values_list('id', flat=True)
+        deleted = State.objects.filter(project=self.project.pk, media__deleted=True)\
+                                .values_list('id', flat=True)
+        print(f"not_deleted (pre-delete): {not_deleted}")
+        print(f"deleted (pre-delete): {deleted}")
+
         response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
         self.assertEqual(len(response.data), 0)
+        
+        not_deleted_medias = Media.objects.filter(project=self.project.pk, deleted=False).values_list('id', flat=True)
+        deleted_medias = Media.objects.filter(project=self.project.pk, deleted=True).values_list('id', flat=True)
+        not_deleted = State.objects.filter(project=self.project.pk, media__deleted=False)\
+                                    .values_list('id', flat=True)
+        deleted = State.objects.filter(project=self.project.pk, media__deleted=True)\
+                                .values_list('id', flat=True)
+        print(f"not_deleted (media): {not_deleted_medias}")
+        print(f"deleted (media): {deleted_medias}")
+        print(f"not_deleted (post-delete): {not_deleted}")
+        print(f"deleted (post-delete): {deleted}")
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute=String%20Test%3A%3A{unique_string_attr_val}")
         self.assertEqual(len(response.data), 0)
