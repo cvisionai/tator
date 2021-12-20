@@ -419,8 +419,17 @@ class MediaListAPI(BaseListView):
                     + [f'line_{val.id}' for val in loc_qs.iterator()] \
                     + [f'dot_{val.id}' for val in loc_qs.iterator()]
             TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': loc_ids}}})
-            state_ids = [f'state_{val.id}' for val in state_qs.iterator()]
-            TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': state_ids}}})
+            state_ids = [val.id for val in state_qs.iterator()]
+            TatorSearch().delete(self.kwargs['project'], {
+                'query': {
+                    'bool': {
+                        'should': {'match': {'_dtype': 'state'}},
+                        'filter': {
+                            'terms': {'_postgres_id': state_ids},
+                        },
+                    }
+                },
+            })
 
             # Create ChangeLogs
             objs = (
@@ -721,8 +730,17 @@ class MediaDetailAPI(BaseDetailView):
                 + [f'line_{val.id}' for val in loc_qs.iterator()] \
                 + [f'dot_{val.id}' for val in loc_qs.iterator()]
         TatorSearch().delete(project.id, {'query': {'ids': {'values': loc_ids}}})
-        state_ids = [f'state_{val.id}' for val in state_qs.iterator()]
-        TatorSearch().delete(project.id, {'query': {'ids': {'values': state_ids}}})
+        state_ids = [val.id for val in state_qs.iterator()]
+        TatorSearch().delete(project.id, {
+            'query': {
+                'bool': {
+                    'should': {'match': {'_dtype': 'state'}},
+                    'filter': {
+                        'terms': {'_postgres_id': state_ids},
+                    },
+                }
+            },
+        })
 
         return {'message': f'Media {params["id"]} successfully deleted!'}
 
