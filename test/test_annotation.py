@@ -3,13 +3,8 @@ import time
 
 from ._common import print_page_error
 
-def test_annotation(authenticated, project, video):
-    print("Going to annotation view...")
-    page = authenticated.new_page()
-    page.goto(f"/{project}/annotation/{video}")
-    page.on("pageerror", print_page_error)
-    page.wait_for_selector('video-canvas')
-    canvas = page.query_selector('video-canvas')
+# Common function for checking annotation capability
+def common_annotation(page, canvas):
     canvas_box = canvas.bounding_box()
     canvas_center_x = canvas_box['x'] + canvas_box['width'] / 2
     canvas_center_y = canvas_box['y'] + canvas_box['height'] / 2
@@ -68,3 +63,13 @@ def test_annotation(authenticated, project, video):
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
         light.wait_for_element_state('hidden')
+
+
+def test_video_annotation(authenticated, project, video):
+    print("Going to annotation view...")
+    page = authenticated.new_page()
+    page.goto(f"/{project}/annotation/{video}")
+    page.on("pageerror", print_page_error)
+    page.wait_for_selector('video-canvas')
+    canvas = page.query_selector('video-canvas')
+    common_annotation(page, canvas)
