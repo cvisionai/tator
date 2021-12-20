@@ -76,17 +76,17 @@ class TatorSES:
         # Add attachments if there are any
         # #TODO Potentially limit the attachment size(s)
         if attachments:
-            key = attachments[0]["key"]
-            upload = key.startswith('_uploads')
-            bucket = None
-            if upload:
-                project_from_key = int(key.split('/')[3])
-                project_obj = main.models.Project.objects.get(pk=project_from_key)
-                bucket = project_obj.upload_bucket if upload else project_obj.bucket
-            tator_store = get_tator_store(bucket, upload=upload)
-
             for attachment in attachments:
                 # Download the S3 object into a byte stream and attach it
+                key = attachment["key"]
+                upload = key.startswith('_uploads')
+                bucket = None
+                if upload:
+                    project_from_key = int(key.split('/')[3])
+                    project_obj = main.models.Project.objects.get(pk=project_from_key)
+                    bucket = project_obj.upload_bucket if upload else project_obj.bucket
+                tator_store = get_tator_store(bucket, upload=upload)
+
                 f_p = io.BytesIO()
                 tator_store.download_fileobj(attachment["key"], f_p)
                 f_p.seek(0)
