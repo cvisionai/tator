@@ -116,6 +116,18 @@ def video_section(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
+def image_section(request, authenticated, project):
+    print("Creating image section...")
+    page = authenticated.new_page()
+    page.goto(f'/{project}/project-detail')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Images')
+    page.click('text="Save"')
+    page.click('text="Images"')
+    section = int(page.url.split('=')[-1])
+    yield section
+
+@pytest.fixture(scope='session')
 def image_set(request):
     print("Getting image files...")
     out_path = '/tmp/lfw.tgz'
@@ -187,6 +199,25 @@ def image_file(request):
                     if chunk:
                         f.write(chunk)
     yield out_path
+
+@pytest.fixture(scope='session')
+def image(request, authenticated, project, image_section, image_file):
+    print("Uploading an image...")
+    page = authenticated.new_page()
+    page.goto(f"/{project}/project-detail?section={image_section}")
+    page.set_input_files('section-upload input', image_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.click('reload-button')
+        cards = page.query_selector_all('media-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    image = int(cards[0].get_attribute('media-id'))
+    yield image
 
 @pytest.fixture(scope='session')
 def yaml_file(request):
