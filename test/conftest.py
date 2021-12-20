@@ -116,6 +116,18 @@ def video_section(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
+def video_section2(request, authenticated, project):
+    print("Creating video section...")
+    page = authenticated.new_page()
+    page.goto(f'/{project}/project-detail')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Videos 2')
+    page.click('text="Save"')
+    page.click('text="Videos 2"')
+    section = int(page.url.split('=')[-1])
+    yield section
+
+@pytest.fixture(scope='session')
 def image_section(request, authenticated, project):
     print("Creating image section...")
     page = authenticated.new_page()
@@ -186,6 +198,36 @@ def video(request, authenticated, project, video_section, video_file):
             break
     video = int(cards[0].get_attribute('media-id'))
     yield video
+
+@pytest.fixture(scope='session')
+def video2(request, authenticated, project, video_section2, video_file):
+    print("Uploading a video...")
+    page = authenticated.new_page()
+    page.goto(f"/{project}/project-detail?section={video_section2}")
+    page.set_input_files('section-upload input', video_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.click('reload-button')
+        cards = page.query_selector_all('media-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    video = int(cards[0].get_attribute('media-id'))
+    yield video
+
+@pytest.fixture(scope='session')
+def multi(request, base_url, token, project, video_section, video, video2):
+    import tator
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    multi_types = [m for m in media_types if m.dtype == "multi"]
+    multi_type_id = multi_types[0]
+    response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[video,video2], "Multis")
+    yield response.id
+
 
 @pytest.fixture(scope='session')
 def image_file(request):
