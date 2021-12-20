@@ -1990,6 +1990,16 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Note: dims is width,height here
     let videoUrl, fps, numFrames, dims;
+
+    if ('concat' in videoObject.media_files)
+    {
+      fetchRetry(`/rest/Medias/${videoObject.project}`,
+                 {method: "PUT",
+                 ...this._undo._headers(),
+                 body: JSON.stringify({"media_ids": children}),
+                  }).then(response => response.json())
+                    .then(json => {console.info(json)});
+    }
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
 
