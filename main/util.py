@@ -73,7 +73,8 @@ INDEX_CHUNK_SIZE = 50000
 CLASS_MAPPING = {'media': Media,
                  'localizations': Localization,
                  'states': State,
-                 'treeleaves': Leaf}
+                 'treeleaves': Leaf,
+                 'files': File}
 
 def get_num_index_chunks(project_number, section, max_age_days=None):
     """ Returns number of chunks for parallel indexing operation.
