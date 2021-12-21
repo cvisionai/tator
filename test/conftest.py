@@ -116,6 +116,42 @@ def video_section(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
+def video_section2(request, authenticated, project):
+    print("Creating video section...")
+    page = authenticated.new_page()
+    page.goto(f'/{project}/project-detail')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Videos 2')
+    page.click('text="Save"')
+    page.click('text="Videos 2"')
+    section = int(page.url.split('=')[-1])
+    yield section
+
+@pytest.fixture(scope='session')
+def video_section3(request, authenticated, project):
+    print("Creating video section...")
+    page = authenticated.new_page()
+    page.goto(f'/{project}/project-detail')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Videos 3')
+    page.click('text="Save"')
+    page.click('text="Videos 3"')
+    section = int(page.url.split('=')[-1])
+    yield section
+
+@pytest.fixture(scope='session')
+def image_section(request, authenticated, project):
+    print("Creating image section...")
+    page = authenticated.new_page()
+    page.goto(f'/{project}/project-detail')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Images')
+    page.click('text="Save"')
+    page.click('text="Images"')
+    section = int(page.url.split('=')[-1])
+    yield section
+
+@pytest.fixture(scope='session')
 def image_set(request):
     print("Getting image files...")
     out_path = '/tmp/lfw.tgz'
@@ -176,6 +212,55 @@ def video(request, authenticated, project, video_section, video_file):
     yield video
 
 @pytest.fixture(scope='session')
+def video2(request, authenticated, project, video_section2, video_file):
+    print("Uploading a video...")
+    page = authenticated.new_page()
+    page.goto(f"/{project}/project-detail?section={video_section2}")
+    page.set_input_files('section-upload input', video_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.click('reload-button')
+        cards = page.query_selector_all('media-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    video = int(cards[0].get_attribute('media-id'))
+    yield video
+
+@pytest.fixture(scope='session')
+def video3(request, authenticated, project, video_section3, video_file):
+    print("Uploading a video...")
+    page = authenticated.new_page()
+    page.goto(f"/{project}/project-detail?section={video_section3}")
+    page.set_input_files('section-upload input', video_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.click('reload-button')
+        cards = page.query_selector_all('media-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    video = int(cards[0].get_attribute('media-id'))
+    yield video
+
+@pytest.fixture(scope='session')
+def multi(request, base_url, token, project, video2, video3):
+    import tator
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    multi_types = [m for m in media_types if m.dtype == "multi"]
+    multi_type_id = multi_types[0]
+    response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[video2,video3], "Multis")
+    yield response.id
+
+
+@pytest.fixture(scope='session')
 def image_file(request):
     out_path = '/tmp/test1.jpg'
     if not os.path.exists(out_path):
@@ -187,6 +272,25 @@ def image_file(request):
                     if chunk:
                         f.write(chunk)
     yield out_path
+
+@pytest.fixture(scope='session')
+def image(request, authenticated, project, image_section, image_file):
+    print("Uploading an image...")
+    page = authenticated.new_page()
+    page.goto(f"/{project}/project-detail?section={image_section}")
+    page.set_input_files('section-upload input', image_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.click('reload-button')
+        cards = page.query_selector_all('media-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    image = int(cards[0].get_attribute('media-id'))
+    yield image
 
 @pytest.fixture(scope='session')
 def yaml_file(request):
