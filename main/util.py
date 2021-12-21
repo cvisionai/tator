@@ -73,7 +73,8 @@ INDEX_CHUNK_SIZE = 50000
 CLASS_MAPPING = {'media': Media,
                  'localizations': Localization,
                  'states': State,
-                 'treeleaves': Leaf}
+                 'treeleaves': Leaf,
+                 'files': File}
 
 def get_num_index_chunks(project_number, section, max_age_days=None):
     """ Returns number of chunks for parallel indexing operation.
@@ -133,8 +134,9 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None, max_ag
             self._qs = qs
         def __call__(self):
             for entity in self._qs.iterator():
-                for doc in TatorSearch().build_document(entity, mode):
-                    yield doc
+                if not entity.deleted:
+                    for doc in TatorSearch().build_document(entity, mode):
+                        yield doc
 
     # Get queryset based on selected section.
     logger.info(f"Building documents for {section}...")
