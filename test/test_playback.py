@@ -13,8 +13,13 @@ def _get_canvas_color(canvas):
     img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
     return img.mean(axis=(0,1))
 
+def _get_element_center(element):
+  box = element.bounding_box()
+  center_x = box['x'] + box['width'] / 2
+  center_y = box['y'] + box['height'] / 2
+  return center_x,center_y
 def test_buffer_usage(authenticated, project, rgb_test):
-  # http://local.tator.io/46/annotation/7444
+  # Tests play, scrub, and seek buffer usage
   print("[Video] Going to annotation view...")
   page = authenticated.new_page()
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
@@ -23,10 +28,12 @@ def test_buffer_usage(authenticated, project, rgb_test):
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
   play_button = page.query_selector('play-button')
+  seek_handle = page.query_selector('seek-bar .range-handle')
 
-  print("Checking for RED")
+ 
   # Wait for hq buffer and verify it is red
   time.sleep(5) # TODO make this better
+  print("Checking for RED")
   canvas_color = _get_canvas_color(canvas)
   print(f"GOT={canvas_color}")
   assert canvas_color[0] > 200
@@ -42,7 +49,49 @@ def test_buffer_usage(authenticated, project, rgb_test):
   assert canvas_color[1] > 200
   assert canvas_color[2] < 40
 
+  # Pause the video
   play_button.click()
+  time.sleep(3)
+  print("Checking for RED")
+  canvas_color = _get_canvas_color(canvas)
+  print(f"GOT={canvas_color}")
+  assert canvas_color[0] > 200
+  assert canvas_color[1] < 40
+  assert canvas_color[2] < 40
+
+  # Click the scrub handle
+  seek_x,seek_y = _get_element_center(seek_handle)
+  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.down()
+
+  page.mouse.move(seek_x+500, seek_y, steps=50)
+  print("Checking for GREEN")
+  canvas_color = _get_canvas_color(canvas)
+  print(f"GOT={canvas_color}")
+  assert canvas_color[0] < 40
+  assert canvas_color[1] > 200
+  assert canvas_color[2] < 40
+
+  page.mouse.move(seek_x+1000, seek_y, steps=50)
+  print("Checking for BLUE")
+  canvas_color = _get_canvas_color(canvas)
+  print(f"GOT={canvas_color}")
+  assert canvas_color[0] < 40
+  assert canvas_color[1] < 40
+  assert canvas_color[2] > 200
+
+  # Release the scrub
+  page.mouse.up()
+  time.sleep(3)
+  print("Checking for RED")
+  canvas_color = _get_canvas_color(canvas)
+  print(f"GOT={canvas_color}")
+  assert canvas_color[0] > 200
+  assert canvas_color[1] < 40
+  assert canvas_color[2] < 40
+
+
+
 
 
 
