@@ -6,10 +6,13 @@ import subprocess
 import tarfile
 import shutil
 
+import tempfile
 import pytest
 import requests
 
-from ._common import get_video_path
+import tator
+
+from ._common import get_video_path, download_file, create_media, upload_media_file
 
 def pytest_addoption(parser):
     parser.addoption('--username', help='Username for login page.')
@@ -251,7 +254,6 @@ def video3(request, authenticated, project, video_section3, video_file):
 
 @pytest.fixture(scope='session')
 def multi(request, base_url, token, project, video2, video3):
-    import tator
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
     multi_types = [m for m in media_types if m.dtype == "multi"]
@@ -299,3 +301,32 @@ def yaml_file(request):
         with open(out_path, 'w+') as f:
             f.write("test")
     yield out_path
+
+@pytest.fixture(scope='session')
+def rgb_test(request, base_url, project, token):
+    red_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.mp4"
+    red_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.json"
+    green_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.mp4"
+    green_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.json"
+    blue_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.mp4"
+    blue_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.json"
+
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    video_types = [m for m in media_types if m.dtype == "video"]
+    video_type_id = video_types[0].id
+
+    media_id = create_media(api, project, base_url, token, video_type_id, "color_check.mp4", "Color Check Video", red_mp4)
+    colors=[red_mp4, green_mp4, blue_mp4]
+    segments=[red_segments, green_segments, blue_segments]
+    with tempfile.TemporaryDirectory() as td:
+        for color,segment in zip(colors, segments):
+            color_fname=os.path.basename(color)
+            segment_fname=os.path.basename(segment)
+            color_fp=os.path.join(td, color_fname)
+            segment_fp = os.path.join(td, segment_fname)
+            download_file(color, color_fp)
+            download_file(segment, segment_fp)
+            upload_media_file(api, project, media_id, color_fp, segment_fp)
+    yield media_id
+
