@@ -31,6 +31,22 @@ def _get_element_center(element):
   center_y = box['y'] + box['height'] / 2
   return center_x,center_y
 
+def _wait_for_color(canvas, color_idx, timeout=30):
+  for _ in range(timeout):
+    canvas_color = _get_canvas_color(canvas)
+    if np.argmax(canvas_color) == color_idx:
+      break
+    time.sleep(1)
+  assert np.argmax(canvas_color) == color_idx, f"canvas_color={canvas_color}, looking for {color_idx}"
+
+def _wait_for_frame(canvas, frame, timeout=30):
+  for _ in range(timeout):
+    canvas_frame = _get_canvas_frame(canvas)
+    if canvas_frame == frame:
+      break
+    time.sleep(1)
+  assert np.argmax(canvas_frame) == frame, f"canvas={canvas_frame}, expected={frame}"
+
 def test_playback_accuracy(authenticated, project, count_test):
   print("[Video] Going to annotation view...")
   page = authenticated.new_page()
@@ -42,18 +58,45 @@ def test_playback_accuracy(authenticated, project, count_test):
   play_button = page.query_selector('play-button')
   seek_handle = page.query_selector('seek-bar .range-handle')
   display_div = page.query_selector('#frame_num_display')
-  time.sleep(5)
+
+  _wait_for_frame(canvas, 0)
   canvas_frame = _get_canvas_frame(canvas)
   assert(canvas_frame == 0)
   assert(int(display_div.inner_text())==0)
 
-  play_button.click()
-  time.sleep(5)
-  play_button.click()
+  play_button.click() # play the video
+  time.sleep(5) # This is simulating the user watching, not dependent on any events.
+  play_button.click() # pause the video
   canvas_frame = _get_canvas_frame(canvas)
   assert(canvas_frame > 0)
   assert(int(display_div.inner_text())==canvas_frame)
-  
+
+  # Click the scrub handle
+  seek_x,seek_y = _get_element_center(seek_handle)
+  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.down()
+
+  page.mouse.move(seek_x+500, seek_y, steps=50)
+  canvas_frame = _get_canvas_frame(canvas)
+  assert(int(display_div.inner_text())==canvas_frame)
+
+
+
+def test_small_res_file(authenticated, project, small_video):
+  # Tests play, scrub, and seek buffer usage
+  print("[Video] Going to annotation view...")
+  page = authenticated.new_page()
+  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
+  page.goto(f"/{project}/annotation/{small_video}")
+  page.on("pageerror", print_page_error)
+  page.wait_for_selector('video-canvas')
+  canvas = page.query_selector('video-canvas')
+  play_button = page.query_selector('play-button')
+  seek_handle = page.query_selector('seek-bar .range-handle')
+
+  # Wait for hq buffer and verify it is blue
+  _wait_for_color(canvas, 2, timeout=30)
+
 def test_buffer_usage(authenticated, project, rgb_test):
   # Tests play, scrub, and seek buffer usage
   print("[Video] Going to annotation view...")
@@ -66,31 +109,16 @@ def test_buffer_usage(authenticated, project, rgb_test):
   play_button = page.query_selector('play-button')
   seek_handle = page.query_selector('seek-bar .range-handle')
 
-  canvas_color = None
+  
   # Wait for hq buffer and verify it is red
-  for _ in range(30):
-    canvas_color = _get_canvas_color(canvas)
-    if np.argmax(canvas_color) == 0:
-      break
-    time.sleep(1)
-  assert np.argmax(canvas_color) == 0, f"{canvas_color}"
+  _wait_for_color(canvas, 0, timeout=30)
 
   play_button.click()
-  for _ in range(30):
-    canvas_color = _get_canvas_color(canvas)
-    if np.argmax(canvas_color) == 1:
-      break
-    time.sleep(1)
-  assert np.argmax(canvas_color) == 1, f"{canvas_color}"
+  _wait_for_color(canvas, 1, timeout=30)
 
   # Pause the video
   play_button.click()
-  for _ in range(30):
-    canvas_color = _get_canvas_color(canvas)
-    if np.argmax(canvas_color) == 0:
-      break
-    time.sleep(1)
-  assert np.argmax(canvas_color) == 0, f"{canvas_color}"
+  _wait_for_color(canvas, 0, timeout=30)
   
 
   # Click the scrub handle
@@ -99,25 +127,14 @@ def test_buffer_usage(authenticated, project, rgb_test):
   page.mouse.down()
 
   page.mouse.move(seek_x+500, seek_y, steps=50)
-  print("Checking for GREEN")
-  canvas_color = _get_canvas_color(canvas)
-  print(f"GOT={canvas_color}")
-  assert np.argmax(canvas_color) == 1, f"{canvas_color}"
+  _wait_for_color(canvas, 1, timeout=30)
 
   page.mouse.move(seek_x+1000, seek_y, steps=50)
-  print("Checking for BLUE")
-  canvas_color = _get_canvas_color(canvas)
-  print(f"GOT={canvas_color}")
-  assert np.argmax(canvas_color) == 2, f"{canvas_color}"
+  _wait_for_color(canvas, 2, timeout=30)
 
   # Release the scrub
   page.mouse.up()
-  for _ in range(30):
-    canvas_color = _get_canvas_color(canvas)
-    if np.argmax(canvas_color) == 0:
-      break
-    time.sleep(1)
-  assert np.argmax(canvas_color) == 0, f"{canvas_color}"
+  _wait_for_color(canvas, 0, timeout=30)
 
 
 
