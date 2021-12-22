@@ -6,6 +6,7 @@ import tempfile
 import time
 import pytesseract
 import numpy as np
+from pprint import pprint
 
 def _get_canvas_color(canvas):
   """ Returns the RGB value of the canvas (mean) """
@@ -135,6 +136,50 @@ def test_buffer_usage(authenticated, project, rgb_test):
   # Release the scrub
   page.mouse.up()
   _wait_for_color(canvas, 0, timeout=30)
+
+"""
+This test would be good, but doesn't work because playback isn't performant enough in test runner
+
+def test_audiosync(authenticated, project, slow_video):
+  # Tests audio sync as reported by watchdog thread
+  # TODO: Consider a longer video than the audio video sync test
+  # NOTE: This uses a 5fps video because playback was kind of lousy in the test runner
+  print("[Video] Going to annotation view...")
+  page = authenticated.new_page()
+  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
+  page.goto(f"/{project}/annotation/{slow_video}?scrubQuality=360&seekQuality=1080&playQuality=720")
+  page.on("pageerror", print_page_error)
+  page.wait_for_selector('video-canvas')
+  canvas = page.query_selector('video-canvas')
+  play_button = page.query_selector('play-button')
+
+  # wait for video to be ready - TODO make this better?
+  time.sleep(10)
+
+  console_msgs=[]
+  page.on("console", lambda msg: console_msgs.append(msg.text))
+  play_button.click()
+  time.sleep(8)
+  play_button.click()
+  audio_sync_msgs=[m for m in console_msgs if m.find("Audio drift") > 0]
+  audio_sync_values=[]
+  pprint(console_msgs)
+  for msg in audio_sync_msgs:
+    comps = msg.split(',')
+    audio_drift = comps[4].split('=')[1]
+    audio_drift = float(audio_drift.replace('ms','').strip())
+    audio_sync_values.append(abs(audio_drift))
+  print(f"Audio sync values = {audio_sync_values}")
+  drift_array=np.array(audio_sync_values[1:])
+  assert drift_array.mean() < 50, "Average drift should be less than 50"
+"""
+
+
+
+
+
+
+  
 
 
 
