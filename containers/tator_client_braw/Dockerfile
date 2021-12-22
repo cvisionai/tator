@@ -13,4 +13,5 @@ RUN rm Blackmagic_RAW_Linux_2.2.1.tar && rm -rf Blackmagic\ RAW
 WORKDIR braw-decode
 RUN make
 ENV PATH=$PATH:/scripts/braw-decode
+COPY containers/tator_client_braw/upload_braw.py .
 
