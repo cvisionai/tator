@@ -17,7 +17,7 @@ sudo snap install microk8s --classic --channel=1.19/stable
 # Install apt packages.
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip build-essential
+    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip build-essential tesseract-ocr
 
 # Install Chrome for front end testing.
 echo "Installing Chrome."
@@ -123,7 +123,7 @@ kubectl delete pod sleepy
 echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
-pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2
+pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2 pytesseract opencv-python
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 playwright install
 
