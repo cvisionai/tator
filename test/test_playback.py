@@ -88,6 +88,26 @@ def test_playback_accuracy(authenticated, project, count_test):
   canvas_frame = _get_canvas_frame(canvas)
   assert(int(display_div.inner_text())==canvas_frame)
 
+  rate_ctrl = page.query_selector('rate-control .form-select')
+  assert rate_ctrl.input_value() == "1"
+  page.keyboard.press("4")
+  assert rate_ctrl.input_value() == "4"
+  page.keyboard.press("Control+ArrowDown")
+  assert rate_ctrl.input_value() == "3.5"
+  page.keyboard.press("Control+ArrowUp")
+  assert rate_ctrl.input_value() == "4"
+  page.keyboard.press("1")
+  assert rate_ctrl.input_value() == "1"
+
+  page.keyboard.press("Space")
+  time.sleep(5)
+  page.keyboard.press("Space")
+  new_frame = _get_canvas_frame(canvas)
+  assert(new_frame > canvas_frame)
+
+
+
+
 def test_playback_accuracy_multi(authenticated, project, multi_count):
   print("[Multi] Going to annotation view...(Accuracy)")
   page = authenticated.new_page()
@@ -124,6 +144,7 @@ def test_playback_accuracy_multi(authenticated, project, multi_count):
   page.mouse.down()
 
   page.mouse.move(seek_x+500, seek_y, steps=50)
+  time.sleep(1)
   canvas_frame = _get_canvas_frame(canvas[0])
   assert(int(display_div.inner_text())==canvas_frame)
   canvas_frame = _get_canvas_frame(canvas[1])
@@ -238,6 +259,7 @@ def test_buffer_usage_multi(authenticated, project, multi_rgb):
   _wait_for_color(canvas[1], 0, timeout=30)
   
   
+
 
 """
 This test would be good, but doesn't work because playback isn't performant enough in test runner
