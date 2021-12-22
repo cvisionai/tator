@@ -342,14 +342,29 @@ def yaml_file(request):
     yield out_path
 
 @pytest.fixture(scope='session')
-def rgb_test(request, base_url, project, token):
-    red_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.mp4"
-    red_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.json"
-    green_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.mp4"
-    green_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.json"
-    blue_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.mp4"
-    blue_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.json"
+def video_files(request):
+    files = ["https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/00FF00.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.json"]
+    for fp in files:
+        dst = os.path.join("/tmp",os.path.basename(fp))
+        download_file(fp, dst)
 
+@pytest.fixture(scope='session')
+def rgb_test(request, base_url, project, token, video_files):
+    red_mp4="/tmp/FF0000.mp4"
+    red_segments="/tmp/FF0000.json"
+    green_mp4="/tmp/00FF00.mp4"
+    green_segments="/tmp/00FF00.json"
+    blue_mp4="/tmp/0000FF.mp4"
+    blue_segments="/tmp/0000FF.json"
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
     video_types = [m for m in media_types if m.dtype == "video"]
@@ -360,19 +375,44 @@ def rgb_test(request, base_url, project, token):
     segments=[red_segments, green_segments, blue_segments]
     with tempfile.TemporaryDirectory() as td:
         for color,segment in zip(colors, segments):
-            color_fname=os.path.basename(color)
-            segment_fname=os.path.basename(segment)
-            color_fp=os.path.join(td, color_fname)
-            segment_fp = os.path.join(td, segment_fname)
-            download_file(color, color_fp)
-            download_file(segment, segment_fp)
-            upload_media_file(api, project, media_id, color_fp, segment_fp)
+            upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
-def small_video(request, base_url, project, token):
-    blue_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.mp4"
-    blue_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/0000FF.json"
+def rgb_test_2(request, base_url, project, token, video_files):
+    
+    red_mp4="/tmp/FF0000.mp4"
+    red_segments="/tmp/FF0000.json"
+    green_mp4="/tmp/00FF00.mp4"
+    green_segments="/tmp/00FF00.json"
+    blue_mp4="/tmp/0000FF.mp4"
+    blue_segments="/tmp/0000FF.json"
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    video_types = [m for m in media_types if m.dtype == "video"]
+    video_type_id = video_types[0].id
+
+    media_id = create_media(api, project, base_url, token, video_type_id, "color_check.mp4", "Color Check Video", red_mp4)
+    colors=[red_mp4, green_mp4, blue_mp4]
+    segments=[red_segments, green_segments, blue_segments]
+    with tempfile.TemporaryDirectory() as td:
+        for color,segment in zip(colors, segments):
+            upload_media_file(api, project, media_id, color, segment)
+    yield media_id
+
+@pytest.fixture(scope='session')
+def multi_rgb(request, base_url, token, project, rgb_test, rgb_test_2):
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    multi_types = [m for m in media_types if m.dtype == "multi"]
+    multi_type_id = multi_types[0]
+    response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[rgb_test,rgb_test_2], "Multis")
+    yield response.id
+
+@pytest.fixture(scope='session')
+def small_video(request, base_url, project, token, video_files):
+    blue_mp4="/tmp/0000FF.mp4"
+    blue_segments="/tmp/0000FF.json"
 
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -384,21 +424,15 @@ def small_video(request, base_url, project, token):
     segments=[blue_segments]
     with tempfile.TemporaryDirectory() as td:
         for color,segment in zip(colors, segments):
-            color_fname=os.path.basename(color)
-            segment_fname=os.path.basename(segment)
-            color_fp=os.path.join(td, color_fname)
-            segment_fp = os.path.join(td, segment_fname)
-            download_file(color, color_fp)
-            download_file(segment, segment_fp)
-            upload_media_file(api, project, media_id, color_fp, segment_fp)
+            upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
 @pytest.fixture(scope='session')
-def count_test(request, base_url, project, token):
-    count_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.mp4"
-    count_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.json"
-    count_360_mp4="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.mp4"
-    count_360_segments="https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.json"
+def count_test(request, base_url, project, token, video_files):
+    count_mp4="/tmp/count.mp4"
+    count_segments="/tmp/count.json"
+    count_360_mp4="/tmp/count_360.mp4"
+    count_360_segments="/tmp/count_360.json"
 
     api = tator.get_api(host=base_url, token=token)
     media_types = api.get_media_type_list(project)
@@ -410,12 +444,34 @@ def count_test(request, base_url, project, token):
     media_id = create_media(api, project, base_url, token, video_type_id, "count_check.mp4", "Counts", count_mp4)
     with tempfile.TemporaryDirectory() as td:
         for color,segment in zip(colors, segments):
-            color_fname=os.path.basename(color)
-            segment_fname=os.path.basename(segment)
-            color_fp=os.path.join(td, color_fname)
-            segment_fp = os.path.join(td, segment_fname)
-            download_file(color, color_fp)
-            download_file(segment, segment_fp)
-            upload_media_file(api, project, media_id, color_fp, segment_fp)
+            upload_media_file(api, project, media_id, color, segment)
     yield media_id
 
+@pytest.fixture(scope='session')
+def count_test_2(request, base_url, project, token, video_files):
+    count_mp4="/tmp/count.mp4"
+    count_segments="/tmp/count.json"
+    count_360_mp4="/tmp/count_360.mp4"
+    count_360_segments="/tmp/count_360.json"
+
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    video_types = [m for m in media_types if m.dtype == "video"]
+    video_type_id = video_types[0].id
+
+    colors=[count_mp4, count_360_mp4]
+    segments=[count_segments, count_360_segments]
+    media_id = create_media(api, project, base_url, token, video_type_id, "count_check.mp4", "Counts", count_mp4)
+    with tempfile.TemporaryDirectory() as td:
+        for color,segment in zip(colors, segments):
+            upload_media_file(api, project, media_id, color, segment)
+    yield media_id
+
+@pytest.fixture(scope='session')
+def multi_count(request, base_url, token, project, count_test, count_test_2):
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    multi_types = [m for m in media_types if m.dtype == "multi"]
+    multi_type_id = multi_types[0]
+    response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[count_test,count_test_2], "Multis")
+    yield response.id
