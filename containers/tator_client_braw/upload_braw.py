@@ -13,8 +13,8 @@ def parse_args():
     transcode is performed. The import is idempotent, with existence determined by filename.
 
     Example usage:
-      python3 upload_braw.py --host=$HOST --token=$TOKEN --project=1 --video_type=1 \
-      --section_name="BRAW Test" /media/blackmagic
+      python3 upload_braw.py --host $HOST --token $TOKEN --project 1 --video_type 1 \
+      --section_name "BRAW Test" /data
     '''), formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--host', help='API host.', required=True)
     parser.add_argument('--token', help='API token.', required=True)
