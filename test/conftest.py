@@ -119,6 +119,18 @@ def video_section(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
+def slow_video_section(request, authenticated, project):
+    print("Creating video section...")
+    page = authenticated.new_page()
+    page.goto(f'/{project}/project-detail')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Slow Videos')
+    page.click('text="Save"')
+    page.click('text="Slow Videos"')
+    section = int(page.url.split('=')[-1])
+    yield section
+
+@pytest.fixture(scope='session')
 def video_section2(request, authenticated, project):
     print("Creating video section...")
     page = authenticated.new_page()
@@ -201,6 +213,33 @@ def video(request, authenticated, project, video_section, video_file):
     page = authenticated.new_page()
     page.goto(f"/{project}/project-detail?section={video_section}")
     page.set_input_files('section-upload input', video_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.click('reload-button')
+        cards = page.query_selector_all('media-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    video = int(cards[0].get_attribute('media-id'))
+    yield video
+
+@pytest.fixture(scope='session')
+def slow_video_file(request, video_file):
+    print("Getting video file...")
+    in_path = video_file
+    out_path = '/tmp/AudioVideoSyncTest_slow.mp4'
+    subprocess.run(["ffmpeg", "-y", "-i", in_path, "-r", "5", out_path])
+    yield out_path
+
+@pytest.fixture(scope='session')
+def slow_video(request, authenticated, project, slow_video_section, slow_video_file):
+    print("Uploading a video...")
+    page = authenticated.new_page()
+    page.goto(f"/{project}/project-detail?section={slow_video_section}")
+    page.set_input_files('section-upload input', slow_video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.click('reload-button')
