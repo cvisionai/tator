@@ -41,6 +41,9 @@ jobs:
         name: Make python bindings
         command: make python-bindings
     - run:
+        name: Install python bindings
+        command: pip3 install scripts/packages/tator-py/dist/*.whl
+    - run:
         name: Make postgis image
         command: make postgis-image
     - run:
