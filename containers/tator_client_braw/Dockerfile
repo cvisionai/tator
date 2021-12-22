@@ -12,5 +12,5 @@ RUN cp -r Blackmagic\ RAW/usr/lib64/blackmagic/BlackmagicRAWSDK/Linux/Include br
 RUN rm Blackmagic_RAW_Linux_2.2.1.tar && rm -rf Blackmagic\ RAW
 WORKDIR braw-decode
 RUN make
-RUN export PATH=$PATH:/scripts/braw-decode
+ENV PATH=$PATH:/scripts/braw-decode
 
