@@ -85,6 +85,8 @@ def convert_archival(args, src, dest):
     cmd = ["ffmpeg", "-y", *input_args,
            "-c:v", codec,
            "-crf", str(args.crf),
+           "-pix_fmt", "yuv420p",
+           "-tag:v", "hvc1",
            dest]
     decode = subprocess.Popen(['braw-decode', '-t', '8', src], stdout=subprocess.PIPE)
     subprocess.run(cmd, stdin=decode.stdout, check=True)
