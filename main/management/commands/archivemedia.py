@@ -64,9 +64,9 @@ def _get_clone_readiness(media, dtype):
     Checks the given media for clones and determines their readiness for archiving.
     """
     if dtype == "image":
-        return _get_single_clone_readiness(media, "image")
+        return _get_single_clone_readiness(media, ["image"])
     if dtype == "video":
-        return _get_single_clone_readiness(media, "archival")
+        return _get_single_clone_readiness(media, ["streaming", "archival"])
     if dtype == "multi":
         return _get_multi_clone_readiness(media)
 
@@ -82,27 +82,33 @@ def _get_multi_clone_readiness(media):
     return tuple(map(list, zip(*media_readiness)))
 
 
-def _get_single_clone_readiness(media, key):
+def _get_single_clone_readiness(media, keys):
     """
-    Checks the given media for clones. Returns a tuple of lists, where the former is the list of
+    Checks the given media for clones. Starts with the first entry of `keys` and moves on if the key
+    is not found in `media.media_files`. Returns a tuple of lists, where the former is the list of
     media whose `archive_state` is `to_archive` and the latter whose `archive_state` is anything
     else.
     """
-    if key not in media.media_files:
-        raise TypeError(f"Key '{key}' not found in media_files field")
+    for key in keys:
+        if key not in media.media_files:
+            continue
 
-    path = media.media_files[key][0]["path"]
+        path = media.media_files[key][0]["path"]
 
-    # Shared base queryset
-    media_qs = Media.objects.filter(resource_media__path=path)
+        # Shared base queryset
+        media_qs = Media.objects.filter(resource_media__path=path)
 
-    # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
-    media_not_ready = list(media_qs.exclude(archive_state__in=READY_TO_ARCHIVE))
+        # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
+        media_not_ready = [
+            m.id for m in media_qs.exclude(archive_state__in=READY_TO_ARCHIVE).iterator()
+        ]
 
-    # Media ready for archive is in one of the READY_TO_ARCHIVE states
-    media_ready = list(media_qs.filter(archive_state__in=READY_TO_ARCHIVE))
+        # Media ready for archive is in one of the READY_TO_ARCHIVE states
+        media_ready = [m.id for m in media_qs.filter(archive_state__in=READY_TO_ARCHIVE).iterator()]
 
-    return media_ready, media_not_ready
+        return media_ready, media_not_ready
+
+    return [media.id], []
 
 
 class Command(BaseCommand):
@@ -148,7 +154,7 @@ class Command(BaseCommand):
                 # Accumulate the lists of cloned media that are(n't) ready
                 cloned_media_not_ready[media.project.id].append(
                     {
-                        "media_requesting_archive": media,
+                        "media_requesting_archive": media.id,
                         "media_ready": media_ready,
                         "media_not_ready": media_not_ready,
                     }
@@ -171,10 +177,7 @@ class Command(BaseCommand):
         for project_id, blocking_media in cloned_media_not_ready.items():
             email_text_list = []
             for instance in blocking_media:
-                msg = (
-                    f"Archiving '{instance['media_requesting_archive'].id}' blocked by: "
-                    f"{[m.id for m in instance['media_not_ready']]}."
-                )
+                msg = f"Archiving '{instance['media_requesting_archive']}' blocked by: {instance['media_not_ready']}."
                 logger.warning(msg)
                 email_text_list.append(msg)
 
@@ -193,5 +196,5 @@ class Command(BaseCommand):
                     sender=settings.TATOR_EMAIL_SENDER,
                     recipients=recipients,
                     title=f"Nightly archive for {project.name} ({project.id}) failed",
-                    text="\n".join(email_text_list),
+                    text="\n\n".join(email_text_list),
                 )
