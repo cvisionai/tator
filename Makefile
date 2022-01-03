@@ -479,6 +479,7 @@ FILES = \
     analytics/files/file-type-select.js \
     third_party/autocomplete.js \
     third_party/webrtcstreamer.js \
+    third_party/jszip.min.js \
     utilities.js
 
 JSDIR = main/static/js
