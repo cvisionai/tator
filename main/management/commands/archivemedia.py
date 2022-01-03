@@ -26,7 +26,7 @@ def _archive_multi(multi):
         return 1
 
     media_qs = Media.objects.filter(pk__in=media_ids)
-    multi_archived = [_archive_single(obj) for obj in media_qs]
+    multi_archived = [_archive_single(obj) for obj in media_qs.iterator()]
 
     if all(multi_archived):
         multi.archive_state = "archived"
@@ -78,8 +78,8 @@ def _get_multi_clone_readiness(media):
     Checks the given multiview's individual media for clones.
     """
     multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
-    media_readiness = [_get_clone_readiness(obj, obj.meta.dtype) for obj in multi_qs]
-    return tuple(map(list, zip(*media_readiness)))
+    media_readiness = [_get_clone_readiness(obj, obj.meta.dtype) for obj in multi_qs.iterator()]
+    return [ele for lst in media_readiness for ele in lst]
 
 
 def _get_single_clone_readiness(media, keys):
@@ -101,18 +101,13 @@ def _get_single_clone_readiness(media, keys):
         media_qs = Media.objects.filter(resource_media__path=path)
 
         # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
-        media_not_ready = [
-            m.id for m in media_qs.exclude(archive_state__in=READY_TO_ARCHIVE).iterator()
-        ]
+        media_not_ready = list(media_qs.exclude(archive_state__in=READY_TO_ARCHIVE).values("id"))
 
-        # Media ready for archive is in one of the READY_TO_ARCHIVE states
-        media_ready = [m.id for m in media_qs.filter(archive_state__in=READY_TO_ARCHIVE).iterator()]
-
-        return media_ready, media_not_ready
+        return media_not_ready
 
     # If no key from the list of keys is found in `media.media_files`, assume there is no blocking
     # clone
-    return [media.id], []
+    return []
 
 
 class Command(BaseCommand):
@@ -138,7 +133,7 @@ class Command(BaseCommand):
             return
 
         cloned_media_not_ready = defaultdict(list)
-        for media in archived_qs:
+        for media in archived_qs.iterator():
             if not media.media_files:
                 # No files to move to archive storage, consider this media archived
                 media.archive_state = "archived"
@@ -147,7 +142,7 @@ class Command(BaseCommand):
 
             media_dtype = media.meta.dtype
             if media_dtype in ["multi", "image", "video"]:
-                media_ready, media_not_ready = _get_clone_readiness(media, media_dtype)
+                media_not_ready = _get_clone_readiness(media, media_dtype)
             else:
                 logger.warning(
                     f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
@@ -159,7 +154,6 @@ class Command(BaseCommand):
                 cloned_media_not_ready[media.project.id].append(
                     {
                         "media_requesting_archive": media.id,
-                        "media_ready": media_ready,
                         "media_not_ready": media_not_ready,
                     }
                 )
