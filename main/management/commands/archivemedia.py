@@ -90,7 +90,9 @@ def _get_single_clone_readiness(media, keys):
     else.
     """
     for key in keys:
-        if key not in media.media_files:
+        # If the given key does not exist in `media_files` or the list of files is empty, move on to
+        # the next key, if any
+        if not (key in media.media_files and media.media_files[key]):
             continue
 
         path = media.media_files[key][0]["path"]
@@ -108,6 +110,8 @@ def _get_single_clone_readiness(media, keys):
 
         return media_ready, media_not_ready
 
+    # If no key from the list of keys is found in `media.media_files`, assume there is no blocking
+    # clone
     return [media.id], []
 
 
