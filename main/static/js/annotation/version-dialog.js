@@ -95,6 +95,9 @@ class VersionDialog extends ModalDialog {
   _updatedDependentLayers(selected_idx)
   {
     const selected_version = this._versions[selected_idx];
+    if (typeof selected_version === "undefined") {
+      return;
+    }
     const bases = selected_version.bases;
     for (let idx = 0; idx < this._viewables.length; idx++) {
       const button = this._buttons[idx];

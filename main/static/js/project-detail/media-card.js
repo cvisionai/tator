@@ -308,6 +308,11 @@ class MediaCard extends TatorElement {
       this._archiveUpEmblem.style.display = "flex";
       this._archiveUpEmblem.setAttribute("tooltip", "Pending Live");
     }
+    else {
+      this._archiveDownEmblem.style.display = "none";
+      this._archiveUpEmblem.style.display = "none";
+      this._archiveEmblem.style.display = "none";
+    }
   }
 
   get media() {
