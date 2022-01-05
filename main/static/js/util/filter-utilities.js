@@ -11,7 +11,7 @@ class FilterConditionData {
    * @param {string} value
    * @param {string} categoryGroup
    */
-  constructor (category, field, modifier, value, categoryGroup) {
+  constructor(category, field, modifier, value, categoryGroup) {
     this.category = category;
     this.field = field;
     this.modifier = modifier;
@@ -43,29 +43,28 @@ class FilterUtilities {
 
     // #TODO Add more options for the different dtypes
     if (selectedAttributeType.name == "_version" ||
-        selectedAttributeType.name == "_section" ||
-        selectedAttributeType.name == "_user" ||
-        selectedAttributeType.name == "_dtype") {
-        choices.push({"value": "=="});
-    }
-    else if (dtype == "int" || dtype == "float") {
-      choices.push({"value": "=="});
-      choices.push({"value": ">"});
-      choices.push({"value": ">="});
-      choices.push({"value": "<"});
-      choices.push({"value": "<="});
-    }
-    else if (dtype == "bool") {
-      choices.push({"value": "=="});
-    }
-    else if (dtype == "datetime") {
-      choices.push({"value": "After"});
-      choices.push({"value": "Before"});
-    }
-    else {
-      choices.push({"value": "Includes"});
+      selectedAttributeType.name == "_section" ||
+      selectedAttributeType.name == "_user" ||
+      selectedAttributeType.name == "_dtype") {
       choices.push({ "value": "==" });
-      choices.push({"value": "NOT"});
+    } else if (dtype == "int" || dtype == "float") {
+      choices.push({ "value": "==" });
+      choices.push({ "value": ">" });
+      choices.push({ "value": ">=" });
+      choices.push({ "value": "<" });
+      choices.push({ "value": "<=" });
+    } else if (dtype == "bool") {
+      choices.push({ "value": "==" });
+    } else if (dtype == "datetime") {
+      choices.push({ "value": "After" });
+      choices.push({ "value": "Before" });
+    } else if (selectedAttributeType.name == "_modified_by") {
+      choices.push({ "value": "==" });
+      choices.push({ "value": "NOT ==" });
+      choices.push({ "value": "Includes" });
+    } else {
+      choices.push({ "value": "Includes" });
+      choices.push({ "value": "==" });
     }
 
     return choices;
