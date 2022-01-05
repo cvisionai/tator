@@ -250,6 +250,38 @@ def test_settings_algorithmTests(authenticated, project, base_url, yaml_file):
     page.click('modal-dialog modal-close .modal__close')
     print(f"Successfully registered algorithm argo workflow!")
 
+def test_settings_appletTests(authenticated, project, base_url, html_file):
+    print("Applet Settings Tests...")
+    page = authenticated.new_page()
+    
+    # Go to settings
+    page.goto(f"/{project}/project-settings")
+
+    # Test Applet Type
+    page.wait_for_selector('.heading-for-Applet .Nav-action')
+    page.click('.heading-for-Applet .Nav-action')
+    page.wait_for_selector('#itemDivId-Applet-New text-input[name="Name"]')
+    page.fill('#itemDivId-Applet-New text-input[name="Name"] input', 'Test Applet')
+    page.fill('#itemDivId-Applet-New text-input[name="Description"] input', 'Description for automated test.')
+    page.set_input_files('#itemDivId-Applet-New input[type="file"]', html_file)
+
+    # - Listen for applet id
+    url = base_url + "/rest/Applets/" + str(project)
+    with page.expect_response(url) as response_info:
+        page.click('#itemDivId-Applet-New button[value="Save"]')
+    response = response_info.value
+    respObject = response.json()
+    applet_id = respObject["id"]
+    
+    page.wait_for_selector(f'text="Successfully created applet {applet_id}!"')
+    page.click('modal-dialog modal-close .modal__close')
+
+    # Go to dashboards
+    page.goto(f"/{project}/dashboards")
+    page.wait_for_selector('text="Test Applet"')
+
+    print(f"Successfully registered Applet.")
+
 def test_settings_attributeTests(authenticated, project):
     print("Attribute Settings...")
     page = authenticated.new_page()

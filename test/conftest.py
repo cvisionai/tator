@@ -342,6 +342,14 @@ def yaml_file(request):
     yield out_path
 
 @pytest.fixture(scope='session')
+def html_file(request):
+    out_path = '/tmp/applet-test.yaml'
+    if not os.path.exists(out_path):
+        with open(out_path, 'w+') as f:
+            f.write("<html><head></head><body><h1>HTML FILE</h1></body></html>")
+    yield out_path
+
+@pytest.fixture(scope='session')
 def video_files(request):
     files = ["https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.mp4",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.2/samples/FF0000.json",
