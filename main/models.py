@@ -48,7 +48,13 @@ from django.db import transaction
 from .search import TatorSearch
 from .ses import TatorSES
 from .download import download_file
-from .store import get_tator_store, ObjectStore, get_storage_lookup
+from .store import (
+    get_tator_store,
+    ObjectStore,
+    get_storage_lookup,
+    DEFAULT_STORAGE_CLASSES,
+    VALID_STORAGE_CLASSES,
+)
 from .cognito import TatorCognito
 
 from collections import UserDict
@@ -413,23 +419,6 @@ class Bucket(Model):
                 logger.warning(msg)
                 raise ValueError(msg)
 
-    @staticmethod
-    def _sc_validator(
-        params,
-        sc_type,
-        valid_storage_classes,
-        default_storage_class,
-        storage_type,
-    ):
-        new_params = dict(params)
-        storage_class = new_params.setdefault(sc_type, default_storage_class)
-        if storage_class not in valid_storage_classes:
-            raise ValueError(
-                f"{sc_type[:-3].title()} storage class '{storage_class}' invalid for {storage_type} store"
-            )
-
-        return new_params
-
     def validate_storage_classes(self, params):
         """
         Checks for the existence of `live_sc` and `archive_sc` and validates them if they exist. If
@@ -437,42 +426,27 @@ class Bucket(Model):
         they are set in a copy of the `params` dict and this copy is returned.
         """
         server = get_tator_store(self).server
+        new_params = dict(params)
+        storage_type = {
+            ObjectStore.AWS: "Amazon S3",
+            ObjectStore.MINIO: "MinIO",
+            ObjectStore.GCP: "Google Cloud Storage",
+        }
 
-        if server is ObjectStore.GCP:
-            valid_archive_storage_classes = ["STANDARD", "COLDLINE"]
-            default_archive_storage_class = "COLDLINE"
-            valid_live_storage_classes = ["STANDARD"]
-            default_live_storage_class = "STANDARD"
-            storage_type = "Google Cloud Storage"
-        elif server is ObjectStore.AWS:
-            valid_archive_storage_classes = ["STANDARD", "DEEP_ARCHIVE"]
-            default_archive_storage_class = "DEEP_ARCHIVE"
-            valid_live_storage_classes = ["STANDARD"]
-            default_live_storage_class = "STANDARD"
-            storage_type = "Amazon AWS"
-        elif server is ObjectStore.MINIO:
-            valid_archive_storage_classes = ["STANDARD"]
-            default_archive_storage_class = "STANDARD"
-            valid_live_storage_classes = ["STANDARD"]
-            default_live_storage_class = "STANDARD"
-            storage_type = "MinIO"
-        else:
-            raise ValueError(f"Found unknown server type {server}")
+        for sc_type in ["archive_sc", "live_sc"]:
+            try:
+                valid_storage_classes = VALID_STORAGE_CLASSES[sc_type][server]
+                default_storage_class = DEFAULT_STORAGE_CLASSES[sc_type][server]
+            except KeyError:
+                raise ValueError(f"Found unknown server type {server}")
 
-        new_params = self._sc_validator(
-            params,
-            "archive_sc",
-            valid_archive_storage_classes,
-            default_archive_storage_class,
-            storage_type,
-        )
-        return self._sc_validator(
-            new_params,
-            "live_sc",
-            valid_live_storage_classes,
-            default_live_storage_class,
-            storage_type,
-        )
+            storage_class = new_params.setdefault(sc_type, default_storage_class)
+            if storage_class not in valid_storage_classes:
+                raise ValueError(
+                    f"{sc_type[:-3].title()} storage class '{storage_class}' invalid for {storage_type[server]} store"
+                )
+
+        return new_params
 
 
 class Project(Model):
@@ -1089,9 +1063,7 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Archiving object {path}")
-        bucket = obj.bucket
-        tator_store = get_tator_store(bucket)
-        return tator_store.archive_object(path, bucket.archive_sc if bucket else "")
+        return get_tator_store(obj.bucket).archive_object(path)
 
 
     @transaction.atomic
@@ -1106,9 +1078,7 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Requesting restoration of object {path}")
-        bucket = obj.bucket
-        tator_store = get_tator_store(bucket)
-        return tator_store.request_restoration(path, bucket.live_sc if bucket else "", min_exp_days)
+        return get_tator_store(obj.bucket).request_restoration(path, min_exp_days)
 
     @transaction.atomic
     def restore_resource(path):
@@ -1124,15 +1094,7 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Restoring object {path}")
-        bucket = obj.bucket
-        tator_store = get_tator_store(bucket)
-        if bucket:
-            archive_sc = bucket.archive_sc
-            live_sc = bucket.live_sc
-        else:
-            archive_sc = ""
-            live_sc = ""
-        return tator_store.restore_resource(path, archive_sc, live_sc)
+        return get_tator_store(obj.bucket).restore_resource(path)
 
 
 @receiver(post_save, sender=Media)
