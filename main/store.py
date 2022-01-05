@@ -16,11 +16,28 @@ from google.oauth2.service_account import Credentials
 logger = logging.getLogger(__name__)
 
 
+DEFAULT_ARCHIVE_SC = {
+    ObjectStore.AWS: "DEEP_ARCHIVE",
+    ObjectStore.MINIO: "STANDARD",
+    ObjectStore.GCP: "COLDLINE",
+    ObjectStore.WASABI: "STANDARD",
+}
+
+
+DEFAULT_LIVE_SC = {
+    ObjectStore.AWS: "STANDARD",
+    ObjectStore.MINIO: "STANDARD",
+    ObjectStore.GCP: "STANDARD",
+    ObjectStore.WASABI: "STANDARD",
+}
+
+
 class ObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
     GCP = "UploadServer"
     WASABI = "WasabiS3"
+
 
 class TatorStorage(ABC):
     """Interface for object storage."""
@@ -30,6 +47,22 @@ class TatorStorage(ABC):
         self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
         self.external_host = external_host
+
+    def get_archive_sc(self) -> str:
+        """
+        Gets the configured archive storage class for this object store. If a bucket is defined, get
+        the storage class from it. Otherwise, use the default archive storage class defined by
+        ObjectStore.
+        """
+        return self.bucket.archive_sc if self.bucket else DEFAULT_ARCHIVE_SC[self.server]
+
+    def get_live_sc(self) -> str:
+        """
+        Gets the configured live storage class for this object store. If a bucket is defined, get
+        the storage class from it. Otherwise, use the default live storage class defined by
+        ObjectStore.
+        """
+        return self.bucket.live_sc if self.bucket else DEFAULT_LIVE_SC[self.server]
 
     @classmethod
     def get_tator_store(cls, server, bucket, client, bucket_name, external_host=None):
@@ -147,15 +180,14 @@ class TatorStorage(ABC):
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
         """ Moves the object into the desired storage class """
 
-    def archive_object(self, path: str, archive_storage_class: str) -> bool:
+    def archive_object(self, path: str) -> bool:
         """
         Moves the object to the archive storage class, if necessary. Returns true if the storage
         class of the object matches the archive storage class.
         """
+        archive_storage_class = self.get_archive_sc()
         response = self.head_object(path)
         current_storage_class = response.get("StorageClass", "")
-        if not archive_storage_class:
-            archive_storage_class = current_storage_class
         if current_storage_class == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
@@ -178,11 +210,12 @@ class TatorStorage(ABC):
         restore_resource.
         """
 
-    def request_restoration(self, path: str, live_storage_class: str, min_exp_days: int) -> bool:
+    def request_restoration(self, path: str, min_exp_days: int) -> bool:
         """
         Requests object restortation from archive storage. Returns True if the request is successful
         or a request is unnecessary.
         """
+        live_storage_class = self.get_live_sc()
         response = self.head_object(path)
         if response.get("StorageClass", "") == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
@@ -476,6 +509,7 @@ class GCPStorage(TatorStorage):
     def _restore_object(self, path, desired_storage_class, min_exp_days):
         self._update_storage_class(path, desired_storage_class)
 
+
 class WasabiStorage(MinIOStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client, bucket_name, external_host)
@@ -488,14 +522,17 @@ class WasabiStorage(MinIOStorage):
             RestoreRequest={"Days": min_exp_days},
         )
 
-def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5, upload=False) -> TatorStorage:
+
+def get_tator_store(
+    bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5, upload=False
+) -> TatorStorage:
     """
     Determines the type of object store required by the given bucket and returns it. All returned
     objects are subclasses of the base class TatorStorage.
 
     :param bucket: The bucket to use for accessing object storage.
     :type bucket: models.Bucket
-    :param upload: True if the upload bucket should be used.
+    :param upload: If True, use the upload bucket; `bucket` must also be None if this is True
     :type upload: bool
     :param connect_timeout: The number of seconds to wait on connect before timing out.
     :type connect_timeout: float or int
@@ -505,21 +542,17 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
     :type max_attempts: int
     :rtype: TatorStorage
     """
+    if bucket is not None and upload:
+        raise ValueError("Cannot specify a bucket and set `upload` to True")
+
     if bucket is None:
-        if upload and os.getenv("UPLOAD_STORAGE_HOST"):
-            endpoint = os.getenv("UPLOAD_STORAGE_HOST")
-            region = os.getenv("UPLOAD_STORAGE_REGION_NAME")
-            access_key = os.getenv("UPLOAD_STORAGE_ACCESS_KEY")
-            secret_key = os.getenv("UPLOAD_STORAGE_SECRET_KEY")
-            bucket_name = os.getenv("UPLOAD_STORAGE_BUCKET_NAME")
-            external_host = os.getenv("UPLOAD_STORAGE_EXTERNAL_HOST")
-        else: 
-            endpoint = os.getenv("OBJECT_STORAGE_HOST")
-            region = os.getenv("OBJECT_STORAGE_REGION_NAME")
-            access_key = os.getenv("OBJECT_STORAGE_ACCESS_KEY")
-            secret_key = os.getenv("OBJECT_STORAGE_SECRET_KEY")
-            bucket_name = os.getenv("BUCKET_NAME")
-            external_host = os.getenv("OBJECT_STORAGE_EXTERNAL_HOST")
+        prefix = "UPLOAD" if upload and os.getenv("UPLOAD_STORAGE_HOST") else "OBJECT"
+        endpoint = os.getenv(f"{prefix}_STORAGE_HOST")
+        region = os.getenv(f"{prefix}_STORAGE_REGION_NAME")
+        access_key = os.getenv(f"{prefix}_STORAGE_ACCESS_KEY")
+        secret_key = os.getenv(f"{prefix}_STORAGE_SECRET_KEY")
+        bucket_name = os.getenv(f"{prefix}_STORAGE_BUCKET_NAME")
+        external_host = os.getenv(f"{prefix}_STORAGE_EXTERNAL_HOST")
     elif bucket.gcs_key_info:
         gcs_key_info = json.loads(bucket.gcs_key_info)
         gcs_project = gcs_key_info["project_id"]

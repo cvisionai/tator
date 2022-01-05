@@ -73,7 +73,7 @@ spec:
               value: {{ .Values.domain }}/objects
             - name: OBJECT_STORAGE_REGION_NAME
               value: {{ .Values.objectStorageRegionName | default "us-east-2" | quote }}
-            - name: BUCKET_NAME
+            - name: OBJECT_STORAGE_BUCKET_NAME
               value: {{ .Values.minio.defaultBucket.name }}
             - name: OBJECT_STORAGE_ACCESS_KEY
               value: {{ .Values.minio.accessKey }}
@@ -84,7 +84,7 @@ spec:
               value: {{ .Values.objectStorageHost }}
             - name: OBJECT_STORAGE_REGION_NAME
               value: {{ .Values.objectStorageRegionName | default "us-east-2" | quote }}
-            - name: BUCKET_NAME
+            - name: OBJECT_STORAGE_BUCKET_NAME
               value: {{ .Values.objectStorageBucketName }}
             - name: OBJECT_STORAGE_ACCESS_KEY
               value: {{ .Values.objectStorageAccessKey }}
