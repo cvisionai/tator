@@ -254,7 +254,7 @@ spec:
         value: "{{workflow.parameters.objectStorageHost}}"
       - name: OBJECT_STORAGE_REGION_NAME
         value: "{{workflow.parameters.objectStorageRegionName}}"
-      - name: OBJECT_STORAGE_BUCKET_NAME
+      - name: BUCKET_NAME
         value: "{{workflow.parameters.objectStorageBucketName}}"
       - name: OBJECT_STORAGE_ACCESS_KEY
         value: "{{workflow.parameters.objectStorageAccessKey}}"

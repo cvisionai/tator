@@ -549,11 +549,12 @@ def get_tator_store(
 
     if bucket is None:
         prefix = "UPLOAD" if upload and os.getenv("UPLOAD_STORAGE_HOST") else "OBJECT"
+        bucket_env_name = "UPLOAD_STORAGE_BUCKET_NAME" if prefix == "UPLOAD" else "BUCKET_NAME"
         endpoint = os.getenv(f"{prefix}_STORAGE_HOST")
         region = os.getenv(f"{prefix}_STORAGE_REGION_NAME")
         access_key = os.getenv(f"{prefix}_STORAGE_ACCESS_KEY")
         secret_key = os.getenv(f"{prefix}_STORAGE_SECRET_KEY")
-        bucket_name = os.getenv(f"{prefix}_STORAGE_BUCKET_NAME")
+        bucket_name = os.getenv(bucket_env_name)
         external_host = os.getenv(f"{prefix}_STORAGE_EXTERNAL_HOST")
     elif bucket.gcs_key_info:
         gcs_key_info = json.loads(bucket.gcs_key_info)
