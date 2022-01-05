@@ -69,7 +69,6 @@ class BucketEdit extends OrganizationTypeForm {
       let bucketTypes = [
         { name: "AWS", id: "aws", checked: false },
         { name: "GCS", id: "gcs", checked: false },
-        //{name : "WASABI", id: "wasabi", checked: false}
       ];
 
       this._editBucketType = document.createElement("radio-set");
