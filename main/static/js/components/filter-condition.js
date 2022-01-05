@@ -173,7 +173,7 @@ class FilterCondition extends TatorElement {
     this._valueEnum.style.display = "none";
     this._valueDate.style.display = "none";
 
-    if (this._currentDtype == "enum" && modifier == "==") {
+    if (this._currentDtype == "enum" && (modifier == "==" || modifier == "NOT ==")) {
       this._value.style.display = "none";
       this._valueBool.style.display = "none";
       this._valueEnum.style.display = "block";
