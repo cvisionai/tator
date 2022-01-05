@@ -1100,6 +1100,8 @@ class FileMixin:
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
+    def _generate_key(self):
+        return f'{self.organization.pk}/{self.project.pk}/{self.media.pk}/{uuid1()}'
 
 class CurrentUserTestCase(APITestCase):
     def test_get(self):
@@ -1660,6 +1662,372 @@ class StateTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
         TatorSearch().refresh(self.project.pk)
+
+    def tearDown(self):
+        self.project.delete()
+
+class LocalizationMediaDeleteCase(APITestCase):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.image_type = MediaType.objects.create(
+            name="images",
+            dtype='image',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.box_type = LocalizationType.objects.create(
+            project=self.project,
+            name='loc_box_type',
+            dtype='box',
+            attribute_types=create_test_attribute_types())
+        self.dot_type = LocalizationType.objects.create(
+            project=self.project,
+            name='loc_dot_type',
+            dtype='dot',
+            attribute_types=create_test_attribute_types())
+        self.line_type = LocalizationType.objects.create(
+            project=self.project,
+            name='loc_line_type',
+            dtype='line',
+            attribute_types=create_test_attribute_types())
+
+    def test_single_media_delete(self):
+        # Tests deleting a localization's associated media (1). The corresponding
+        # localization must also be deleted. Delete via the endpoint.
+        unique_string_attr_val = 'super_unique_string_to_search_for_1'
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id1 = response.data['id']
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id2 = response.data['id']
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id3 = response.data['id']
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id4 = response.data['id']
+
+        create_json = [{
+            'project': self.project.pk,
+            'type': self.box_type.pk,
+            'frame': 0,
+            'media_id': media_id1,
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        }]
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.line_type.pk
+        create_json[0]["media_id"] = media_id2
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.line_type.pk
+        create_json[0]["media_id"] = media_id4
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.dot_type.pk
+        create_json[0]["media_id"] = media_id3
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.dot_type.pk
+        create_json[0]["media_id"] = media_id4
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        response = self.client.delete(f"/rest/Media/{media_id1}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 4)
+
+        response = self.client.delete(f"/rest/Media/{media_id2}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 3)
+
+        response = self.client.delete(f"/rest/Media/{media_id3}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 2)
+
+        response = self.client.delete(f"/rest/Media/{media_id4}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 0)
+
+    def test_multiple_media_delete(self):
+        # Tests deleting localizations where it's associated with multiple media.
+        # The media is deleted and the subsequent localizations should also be deleted.
+        unique_string_attr_val1 = 'super_unique_string_to_search_for_1'
+        unique_string_attr_val2 = 'super_unique_string_to_search_for_2'
+        unique_string_attr_val3 = 'super_unique_string_to_search_for_3'
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val1}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id1 = response.data['id']
+
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val2}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id2 = response.data['id']
+
+        create_json = [{
+            'project': self.project.pk,
+            'type': self.box_type.pk,
+            'frame': 0,
+            'media_id': media_id1,
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val3,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        }]
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.line_type.pk
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.dot_type.pk
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.box_type.pk
+        create_json[0]["media_id"] = media_id2
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.line_type.pk
+        create_json[0]["media_id"] = media_id2
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        create_json[0]["type"] = self.dot_type.pk
+        create_json[0]["media_id"] = media_id2
+        response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val1}%22")
+        self.assertEqual(len(response.data), 3)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val2}%22")
+        self.assertEqual(len(response.data), 3)
+
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val1}%22", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val1}%22")
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val2}%22")
+        self.assertEqual(len(response.data), 3)
+
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val2}%22", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val2}%22")
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}")
+        self.assertEqual(len(response.data), 0)
+
+    def tearDown(self):
+        self.project.delete()
+
+class StateMediaDeleteCase(APITestCase):
+    def setUp(self):
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.project = create_test_project(self.user)
+        self.membership = create_test_membership(self.user, self.project)
+        self.image_type = MediaType.objects.create(
+            name="images",
+            dtype='image',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
+        self.entity_type = StateType.objects.create(
+            name="states",
+            dtype='state',
+            project=self.project,
+            association="Media",
+            interpolation="none",
+            attribute_types=create_test_attribute_types(),
+        )
+        self.entity_type.media.add(self.image_type)
+
+    def test_single_media_delete(self):
+        # Tests deleting a state's associated media (1). The corresponding
+        # state must also be deleted. Delete via the endpoint.
+
+        unique_string_attr_val = 'super_unique_string_to_search_for_1'
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id = response.data['id']
+
+        create_json = [{
+            'project': self.project.pk,
+            'type': self.entity_type.pk,
+            'frame': 0,
+            'name': 'asdf',
+            'media_ids': [media_id],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        }]
+        response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 1)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 1)
+
+        response = self.client.delete(f"/rest/Media/{media_id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 0)
+
+    def test_multiple_media_delete(self):
+        # Tests deleting states where it's associated with multiple media.
+        # The media is deleted and the subsequent states should also be deleted.
+
+        unique_string_attr_val = 'super_unique_string_to_search_for_2'
+
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id1 = response.data['id']
+
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id2 = response.data['id']
+
+        body = {'type': self.image_type.pk,
+                'section': 'asdf',
+                'name': 'asdf',
+                'md5': 'asdf',
+                'attributes': {'String Test': unique_string_attr_val}}
+        response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
+        media_id3 = response.data['id']
+
+        create_json = [{
+            'project': self.project.pk,
+            'type': self.entity_type.pk,
+            'frame': 0,
+            'name': 'asdf',
+            'media_ids': [media_id1],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        },{
+            'project': self.project.pk,
+            'type': self.entity_type.pk,
+            'frame': 0,
+            'name': 'asdf',
+            'media_ids': [media_id2, media_id3],
+            'Bool Test': True,
+            'Int Test': 1,
+            'Float Test': 0.0,
+            'Enum Test': 'enum_val1',
+            'String Test': unique_string_attr_val,
+            'Datetime Test': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Geoposition Test': [0.0, 0.0],
+        }]
+        response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data["id"]), 2)
+
+        response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 3)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?media_search=String%5C%20Test%3A{unique_string_attr_val}")
+        self.assertEqual(len(response.data), 2)
+
+        not_deleted = State.objects.filter(project=self.project.pk, media__deleted=False)\
+                                    .values_list('id', flat=True)
+        deleted = State.objects.filter(project=self.project.pk, media__deleted=True)\
+                                .values_list('id', flat=True)
+
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
+        self.assertEqual(len(response.data), 0)
+
+        not_deleted_medias = Media.objects.filter(project=self.project.pk, deleted=False).values_list('id', flat=True)
+        deleted_medias = Media.objects.filter(project=self.project.pk, deleted=True).values_list('id', flat=True)
+        not_deleted = State.objects.filter(project=self.project.pk, media__deleted=False)\
+                                    .values_list('id', flat=True)
+        deleted = State.objects.filter(project=self.project.pk, media__deleted=True)\
+                                .values_list('id', flat=True)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?attribute=String%20Test%3A%3A{unique_string_attr_val}")
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 0)
+
+        response = self.client.get(f"/rest/States/{self.project.pk}?media_search=%22{unique_string_attr_val}%22")
+        self.assertEqual(len(response.data), 0)
 
     def tearDown(self):
         self.project.delete()
@@ -2432,8 +2800,8 @@ class ImageFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'ImageFiles'
         self.detail_uri = 'ImageFile'
-        self.create_json = {'path': 'asdf', 'resolution': [1, 1]}
-        self.patch_json = {'path': 'asdf', 'resolution': [2, 2]}
+        self.create_json = {'path': self._generate_key(), 'resolution': [1, 1]}
+        self.patch_json = {'path': self._generate_key(), 'resolution': [2, 2]}
 
     def test_image(self):
         self._test_methods('image')
@@ -2462,8 +2830,8 @@ class VideoFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'VideoFiles'
         self.detail_uri = 'VideoFile'
-        self.create_json = {'path': 'asdf', 'resolution': [1, 1], 'codec': 'h264', 'segment_info': 'asdf'}
-        self.patch_json = {'path': 'asdf', 'resolution': [2, 2], 'codec': 'h264', 'segment_info': 'asdf'}
+        self.create_json = {'path': self._generate_key(), 'resolution': [1, 1], 'codec': 'h264', 'segment_info': 'asdf'}
+        self.patch_json = {'path': self._generate_key(), 'resolution': [2, 2], 'codec': 'h264', 'segment_info': 'asdf'}
 
     def test_streaming(self):
         self._test_methods('streaming')
@@ -2489,8 +2857,8 @@ class AudioFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'AudioFiles'
         self.detail_uri = 'AudioFile'
-        self.create_json = {'path': 'asdf', 'codec': 'h264'}
-        self.patch_json = {'path': 'asdf', 'codec': 'h264'}
+        self.create_json = {'path': self._generate_key(), 'codec': 'h264'}
+        self.patch_json = {'path': self._generate_key(), 'codec': 'h264'}
 
     def test_audio(self):
         self._test_methods('audio')
@@ -2513,8 +2881,8 @@ class AuxiliaryFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'AuxiliaryFiles'
         self.detail_uri = 'AuxiliaryFile'
-        self.create_json = {'path': 'asdf', 'name': 'asdf1'}
-        self.patch_json = {'path': 'asdf', 'name': 'asdf'}
+        self.create_json = {'path': self._generate_key(), 'name': 'asdf1'}
+        self.patch_json = {'path': self._generate_key(), 'name': 'asdf'}
 
     def test_attachment(self):
         self._test_methods('attachment')
@@ -2545,10 +2913,10 @@ class ResourceTestCase(APITestCase):
         )
         self.store = get_tator_store()
 
-    def _random_store_obj(self):
+    def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
         """
-        key = f"test/{str(uuid1())}"
+        key = f"{self.organization.pk}/{self.project.pk}/{media.pk}/{str(uuid1())}"
         self.store.put_string(key, b"\x00" + os.urandom(16) + b"\x00")
         return key
 
@@ -2562,9 +2930,9 @@ class ResourceTestCase(APITestCase):
         else:
             return True
 
-    def _generate_keys(self):
-        keys = {role:self._random_store_obj() for role in ResourceTestCase.MEDIA_ROLES}
-        segment_key = self._random_store_obj()
+    def _generate_keys(self, media):
+        keys = {role:self._random_store_obj(media) for role in ResourceTestCase.MEDIA_ROLES}
+        segment_key = self._random_store_obj(media)
         return keys, segment_key
 
     def _get_media_def(self, role, keys, segment_key):
@@ -2594,7 +2962,7 @@ class ResourceTestCase(APITestCase):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
 
         # Post one file of each role.
-        keys, segment_key = self._generate_keys()
+        keys, segment_key = self._generate_keys(media)
         for role in ResourceTestCase.MEDIA_ROLES:
             endpoint = ResourceTestCase.MEDIA_ROLES[role]
             media_def = self._get_media_def(role, keys, segment_key)
@@ -2602,7 +2970,7 @@ class ResourceTestCase(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Patch in a new value for each role.
-        patch_keys, patch_segment_key = self._generate_keys()
+        patch_keys, patch_segment_key = self._generate_keys(media)
         for role in ResourceTestCase.MEDIA_ROLES:
             endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
             media_def = self._get_media_def(role, patch_keys, patch_segment_key)
@@ -2626,7 +2994,7 @@ class ResourceTestCase(APITestCase):
         TatorSearch().refresh(self.project.pk)
 
         # Post one file of each role.
-        keys, segment_key = self._generate_keys()
+        keys, segment_key = self._generate_keys(media)
         for role in ResourceTestCase.MEDIA_ROLES:
             endpoint = ResourceTestCase.MEDIA_ROLES[role]
             media_def = self._get_media_def(role, keys, segment_key)

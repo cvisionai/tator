@@ -108,11 +108,13 @@ class AnnotationPlayer extends TatorElement {
     this._currentFrameInput = document.createElement("input");
     this._currentFrameInput.setAttribute("class", "form-control input-sm1 f2 text-center");
     this._currentFrameInput.setAttribute("type", "text");
+    this._currentFrameInput.setAttribute("id", "frame_num_ctrl");
     this._currentFrameInput.style.display = "none";
     this._currentFrameInput.style.width = "100px";
     frameDiv.appendChild(this._currentFrameInput);
 
     this._currentFrameText = document.createElement("div");
+    this._currentFrameText.setAttribute("id", "frame_num_display");
     this._currentFrameText.setAttribute("class", "f2 text-center");
     this._currentFrameText.textContent = "0";
     this._currentFrameText.style.minWidth = "15px";
@@ -789,7 +791,7 @@ class AnnotationPlayer extends TatorElement {
 
   checkReady()
   {
-    if (this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
     }
@@ -896,7 +898,7 @@ class AnnotationPlayer extends TatorElement {
 
   play()
   {
-    if (this._rate > 8.0)
+    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
@@ -936,7 +938,7 @@ class AnnotationPlayer extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > 8.0)
+    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.

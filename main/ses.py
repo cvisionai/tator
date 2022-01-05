@@ -7,12 +7,13 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 
 from django.conf import settings
+from django.db import models
 import boto3
 
 from .store import get_tator_store
+import main.models
 
 logger = logging.getLogger(__name__)
-
 
 class TatorSES:
     """Interface for AWS Simple Email Service."""
@@ -75,9 +76,17 @@ class TatorSES:
         # Add attachments if there are any
         # #TODO Potentially limit the attachment size(s)
         if attachments:
-            tator_store = get_tator_store()
             for attachment in attachments:
                 # Download the S3 object into a byte stream and attach it
+                key = attachment["key"]
+                upload = key.startswith('_uploads')
+                bucket = None
+                if upload:
+                    project_from_key = int(key.split('/')[3])
+                    project_obj = main.models.Project.objects.get(pk=project_from_key)
+                    bucket = project_obj.upload_bucket if upload else project_obj.bucket
+                tator_store = get_tator_store(bucket, upload=upload)
+
                 f_p = io.BytesIO()
                 tator_store.download_fileobj(attachment["key"], f_p)
                 f_p.seek(0)

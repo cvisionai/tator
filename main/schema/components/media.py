@@ -100,8 +100,9 @@ media_spec = {
         'gid': media_get_properties['gid'],
         'uid': media_get_properties['uid'],
         'url': {
-            'description': 'Upload URL for the image if this is an image type. If '
-                           'not an image, this field is ignored.',
+            'description': 'Upload URL for the image if this is an image type, URL '
+                           'of hosted original media if this is a video type. For video '
+                           'types this field is just for reference.',
             'type': 'string',
         },
         'thumbnail_url': {

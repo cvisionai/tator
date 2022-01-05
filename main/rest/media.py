@@ -174,6 +174,7 @@ class MediaListAPI(BaseListView):
         gid = params.get('gid', None)
         uid = params.get('uid', None)
         new_attributes = params.get('attributes', None)
+        url = params.get('url')
         if gid is not None:
             gid = str(gid)
         project_obj = Project.objects.get(pk=project)
@@ -230,6 +231,9 @@ class MediaListAPI(BaseListView):
         attributes.update({'tator_user_sections': tator_user_sections})
 
         if media_type.dtype == 'image':
+            # Get image only parameters.
+            thumbnail_url = params.get('thumbnail_url')
+
             # Create the media object.
             media_obj = Media.objects.create(
                 project=project_obj,
@@ -241,12 +245,9 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
+                source_url=url,
             )
             media_obj.media_files = {}
-
-            # Get image only parameters.
-            url = params.get('url')
-            thumbnail_url = params.get('thumbnail_url')
 
             if url:
                 # Download the image file and load it.
@@ -320,6 +321,7 @@ class MediaListAPI(BaseListView):
                 modified_by=self.request.user,
                 gid=gid,
                 uid=uid,
+                source_url=url,
             )
 
             # Add optional parameters.
@@ -413,12 +415,21 @@ class MediaListAPI(BaseListView):
             # not accept queries with size, and has_parent also does not accept ids queries.
             query = get_media_es_query(self.kwargs['project'], params)
             TatorSearch().delete(self.kwargs['project'], query)
-            loc_ids = [f'box_{id_}' for id_ in loc_qs.iterator()] \
-                    + [f'line_{id_}' for id_ in loc_qs.iterator()] \
-                    + [f'dot_{id_}' for id_ in loc_qs.iterator()]
+            loc_ids = [f'box_{val.id}' for val in loc_qs.iterator()] \
+                    + [f'line_{val.id}' for val in loc_qs.iterator()] \
+                    + [f'dot_{val.id}' for val in loc_qs.iterator()]
             TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': loc_ids}}})
-            state_ids = [f'state_{id_}' for id_ in state_qs.iterator()]
-            TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': state_ids}}})
+            state_ids = [val.id for val in state_qs.iterator()]
+            TatorSearch().delete(self.kwargs['project'], {
+                'query': {
+                    'bool': {
+                        'should': {'match': {'_dtype': 'state'}},
+                        'filter': {
+                            'terms': {'_postgres_id': state_ids},
+                        },
+                    }
+                },
+            })
 
             # Create ChangeLogs
             objs = (
@@ -711,6 +722,25 @@ class MediaDetailAPI(BaseDetailView):
         loc_qs.update(deleted=True,
                       modified_datetime=datetime.datetime.now(datetime.timezone.utc),
                       modified_by=self.request.user)
+
+        # Clear elasticsearch entries for both media and its children.
+        # Note that clearing children cannot be done using has_parent because it does
+        # not accept queries with size, and has_parent also does not accept ids queries.
+        loc_ids = [f'box_{val.id}' for val in loc_qs.iterator()] \
+                + [f'line_{val.id}' for val in loc_qs.iterator()] \
+                + [f'dot_{val.id}' for val in loc_qs.iterator()]
+        TatorSearch().delete(project.id, {'query': {'ids': {'values': loc_ids}}})
+        state_ids = [val.id for val in state_qs.iterator()]
+        TatorSearch().delete(project.id, {
+            'query': {
+                'bool': {
+                    'should': {'match': {'_dtype': 'state'}},
+                    'filter': {
+                        'terms': {'_postgres_id': state_ids},
+                    },
+                }
+            },
+        })
 
         return {'message': f'Media {params["id"]} successfully deleted!'}
 

@@ -730,7 +730,7 @@ class AttributesForm extends TatorElement {
   
     // Description: Only when changed, or when it is a Clone pass the value along
     // Don't send if the value is null => invalid
-    if ((this._description.changed() || this.isClone) && this._order.getValue() !== null) {
+    if ((this._description.changed() || this.isClone) && this._description.getValue() !== null) {
       formData.description = this._description.getValue();
     }
   

@@ -19,7 +19,7 @@ class AnalyticsPortal extends TatorPage {
 
     this._breadcrumbs = document.createElement("analytics-breadcrumbs");
     div.appendChild(this._breadcrumbs);
-    this._breadcrumbs.setAttribute("analytics-name", "Dashboard");
+    this._breadcrumbs.setAttribute("analytics-name", "Portal");
 
     this.main = document.createElement("main");
     this.main.setAttribute("class", "layout-max d-flex flex-justify-center");
@@ -34,14 +34,16 @@ class AnalyticsPortal extends TatorPage {
     this.main.appendChild(localizationsBox);
 
     // Collections
+    /*
     const collectionsBox = this._getDashboardBox({
         name : "Collections",
         href : `/${this.projectId}/analytics/collections`,
         iconName: "track-icon"
       });
     this.main.appendChild(collectionsBox);
+    */
 
-    // Collections
+    // Corrections
     const correctionsBox = this._getDashboardBox({
       name : "Corrections",
       href : `/${this.projectId}/analytics/corrections`,

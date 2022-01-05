@@ -57,7 +57,7 @@ class RateControl extends TatorElement {
    */
   setValue(rate) {
     this._value = rate;
-    this.setIdx(this._rates.findIndex(rate));
+    this.setIdx(this._rates.findIndex(el => el == rate));
   }
 
   setIdx(idx)

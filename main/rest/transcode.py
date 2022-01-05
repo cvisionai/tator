@@ -57,12 +57,21 @@ class TranscodeAPI(BaseListView):
         # Attempt to determine upload size. Only use size parameter if size cannot be determined.
         parsed = urlparse(url)
         upload_size = -1
-        if len(parsed.path.split('/')) > 4:
+        tokens = parsed.path.split('/')
+        if len(tokens) > 4:
             # First assume this is a presigned url for S3. Parse
             # out the object key and get object size via S3 api.
-            path = '/'.join(parsed.path.split('/')[-4:])
+            num_tokens = 4
+            bucket = project_obj.bucket
+            upload = False
+            if len(tokens) > 6:
+                if tokens[-6] == '_uploads':
+                    num_tokens = 6
+                    bucket = project_obj.upload_bucket
+                    upload = True
+            path = '/'.join(parsed.path.split('/')[-num_tokens:])
             logger.info(f"Attempting to retrieve size for object key {path}...")
-            tator_store = get_tator_store(project_obj.bucket)
+            tator_store = get_tator_store(bucket, upload=upload)
             upload_size = tator_store.get_size(path)
             logger.info(f"Got object size {upload_size} for object key {path}")
         if upload_size == -1:

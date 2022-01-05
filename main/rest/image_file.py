@@ -12,6 +12,7 @@ from ..search import TatorSearch
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectTransferPermission
+from ._util import check_resource_prefix
 
 class ImageFileListAPI(BaseListView):
     schema = ImageFileListSchema()
@@ -36,6 +37,7 @@ class ImageFileListAPI(BaseListView):
             role = params['role']
             body = params['body']
             index = params.get('index')
+            check_resource_prefix(body['path'], qs[0])
             if not media_files:
                 media_files = {}
             if role not in media_files:
@@ -93,6 +95,7 @@ class ImageFileDetailAPI(BaseDetailView):
                                  f"{len(media_files[role])}")
             old_path = media_files[role][index]['path']
             new_path = body['path']
+            check_resource_prefix(new_path, qs[0])
             media_files[role][index] = body
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params['id'])

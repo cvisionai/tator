@@ -39,6 +39,8 @@ class KeyboardShortcuts extends TatorElement {
       ["1x Playback", "1", null],
       ["2x Playback", "2", null],
       ["4x Playback", "4", null],
+      ["Increase rate", "\u{2191}", "\u{2318}"],
+      ["Decrease rate", "\u{2193}", "\u{2318}"],
     ]
 
     for (let shortcut of shortcuts) {

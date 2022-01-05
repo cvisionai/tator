@@ -172,6 +172,13 @@ client-latest: client-image
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) cvisionai/tator_client:latest
 	docker push cvisionai/tator_client:latest
 
+.PHONY: braw-image
+braw-image:
+	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION)
+	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
+
 .PHONY: main/version.py
 main/version.py:
 	./scripts/version.sh > main/version.py
@@ -466,13 +473,6 @@ FILES = \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
     analytics/reports/reports.js \
-    apps/verification/components/apps-species-gallery.js \
-    apps/verification/components/apps-species-panel.js \
-    apps/verification/components/apps-verification-breadcrumbs.js \
-    apps/verification/components/apps-verification-table.js \
-    apps/verification/data/apps-verification-api.js \
-    apps/verification/apps-species-page.js \
-    apps/verification/apps-verification-page.js \
     analytics/portal/portal.js \
     analytics/files/files-page.js \
     analytics/files/file-type-dialog.js \
@@ -480,6 +480,7 @@ FILES = \
     analytics/files/file-type-select.js \
     third_party/autocomplete.js \
     third_party/webrtcstreamer.js \
+    third_party/jszip.min.js \
     utilities.js
 
 JSDIR = main/static/js

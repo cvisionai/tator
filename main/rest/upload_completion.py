@@ -26,7 +26,9 @@ class UploadCompletionAPI(BaseListView):
         project_obj = Project.objects.get(pk=project)
 
         # Complete the upload.
-        tator_store = get_tator_store(project_obj.bucket)
+        upload = key.startswith('_uploads')
+        bucket = project_obj.upload_bucket if upload else project_obj.bucket
+        tator_store = get_tator_store(bucket, upload=upload)
         tator_store.complete_multipart_upload(key, parts, upload_id)
         return {'message': f"Upload completion for {key} successful!"}
 

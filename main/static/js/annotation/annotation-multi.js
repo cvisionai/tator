@@ -113,12 +113,14 @@ class AnnotationMulti extends TatorElement {
     this._currentFrameInput = document.createElement("input");
     this._currentFrameInput.setAttribute("class", "form-control input-sm1 f2 text-center");
     this._currentFrameInput.setAttribute("type", "text");
+    this._currentFrameInput.setAttribute("id", "frame_num_ctrl");
     this._currentFrameInput.style.display = "none";
     this._currentFrameInput.style.width = "100px";
     frameDiv.appendChild(this._currentFrameInput);
 
     this._currentFrameText = document.createElement("div");
     this._currentFrameText.setAttribute("class", "f2 text-center");
+    this._currentFrameText.setAttribute("id", "frame_num_display");
     this._currentFrameText.textContent = "0";
     this._currentFrameText.style.minWidth = "15px";
     currentFrameWrapper.appendChild(this._currentFrameText);
@@ -1397,7 +1399,7 @@ class AnnotationMulti extends TatorElement {
     let notReady;
     for (let video of this._videos)
     {
-      notReady |= !(video._onDemandPlaybackReady);
+      notReady |= video.bufferDelayRequired() && !(video._onDemandPlaybackReady);
     }
     if (notReady)
     {
@@ -1582,7 +1584,7 @@ class AnnotationMulti extends TatorElement {
   play()
   {
     this._ratesAvailable = this.computeRatesAvailable();
-    if (this._rate > 8.0)
+    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       let playing = false;
       // Check to see if the video player can play at this rate
@@ -1651,7 +1653,7 @@ class AnnotationMulti extends TatorElement {
   playBackwards()
   {
     this._ratesAvailable = this.computeRatesAvailable();
-    if (this._rate > 8.0)
+    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       let playing = false;
       // Check to see if the video player can play at this rate
