@@ -16,24 +16,38 @@ from google.oauth2.service_account import Credentials
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_ARCHIVE_SC = {
-    ObjectStore.AWS: "DEEP_ARCHIVE",
-    ObjectStore.MINIO: "STANDARD",
-    ObjectStore.GCP: "COLDLINE",
-}
-
-
-DEFAULT_LIVE_SC = {
-    ObjectStore.AWS: "STANDARD",
-    ObjectStore.MINIO: "STANDARD",
-    ObjectStore.GCP: "STANDARD",
-}
-
-
 class ObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
     GCP = "UploadServer"
+
+
+VALID_STORAGE_CLASSES = {
+    "archive_sc": {
+        ObjectStore.AWS: ["STANDARD", "DEEP_ARCHIVE"],
+        ObjectStore.MINIO: ["STANDARD"],
+        ObjectStore.GCP: ["STANDARD", "COLDLINE"],
+    },
+    "live_sc": {
+        ObjectStore.AWS: ["STANDARD"],
+        ObjectStore.MINIO: ["STANDARD"],
+        ObjectStore.GCP: ["STANDARD"],
+    },
+}
+
+
+DEFAULT_STORAGE_CLASSES = {
+    "archive_sc": {
+        ObjectStore.AWS: "DEEP_ARCHIVE",
+        ObjectStore.MINIO: "STANDARD",
+        ObjectStore.GCP: "COLDLINE",
+    },
+    "live_sc": {
+        ObjectStore.AWS: "STANDARD",
+        ObjectStore.MINIO: "STANDARD",
+        ObjectStore.GCP: "STANDARD",
+    },
+}
 
 
 class TatorStorage(ABC):
@@ -51,7 +65,10 @@ class TatorStorage(ABC):
         the storage class from it. Otherwise, use the default archive storage class defined by
         ObjectStore.
         """
-        return self.bucket.archive_sc if self.bucket else DEFAULT_ARCHIVE_SC[self.server]
+        if self.bucket:
+            return self.bucket.archive_sc
+
+        return DEFAULT_STORAGE_CLASSES["archive_sc"][self.server]
 
     def get_live_sc(self) -> str:
         """
@@ -59,7 +76,10 @@ class TatorStorage(ABC):
         the storage class from it. Otherwise, use the default live storage class defined by
         ObjectStore.
         """
-        return self.bucket.live_sc if self.bucket else DEFAULT_LIVE_SC[self.server]
+        if self.bucket:
+            return self.bucket.live_sc
+
+        return DEFAULT_STORAGE_CLASSES["live_sc"][self.server]
 
     @classmethod
     def get_tator_store(cls, server, bucket, client, bucket_name, external_host=None):
