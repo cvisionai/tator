@@ -116,8 +116,8 @@ class AppletEdit extends TypeForm {
       const formData = {};
 
       // console.log(`Data ID: ${this.data.id}`);
-      // const isNew = this.data.id == "New" ? true : false;
-      const isNew = true;
+      const isNew = this.data.id == "New" ? true : false;
+      // const isNew = true;
 
       if (this._editName.changed() || isNew) {
          formData.name = this._editName.getValue();
@@ -127,7 +127,7 @@ class AppletEdit extends TypeForm {
          formData.description = this._editDescription.getValue();
       }
 
-      if (this._htmlFilePath.changed() || (this._htmlFilePath.getValue() !== "")) {
+      if ((this._htmlFilePath.changed() && this._htmlFilePath.getValue() !== "") || isNew) {
          formData.html_file = this._htmlFilePath.getValue();
        } else if (isNew && !this._htmlFilePath.changed()) {
          formData.html_file = null;         
