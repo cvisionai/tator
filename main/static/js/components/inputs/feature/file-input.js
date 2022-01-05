@@ -172,7 +172,7 @@ class FileInput extends TatorElement {
   _editListeners(e) {
     this.dispatchEvent(new Event("change"));
     const blob = e.target.files[0];
-    console.log(blob);
+    const fileName = blob.name;
 
     let uploadData = {
       file: blob,
@@ -222,15 +222,13 @@ class FileInput extends TatorElement {
           return resp.json();
         }).then((data) => {
           // Check the related state types
-          console.log(data);
           const bodyData = {
-            name: data[0].key,
+            name: fileName,
             upload_url: data[0].url
           }
           
           // _fetchCall is defined in the instantiating page or parent element
           this._fetchCall(bodyData);
-
         });
       }
     });
