@@ -1063,7 +1063,7 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Archiving object {path}")
-        return get_tator_store(obj.bucket).archive_object(path, bucket.archive_sc if bucket else "")
+        return get_tator_store(obj.bucket).archive_object(path)
 
 
     @transaction.atomic
@@ -1094,7 +1094,7 @@ class Resource(Model):
         """
         obj = Resource.objects.get(path=path)
         logger.info(f"Restoring object {path}")
-        return get_tator_store(obj.bucket).restore_resource(path, archive_sc, live_sc)
+        return get_tator_store(obj.bucket).restore_resource(path)
 
 
 @receiver(post_save, sender=Media)
