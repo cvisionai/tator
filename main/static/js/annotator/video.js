@@ -1805,6 +1805,7 @@ class VideoCanvas extends AnnotationCanvas {
    */
   setQuality(quality, buffer)
   {
+    quality = Math.min(quality, this._maxHeight); // defensive programming
     let find_closest = (videoObject, resolution) => {
       let play_idx = -1;
       let max_delta = Number.MAX_SAFE_INTEGER;
@@ -1877,11 +1878,24 @@ class VideoCanvas extends AnnotationCanvas {
     if (mediaType)
       this.mediaType = mediaType;
     this._videoObject = videoObject;
-    // If quality is not supplied default to 720
+
+    
+    // If quality is not supplied default to 720 or highest available
+    let resolutions = videoObject.media_files["streaming"].length;
+    this._maxHeight = 0;
+    for (let idx = 0; idx < resolutions; idx++)
+    {
+      let height = videoObject.media_files["streaming"][idx].resolution[0];
+      if (height > this._maxHeight)
+      {
+        this._maxHeight = height;
+      }
+    }
     if (quality == undefined || quality == null)
     {
-      quality = 720;
+      quality = Math.min(720);
     }
+    quality = Math.min(quality, this._maxHeight);
     if (resizeHandler == undefined)
     {
       resizeHandler = true;

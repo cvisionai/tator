@@ -113,12 +113,14 @@ class AnnotationMulti extends TatorElement {
     this._currentFrameInput = document.createElement("input");
     this._currentFrameInput.setAttribute("class", "form-control input-sm1 f2 text-center");
     this._currentFrameInput.setAttribute("type", "text");
+    this._currentFrameInput.setAttribute("id", "frame_num_ctrl");
     this._currentFrameInput.style.display = "none";
     this._currentFrameInput.style.width = "100px";
     frameDiv.appendChild(this._currentFrameInput);
 
     this._currentFrameText = document.createElement("div");
     this._currentFrameText.setAttribute("class", "f2 text-center");
+    this._currentFrameText.setAttribute("id", "frame_num_display");
     this._currentFrameText.textContent = "0";
     this._currentFrameText.style.minWidth = "15px";
     currentFrameWrapper.appendChild(this._currentFrameText);

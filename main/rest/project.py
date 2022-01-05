@@ -36,8 +36,11 @@ def _serialize_projects(projects, user_id):
         del project_data[idx]['attribute_type_uuids']
         if project_data[idx]['thumb']:
             thumb_store = get_tator_store()
-            if not thumb_store.check_key(project_data[idx]['thumb']):
-                thumb_store = store
+            if project.bucket:
+                # If this project has a separate bucket, the thumbnail may be there or on the
+                # main bucket
+                if not thumb_store.check_key(project_data[idx]['thumb']):
+                    thumb_store = store
             project_data[idx]['thumb'] = thumb_store.get_download_url(project_data[idx]['thumb'], 28800)
     return project_data
 
