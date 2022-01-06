@@ -219,7 +219,7 @@ class TatorStorage(ABC):
         response = self.head_object(path)
         if not response:
             return False
-        if current_storage_class == archive_storage_class:
+        if response.get("StorageClass", "") == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
 
