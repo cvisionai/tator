@@ -2921,14 +2921,8 @@ class ResourceTestCase(APITestCase):
         return key
 
     def _store_obj_exists(self, key):
-        """ Checks whether an object in store exists.
-        """
-        try:
-            self.store.head_object(key)
-        except ClientError:
-            return False
-        else:
-            return True
+        """ Checks whether an object in store exists. """
+        return bool(self.store.head_object(key))
 
     def _generate_keys(self, media):
         keys = {role:self._random_store_obj(media) for role in ResourceTestCase.MEDIA_ROLES}

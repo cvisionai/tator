@@ -104,9 +104,22 @@ class TatorStorage(ABC):
     def check_key(self, path: str) -> bool:
         """ Checks that at least one key matches the given path """
 
-    @abstractmethod
     def head_object(self, path: str) -> dict:
-        """ Returns the object metadata for a given path """
+        """
+        Returns the object metadata for a given path using the concrete class implementation of
+        `_head_object`. If the concrete implementation raises, this logs a warning and returns an
+        empty dictionary.
+        """
+        try:
+            return self._head_object(path)
+        except:
+            logger.warning(f"Failed to call `head_object` on path '{path}'", exc_info=True)
+
+        return {}
+
+    @abstractmethod
+    def _head_object(self, path: str) -> dict:
+        """ The server-specific implementation for getting object metadata. """
 
     @abstractmethod
     def copy(self, source_path: str, dest_path: str, extra_args: Optional[dict] = None) -> None:
@@ -149,25 +162,27 @@ class TatorStorage(ABC):
         return self._get_multiple_upload_urls(key, expiration, num_parts, domain)
 
     def get_size(self, path: str) -> int:
-        """Returns the size of an object for the given path, if it exists.
-        Returns -1 if it does not exist."""
-        size = -1
-        try:
-            response = self.head_object(path)
-        except (ValueError, ClientError):
-            logger.warning(f"Could not find object {path}!")
-        else:
-            size = response["ContentLength"]
+        """
+        Returns the size of an object for the given path, if it exists, otherwise returns -1.
+        """
+        return self.head_object(path).get("ContentLength", -1)
 
-        return size
-
-    @abstractmethod
     def list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> list:
         """
         Returns an object list in the style of the Contents key from boto3.client.list_objects_v2
         for the given prefix. Note that no attempts to modify the prefix are made; it is assumed
         that the given prefix starts with the bucket name if that is relevant.
         """
+        try:
+            return self._list_objects_v2(prefix, **kwargs)
+        except:
+            logger.warning(f"Call to _list_objects_v2 failed for prefix {prefix}", exc_info=True)
+
+        return []
+
+    @abstractmethod
+    def _list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> list:
+        """ The server-specific implementation for listing object metadata. """
 
     @abstractmethod
     def complete_multipart_upload(self, path: str, parts: int, upload_id: str) -> None:
@@ -202,7 +217,8 @@ class TatorStorage(ABC):
         """
         archive_storage_class = self.get_archive_sc()
         response = self.head_object(path)
-        current_storage_class = response.get("StorageClass", "")
+        if not response:
+            return False
         if current_storage_class == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
@@ -212,6 +228,9 @@ class TatorStorage(ABC):
         except:
             logger.warning(f"Exception while archiving object {path}", exc_info=True)
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not confirm storage class change for {path}")
+            return False
         if response.get("StorageClass", "") != archive_storage_class:
             logger.warning(f"Archiving object {path} failed")
             return False
@@ -232,6 +251,8 @@ class TatorStorage(ABC):
         """
         live_storage_class = self.get_live_sc()
         response = self.head_object(path)
+        if not response:
+            return False
         if response.get("StorageClass", "") == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
             return True
@@ -245,6 +266,9 @@ class TatorStorage(ABC):
                 f"Exception while requesting restoration of object {path}", exc_info=True
             )
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not confirm restoration request status for {path}")
+            return False
         if response.get("StorageClass", "") == live_storage_class:
             logger.info(f"Object {path} live")
             return True
@@ -258,6 +282,10 @@ class TatorStorage(ABC):
     def restore_resource(self, path: str, archive_sc: str, live_storage_class: str) -> bool:
         # Check the current state of the restoration request
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not check the state of the restoration request for {path}")
+            return False
+
         request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
@@ -295,6 +323,9 @@ class TatorStorage(ABC):
                 f"Exception while changing storage class of object {path}", exc_info=True
             )
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not check the restoration state for {path}")
+            return False
         if response.get("StorageClass", "") == archive_sc:
             logger.warning(f"Storage class not changed for object {path}")
             return False
@@ -309,7 +340,7 @@ class MinIOStorage(TatorStorage):
     def check_key(self, path):
         return bool(self.list_objects_v2(self._path_to_key(path)))
 
-    def head_object(self, path):
+    def _head_object(self, path):
         return self.client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def copy(self, source_path, dest_path, extra_args=None):
@@ -374,7 +405,7 @@ class MinIOStorage(TatorStorage):
         )
         return [url], ""
 
-    def list_objects_v2(self, prefix=None, **kwargs):
+    def _list_objects_v2(self, prefix=None, **kwargs):
         if prefix is not None:
             kwargs["Prefix"] = prefix
 
@@ -445,7 +476,7 @@ class GCPStorage(TatorStorage):
     def check_key(self, path):
         return self.gcs_bucket.blob(self._path_to_key(path)).exists()
 
-    def head_object(self, path):
+    def _head_object(self, path):
         """
         Create a dictionary that matches the response from boto3.
         """
@@ -483,13 +514,11 @@ class GCPStorage(TatorStorage):
         )
         return [url], ""
 
-    def list_objects_v2(self, prefix=None, **kwargs):
+    def _list_objects_v2(self, prefix=None, **kwargs):
         if "StartAfter" in kwargs:
             kwargs["start_offset"] = kwargs.pop("StartAfter")
         if prefix is not None:
             kwargs["prefix"] = prefix
-
-        blob_iter = self.gcs_bucket.list_blobs(**kwargs)
 
         return [
             {
@@ -500,7 +529,7 @@ class GCPStorage(TatorStorage):
                 "StorageClass": blob.storage_class,
                 "Owner": {"DisplayName": blob.owner["entity"], "ID": blob.owner["entityId"]},
             }
-            for blob in blob_iter
+            for blob in self.gcs_bucket.list_blobs(**kwargs)
         ]
 
     def complete_multipart_upload(self, path, parts, upload_id):
