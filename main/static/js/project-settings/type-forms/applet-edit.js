@@ -50,7 +50,7 @@ class AppletEdit extends TypeForm {
       if (typeof this.data.html_file == "undefined") {
          this.data.html_file = [];
       }
-      
+
       this._htmlFilePath.setValue(this.data.html_file);
       this._htmlFilePath.default = this.data.html_file;
 
@@ -74,29 +74,9 @@ class AppletEdit extends TypeForm {
                Utilities.showSuccessIcon(`HTML file uploaded to: ${htmlData.url}`);
                return htmlData;
             }
-         ).then((data) => {
-            // Create the new algorithm configuration
-            var postBody = {
-               name:"test name",
-               path: data.url,
-               description: "",
-               meta: 2,
-               attributes: {}
-            }
-            
-            fetchRetry("/rest/Files/" + this.projectId, {
-               method: "POST",
-               credentials: "same-origin",
-               headers: {
-               "X-CSRFToken": getCookie("csrftoken"),
-               "Accept": "application/json",
-               "Content-Type": "application/json"
-               },
-               body: JSON.stringify(postBody),
-            }).then(data => {
-               console.log(data);
-            })
-         })
+         ).catch(err => {
+            console.error("Issue saving generic file.", err);
+         });
       };
 
       this._htmlFilePath.addEventListener("change", this._formChanged.bind(this));
