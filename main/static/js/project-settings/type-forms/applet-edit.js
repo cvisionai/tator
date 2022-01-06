@@ -46,6 +46,11 @@ class AppletEdit extends TypeForm {
       this._htmlFilePath.setAttribute("for", "applet");
       this._htmlFilePath.setAttribute("type", "html");
       this._htmlFilePath.projectId = this.projectId;
+
+      if (typeof this.data.html_file == "undefined") {
+         this.data.html_file = [];
+      }
+      
       this._htmlFilePath.setValue(this.data.html_file);
       this._htmlFilePath.default = this.data.html_file;
 
