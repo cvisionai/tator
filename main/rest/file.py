@@ -6,10 +6,12 @@ from django.db import transaction
 from django.conf import settings
 
 from ..models import Project
+from ..models import Resource
 from ..models import File
 from ..models import FileType
 from ..models import User
 from ..models import database_qs
+from ..models import safe_delete
 from ..search import TatorSearch
 from ..schema import FileListSchema
 from ..schema import FileDetailSchema
@@ -25,6 +27,7 @@ from ._attributes import validate_attributes
 from ._permissions import ProjectExecutePermission
 from ._util import computeRequiredFields
 from ._util import check_required_fields
+from ._util import check_file_resource_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -71,15 +74,6 @@ class FileListAPI(BaseListView):
             logging.error(log_msg)
             raise ValueError(log_msg)
 
-        # Gather the file file and verify it exists on the server in the right project
-        file_param = os.path.basename(params[fields.path])
-        file_url = os.path.join(str(project_id), file_param)
-        file_path = os.path.join(settings.MEDIA_ROOT, file_url)
-        if not os.path.exists(file_path):
-            log_msg = f'Provided file ({file_param}) does not exist in {settings.MEDIA_ROOT}'
-            logging.error(log_msg)
-            raise ValueError(log_msg)
-
         # Get the optional fields and to null if need be
         description = params.get(fields.description, None)
 
@@ -103,7 +97,6 @@ class FileListAPI(BaseListView):
             project=project,
             name=params[fields.name],
             description=description,
-            path=file_path,
             meta=associated_file_type,
             created_by=self.request.user,
             modified_by=self.request.user,
@@ -122,13 +115,6 @@ class FileDetailAPI(BaseDetailView):
     permission_classes = [ProjectExecutePermission]
     http_method_names = ['get', 'patch', 'delete']
 
-    def safe_delete(self, path: str) -> None:
-        try:
-            logger.info(f"Deleting {path}")
-            os.remove(path)
-        except:
-            logger.warning(f"Could not remove {path}")
-
     def _delete(self, params: dict) -> dict:
         # Grab the file object and delete it from the database
         obj = File.objects.get(pk=params[fields.id])
@@ -136,7 +122,7 @@ class FileDetailAPI(BaseDetailView):
 
         # Delete the correlated file
         path = os.path.join(settings.MEDIA_ROOT, file_param.name)
-        self.safe_delete(path=path)
+        safe_delete(path=path)
 
         # Delete ES document
         TatorSearch().delete_document(obj)
@@ -163,19 +149,13 @@ class FileDetailAPI(BaseDetailView):
         if description is not None:
             obj.description = description
 
-        file_param = params.get(fields.path, None)
-        if file_param is not None:
-            file_param = os.path.basename(file_param)
-            file_url = os.path.join(str(obj.project.id), file_param)
-            file_path = os.path.join(settings.MEDIA_ROOT, file_url)
-            if not os.path.exists(file_path):
-                log_msg = f'Provided file ({file_param}) does not exist in {settings.MEDIA_ROOT}'
-                logging.error(log_msg)
-                raise ValueError(log_msg)
-
-            delete_path = os.path.join(settings.MEDIA_ROOT, obj.path.name)
-            self.safe_delete(path=delete_path)
+        file_path = params.get(fields.path, None)
+        if file_path is not None:
+            obj.path = delete_path
+            check_file_resource_prefix(file_path, obj)
+            Resource.add_resource(file_path, None, obj)
             obj.path = file_path
+            safe_delete(path=delete_path)
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
