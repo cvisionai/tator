@@ -72,8 +72,8 @@ def token(request, authenticated):
     page.fill('input[type="text"]', username)
     page.fill('input[type="password"]', password)
     page.click('input[type="submit"]')
-    page.wait_for_selector('text=/^.{40}$/')
-    token = page.text_content('modal-notify p')
+    page.wait_for_selector('text=Your API token is:')
+    token = page.text_content('modal-notify .modal__main p')
     assert(len(token) == 40)
     yield token
 
