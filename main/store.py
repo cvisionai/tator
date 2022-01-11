@@ -20,7 +20,35 @@ class ObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
     GCP = "UploadServer"
-    WASABI = "WasabiS3"
+
+
+VALID_STORAGE_CLASSES = {
+    "archive_sc": {
+        ObjectStore.AWS: ["STANDARD", "DEEP_ARCHIVE"],
+        ObjectStore.MINIO: ["STANDARD"],
+        ObjectStore.GCP: ["STANDARD", "COLDLINE"],
+    },
+    "live_sc": {
+        ObjectStore.AWS: ["STANDARD"],
+        ObjectStore.MINIO: ["STANDARD"],
+        ObjectStore.GCP: ["STANDARD"],
+    },
+}
+
+
+DEFAULT_STORAGE_CLASSES = {
+    "archive_sc": {
+        ObjectStore.AWS: "DEEP_ARCHIVE",
+        ObjectStore.MINIO: "STANDARD",
+        ObjectStore.GCP: "COLDLINE",
+    },
+    "live_sc": {
+        ObjectStore.AWS: "STANDARD",
+        ObjectStore.MINIO: "STANDARD",
+        ObjectStore.GCP: "STANDARD",
+    },
+}
+
 
 class TatorStorage(ABC):
     """Interface for object storage."""
@@ -31,6 +59,28 @@ class TatorStorage(ABC):
         self.client = client
         self.external_host = external_host
 
+    def get_archive_sc(self) -> str:
+        """
+        Gets the configured archive storage class for this object store. If a bucket is defined, get
+        the storage class from it. Otherwise, use the default archive storage class defined by
+        ObjectStore.
+        """
+        if self.bucket:
+            return self.bucket.archive_sc
+
+        return DEFAULT_STORAGE_CLASSES["archive_sc"][self.server]
+
+    def get_live_sc(self) -> str:
+        """
+        Gets the configured live storage class for this object store. If a bucket is defined, get
+        the storage class from it. Otherwise, use the default live storage class defined by
+        ObjectStore.
+        """
+        if self.bucket:
+            return self.bucket.live_sc
+
+        return DEFAULT_STORAGE_CLASSES["live_sc"][self.server]
+
     @classmethod
     def get_tator_store(cls, server, bucket, client, bucket_name, external_host=None):
         if server is ObjectStore.AWS:
@@ -39,8 +89,6 @@ class TatorStorage(ABC):
             return GCPStorage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.MINIO:
             return MinIOStorage(bucket, client, bucket_name, external_host)
-        if server is ObjectStore.WASABI:
-            return WasabiStorage(bucket, client, bucket_name, external_host)
 
         raise ValueError(f"Server type '{server}' is not supported")
 
@@ -56,9 +104,22 @@ class TatorStorage(ABC):
     def check_key(self, path: str) -> bool:
         """ Checks that at least one key matches the given path """
 
-    @abstractmethod
     def head_object(self, path: str) -> dict:
-        """ Returns the object metadata for a given path """
+        """
+        Returns the object metadata for a given path using the concrete class implementation of
+        `_head_object`. If the concrete implementation raises, this logs a warning and returns an
+        empty dictionary.
+        """
+        try:
+            return self._head_object(path)
+        except:
+            logger.warning(f"Failed to call `head_object` on path '{path}'", exc_info=True)
+
+        return {}
+
+    @abstractmethod
+    def _head_object(self, path: str) -> dict:
+        """ The server-specific implementation for getting object metadata. """
 
     @abstractmethod
     def copy(self, source_path: str, dest_path: str, extra_args: Optional[dict] = None) -> None:
@@ -101,25 +162,27 @@ class TatorStorage(ABC):
         return self._get_multiple_upload_urls(key, expiration, num_parts, domain)
 
     def get_size(self, path: str) -> int:
-        """Returns the size of an object for the given path, if it exists.
-        Returns -1 if it does not exist."""
-        size = -1
-        try:
-            response = self.head_object(path)
-        except (ValueError, ClientError):
-            logger.warning(f"Could not find object {path}!")
-        else:
-            size = response["ContentLength"]
+        """
+        Returns the size of an object for the given path, if it exists, otherwise returns -1.
+        """
+        return self.head_object(path).get("ContentLength", -1)
 
-        return size
-
-    @abstractmethod
     def list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> list:
         """
         Returns an object list in the style of the Contents key from boto3.client.list_objects_v2
         for the given prefix. Note that no attempts to modify the prefix are made; it is assumed
         that the given prefix starts with the bucket name if that is relevant.
         """
+        try:
+            return self._list_objects_v2(prefix, **kwargs)
+        except:
+            logger.warning(f"Call to _list_objects_v2 failed for prefix {prefix}", exc_info=True)
+
+        return []
+
+    @abstractmethod
+    def _list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> list:
+        """ The server-specific implementation for listing object metadata. """
 
     @abstractmethod
     def complete_multipart_upload(self, path: str, parts: int, upload_id: str) -> None:
@@ -147,16 +210,16 @@ class TatorStorage(ABC):
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
         """ Moves the object into the desired storage class """
 
-    def archive_object(self, path: str, archive_storage_class: str) -> bool:
+    def archive_object(self, path: str) -> bool:
         """
         Moves the object to the archive storage class, if necessary. Returns true if the storage
         class of the object matches the archive storage class.
         """
+        archive_storage_class = self.get_archive_sc()
         response = self.head_object(path)
-        current_storage_class = response.get("StorageClass", "")
-        if not archive_storage_class:
-            archive_storage_class = current_storage_class
-        if current_storage_class == archive_storage_class:
+        if not response:
+            return False
+        if response.get("StorageClass", "") == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
 
@@ -165,6 +228,9 @@ class TatorStorage(ABC):
         except:
             logger.warning(f"Exception while archiving object {path}", exc_info=True)
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not confirm storage class change for {path}")
+            return False
         if response.get("StorageClass", "") != archive_storage_class:
             logger.warning(f"Archiving object {path} failed")
             return False
@@ -178,12 +244,15 @@ class TatorStorage(ABC):
         restore_resource.
         """
 
-    def request_restoration(self, path: str, live_storage_class: str, min_exp_days: int) -> bool:
+    def request_restoration(self, path: str, min_exp_days: int) -> bool:
         """
         Requests object restortation from archive storage. Returns True if the request is successful
         or a request is unnecessary.
         """
+        live_storage_class = self.get_live_sc()
         response = self.head_object(path)
+        if not response:
+            return False
         if response.get("StorageClass", "") == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
             return True
@@ -197,6 +266,9 @@ class TatorStorage(ABC):
                 f"Exception while requesting restoration of object {path}", exc_info=True
             )
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not confirm restoration request status for {path}")
+            return False
         if response.get("StorageClass", "") == live_storage_class:
             logger.info(f"Object {path} live")
             return True
@@ -210,6 +282,10 @@ class TatorStorage(ABC):
     def restore_resource(self, path: str, archive_sc: str, live_storage_class: str) -> bool:
         # Check the current state of the restoration request
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not check the state of the restoration request for {path}")
+            return False
+
         request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
@@ -247,6 +323,9 @@ class TatorStorage(ABC):
                 f"Exception while changing storage class of object {path}", exc_info=True
             )
         response = self.head_object(path)
+        if not response:
+            logger.warning(f"Could not check the restoration state for {path}")
+            return False
         if response.get("StorageClass", "") == archive_sc:
             logger.warning(f"Storage class not changed for object {path}")
             return False
@@ -261,7 +340,7 @@ class MinIOStorage(TatorStorage):
     def check_key(self, path):
         return bool(self.list_objects_v2(self._path_to_key(path)))
 
-    def head_object(self, path):
+    def _head_object(self, path):
         return self.client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def copy(self, source_path, dest_path, extra_args=None):
@@ -326,7 +405,7 @@ class MinIOStorage(TatorStorage):
         )
         return [url], ""
 
-    def list_objects_v2(self, prefix=None, **kwargs):
+    def _list_objects_v2(self, prefix=None, **kwargs):
         if prefix is not None:
             kwargs["Prefix"] = prefix
 
@@ -397,7 +476,7 @@ class GCPStorage(TatorStorage):
     def check_key(self, path):
         return self.gcs_bucket.blob(self._path_to_key(path)).exists()
 
-    def head_object(self, path):
+    def _head_object(self, path):
         """
         Create a dictionary that matches the response from boto3.
         """
@@ -435,13 +514,11 @@ class GCPStorage(TatorStorage):
         )
         return [url], ""
 
-    def list_objects_v2(self, prefix=None, **kwargs):
+    def _list_objects_v2(self, prefix=None, **kwargs):
         if "StartAfter" in kwargs:
             kwargs["start_offset"] = kwargs.pop("StartAfter")
         if prefix is not None:
             kwargs["prefix"] = prefix
-
-        blob_iter = self.gcs_bucket.list_blobs(**kwargs)
 
         return [
             {
@@ -452,7 +529,7 @@ class GCPStorage(TatorStorage):
                 "StorageClass": blob.storage_class,
                 "Owner": {"DisplayName": blob.owner["entity"], "ID": blob.owner["entityId"]},
             }
-            for blob in blob_iter
+            for blob in self.gcs_bucket.list_blobs(**kwargs)
         ]
 
     def complete_multipart_upload(self, path, parts, upload_id):
@@ -476,26 +553,17 @@ class GCPStorage(TatorStorage):
     def _restore_object(self, path, desired_storage_class, min_exp_days):
         self._update_storage_class(path, desired_storage_class)
 
-class WasabiStorage(MinIOStorage):
-    def __init__(self, bucket, client, bucket_name, external_host=None):
-        super().__init__(bucket, client, bucket_name, external_host)
-        self._server = ObjectStore.WASABI
 
-    def _restore_object(self, path, desired_storage_class, min_exp_days):
-        return self.client.restore_object(
-            Bucket=self.bucket_name,
-            Key=self._path_to_key(path),
-            RestoreRequest={"Days": min_exp_days},
-        )
-
-def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5, upload=False) -> TatorStorage:
+def get_tator_store(
+    bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5, upload=False
+) -> TatorStorage:
     """
     Determines the type of object store required by the given bucket and returns it. All returned
     objects are subclasses of the base class TatorStorage.
 
     :param bucket: The bucket to use for accessing object storage.
     :type bucket: models.Bucket
-    :param upload: True if the upload bucket should be used.
+    :param upload: If True, use the upload bucket; `bucket` must also be None if this is True
     :type upload: bool
     :param connect_timeout: The number of seconds to wait on connect before timing out.
     :type connect_timeout: float or int
@@ -505,21 +573,18 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
     :type max_attempts: int
     :rtype: TatorStorage
     """
+    if bucket is not None and upload:
+        raise ValueError("Cannot specify a bucket and set `upload` to True")
+
     if bucket is None:
-        if upload and os.getenv("UPLOAD_STORAGE_HOST"):
-            endpoint = os.getenv("UPLOAD_STORAGE_HOST")
-            region = os.getenv("UPLOAD_STORAGE_REGION_NAME")
-            access_key = os.getenv("UPLOAD_STORAGE_ACCESS_KEY")
-            secret_key = os.getenv("UPLOAD_STORAGE_SECRET_KEY")
-            bucket_name = os.getenv("UPLOAD_STORAGE_BUCKET_NAME")
-            external_host = os.getenv("UPLOAD_STORAGE_EXTERNAL_HOST")
-        else: 
-            endpoint = os.getenv("OBJECT_STORAGE_HOST")
-            region = os.getenv("OBJECT_STORAGE_REGION_NAME")
-            access_key = os.getenv("OBJECT_STORAGE_ACCESS_KEY")
-            secret_key = os.getenv("OBJECT_STORAGE_SECRET_KEY")
-            bucket_name = os.getenv("BUCKET_NAME")
-            external_host = os.getenv("OBJECT_STORAGE_EXTERNAL_HOST")
+        prefix = "UPLOAD" if upload and os.getenv("UPLOAD_STORAGE_HOST") else "OBJECT"
+        bucket_env_name = "UPLOAD_STORAGE_BUCKET_NAME" if prefix == "UPLOAD" else "BUCKET_NAME"
+        endpoint = os.getenv(f"{prefix}_STORAGE_HOST")
+        region = os.getenv(f"{prefix}_STORAGE_REGION_NAME")
+        access_key = os.getenv(f"{prefix}_STORAGE_ACCESS_KEY")
+        secret_key = os.getenv(f"{prefix}_STORAGE_SECRET_KEY")
+        bucket_name = os.getenv(bucket_env_name)
+        external_host = os.getenv(f"{prefix}_STORAGE_EXTERNAL_HOST")
     elif bucket.gcs_key_info:
         gcs_key_info = json.loads(bucket.gcs_key_info)
         gcs_project = gcs_key_info["project_id"]
@@ -565,8 +630,6 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
         )
         if "amazonaws" in endpoint:
             server = ObjectStore.AWS
-        elif "wasabisys" in endpoint:
-            server = ObjectStore.WASABI
         else:
             server = ObjectStore.MINIO
     else:
@@ -575,8 +638,6 @@ def get_tator_store(bucket=None, connect_timeout=5, read_timeout=5, max_attempts
             server = ObjectStore.AWS
         elif ObjectStore.MINIO.value in response_server:
             server = ObjectStore.MINIO
-        elif ObjectStore.WASABI.value in response_server:
-            server = ObjectStore.WASABI
         else:
             raise ValueError(f"Received unhandled server type '{response_server}'")
 

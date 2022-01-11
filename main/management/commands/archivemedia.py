@@ -63,10 +63,8 @@ def _get_clone_readiness(media, dtype):
     """
     Checks the given media for clones and determines their readiness for archiving.
     """
-    if dtype == "image":
-        return _get_single_clone_readiness(media, ["image"])
-    if dtype == "video":
-        return _get_single_clone_readiness(media, ["streaming", "archival"])
+    if dtype in ["image", "video"]:
+        return _get_single_clone_readiness(media)
     if dtype == "multi":
         return _get_multi_clone_readiness(media)
 
@@ -78,18 +76,18 @@ def _get_multi_clone_readiness(media):
     Checks the given multiview's individual media for clones.
     """
     multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
-    media_readiness = [_get_clone_readiness(obj, obj.meta.dtype) for obj in multi_qs.iterator()]
+    media_readiness = [_get_clone_readiness(obj, "video") for obj in multi_qs.iterator()]
     return [ele for lst in media_readiness for ele in lst]
 
 
-def _get_single_clone_readiness(media, keys):
+def _get_single_clone_readiness(media):
     """
     Checks the given media for clones. Starts with the first entry of `keys` and moves on if the key
     is not found in `media.media_files`. Returns a tuple of lists, where the former is the list of
     media whose `archive_state` is `to_archive` and the latter whose `archive_state` is anything
     else.
     """
-    for key in keys:
+    for key in FILES_TO_ARCHIVE:
         # If the given key does not exist in `media_files` or the list of files is empty, move on to
         # the next key, if any
         if not (key in media.media_files and media.media_files[key]):

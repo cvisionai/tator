@@ -1431,7 +1431,6 @@ class AnnotationPage extends TatorPage {
       });
     };
 
-    menu.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
     for (const save of Object.values(this._saves)) {
       save.addEventListener("addDetectionToTrack", this._addDetectionToTrack.bind(this));
     }
