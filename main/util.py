@@ -382,17 +382,20 @@ def move_backups_to_s3():
 def fix_bad_archives(*, project_id_list=None, live_run=False):
     from pprint import pformat
 
-    logger.info(f"fix_bad_archives {'live' if live_run else 'dry'} run")
-
     def _sc_needs_updating(path, store):
-        response = store.head_object(Bucket=bucket, Key=path)
-        return response.get("StorageClass", "STANDARD") != sc_to_find
+        response = store.head_object(path)
+        return response.get("StorageClass", "STANDARD") != store.get_archive_sc()
 
     def _update_sc(path, store):
         if live_run:
             try:
-                store.copy(path, path, {"StorageClass": target_sc, "MetadataDirective": "COPY"})
+                store.copy(
+                    path,
+                    path,
+                    {"StorageClass": store.get_archive_sc(), "MetadataDirective": "COPY"},
+                )
             except:
+                logger.warning(f"Copy operation on {path} failed", exc_info=True)
                 return False
         return True
 
@@ -401,16 +404,19 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
         if not media_ids:
             return "failed"
 
+        success = True
+        sc_needs_updating = False
         media_qs = Media.objects.filter(pk__in=media_ids)
-        multi_archived = [_archive_single(single, store) for single in media_qs.iterator()]
+        for single in media_qs.iterator():
+            single_success, single_sc_needs_updating = _archive_single(single, store)
+            success = success and single_success
+            sc_needs_updating = sc_needs_updating or single_sc_needs_updating
 
-        if all(media_archived == "successfully_archived" for media_archived in multi_archived):
-            return "successfully_archived"
-
-        return "failed"
+        return success, sc_needs_updating
 
     def _archive_single(single, store):
-        success = "successfully_archived"
+        success = True
+        sc_needs_updating = False
         for key in ["streaming", "archival", "audio", "image"]:
             if not (key in single.media_files and single.media_files[key]):
                 continue
@@ -419,24 +425,27 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
                 try:
                     path = obj["path"]
                 except:
-                    logger.warning(f"Could not get path from {key} in {single.id}")
-                    success = "failed"
+                    logger.warning(f"Could not get path from {key} in {single.id}", exc_info=True)
+                    success = False
                     continue
 
-                    if _sc_needs_updating(path, store):
-                        try:
-                            _update_sc(path, store)
-                        except:
-                            logger.warning(f"Copy operation on {path} from {single.id} failed")
-                            success = "failed"
-
-                if key == "streaming":
+                if _sc_needs_updating(path, store):
+                    sc_needs_updating = True
                     try:
-                        _update_sc(obj["segment_info"], store)
+                        success = _update_sc(path, store) and success
                     except:
-                        success = "failed"
+                        logger.warning(f"Copy operation on {path} from {single.id} failed", exc_info=True)
+                        success = False
 
-        return success
+                    if key == "streaming":
+                        try:
+                            success = _update_sc(obj["segment_info"], store) and success
+                        except:
+                            success = False
+
+        return success, sc_needs_updating
+
+    logger.info(f"fix_bad_archives {'live' if live_run else 'dry'} run")
 
     archive_state_dict = {}
     project_qs = Project.objects.all()
@@ -454,33 +463,33 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
             continue
 
         archive_state_dict[proj_id] = {
-            "archived": 0,
-            "to_archive": 0,
-            "to_live": 0,
-            "wrong_sc": 0,
+            "correct_sc": 0,
             "successfully_archived": 0,
             "failed": 0,
         }
         step = 250
         for media in archived_media_qs.iterator():
-            archive_state = media.archive_state
-            archive_state_dict[proj_id][archive_state] += 1
-            if archive_state != "archived":
-                continue
-
             if not media.meta:
                 logger.warning(f"No dtype for '{media.id}'")
                 continue
 
             media_dtype = media.meta.dtype
             if media_dtype in ["image", "video"]:
-                archive_state_dict[proj_id][_archive_single(media, tator_store)] += 1
+                success, sc_needs_updating = _archive_single(media, tator_store)
             elif media_dtype == "multi":
-                archive_state_dict[proj_id][_archive_multi(media, tator_store)] += 1
+                success, sc_needs_updating = _archive_multi(media, tator_store)
             else:
                 logger.warning(
                     f"Unrecognized dtype '{media_dtype}' for media {media.id}, failed to archive"
                 )
+                continue
+
+            if success:
+                if sc_needs_updating:
+                    archive_state_dict[proj_id]["successfully_archived"] += 1
+                else:
+                    archive_state_dict[proj_id]["correct_sc"] += 1
+            else:
                 archive_state_dict[proj_id]["failed"] += 1
 
     logger.info(f"fix_bad_archives stats:\n{pformat(archive_state_dict)}")
