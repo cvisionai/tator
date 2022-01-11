@@ -279,8 +279,10 @@ class TatorStorage(ABC):
         logger.warning(f"Request to restore object {path} failed")
         return False
 
-    def restore_resource(self, path: str, archive_sc: str, live_storage_class: str) -> bool:
+    def restore_resource(self, path: str) -> bool:
         # Check the current state of the restoration request
+        archive_storage_class = self.get_archive_sc()
+        live_storage_class = self.get_live_sc()
         response = self.head_object(path)
         if not response:
             logger.warning(f"Could not check the state of the restoration request for {path}")
@@ -290,7 +292,7 @@ class TatorStorage(ABC):
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
             storage_class = response.get("StorageClass", "")
-            if storage_class == archive_sc:
+            if storage_class == archive_storage_class:
                 # Something went wrong with the original restoration request
                 logger.warning(f"Object {path} has no associated restoration request")
                 return False
@@ -326,7 +328,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not check the restoration state for {path}")
             return False
-        if response.get("StorageClass", "") == archive_sc:
+        if response.get("StorageClass", "") == archive_storage_class:
             logger.warning(f"Storage class not changed for object {path}")
             return False
         return True
