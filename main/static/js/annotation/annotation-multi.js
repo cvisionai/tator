@@ -1266,8 +1266,9 @@ class AnnotationMulti extends TatorElement {
 
   assignToGrid(setContextMenu=true)
   {
-    for (let videoId in this._videoDivs)
+    for (let idx = 0; idx < this._videos.length; idx++)
     {
+      let videoId = this._videos[idx]._videoObject.id;
       let div = this._videoDivs[videoId];
       this._gridDiv.appendChild(div);
       this.makeAllVisible(div);
