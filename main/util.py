@@ -432,7 +432,7 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
 
                 if key == "streaming":
                     try:
-                        _update_sc(obj.segment_info, store)
+                        _update_sc(obj["segment_info"], store)
                     except:
                         success = "failed"
 
