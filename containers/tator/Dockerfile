@@ -22,7 +22,8 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         google-auth==1.28.0 elasticsearch==7.1.0 progressbar2==3.47.0 \
         gevent==1.4.0 uritemplate==3.0.1 pylint pylint-django \
         django-cognito-jwt==0.0.3 boto3==1.17.84 \
-        google-cloud-storage==1.37.1 datadog==0.41.0
+        google-cloud-storage==1.37.1 datadog==0.41.0 \
+        kubernetes==21.7.0
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
@@ -37,12 +38,6 @@ RUN mv kubectl /usr/local/bin/.
 WORKDIR /working
 RUN git clone https://github.com/jrtcppv/openapi-core.git
 WORKDIR /working/openapi-core
-RUN python3 setup.py install
-
-# Install kubernetes client
-WORKDIR /working
-RUN git clone --branch release-10.0 --recursive https://github.com/kubernetes-client/python
-WORKDIR /working/python
 RUN python3 setup.py install
 
 # Copy over the project
