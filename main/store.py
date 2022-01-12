@@ -96,7 +96,7 @@ class TatorStorage(ABC):
 
         raise ValueError(f"Server type '{server}' is not supported")
 
-    def _path_to_key(self, path: str) -> str:
+    def path_to_key(self, path: str) -> str:
         """ Returns the storage key for the given path """
         return path
 
@@ -158,7 +158,7 @@ class TatorStorage(ABC):
         self, path: str, expiration: int, num_parts: int, domain: str
     ) -> Tuple[List[str], str]:
         """ Generates the pre-signed urls for uploading objects for a given path. """
-        key = self._path_to_key(path)
+        key = self.path_to_key(path)
 
         if num_parts == 1:
             return self._get_single_upload_url(key, expiration, domain)
@@ -376,7 +376,7 @@ class MinIOStorage(TatorStorage):
         self._server = ObjectStore.MINIO
 
     def check_key(self, path):
-        return bool(self.list_objects_v2(self._path_to_key(path)))
+        return bool(self.list_objects_v2(self.path_to_key(path)))
 
     def _object_tagged_for_archive(self, path):
         tag_set = self.client.get_object_tagging(
@@ -397,13 +397,13 @@ class MinIOStorage(TatorStorage):
         )
 
     def _head_object(self, path):
-        return self.client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
+        return self.client.head_object(Bucket=self.bucket_name, Key=self.path_to_key(path))
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.client.copy(
-            CopySource={"Bucket": self.bucket_name, "Key": self._path_to_key(source_path)},
+            CopySource={"Bucket": self.bucket_name, "Key": self.path_to_key(source_path)},
             Bucket=self.bucket_name,
-            Key=self._path_to_key(dest_path),
+            Key=self.path_to_key(dest_path),
             ExtraArgs=extra_args,
         )
 
@@ -411,7 +411,7 @@ class MinIOStorage(TatorStorage):
         self._update_storage_class(path, live_storage_class)
 
     def delete_object(self, path):
-        self.client.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
+        self.client.delete_object(Bucket=self.bucket_name, Key=self.path_to_key(path))
 
     def get_download_url(self, path, expiration):
         """ Gets the presigned url for accessing an object """
@@ -422,7 +422,7 @@ class MinIOStorage(TatorStorage):
         # Generate presigned url.
         url = self.client.generate_presigned_url(
             ClientMethod="get_object",
-            Params={"Bucket": self.bucket_name, "Key": self._path_to_key(path)},
+            Params={"Bucket": self.bucket_name, "Key": self.path_to_key(path)},
             ExpiresIn=expiration,
         )
         # Replace host if external host is given.
@@ -470,13 +470,13 @@ class MinIOStorage(TatorStorage):
     def complete_multipart_upload(self, path, parts, upload_id):
         self.client.complete_multipart_upload(
             Bucket=self.bucket_name,
-            Key=self._path_to_key(path),
+            Key=self.path_to_key(path),
             MultipartUpload={"Parts": parts},
             UploadId=upload_id,
         )
 
     def put_object(self, path, body):
-        self.client.put_object(Bucket=self.bucket_name, Key=self._path_to_key(path), Body=body)
+        self.client.put_object(Bucket=self.bucket_name, Key=self.path_to_key(path), Body=body)
 
     def put_string(self, path, body):
         self.put_object(path, body)
@@ -485,7 +485,7 @@ class MinIOStorage(TatorStorage):
         if start is None != stop is None:
             raise ValueError("Must specify both or neither start and stop arguments")
 
-        kwargs = {"Bucket": self.bucket_name, "Key": self._path_to_key(path)}
+        kwargs = {"Bucket": self.bucket_name, "Key": self.path_to_key(path)}
 
         if start is not None:
             kwargs["Range"] = f"bytes={start}-{stop}"
@@ -493,7 +493,7 @@ class MinIOStorage(TatorStorage):
         return self.client.get_object(**kwargs)["Body"].read()
 
     def download_fileobj(self, path, fp):
-        self.client.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
+        self.client.download_fileobj(self.bucket_name, self.path_to_key(path), fp)
 
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
         self.copy(path, path, {"StorageClass": desired_storage_class, "MetadataDirective": "COPY"})
@@ -504,13 +504,13 @@ class S3Storage(MinIOStorage):
         super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.AWS
 
-    def _path_to_key(self, path):
+    def path_to_key(self, path):
         return f"{self.bucket_name}/{path}"
 
     def _restore_object(self, path, desired_storage_class, min_exp_days):
         return self.client.restore_object(
             Bucket=self.bucket_name,
-            Key=self._path_to_key(path),
+            Key=self.path_to_key(path),
             RestoreRequest={"Days": min_exp_days},
         )
 
@@ -522,7 +522,7 @@ class GCPStorage(TatorStorage):
         self.gcs_bucket = self.client.get_bucket(self.bucket_name)
 
     def _get_blob(self, path):
-        blob = self.gcs_bucket.get_blob(self._path_to_key(path))
+        blob = self.gcs_bucket.get_blob(self.path_to_key(path))
 
         if blob is None:
             raise ValueError()
@@ -530,7 +530,7 @@ class GCPStorage(TatorStorage):
         return blob
 
     def check_key(self, path):
-        return self.gcs_bucket.blob(self._path_to_key(path)).exists()
+        return self.gcs_bucket.blob(self.path_to_key(path)).exists()
 
     def _head_object(self, path):
         """
@@ -552,14 +552,14 @@ class GCPStorage(TatorStorage):
         self.gcs_bucket.copy_blob(
             blob=self._get_blob(path),
             destination_bucket=self.gcs_bucket,
-            new_name=self._path_to_key(dest_path),
+            new_name=self.path_to_key(dest_path),
         )
 
     def delete_object(self, path):
-        self.gcs_bucket.delete_blob(self._path_to_key(path))
+        self.gcs_bucket.delete_blob(self.path_to_key(path))
 
     def get_download_url(self, path, expiration):
-        key = self._path_to_key(path)
+        key = self.path_to_key(path)
         blob = self.gcs_bucket.blob(key)
         return blob.generate_signed_url(
             version="v4",
@@ -601,10 +601,10 @@ class GCPStorage(TatorStorage):
         logger.info(f"No need to complete upload for GCP store")
 
     def put_object(self, path, body):
-        self.gcs_bucket.blob(self._path_to_key(path)).upload_from_file(body)
+        self.gcs_bucket.blob(self.path_to_key(path)).upload_from_file(body)
 
     def put_string(self, path, body):
-        self.gcs_bucket.blob(self._path_to_key(path)).upload_from_string(body)
+        self.gcs_bucket.blob(self.path_to_key(path)).upload_from_string(body)
 
     def get_object(self, path, start=None, stop=None):
         return self._get_blob(path).download_as_bytes(start=start, end=stop)

@@ -381,6 +381,7 @@ def move_backups_to_s3():
 
 def fix_bad_archives(*, project_id_list=None, live_run=False):
     from pprint import pformat
+    media_to_update = []
 
     def _sc_needs_updating(path, store):
         response = store.head_object(path)
@@ -397,6 +398,9 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
             except:
                 logger.warning(f"Copy operation on {path} failed", exc_info=True)
                 return False
+        else:
+            media_to_update.append(f"{store.bucket_name},{store.path_to_key(path)}\n")
+
         return True
 
     def _archive_multi(multi, store):
@@ -493,3 +497,6 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
                 archive_state_dict[proj_id]["failed"] += 1
 
     logger.info(f"fix_bad_archives stats:\n{pformat(archive_state_dict)}")
+    if media_to_update:
+        with open("manifest_spec.csv", "w") as fp:
+            fp.writelines(media_to_update)
