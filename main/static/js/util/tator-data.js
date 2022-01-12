@@ -689,6 +689,7 @@ class TatorData {
       finalAnnotationFilters.push(this._convertDateRangeForTator(dateFilter));
     }
 
+    // Annotation Search
     var annotationSearch = "";
     for (let idx = 0; idx < finalAnnotationFilters.length; idx++) {
       var filter = finalAnnotationFilters[idx];
@@ -697,11 +698,13 @@ class TatorData {
         annotationSearch += encodeURIComponent(" AND ");        
       }
     }
-
-    if (annotationSearch) {
+    if (annotationSearch && annotationType != "Medias") {
       paramString += "&search=" + annotationSearch;
+    } else if (annotationSearch && annotationType == "Medias") {
+      paramString += "&annotation_search" + annotationSearch;
     }
 
+     // Media Filters
     var finalMediaFilters = [];
     var mediaDateFilters = [];
     for (const filter of mediaFilterData) {
@@ -715,10 +718,10 @@ class TatorData {
         finalMediaFilters.push(this._convertFilterForTator(filter));
       }
     }
+
     for (const dateFilter of mediaDateFilters) {
       finalMediaFilters.push(this._convertDateRangeForTator(dateFilter));
     }
-
 
     var mediaSearch = "";
     for (let idx = 0; idx < finalMediaFilters.length; idx++) {
@@ -729,8 +732,10 @@ class TatorData {
       }
     }
 
-    if (mediaSearch) {
+    if (mediaSearch && annotationType != "Medias") {
       paramString += "&media_search=" + mediaSearch;
+    } else if (mediaSearch && annotationType == "Medias") {
+      paramString += "&search=" + mediaSearch;
     }
 
     if (versionIds != undefined && versionIds.length > 0) {
@@ -775,6 +780,14 @@ class TatorData {
         url += "/States/";
       }
     }
+    else if (annotationType == "Medias") {
+      if (outputType == "count") {
+        url += "/MediaCount/";
+      }
+      else {
+        url += "/Medias/";
+      }
+    }
 
     url += `${this._project}?${paramString}`;
     if (!isNaN(listStart) && !isNaN(listStop) && afterMap != null) {
@@ -784,6 +797,10 @@ class TatorData {
       if (pageValues.after != undefined) {
         url += `&after=${pageValues.after}`;
       }
+    }
+
+    if (annotationType == "Medias") {
+      url += "&presigned=28800";
     }
 
     console.log("Getting data with URL: " + url);
@@ -1012,8 +1029,6 @@ class TatorData {
       });
     }
 
-     console.log(stateFilters);
-
     if (typeIds.length > 0) {
       typeIds.forEach(dtypeId => {
         typePromises.push(this._getAnnotationData(
@@ -1035,6 +1050,129 @@ class TatorData {
         outputType,
         "States",
         stateFilters,
+        mediaFilters,
+        listStart,
+        listStop,
+        afterMap,
+        mediaIds,
+        versionIds
+      ));
+    }
+
+    // Wait for all the data requests to complete. Once complete, return the appropriate data.
+    var typeResults = await Promise.all(typePromises);
+    var outData;
+    if (outputType == "count") {
+      outData = 0;
+    }
+    else {
+      outData = [];
+    }
+
+    for (let idx = 0; idx < typeResults.length; idx++) {
+      if (outputType == "count") {
+        outData += Number(typeResults[idx]);
+      }
+      else {
+        outData.push(...typeResults[idx]);
+      }
+    }
+    return outData;
+   }
+  
+  /**
+   * Retrieves a list of media data matching the filter criteria
+   *
+   * @param {string} outputType -
+   *    ids|objects|count
+   *
+   * @param {array of FilterConditionData objects} filters -
+   *    List of FilterConditionData to apply
+   *    Only conditions associated with media and localizations will be applied.
+   *
+   * @param {integer} listStart -
+   *   Used in conjunction with listStop and pagination of data.
+   *   If null, pagination is ignored.
+   *
+   * @param {integer} listStop =
+   *   Used in conjunction with listStart and pagination of data.
+   *   If null, pagination is ignored.
+   *
+   * @param {Map} afterMap -
+   *   Used in conjunction with the other pagination. Modified here.
+   *   If null, pagination is ignored.
+   *
+   * @returns {array of integers}
+   *    List of localization IDs matching the filter criteria
+   */
+   async getFilteredMedias(outputType, filters, listStart, listStop, afterMap) {
+
+    // Loop through the filters, if there are any media specific ones
+    var mediaFilters = [];
+    var localizationFilters = [];
+    var dtypeIds = [];
+    var versionIds = [];
+    var typePromises = [];
+    var mediaIds = [];
+
+    // Separate out the filter conditions into their groups
+    if (Array.isArray(filters)) {
+      filters.forEach(filter => {
+        if (this._mediaTypeNames.indexOf(filter.category) >= 0) {
+          if (filter.field == "_section") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "tator_user_sections";
+            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+            mediaFilters.push(newFilter);
+          }
+          else if (filter.field == "_id") {
+            mediaIds.push(Number(filter.value))
+          }
+          else {
+            mediaFilters.push(filter);
+          }
+        }
+        else if (this._localizationTypeNames.indexOf(filter.category) >= 0) {
+          if (filter.field == "_version") {
+            versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
+          }
+          else if (filter.field == "_dtype") {
+            dtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
+          }
+          else if (filter.field == "_user") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "_user";
+            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            localizationFilters.push(newFilter);
+          }
+          else {
+            localizationFilters.push(filter);
+          }
+        }
+      });
+    }
+
+    if (dtypeIds.length > 0) {
+      dtypeIds.forEach(dtypeId => {
+        typePromises.push(this._getAnnotationData(
+          outputType,
+          "Medias",
+          localizationFilters,
+          mediaFilters,
+          listStart,
+          listStop,
+          afterMap,
+          mediaIds,
+          versionIds,
+          dtypeId
+        ));
+      });
+    }
+    else {
+      typePromises.push(this._getAnnotationData(
+        outputType,
+        "Medias",
+        localizationFilters,
         mediaFilters,
         listStart,
         listStop,

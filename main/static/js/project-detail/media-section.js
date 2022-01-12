@@ -676,6 +676,100 @@ class MediaSection extends TatorElement {
 
     this._reload.addEventListener("click", this.reload.bind(this));
   }
+
+  async updateFilterResults(evt) {
+    console.log(this);
+    this._reload.busy();
+    this._filterConditions = evt.detail.conditions;
+    let noSectionFilter = true;
+
+    console.log(this._filterConditions)
+    for (let index in this._filterConditions) {
+      if (this._filterConditions[index].field == "_section") {
+        noSectionFilter = false;
+        if (typeof this._section !== undefined && this._section !== null) {
+          this._filterConditions[index].value = this._section.id;
+        } else {
+          this._filterConditions.splice(index, 1);
+        }
+      }
+    }
+    
+    if (noSectionFilter == true && typeof this._section !== undefined && this._section !== null) {
+      // add condition this._section.id);
+      const sectionTypeFilter = {
+        category: "Media",
+        categoryGroup: "Media",
+        field: "_section",
+        modifier: "==",
+        value: this._section.id
+      };
+      this._filterConditions.push(sectionTypeFilter);
+    }
+
+    this._filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));
+    window.history.pushState({}, "", this.getURL());
+    console.log(this.getURL());
+
+    const count = await this._modelData.getFilteredMedias(
+      "count",
+      this._filterConditions
+    );
+    
+    this.afterMap = new Map();
+    
+    if (count > 5000) {
+      // this.afterMap #todo
+    }
+    
+    const media = await this._modelData.getFilteredMedias(
+      "objects",
+      this._filterConditions,
+      this._start,
+      this._stop,
+      this.afterMap
+    );
+
+    console.log("SETTING THE _FILES CARD INFO TO::::::::::::::::::::::::::::");
+    console.log(`media with length ${media.length} and count ${count}`)
+    console.log(media);
+
+    this.numMedia = count
+    this._paginator._numFiles = count;
+    this._files.numMedia = count;
+    this._files.startMediaIndex = this._start;
+    this._files.cardInfo = media;
+    this._reload.ready();
+  }
+
+  getURL() {
+    const searchParams = new URLSearchParams(window.location.search);
+    var url = window.location.origin + window.location.pathname;
+    url += "?" + this._queryParams(this._queryParams(searchParams)).toString();
+    return url;
+  }
+
+  _queryParams(params) {
+    if (typeof params == "undefined") {
+      params = new URLSearchParams(window.location.search)
+    }
+    if (this.hasAttribute("_filterURIString")) {
+      params.set("filterConditions", this._filterURIString);
+    }
+    return params;
+  }
+ 
+  getFilterConditionsObject() {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has("filterConditions")) {
+      this._filterURIString = searchParams.get("filterConditions");
+    }
+    if (this.hasAttribute("_filterURIString")) {
+      return JSON.parse(decodeURIComponent(this.getAttribute("_filterURIString")));
+    } else {
+      return [];
+    }
+  }
 }
 
 customElements.define("media-section", MediaSection);

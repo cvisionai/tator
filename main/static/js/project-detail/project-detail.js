@@ -150,6 +150,12 @@ class ProjectDetail extends TatorPage {
     this._search = document.createElement("project-search");
     subheader.appendChild(this._search);
 
+    const filterdiv = document.createElement("div");
+    mainSection.appendChild(filterdiv);
+
+    this._filterView = document.createElement("filter-interface");
+    filterdiv.appendChild(this._filterView);
+
     this._collaborators = document.createElement("project-collaborators");
     subheader.appendChild(this._collaborators);
 
@@ -464,9 +470,12 @@ class ProjectDetail extends TatorPage {
           this._addSavedSearchButton.style.cursor = "not-allowed";
         }
         this._mediaSection.searchString = this._lastQuery;
+        console.log(this._mediaSection.searchString);
         this._mediaSection.reload();
       }
     });
+    
+
   }
 
   static get observedAttributes() {
@@ -636,6 +645,24 @@ class ProjectDetail extends TatorPage {
             card.active = true;
           });
         }
+
+        // Filter interface
+        this._modelData = new TatorData(projectId);
+        this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
+        this._modelData.init().then(() => {
+          this._mediaSection._modelData = this._modelData;
+          this._filterDataView = new FilterData(
+            this._modelData, ["annotation-analytics-view"], ["Media", "Localizations"]);
+          
+          this._filterDataView.init();
+          this._filterView.dataView = this._filterDataView;
+          this._filterView.setFilterConditions(this._mediaSection._filterConditions);
+          
+          // Listen for filter events
+          this._filterView.addEventListener("filterParameters", this._mediaSection.updateFilterResults.bind(this._mediaSection));
+        });
+
+
         // Put "Last visited" bookmark on top
         const first = "Last visited";
         bookmarks.sort((a, b) => {return a.name == first ? -1 : b.name == first ? 1 : 0;});
@@ -778,6 +805,7 @@ class ProjectDetail extends TatorPage {
       .then(data => console.log(data));
     }
   }
+
 }
 
 customElements.define("project-detail", ProjectDetail);
