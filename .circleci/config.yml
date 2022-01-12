@@ -68,7 +68,11 @@ jobs:
         command: make test
     - run:
         name: Front end tests
-        command: pytest test --base-url=http://$TATOR_UNIT_TEST_HOST_IP --browser=chromium --username=admin --password=admin --videos=$HOME -s
+        command: |
+          mkdir $HOME/videos;
+          pytest test --base-url=http://$TATOR_UNIT_TEST_HOST_IP --browser=chromium --username=admin --password=admin --videos=$HOME/videos -s;
+    - store_artifacts:
+        path: $HOME/videos
     - run:
         name: Copy test directories
         command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
