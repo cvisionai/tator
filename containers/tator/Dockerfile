@@ -11,7 +11,7 @@ RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
 RUN pip3 --no-cache-dir --timeout=1000 install pyyaml==5.3.1
 RUN pip3 --no-cache-dir --timeout=1000 install \
-        django==2.2.7 django-enumfields==1.0.0 \
+        django==2.2.7 django-enumfields==1.0.0 jsonschema==4.3.3 \
         psycopg2-binary==2.8.4 pillow==6.2.1 imageio==2.6.1 \
         djangorestframework==3.11.0 pygments==2.4.2 \
         django-extensions==2.2.5 pygraphviz==1.5 \
