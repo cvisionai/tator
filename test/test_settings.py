@@ -261,7 +261,7 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
 
 def test_settings_appletTests(page_factory, project, base_url, html_file):
     print("Applet Settings Tests...")
-    page = page_factory.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     
     # Go to settings
     page.goto(f"/{project}/project-settings")
