@@ -76,7 +76,7 @@ def _get_multi_clone_readiness(media):
     Checks the given multiview's individual media for clones.
     """
     multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
-    media_readiness = [_get_clone_readiness(obj) for obj in multi_qs.iterator()]
+    media_readiness = [_get_clone_readiness(obj, "video") for obj in multi_qs.iterator()]
     return [ele for lst in media_readiness for ele in lst]
 
 

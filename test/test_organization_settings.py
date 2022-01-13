@@ -1,11 +1,12 @@
 import os
 import time
+import inspect
 
 from ._common import print_page_error
 
-def test_organization_settings(authenticated, project, launch_time, image_file, base_url):
+def test_organization_settings(page_factory, project, launch_time, image_file, base_url):
     print("Going to organizations...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/organizations")
     page.on("pageerror", print_page_error)
     name = f"test_front_end_{launch_time}"
@@ -178,5 +179,6 @@ def test_organization_settings(authenticated, project, launch_time, image_file, 
     page.wait_for_selector(f'text="Job Cluster {newClusterId} successfully updated!"')
     page.click('modal-dialog modal-close .modal__close')
     print(f"Cluster id {newClusterId} updated!")
+    page.close()
     
     

@@ -1,5 +1,6 @@
 import os
 import time
+import inspect
 
 
 from ._common import print_page_error
@@ -14,9 +15,9 @@ from ._common import print_page_error
 # - Versions
 # - Algorithm
 # - Created, Edited, Cloned & Edit (Assert all steps) - 7 Attribute types
-def test_settings_projectEdit(authenticated, project, image_file):
+def test_settings_projectEdit(page_factory, project, image_file):
     print("Project Settings Main Tests...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -31,11 +32,12 @@ def test_settings_projectEdit(authenticated, project, image_file):
     page.wait_for_selector(f'text="Project {project} updated successfully!"')
     print(f"Project {project} updated successfully!")
     page.click('modal-dialog modal-close .modal__close')
+    page.close()
 
 
-def test_settings_mediaTypes(authenticated, project):
+def test_settings_mediaTypes(page_factory, project):
     print("Media Types Tests...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -53,10 +55,11 @@ def test_settings_mediaTypes(authenticated, project):
         page.wait_for_selector(f'text="Media type created successfully!"')
         page.click('modal-dialog modal-close .modal__close')
         print(f"{dtypeName} Media type created successfully!")
+    page.close()
     
-def test_settings_localizationTypes(authenticated, project):
+def test_settings_localizationTypes(page_factory, project):
     print("Localization Types Tests...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -78,10 +81,11 @@ def test_settings_localizationTypes(authenticated, project):
         page.wait_for_selector(f'text="Localization type created successfully!"')
         page.click('modal-dialog modal-close .modal__close')
         print(f"{dtypeName} - Localization type created successfully!!")
+    page.close()
 
-def test_settings_leafType(authenticated, project):
+def test_settings_leafType(page_factory, project):
     print("Leaf Type Tests...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -94,9 +98,9 @@ def test_settings_leafType(authenticated, project):
     page.click('modal-dialog modal-close .modal__close')
     print(f"Leaf type created successfully!!")
 
-def test_settings_stateTypes(authenticated, project):
+def test_settings_stateTypes(page_factory, project):
     print("State Type Tests...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -145,11 +149,12 @@ def test_settings_stateTypes(authenticated, project):
     page.click('modal-dialog modal-close .modal__close')
     page.wait_for_selector(f'text="State type created successfully!"')
     print(f"State type created successfully - Association: Frame, Interpolation: Latest")
+    page.close()
 
 
-# def test_settings_projectMemberships(authenticated, project):
+# def test_settings_projectMemberships(page_factory, project):
 #     print("Membership Tests...")
-#     page = authenticated.new_page()
+#     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
 #     page.goto(f"/{project}/project-settings")
 #     page.on("pageerror", print_page_error)
 
@@ -177,10 +182,11 @@ def test_settings_stateTypes(authenticated, project):
 #     page.wait_for_selector(f'text="Membership {memberId} successfully updated!"')
 #     page.click('modal-dialog modal-close .modal__close')
 #     print(f"Membershipship id {memberId} updated successfully!")
+#     page.close()
 
-def test_settings_versionTests(authenticated, project):
+def test_settings_versionTests(page_factory, project):
     print("Version Settings Tests...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -194,10 +200,11 @@ def test_settings_versionTests(authenticated, project):
     page.wait_for_selector(f'text="Created version successfully!"')
     print(f"Version created successfully!!")
     page.click('modal-dialog modal-close .modal__close')
+    page.close()
 
-def test_settings_algorithmTests(authenticated, project, base_url, yaml_file):
+def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     print("Algorithm Settings Tests...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     
     # Requires Cluster
     # - Find org ID first
@@ -249,10 +256,11 @@ def test_settings_algorithmTests(authenticated, project, base_url, yaml_file):
     page.wait_for_selector('text="Successfully registered algorithm argo workflow."')
     page.click('modal-dialog modal-close .modal__close')
     print(f"Successfully registered algorithm argo workflow!")
+    page.close()
 
-def test_settings_attributeTests(authenticated, project):
+def test_settings_attributeTests(page_factory, project):
     print("Attribute Settings...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -304,11 +312,12 @@ def test_settings_attributeTests(authenticated, project):
         assert len(successMessages) == 1
         page.click('modal-dialog modal-close .modal__close')
         print(f'Successfully edited {len(successMessages)} global attribute named {dtypeName}!')
+    page.close()
 
 
 
-def test_settings_projectDelete(authenticated, project):
-    page = authenticated.new_page()
+def test_settings_projectDelete(page_factory, project):
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings")
     page.on("pageerror", print_page_error)
 
@@ -320,3 +329,4 @@ def test_settings_projectDelete(authenticated, project):
     page.click('button:has-text("Confirm")')
     page.wait_for_selector(f'text="Project {project} deleted successfully!"')
     print(f"Project deleted successfully!")
+    page.close()
