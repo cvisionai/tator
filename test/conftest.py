@@ -4,15 +4,42 @@ import time
 import datetime
 import subprocess
 import tarfile
-import shutil
-
 import tempfile
 import pytest
 import requests
+import inspect
 
 import tator
 
 from ._common import get_video_path, download_file, create_media, upload_media_file
+
+class PageFactory:
+    def __init__(self, base_url, browser, browser_context_args, storage, base_path):
+        self.base_url = base_url
+        self.browser = browser
+        self.browser_context_args = browser_context_args
+        self.storage = storage
+        self.base_path = base_path
+        self._logs = []
+
+    def __call__(self, test_name):
+        artifact_path = os.path.join(self.base_path, test_name)
+        os.makedirs(artifact_path, exist_ok=True)
+        page = self.browser.new_page(
+            **self.browser_context_args,
+            base_url=self.base_url,
+            record_video_dir=artifact_path,
+            record_har_path=os.path.join(artifact_path, 'har.json'),
+            locale='en-us',
+            storage_state=self.storage,
+        )
+        log_path = os.path.join(artifact_path, 'console.txt')
+        self._logs.append(open(log_path, 'w'))
+        page.on("console", lambda msg: self._logs[-1].write(f"{msg.location['url']} line "
+                                                            f"{msg.location['lineNumber']} col "
+                                                            f"{msg.location['columnNumber']} ("
+                                                            f"{msg.type}): {msg.text}\n"))
+        return page
 
 def pytest_addoption(parser):
     parser.addoption('--username', help='Username for login page.')
@@ -33,23 +60,26 @@ def launch_time(request):
     yield dt_str
 
 @pytest.fixture(scope='session')
-def authenticated(request, launch_time, base_url, browser_type, browser_type_launch_args,
-                  browser_context_args):
+def chrome(browser_type, browser_type_launch_args):
+    yield browser_type.launch(
+        **browser_type_launch_args,
+        executable_path="/usr/bin/google-chrome",
+    )
+
+@pytest.fixture(scope='session')
+def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     """ Yields a persistent logged in context. """
     print("Logging in...")
     username = request.config.option.username
     password = request.config.option.password
-    videos = os.path.join(request.config.option.videos, launch_time)
-    if os.path.exists("foobar"):
-        shutil.rmtree("foobar")
-    context = browser_type.launch_persistent_context("./foobar", **{
-        **browser_type_launch_args,
+    videos = os.path.join(request.config.option.videos, launch_time, f'{os.path.basename(__file__)}__test_login')
+    os.makedirs(videos, exist_ok=True)
+    context = chrome.new_context(
         **browser_context_args,
-        "base_url": base_url,
-        "record_video_dir": videos,
-        "locale": "en-US",
-        "executable_path": "/usr/bin/google-chrome",
-    })
+        base_url=base_url,
+        record_video_dir=videos,
+        locale="en-US",
+    )
     page = context.new_page()
     page.goto('/')
     page.wait_for_url('/accounts/login/')
@@ -59,15 +89,20 @@ def authenticated(request, launch_time, base_url, browser_type, browser_type_lau
     page.wait_for_url('/projects/')
     yield context
     context.close()
-    shutil.rmtree("./foobar")
 
 @pytest.fixture(scope='session')
-def token(request, authenticated):
+def page_factory(request, launch_time, base_url, chrome, browser_context_args, authenticated):
+    base_path = os.path.join(request.config.option.videos, launch_time)
+    storage = authenticated.storage_state(path="/tmp/state.json")
+    yield PageFactory(base_url, chrome, browser_context_args, storage, base_path)
+
+@pytest.fixture(scope='session')
+def token(request, page_factory):
     """ Token obtained via the API Token page. """
     print("Getting token...")
     username = request.config.option.username
     password = request.config.option.password
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto('/token')
     page.fill('input[type="text"]', username)
     page.fill('input[type="password"]', password)
@@ -78,7 +113,7 @@ def token(request, authenticated):
     yield token
 
 @pytest.fixture(scope='session')
-def project(request, authenticated, launch_time, base_url, token):
+def project(request, page_factory, launch_time, base_url, token):
     """ Project created with setup_project.py script, all options enabled. """
     print("Creating test project with setup_project.py...")
     name = f"test_front_end_{launch_time}"
@@ -94,7 +129,7 @@ def project(request, authenticated, launch_time, base_url, token):
     ]
     subprocess.run(cmd, check=True)
 
-    page = authenticated.new_page()
+    page = page_factory(f'{os.path.basename(__file__)}__token')
     page.goto('/projects')
     page.wait_for_selector(f'text="{name}"')
     summaries = page.query_selector_all('project-summary')
@@ -107,9 +142,9 @@ def project(request, authenticated, launch_time, base_url, token):
     yield project_id
 
 @pytest.fixture(scope='session')
-def video_section(request, authenticated, project):
+def video_section(request, page_factory, project):
     print("Creating video section...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f'/{project}/project-detail')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Videos')
@@ -119,9 +154,9 @@ def video_section(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
-def slow_video_section(request, authenticated, project):
+def slow_video_section(request, page_factory, project):
     print("Creating video section...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f'/{project}/project-detail')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Slow Videos')
@@ -131,9 +166,9 @@ def slow_video_section(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
-def video_section2(request, authenticated, project):
+def video_section2(request, page_factory, project):
     print("Creating video section...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f'/{project}/project-detail')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Videos 2')
@@ -143,9 +178,9 @@ def video_section2(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
-def video_section3(request, authenticated, project):
+def video_section3(request, page_factory, project):
     print("Creating video section...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f'/{project}/project-detail')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Videos 3')
@@ -155,9 +190,9 @@ def video_section3(request, authenticated, project):
     yield section
 
 @pytest.fixture(scope='session')
-def image_section(request, authenticated, project):
+def image_section(request, page_factory, project):
     print("Creating image section...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f'/{project}/project-detail')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Images')
@@ -208,9 +243,9 @@ def video_file(request):
     yield out_path
 
 @pytest.fixture(scope='session')
-def video(request, authenticated, project, video_section, video_file):
+def video(request, page_factory, project, video_section, video_file):
     print("Uploading a video...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section}")
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
@@ -235,9 +270,9 @@ def slow_video_file(request, video_file):
     yield out_path
 
 @pytest.fixture(scope='session')
-def slow_video(request, authenticated, project, slow_video_section, slow_video_file):
+def slow_video(request, page_factory, project, slow_video_section, slow_video_file):
     print("Uploading a video...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={slow_video_section}")
     page.set_input_files('section-upload input', slow_video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
@@ -254,9 +289,9 @@ def slow_video(request, authenticated, project, slow_video_section, slow_video_f
     yield video
 
 @pytest.fixture(scope='session')
-def video2(request, authenticated, project, video_section2, video_file):
+def video2(request, page_factory, project, video_section2, video_file):
     print("Uploading a video...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section2}")
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
@@ -273,9 +308,9 @@ def video2(request, authenticated, project, video_section2, video_file):
     yield video
 
 @pytest.fixture(scope='session')
-def video3(request, authenticated, project, video_section3, video_file):
+def video3(request, page_factory, project, video_section3, video_file):
     print("Uploading a video...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section3}")
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
@@ -315,9 +350,9 @@ def image_file(request):
     yield out_path
 
 @pytest.fixture(scope='session')
-def image(request, authenticated, project, image_section, image_file):
+def image(request, page_factory, project, image_section, image_file):
     print("Uploading an image...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={image_section}")
     page.set_input_files('section-upload input', image_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
