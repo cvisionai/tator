@@ -1,5 +1,6 @@
 import os
 import time
+import inspect
 
 from ._common import print_page_error
 
@@ -67,29 +68,31 @@ def common_annotation(page, canvas, bias=0):
         light.wait_for_element_state('hidden')
 
 
-def test_video_annotation(authenticated, project, video):
+def test_video_annotation(page_factory, project, video):
     print("[Video] Going to annotation view...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
     page.goto(f"/{project}/annotation/{video}")
     page.on("pageerror", print_page_error)
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector('video-canvas')
     common_annotation(page, canvas)
+    page.close()
     
-def test_image_annotation(authenticated, project, image):
+def test_image_annotation(page_factory, project, image):
     print("[Image] Going to annotation view...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
     page.goto(f"/{project}/annotation/{image}")
     page.on("pageerror", print_page_error)
     page.wait_for_selector('image-canvas')
     canvas = page.query_selector('image-canvas')
     common_annotation(page, canvas)
+    page.close()
 
-def test_multi_annotation(authenticated, project, multi):
+def test_multi_annotation(page_factory, project, multi):
     print("[Multi] Going to annotation view...")
-    page = authenticated.new_page()
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Multi requires a decent screen
     page.goto(f"/{project}/annotation/{multi}")
     page.on("pageerror", print_page_error)
@@ -99,3 +102,4 @@ def test_multi_annotation(authenticated, project, multi):
     assert(len(canvas) == 2)
     common_annotation(page, canvas[0])
     common_annotation(page, canvas[1], bias=3)
+    page.close()

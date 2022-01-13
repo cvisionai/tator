@@ -4,8 +4,6 @@ import time
 import datetime
 import subprocess
 import tarfile
-import shutil
-
 import tempfile
 import pytest
 import requests
@@ -13,6 +11,34 @@ import requests
 import tator
 
 from ._common import get_video_path, download_file, create_media, upload_media_file
+
+class PageFactory:
+    def __init__(self, base_url, browser, browser_context_args, storage, base_path):
+        self.base_url = base_url
+        self.browser = browser
+        self.browser_context_args = browser_context_args
+        self.storage = storage
+        self.base_path = base_path
+        self._logs = []
+
+    def __call__(self, test_name):
+        artifact_path = os.path.join(self.base_path, test_name)
+        os.makedirs(artifact_path, exist_ok=True)
+        page = self.browser.new_page(
+            **self.browser_context_args,
+            base_url=self.base_url,
+            record_video_dir=artifact_path,
+            record_har_path=os.path.join(artifact_path, 'har.json'),
+            locale='en-us',
+            storage_state=self.storage,
+        )
+        log_path = os.path.join(artifact_path, 'console.txt')
+        self._logs.append(open(log_path, 'w'))
+        page.on("console", lambda msg: self._logs[-1].write(f"{msg.location['url']} line "
+                                                            f"{msg.location['lineNumber']} col "
+                                                            f"{msg.location['columnNumber']} ("
+                                                            f"{msg.type}): {msg.text}"))
+        return page
 
 def pytest_addoption(parser):
     parser.addoption('--username', help='Username for login page.')
@@ -33,23 +59,27 @@ def launch_time(request):
     yield dt_str
 
 @pytest.fixture(scope='session')
-def authenticated(request, launch_time, base_url, browser_type, browser_type_launch_args,
-                  browser_context_args):
+def chrome(browser_type, browser_type_launch_args):
+    return browser_type.launch(
+        **browser_type_launch_args,
+        executable_path="/usr/bin/google-chrome",
+    )
+
+@pytest.fixture(scope='session')
+def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     """ Yields a persistent logged in context. """
     print("Logging in...")
     username = request.config.option.username
     password = request.config.option.password
-    videos = os.path.join(request.config.option.videos, launch_time)
-    if os.path.exists("foobar"):
-        shutil.rmtree("foobar")
-    context = browser_type.launch_persistent_context("./foobar", **{
-        **browser_type_launch_args,
+    videos = os.path.join(request.config.option.videos, launch_time, 'test_login')
+    os.makedirs(videos, exist_ok=True)
+    context = chrome.new_context(
         **browser_context_args,
-        "base_url": base_url,
-        "record_video_dir": videos,
-        "locale": "en-US",
-        "executable_path": "/usr/bin/google-chrome",
-    })
+        base_url=base_url,
+        record_video_dir=videos,
+        record_har_path=os.path.join(videos, 'har.json'),
+        locale="en-US",
+    )
     page = context.new_page()
     page.goto('/')
     page.wait_for_url('/accounts/login/')
@@ -59,7 +89,12 @@ def authenticated(request, launch_time, base_url, browser_type, browser_type_lau
     page.wait_for_url('/projects/')
     yield context
     context.close()
-    shutil.rmtree("./foobar")
+
+@pytest.fixture(scope='session')
+def page_factory(request, launch_time, base_url, chrome, browser_context_args, authenticated):
+    base_path = os.path.join(request.config.option.videos, launch_time)
+    storage = authenticated.storage_state(path="/tmp/state.json")
+    yield PageFactory(base_url, chrome, browser_context_args, storage, base_path)
 
 @pytest.fixture(scope='session')
 def token(request, authenticated):
