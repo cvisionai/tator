@@ -53,7 +53,7 @@ file_update = {
         **file_shared_properties,
         file_fields.path: {
             "type": "string",
-            "description": "Server path to file"
+            "description": "Relative URL to the file"
         },
     }
 }
@@ -87,6 +87,10 @@ file = {
         file_fields.modified_by: {
             'type': 'integer',
             'description': 'User who last edited this file'
+        },
+        file_fields.path: {
+            "type": "string",
+            "description": "Relative URL to the file"
         },
         **file_post_properties
     },

@@ -12,6 +12,7 @@ from ..models import FileType
 from ..models import User
 from ..models import database_qs
 from ..models import safe_delete
+from ..models import drop_file_from_resource
 from ..search import TatorSearch
 from ..schema import FileListSchema
 from ..schema import FileDetailSchema
@@ -118,11 +119,14 @@ class FileDetailAPI(BaseDetailView):
     def _delete(self, params: dict) -> dict:
         # Grab the file object and delete it from the database
         obj = File.objects.get(pk=params[fields.id])
-        file_param = obj.path
 
         # Delete the correlated file
-        path = os.path.join(settings.MEDIA_ROOT, file_param.name)
-        safe_delete(path=path)
+        local_path = os.path.join(settings.MEDIA_ROOT, obj.path.name)
+        if os.path.exists(local_path):
+            safe_delete(path=local_path)
+        else:
+            drop_file_from_resource(obj.path.path, obj)
+            safe_delete(obj.path)
 
         # Delete ES document
         TatorSearch().delete_document(obj)
@@ -149,13 +153,15 @@ class FileDetailAPI(BaseDetailView):
         if description is not None:
             obj.description = description
 
-        file_path = params.get(fields.path, None)
-        if file_path is not None:
-            obj.path = delete_path
-            check_file_resource_prefix(file_path, obj)
-            Resource.add_resource(file_path, None, obj)
-            obj.path = file_path
-            safe_delete(path=delete_path)
+        new_path = params.get(fields.path, None)
+        if new_path is not None:
+            old_path = obj.path
+            check_file_resource_prefix(new_path, obj)
+            if old_path != new_path:
+                drop_file_from_resource(old_path, obj)
+                safe_delete(old_path)
+                Resource.add_resource(new_path, None, obj)
+                obj.path = new_path
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)

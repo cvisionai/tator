@@ -2920,7 +2920,6 @@ class ResourceTestCase(APITestCase):
         )
         self.file_entity_type = FileType.objects.create(
             name="TestFileType",
-            dtype="file",
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
@@ -2973,67 +2972,61 @@ class ResourceTestCase(APITestCase):
             m.delete()
 
     def test_generic_files(self):
-        # Create then patch three File objects, all sharing the same file.
-        # Make sure the key exist.
-        # Delete one File.
-        # Make sure the key exists.
-        # Patch one file to point to a new file.
-        # Make sure both keys exist.
-        # Delete both files.
-        # Make sure no keys exists.
+        # Create File1 and patch with key1
+        # Create File2 and patch with key2
+        # Make sure the key1 and key2 exist.
+        # Patch File1 with key3
+        # Make sure key3 exists.
+        # Make sure key1 exists.
+        # Delete File1
+        # Delete File2
+        # Make sure no keys exist
 
         file1 = create_test_file(
             name="File1", entity_type=self.file_entity_type, project=self.project)
         file2 = create_test_file(
             name="File2", entity_type=self.file_entity_type, project=self.project)
-        file3 = create_test_file(
-            name="File3", entity_type=self.file_entity_type, project=self.project)
 
         key1 = self._random_file_store_obj(file1)
+        key2 = self._random_file_store_obj(file2)
+
         file_patch_spec = {
             "path": key1
         }
-
         response = self.client.patch(f"/rest/File/{file1.id}", file_patch_spec, format="json")
+        print(vars(response))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file1.id}")
-        self.assertTrue(self._store_obj_exists(response.path))
-
-        response = self.client.patch(f"/rest/File/{file2.id}", file_patch_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/File/{file2.id}")
-        self.assertTrue(self._store_obj_exists(response.path))
-
-        response = self.client.patch(f"/rest/File/{file3.id}", file_patch_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/File/{file3.id}")
-        self.assertTrue(self._store_obj_exists(response.path))
-
-        response = self.client.delete(f"/rest/File/{file1.id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self.client.get(f"/rest/File/{file2.id}")
-        self.assertTrue(self._store_obj_exists(response.path))
-        response = self.client.get(f"/rest/File/{file3.id}")
-        self.assertTrue(self._store_obj_exists(response.path))
-
-        key2 = self._random_file_store_obj(file2)
+        self.assertTrue(self._store_obj_exists(response.data["path"]))
+        
         file_patch_spec = {
             "path": key2
         }
-
         response = self.client.patch(f"/rest/File/{file2.id}", file_patch_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file2.id}")
-        self.assertTrue(self._store_obj_exists(response.path))
-        response = self.client.get(f"/rest/File/{file3.id}")
-        self.assertTrue(self._store_obj_exists(response.path))
+        self.assertTrue(self._store_obj_exists(response.data["path"]))
+
+        key3 = self._random_file_store_obj(file1)
+        file_patch_spec = {
+            "path": key3
+        }
+        response = self.client.patch(f"/rest/File/{file1.id}", file_patch_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/File/{file1.id}")
+        self.assertEqual(key3, response.data["path"])
+        self.assertTrue(self._store_obj_exists(response.data["path"]))
+        self.assertTrue(self._store_obj_exists(key1))
+
+        response = self.client.delete(f"/rest/File/{file1.id}", format='json')
+        print(vars(response))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(self._store_obj_exists(key1))
+        self.assertFalse(self._store_obj_exists(key3))
 
         response = self.client.delete(f"/rest/File/{file2.id}", format='json')
-        self.assertTrue(self._store_obj_exists(key1))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(self._store_obj_exists(key2))
-
-        response = self.client.delete(f"/rest/File/{file3.id}", format='json')
-        self.assertFalse(self._store_obj_exists(key3))
 
     def test_files(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
