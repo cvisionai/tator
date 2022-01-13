@@ -119,7 +119,7 @@ def get_jobs(selector, cache):
     clusters = _get_clusters(cache)
     jobs = []
     for cluster in clusters:
-        api = _get_api(cluster) 
+        api = _get_api(cluster)
         try:
             response = api.list_namespaced_custom_object(
                 group='argoproj.io',
@@ -196,7 +196,7 @@ class JobManagerMixin:
                 )
                 break
             except ApiException:
-                logger.info(f"Failed to submit workflow:")
+                logger.info(f"Failed to submit workflow:", exc_info=True)
                 logger.info(f"{manifest}")
                 time.sleep(SUBMIT_RETRY_BACKOFF)
         if num_retries == (MAX_SUBMIT_RETRIES - 1):
