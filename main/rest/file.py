@@ -121,20 +121,19 @@ class FileDetailAPI(BaseDetailView):
         obj = File.objects.get(pk=params[fields.id])
 
         # Delete the correlated file
-        local_path = os.path.join(settings.MEDIA_ROOT, obj.path.name)
-        if os.path.exists(local_path):
-            safe_delete(path=local_path)
+        if os.path.exists(obj.path.path):
+            safe_delete(path=obj.path.path)
         else:
-            drop_file_from_resource(obj.path.path, obj)
-            safe_delete(obj.path)
+            drop_file_from_resource(obj.path.name, obj)
+            safe_delete(obj.path.name)
 
         # Delete ES document
         TatorSearch().delete_document(obj)
+        msg = f'Registered file deleted successfully! {obj.path.path} {obj.path.name}'
 
         # Delete from database
         obj.delete()
 
-        msg = 'Registered file deleted successfully!'
         return {'message': msg}
 
     def _get(self, params):
@@ -155,7 +154,7 @@ class FileDetailAPI(BaseDetailView):
 
         new_path = params.get(fields.path, None)
         if new_path is not None:
-            old_path = obj.path
+            old_path = obj.path.name
             check_file_resource_prefix(new_path, obj)
             if old_path != new_path:
                 drop_file_from_resource(old_path, obj)

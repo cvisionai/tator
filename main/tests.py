@@ -2972,15 +2972,20 @@ class ResourceTestCase(APITestCase):
             m.delete()
 
     def test_generic_files(self):
-        # Create File1 and patch with key1
-        # Create File2 and patch with key2
-        # Make sure the key1 and key2 exist.
-        # Patch File1 with key3
-        # Make sure key3 exists.
-        # Make sure key1 exists.
-        # Delete File1
-        # Delete File2
-        # Make sure no keys exist
+        """
+        Test procedure:
+        - Create File1 and patch with key1
+        - Assert key1 exists
+        - Create File2 and patch with key2
+        - Assert key2 exists
+        - Patch File1 with key3
+        - Assert key3 exists.
+        - Assert key1 does not exist.
+        - Delete File1
+        - Assert key3 does not exist.
+        - Delete File2
+        - Assert key2 does not exist.
+        """
 
         file1 = create_test_file(
             name="File1", entity_type=self.file_entity_type, project=self.project)
@@ -2988,17 +2993,15 @@ class ResourceTestCase(APITestCase):
             name="File2", entity_type=self.file_entity_type, project=self.project)
 
         key1 = self._random_file_store_obj(file1)
-        key2 = self._random_file_store_obj(file2)
-
         file_patch_spec = {
             "path": key1
         }
         response = self.client.patch(f"/rest/File/{file1.id}", file_patch_spec, format="json")
-        print(vars(response))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file1.id}")
         self.assertTrue(self._store_obj_exists(response.data["path"]))
-        
+
+        key2 = self._random_file_store_obj(file2)
         file_patch_spec = {
             "path": key2
         }
@@ -3016,12 +3019,10 @@ class ResourceTestCase(APITestCase):
         response = self.client.get(f"/rest/File/{file1.id}")
         self.assertEqual(key3, response.data["path"])
         self.assertTrue(self._store_obj_exists(response.data["path"]))
-        self.assertTrue(self._store_obj_exists(key1))
+        self.assertFalse(self._store_obj_exists(key1))
 
         response = self.client.delete(f"/rest/File/{file1.id}", format='json')
-        print(vars(response))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(self._store_obj_exists(key1))
         self.assertFalse(self._store_obj_exists(key3))
 
         response = self.client.delete(f"/rest/File/{file2.id}", format='json')
