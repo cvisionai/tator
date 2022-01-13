@@ -36,7 +36,6 @@ class FilterData {
       this.skipTypeIds = skipTypeIds;
     }
   }
-
   /**
    * @precondition The provided modelData must have been initialized
    */
@@ -48,7 +47,6 @@ class FilterData {
     this.versions = this._modelData.getStoredVersions();
     this.sections = this._modelData.getStoredSections();
     this.users = this._modelData.getStoredMemberships();
-
     this.algorithms = [];
     var algorithms = this._modelData.getStoredAlgorithms();
 
@@ -88,11 +86,14 @@ class FilterData {
 
     // Allow options to filter by users
     var userNames = [];
+    var userFirstLastNames = [];
     for (let idx = 0; idx < this.users.length; idx++) {
       let user = this.users[idx];
       userNames.push(`${user.username} (ID:${user.user})`);
+      userFirstLastNames.push(`${user.first_name} ${user.last_name}`);
     }
     userNames.sort();
+    userFirstLastNames.sort();
 
     // Versions aren't typically part of the localization type's user attribute list.
     // Pretend that it's an attribute with the name _version and apply it to each
@@ -242,6 +243,13 @@ class FilterData {
             dtype: "enum"
           }
           entityType.attribute_types.push(typeAttribute);
+
+          var modifiedByAttribute = {
+            choices: userFirstLastNames,
+            name: "_modified_by",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(modifiedByAttribute);
 
           this._allTypes.push(entityType);
         }

@@ -622,10 +622,10 @@ class TatorData {
     else if (modifier == "OR") {
       modifier = "";
       doNotReplace = true;
-    } else if(modifier == "NOT"){
+    } else if (modifier == "NOT ==") {
       modifier = "";
-      modifierStart = "NOT ";
-      doNotReplace = true;    
+      modifierStart = "NOT("
+      modifierEnd = ")";
     }
 
     if (!doNotReplace) {
@@ -694,13 +694,7 @@ class TatorData {
       var filter = finalAnnotationFilters[idx];
       annotationSearch += encodeURIComponent(filter);
       if (idx < finalAnnotationFilters.length - 1) {
-        if (filter.indexOf("NOT") > -1) {
-          console.log(`filter.indexOf("NOT") = ${filter.indexOf("NOT")}`)
-          annotationSearch += encodeURIComponent(" NOT ");
-        } else {
-          annotationSearch += encodeURIComponent(" AND ");
-        }
-        
+        annotationSearch += encodeURIComponent(" AND ");        
       }
     }
 
