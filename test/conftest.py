@@ -37,7 +37,7 @@ class PageFactory:
         page.on("console", lambda msg: self._logs[-1].write(f"{msg.location['url']} line "
                                                             f"{msg.location['lineNumber']} col "
                                                             f"{msg.location['columnNumber']} ("
-                                                            f"{msg.type}): {msg.text}"))
+                                                            f"{msg.type}): {msg.text}\n"))
         return page
 
 def pytest_addoption(parser):
