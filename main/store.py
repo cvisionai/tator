@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import timedelta
+from datetime import datetime, timedelta
 from enum import Enum
 import json
 import os
@@ -14,6 +14,10 @@ from google.cloud import storage
 from google.oauth2.service_account import Credentials
 
 logger = logging.getLogger(__name__)
+
+
+ARCHIVE_KEY = "archive"
+PATH_KEYS = ["streaming", "archival", "audio", "image"]
 
 
 class ObjectStore(Enum):
@@ -210,6 +214,14 @@ class TatorStorage(ABC):
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
         """ Moves the object into the desired storage class """
 
+    @abstractmethod
+    def _object_tagged_for_archive(self, path):
+        """ Returns True if an object is tagged in storage for archive """
+
+    @abstractmethod
+    def _put_archive_tag(self, path):
+        """ Adds tag to object marking it for archival. """
+
     def archive_object(self, path: str) -> bool:
         """
         Moves the object to the archive storage class, if necessary. Returns true if the storage
@@ -222,19 +234,16 @@ class TatorStorage(ABC):
         if response.get("StorageClass", "") == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
+        if self._object_tagged_for_archive(path):
+            logger.info(f"Object {path} already tagged for archive, skipping")
+            return True
 
         try:
-            self._update_storage_class(path, archive_storage_class)
+            self._put_archive_tag(path)
         except:
-            logger.warning(f"Exception while archiving object {path}", exc_info=True)
-        response = self.head_object(path)
-        if not response:
-            logger.warning(f"Could not confirm storage class change for {path}")
-            return False
-        if response.get("StorageClass", "") != archive_storage_class:
-            logger.warning(f"Archiving object {path} failed")
-            return False
-        return True
+            logger.warning(f"Exception while tagging object {path} for archive", exc_info=True)
+
+        return self._object_tagged_for_archive(path)
 
     @abstractmethod
     def _restore_object(self, path: str, desired_storage_class: str, min_exp_days: int) -> None:
@@ -333,6 +342,33 @@ class TatorStorage(ABC):
             return False
         return True
 
+    def paths_from_media(self, media):
+        if media.meta.dtype == "multi":
+            return self._paths_from_multi(media)
+        return self._paths_from_single(media)
+
+    def _paths_from_multi(self, multi):
+        media_ids = multi.media_files.get("ids")
+
+        if not media_ids:
+            return []
+
+        media_qs = Media.objects.filter(pk__in=media_ids)
+        return [ele for obj in media_qs.iterator() for ele in self._paths_from_single(obj)]
+
+    def _paths_from_single(self, media):
+        paths = []
+        for key in PATH_KEYS:
+            if key not in media.media_files:
+                continue
+
+            for obj in media.media_files[key]:
+                paths.append(obj["path"])
+                if key == "streaming":
+                    paths.append(obj["segment_info"])
+
+        return paths
+
 
 class MinIOStorage(TatorStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
@@ -341,6 +377,24 @@ class MinIOStorage(TatorStorage):
 
     def check_key(self, path):
         return bool(self.list_objects_v2(self._path_to_key(path)))
+
+    def _object_tagged_for_archive(self, path):
+        tag_set = self.client.get_object_tagging(
+            Bucket=self.bucket_name, Key=self._path_to_key(path)
+        ).get("TagSet", [])
+
+        for tag in tag_set:
+            if tag["Key"] == ARCHIVE_KEY:
+                return True
+
+        return False
+
+    def _put_archive_tag(self, path):
+        self.client.put_object_tagging(
+            Bucket=self.bucket_name,
+            Key=self._path_to_key(path),
+            Tagging={"TagSet": [{"Key": ARCHIVE_KEY, "Value": "true"}]},
+        )
 
     def _head_object(self, path):
         return self.client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
@@ -485,6 +539,15 @@ class GCPStorage(TatorStorage):
         blob = self._get_blob(path)
         return {"ContentLength": blob.size, "StorageClass": blob.storage_class}
 
+    def _object_tagged_for_archive(self, path):
+        blob = self._get_blob(path)
+        return blob.custom_time is not None
+
+    def _put_archive_tag(self, path):
+        blob = self._get_blob(path)
+        blob.custom_time = datetime.now()
+        blob.patch()
+
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(
             blob=self._get_blob(path),
@@ -553,6 +616,7 @@ class GCPStorage(TatorStorage):
         self._get_blob(path).update_storage_class(desired_storage_class)
 
     def _restore_object(self, path, desired_storage_class, min_exp_days):
+        # TODO determine if we need to update the `current_time` field
         self._update_storage_class(path, desired_storage_class)
 
 
