@@ -387,19 +387,15 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
         response = store.head_object(path)
         return response.get("StorageClass", "STANDARD") != store.get_archive_sc()
 
-    def _update_sc(path, store):
+    def _update_tag(path, store):
         if live_run:
             try:
-                store.copy(
-                    path,
-                    path,
-                    {"StorageClass": store.get_archive_sc(), "MetadataDirective": "COPY"},
-                )
+                store._put_archive_tag(path)
             except:
-                logger.warning(f"Copy operation on {path} failed", exc_info=True)
+                logger.warning(f"Tag operation on {path} failed", exc_info=True)
                 return False
         else:
-            media_to_update.append(f"{store.bucket_name},{store.path_to_key(path)}\n")
+            media_to_update.append(f"{path}\n")
 
         return True
 
@@ -436,14 +432,14 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
                 if _sc_needs_updating(path, store):
                     sc_needs_updating = True
                     try:
-                        success = _update_sc(path, store) and success
+                        success = _update_tag(path, store) and success
                     except:
                         logger.warning(f"Copy operation on {path} from {single.id} failed", exc_info=True)
                         success = False
 
                     if key == "streaming":
                         try:
-                            success = _update_sc(obj["segment_info"], store) and success
+                            success = _update_tag(obj["segment_info"], store) and success
                         except:
                             success = False
 
@@ -471,7 +467,6 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
             "successfully_archived": 0,
             "failed": 0,
         }
-        step = 250
         for media in archived_media_qs.iterator():
             if not media.meta:
                 logger.warning(f"No dtype for '{media.id}'")
