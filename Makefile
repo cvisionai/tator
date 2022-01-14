@@ -364,6 +364,7 @@ FILES = \
     project-settings/data/data-project-types.js \
     project-settings/data/data-version-list.js \
     project-settings/type-forms/type-form.js \
+    project-settings/type-forms/applet-edit.js \
     project-settings/type-forms/dashboard-edit.js \
     project-settings/type-forms/algorithm-edit.js \
     project-settings/type-forms/leaf-type-edit.js \
