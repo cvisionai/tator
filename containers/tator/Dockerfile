@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 MAINTAINER CVision AI <info@cvisionai.com>
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -16,13 +16,14 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         djangorestframework==3.11.0 pygments==2.4.2 \
         django-extensions==2.2.5 pygraphviz==1.5 \
         pyparsing==2.4.5 pydot==1.4.1 markdown==3.1.1 \
-        hiredis==1.0.0 redis==3.3.11 \
-        gunicorn==20.0.0 django_admin_json_editor==0.2.0 django-ltree==0.4 \
+        hiredis==1.0.0 redis==3.3.11 greenlet==1.1.0 \
+        gunicorn==20.1.0 django_admin_json_editor==0.2.0 django-ltree==0.4 \
         requests==2.22.0 python-dateutil==2.8.1 ujson==1.35 slackclient==2.3.1 \
         google-auth==1.28.0 elasticsearch==7.1.0 progressbar2==3.47.0 \
-        gevent==1.4.0 uritemplate==3.0.1 pylint pylint-django \
+        gevent==21.1.2 uritemplate==3.0.1 pylint pylint-django \
         django-cognito-jwt==0.0.3 boto3==1.17.84 \
-        google-cloud-storage==1.37.1 datadog==0.41.0
+        google-cloud-storage==1.37.1 datadog==0.41.0 \
+        kubernetes==21.7.0
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
@@ -37,12 +38,6 @@ RUN mv kubectl /usr/local/bin/.
 WORKDIR /working
 RUN git clone https://github.com/jrtcppv/openapi-core.git
 WORKDIR /working/openapi-core
-RUN python3 setup.py install
-
-# Install kubernetes client
-WORKDIR /working
-RUN git clone --branch release-10.0 --recursive https://github.com/kubernetes-client/python
-WORKDIR /working/python
 RUN python3 setup.py install
 
 # Copy over the project

@@ -3,6 +3,7 @@ from ._common import print_page_error
 import os
 import cv2
 import tempfile
+import inspect
 import time
 import pytesseract
 import numpy as np
@@ -48,9 +49,9 @@ def _wait_for_frame(canvas, frame, timeout=30):
     time.sleep(1)
   assert canvas_frame == frame, f"canvas={canvas_frame}, expected={frame}"
 
-def test_playback_accuracy(authenticated, project, count_test):
+def test_playback_accuracy(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
-  page = authenticated.new_page()
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
   page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720")
   page.on("pageerror", print_page_error)
@@ -104,13 +105,14 @@ def test_playback_accuracy(authenticated, project, count_test):
   page.keyboard.press("Space")
   new_frame = _get_canvas_frame(canvas)
   assert(new_frame > canvas_frame)
+  page.close()
 
 
 
 
-def test_playback_accuracy_multi(authenticated, project, multi_count):
+def test_playback_accuracy_multi(page_factory, project, multi_count):
   print("[Multi] Going to annotation view...(Accuracy)")
-  page = authenticated.new_page()
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
   page.goto(f"/{project}/annotation/{multi_count}?scrubQuality=360&seekQuality=720&playQuality=720")
   page.on("pageerror", print_page_error)
@@ -157,11 +159,12 @@ def test_playback_accuracy_multi(authenticated, project, multi_count):
   assert(int(display_div.inner_text())==canvas_frame)
   canvas_frame = _get_canvas_frame(canvas[1])
   assert(int(display_div.inner_text())==canvas_frame)
+  page.close()
 
-def test_small_res_file(authenticated, project, small_video):
+def test_small_res_file(page_factory, project, small_video):
   # Tests play, scrub, and seek buffer usage
   print("[Video] Going to annotation view...")
-  page = authenticated.new_page()
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
   page.goto(f"/{project}/annotation/{small_video}")
   page.on("pageerror", print_page_error)
@@ -172,11 +175,12 @@ def test_small_res_file(authenticated, project, small_video):
 
   # Wait for hq buffer and verify it is blue
   _wait_for_color(canvas, 2, timeout=30)
+  page.close()
 
-def test_buffer_usage_single(authenticated, project, rgb_test):
+def test_buffer_usage_single(page_factory, project, rgb_test):
   # Tests play, scrub, and seek buffer usage
   print("[Video] Going to annotation view...")
-  page = authenticated.new_page()
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
   page.goto(f"/{project}/annotation/{rgb_test}?scrubQuality=360&seekQuality=1080&playQuality=720")
   page.on("pageerror", print_page_error)
@@ -212,11 +216,12 @@ def test_buffer_usage_single(authenticated, project, rgb_test):
   # Release the scrub
   page.mouse.up()
   _wait_for_color(canvas, 0, timeout=30)
+  page.close()
 
-def test_buffer_usage_multi(authenticated, project, multi_rgb):
+def test_buffer_usage_multi(page_factory, project, multi_rgb):
   # Tests play, scrub, and seek buffer usage
   print("[Multi] Going to annotation view...")
-  page = authenticated.new_page()
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
   page.goto(f"/{project}/annotation/{multi_rgb}?scrubQuality=360&seekQuality=1080&playQuality=720")
   page.on("pageerror", print_page_error)
@@ -257,6 +262,7 @@ def test_buffer_usage_multi(authenticated, project, multi_rgb):
   page.mouse.up()
   _wait_for_color(canvas[0], 0, timeout=30)
   _wait_for_color(canvas[1], 0, timeout=30)
+  page.close()
   
   
 
@@ -264,12 +270,12 @@ def test_buffer_usage_multi(authenticated, project, multi_rgb):
 """
 This test would be good, but doesn't work because playback isn't performant enough in test runner
 
-def test_audiosync(authenticated, project, slow_video):
+def test_audiosync(page_factory, project, slow_video):
   # Tests audio sync as reported by watchdog thread
   # TODO: Consider a longer video than the audio video sync test
   # NOTE: This uses a 5fps video because playback was kind of lousy in the test runner
   print("[Video] Going to annotation view...")
-  page = authenticated.new_page()
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
   page.goto(f"/{project}/annotation/{slow_video}?scrubQuality=360&seekQuality=1080&playQuality=720")
   page.on("pageerror", print_page_error)
