@@ -519,9 +519,11 @@ class MediaListAPI(BaseListView):
                     archive_ids_to_update = [o.id for o in archive_objs]
                     archive_count += len(archive_ids_to_update)
                     previously_updated += archive_ids_to_update
+                    dt_now = datetime.datetime.now(datetime.timezone.utc)
                     archive_qs.update(
+                        archive_status_date=dt_now,
                         archive_state=next_archive_state,
-                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                        modified_datetime=dt_now,
                     )
                     archive_qs = Media.objects.filter(pk__in=archive_ids_to_update)
 
@@ -658,9 +660,11 @@ class MediaDetailAPI(BaseDetailView):
                 )
 
                 if next_archive_state is not None:
+                    dt_now = datetime.datetime.now(datetime.timezone.utc)
                     qs.update(
+                        archive_status_date=dt_now,
                         archive_state=next_archive_state,
-                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
+                        modified_datetime=dt_now,
                     )
 
         obj = Media.objects.get(pk=params['id'], deleted=False)

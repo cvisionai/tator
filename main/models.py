@@ -979,6 +979,7 @@ class Media(Model, ModelDiffMixin):
     media_files = JSONField(null=True, blank=True)
     deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
+    archive_status_date = DateTimeField(auto_now_add=True, null=True, blank=True)
     archive_state = CharField(
         max_length=16,
         choices=[
