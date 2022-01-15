@@ -36,7 +36,6 @@ class FilterData {
       this.skipTypeIds = skipTypeIds;
     }
   }
-
   /**
    * @precondition The provided modelData must have been initialized
    */
@@ -48,7 +47,6 @@ class FilterData {
     this.versions = this._modelData.getStoredVersions();
     this.sections = this._modelData.getStoredSections();
     this.users = this._modelData.getStoredMemberships();
-
     this.algorithms = [];
     var algorithms = this._modelData.getStoredAlgorithms();
 

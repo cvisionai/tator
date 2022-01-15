@@ -13,14 +13,10 @@ file_fields = SimpleNamespace(
     attributes="attributes",
     meta="meta")
 
-file_update_properties = {
+file_shared_properties = {
     file_fields.name: {
         "type": "string",
         "description": "Name of file"
-    },
-    file_fields.path: {
-        "type": "string",
-        "description": "Server path to file"
     },
     file_fields.description: {
         "type": "string",
@@ -34,7 +30,7 @@ file_update_properties = {
 }
 
 file_post_properties = {
-    **file_update_properties,
+    **file_shared_properties,
     file_fields.meta: {
         'type': 'integer',
         'description': 'Unique integer identifying FileType of this File object.',
@@ -54,7 +50,11 @@ file_update = {
     "type": "object",
     "description": "Non-media file spec.",
     "properties": {
-        **file_update_properties
+        **file_shared_properties,
+        file_fields.path: {
+            "type": "string",
+            "description": "Relative URL to the file"
+        },
     }
 }
 
@@ -87,6 +87,10 @@ file = {
         file_fields.modified_by: {
             'type': 'integer',
             'description': 'User who last edited this file'
+        },
+        file_fields.path: {
+            "type": "string",
+            "description": "Relative URL to the file"
         },
         **file_post_properties
     },

@@ -1076,7 +1076,15 @@ class AnnotationCanvas extends TatorElement
         name = name.substr(2);
       }
       let start_time_8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+      let timeZoneIncluded = start_time_8601.lastIndexOf('-') > 7;
+      if (timeZoneIncluded != true)
+      {
+        start_time_8601 += '-00:00'; // Assume zulu time
+      }
+
+      // Convert to seconds since epoch (browser local time)
       let time_since_epoch = Date.parse(start_time_8601);
+
       if (isNaN(time_since_epoch) == true)
       {
         console.info("Could not deduce time from file name");
@@ -1107,18 +1115,8 @@ class AnnotationCanvas extends TatorElement
         }
         lastUpdate = seconds;
         const milliseconds = seconds * 1000;
-        // This is automatically in the wrong timezone (go javascript)
-        const d_bad_tz = new Date(time_since_epoch + milliseconds);
-
-        // Strip timezone from previous object resolve to UTC time
-        // and make a new timezone-aware object based on truth
-        let d = new Date(Date.UTC(d_bad_tz.getFullYear(),
-                                  d_bad_tz.getMonth(),
-                                  d_bad_tz.getDate(),
-                                  d_bad_tz.getHours(),
-                                  d_bad_tz.getMinutes(),
-                                  d_bad_tz.getSeconds(),
-                                  d_bad_tz.getMilliseconds()));
+        // This is automatically in the local timezone based on the parsing above.
+        const d = new Date(time_since_epoch + milliseconds);
 
         // Output to the text format specified by the media type schema
         this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options), style: this.overlayTextStyle});

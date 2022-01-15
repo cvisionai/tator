@@ -1020,19 +1020,70 @@ class Media(Model, ModelDiffMixin):
                     total_size += tator_store.get_size(media_def.get('segment_info'))
         return (total_size, download_size)
 
+
+class FileType(Model):
+    """ Non-media generic file. Has user-defined attributes.
+    """
+    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
+    """ Project associated with the file type """
+    name = CharField(max_length=64)
+    """ Name of the file type"""
+    description = CharField(max_length=256, blank=True)
+    """ Description of the file type"""
+    attribute_types = JSONField(default=list, null=True, blank=True)
+    """ Refer to the attribute_types field for the other *Type models
+    """
+    dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
+    """ Required as part of building the TatorSearch documents
+    """
+
+@receiver(post_save, sender=FileType)
+def file_type_save(sender, instance, **kwargs):
+    TatorSearch().create_mapping(instance)
+
+class File(Model, ModelDiffMixin):
+    """ Non-media generic file stored within a project
+    """
+    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
+    """ Datetime when file was created """
+    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                            related_name='file_created_by', db_column='created_by')
+    """ User who originally created the file """
+    description = CharField(max_length=1024, blank=True)
+    """Description of the file"""
+    path = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
+    """ Path of file """
+    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
+    """ Datetime when file was last modified """
+    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
+                             related_name='file_modified_by', db_column='modified_by')
+    """ User who last modified the file """
+    name = CharField(max_length=128)
+    """ Project associated with the file """
+    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
+    """ Project associated with the file """
+    meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
+    """ Type associated with file """
+    attributes = JSONField(null=True, blank=True)
+    """ Values of user defined attributes. """
+
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
     media = ManyToManyField(Media, related_name='resource_media')
+    generic_files = ManyToManyField(File, related_name='resource_files')
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
 
     @transaction.atomic
-    def add_resource(path_or_link, media):
+    def add_resource(path_or_link, media, generic_file=None):
         if os.path.islink(path_or_link):
             path = os.readlink(path_or_link)
         else:
             path = path_or_link
-        if media is None:
+        if media is None and generic_file is None:
             obj, created = Resource.objects.get_or_create(path=path, bucket=None)
+        elif media is None:
+            obj, created = Resource.objects.get_or_create(path=path, bucket=generic_file.project.bucket)
+            obj.generic_files.add(generic_file)
         else:
             obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
             obj.media.add(media)
@@ -1045,7 +1096,7 @@ class Resource(Model):
                 path=os.readlink(path_or_link)
                 os.remove(path_or_link)
         obj = Resource.objects.get(path=path)
-        if obj.media.all().count() == 0:
+        if obj.media.all().count() == 0 and obj.generic_files.all().count() == 0:
             logger.info(f"Deleting object {path}")
             obj.delete()
             tator_store = get_tator_store(obj.bucket)
@@ -1115,6 +1166,19 @@ def safe_delete(path):
         logger.warning(f"Could not remove {path}")
         logger.warning(f"{traceback.format_exc()}")
 
+def drop_file_from_resource(path, generic_file):
+    """ Drops the specified generic file from the resource. This should be called when
+        removing a resource from a File object but the File object is
+        not being deleted.
+    """
+    try:
+        logger.info(f"Dropping file {generic_file} from resource {path}")
+        obj = Resource.objects.get(path=path)
+        obj.generic_files.remove(generic_file)
+    except:
+        logger.warning(f"Could not remove {generic_file} from {path}")
+        logger.warning(f"{traceback.format_exc()}")
+
 def drop_media_from_resource(path, media):
     """ Drops the specified media from the resource. This should be called when
         removing a resource from a Media object's media_files but the Media is
@@ -1147,6 +1211,22 @@ def media_post_delete(sender, instance, **kwargs):
                 if key == 'streaming':
                     path = obj['segment_info']
                     safe_delete(path)
+
+@receiver(post_save, sender=File)
+def file_save(sender, instance, created, **kwargs):
+    TatorSearch().create_document(instance)
+    if instance.path and created:
+        Resource.add_resource(instance.path, None, instance)
+
+@receiver(pre_delete, sender=File)
+def file_delete(sender, instance, **kwargs):
+    TatorSearch().delete_document(instance)
+
+@receiver(post_delete, sender=File)
+def file_post_delete(sender, instance, **kwargs):
+    # Delete the path reference
+    if not instance.path is None:
+        safe_delete(instance.path)
 
 class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
@@ -1460,60 +1540,6 @@ class Dashboard(Model):
     """ Name of the applet """
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
     """ Project associated with the applet """
-
-class FileType(Model):
-    """ Non-media generic file. Has user-defined attributes.
-    """
-    project = ForeignKey(Project, on_delete=CASCADE, null=True, blank=True, db_column='project')
-    """ Project associated with the file type """
-    name = CharField(max_length=64)
-    """ Name of the file type"""
-    description = CharField(max_length=256, blank=True)
-    """ Description of the file type"""
-    attribute_types = JSONField(default=list, null=True, blank=True)
-    """ Refer to the attribute_types field for the other *Type models
-    """
-    dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
-    """ Required as part of building the TatorSearch documents
-    """
-
-@receiver(post_save, sender=FileType)
-def file_type_save(sender, instance, **kwargs):
-    TatorSearch().create_mapping(instance)
-
-class File(Model, ModelDiffMixin):
-    """ Non-media generic file stored within a project
-    """
-    created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    """ Datetime when file was created """
-    created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                            related_name='file_created_by', db_column='created_by')
-    """ User who originally created the file """
-    description = CharField(max_length=1024, blank=True)
-    """Description of the file"""
-    path = FileField(upload_to=ProjectBasedFileLocation, null=True, blank=True)
-    """ Path of file """
-    modified_datetime = DateTimeField(auto_now=True, null=True, blank=True)
-    """ Datetime when file was last modified """
-    modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
-                             related_name='file_modified_by', db_column='modified_by')
-    """ User who last modified the file """
-    name = CharField(max_length=128)
-    """ Project associated with the file """
-    project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
-    """ Project associated with the file """
-    meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
-    """ Type associated with file """
-    attributes = JSONField(null=True, blank=True)
-    """ Values of user defined attributes. """
-
-@receiver(post_save, sender=File)
-def file_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=File)
-def file_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
 
 def type_to_obj(typeObj):
     """Returns a data object for a given type object"""

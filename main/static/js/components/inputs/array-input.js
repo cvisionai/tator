@@ -138,8 +138,8 @@ class ArrayInput extends TatorElement {
       return val;
     }
 
-    changed(){
-      return this.getValue() !== this._default;
+  changed() {
+      return String(this.getValue()) !== String(this._default);
     }
   }
   

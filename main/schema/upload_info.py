@@ -59,6 +59,14 @@ class UploadInfoSchema(AutoSchema):
                                'minimum': 1},
                 },
                 {
+                    'name': 'file_id',
+                    'in': 'query',
+                    'required': False,
+                    'description': 'File ID if this is an upload for existing file.',
+                    'schema': {'type': 'integer',
+                               'minimum': 1},
+                },
+                {
                     'name': 'filename',
                     'in': 'query',
                     'required': False,

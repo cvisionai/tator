@@ -9,7 +9,7 @@ upload_info = {
         },
         'key': {
             'description': 'An object key that can be supplied to the `Transcode` or '
-                           '`Media` endpoint after the file has been uploaded.',
+                           '`Media` or `File` endpoint after the file has been uploaded.',
             'type': 'string',
         },
         'upload_id': {
