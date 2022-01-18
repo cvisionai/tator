@@ -16,7 +16,7 @@ class SaveGenericFileSchema(AutoSchema):
     def get_description(self, path, method):
         return dedent("""\
         Saves an uploaded non-media file to the desired project's permanent storage.
-        It is expected that this file will be used in conjunction with either a Report or Dashboard object.
+        It is expected that this file will be used in conjunction with an applet.
         """)
 
     def _get_path_parameters(self, path, method):

@@ -266,6 +266,13 @@ def create_test_version(name, description, number, project, media):
         project=project,
     )
 
+def create_test_file(name, entity_type, project):
+    return File.objects.create(
+        name=name,
+        meta=entity_type,
+        project=project,
+    )
+
 def random_string(length):
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))
 
@@ -2911,12 +2918,24 @@ class ResourceTestCase(APITestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        self.file_entity_type = FileType.objects.create(
+            name="TestFileType",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
         self.store = get_tator_store()
 
     def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
         """
         key = f"{self.organization.pk}/{self.project.pk}/{media.pk}/{str(uuid1())}"
+        self.store.put_string(key, b"\x00" + os.urandom(16) + b"\x00")
+        return key
+
+    def _random_file_store_obj(self, file):
+        """ Creates a store file with random key for a generic file. Simulates an upload.
+        """
+        key = f"{self.organization.pk}/{self.project.pk}/files/{file.pk}/{str(uuid1())}"
         self.store.put_string(key, b"\x00" + os.urandom(16) + b"\x00")
         return key
 
@@ -2951,6 +2970,64 @@ class ResourceTestCase(APITestCase):
         media = Media.objects.filter(deleted=True)
         for m in media:
             m.delete()
+
+    def test_generic_files(self):
+        """
+        Test procedure:
+        - Create File1 and patch with key1
+        - Assert key1 exists
+        - Create File2 and patch with key2
+        - Assert key2 exists
+        - Patch File1 with key3
+        - Assert key3 exists.
+        - Assert key1 does not exist.
+        - Delete File1
+        - Assert key3 does not exist.
+        - Delete File2
+        - Assert key2 does not exist.
+        """
+
+        file1 = create_test_file(
+            name="File1", entity_type=self.file_entity_type, project=self.project)
+        file2 = create_test_file(
+            name="File2", entity_type=self.file_entity_type, project=self.project)
+
+        key1 = self._random_file_store_obj(file1)
+        file_patch_spec = {
+            "path": key1
+        }
+        response = self.client.patch(f"/rest/File/{file1.id}", file_patch_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/File/{file1.id}")
+        self.assertTrue(self._store_obj_exists(response.data["path"]))
+
+        key2 = self._random_file_store_obj(file2)
+        file_patch_spec = {
+            "path": key2
+        }
+        response = self.client.patch(f"/rest/File/{file2.id}", file_patch_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/File/{file2.id}")
+        self.assertTrue(self._store_obj_exists(response.data["path"]))
+
+        key3 = self._random_file_store_obj(file1)
+        file_patch_spec = {
+            "path": key3
+        }
+        response = self.client.patch(f"/rest/File/{file1.id}", file_patch_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(f"/rest/File/{file1.id}")
+        self.assertEqual(key3, response.data["path"])
+        self.assertTrue(self._store_obj_exists(response.data["path"]))
+        self.assertFalse(self._store_obj_exists(key1))
+
+        response = self.client.delete(f"/rest/File/{file1.id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(self._store_obj_exists(key3))
+
+        response = self.client.delete(f"/rest/File/{file2.id}", format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(self._store_obj_exists(key2))
 
     def test_files(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)

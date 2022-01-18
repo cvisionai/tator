@@ -8,6 +8,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 from ..models import Project
 from ..models import Media
+from ..models import File
 from ..schema import UploadInfoSchema
 from ..store import get_tator_store
 
@@ -30,6 +31,7 @@ class UploadInfoAPI(BaseDetailView):
         num_parts = params['num_parts']
         project = params['project']
         media_id = params.get('media_id')
+        file_id = params.get('file_id')
         filename = params.get('filename')
         if os.getenv('REQUIRE_HTTPS') == 'TRUE':
             PROTO = 'https'
@@ -40,7 +42,6 @@ class UploadInfoAPI(BaseDetailView):
         project_obj = Project.objects.get(pk=project)
         organization = project_obj.organization.pk
 
-        # Check if media exists in this project (if media ID given).
         name = str(uuid1())
         if filename:
             name = filename
@@ -50,18 +51,27 @@ class UploadInfoAPI(BaseDetailView):
             components = os.path.splitext(name)
             name = f"{components[0]}_{rand_str}{components[1]}"
 
-        if media_id is None:
+        if media_id is None and file_id is None:
             # Generate an object name
             today = datetime.datetime.now().strftime('%Y-%m-%d')
             user = self.request.user.pk
             key = f"_uploads/{today}/{organization}/{project}/{user}/{name}"
             tator_store = get_tator_store(project_obj.upload_bucket, upload=True)
-        else:
+        elif media_id is not None and file_id is not None:
+            raise ValueError(f"Both a file_id and media_id was provided!")
+        elif media_id is not None:
             qs = Media.objects.filter(project=project, pk=media_id)
             if qs.exists():
                 key = f"{organization}/{project}/{media_id}/{name}"
             else:
                 raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
+            tator_store = get_tator_store(project_obj.bucket)
+        elif file_id is not None:
+            qs = File.objects.filter(project=project, pk=file_id)
+            if qs.exists():
+                key = f"{organization}/{project}/files/{file_id}/{name}"
+            else:
+                raise ValueError(f"File ID {file_id} does not exist in project {project}!")
             tator_store = get_tator_store(project_obj.bucket)
 
         # Generate presigned urls.

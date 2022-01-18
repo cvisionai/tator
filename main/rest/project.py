@@ -169,6 +169,7 @@ class ProjectDetailAPI(BaseDetailView):
             new_key = f"{org_from_key}/{project_from_key}/{fname}"
             fp = io.BytesIO()
             upload_store.download_fileobj(params['thumb'], fp)
+            fp.seek(0)
             generic_store.put_object(new_key, fp)
 
             if project.thumb:

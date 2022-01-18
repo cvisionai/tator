@@ -123,7 +123,7 @@ kubectl delete pod sleepy
 echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
-pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2 pytesseract opencv-python
+pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2 pytesseract opencv-python yq
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 playwright install
 
@@ -140,6 +140,31 @@ kubectl exec -it $GUNICORN_POD -- \
     python3 manage.py createsuperuser --username admin --email no-reply@cvisionai.com --noinput
 kubectl exec -it $GUNICORN_POD -- \
     python3 manage.py shell -c 'from main.models import User; user=User.objects.first(); user.set_password("admin"); user.save()'
+
+# Set up mc and configure lifecycle rule for uploads.
+MINIO_ACCESS_KEY=$(yq -r .minio.accessKey helm/tator/values.yaml)
+MINIO_SECRET_KEY=$(yq -r .minio.secretKey helm/tator/values.yaml)
+kubectl exec -it $GUNICORN_POD -- bash <<EOF
+wget  https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
+chmod +x /usr/local/bin/mc
+mc alias set tator http://tator-minio:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+mc ilm import tator/tator <<RULE
+{
+    "Rules": [
+        {
+            "Expiration": {
+                "Days": 7
+            },
+            "ID": "expire-uploads",
+            "Filter": {
+                "Prefix": "_uploads/"
+            },
+            "Status": "Enabled"
+        }
+    ]
+}
+RULE
+EOF
 
 # Print success.
 echo "Installation completed successfully!"

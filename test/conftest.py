@@ -107,8 +107,8 @@ def token(request, page_factory):
     page.fill('input[type="text"]', username)
     page.fill('input[type="password"]', password)
     page.click('input[type="submit"]')
-    page.wait_for_selector('text=/^.{40}$/')
-    token = page.text_content('modal-notify p')
+    page.wait_for_selector('text=Your API token is:')
+    token = page.text_content('modal-notify .modal__main p')
     assert(len(token) == 40)
     yield token
 
@@ -374,6 +374,14 @@ def yaml_file(request):
     if not os.path.exists(out_path):
         with open(out_path, 'w+') as f:
             f.write("test")
+    yield out_path
+
+@pytest.fixture(scope='session')
+def html_file(request):
+    out_path = '/tmp/applet-test.yaml'
+    if not os.path.exists(out_path):
+        with open(out_path, 'w+') as f:
+            f.write("<html><head></head><body><h1>HTML FILE</h1></body></html>")
     yield out_path
 
 @pytest.fixture(scope='session')

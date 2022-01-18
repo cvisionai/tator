@@ -130,3 +130,23 @@ def check_resource_prefix(prefix, obj):
     if obj_id != int(parts[2]):
         raise PermissionDenied("Prefix does not match expected object!")
     
+def check_file_resource_prefix(prefix, obj):
+    """ Checks that a prefix corresponding to a resource (associated with a File instead of Media)
+        has the form <organization>/<project>/files/<object>/<name> and that the IDs line
+        up with what is expected for the object associated with the .
+    """
+    parts = prefix.split('/')
+    if len(parts) != 5:
+        raise PermissionDenied("Incorrect prefix format for file resource! Required format is "
+                               "<organization>/<project>/files/<object>/<name>.")
+    organization = obj.project.organization.pk
+    project = obj.project.pk
+    obj_id = obj.pk
+    if organization != int(parts[0]):
+        raise PermissionDenied("Prefix does not match expected organization!")
+    if project != int(parts[1]):
+        raise PermissionDenied("Prefix does not match expected project!")
+    if parts[2] != "files":
+        raise PermissionDenied("Prefix does not match expected files location!")
+    if obj_id != int(parts[3]):
+        raise PermissionDenied("Prefix does not match expected object!")
