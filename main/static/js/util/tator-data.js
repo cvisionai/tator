@@ -685,6 +685,7 @@ class TatorData {
         finalAnnotationFilters.push(this._convertFilterForTator(filter));
       }
     }
+    
     for (const dateFilter of annotationDateFilters) {
       finalAnnotationFilters.push(this._convertDateRangeForTator(dateFilter));
     }
@@ -827,6 +828,8 @@ class TatorData {
         flatResults.forEach(data => {
           finalResults.push(data.id);
         });
+      } else if (outputType == "search-string") {
+        var finalResults = mediaSearch;
       }
       else {
         finalResults = flatResults;

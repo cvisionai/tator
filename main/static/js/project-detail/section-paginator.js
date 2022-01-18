@@ -135,7 +135,6 @@ class SectionPaginator extends TatorElement {
 
   _setPage(page) {
     this._page = page;
-    console.log(page);
 
     // Update appearance to reflect new page.
     if (this._numPages == 1) {

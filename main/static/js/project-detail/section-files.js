@@ -28,7 +28,6 @@ class SectionFiles extends TatorElement {
   }
 
   set cardInfo(val) {
-    console.log("Let's make some cards!")
     this._makeCards(val);
   }
 
