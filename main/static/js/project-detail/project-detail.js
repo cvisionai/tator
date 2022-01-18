@@ -692,6 +692,8 @@ class ProjectDetail extends TatorPage {
                     } catch (err) {
                       console.error("Error getting section.", err);
                       child.click();
+                      this.loading.hideSpinner();
+                      this.hideDimmer();
                     } 
                     
                     break;
@@ -714,10 +716,13 @@ class ProjectDetail extends TatorPage {
                   home.active = true;
                   this.loading.hideSpinner();
                   this.hideDimmer();
+                  
                 });
               } catch (err) {
                 console.error("Error getting home section.", err);
                 home.click();
+                this.loading.hideSpinner();
+                this.hideDimmer();
               } 
             }
 
@@ -755,11 +760,21 @@ class ProjectDetail extends TatorPage {
             
             } catch (err) {
               console.error("Could not initialize filter interface.", err);
+              this.loading.hideSpinner();
+              this.hideDimmer();
             }
             
             
+          }).catch(err => {
+            console.log("Error setting up page with all promises", err);
+            this.loading.hideSpinner();
+            this.hideDimmer();
           });
 
+      }).catch(err => {
+        console.log("Error setting up page with all promises", err);
+        this.loading.hideSpinner();
+        this.hideDimmer();
       });
     
                 
@@ -878,22 +893,28 @@ class ProjectDetail extends TatorPage {
     this._filterView.setFilterConditions(this._filterConditions);
     this.showDimmer();
     this.loading.showSpinner();
-    const query = await this._mediaSection.updateFilterResults(this._filterConditions);
 
-    if (typeof query != "undefined" && query != this._lastQuery) {
+    try {
+      const query = await this._mediaSection.updateFilterResults(this._filterConditions);
 
-      if (query !== "") {
-        this._lastQuery = query;
-        this._addSavedSearchButton.style.opacity = 1.0;
-        this._addSavedSearchButton.style.cursor = "pointer";
-      } else {
-        this._lastQuery = null;
-        this._addSavedSearchButton.style.opacity = 0.5;
-        this._addSavedSearchButton.style.cursor = "not-allowed";
+      if (typeof query != "undefined" && query != this._lastQuery) {
+
+        if (query !== "") {
+          this._lastQuery = query;
+          this._addSavedSearchButton.style.opacity = 1.0;
+          this._addSavedSearchButton.style.cursor = "pointer";
+        } else {
+          this._lastQuery = null;
+          this._addSavedSearchButton.style.opacity = 0.5;
+          this._addSavedSearchButton.style.cursor = "not-allowed";
+        }
+        // await this._mediaSection.reload();
+
       }
-      // await this._mediaSection.reload();
-
+    } catch (err) {
+      console.error("Couldn't update results with current filter.", err);
     }
+    
     this.loading.hideSpinner();
     this.hideDimmer();
   }

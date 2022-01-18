@@ -729,11 +729,16 @@ class MediaSection extends TatorElement {
       for (const filter of this._filterConditions) {
         if (filter.modifier == "Before") {
           mediaDateFilters = this._modelData._applyDateRange(mediaDateFilters, filter.field, "end", filter.value);
-        }
-        else if (filter.modifier == "After") {
+        } else if (filter.modifier == "After") {
           mediaDateFilters = this._modelData._applyDateRange(mediaDateFilters, filter.field, "start", filter.value);
-        }
-        else {
+        } else if (filter.field == "_section") {
+          filter.field = "tator_user_sections";
+          filter.value = this._modelData._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+          finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
+        } else {
+          if (filter.field == "_id") {
+            filter.field = "_postgres_id"
+          }
           finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
         }
       }
