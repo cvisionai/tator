@@ -60,6 +60,7 @@ class MediaSection extends TatorElement {
     section.appendChild(this._paginator);
 
     this._searchParams = new URLSearchParams();
+    this._numFilesCount = 0;
 
     this._setCallbacks();
   }
@@ -161,6 +162,7 @@ class MediaSection extends TatorElement {
       fileText = "File";
     }
     this._numFiles.nodeValue = `${numFiles} ${fileText}`;
+    this._numFilesCount = Number(numFiles);
     
     if (numFiles != this._paginator._numFiles) {
       this._start = 0;
@@ -213,9 +215,6 @@ class MediaSection extends TatorElement {
   }
 
   async _loadMedia() {
-    console.log("Load media..........");
-    console.log(`this._start ${this._start} and this._stop ${this._stop}`);
-
     const sectionQuery = this._sectionParams();
     // Find an interval for use with "after". Super page size of
     // 5000 guarantees that any start/stop fully falls within a
@@ -261,8 +260,6 @@ class MediaSection extends TatorElement {
 
   reload() {
     this._reload.busy();
-    console.log("Reload media........");
-    console.log(`this._start ${this._start} and this._stop ${this._stop}`);
 
     this._start = 0;
     this._stop = this._paginator._pageSize;

@@ -676,16 +676,6 @@ class ProjectDetail extends TatorPage {
                     child.active = true;
                     try {
                       this._selectSection(child._section, child._section.project).then(() => {
-                        if (params.has("page") && params.has("pageSize")) {
-                          let pageSize = Number(params.get("pageSize"));
-                          let page = Number(params.get("page"));
-                          this._mediaSection._paginator._pageSize = pageSize;
-                          this._mediaSection._paginator._setPage(page);
-                          this._mediaSection._start = (page * pageSize);
-                          this._mediaSection._stop = ((page + 1) * pageSize)
-                          this._mediaSection._paginator._emit();    
-                        }
-                        home.active = true;
                         this.loading.hideSpinner();
                         this.hideDimmer();
                       });
@@ -703,20 +693,10 @@ class ProjectDetail extends TatorPage {
             } else { 
               //
               try {
+                home.active = true;
                 this._selectSection(null, projectId).then( async () => {
-                  if (params.has("page") && params.has("pageSize")) {
-                    let pageSize = Number(params.get("pageSize"));
-                    let page = Number(params.get("page"));
-                    this._mediaSection._paginator._pageSize = pageSize;
-                    this._mediaSection._paginator._setPage(page -1);
-                    this._mediaSection._start = (page * pageSize);
-                    this._mediaSection._stop = ((page + 1) * pageSize)
-                    this._mediaSection._paginator._emit();
-                  }
-                  home.active = true;
                   this.loading.hideSpinner();
-                  this.hideDimmer();
-                  
+                  this.hideDimmer();   
                 });
               } catch (err) {
                 console.error("Error getting home section.", err);
@@ -725,9 +705,6 @@ class ProjectDetail extends TatorPage {
                 this.hideDimmer();
               } 
             }
-
-
-            console.log("checking params");
 
             // Is there a search to apply?
             if (params.has("search")) {
@@ -794,7 +771,7 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  _selectSection(section, projectId) {
+  async _selectSection(section, projectId) {
     const params = new URLSearchParams(document.location.search.substring(1));
     
     this._mediaSection.addEventListener("remove", this._removeCallback);
@@ -814,7 +791,30 @@ class ProjectDetail extends TatorPage {
     }
     window.history.replaceState(`${this._projectText.textContent}|${sectionName}`, "Filter", newUrl);
 
-    return this._mediaSection.init(projectId, section, this.getAttribute("username"), this.getAttribute("token"));
+    await this._mediaSection.init(projectId, section, this.getAttribute("username"), this.getAttribute("token"));
+
+    if (params.has("page") && params.has("pageSize")) {
+      let pageSize = Number(params.get("pageSize"));
+      let page = Number(params.get("page"));
+
+      const samePageSize = pageSize == Number(this._mediaSection._paginator._pageSize);
+      const samePage = page == Number(this._mediaSection._paginator._page);
+      if (!samePageSize) {
+        this._mediaSection._paginator._pageSize = pageSize;
+        this._mediaSection._paginator.init(this._mediaSection._numFilesCount);// apply new page size          
+      }
+      if (!samePage) {
+        this._mediaSection._paginator._setPage(page - 1);
+        this._mediaSection._start = (page * pageSize);
+        this._mediaSection._stop = ((page + 1) * pageSize)                            
+      }
+
+      if (!samePageSize || !samePage) {
+        this._mediaSection._paginator._emit();
+      }  
+    }
+
+    return true;
   }
 
   /**

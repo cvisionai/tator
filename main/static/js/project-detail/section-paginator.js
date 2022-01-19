@@ -68,16 +68,16 @@ class SectionPaginator extends TatorElement {
     pageSizeText.textContent = "Page Size:";
     div.appendChild(pageSizeText);
 
-    const pageSize = document.createElement("select");
-    pageSize.setAttribute("class", "form-select select-sm2 has-border");
+    this._pageSizeSelect = document.createElement("select");
+    this._pageSizeSelect.setAttribute("class", "form-select select-sm2 has-border");
     for (const pageOption of [10, 25, 50, 100]) {
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
       option.textContent = pageOption;
-      pageSize.appendChild(option);
+      this._pageSizeSelect.appendChild(option);
     }
-    pageSize.selectedIndex = 2;
-    div.appendChild(pageSize);
+    this._pageSizeSelect.selectedIndex = 2;
+    div.appendChild(this._pageSizeSelect);
 
     const goToPageText = document.createElement("span");
     goToPageText.setAttribute("class", "pagination__ellipsis");
@@ -103,7 +103,7 @@ class SectionPaginator extends TatorElement {
       this._emit();
     });
 
-    pageSize.addEventListener("change", evt => {
+    this._pageSizeSelect.addEventListener("change", evt => {
       if (evt.target.value != "Page Size") {
         this._pageSize = Number(evt.target.value);
         this.init(this._numFiles);
