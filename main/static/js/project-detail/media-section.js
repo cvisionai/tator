@@ -217,6 +217,7 @@ class MediaSection extends TatorElement {
   }
 
   async _loadMedia() {
+    console.log("Load media...");
     const sectionQuery = this._sectionParams();
     // Find an interval for use with "after". Super page size of
     // 5000 guarantees that any start/stop fully falls within a
@@ -261,10 +262,8 @@ class MediaSection extends TatorElement {
   }
 
   reload() {
+    console.log("Reload media...");
     this._reload.busy();
-
-    this._start = 0;
-    this._stop = this._paginator._pageSize;
 
     const sectionQuery = this._sectionParams();
     return fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
@@ -697,24 +696,49 @@ class MediaSection extends TatorElement {
 
     this._paginator.addEventListener("selectPage", (evt) => {
       this._setPage(evt);
-
-      // update the URL
-      const searchArgs = new URLSearchParams(window.location.search);
-      var newUrl = `${document.location.origin}${document.location.pathname}?`;
-
-      if (searchArgs.toString !== "") {
-        searchArgs.delete('page');
-        searchArgs.delete('pageSize');
-        newUrl += searchArgs.toString();
-      }
-      
-      newUrl += `page=${Number(this._paginator._page) + 1}&pageSize=${this._paginator._pageSize}`
-  
-      window.history.pushState({}, "", newUrl);
-      this._pagePosition.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
+      this._updatePageArgs();
     });
 
     this._reload.addEventListener("click", this.reload.bind(this));
+  }
+
+  _updatePageArgs() {
+    // update the URL
+    const searchArgs = new URLSearchParams(window.location.search);
+    var newUrl = `${document.location.origin}${document.location.pathname}`;
+    let firstParm = true;
+
+    console.log(document.location);
+    console.log(`start ${this._start} and stop ${this._stop} ... this._paginator._page ${this._paginator._page}`)
+
+    if (searchArgs.toString !== "") {
+      searchArgs.delete('page');
+      searchArgs.delete('pagesize');
+
+      for (const [key, value] of searchArgs) {
+        if (!firstParm) {
+          newUrl += "&";
+        } else {
+          newUrl += "?";
+        }
+        newUrl += `${key}=${value}`;
+        firstParm = false;
+      }
+      
+    }
+
+    // Only add back params if we're not on default page 1
+    if (this._start !== 0) {
+      if (!firstParm) {
+        newUrl += "&";
+      } else {
+        newUrl += "?";
+      }
+      newUrl += `page=${Number(this._paginator._page) + 1}&pagesize=${this._paginator._pageSize}`      
+    }
+
+    window.history.pushState({}, "", newUrl);
+    this._pagePosition.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
   }
 
   async updateFilterResults(conditions) {
@@ -782,7 +806,7 @@ class MediaSection extends TatorElement {
 
     // remove page references when new query is made
     params.delete("page");
-    params.delete("pageSize");
+    params.delete("pagesize");
 
     if (typeof this._filterURIString !== "undefined" && this._filterURIString != null && this._filterURIString != encodeURIComponent("[]")) {
       params.set("filterConditions", this._filterURIString);

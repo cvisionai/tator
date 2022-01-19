@@ -314,7 +314,8 @@ class ProjectDetail extends TatorPage {
                 this._archivedFolders.appendChild(card);
               }
               card.addEventListener("click", () => {
-                this._selectSection(sectionObj, projectId);
+                const clearPage = true;
+                this._selectSection(sectionObj, projectId, clearPage);
                 for (const child of this._allSections()) {
                   child.active = false;
                 }
@@ -327,7 +328,8 @@ class ProjectDetail extends TatorPage {
               card.init(sectionObj, "savedSearch");
               this._savedSearches.appendChild(card);
               card.addEventListener("click", () => {
-                this._selectSection(sectionObj, projectId);
+                const clearPage = true;
+                this._selectSection(sectionObj, projectId, clearPage);
                 for (const child of this._allSections()) {
                   child.active = false;
                 }
@@ -504,7 +506,8 @@ class ProjectDetail extends TatorPage {
       this._sectionVisibilityEL(evt)
     });
     card.addEventListener("click", () => {
-      this._selectSection(section, section.project);
+      const clearPage = true;
+      this._selectSection(section, section.project, clearPage);
       for (const child of this._allSections()) {
         child.active = false;
       }
@@ -613,7 +616,7 @@ class ProjectDetail extends TatorPage {
             const home = document.createElement("section-card");
             home.init(null, false);
             home.addEventListener("click", () => {
-              this._selectSection(null, projectId);
+              this._selectSection(null, projectId, true);
               for (const child of this._allSections()) {
                 child.active = false;
               }
@@ -647,7 +650,8 @@ class ProjectDetail extends TatorPage {
                 this._savedSearches.appendChild(card);
               }
               card.addEventListener("click", () => {
-                this._selectSection(section, projectId);
+                const clearPage = true;
+                this._selectSection(section, projectId, clearPage);
                 for (const child of this._allSections()) {
                   child.active = false;
                 }
@@ -772,18 +776,26 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  async _selectSection(section, projectId) {
-    const params = new URLSearchParams(document.location.search.substring(1));
+  async _selectSection(section, projectId, clearPage = false) {
+    const params = new URLSearchParams(document.location.search);
+
+    if (clearPage) {
+      params.delete("page");
+      params.delete("pagesize");
+    }
     
     this._mediaSection.addEventListener("remove", this._removeCallback);
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
     this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
+
     params.delete("section");
     if (section !== null) {
       params.set("section", section.id);
     }
+
     const path = document.location.pathname;
     const searchArgs = params.toString();
+
     let newUrl = path;
     newUrl += "?" + searchArgs;
     let sectionName = "All Media";
@@ -794,7 +806,7 @@ class ProjectDetail extends TatorPage {
 
     await this._mediaSection.init(projectId, section, this.getAttribute("username"), this.getAttribute("token"));
 
-    if (params.has("page") && params.has("pagesize")) {
+    if (params.has("page") && params.has("pagesize") && !clearPage) {
       let pageSize = Number(params.get("pagesize"));
       let page = Number(params.get("page"));
 
