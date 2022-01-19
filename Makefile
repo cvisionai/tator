@@ -473,7 +473,6 @@ FILES = \
     analytics/corrections/gallery.js \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
-    analytics/reports/reports.js \
     analytics/portal/portal.js \
     analytics/files/files-page.js \
     analytics/files/file-type-dialog.js \
