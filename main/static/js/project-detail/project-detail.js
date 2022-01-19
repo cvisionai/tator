@@ -156,6 +156,7 @@ class ProjectDetail extends TatorPage {
     mainSection.appendChild(filterdiv);
 
     this._filterView = document.createElement("filter-interface");
+    this._filterView._algoButton.hidden = true;
     filterdiv.appendChild(this._filterView);
 
     this._collaborators = document.createElement("project-collaborators");
@@ -896,9 +897,7 @@ class ProjectDetail extends TatorPage {
 
     try {
       const query = await this._mediaSection.updateFilterResults(this._filterConditions);
-
       if (typeof query != "undefined" && query != this._lastQuery) {
-
         if (query !== "") {
           this._lastQuery = query;
           this._addSavedSearchButton.style.opacity = 1.0;
@@ -908,8 +907,6 @@ class ProjectDetail extends TatorPage {
           this._addSavedSearchButton.style.opacity = 0.5;
           this._addSavedSearchButton.style.cursor = "not-allowed";
         }
-        // await this._mediaSection.reload();
-
       }
     } catch (err) {
       console.error("Couldn't update results with current filter.", err);

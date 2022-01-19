@@ -11,7 +11,7 @@ class MediaSection extends TatorElement {
     section.appendChild(header);
 
     this._name = document.createElement("h2");
-    this._name.setAttribute("class", "h3"); //not a typo
+    this._name.setAttribute("class", "h3 px-2 py-2"); //not a typo
     header.appendChild(this._name);
 
     this._nameText = document.createTextNode("");
@@ -24,12 +24,12 @@ class MediaSection extends TatorElement {
     this._numFiles = document.createTextNode("");
     numFiles.appendChild(this._numFiles);
     
-    const pageFiles = document.createElement("span");
-    pageFiles.setAttribute("class", "text-gray px-2");
-    header.appendChild(pageFiles);
+    const pagePosition = document.createElement("div");
+    pagePosition.setAttribute("class", "py-3 f1 text-normal text-gray");
+    this._name.appendChild(pagePosition);
 
-    this._pageFiles = document.createTextNode("");
-    pageFiles.appendChild(this._pageFiles);
+    this._pagePosition = document.createTextNode("");
+    pagePosition.appendChild(this._pagePosition);
 
     const actions = document.createElement("div");
     actions.setAttribute("class", "d-flex flex-items-center");
@@ -61,6 +61,7 @@ class MediaSection extends TatorElement {
 
     this._searchParams = new URLSearchParams();
     this._numFilesCount = 0;
+    this._searchString = "";
 
     this._setCallbacks();
   }
@@ -117,6 +118,7 @@ class MediaSection extends TatorElement {
     } else {
       this._searchParams = new URLSearchParams();
     }
+    this._searchString = val;
   }
 
   get sectionParams() {
@@ -169,7 +171,7 @@ class MediaSection extends TatorElement {
       this._stop = this._paginator._pageSize;
       this._after = new Map();
       this._paginator.init(numFiles);
-      this._pageFiles.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
+      this._pagePosition.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
     }
   }
 
@@ -709,7 +711,7 @@ class MediaSection extends TatorElement {
       newUrl += `page=${Number(this._paginator._page) + 1}&pageSize=${this._paginator._pageSize}`
   
       window.history.pushState({}, "", newUrl);
-      this._pageFiles.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
+      this._pagePosition.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
     });
 
     this._reload.addEventListener("click", this.reload.bind(this));
@@ -752,9 +754,10 @@ class MediaSection extends TatorElement {
           mediaSearch += " AND ";
         }
       }
-
       this.searchString = mediaSearch;
+
       await this.reload();
+
     } else {
       this.searchString = "";
     }
@@ -764,9 +767,7 @@ class MediaSection extends TatorElement {
       window.history.replaceState({}, "Filter", newUrl);
     }
 
-   
-
-    return this.searchString;
+    return this._searchString;
   }
 
   getFilterURL() {
