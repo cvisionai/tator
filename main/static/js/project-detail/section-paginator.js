@@ -126,6 +126,14 @@ class SectionPaginator extends TatorElement {
     this._pageSize = 50;
   }
 
+  set pageSize(val) {
+    console.log(`Set function page size is ${val}`)
+    if (Number(val) !== this._pageSize) {
+      this._pageSize = val;
+      this._pageSizeSelect.value = val;
+    }
+  }
+
   init(numFiles) {
     this._numFiles = numFiles;
     this._numPages = Math.ceil(this._numFiles / this._pageSize);

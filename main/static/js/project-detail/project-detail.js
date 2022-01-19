@@ -794,14 +794,14 @@ class ProjectDetail extends TatorPage {
 
     await this._mediaSection.init(projectId, section, this.getAttribute("username"), this.getAttribute("token"));
 
-    if (params.has("page") && params.has("pageSize")) {
-      let pageSize = Number(params.get("pageSize"));
+    if (params.has("page") && params.has("pagesize")) {
+      let pageSize = Number(params.get("pagesize"));
       let page = Number(params.get("page"));
 
       const samePageSize = pageSize == Number(this._mediaSection._paginator._pageSize);
       const samePage = page == Number(this._mediaSection._paginator._page);
       if (!samePageSize) {
-        this._mediaSection._paginator._pageSize = pageSize;
+        this._mediaSection._paginator.pageSize = pageSize;
         this._mediaSection._paginator.init(this._mediaSection._numFilesCount);// apply new page size          
       }
       if (!samePage) {
