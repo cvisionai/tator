@@ -144,11 +144,20 @@ class ProjectDetail extends TatorPage {
     div.appendChild(this._description);
 
     const subheader = document.createElement("div");
-    subheader.setAttribute("class", "d-flex flex-justify-between");
+    subheader.setAttribute("class", "d-flex flex-justify-right");
     mainSection.appendChild(subheader);
 
+    // Hidden search input
     this._search = document.createElement("project-search");
-    subheader.appendChild(this._search);
+    // subheader.appendChild(this._search);
+
+    const filterdiv = document.createElement("div");
+    filterdiv.setAttribute("class", "mt-3");
+    mainSection.appendChild(filterdiv);
+
+    this._filterView = document.createElement("filter-interface");
+    this._filterView._algoButton.hidden = true;
+    filterdiv.appendChild(this._filterView);
 
     this._collaborators = document.createElement("project-collaborators");
     subheader.appendChild(this._collaborators);
@@ -190,6 +199,10 @@ class ProjectDetail extends TatorPage {
 
     this._leaveConfirmOk = false;
 
+    // Class to hide and showing loading spinner
+    this.loading = new LoadingSpinner();
+    this._shadow.appendChild(this.loading.getImg())
+
     window.addEventListener("beforeunload", evt => {
       if (this._leaveConfirmOk) {
         evt.preventDefault();
@@ -226,11 +239,13 @@ class ProjectDetail extends TatorPage {
       if (newSectionDialog._confirm) {
         let spec;
         if (newSectionDialog._sectionType == "folder") {
-          spec = {name: newSectionDialog._input.value,
-                  tator_user_sections: uuidv1(),
-                  visible: true};
+          spec = {
+            name: newSectionDialog._input.value,
+            tator_user_sections: uuidv1(),
+            visible: true
+          };
         } else if (newSectionDialog._sectionType == "savedSearch") {
-          spec = {visible: true};
+          spec = { visible: true };
 
           // Check if an existing section is selected.
           const params = new URLSearchParams(document.location.search.substring(1));
@@ -245,10 +260,12 @@ class ProjectDetail extends TatorPage {
                 "Content-Type": "application/json"
               },
             })
-            .then(response => response.json())
-            .then(section => {spec = section;});
+              .then(response => response.json())
+              .then(section => { spec = section; });
           }
           spec.name = newSectionDialog._input.value;
+
+          // TODO 
           if (params.has("search")) {
             if (spec.lucene_search) {
               spec.lucene_search = `(${spec.lucene_search}) AND (${params.get("search")})`;
@@ -256,6 +273,7 @@ class ProjectDetail extends TatorPage {
               spec.lucene_search = params.get("search");
             }
           }
+
           delete spec.id;
           if (spec.annotation_bools === null) {
             delete spec.annotation_bools;
@@ -280,41 +298,45 @@ class ProjectDetail extends TatorPage {
           },
           body: JSON.stringify(spec),
         })
-        .then(response => response.json())
-        .then(section => {
-          const card = document.createElement("section-card");
-          const sectionObj = {id: section.id,
-                              project: projectId,
-                              ...spec};
-          if (newSectionDialog._sectionType == "folder") {
-            card.init(sectionObj, "folder");
-            if (sectionObj.visible) {
-              this._folders.appendChild(card);
-            } else {
-              this._archivedFolders.appendChild(card);
+          .then(response => response.json())
+          .then(section => {
+            const card = document.createElement("section-card");
+            const sectionObj = {
+              id: section.id,
+              project: projectId,
+              ...spec
+            };
+            if (newSectionDialog._sectionType == "folder") {
+              card.init(sectionObj, "folder");
+              if (sectionObj.visible) {
+                this._folders.appendChild(card);
+              } else {
+                this._archivedFolders.appendChild(card);
+              }
+              card.addEventListener("click", () => {
+                const clearPage = true;
+                this._selectSection(sectionObj, projectId, clearPage);
+                for (const child of this._allSections()) {
+                  child.active = false;
+                }
+                card.active = true;
+              });
+              card.addEventListener("visibilityChange", evt => {
+                this._sectionVisibilityEL(evt)
+              });
+            } else if (newSectionDialog._sectionType == "savedSearch") {
+              card.init(sectionObj, "savedSearch");
+              this._savedSearches.appendChild(card);
+              card.addEventListener("click", () => {
+                const clearPage = true;
+                this._selectSection(sectionObj, projectId, clearPage);
+                for (const child of this._allSections()) {
+                  child.active = false;
+                }
+                card.active = true;
+              });
             }
-            card.addEventListener("click", () => {
-              this._selectSection(sectionObj, projectId);
-              for (const child of this._allSections()) {
-                child.active = false;
-              }
-              card.active = true;
-            });
-            card.addEventListener("visibilityChange", evt => {
-              this._sectionVisibilityEL(evt)
-            });
-          } else if (newSectionDialog._sectionType == "savedSearch") {
-            card.init(sectionObj, "savedSearch");
-            this._savedSearches.appendChild(card);
-            card.addEventListener("click", () => {
-              this._selectSection(sectionObj, projectId);
-              for (const child of this._allSections()) {
-                child.active = false;
-              }
-              card.active = true;
-            });
-          }
-        });
+          });
       }
       this.removeAttribute("has-open-modal");
     });
@@ -327,7 +349,7 @@ class ProjectDetail extends TatorPage {
     });
 
     uploadDialog.addEventListener("cancel", evt => {
-      window._uploader.postMessage({command: "cancelUploads"});
+      window._uploader.postMessage({ command: "cancelUploads" });
       this.removeAttribute("has-open-modal");
     });
 
@@ -385,7 +407,7 @@ class ProjectDetail extends TatorPage {
 
     this._removeCallback = evt => {
       deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams,
-                         evt.detail.deleteMedia);
+        evt.detail.deleteMedia);
       deleteSection.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
@@ -450,23 +472,7 @@ class ProjectDetail extends TatorPage {
     this._loaded = 0;
     this._needScroll = true;
 
-    this._lastQuery = (this._search.value == "" ? null : this._search.value);
-    this._search.addEventListener("filterProject", evt => {
-      const query = evt.detail.query;
-      if (query != this._lastQuery) {
-        if (query) {
-          this._lastQuery = query;
-          this._addSavedSearchButton.style.opacity = 1.0;
-          this._addSavedSearchButton.style.cursor = "pointer";
-        } else if (query == "") {
-          this._lastQuery = null;
-          this._addSavedSearchButton.style.opacity = 0.5;
-          this._addSavedSearchButton.style.cursor = "not-allowed";
-        }
-        this._mediaSection.searchString = this._lastQuery;
-        this._mediaSection.reload();
-      }
-    });
+    this._lastQuery = null;
   }
 
   static get observedAttributes() {
@@ -500,7 +506,8 @@ class ProjectDetail extends TatorPage {
       this._sectionVisibilityEL(evt)
     });
     card.addEventListener("click", () => {
-      this._selectSection(section, section.project);
+      const clearPage = true;
+      this._selectSection(section, section.project, clearPage);
       for (const child of this._allSections()) {
         child.active = false;
       }
@@ -522,9 +529,12 @@ class ProjectDetail extends TatorPage {
   }
 
   _init() {
+    this.showDimmer();
+    this.loading.showSpinner();
     const projectId = this.getAttribute("project-id");
     this._settingsButton.setAttribute("href", `/${projectId}/project-settings`);
     this._activityNav.init(projectId);
+    
     // Get info about the project.
     const projectPromise = fetch("/rest/Project/" + projectId, {
       method: "GET",
@@ -535,6 +545,8 @@ class ProjectDetail extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+    
+    // Get sections
     const sectionPromise = fetch("/rest/Sections/" + projectId, {
       method: "GET",
       credentials: "same-origin",
@@ -544,6 +556,8 @@ class ProjectDetail extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+
+    // Get project bookmarks
     const bookmarkPromise = fetch("/rest/Bookmarks/" + projectId, {
       method: "GET",
       credentials: "same-origin",
@@ -553,6 +567,8 @@ class ProjectDetail extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+
+    // Get Algorithms
     const algoPromise = fetch("/rest/Algorithms/" + projectId, {
       method: "GET",
       credentials: "same-origin",
@@ -562,109 +578,188 @@ class ProjectDetail extends TatorPage {
         "Content-Type": "application/json"
       }
     });
+
+    // Run all above promises
     Promise.all([
       projectPromise,
       sectionPromise,
       bookmarkPromise,
       algoPromise,
     ])
-    .then(([projectResponse, sectionResponse, bookmarkResponse, algoResponse]) => {
-      const projectData = projectResponse.json();
-      const sectionData = sectionResponse.json();
-      const bookmarkData = bookmarkResponse.json();
-      const algoData = algoResponse.json();
-      Promise.all([projectData, sectionData, bookmarkData, algoData])
-      .then(([project, sections, bookmarks, algos]) => {
-        // First hide algorithms if needed. These are not appropriate to be
-        // run at the project/section/media level.
-        const hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
-        const parsedAlgos = algos.filter(function(alg) {
-          return !hiddenAlgos.includes(alg.name);
-        });
-        if (!hasPermission(project.permission, "Full Control")) {
-          this._settingsButton.style.display = "none";
-        }
-        this._algorithms = parsedAlgos;
-        this._mediaSection.project = project;
-        this._mediaSection.algorithms = this._algorithms;
-        this._projectText.nodeValue = project.name;
-        this._search.setAttribute("project-name", project.name);
-        this._description.setAttribute("text", project.summary);
-        this._collaborators.usernames = project.usernames;
-        this._search.autocomplete = project.filter_autocomplete;
-        let projectParams = null;
-        const home = document.createElement("section-card");
-        home.init(null, false);
-        home.addEventListener("click", () => {
-          this._selectSection(null, projectId);
-          for (const child of this._allSections()) {
-            child.active = false;
-          }
-          home.active = true;
-        });
-        this._folders.appendChild(home);
-        for (const section of sections) {
-          const hasSection = Boolean(section.tator_user_sections);
-          const hasSearch = (Boolean(section.lucene_search)
-                             || Boolean(section.media_bools)
-                             || Boolean(section.annotation_bools));
-          let sectionType;
-          if (hasSection && !hasSearch) {
-            sectionType = "folder";
-          } else {
-            sectionType = "savedSearch";
-          }
-          const card = document.createElement("section-card");
-          card.init(section, sectionType);
-          if (sectionType == "folder") {
-            if (section.visible) {
-              this._folders.appendChild(card);
-            } else {
-              this._archivedFolders.appendChild(card);
-            }
-            card.addEventListener("visibilityChange", evt => {
-              this._sectionVisibilityEL(evt)
+      .then(([projectResponse, sectionResponse, bookmarkResponse, algoResponse]) => {
+        const projectData = projectResponse.json();
+        const sectionData = sectionResponse.json();
+        const bookmarkData = bookmarkResponse.json();
+        const algoData = algoResponse.json();
+        
+        Promise.all([projectData, sectionData, bookmarkData, algoData])
+          .then(([project, sections, bookmarks, algos]) => {
+            // First hide algorithms if needed. These are not appropriate to be
+            // run at the project/section/media level.
+            const hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
+            const parsedAlgos = algos.filter(function (alg) {
+              return !hiddenAlgos.includes(alg.name);
             });
-          } else {
-            this._savedSearches.appendChild(card);
-          }
-          card.addEventListener("click", () => {
-            this._selectSection(section, projectId);
-            for (const child of this._allSections()) {
-              child.active = false;
+            if (!hasPermission(project.permission, "Full Control")) {
+              this._settingsButton.style.display = "none";
             }
-            card.active = true;
-          });
-        }
-        // Put "Last visited" bookmark on top
-        const first = "Last visited";
-        bookmarks.sort((a, b) => {return a.name == first ? -1 : b.name == first ? 1 : 0;});
-        for (const bookmark of bookmarks) {
-          const card = document.createElement("section-card");
-          card.init(bookmark, "bookmark");
-          this._bookmarks.appendChild(card);
-        }
-        const params = new URLSearchParams(document.location.search.substring(1));
-        if (params.has("search")) {
-          this._mediaSection.searchString = params.get("search");
-          this._addSavedSearchButton.style.opacity = 1.0;
-          this._addSavedSearchButton.style.cursor = "pointer";
-        }
-        if (params.has("section")) {
-          const sectionId = Number(params.get("section"));
-          for (const child of this._allSections()) {
-            if (child._section) {
-              if (child._section.id == sectionId) {
-                child.click();
-                break;
+            this._algorithms = parsedAlgos;
+            this._mediaSection.project = project;
+            this._mediaSection.algorithms = this._algorithms;
+            this._projectText.nodeValue = project.name;
+            // this._search.setAttribute("project-name", project.name);
+            this._description.setAttribute("text", project.summary);
+            this._collaborators.usernames = project.usernames;
+            // this._search.autocomplete = project.filter_autocomplete;
+            
+            let projectParams = null;
+            const home = document.createElement("section-card");
+            home.init(null, false);
+            home.addEventListener("click", () => {
+              this._selectSection(null, projectId, true);
+              for (const child of this._allSections()) {
+                child.active = false;
               }
+              home.active = true;
+            });
+            this._folders.appendChild(home);
+            
+            for (const section of sections) {
+              const hasSection = Boolean(section.tator_user_sections);
+              const hasSearch = (Boolean(section.lucene_search)
+                || Boolean(section.media_bools)
+                || Boolean(section.annotation_bools));
+              let sectionType;
+              if (hasSection && !hasSearch) {
+                sectionType = "folder";
+              } else {
+                sectionType = "savedSearch";
+              }
+              const card = document.createElement("section-card");
+              card.init(section, sectionType);
+              if (sectionType == "folder") {
+                if (section.visible) {
+                  this._folders.appendChild(card);
+                } else {
+                  this._archivedFolders.appendChild(card);
+                }
+                card.addEventListener("visibilityChange", evt => {
+                  this._sectionVisibilityEL(evt)
+                });
+              } else {
+                this._savedSearches.appendChild(card);
+              }
+              card.addEventListener("click", () => {
+                const clearPage = true;
+                this._selectSection(section, projectId, clearPage);
+                for (const child of this._allSections()) {
+                  child.active = false;
+                }
+                card.active = true;
+              });
             }
-          }
-        } else {
-          home.click();
-        }
+
+            // Put "Last visited" bookmark on top
+            const first = "Last visited";
+            bookmarks.sort((a, b) => { return a.name == first ? -1 : b.name == first ? 1 : 0; });
+            for (const bookmark of bookmarks) {
+              const card = document.createElement("section-card");
+              card.init(bookmark, "bookmark");
+              this._bookmarks.appendChild(card);
+            }
+
+            // If there is a selected section click that otherwise
+            const params = new URLSearchParams(document.location.search.substring(1));
+            if (params.has("section")) {
+              const sectionId = Number(params.get("section"));
+              for (const child of this._allSections()) {
+                if (child._section) {
+                  if (child._section.id == sectionId) {
+                    for (const other of this._allSections()) {
+                      other.active = false;
+                    }
+                    child.active = true;
+                    try {
+                      this._selectSection(child._section, child._section.project).then(() => {
+                        this.loading.hideSpinner();
+                        this.hideDimmer();
+                      });
+                    } catch (err) {
+                      console.error("Error getting section.", err);
+                      child.click();
+                      this.loading.hideSpinner();
+                      this.hideDimmer();
+                    } 
+                    
+                    break;
+                  }
+                }
+              }
+            } else { 
+              //
+              try {
+                home.active = true;
+                this._selectSection(null, projectId).then( async () => {
+                  this.loading.hideSpinner();
+                  this.hideDimmer();   
+                });
+              } catch (err) {
+                console.error("Error getting home section.", err);
+                home.click();
+                this.loading.hideSpinner();
+                this.hideDimmer();
+              } 
+            }
+
+            // Is there a search to apply?
+            if (params.has("search")) {
+              this._mediaSection.searchString = params.get("search");
+              this._addSavedSearchButton.style.opacity = 1.0;
+              this._addSavedSearchButton.style.cursor = "pointer";
+            }
+
+            // Filter interface
+            try {
+              this._modelData = new TatorData(projectId);
+              this._modelData.init().then(() => {
+                // used to setup filter options & string utils
+                this._mediaSection._modelData = this._modelData;
+                this._filterDataView = new FilterData(
+                  this._modelData, null, ["MediaStates", "LocalizationStates", "Localizations"], null);
+                this._filterDataView.init();
+                this._filterView.dataView = this._filterDataView;
+
+                // Set UI and results to any url param conditions that exist (from URL)
+                this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
+                if (this._mediaSection._filterConditions.length > 0) {
+                  this._updateFilterResults({ detail: { conditions: this._mediaSection._filterConditions }});                  
+                }
+
+                // Listen for filter events
+                this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
+              
+              });
+            
+            } catch (err) {
+              console.error("Could not initialize filter interface.", err);
+              this.loading.hideSpinner();
+              this.hideDimmer();
+            }
+            
+            
+          }).catch(err => {
+            console.log("Error setting up page with all promises", err);
+            this.loading.hideSpinner();
+            this.hideDimmer();
+          });
+
+      }).catch(err => {
+        console.log("Error setting up page with all promises", err);
+        this.loading.hideSpinner();
+        this.hideDimmer();
       });
-    });
+    
+                
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -681,19 +776,26 @@ class ProjectDetail extends TatorPage {
     }
   }
 
-  _selectSection(section, projectId) {
-    this._mediaSection.init(projectId, section, this.getAttribute("username"),
-                            this.getAttribute("token"));
+  async _selectSection(section, projectId, clearPage = false) {
+    const params = new URLSearchParams(document.location.search);
+
+    if (clearPage) {
+      params.delete("page");
+      params.delete("pagesize");
+    }
+    
     this._mediaSection.addEventListener("remove", this._removeCallback);
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
     this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
-    let params = new URLSearchParams(document.location.search.substring(1));
+
     params.delete("section");
     if (section !== null) {
       params.set("section", section.id);
     }
+
     const path = document.location.pathname;
     const searchArgs = params.toString();
+
     let newUrl = path;
     newUrl += "?" + searchArgs;
     let sectionName = "All Media";
@@ -701,6 +803,31 @@ class ProjectDetail extends TatorPage {
       sectionName = section.name;
     }
     window.history.replaceState(`${this._projectText.textContent}|${sectionName}`, "Filter", newUrl);
+
+    await this._mediaSection.init(projectId, section, this.getAttribute("username"), this.getAttribute("token"));
+
+    if (params.has("page") && params.has("pagesize") && !clearPage) {
+      let pageSize = Number(params.get("pagesize"));
+      let page = Number(params.get("page"));
+
+      const samePageSize = pageSize == Number(this._mediaSection._paginator._pageSize);
+      const samePage = page == Number(this._mediaSection._paginator._page);
+      if (!samePageSize) {
+        this._mediaSection._paginator.pageSize = pageSize;
+        this._mediaSection._paginator.init(this._mediaSection._numFilesCount);// apply new page size          
+      }
+      if (!samePage) {
+        this._mediaSection._paginator._setPage(page - 1);
+        this._mediaSection._start = (page * pageSize);
+        this._mediaSection._stop = ((page + 1) * pageSize)                            
+      }
+
+      if (!samePageSize || !samePage) {
+        this._mediaSection._paginator._emit();
+      }  
+    }
+
+    return true;
   }
 
   /**
@@ -709,18 +836,16 @@ class ProjectDetail extends TatorPage {
    */
   _openConfirmRunAlgoModal(evt) {
 
-    if ('mediaIds' in evt.detail)
-    {
+    if ('mediaIds' in evt.detail) {
       this._confirmRunAlgorithm.init(
         evt.detail.algorithmName, evt.detail.projectId, evt.detail.mediaIds, null);
     }
-    else
-    {
+    else {
       this._confirmRunAlgorithm.init(
         evt.detail.algorithmName, evt.detail.projectId, null, evt.detail.mediaQuery);
     }
 
-    this._confirmRunAlgorithm.setAttribute("is-open","");
+    this._confirmRunAlgorithm.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
     document.body.classList.add("shortcuts-disabled");
   }
@@ -735,17 +860,14 @@ class ProjectDetail extends TatorPage {
     document.body.classList.remove("shortcuts-disabled");
 
     var that = this;
-    if (evt.detail.confirm)
-    {
-      if (evt.detail.mediaIds != null)
-      {
+    if (evt.detail.confirm) {
+      if (evt.detail.mediaIds != null) {
         var body = JSON.stringify({
           "algorithm_name": evt.detail.algorithmName,
           "media_ids": evt.detail.mediaIds
         });
       }
-      else
-      {
+      else {
         var body = JSON.stringify({
           "algorithm_name": evt.detail.algorithmName,
           "media_query": evt.detail.mediaQuery
@@ -762,22 +884,59 @@ class ProjectDetail extends TatorPage {
         },
         body: body,
       })
-      .then(response => {
-        if (response.status == 201) {
-          that._notify("Algorithm launched!",
-                       `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
-                       "ok");
-        }
-        else {
-          that._notify("Error launching algorithm!",
-                      `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
-                      "error");
-        }
-        return response.json();
-      })
-      .then(data => console.log(data));
+        .then(response => {
+          if (response.status == 201) {
+            that._notify("Algorithm launched!",
+              `Successfully launched ${evt.detail.algorithmName}! Monitor progress by clicking the "Activity" button.`,
+              "ok");
+          }
+          else {
+            that._notify("Error launching algorithm!",
+              `Failed to launch ${evt.detail.algorithmName}: ${response.statusText}.`,
+              "error");
+          }
+          return response.json();
+        })
+        .then(data => console.log(data));
     }
   }
+
+  async _updateFilterResults(evt) {
+    this._filterConditions = evt.detail.conditions;
+    this._filterView.setFilterConditions(this._filterConditions);
+    this.showDimmer();
+    this.loading.showSpinner();
+
+    try {
+      const query = await this._mediaSection.updateFilterResults(this._filterConditions);
+      if (typeof query != "undefined" && query != this._lastQuery) {
+        if (query !== "") {
+          this._lastQuery = query;
+          this._addSavedSearchButton.style.opacity = 1.0;
+          this._addSavedSearchButton.style.cursor = "pointer";
+        } else {
+          this._lastQuery = null;
+          this._addSavedSearchButton.style.opacity = 0.5;
+          this._addSavedSearchButton.style.cursor = "not-allowed";
+        }
+      }
+    } catch (err) {
+      console.error("Couldn't update results with current filter.", err);
+    }
+    
+    this.loading.hideSpinner();
+    this.hideDimmer();
+  }
+
+    // Modal for this page, and handlers
+    showDimmer() {
+      return this.setAttribute("has-open-modal", "");
+    }
+  
+    hideDimmer() {
+      return this.removeAttribute("has-open-modal");
+    }
+
 }
 
 customElements.define("project-detail", ProjectDetail);
