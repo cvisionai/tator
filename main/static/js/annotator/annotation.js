@@ -3554,6 +3554,9 @@ class AnnotationCanvas extends TatorElement
     let boundsFixPoint = (point) => {
       return [Math.min(1,Math.max(0,point[0])), Math.min(1,Math.max(0,point[1]))];
     };
+    let boundsFixVector = (x, u) => {
+      return Math.min(1-x, Math.max(-x, u));
+    };
 
     let patchObj = {}
     // Update positions (TODO can optomize and only update if they changed) (same goes for all fields)
@@ -3577,8 +3580,8 @@ class AnnotationCanvas extends TatorElement
     {
       patchObj.x = boundsFix(localization.x0);
       patchObj.y = boundsFix(localization.y0);
-      patchObj.u = boundsFix(localization.x1 - localization.x0);
-      patchObj.v = boundsFix(localization.y1 - localization.y0);
+      patchObj.u = boundsFixVector(localization.x0, localization.x1 - localization.x0);
+      patchObj.v = boundsFixVector(localization.y0, localization.y1 - localization.y0);
     }
     else if (objDescription.dtype=='dot')
     {
