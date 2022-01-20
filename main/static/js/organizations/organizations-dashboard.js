@@ -178,27 +178,27 @@ class OrganizationsDashboard extends TatorPage {
       return Promise.resolve(organization);
     });
 
-    const preset = this._newOrganizationDialog.getOrganizationPreset();
-    let promise;
-    switch (preset) {
-      case "imageClassification":
-        promise = this._configureImageClassification(organizationPromise);
-        break;
-      case "objectDetection":
-        promise = this._configureObjectDetection(organizationPromise);
-        break;
-      case "multiObjectTracking":
-        promise = this._configureMultiObjectTracking(organizationPromise);
-        break;
-      case "activityRecognition":
-        promise = this._configureActivityRecognition(organizationPromise);
-        break;
-      case "none":
-        break;
-      default:
-        console.error(`Invalid preset: ${preset}`);
-    }
-    promise.then(() => {
+    // const preset = this._newOrganizationDialog.getOrganizationPreset();
+    // let promise;
+    // switch (preset) {
+    //   case "imageClassification":
+    //     promise = this._configureImageClassification(organizationPromise);
+    //     break;
+    //   case "objectDetection":
+    //     promise = this._configureObjectDetection(organizationPromise);
+    //     break;
+    //   case "multiObjectTracking":
+    //     promise = this._configureMultiObjectTracking(organizationPromise);
+    //     break;
+    //   case "activityRecognition":
+    //     promise = this._configureActivityRecognition(organizationPromise);
+    //     break;
+    //   case "none":
+    //     break;
+    //   default:
+    //     console.error(`Invalid preset: ${preset}`);
+    // }
+    organizationPromise.then(() => {
       this._modalNotify.init("Organization created successfully!",
                              "Continue to organization settings or close this dialog.",
                              "ok",
@@ -217,189 +217,189 @@ class OrganizationsDashboard extends TatorPage {
     });*/
   }
 
-  _configureImageClassification(organizationPromise) {
-    return organizationPromise.then(organization => {
-      return fetch(`/rest/MediaTypes/${organization.id}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Images",
-          dtype: "image",
-          attribute_types: [{
-            name: "Label",
-            description: "Image classification label.",
-            dtype: "string",
-            order: 0,
-          }],
-        }),
-      })
-      .then(response => response.json());
-    });
-  }
+  // _configureImageClassification(organizationPromise) {
+  //   return organizationPromise.then(organization => {
+  //     return fetch(`/rest/MediaTypes/${organization.id}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Images",
+  //         dtype: "image",
+  //         attribute_types: [{
+  //           name: "Label",
+  //           description: "Image classification label.",
+  //           dtype: "string",
+  //           order: 0,
+  //         }],
+  //       }),
+  //     })
+  //     .then(response => response.json());
+  //   });
+  // }
 
-  _configureObjectDetection(organizationPromise) {
-    return organizationPromise.then(organization => {
-      const imagePromise = fetch(`/rest/MediaTypes/${organization.id}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Images",
-          dtype: "image",
-          attribute_types: [],
-        }),
-      });
-      const videoPromise = fetch(`/rest/MediaTypes/${organization.id}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Videos",
-          dtype: "video",
-          attribute_types: [],
-        }),
-      });
-      return Promise.all([imagePromise, videoPromise]);
-    })
-    .then(responses => Promise.all(responses.map(resp => resp.json())))
-    .then(([imageResponse, videoResponse]) => {
-      return fetch(`/rest/LocalizationTypes/${this._newOrganizationId}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Boxes",
-          dtype: "box",
-          media_types: [imageResponse.id, videoResponse.id],
-          attribute_types: [{
-            name: "Label",
-            description: "Object detection label.",
-            dtype: "string",
-            order: 0,
-          }],
-        }),
-      });
-    });
-  }
+  // _configureObjectDetection(organizationPromise) {
+  //   return organizationPromise.then(organization => {
+  //     const imagePromise = fetch(`/rest/MediaTypes/${organization.id}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Images",
+  //         dtype: "image",
+  //         attribute_types: [],
+  //       }),
+  //     });
+  //     const videoPromise = fetch(`/rest/MediaTypes/${organization.id}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Videos",
+  //         dtype: "video",
+  //         attribute_types: [],
+  //       }),
+  //     });
+  //     return Promise.all([imagePromise, videoPromise]);
+  //   })
+  //   .then(responses => Promise.all(responses.map(resp => resp.json())))
+  //   .then(([imageResponse, videoResponse]) => {
+  //     return fetch(`/rest/LocalizationTypes/${this._newOrganizationId}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Boxes",
+  //         dtype: "box",
+  //         media_types: [imageResponse.id, videoResponse.id],
+  //         attribute_types: [{
+  //           name: "Label",
+  //           description: "Object detection label.",
+  //           dtype: "string",
+  //           order: 0,
+  //         }],
+  //       }),
+  //     });
+  //   });
+  // }
 
-  _configureMultiObjectTracking(organizationPromise) {
-    return organizationPromise.then(organization => {
-      return fetch(`/rest/MediaTypes/${organization.id}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Videos",
-          dtype: "video",
-          attribute_types: [],
-        }),
-      })
-    })
-    .then(response => response.json())
-    .then(videoResponse => {
-      const trackPromise = fetch(`/rest/StateTypes/${this._newOrganizationId}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Tracks",
-          association: "Localization",
-          interpolation: "none",
-          media_types: [videoResponse.id],
-          attribute_types: [{
-            name: "Label",
-            description: "Track label.",
-            dtype: "string",
-            order: 0,
-          }],
-        }),
-      });
-      const boxPromise = fetch(`/rest/LocalizationTypes/${this._newOrganizationId}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Boxes",
-          dtype: "box",
-          media_types: [videoResponse.id],
-          attribute_types: [],
-        }),
-      });
-      return Promise.all([trackPromise, boxPromise]);
-    });
-  }
+  // _configureMultiObjectTracking(organizationPromise) {
+  //   return organizationPromise.then(organization => {
+  //     return fetch(`/rest/MediaTypes/${organization.id}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Videos",
+  //         dtype: "video",
+  //         attribute_types: [],
+  //       }),
+  //     })
+  //   })
+  //   .then(response => response.json())
+  //   .then(videoResponse => {
+  //     const trackPromise = fetch(`/rest/StateTypes/${this._newOrganizationId}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Tracks",
+  //         association: "Localization",
+  //         interpolation: "none",
+  //         media_types: [videoResponse.id],
+  //         attribute_types: [{
+  //           name: "Label",
+  //           description: "Track label.",
+  //           dtype: "string",
+  //           order: 0,
+  //         }],
+  //       }),
+  //     });
+  //     const boxPromise = fetch(`/rest/LocalizationTypes/${this._newOrganizationId}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Boxes",
+  //         dtype: "box",
+  //         media_types: [videoResponse.id],
+  //         attribute_types: [],
+  //       }),
+  //     });
+  //     return Promise.all([trackPromise, boxPromise]);
+  //   });
+  // }
 
-  _configureActivityRecognition(organizationPromise) {
-    return organizationPromise.then(organization => {
-      return fetch(`/rest/MediaTypes/${organization.id}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Videos",
-          dtype: "video",
-          attribute_types: [],
-        }),
-      })
-    })
-    .then(response => response.json())
-    .then(videoResponse => {
-      return fetch(`/rest/StateTypes/${this._newOrganizationId}`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "Activities",
-          association: "Frame",
-          interpolation: "latest",
-          media_types: [videoResponse.id],
-          attribute_types: [{
-            name: "Something in view",
-            description: "Whether something is happening in the video.",
-            dtype: "bool",
-            order: 0,
-          }],
-        }),
-      });
-    });
-  }
+  // _configureActivityRecognition(organizationPromise) {
+  //   return organizationPromise.then(organization => {
+  //     return fetch(`/rest/MediaTypes/${organization.id}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Videos",
+  //         dtype: "video",
+  //         attribute_types: [],
+  //       }),
+  //     })
+  //   })
+  //   .then(response => response.json())
+  //   .then(videoResponse => {
+  //     return fetch(`/rest/StateTypes/${this._newOrganizationId}`, {
+  //       method: "POST",
+  //       credentials: "same-origin",
+  //       headers: {
+  //         "X-CSRFToken": getCookie("csrftoken"),
+  //         "Accept": "application/json",
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         name: "Activities",
+  //         association: "Frame",
+  //         interpolation: "latest",
+  //         media_types: [videoResponse.id],
+  //         attribute_types: [{
+  //           name: "Something in view",
+  //           description: "Whether something is happening in the video.",
+  //           dtype: "bool",
+  //           order: 0,
+  //         }],
+  //       }),
+  //     });
+  //   });
+  // }
 }
 
 customElements.define("organizations-dashboard", OrganizationsDashboard);
