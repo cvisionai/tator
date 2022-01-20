@@ -23,7 +23,7 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         gevent==21.1.2 uritemplate==3.0.1 pylint pylint-django \
         django-cognito-jwt==0.0.3 boto3==1.17.84 \
         google-cloud-storage==1.37.1 datadog==0.41.0 \
-        kubernetes==21.7.0
+        kubernetes==21.7.0 openapi-core==0.14.2
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
@@ -33,12 +33,6 @@ RUN wget https://raw.githubusercontent.com/diafygi/acme-tiny/4.1.0/acme_tiny.py
 RUN wget https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl
 RUN chmod +x kubectl
 RUN mv kubectl /usr/local/bin/.
-
-# Install fork of openapi-core that works in DRF views
-WORKDIR /working
-RUN git clone https://github.com/jrtcppv/openapi-core.git
-WORKDIR /working/openapi-core
-RUN python3 setup.py install
 
 # Copy over the project
 COPY . /tator_online
