@@ -22,17 +22,17 @@ class FilterData {
 
     this._modelData = modelData;
 
-    if (algorithmCategories != undefined) {
+    if (algorithmCategories != null) {
       this.algorithmCategories = algorithmCategories;
     }
 
     this.excludeTypesList = [];
-    if (excludeTypesList) {
+    if (excludeTypesList != null) {
       this.excludeTypesList = excludeTypesList;
     }
 
     this.skipTypeIds = [];
-    if (skipTypeIds) {
+    if (skipTypeIds != null) {
       this.skipTypeIds = skipTypeIds;
     }
   }
@@ -50,9 +50,9 @@ class FilterData {
     this.algorithms = [];
     var algorithms = this._modelData.getStoredAlgorithms();
 
-    if (this.algorithmCategories != undefined) {
+    if (typeof this.algorithmCategories != "undefined") {
       for (const algo of algorithms) {
-        if (algo.categories != undefined) {
+        if (typeof algo.categories != "undefined") {
           for (const algoCategory of algo.categories) {
             if (this.algorithmCategories.indexOf(algoCategory) >= 0) {
               this.algorithms.push(algo);

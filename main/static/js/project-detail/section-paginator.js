@@ -68,16 +68,16 @@ class SectionPaginator extends TatorElement {
     pageSizeText.textContent = "Page Size:";
     div.appendChild(pageSizeText);
 
-    const pageSize = document.createElement("select");
-    pageSize.setAttribute("class", "form-select select-sm2 has-border");
+    this._pageSizeSelect = document.createElement("select");
+    this._pageSizeSelect.setAttribute("class", "form-select select-sm2 has-border");
     for (const pageOption of [10, 25, 50, 100]) {
       const option = document.createElement("option");
       option.setAttribute("value", pageOption);
       option.textContent = pageOption;
-      pageSize.appendChild(option);
+      this._pageSizeSelect.appendChild(option);
     }
-    pageSize.selectedIndex = 2;
-    div.appendChild(pageSize);
+    this._pageSizeSelect.selectedIndex = 2;
+    div.appendChild(this._pageSizeSelect);
 
     const goToPageText = document.createElement("span");
     goToPageText.setAttribute("class", "pagination__ellipsis");
@@ -103,7 +103,7 @@ class SectionPaginator extends TatorElement {
       this._emit();
     });
 
-    pageSize.addEventListener("change", evt => {
+    this._pageSizeSelect.addEventListener("change", evt => {
       if (evt.target.value != "Page Size") {
         this._pageSize = Number(evt.target.value);
         this.init(this._numFiles);
@@ -126,6 +126,14 @@ class SectionPaginator extends TatorElement {
     this._pageSize = 50;
   }
 
+  set pageSize(val) {
+    console.log(`Set function page size is ${val}`)
+    if (Number(val) !== this._pageSize) {
+      this._pageSize = val;
+      this._pageSizeSelect.value = val;
+    }
+  }
+
   init(numFiles) {
     this._numFiles = numFiles;
     this._numPages = Math.ceil(this._numFiles / this._pageSize);
@@ -135,7 +143,6 @@ class SectionPaginator extends TatorElement {
 
   _setPage(page) {
     this._page = page;
-    console.log(page);
 
     // Update appearance to reflect new page.
     if (this._numPages == 1) {
