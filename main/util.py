@@ -379,13 +379,19 @@ def move_backups_to_s3():
     logger.info(f"Finished moving {num_moved} files!")
 
 
-def fix_bad_archives(*, project_id_list=None, live_run=False):
+def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False):
     from pprint import pformat
-    media_to_update = []
+    media_to_update = set()
+    path_filename = "manifest_spec.txt"
+
+    def _tag_needs_updating(path, store):
+        return force_update or not store._object_tagged_for_archive(path)
 
     def _sc_needs_updating(path, store):
-        response = store.head_object(path)
-        return response.get("StorageClass", "STANDARD") != store.get_archive_sc()
+        return (
+            force_update
+            or store.head_object(path).get("StorageClass", "STANDARD") != store.get_archive_sc()
+        )
 
     def _update_tag(path, store):
         if live_run:
@@ -395,7 +401,7 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
                 logger.warning(f"Tag operation on {path} failed", exc_info=True)
                 return False
         else:
-            media_to_update.append(f"{path}\n")
+            media_to_update.add(f"{path}\n")
 
         return True
 
@@ -406,17 +412,22 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
 
         success = True
         sc_needs_updating = False
+        tag_needs_updating = False
         media_qs = Media.objects.filter(pk__in=media_ids)
         for single in media_qs.iterator():
-            single_success, single_sc_needs_updating = _archive_single(single, store)
+            single_success, single_sc_needs_updating, single_tag_needs_updating = _archive_single(
+                single, store
+            )
             success = success and single_success
             sc_needs_updating = sc_needs_updating or single_sc_needs_updating
+            tag_needs_updating = tag_needs_updating or single_tag_needs_updating
 
-        return success, sc_needs_updating
+        return success, sc_needs_updating, tag_needs_updating
 
     def _archive_single(single, store):
         success = True
         sc_needs_updating = False
+        tag_needs_updating = False
         for key in ["streaming", "archival", "audio", "image"]:
             if not (key in single.media_files and single.media_files[key]):
                 continue
@@ -429,21 +440,29 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
                     success = False
                     continue
 
-                if _sc_needs_updating(path, store):
-                    sc_needs_updating = True
+                if not _sc_needs_updating(path, store):
+                    continue
+
+                sc_needs_updating = True
+                if not _tag_needs_updating(path, store):
+                    continue
+
+                tag_needs_updating = True
+                try:
+                    success = _update_tag(path, store) and success
+                except:
+                    logger.warning(
+                        f"Copy operation on {path} from {single.id} failed", exc_info=True
+                    )
+                    success = False
+
+                if key == "streaming":
                     try:
-                        success = _update_tag(path, store) and success
+                        success = _update_tag(obj["segment_info"], store) and success
                     except:
-                        logger.warning(f"Copy operation on {path} from {single.id} failed", exc_info=True)
                         success = False
 
-                    if key == "streaming":
-                        try:
-                            success = _update_tag(obj["segment_info"], store) and success
-                        except:
-                            success = False
-
-        return success, sc_needs_updating
+        return success, sc_needs_updating, tag_needs_updating
 
     logger.info(f"fix_bad_archives {'live' if live_run else 'dry'} run")
 
@@ -458,25 +477,35 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
         proj_id = project.id
         logger.info(f"Analyzing project {proj_id}...")
         archived_media_qs = Media.objects.filter(project=project, archive_state="archived")
-        if archived_media_qs.count() < 1:
+        media_count = archived_media_qs.count()
+        if media_count < 1:
             logger.info(f"No archived media in project {proj_id}, moving on")
             continue
 
         archive_state_dict[proj_id] = {
             "correct_sc": 0,
             "successfully_archived": 0,
+            "correct_tag": 0,
+            "successfully_tagged": 0,
             "failed": 0,
         }
+        idx = 0
         for media in archived_media_qs.iterator():
+            idx += 1
+            if idx % 250 == 0 or idx == media_count:
+                logger.info(
+                    f"Processed {idx} of {media_count} archived media for project {project.id}"
+                )
+
             if not media.meta:
                 logger.warning(f"No dtype for '{media.id}'")
                 continue
 
             media_dtype = media.meta.dtype
             if media_dtype in ["image", "video"]:
-                success, sc_needs_updating = _archive_single(media, tator_store)
+                success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
             elif media_dtype == "multi":
-                success, sc_needs_updating = _archive_multi(media, tator_store)
+                success, sc_needs_updating, tag_needs_updating = _archive_multi(media, tator_store)
             else:
                 logger.warning(
                     f"Unrecognized dtype '{media_dtype}' for media {media.id}, failed to archive"
@@ -484,6 +513,11 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
                 continue
 
             if success:
+                if tag_needs_updating:
+                    archive_state_dict[proj_id]["successfully_tagged"] += 1
+                else:
+                    archive_state_dict[proj_id]["correct_tag"] += 1
+
                 if sc_needs_updating:
                     archive_state_dict[proj_id]["successfully_archived"] += 1
                 else:
@@ -491,7 +525,7 @@ def fix_bad_archives(*, project_id_list=None, live_run=False):
             else:
                 archive_state_dict[proj_id]["failed"] += 1
 
-    logger.info(f"fix_bad_archives stats:\n{pformat(archive_state_dict)}")
+    logger.info(f"fix_bad_archives stats:\n{pformat(archive_state_dict)}\n")
     if media_to_update:
-        with open("manifest_spec.csv", "w") as fp:
+        with open(path_filename, "w") as fp:
             fp.writelines(media_to_update)
