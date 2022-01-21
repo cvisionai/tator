@@ -189,7 +189,7 @@ class ProjectSettings extends TatorPage {
               // console.log(e.detail);
               typeClassView.updateMediaList(e.detail);
             });
-          } else if (typeClassView.typeName == "Version") {
+          } else if (typeClassView.typeName == "Version" || typeClassView.typeName == "Membership") {
             this._dataVersionList.el.addEventListener("change", (e) => {
               // console.log(e.detail);
               typeClassView.updateVersionList(e.detail);
@@ -202,7 +202,7 @@ class ProjectSettings extends TatorPage {
           }
 
           // Make versions new list before we add an empty row
-          if (typeClassView.typeName == "Version") {
+          if (typeClassView.typeName == "Version" || typeClassView.typeName == "Membership") {
             this._dataVersionList._setVersionList("", true);
           }
 
@@ -253,7 +253,7 @@ class ProjectSettings extends TatorPage {
         }
 
         // Make versions new list before we add an empty row
-        if (formView.typeName == "Version") {
+        if (formView.typeName == "Version" || formView.typeName == "Membership") {
           // Versions number sort
           if (typeof objData[0] !== "undefined" && typeof objData[0].number !== "undefined") {
             objData = objData.sort((a, b) => a.number > b.number);
@@ -299,7 +299,7 @@ class ProjectSettings extends TatorPage {
               // console.log(e.detail);
               form.updateMediaList(e.detail);
             });
-          } else if (form.typeName == "Version") {
+          } else if (form.typeName == "Version" || form.typeName == "Membership") {
             this._dataVersionList.el.addEventListener("change", (e) => {
               // console.log(e.detail);
               form.updateVersionList(e.detail);
