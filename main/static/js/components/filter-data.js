@@ -124,6 +124,12 @@ class FilterData {
         entityType.typeGroupName = "Media";
 
         if (this.skipTypeIds.indexOf(this.mediaTypes[idx].id) < 0) {
+          var nameAttribute = {
+            name: "filename",
+            dtype: "string"
+          };
+          entityType.attribute_types.push(nameAttribute);
+
           var sectionAttribute = {
             choices: sectionNames,
             name: "_section",
@@ -132,7 +138,6 @@ class FilterData {
           entityType.attribute_types.push(sectionAttribute);
 
           var mediaIdAttribute = {
-            choices: sectionNames,
             name: "_id",
             dtype: "int"
           };
