@@ -1939,7 +1939,7 @@ class VideoCanvas extends AnnotationCanvas {
     let scrub_idx = -1;
     let hq_idx = -1;
     let streaming_files = null;
-    this._lastSeekFrame = -1;
+    this._lastDownloadSeekFrame = -1;
     if (videoObject.media_files)
     {
       streaming_files = videoObject.media_files["streaming"];
@@ -2366,9 +2366,10 @@ class VideoCanvas extends AnnotationCanvas {
       // seek operations
       this._seekFrame = frame;
 
-      if (this._lastSeekFrame != this._seekFrame)
+      if (this._lastDownloadSeekFrame != this._seekFrame)
       {
         downloadSeekFrame = true;
+        this._lastDownloadSeekFrame = this._seekFrame;
       }
 
       clearTimeout(this._seek_expire);
@@ -2431,7 +2432,6 @@ class VideoCanvas extends AnnotationCanvas {
         if (createTimeout)
         {
           that._seek_expire = setTimeout(() => {
-            that._lastSeekFrame = that._seekFrame;
             that._seekFrame = -1;
             that._seek_expire = null;
             document.body.style.cursor = null;
