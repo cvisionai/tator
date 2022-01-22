@@ -1,6 +1,7 @@
 import json
 import os
 import traceback
+import psycopg2
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -1570,6 +1571,7 @@ def database_query(query):
     import datetime
     with connection.cursor() as d_cursor:
         cursor = d_cursor.cursor
+        psycopg2.extras.register_default_jsonb(conn_or_curs=cursor)
         bq=datetime.datetime.now()
         cursor.execute(query)
         aq=datetime.datetime.now()
