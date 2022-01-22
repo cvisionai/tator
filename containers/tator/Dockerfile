@@ -11,18 +11,18 @@ RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
 RUN pip3 --no-cache-dir --timeout=1000 install pyyaml==5.3.1
 RUN pip3 --no-cache-dir --timeout=1000 install \
-        django==2.2.7 django-enumfields==1.0.0 \
-        psycopg2-binary==2.8.4 pillow==6.2.1 imageio==2.6.1 \
-        djangorestframework==3.11.0 pygments==2.4.2 \
-        django-extensions==2.2.5 pygraphviz==1.5 \
-        pyparsing==2.4.5 pydot==1.4.1 markdown==3.1.1 \
-        hiredis==1.0.0 redis==3.3.11 greenlet==1.1.2 \
-        gunicorn==20.1.0 django_admin_json_editor==0.2.0 django-ltree==0.4 \
-        requests==2.22.0 python-dateutil==2.8.1 ujson==1.35 slackclient==2.3.1 \
-        google-auth==1.28.0 elasticsearch==7.1.0 progressbar2==3.47.0 \
-        gevent==21.12.0 uritemplate==3.0.1 pylint pylint-django \
-        django-cognito-jwt==0.0.3 boto3==1.17.84 \
-        google-cloud-storage==1.37.1 datadog==0.41.0 \
+        django==3.2.11 django-enumfields==2.1.1 \
+        psycopg2-binary==2.9.3 pillow==9.0.0 imageio==2.14.0 \
+        djangorestframework==3.13.1 pygments==2.11.2 \
+        django-extensions==3.1.5 pygraphviz==1.8 \
+        pyparsing==3.0.7 pydot==1.4.2 markdown==3.3.6 \
+        hiredis==2.0.0 redis==4.1.1 greenlet==1.1.2 \
+        gunicorn==20.1.0 django_admin_json_editor==0.2.3 django-ltree==0.5.3 \
+        requests==2.27.0 python-dateutil==2.8.2 ujson==5.1.0 slackclient==2.9.3 \
+        google-auth==2.3.3 elasticsearch==7.1.0 progressbar2==4.0.0 \
+        gevent==21.12.0 uritemplate==4.1.1 pylint pylint-django \
+        django-cognito-jwt==0.0.4 boto3==1.20.41 \
+        google-cloud-storage==2.1.0 datadog==0.43.0 \
         kubernetes==21.7.0
 
 # Get acme_tiny.py for certificate renewal

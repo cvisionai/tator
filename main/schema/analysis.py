@@ -31,7 +31,7 @@ class AnalysisListSchema(AutoSchema):
             short_desc = 'Create analysis.'
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
             'in': 'path',
@@ -40,10 +40,10 @@ class AnalysisListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -69,7 +69,7 @@ class AnalysisListSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = {}
         if method == 'GET':
             responses['404'] = {'description': 'Failure to find project with given ID.'}
@@ -114,7 +114,7 @@ class AnalysisDetailSchema(AutoSchema):
             description = 'Update analysis record'
         return description
 
-    def _get_path_parameters(self, path, method) -> list:
+    def get_path_parameters(self, path, method) -> list:
         parameters = [{
             'name': 'id',
             'in': 'path',
@@ -125,10 +125,10 @@ class AnalysisDetailSchema(AutoSchema):
 
         return parameters
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method) -> dict:
+    def get_request_body(self, path, method) -> dict:
         body = {}
         if method == 'PATCH':
             body = {
@@ -142,7 +142,7 @@ class AnalysisDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {

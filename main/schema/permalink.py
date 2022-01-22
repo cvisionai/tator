@@ -22,7 +22,7 @@ class PermalinkSchema(AutoSchema):
             short_desc = "Get permalink"
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -31,7 +31,7 @@ class PermalinkSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method == 'GET':
             params = [
@@ -56,7 +56,7 @@ class PermalinkSchema(AutoSchema):
             ]
         return params
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['301'] = {

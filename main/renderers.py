@@ -1,4 +1,7 @@
 from rest_framework.renderers import BaseRenderer
+from rest_framework.renderers import JSONRenderer
+from django_ltree.fields import PathValue
+from .encoders import TatorJSONEncoder
 
 import csv
 import io
@@ -7,6 +10,7 @@ import logging
 
 from collections import OrderedDict
 from pprint import pprint
+
 
 logger = logging.getLogger(__name__)
 
@@ -53,14 +57,8 @@ class PprintRenderer(BaseRenderer):
         """ Returns a pretty printed representation of the list object """
         return ujson.dumps(listObj, indent=4)
 
-
-class UJsonRenderer(BaseRenderer):
-    """ Uses ujson instead of json to serialize an object """
-    media_type = 'application/json'
-    format = 'json'
-
-    def render(self, obj, media_type=None, renderer_context=None):
-        return ujson.dumps(obj, ensure_ascii=True, escape_forward_slashes=False)
+class TatorRenderer(JSONRenderer):
+    encoder_class = TatorJSONEncoder
 
 class JpegRenderer(BaseRenderer):
     media_type = 'image/jpeg'

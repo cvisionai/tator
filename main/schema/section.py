@@ -30,7 +30,7 @@ class SectionListSchema(AutoSchema):
             short_desc = "Create section."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
             'in': 'path',
@@ -39,7 +39,7 @@ class SectionListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return [{
             'name': 'name',
             'in': 'query',
@@ -48,7 +48,7 @@ class SectionListSchema(AutoSchema):
             'schema': {'type': 'string'},
         }]
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -59,7 +59,7 @@ class SectionListSchema(AutoSchema):
 
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -95,7 +95,7 @@ class SectionDetailSchema(AutoSchema):
             short_desc = "Delete section."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method) -> list:
+    def get_path_parameters(self, path, method) -> list:
         parameters = [{
             'name': 'id',
             'in': 'path',
@@ -106,10 +106,10 @@ class SectionDetailSchema(AutoSchema):
 
         return parameters
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method) -> dict:
+    def get_request_body(self, path, method) -> dict:
         body = {}
         if method == 'PATCH':
             body = {
@@ -123,7 +123,7 @@ class SectionDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
