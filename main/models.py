@@ -29,9 +29,9 @@ from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager
 from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
+from django.db.models import JSONField
 from django.db.models import FloatField, Transform,UUIDField
 from django.db.models.signals import post_save
 from django.db.models.signals import pre_delete
