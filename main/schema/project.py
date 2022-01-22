@@ -31,10 +31,10 @@ class ProjectListSchema(AutoSchema):
             short_desc = 'Create project.'
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return []
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return [{
             'name': 'organization',
             'in': 'query',
@@ -43,7 +43,7 @@ class ProjectListSchema(AutoSchema):
             'schema': {'type': 'integer', 'minimum': 1},
         }]
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -57,7 +57,7 @@ class ProjectListSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -97,7 +97,7 @@ class ProjectDetailSchema(AutoSchema):
             """)
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -106,10 +106,10 @@ class ProjectDetailSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -123,7 +123,7 @@ class ProjectDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {

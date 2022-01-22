@@ -17,7 +17,7 @@ class OrganizationUploadInfoSchema(AutoSchema):
         Retrieve URL for file upload to a given organization.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'organization',
             'in': 'path',
@@ -26,7 +26,7 @@ class OrganizationUploadInfoSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method  == 'GET':
             params = [
@@ -53,10 +53,10 @@ class OrganizationUploadInfoSchema(AutoSchema):
             ]
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         return {}
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {

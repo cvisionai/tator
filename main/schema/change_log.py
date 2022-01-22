@@ -57,7 +57,7 @@ class ChangeLogListSchema(AutoSchema):
 
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [
             {
                 "name": "project",
@@ -68,16 +68,16 @@ class ChangeLogListSchema(AutoSchema):
             }
         ]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method in ["GET"]:
             params += change_log_filter_schema
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         return {}
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == "GET":
             responses["200"] = {
