@@ -834,7 +834,7 @@ class TypeForm extends TatorElement {
   }
 
   updateVersionList(detail) {
-    //Look for the input and remove specific checkbox, or rename the label
+    //Look for the input and remove specific checkbox, or rename the label   
     if (typeof this._basesCheckbox !== "undefined") {
       if (detail.changed == "rename") {
         // console.log("Heard rename")
@@ -853,6 +853,29 @@ class TypeForm extends TatorElement {
         };
 
         this._basesCheckbox._newInput(item);
+      }
+
+    } else if (typeof this._versionSelect !== "undefined") {
+      if (detail.changed == "rename") {
+        // console.log("Heard rename")
+        for (let option of this._versionSelect._select.options) {
+          if (option.value == detail.typeId) {
+            return option.innerText = detail.newName;
+          }
+        }
+      } else if (detail.changed == "remove") {
+        // console.log("Heard remove")
+        for (let i in this._versionSelect._select.options) {
+          let option = this._versionSelect._select.options[i];
+          if (option.value == detail.typeId) {
+            this._versionSelect._select.remove(i);
+          }
+        }
+      } else if (detail.changed == "new") {
+        const newOption = document.createElement("option");
+        newOption.value = detail.typeId,
+        newOption.innerText = detail.newName
+        this._versionSelect._select.appendChild(newOption);
       }
 
     }

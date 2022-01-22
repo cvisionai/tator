@@ -449,8 +449,6 @@ class MinIOStorage(TatorStorage):
             for part in range(1, num_parts + 1)
         ]
 
-        for url in urls:
-            logger.info(f"GOOGLE {url}")
         return urls, upload_id
 
     def _get_single_upload_url(self, key, expiration, domain):

@@ -134,11 +134,10 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   play_button.click() # play the video
   time.sleep(5) # This is simulating the user watching, not dependent on any events.
   play_button.click() # pause the video
-  canvas_frame = _get_canvas_frame(canvas[0])
-  assert(canvas_frame > 0)
-  assert(int(display_div.inner_text())==canvas_frame)
-  canvas_frame = _get_canvas_frame(canvas[1])
-  assert(int(display_div.inner_text())==canvas_frame)
+  current_frame = int(display_div.inner_text())
+  assert(current_frame > 0)
+  _wait_for_frame(canvas[0], current_frame)
+  _wait_for_frame(canvas[1], current_frame)
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
@@ -147,18 +146,16 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
 
   page.mouse.move(seek_x+500, seek_y, steps=50)
   time.sleep(1)
-  canvas_frame = _get_canvas_frame(canvas[0])
-  assert(int(display_div.inner_text())==canvas_frame)
-  canvas_frame = _get_canvas_frame(canvas[1])
-  assert(int(display_div.inner_text())==canvas_frame)
+  current_frame = int(display_div.inner_text())
+  _wait_for_frame(canvas[0], current_frame)
+  _wait_for_frame(canvas[1], current_frame)
   page.mouse.up()
 
   # Complete scrub
   time.sleep(5)
-  canvas_frame = _get_canvas_frame(canvas[0])
-  assert(int(display_div.inner_text())==canvas_frame)
-  canvas_frame = _get_canvas_frame(canvas[1])
-  assert(int(display_div.inner_text())==canvas_frame)
+  current_frame = int(display_div.inner_text())
+  _wait_for_frame(canvas[0], current_frame)
+  _wait_for_frame(canvas[1], current_frame)
   page.close()
 
 def test_small_res_file(page_factory, project, small_video):

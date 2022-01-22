@@ -308,6 +308,7 @@ FILES = \
     organizations/organization-summary.js \
     organizations/new-organization.js \
     organizations/organizations-dashboard.js \
+    organizations/new-organization-dialog.js \
     account-profile/account-profile.js \
     token/token-page.js \
     new-project/new-project-close.js \
