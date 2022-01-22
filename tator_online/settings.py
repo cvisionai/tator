@@ -232,7 +232,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication'
     ),
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
+        'main.renderers.TatorRenderer',
         'main.renderers.CsvRenderer',
         'main.renderers.PprintRenderer',
     ),
@@ -245,6 +245,9 @@ REST_FRAMEWORK = {
         'anon': '10/second',
         'user': '100/second',
     },
+    'TEST_REQUEST_RENDERER_CLASSES': [
+        'main.renderers.TatorRenderer',
+    ],
 }
 
 AUTHENTICATION_BACKENDS = ['main.auth.TatorAuth']
