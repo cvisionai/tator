@@ -16,11 +16,11 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         djangorestframework==3.13.1 pygments==2.11.2 \
         django-extensions==3.1.5 pygraphviz==1.8 \
         pyparsing==3.0.7 pydot==1.4.2 markdown==3.3.6 \
-        hiredis==2.0.0 redis==4.1.1 greenlet==1.1.2 \
+        hiredis==2.0.0 redis==4.1.1 greenlet==0.4.15 \
         gunicorn==20.1.0 django_admin_json_editor==0.2.3 django-ltree==0.5.3 \
         requests==2.27.0 python-dateutil==2.8.2 ujson==5.1.0 slackclient==2.9.3 \
         google-auth==2.3.3 elasticsearch==7.1.0 progressbar2==4.0.0 \
-        gevent==21.12.0 uritemplate==4.1.1 pylint pylint-django \
+        gevent==1.4.0 uritemplate==4.1.1 pylint pylint-django \
         django-cognito-jwt==0.0.4 boto3==1.20.41 \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
         kubernetes==21.7.0
