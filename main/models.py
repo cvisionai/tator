@@ -463,8 +463,8 @@ class Project(Model):
     """ Duration of all videos in this project.
     """
     summary = CharField(max_length=1024)
-    filter_autocomplete = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
-    attribute_type_uuids = JSONField(encoder=TatorJSONEncoder, default=dict, null=True, blank=True)
+    filter_autocomplete = JSONField(null=True, blank=True)
+    attribute_type_uuids = JSONField(default=dict, null=True, blank=True)
     enable_downloads = BooleanField(default=True)
     thumb = CharField(max_length=1024, null=True, blank=True)
     usernames = ArrayField(CharField(max_length=256), default=list)
@@ -606,7 +606,7 @@ class Algorithm(Model):
         validators=[MinValueValidator(1),]
     )
     categories = ArrayField(CharField(max_length=128), default=list, null=True)
-    parameters = JSONField(encoder=TatorJSONEncoder, default=list, null=True, blank=True)
+    parameters = JSONField(default=list, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -674,8 +674,7 @@ class MediaType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    editTriggers = JSONField(encoder=TatorJSONEncoder,
-                             null=True,
+    editTriggers = JSONField(null=True,
                              blank=True)
     file_format = CharField(max_length=4,
                             null=True,
@@ -683,7 +682,7 @@ class MediaType(Model):
                             default=None)
     default_volume = IntegerField(default=0)
     """ Default Volume for Videos (default is muted) """
-    attribute_types = JSONField(encoder=TatorJSONEncoder, default=list, null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
@@ -708,9 +707,9 @@ class MediaType(Model):
                      as the default for datetime dtype.
         style: (optional) String of GUI-related styles.
     """
-    archive_config = JSONField(encoder=TatorJSONEncoder, default=None, null=True, blank=True)
-    streaming_config = JSONField(encoder=TatorJSONEncoder, default=None, null=True,blank=True)
-    overlay_config = JSONField(encoder=TatorJSONEncoder, default=None,null=True,blank=True)
+    archive_config = JSONField(default=None, null=True, blank=True)
+    streaming_config = JSONField(default=None, null=True,blank=True)
+    overlay_config = JSONField(default=None,null=True,blank=True)
     """
     Overlay configuration provides text overlay on video / image based on
     configruation examples:
@@ -754,9 +753,9 @@ class LocalizationType(Model):
     grouping_default = BooleanField(default=True)
     """ Whether to group elements in the UI by default."""
     media = ManyToManyField(MediaType)
-    colorMap = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    colorMap = JSONField(null=True, blank=True)
     line_width = PositiveIntegerField(default=3)
-    attribute_types = JSONField(encoder=TatorJSONEncoder, default=list, null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
@@ -804,7 +803,7 @@ class StateType(Model):
     association = CharField(max_length=64,
                             choices=AssociationTypes,
                             default=AssociationTypes[0][0])
-    attribute_types = JSONField(encoder=TatorJSONEncoder, default=list, null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
@@ -852,7 +851,7 @@ class LeafType(Model):
     description = CharField(max_length=256, blank=True)
     visible = BooleanField(default=True)
     """ Whether this type should be displayed in the UI."""
-    attribute_types = JSONField(encoder=TatorJSONEncoder, default=list, null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ User defined attributes.
 
         An array of objects, each containing the following fields:
@@ -947,7 +946,7 @@ class Media(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
     gid = CharField(max_length=36, null=True, blank=True)
     """ Group ID for the upload that created this media. Note we intentionally do
@@ -977,7 +976,7 @@ class Media(Model, ModelDiffMixin):
     codec = CharField(null=True, blank=True, max_length=256)
     width=IntegerField(null=True)
     height=IntegerField(null=True)
-    media_files = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    media_files = JSONField(null=True, blank=True)
     deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
     archive_state = CharField(
@@ -1032,7 +1031,7 @@ class FileType(Model):
     """ Name of the file type"""
     description = CharField(max_length=256, blank=True)
     """ Description of the file type"""
-    attribute_types = JSONField(encoder=TatorJSONEncoder, default=list, null=True, blank=True)
+    attribute_types = JSONField(default=list, null=True, blank=True)
     """ Refer to the attribute_types field for the other *Type models
     """
     dtype = CharField(max_length=16, choices=[('file', 'file')], default='file')
@@ -1066,7 +1065,7 @@ class File(Model, ModelDiffMixin):
     """ Project associated with the file """
     meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Type associated with file """
-    attributes = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
 
 class Resource(Model):
@@ -1237,7 +1236,7 @@ class Localization(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1271,7 +1270,7 @@ class Localization(Model, ModelDiffMixin):
     """ Width for boxes."""
     height = FloatField(null=True, blank=True)
     """ Height for boxes."""
-    points = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    points = JSONField(null=True, blank=True)
     """ List of points used by poly dtype. """
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
@@ -1302,7 +1301,7 @@ class State(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1319,7 +1318,7 @@ class State(Model, ModelDiffMixin):
     """
     media = ManyToManyField(Media, related_name='media')
     localizations = ManyToManyField(Localization)
-    segments = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    segments = JSONField(null=True, blank=True)
     color = CharField(null=True, blank=True, max_length=8)
     frame = PositiveIntegerField(null=True, blank=True)
     extracted = ForeignKey(Media,
@@ -1375,7 +1374,7 @@ class Leaf(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1438,11 +1437,11 @@ class Section(Model):
     lucene_search = CharField(max_length=1024, null=True, blank=True)
     """ Optional lucene query syntax search string.
     """
-    media_bools = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    media_bools = JSONField(null=True, blank=True)
     """ Optional list of elasticsearch boolean queries that should be applied
         to media. These are applied to the boolean query "filter" list.
     """
-    annotation_bools = JSONField(encoder=TatorJSONEncoder, null=True, blank=True)
+    annotation_bools = JSONField(null=True, blank=True)
     """ Optional list of elasticsearch boolean queries that should be applied
         to annotations. These are applied to the boolean query "filter" list.
     """
@@ -1465,7 +1464,7 @@ class Favorite(Model):
     meta = PositiveIntegerField()
     name = CharField(max_length=128)
     page = PositiveIntegerField(default=1)
-    values = JSONField(encoder=TatorJSONEncoder)
+    values = JSONField()
     entityTypeName = CharField(max_length=16, choices=[('Localization', 'Localization'), ('State','State')], null=True, blank=True)
 
 class Bookmark(Model):
