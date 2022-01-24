@@ -38,7 +38,7 @@ class LocalizationGraphicSchema(AutoSchema):
         Get localization graphic from a media object.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -47,7 +47,7 @@ class LocalizationGraphicSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
 
         valid_for_non_default_margins_message = f'Valid only if {self.PARAMS_USE_DEFAULT_MARGINS} is false. '
 
@@ -102,10 +102,10 @@ class LocalizationGraphicSchema(AutoSchema):
             ]
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         return {}
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = {}
         if method == 'GET':
             responses['404'] = {

@@ -21,7 +21,7 @@ class SectionAnalysisSchema(AutoSchema):
         on filtered media lists.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
             'in': 'path',
@@ -30,7 +30,7 @@ class SectionAnalysisSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return [
             {
                 'name': 'media_id',
@@ -49,10 +49,10 @@ class SectionAnalysisSchema(AutoSchema):
             },
         ] + attribute_filter_parameter_schema
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         return {}
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {

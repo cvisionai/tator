@@ -29,7 +29,7 @@ class FavoriteListSchema(AutoSchema):
             short_desc = "Create favorite."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
             'in': 'path',
@@ -38,10 +38,10 @@ class FavoriteListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return {}
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -51,7 +51,7 @@ class FavoriteListSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -86,7 +86,7 @@ class FavoriteDetailSchema(AutoSchema):
             short_desc = "Delete favorite."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -95,10 +95,10 @@ class FavoriteDetailSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -108,7 +108,7 @@ class FavoriteDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {

@@ -18,10 +18,10 @@ class UserExistsSchema(AutoSchema):
         if method == 'GET':
             return 'Returns whether a user exists.'
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return []
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method == 'GET':
             params = [{
@@ -40,10 +40,10 @@ class UserExistsSchema(AutoSchema):
             }]
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         return {}
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -80,10 +80,10 @@ class UserListSchema(AutoSchema):
             user can be created with this method.
             """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return []
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method == 'GET':
             params = [{
@@ -102,7 +102,7 @@ class UserListSchema(AutoSchema):
             }]
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -113,7 +113,7 @@ class UserListSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -142,7 +142,7 @@ class UserDetailSchema(AutoSchema):
             short_desc = "Update user."
         return f"{short_desc}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -151,10 +151,10 @@ class UserDetailSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -164,7 +164,7 @@ class UserDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -190,13 +190,13 @@ class CurrentUserSchema(AutoSchema):
         Retrieves user making the request.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return []
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = {
             '200': {
                 'description': 'Successful retrieval of user who sent request.',

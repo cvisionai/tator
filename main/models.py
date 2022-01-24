@@ -1,6 +1,7 @@
 import json
 import os
 import traceback
+import psycopg2
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -29,9 +30,9 @@ from django.contrib.gis.geos import Point
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager
 from django.contrib.postgres.fields import ArrayField
-from django.contrib.postgres.fields import JSONField
 from django.core.validators import MinValueValidator
 from django.core.validators import RegexValidator
+from django.db.models import JSONField
 from django.db.models import FloatField, Transform,UUIDField
 from django.db.models.signals import post_save
 from django.db.models.signals import pre_delete
@@ -48,6 +49,7 @@ from django.db import transaction
 from .search import TatorSearch
 from .ses import TatorSES
 from .download import download_file
+from .encoders import TatorJSONEncoder
 from .store import (
     get_tator_store,
     ObjectStore,
@@ -68,7 +70,6 @@ import uuid
 
 # Load the main.view logger
 logger = logging.getLogger(__name__)
-
 
 class ModelDiffMixin(object):
     """
@@ -1479,7 +1480,7 @@ class ChangeLog(Model):
     project = ForeignKey(Project, on_delete=CASCADE)
     user = ForeignKey(User, on_delete=SET_NULL, null=True)
     modified_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
-    description_of_change = JSONField()
+    description_of_change = JSONField(encoder=TatorJSONEncoder)
     """
     The description of the change applied. A single object with the keys `old` and `new`, each
     containing a list of objects with the keys `name` and `value`. Each object in the `old` list
@@ -1570,6 +1571,7 @@ def database_query(query):
     import datetime
     with connection.cursor() as d_cursor:
         cursor = d_cursor.cursor
+        psycopg2.extras.register_default_jsonb(conn_or_curs=cursor)
         bq=datetime.datetime.now()
         cursor.execute(query)
         aq=datetime.datetime.now()

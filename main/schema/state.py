@@ -57,7 +57,7 @@ class StateListSchema(AutoSchema):
             short_desc = 'Get state list by ID.'
         return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
             'in': 'path',
@@ -66,13 +66,13 @@ class StateListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
             params = annotation_filter_parameter_schema + attribute_filter_parameter_schema
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -149,7 +149,7 @@ class StateListSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method in ['GET', 'PUT']:
             responses['200'] = {
@@ -188,7 +188,7 @@ class StateDetailSchema(AutoSchema):
             short_desc = 'Delete state.'
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -197,10 +197,10 @@ class StateDetailSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -213,7 +213,7 @@ class StateDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -245,7 +245,7 @@ class StateGraphicSchema(AutoSchema):
         control which section of a state is retrieved.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -254,7 +254,7 @@ class StateGraphicSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return [
             {
                 'name': 'mode',
@@ -314,10 +314,10 @@ class StateGraphicSchema(AutoSchema):
             },
         ]
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         return {}
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = {}
         if method == 'GET':
             responses['404'] = {
@@ -358,7 +358,7 @@ class MergeStatesSchema(AutoSchema):
         The target state will inherit the the source's localizations and will be deleted.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -367,10 +367,10 @@ class MergeStatesSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -380,7 +380,7 @@ class MergeStatesSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = {}
         if method == 'PATCH':
             responses['200'] = message_schema('update', 'state')
@@ -400,7 +400,7 @@ class TrimStateEndSchema(AutoSchema):
         before the new start point or after the new end point.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -409,10 +409,10 @@ class TrimStateEndSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -422,7 +422,7 @@ class TrimStateEndSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = {}
         if method == 'PATCH':
             responses['200'] = message_schema('update', 'state')
