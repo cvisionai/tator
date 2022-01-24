@@ -1570,11 +1570,30 @@ class AnnotationMulti extends TatorElement {
 
         if (allVideosReady) {
           console.log("allVideosReady");
-          this._play._button.removeAttribute("disabled");
-          this._rewind.removeAttribute("disabled")
-          this._fastForward.removeAttribute("disabled");
-          this._play.removeAttribute("tooltip");
-          this._playbackDisabled = false;
+
+          var seekPromiseList = [];
+          for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++) {
+            let video = this._videos[vidIdx];
+            const seekPromise = video.seekFrame(video.currentFrame(), video.drawFrame, true, null, true);
+            seekPromiseList.push(seekPromise);
+          }
+          Promise.allSettled(seekPromiseList).then(() => {
+            this._play._button.removeAttribute("disabled");
+            this._rewind.removeAttribute("disabled")
+            this._fastForward.removeAttribute("disabled");
+            this._play.removeAttribute("tooltip");
+            this._playbackDisabled = false;
+          })
+          .catch((exc) => {
+            console.warn("allVideosReady() seekFrame promises error caught")
+            console.warn(exc);
+
+            this._play._button.removeAttribute("disabled");
+            this._rewind.removeAttribute("disabled")
+            this._fastForward.removeAttribute("disabled");
+            this._play.removeAttribute("tooltip");
+            this._playbackDisabled = false;
+          })
         }
       }
     };

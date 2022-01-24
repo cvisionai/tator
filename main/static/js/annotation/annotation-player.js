@@ -884,13 +884,14 @@ class AnnotationPlayer extends TatorElement {
       }
       if (not_ready == false)
       {
-        this._video.seekFrame(this._video.currentFrame(), this._video.drawFrame, true).then(() => {
+        this._video.seekFrame(this._video.currentFrame(), this._video.drawFrame, true, null, true).then(() => {
           console.log(`Video playback check - Ready [Now: ${new Date().toISOString()}]`);
           this._play._button.removeAttribute("disabled");
           this._rewind.removeAttribute("disabled")
           this._fastForward.removeAttribute("disabled");
           this._play.removeAttribute("tooltip");
         }).catch((e) => {
+          console.log(e);
           console.log(`Video playback check - Ready [Now: ${new Date().toISOString()}] (not hq pause)`);
           this._play._button.removeAttribute("disabled");
           this._rewind.removeAttribute("disabled")

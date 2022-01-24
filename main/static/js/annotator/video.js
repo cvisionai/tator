@@ -2310,7 +2310,7 @@ class VideoCanvas extends AnnotationCanvas {
    *                                 False if the downloaded scrub buffer should be used.
    * @param {bool} bufferType - Buffer to use if seek buffer is not forced
    */
-  seekFrame(frame, callback, forceSeekBuffer, bufferType)
+  seekFrame(frame, callback, forceSeekBuffer, bufferType, forceSeekDownload)
   {
     var that = this;
     var time = this.frameToTime(frame);
@@ -2366,7 +2366,7 @@ class VideoCanvas extends AnnotationCanvas {
       // seek operations
       this._seekFrame = frame;
 
-      if (this._lastDownloadSeekFrame != this._seekFrame)
+      if (this._lastDownloadSeekFrame != this._seekFrame || forceSeekDownload)
       {
         downloadSeekFrame = true;
         this._lastDownloadSeekFrame = this._seekFrame;
