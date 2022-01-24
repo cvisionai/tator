@@ -2432,6 +2432,10 @@ class VideoCanvas extends AnnotationCanvas {
         if (createTimeout)
         {
           that._seek_expire = setTimeout(() => {
+            if (that.videoBuffer(that._seekFrame, "seek") == null) {
+              // Current seek frame is still not in buffer, allow redownload
+              that._lastDownloadSeekFrame = -1;
+            }
             that._seekFrame = -1;
             that._seek_expire = null;
             document.body.style.cursor = null;
