@@ -2832,7 +2832,7 @@ class VideoCanvas extends AnnotationCanvas {
   loaderThread(initialize, bufferName)
   {
     let fpsInterval = 1000.0 / (this._fps);
-    var bufferWaitTime=fpsInterval*4;
+    var bufferWaitTime=Math.min(fpsInterval*4, 100); // max delay is 100ms
     if (bufferName == undefined)
     {
       bufferName = "seek";
