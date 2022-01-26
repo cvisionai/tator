@@ -267,5 +267,10 @@ media = {
             'description': 'The current archival state of the media.',
             'enum': ['archived', 'to_archive', 'live', 'to_live']
         },
+        'archive_status_date': {
+            'description': 'Datetime of the last change to the `archive_state` field.',
+            'type': 'string',
+            'format': 'date-time',
+        },
     },
 }

@@ -37,7 +37,7 @@ class AttributeTypeListSchema(AutoSchema):
 
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             "name": "id",
             "in": "path",
@@ -46,10 +46,10 @@ class AttributeTypeListSchema(AutoSchema):
             "schema": {"type": "integer"},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == "POST":
             body = {
@@ -94,7 +94,7 @@ class AttributeTypeListSchema(AutoSchema):
             }
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == "PATCH":
             responses["200"] = message_schema("update", "attribute")

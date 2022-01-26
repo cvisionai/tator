@@ -308,6 +308,7 @@ FILES = \
     organizations/organization-summary.js \
     organizations/new-organization.js \
     organizations/organizations-dashboard.js \
+    organizations/new-organization-dialog.js \
     account-profile/account-profile.js \
     token/token-page.js \
     new-project/new-project-close.js \
@@ -473,7 +474,6 @@ FILES = \
     analytics/corrections/gallery.js \
     analytics/collections/collections.js \
     analytics/collections/collections-data.js \
-    analytics/reports/reports.js \
     analytics/portal/portal.js \
     analytics/files/files-page.js \
     analytics/files/file-type-dialog.js \

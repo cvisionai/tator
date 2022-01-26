@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import logging
 
 from django.core.management.base import BaseCommand
@@ -16,6 +17,7 @@ def _request_restore_multi(multi, expiry_days):
 
     if not media_ids:
         # No media associated with this multiview, consider it live
+        multi.archive_status_date = datetime.now(timezone.utc)
         multi.archive_state = "live"
         multi.save()
         return 0
