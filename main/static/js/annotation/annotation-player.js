@@ -593,7 +593,7 @@ class AnnotationPlayer extends TatorElement {
       this._lastScrub = Date.now()
       this._video.onDemandDownloadPrefetch(frame);
       this._videoStatus = "paused";
-      this.handleNotReadyEvent();
+      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
       console.error(`"ERROR: ${e}`)
