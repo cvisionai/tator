@@ -96,10 +96,10 @@ def _get_single_clone_readiness(media):
         if not (key in media.media_files and media.media_files[key]):
             continue
 
-        path = media.media_files[key][0]["path"]
+        paths = [obj["path"] for obj in media.media_files[key]]
 
         # Shared base queryset
-        media_qs = Media.objects.filter(resource_media__path=path)
+        media_qs = Media.objects.filter(resource_media__path__in=paths)
 
         # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
         media_not_ready = list(media_qs.exclude(archive_state__in=READY_TO_ARCHIVE).values("id"))
