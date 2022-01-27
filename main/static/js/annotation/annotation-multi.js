@@ -1608,6 +1608,7 @@ class AnnotationMulti extends TatorElement {
   play()
   {
     this._ratesAvailable = this.computeRatesAvailable();
+    clearTimeout(this._failSafeTimer);
     if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       let playing = false;
@@ -1765,21 +1766,23 @@ class AnnotationMulti extends TatorElement {
 
     const paused = this.is_paused();
     var pausePromises = [];
+    let failSafeFunction = () => {
+      clearTimeout(this._failSafeTimer);
+      this._videoStatus = "paused";
+      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+    };
     if (paused == false) {
       for (let video of this._videos)
       {
         pausePromises.push(video.pause());
       }
       this._play.setAttribute("is-paused", "");
+      this._failSafeTimer = setTimeout(failSafeFunction, 1500);
     }
     clearTimeout(this._syncThread);
-    Promise.all(pausePromises).then(() => {
-      // If we are in focus mode, sync to the focused video.
-      // Otherwise, use the video with the most data.
-
-      this._videoStatus = "paused";
-      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
-    });
+    clearTimeout(this._failSafeTimer);
+    Promise.all(pausePromises).then(failSafeFunction);
+    
   }
 
   disablePlayUI() {
