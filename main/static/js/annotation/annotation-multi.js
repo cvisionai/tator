@@ -1762,7 +1762,7 @@ class AnnotationMulti extends TatorElement {
   {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
-    this.disablePlayUI(); // Wait for playbackReady checks to enable play
+    this.checkReady(); // Verify ready state, this will gray out elements if buffering is required.
 
     const paused = this.is_paused();
     var pausePromises = [];

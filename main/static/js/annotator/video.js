@@ -3343,13 +3343,13 @@ class VideoCanvas extends AnnotationCanvas {
     // Sleep for a period before checking the onDemand buffer again
     if (!this._onDemandPlaybackReady)
     {
-      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 50);
+      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 500);
     }
     else
     {
       if (!this._onDemandFinished && !inhibited)
       {
-        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 50);
+        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 500);
       }
     }
   }
