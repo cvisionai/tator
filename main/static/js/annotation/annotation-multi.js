@@ -813,6 +813,7 @@ class AnnotationMulti extends TatorElement {
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
                                handle_buffer_load(idx,evt);
+                               this.checkReady();
                              });
       this._videos[idx].addEventListener("onDemandDetail",
                              (evt) => {
@@ -1419,6 +1420,14 @@ class AnnotationMulti extends TatorElement {
     {
       this.handleAllNotReadyEvents();
     }
+    else
+    {
+      this._play._button.removeAttribute("disabled");
+      this._rewind.removeAttribute("disabled")
+      this._fastForward.removeAttribute("disabled");
+      this._play.removeAttribute("tooltip");
+      this._playbackDisabled = false;
+    }
   }
 
 
@@ -1652,7 +1661,7 @@ class AnnotationMulti extends TatorElement {
 
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx]._onDemandPlaybackReady != true)
+	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx]._onDemandPlaybackReady != true)
 	    {
 	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
 	      this.handleNotReadyEvent(idx);

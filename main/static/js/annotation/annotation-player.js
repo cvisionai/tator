@@ -172,6 +172,7 @@ class AnnotationPlayer extends TatorElement {
       let frame = Math.round(evt.detail.percent_complete * Number(this._mediaInfo.num_frames)-1);
       this._zoomSlider.setLoadProgress(frame);
       this._slider.onBufferLoaded(evt);
+      this.checkReady();
     });
 
     this._video.addEventListener("onDemandDetail", evt => {
@@ -923,7 +924,7 @@ class AnnotationPlayer extends TatorElement {
     }
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
-    if (this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
       return;
