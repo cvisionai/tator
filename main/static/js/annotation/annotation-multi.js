@@ -1949,7 +1949,7 @@ class AnnotationMulti extends TatorElement {
     }
     let coupled_promise = new Promise((resolve,_) => {
       Promise.all(p_list).then(() =>{
-        this.handleAllNotReadyEvents();
+        this.checkReady();
         resolve();
       });
     });
