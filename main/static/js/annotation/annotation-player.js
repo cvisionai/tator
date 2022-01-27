@@ -192,7 +192,11 @@ class AnnotationPlayer extends TatorElement {
     });
 
     this._video.addEventListener("rateChange", evt => {
-      this.checkReady();
+      if (this.is_paused())
+      {
+        this._video.onDemandDownloadPrefetch();
+        this.checkReady();
+      }
     });
 
     // #TODO Combine with this._slider.addEventListener

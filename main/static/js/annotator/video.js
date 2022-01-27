@@ -2500,6 +2500,7 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._loaderTimeout);
       this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
     }
+    this._onDemandPlaybackReady = this.onDemandBufferAvailable(this._dispFrame);
     this.dispatchEvent(new CustomEvent("rateChange", {
       detail: {rate: newRate},
       composed: true,
@@ -2924,6 +2925,12 @@ class VideoCanvas extends AnnotationCanvas {
     // This function can be called at anytime. If auto-download is disabled, then just stop
     // onDemand functionality completely
     if (this._disableAutoDownloads) {
+      return;
+    }
+
+    // If we aren't using on-demand buffering based on settings then don't pre-fetch.
+    if (this.bufferDelayRequired() == false)
+    {
       return;
     }
 

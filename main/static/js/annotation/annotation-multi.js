@@ -780,6 +780,15 @@ class AnnotationMulti extends TatorElement {
              this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
              this._currentFrameText.style.width = (15 * String(frame).length) + "px";
            });
+        prime.addEventListener("rateChange", evt => {
+          if (this.is_paused())
+          {
+            for (let video of this._videos) {
+              video.onDemandDownloadPrefetch();
+            }
+            this.checkReady();
+          }
+        });
 
         prime.addPauseListener(() => {
           const prime_frame = prime.currentFrame();
