@@ -2912,9 +2912,11 @@ class VideoCanvas extends AnnotationCanvas {
     return this.videoBuffer(frame, "scrub") != null;
   }
 
+
+  // Returns true if on-demand buffer check + delay is required based on current settings.
   bufferDelayRequired()
   {
-    return this._play_idx != this._scrub_idx;
+    return (this._playbackRate <= RATE_CUTOFF_FOR_ON_DEMAND && this._play_idx != this._scrub_idx);
   }
 
   onDemandDownloadPrefetch(reqFrame)
@@ -3118,7 +3120,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
-        const appendThreshold = 45 * Math.max(1,this._playbackRate);
+        const appendThreshold = 45 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)); // Only append up to the fastest on-demand rate (Defensive)
         var playbackReadyThreshold = 10;
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
