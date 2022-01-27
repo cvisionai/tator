@@ -560,7 +560,7 @@ class AnnotationMulti extends TatorElement {
       };
 
       this._videoStatus = "paused";
-      this.handleAllNotReadyEvents();
+      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     })
     .catch(() => {
