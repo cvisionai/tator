@@ -977,6 +977,7 @@ class Media(Model, ModelDiffMixin):
     width=IntegerField(null=True)
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
+    backed_up = BooleanField(default=False)
     deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
     archive_status_date = DateTimeField(auto_now_add=True, null=True, blank=True)
