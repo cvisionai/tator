@@ -977,7 +977,6 @@ class Media(Model, ModelDiffMixin):
     width=IntegerField(null=True)
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
-    backed_up = BooleanField(default=False)
     deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
     archive_status_date = DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -1075,6 +1074,7 @@ class Resource(Model):
     media = ManyToManyField(Media, related_name='resource_media')
     generic_files = ManyToManyField(File, related_name='resource_files')
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
+    backed_up = BooleanField(default=False)
 
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):
@@ -1090,6 +1090,11 @@ class Resource(Model):
         else:
             obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
             obj.media.add(media)
+
+        if not created:
+            # Assume that new resources added are not yet backed up and mark the resource for backup
+            obj.backed_up = False
+            obj.save()
 
     @transaction.atomic
     def delete_resource(path_or_link):

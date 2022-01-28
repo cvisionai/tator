@@ -262,10 +262,6 @@ media = {
     'properties': {
         **media_properties,
         **media_get_properties,
-        'backed_up': {
-            'type': 'boolean',
-            'description': 'The current backup state of the media.',
-        },
         'archive_state': {
             'type': 'string',
             'description': 'The current archival state of the media.',
