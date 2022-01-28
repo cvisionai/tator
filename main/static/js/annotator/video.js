@@ -2941,8 +2941,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    // Always prefetch if we pause after playing backwards.
-    if (this._direction != Direction.BACKWARDS && this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
+    if (this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
@@ -3246,7 +3245,7 @@ class VideoCanvas extends AnnotationCanvas {
 
               if (this._direction == Direction.FORWARD)
               {
-                var trimEnd = currentTime - 10;
+                var trimEnd = currentTime - 30;
                 if (trimEnd > start && this._playing)
                 {
                   console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
@@ -3255,7 +3254,7 @@ class VideoCanvas extends AnnotationCanvas {
               }
               else if (this._direction == Direction.BACKWARDS)
               {
-                var trimEnd = currentTime + 2;
+                var trimEnd = currentTime + 30;
                 if (trimEnd < end && this._playing)
                 {
                   console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
