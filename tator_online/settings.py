@@ -291,4 +291,4 @@ if os.path.exists("/cognito/cognito.yaml"):
 else:
     COGNITO_ENABLED=False
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
