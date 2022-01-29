@@ -26,7 +26,7 @@ spec:
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     spec:
       restartPolicy: Never
-      terminationGracePeriodSeconds: 10
+      terminationGracePeriodSeconds: {{ .gracePeriodSeconds | default 10 }}
       nodeSelector:
         {{ .selector }}
       containers:
