@@ -30,7 +30,7 @@ class VideoFileListSchema(AutoSchema):
             short_desc = "Create video file."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -39,7 +39,7 @@ class VideoFileListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = [{
             'name': 'role',
             'in': 'query',
@@ -61,7 +61,7 @@ class VideoFileListSchema(AutoSchema):
             })
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -71,7 +71,7 @@ class VideoFileListSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -106,7 +106,7 @@ class VideoFileDetailSchema(AutoSchema):
             short_desc = "Delete video file."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -115,7 +115,7 @@ class VideoFileDetailSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return [{
             'name': 'role',
             'in': 'query',
@@ -133,7 +133,7 @@ class VideoFileDetailSchema(AutoSchema):
                        'minimum': 0},
         }]
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -143,7 +143,7 @@ class VideoFileDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {

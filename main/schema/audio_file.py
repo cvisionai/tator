@@ -30,7 +30,7 @@ class AudioFileListSchema(AutoSchema):
             short_desc = "Create audio file."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -39,7 +39,7 @@ class AudioFileListSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = [{
             'name': 'role',
             'in': 'query',
@@ -62,7 +62,7 @@ class AudioFileListSchema(AutoSchema):
             })
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -72,7 +72,7 @@ class AudioFileListSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {
@@ -107,7 +107,7 @@ class AudioFileDetailSchema(AutoSchema):
             short_desc = "Delete audio file."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'id',
             'in': 'path',
@@ -116,7 +116,7 @@ class AudioFileDetailSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return [{
             'name': 'role',
             'in': 'query',
@@ -135,7 +135,7 @@ class AudioFileDetailSchema(AutoSchema):
                        'minimum': 0},
         }]
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PATCH':
             body = {
@@ -145,7 +145,7 @@ class AudioFileDetailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'GET':
             responses['200'] = {

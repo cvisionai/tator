@@ -116,14 +116,15 @@ curl -sLO $ARGO_CLIENT_URL \
 echo "Copying wheel from tator client image."
 kubectl run sleepy --image=$DOCKER_REGISTRY/tator_client:$GIT_REVISION -- sleep 60
 kubectl wait pod/sleepy --for=condition=Ready=true --timeout=120s
-kubectl cp sleepy:/tmp /tmp
+mkdir -p /tmp/tator_py_whl
+kubectl cp sleepy:/tmp /tmp/tator_py_whl
 kubectl delete pod sleepy
 
 # Install pip packages.
 echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
-pip3 install /tmp/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2 pytesseract opencv-python yq
+pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2 pytesseract opencv-python yq
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 playwright install
 

@@ -21,13 +21,13 @@ class TokenSchema(AutoSchema):
             can be used with the Tator REST API, tator-py, or tator-r. 
             """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return []
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -39,7 +39,7 @@ class TokenSchema(AutoSchema):
         return body
         return {}
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
             responses['200'] = {

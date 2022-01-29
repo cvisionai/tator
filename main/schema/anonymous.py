@@ -17,7 +17,7 @@ class AnonymousGatewaySchema(AutoSchema):
     def get_description(self, path, method):
         return boilerplate
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method == 'GET':
             params = [{

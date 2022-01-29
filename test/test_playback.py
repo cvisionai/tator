@@ -263,6 +263,168 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   
   
 
+def test_playback_schedule(page_factory, project, count_test):
+  print("[Video] Going to annotation view...")
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
+  page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720")
+  page.on("pageerror", print_page_error)
+  page.wait_for_selector('video-canvas')
+  canvas = page.query_selector('video-canvas')
+  time.sleep(10)
+  play_button = page.query_selector('play-button')
+
+  console_msgs=[]
+  page.on("console", lambda msg: console_msgs.append(msg.text))
+
+  play_button.click()
+  time.sleep(5)
+  play_button.click()
+
+  schedule_msg = None
+  for msg in console_msgs:
+    if msg.find('Playback schedule') >= 0:
+      schedule_msg = msg
+  assert schedule_msg
+
+  schedule_lines=schedule_msg.split('\n')
+  print(schedule_lines)
+  frame_increment = int(schedule_lines[2].split('=')[1])
+  target_fps = int(schedule_lines[3].split('=')[1])
+  factor = int(schedule_lines[5].split('=')[1])
+  assert target_fps == 30
+  assert frame_increment == 1
+  assert factor == 1
+
+  # repeat at 4x
+  console_msgs=[]
+  page.keyboard.press("4")
+  play_button.click()
+  time.sleep(5)
+  play_button.click()
+
+  schedule_msg = None
+  for msg in console_msgs:
+    if msg.find('Playback schedule') >= 0:
+      schedule_msg = msg
+  assert schedule_msg
+
+  schedule_lines=schedule_msg.split('\n')
+  print(schedule_lines)
+  frame_increment = int(schedule_lines[2].split('=')[1])
+  target_fps = int(schedule_lines[3].split('=')[1])
+  factor = int(schedule_lines[5].split('=')[1])
+  assert target_fps == 30
+  assert frame_increment == 4
+  assert factor == 4
+  page.close()
+
+def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
+  print("[Video] Going to annotation view...")
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
+  page.goto(f"/{project}/annotation/{count_1fps_test}?playQuality=720")
+  page.on("pageerror", print_page_error)
+  page.wait_for_selector('video-canvas')
+  canvas = page.query_selector('video-canvas')
+  time.sleep(10)
+  play_button = page.query_selector('play-button')
+
+  console_msgs=[]
+  page.on("console", lambda msg: console_msgs.append(msg.text))
+
+  play_button.click()
+  time.sleep(5)
+  play_button.click()
+
+  schedule_msg = None
+  for msg in console_msgs:
+    if msg.find('Playback schedule') >= 0:
+      schedule_msg = msg
+  assert schedule_msg
+
+  schedule_lines=schedule_msg.split('\n')
+  print(schedule_lines)
+  frame_increment = int(schedule_lines[2].split('=')[1])
+  target_fps = int(schedule_lines[3].split('=')[1])
+  factor = int(schedule_lines[5].split('=')[1])
+  assert target_fps == 1
+  assert frame_increment == 1
+  assert factor == 1
+
+  # repeat at 2x
+  console_msgs=[]
+  page.keyboard.press("2")
+  play_button.click()
+  time.sleep(5)
+  play_button.click()
+
+  schedule_msg = None
+  for msg in console_msgs:
+    if msg.find('Playback schedule') >= 0:
+      schedule_msg = msg
+  assert schedule_msg
+
+  schedule_lines=schedule_msg.split('\n')
+  print(schedule_lines)
+  frame_increment = int(schedule_lines[2].split('=')[1])
+  target_fps = int(schedule_lines[3].split('=')[1])
+  factor = int(schedule_lines[5].split('=')[1])
+  assert target_fps == 2
+  assert frame_increment == 1
+  assert factor == 2
+
+  # repeat at 4x
+  console_msgs=[]
+  page.keyboard.press("4")
+  play_button.click()
+  time.sleep(5)
+  play_button.click()
+  
+
+  schedule_msg = None
+  for msg in console_msgs:
+    if msg.find('Playback schedule') >= 0:
+      schedule_msg = msg
+  assert schedule_msg
+
+  schedule_lines=schedule_msg.split('\n')
+  print(schedule_lines)
+  frame_increment = int(schedule_lines[2].split('=')[1])
+  target_fps = int(schedule_lines[3].split('=')[1])
+  factor = int(schedule_lines[5].split('=')[1])
+  assert target_fps == 4
+  assert frame_increment == 1
+  assert factor == 4
+
+  # Go up to 32x
+  for _ in range(4):
+    page.keyboard.press("Control+ArrowUp")
+    time.sleep(1)
+
+  console_msgs=[]
+  play_button.click()
+  time.sleep(5)
+  play_button.click()
+  
+
+  schedule_msg = None
+  for msg in console_msgs:
+    if msg.find('Playback schedule') >= 0:
+      schedule_msg = msg
+  assert schedule_msg
+
+  schedule_lines=schedule_msg.split('\n')
+  print(schedule_lines)
+  frame_increment = int(schedule_lines[2].split('=')[1])
+  target_fps = int(schedule_lines[3].split('=')[1])
+  factor = int(schedule_lines[5].split('=')[1])
+  assert target_fps == 15
+  assert frame_increment == 3
+  assert factor == 32
+
+  page.close()
+
 
 """
 This test would be good, but doesn't work because playback isn't performant enough in test runner

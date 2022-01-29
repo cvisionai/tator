@@ -60,6 +60,9 @@ jobs:
     - run:
         name: Install Tator
         command: ./install.sh 
+    - store_artifacts:
+        path: /tmp/tator_py_whl
+        destination: tator_py_whl
     - run:
         name: Initialize REST tests
         command: make testinit

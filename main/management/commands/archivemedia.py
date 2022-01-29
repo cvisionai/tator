@@ -1,5 +1,5 @@
 from collections import defaultdict
-import datetime
+from datetime import datetime, timedelta, timezone
 import logging
 
 from django.conf import settings
@@ -21,6 +21,7 @@ def _archive_multi(multi):
 
     if not media_ids:
         # No media associated with this multiview, consider it archived
+        multi.archive_status_date = datetime.now(timezone.utc)
         multi.archive_state = "archived"
         multi.save()
         return 1
@@ -29,6 +30,7 @@ def _archive_multi(multi):
     multi_archived = [_archive_single(obj) for obj in media_qs.iterator()]
 
     if all(multi_archived):
+        multi.archive_status_date = datetime.now(timezone.utc)
         multi.archive_state = "archived"
         multi.save()
 
@@ -53,6 +55,7 @@ def _archive_single(media):
                 media_archived = media_archived and resource_archived
 
     if media_archived:
+        media.archive_status_date = datetime.now(timezone.utc)
         media.archive_state = "archived"
         media.save()
 
@@ -93,10 +96,10 @@ def _get_single_clone_readiness(media):
         if not (key in media.media_files and media.media_files[key]):
             continue
 
-        path = media.media_files[key][0]["path"]
+        paths = [obj["path"] for obj in media.media_files[key]]
 
         # Shared base queryset
-        media_qs = Media.objects.filter(resource_media__path=path)
+        media_qs = Media.objects.filter(resource_media__path__in=paths)
 
         # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
         media_not_ready = list(media_qs.exclude(archive_state__in=READY_TO_ARCHIVE).values("id"))
@@ -121,8 +124,8 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         num_archived = 0
-        min_delta = datetime.timedelta(days=options["min_age_days"])
-        max_datetime = datetime.datetime.now(datetime.timezone.utc) - min_delta
+        min_delta = timedelta(days=options["min_age_days"])
+        max_datetime = datetime.now(timezone.utc) - min_delta
         archived_qs = Media.objects.filter(
             deleted=False, archive_state="to_archive", modified_datetime__lte=max_datetime
         )
@@ -134,6 +137,7 @@ class Command(BaseCommand):
         for media in archived_qs.iterator():
             if not media.media_files:
                 # No files to move to archive storage, consider this media archived
+                media.archive_status_date = datetime.now(timezone.utc)
                 media.archive_state = "archived"
                 media.save()
                 continue
