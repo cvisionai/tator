@@ -1,0 +1,17 @@
+{
+  "name": "tator-ui",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack"
+  },
+  "keywords": [],
+  "author": "CVision AI, Inc.",
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^5.67.0",
+    "webpack-cli": "^4.9.2"
+  }
+}
