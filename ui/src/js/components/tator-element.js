@@ -1,3 +1,5 @@
+import "../../css/styles.scss";
+
 const svgNamespace = "http://www.w3.org/2000/svg";
 
 class TatorElement extends HTMLElement {

@@ -1,13 +1,10 @@
 let window = self;
 
 // Import sparkmd5.
-importScripts("/static/js/md5.min.js");
-
-// Import uuid.
-importScripts("/static/js/node-uuid.js");
+import SparkMD5 from "spark-md5";
 
 // Import fetch retry.
-importScripts("/static/js/util/fetch-retry.js");
+import fetchRetry from "../util/fetch-retry.js";
 
 // List of uploads in progress.
 let activeUploads = {};
