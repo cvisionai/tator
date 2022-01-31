@@ -1091,11 +1091,6 @@ class Resource(Model):
             obj, created = Resource.objects.get_or_create(path=path, bucket=media.project.bucket)
             obj.media.add(media)
 
-        if not created:
-            # Assume that new resources added are not yet backed up and mark the resource for backup
-            obj.backed_up = False
-            obj.save()
-
     @transaction.atomic
     def delete_resource(path_or_link):
         path=path_or_link
