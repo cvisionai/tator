@@ -3034,18 +3034,16 @@ class ResourceTestCase(APITestCase):
 
         # Post one file of each role.
         keys, segment_key = self._generate_keys(media)
-        for role in ResourceTestCase.MEDIA_ROLES:
-            endpoint = ResourceTestCase.MEDIA_ROLES[role]
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             media_def = self._get_media_def(role, keys, segment_key)
             response = self.client.post(f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json')
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Patch in a new value for each role.
         patch_keys, patch_segment_key = self._generate_keys(media)
-        for role in ResourceTestCase.MEDIA_ROLES:
-            endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             media_def = self._get_media_def(role, patch_keys, patch_segment_key)
-            response = self.client.patch(f"/rest/{endpoint}/{media.id}?index=0&role={role}", media_def, format='json')
+            response = self.client.patch(f"/rest/{endpoint[:-1]}/{media.id}?index=0&role={role}", media_def, format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertFalse(self._store_obj_exists(keys[role]))
             self.assertTrue(self._store_obj_exists(patch_keys[role]))
@@ -3053,9 +3051,8 @@ class ResourceTestCase(APITestCase):
         self.assertTrue(self._store_obj_exists(patch_segment_key))
 
         # Delete the files.
-        for role in ResourceTestCase.MEDIA_ROLES:
-            endpoint = ResourceTestCase.MEDIA_ROLES[role][:-1]
-            response = self.client.delete(f"/rest/{endpoint}/{media.id}?index=0&role={role}", format='json')
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
+            response = self.client.delete(f"/rest/{endpoint[:-1]}/{media.id}?index=0&role={role}", format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             self.assertFalse(self._store_obj_exists(patch_keys[role]))
         self.assertFalse(self._store_obj_exists(patch_segment_key))
@@ -3218,6 +3215,24 @@ class ResourceTestCase(APITestCase):
         self._prune_media()
         self.assertFalse(self._store_obj_exists(thumb_key))
         self.assertFalse(self._store_obj_exists(gif_key))
+
+    def test_backed_up_flag(self):
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys(media)
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(
+                f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json'
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check the value of each resource's `backed_up` flag
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
+            media_def = self._get_media_def(role, keys, segment_key)
+            self.assertFalse(Resource.objects.get(path=media_def["path"]).backed_up)
+
 
 class AttributeTestCase(APITestCase):
     def setUp(self):
