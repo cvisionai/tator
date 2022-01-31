@@ -14,7 +14,6 @@ from ..models import Media
 from ..models import Bucket
 from ..models import database_qs
 from ..models import safe_delete
-from ..models import Resource
 from ..schema import ProjectListSchema
 from ..schema import ProjectDetailSchema
 from ..store import get_tator_store
