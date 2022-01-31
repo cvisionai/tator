@@ -55,7 +55,7 @@ class PprintRenderer(BaseRenderer):
 
     def render(self, listObj, media_type=None, renderer_context=None):
         """ Returns a pretty printed representation of the list object """
-        return ujson.dumps(listObj, indent=4)
+        return ujson.dumps(listObj, indent=4, default=str)
 
 class TatorRenderer(JSONRenderer):
     encoder_class = TatorJSONEncoder

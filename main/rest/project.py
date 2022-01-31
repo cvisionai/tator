@@ -27,20 +27,20 @@ logger = logging.getLogger(__name__)
 
 def _serialize_projects(projects, user_id):
     project_data = database_qs(projects)
+    default_store = get_tator_store(None, connect_timeout=1, read_timeout=1, max_attempts=1)
     for idx, project in enumerate(projects):
-        store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
         if project.creator.pk == user_id:
             project_data[idx]['permission'] = 'Creator'
         else:
             project_data[idx]['permission'] = str(project.user_permission(user_id))
         del project_data[idx]['attribute_type_uuids']
         if project_data[idx]['thumb']:
-            thumb_store = get_tator_store()
+            thumb_store = default_store
             if project.bucket:
                 # If this project has a separate bucket, the thumbnail may be there or on the
                 # main bucket
-                if not thumb_store.check_key(project_data[idx]['thumb']):
-                    thumb_store = store
+                if not default_store.check_key(project_data[idx]['thumb']):
+                    thumb_store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
             project_data[idx]['thumb'] = thumb_store.get_download_url(project_data[idx]['thumb'], 28800)
     return project_data
 

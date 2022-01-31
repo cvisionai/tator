@@ -395,7 +395,9 @@ def video_files(request):
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.mp4",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count.json",
              "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.mp4",
-             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.json"]
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.3/samples/count_360.json",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.4/samples/count_1fps.mp4",
+             "https://github.com/cvisionai/rgb_test_videos/raw/v0.0.4/samples/count_1fps.json"]
     for fp in files:
         dst = os.path.join("/tmp",os.path.basename(fp))
         download_file(fp, dst)
@@ -485,6 +487,24 @@ def count_test(request, base_url, project, token, video_files):
     colors=[count_mp4, count_360_mp4]
     segments=[count_segments, count_360_segments]
     media_id = create_media(api, project, base_url, token, video_type_id, "count_check.mp4", "Counts", count_mp4)
+    with tempfile.TemporaryDirectory() as td:
+        for color,segment in zip(colors, segments):
+            upload_media_file(api, project, media_id, color, segment)
+    yield media_id
+
+@pytest.fixture(scope='session')
+def count_1fps_test(request, base_url, project, token, video_files):
+    count_mp4="/tmp/count_1fps.mp4"
+    count_segments="/tmp/count_1fps.json"
+
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    video_types = [m for m in media_types if m.dtype == "video"]
+    video_type_id = video_types[0].id
+
+    colors=[count_mp4]
+    segments=[count_segments]
+    media_id = create_media(api, project, base_url, token, video_type_id, "count_1fps_check.mp4", "Counts", count_mp4)
     with tempfile.TemporaryDirectory() as td:
         for color,segment in zip(colors, segments):
             upload_media_file(api, project, media_id, color, segment)
