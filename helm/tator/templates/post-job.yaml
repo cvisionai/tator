@@ -12,7 +12,7 @@
 {{- $makeMigrationsSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-migrations" "app" "make-migrations" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"makemigrations\"]" "hookWeight" "0" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $makeMigrationsSettings }}
 ---
-{{- $migrateSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "migrate" "app" "migrate" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"migrate\"]" "hookWeight" "1" "hook" "post-install,post-upgrade" }}
+{{- $migrateSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "migrate" "app" "migrate" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"migrate\"]" "gracePeriodSeconds" "7200" "hookWeight" "1" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $migrateSettings }}
 ---
 {{- end }}

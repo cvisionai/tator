@@ -20,7 +20,7 @@ class EmailSchema(AutoSchema):
         Messages can only be sent to members of the same project.
         """)
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
             'in': 'path',
@@ -29,10 +29,10 @@ class EmailSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'POST':
             body = {
@@ -42,7 +42,7 @@ class EmailSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
             responses['201'] = message_schema('completion', 'email sent')

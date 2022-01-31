@@ -28,7 +28,7 @@ class LeafCountSchema(AutoSchema):
             short_desc = "Get leaf list count by ID."
         return f"{short_desc}\n\n{boilerplate}"
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [{
             'name': 'project',
             'in': 'path',
@@ -37,7 +37,7 @@ class LeafCountSchema(AutoSchema):
             'schema': {'type': 'integer'},
         }]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PUT']:
             params = leaf_filter_parameter_schema + attribute_filter_parameter_schema
@@ -45,7 +45,7 @@ class LeafCountSchema(AutoSchema):
             params = [p for p in params if p['name'] != 'search']
         return params
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == 'PUT':
             body = {
@@ -57,7 +57,7 @@ class LeafCountSchema(AutoSchema):
             }}}
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method in ['GET', 'PUT']:
             responses['200'] = {

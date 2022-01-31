@@ -36,7 +36,7 @@ class JobClusterListSchema(AutoSchema):
 
         return description
 
-    def _get_path_parameters(self, path, method):
+    def get_path_parameters(self, path, method):
         return [
             {
                 "name": "id",
@@ -47,10 +47,10 @@ class JobClusterListSchema(AutoSchema):
             }
         ]
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method):
+    def get_request_body(self, path, method):
         body = {}
         if method == "POST":
             body = {
@@ -64,7 +64,7 @@ class JobClusterListSchema(AutoSchema):
 
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == "GET":
             responses["200"] = {
@@ -105,7 +105,7 @@ class JobClusterDetailSchema(AutoSchema):
             description = "Delete registered job cluster"
         return description
 
-    def _get_path_parameters(self, path, method) -> list:
+    def get_path_parameters(self, path, method) -> list:
         parameters = [
             {
                 "name": "id",
@@ -118,10 +118,10 @@ class JobClusterDetailSchema(AutoSchema):
 
         return parameters
 
-    def _get_filter_parameters(self, path, method):
+    def get_filter_parameters(self, path, method):
         return []
 
-    def _get_request_body(self, path, method) -> dict:
+    def get_request_body(self, path, method) -> dict:
         body = {}
         if method == "PATCH":
             body = {
@@ -138,7 +138,7 @@ class JobClusterDetailSchema(AutoSchema):
             }
         return body
 
-    def _get_responses(self, path, method):
+    def get_responses(self, path, method):
         responses = error_responses()
         if method == "GET":
             responses["200"] = {
