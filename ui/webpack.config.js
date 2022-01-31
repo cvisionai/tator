@@ -1,24 +1,25 @@
 const path = require("path")
-const WebpackShellPluginNext = require('webpack-shell-plugin-next');
+const WebpackShellPluginNext = require("webpack-shell-plugin-next");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 module.exports = {
   entry: {
-    "project-settings": "./src/project-settings/index.js",
-    "project-detail": "./src/project-detail/index.js",
-    "organization-settings": "./src/organization-settings/index.js",
-    "password-reset": "./src/password-reset/index.js",
-    annotation: "./src/annotation/index.js",
-    organizations: "./src/organizations/index.js",
-    "account-profile": "./src/account-profile/index.js",
-    annotator: "./src/annotator/index.js",
-    token: "./src/token/index.js",
-    projects: "./src/projects/index.js",
-    tasks: "./src/tasks/index.js",
-    util: "./src/util/index.js",
-    registration: "./src/registration/index.js",
-    components: "./src/components/index.js",
-    "new-project": "./src/new-project/index.js",
-    analytics: "./src/analytics/index.js"
+    "project-settings": "./src/js/project-settings/index.js",
+    "project-detail": "./src/js/project-detail/index.js",
+    "organization-settings": "./src/js/organization-settings/index.js",
+    "password-reset": "./src/js/password-reset/index.js",
+    annotation: "./src/js/annotation/index.js",
+    organizations: "./src/js/organizations/index.js",
+    "account-profile": "./src/js/account-profile/index.js",
+    annotator: "./src/js/annotator/index.js",
+    token: "./src/js/token/index.js",
+    projects: "./src/js/projects/index.js",
+    tasks: "./src/js/tasks/index.js",
+    util: "./src/js/util/index.js",
+    registration: "./src/js/registration/index.js",
+    components: "./src/js/components/index.js",
+    "new-project": "./src/js/new-project/index.js",
+    analytics: "./src/js/analytics/index.js"
   },
   output: {
     filename: "[name].js",
@@ -27,10 +28,31 @@ module.exports = {
   plugins: [
     new WebpackShellPluginNext({
       onBeforeBuild: {
-        scripts: ['python3 make_index_files.py'],
+        scripts: ["python3 make_index_files.py"],
         blocking: true,
         parallel: false
       }
-    })
-  ]
+    }),
+    new MiniCssExtractPlugin()
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.scss$/i,
+        use: [
+          MiniCssExtractPlugin.loader,
+          "css-loader",
+          "sass-loader"
+        ],
+      },
+      {
+        test: /\.(svg|jpg|ico|png|gif)$/i,
+        type: 'asset/resource',
+      },
+      {
+        test: /\.(woff|woff2)$/i,
+        type: 'asset/resource',
+      }
+    ]
+  }
 }
