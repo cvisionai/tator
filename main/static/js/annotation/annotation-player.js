@@ -916,7 +916,7 @@ class AnnotationPlayer extends TatorElement {
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
-      if (!this._video.canPlayRate(this._rate))
+      if (!this._video.canPlayRate(this._rate, this.currentFrame()))
       {
         window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
@@ -956,7 +956,7 @@ class AnnotationPlayer extends TatorElement {
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
-      if (!this._video.canPlayRate(this._rate))
+      if (!this._video.canPlayRate(this._rate, this.currentFrame()))
       {
         window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
