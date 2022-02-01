@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import logging
 
 from django.core.management.base import BaseCommand
@@ -16,6 +17,7 @@ def _restore_multi(multi):
 
     if not media_ids:
         # No media associated with this multiview, consider it live
+        multi.archive_status_date = datetime.now(timezone.utc)
         multi.archive_state = "live"
         multi.restoration_requested = False
         multi.save()
@@ -25,6 +27,7 @@ def _restore_multi(multi):
     multi_restored = [_restore_single(media) for media in media_qs]
 
     if all(multi_restored):
+        multi.archive_status_date = datetime.now(timezone.utc)
         multi.archive_state = "live"
         multi.restoration_requested = False
         multi.save()
@@ -51,6 +54,7 @@ def _restore_single(media):
                 media_restored = media_restored and resource_restored
 
     if media_restored:
+        media.archive_status_date = datetime.now(timezone.utc)
         media.archive_state = "live"
         media.restoration_requested = False
         media.save()
@@ -73,6 +77,7 @@ class Command(BaseCommand):
         for media in restoration_qs:
             if not media.media_files:
                 # No files to finalize restoration
+                media.archive_status_date = datetime.now(timezone.utc)
                 media.archive_state = "live"
                 media.restoration_requested = False
                 media.save()

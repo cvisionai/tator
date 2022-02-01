@@ -979,6 +979,7 @@ class Media(Model, ModelDiffMixin):
     media_files = JSONField(null=True, blank=True)
     deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
+    archive_status_date = DateTimeField(auto_now_add=True, null=True, blank=True)
     archive_state = CharField(
         max_length=16,
         choices=[
@@ -1073,6 +1074,7 @@ class Resource(Model):
     media = ManyToManyField(Media, related_name='resource_media')
     generic_files = ManyToManyField(File, related_name='resource_files')
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
+    backed_up = BooleanField(default=False)
 
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):

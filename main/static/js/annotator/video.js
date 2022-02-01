@@ -1030,6 +1030,7 @@ class MotionComp {
       }
     }
   }
+
   /// Given a video at a frame rate calculate the frame update
   /// schedule:
   ///
@@ -1055,18 +1056,8 @@ class MotionComp {
     this._videoFps = videoFps;
     this._factor = factor;
 
-    let displayFps = videoFps;
-    if (factor < 1)
-    {
-      displayFps *= factor;
-    }
-    if (factor < 2)
-    {
-      displayFps *= factor;
-    }
-
     // Compute a 3-slot schedule for playback
-    let animationCyclesPerFrame = (this._monitorFps / displayFps);
+    let animationCyclesPerFrame = this.animationCycles(videoFps, factor);
     if (this._safeMode)
     {
       // Safe mode slows things down by 2x
@@ -1135,13 +1126,19 @@ class MotionComp {
     let relIdx = animationIdx % this._lengthOfSchedule;
     return this._updatesAt.includes(relIdx);
   }
+
+  animationCycles(fps, factor)
+  {
+    let target_fps = fps * factor;
+    let max_fps = Math.max(15, this._videoFps);
+    target_fps = Math.min(max_fps,target_fps);
+    return (this._monitorFps / target_fps);
+  }
   frameIncrement(fps, factor)
   {
-    let clicks = Math.ceil(fps / this._monitorFps);
-    if (factor > 1)
-    {
-      clicks *= factor;
-    }
+    let target_fps = fps * factor;
+    let max_fps = Math.min(this._monitorFps, Math.max(15, this._videoFps));
+    let clicks = Math.ceil(target_fps / max_fps);
 
     // We skip every other frame in safe mode
     if (this._safeMode)
@@ -1879,7 +1876,7 @@ class VideoCanvas extends AnnotationCanvas {
       this.mediaType = mediaType;
     this._videoObject = videoObject;
 
-    
+
     // If quality is not supplied default to 720 or highest available
     let resolutions = videoObject.media_files["streaming"].length;
     this._maxHeight = 0;
@@ -2836,7 +2833,7 @@ class VideoCanvas extends AnnotationCanvas {
   loaderThread(initialize, bufferName)
   {
     let fpsInterval = 1000.0 / (this._fps);
-    var bufferWaitTime=fpsInterval*4;
+    var bufferWaitTime=Math.min(fpsInterval*4, 100); // max delay is 100ms
     if (bufferName == undefined)
     {
       bufferName = "seek";
