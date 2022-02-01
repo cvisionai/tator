@@ -148,8 +148,8 @@ class AnnotationMulti extends TatorElement {
 
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
-    this._focusQuality = 1080;
-    this._dockQuality = 144;
+    this._focusQuality = this._quality;
+    this._dockQuality = this._quality;
     this._seekQuality = null;
     this._scrubQuality = null;
     this._allowSafeMode = true;
@@ -1144,6 +1144,7 @@ class AnnotationMulti extends TatorElement {
         this.assignToPrimary(Number(videoId), this._focusQuality);
       }
     }
+    this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
   }
 
   setFocusVertical(vid_id)
@@ -1253,7 +1254,7 @@ class AnnotationMulti extends TatorElement {
     // These go invisible on a move.
     this.makeAllVisible(div);
     let video = div.children[0];
-    video.setQuality(quality);
+    //video.setQuality(quality);
 
     for (let idx = 0; idx < this._videos.length; idx++) {
       if (vid_id == this._videos[idx].video_id()) {
@@ -1271,7 +1272,7 @@ class AnnotationMulti extends TatorElement {
     // These go invisible on a move.
     this.makeAllVisible(div);
     let video = div.children[0];
-    video.setQuality(quality);
+    //video.setQuality(quality);
   }
 
   assignToGrid(setContextMenu=true)
@@ -1841,13 +1842,13 @@ class AnnotationMulti extends TatorElement {
     if (buffer == "focusPlayback") {
       this._focusQuality = quality;
       for (let videoDiv of this._focusDiv.children) {
-        videoDiv.children[0].setQuality(this._focusQuality, "play");
+        videoDiv.children[0].setQuality(quality, "play");
       }
     }
     else if (buffer == "dockPlayback") {
       this._dockQuality = quality;
       for (let videoDiv of this._focusTopDockDiv.children) {
-        videoDiv.children[0].setQuality(this._dockQuality, "play");
+        videoDiv.children[0].setQuality(quality, "play");
       }
     }
     else {
