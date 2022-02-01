@@ -172,6 +172,7 @@ class AnnotationPlayer extends TatorElement {
       let frame = Math.round(evt.detail.percent_complete * Number(this._mediaInfo.num_frames)-1);
       this._zoomSlider.setLoadProgress(frame);
       this._slider.onBufferLoaded(evt);
+      this.checkReady();
     });
 
     this._video.addEventListener("onDemandDetail", evt => {
@@ -192,7 +193,11 @@ class AnnotationPlayer extends TatorElement {
     });
 
     this._video.addEventListener("rateChange", evt => {
-      this.checkReady();
+      if (this.is_paused())
+      {
+        this._video.onDemandDownloadPrefetch();
+        this.checkReady();
+      }
     });
 
     // #TODO Combine with this._slider.addEventListener
@@ -589,7 +594,7 @@ class AnnotationPlayer extends TatorElement {
       this._lastScrub = Date.now()
       this._video.onDemandDownloadPrefetch(frame);
       this._videoStatus = "paused";
-      this.handleNotReadyEvent();
+      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
       console.error(`"ERROR: ${e}`)
@@ -919,7 +924,7 @@ class AnnotationPlayer extends TatorElement {
     }
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
-    if (this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
       return;

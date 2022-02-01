@@ -560,7 +560,7 @@ class AnnotationMulti extends TatorElement {
       };
 
       this._videoStatus = "paused";
-      this.handleAllNotReadyEvents();
+      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     })
     .catch(() => {
@@ -780,6 +780,15 @@ class AnnotationMulti extends TatorElement {
              this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
              this._currentFrameText.style.width = (15 * String(frame).length) + "px";
            });
+        prime.addEventListener("rateChange", evt => {
+          if (this.is_paused())
+          {
+            for (let video of this._videos) {
+              video.onDemandDownloadPrefetch();
+            }
+            this.checkReady();
+          }
+        });
 
         prime.addPauseListener(() => {
           const prime_frame = prime.currentFrame();
@@ -804,6 +813,7 @@ class AnnotationMulti extends TatorElement {
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
                                handle_buffer_load(idx,evt);
+                               this.checkReady();
                              });
       this._videos[idx].addEventListener("onDemandDetail",
                              (evt) => {
@@ -1410,6 +1420,14 @@ class AnnotationMulti extends TatorElement {
     {
       this.handleAllNotReadyEvents();
     }
+    else
+    {
+      this._play._button.removeAttribute("disabled");
+      this._rewind.removeAttribute("disabled")
+      this._fastForward.removeAttribute("disabled");
+      this._play.removeAttribute("tooltip");
+      this._playbackDisabled = false;
+    }
   }
 
 
@@ -1608,6 +1626,7 @@ class AnnotationMulti extends TatorElement {
   play()
   {
     this._ratesAvailable = this.computeRatesAvailable();
+    clearTimeout(this._failSafeTimer);
     if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
     {
       let playing = false;
@@ -1642,7 +1661,7 @@ class AnnotationMulti extends TatorElement {
 
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx]._onDemandPlaybackReady != true)
+	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx]._onDemandPlaybackReady != true)
 	    {
 	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
 	      this.handleNotReadyEvent(idx);
@@ -1761,25 +1780,27 @@ class AnnotationMulti extends TatorElement {
   {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
-    this.disablePlayUI(); // Wait for playbackReady checks to enable play
+    this.checkReady(); // Verify ready state, this will gray out elements if buffering is required.
 
     const paused = this.is_paused();
     var pausePromises = [];
+    let failSafeFunction = () => {
+      clearTimeout(this._failSafeTimer);
+      this._videoStatus = "paused";
+      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+    };
+    clearTimeout(this._failSafeTimer);
     if (paused == false) {
       for (let video of this._videos)
       {
         pausePromises.push(video.pause());
       }
       this._play.setAttribute("is-paused", "");
+      this._failSafeTimer = setTimeout(failSafeFunction, 1500);
     }
     clearTimeout(this._syncThread);
-    Promise.all(pausePromises).then(() => {
-      // If we are in focus mode, sync to the focused video.
-      // Otherwise, use the video with the most data.
-
-      this._videoStatus = "paused";
-      this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
-    });
+    Promise.all(pausePromises).then(failSafeFunction);
+    
   }
 
   disablePlayUI() {
@@ -1937,7 +1958,7 @@ class AnnotationMulti extends TatorElement {
     }
     let coupled_promise = new Promise((resolve,_) => {
       Promise.all(p_list).then(() =>{
-        this.handleAllNotReadyEvents();
+        this.checkReady();
         resolve();
       });
     });

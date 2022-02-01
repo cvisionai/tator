@@ -2497,6 +2497,7 @@ class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._loaderTimeout);
       this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
     }
+    this._onDemandPlaybackReady = this.onDemandBufferAvailable(this._dispFrame);
     this.dispatchEvent(new CustomEvent("rateChange", {
       detail: {rate: newRate},
       composed: true,
@@ -2909,9 +2910,11 @@ class VideoCanvas extends AnnotationCanvas {
     return this.videoBuffer(frame, "scrub") != null;
   }
 
+
+  // Returns true if on-demand buffer check + delay is required based on current settings.
   bufferDelayRequired()
   {
-    return this._play_idx != this._scrub_idx;
+    return (this._playbackRate <= RATE_CUTOFF_FOR_ON_DEMAND && this._play_idx != this._scrub_idx);
   }
 
   onDemandDownloadPrefetch(reqFrame)
@@ -2922,6 +2925,12 @@ class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
+    // If we aren't using on-demand buffering based on settings then don't pre-fetch.
+    if (this.bufferDelayRequired() == false)
+    {
+      return;
+    }
+
     if (reqFrame == undefined)
     {
       reqFrame = this.currentFrame();
@@ -2929,8 +2938,7 @@ class VideoCanvas extends AnnotationCanvas {
 
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    // Always prefetch if we pause after playing backwards.
-    if (this._direction != Direction.BACKWARDS && this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
+    if (this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
@@ -3115,7 +3123,7 @@ class VideoCanvas extends AnnotationCanvas {
       {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
-        const appendThreshold = 45 * Math.max(1,this._playbackRate);
+        const appendThreshold = 45 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)); // Only append up to the fastest on-demand rate (Defensive)
         var playbackReadyThreshold = 10;
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
@@ -3234,7 +3242,7 @@ class VideoCanvas extends AnnotationCanvas {
 
               if (this._direction == Direction.FORWARD)
               {
-                var trimEnd = currentTime - 10;
+                var trimEnd = currentTime - 30;
                 if (trimEnd > start && this._playing)
                 {
                   console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
@@ -3243,7 +3251,7 @@ class VideoCanvas extends AnnotationCanvas {
               }
               else if (this._direction == Direction.BACKWARDS)
               {
-                var trimEnd = currentTime + 2;
+                var trimEnd = currentTime + 30;
                 if (trimEnd < end && this._playing)
                 {
                   console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
@@ -3340,13 +3348,13 @@ class VideoCanvas extends AnnotationCanvas {
     // Sleep for a period before checking the onDemand buffer again
     if (!this._onDemandPlaybackReady)
     {
-      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 50);
+      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 500);
     }
     else
     {
       if (!this._onDemandFinished && !inhibited)
       {
-        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 50);
+        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 500);
       }
     }
   }
