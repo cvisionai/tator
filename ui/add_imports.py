@@ -1,5 +1,26 @@
 import os
 
+symbols = {
+    "TatorElement": "src/js/componeents/tator-element.js",
+    "ModalDialog": "src/js/components/modal-dialog.js",
+    "TatorPage": "src/js/components/tator-page.js",
+    "UploadElement": "src/js/components/upload-element.js",
+    "OrganizationTypeForm": "src/js/organization-settings/organization-type-form.js",
+    "TypeForm": "src/js/project-settings/type-forms/type-form.js",
+    "AnnotationCanvas": "src/js/annotator/annotation.js",
+    "hasPermission": "src/js/util/has-permission.js",
+    "getCookie": "src/js/util/get-cookie.js",
+    "FilterConditionData": "src/js/util/filter-utilities.js",
+    "FilterUtilities": "src/js/util/filter-utilities.js",
+    "fetchRetry": "src/js/util/fetch-retry.js",
+    "identifyingAttribute": "src/js/util/identifying-attribute.js",
+    "joinParams": "src/js/util/join-params.js",
+    "sameOriginCredentials": "src/js/util/same-origin-credentials.js",
+    "TatorData": "src/js/util/tator-data.js",
+    "Utilities": "src/js/util/utilities.js",
+    "svgNamespace": "src/js/components/tator-element.js",
+}
+
 for root, dirs, files in os.walk('src/js'):
     for fname in files:
         if not fname.endswith('.js'):
@@ -9,34 +30,15 @@ for root, dirs, files in os.walk('src/js'):
         path = os.path.join(root, fname)
         with open(path, 'r') as f:
             content = f.read()
-        if "extends TatorElement" in content:
-            cls = "TatorElement"
-            cls_file = "components/tator-element.js"
-        elif "extends ModalDialog" in content:
-            cls = "ModalDialog"
-            cls_file = "components/modal-dialog.js"
-        elif "extends TatorPage" in content:
-            cls = "TatorPage"
-            cls_file = "components/tator-page.js"
-        elif "extends HTMLElement" in content:
-            continue
-        elif "extends UploadElement" in content:
-            cls = "UploadElement"
-            cls_file = "components/upload-element.js"
-        elif "extends OrganizationTypeForm" in content:
-            cls = "OrganizationTypeForm"
-            cls_file = "organization-settings/organization-type-form.js"
-        elif "extends TypeForm" in content:
-            cls = "TypeForm"
-            cls_file = "project-settings/type-forms/type-form.js"
-        elif "extends AnnotationCanvas" in content:
-            cls = "AnnotationCanvas"
-            cls_file = "annotator/annotation.js"
-        else:
-            print(f"Need manual mods for {path}!")
-            continue
-        content = ("import { " + cls + " } from \"" + prefix +
-                   cls_file + "\";\n\n" + content)
+        for symbol in symbols:
+            imports = ""
+            if path != symbols[symbol] and symbol in content:
+                print(f"TARGET PATH: {symbols[symbol]}")
+                print(f"CURRENT PATH: {path}")
+                rel = os.path.relpath(symbols[symbol], path)
+                imports += "import { " + symbol + " } from \"" + rel + "\";\n"
+            if imports:
+                content = imports + "\n" + content
         content = content.replace("class ", "export class ")
         with open(path, 'w') as f:
             f.write(content)
