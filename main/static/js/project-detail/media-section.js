@@ -709,12 +709,10 @@ class MediaSection extends TatorElement {
     });
 
     this._paginator_top.addEventListener("selectPage", (evt) => {
-      console.log("PAGE TOP SET PAGE" + JSON.stringify(evt.detail));
       this._setPage(evt, this._paginator_bottom); 
     });
 
     this._paginator_bottom.addEventListener("selectPage", (evt) => {
-      console.log("PAGE BOTTOM SET PAGE" + JSON.stringify(evt.detail));
       this._setPage(evt, this._paginator_top); 
     });
 
@@ -725,7 +723,7 @@ class MediaSection extends TatorElement {
     this._start = evt.detail.start;
     this._stop = evt.detail.stop;
     this._paginationState = evt.detail;
-    console.log(this._paginationState);
+
     otherPaginator.init(otherPaginator._numFiles, this._paginationState);        
     
     this._updatePageArgs();
