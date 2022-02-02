@@ -7,7 +7,7 @@ const levels = [
   "Creator"
 ]
 
-function hasPermission(level, required) {
+export function hasPermission(level, required) {
   // Checks if permission is greater or equal required level
   const reqIndex = levels.indexOf(required);
   const levelIndex = levels.indexOf(level);

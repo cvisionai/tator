@@ -1,5 +1,5 @@
 // Join multiple URLSearchParams.
-function joinParams(...args) {
+export function joinParams(...args) {
   out = new URLSearchParams();
   for (const arg of args) {
     for (const [key, val] of arg.entries()) {

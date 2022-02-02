@@ -1,4 +1,4 @@
-function fetchRetry(url, options) {
+export function fetchRetry(url, options) {
   return new Promise((resolve, reject) => {
     let retry = 0;
     const delay = [0, 50, 100, 200, 500, 1000];
