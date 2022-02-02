@@ -4,8 +4,11 @@ class EntityGalleryPaginator extends TatorElement {
 
     //Controls default page size & page indexes to list on number line
     this._pageSize = 10;
+    this._pageMax = 50;
     this._showIndexLength = 8;
+  }
 
+  setupElements() {
     this.div = document.createElement("div");
     this.div.setAttribute("class", "flex-justify-center pagination d-flex flex-items-center text-gray f3");
     this._shadow.appendChild(this.div);
@@ -75,12 +78,14 @@ class EntityGalleryPaginator extends TatorElement {
 
     this.pageSizeEl = document.createElement("select");
     this.pageSizeEl.setAttribute("class", "form-select select-sm2 has-border");
-    for (const pageOption of [10, 25, 50]) { // #TODO Fix
-      const option = document.createElement("option");
-      option.setAttribute("value", pageOption);
-      if (this._pageSize == pageOption) option.selected = true;
-      option.textContent = pageOption;
-      this.pageSizeEl.appendChild(option);
+    for (const pageOption of [10, 25, 50, 100]) { // #TODO Fix
+      if (pageOption <= this._pageMax) {
+        const option = document.createElement("option");
+        option.setAttribute("value", pageOption);
+        if (this._pageSize == pageOption) option.selected = true;
+        option.textContent = pageOption;
+        this.pageSizeEl.appendChild(option);
+      }
     }
     //pageSize.selectedIndex = 2;
     this.div.appendChild(this.pageSizeEl);
@@ -115,7 +120,7 @@ class EntityGalleryPaginator extends TatorElement {
     this.pageSizeEl.addEventListener("change", evt => {
       evt.preventDefault();
       if (evt.target.value != "Page Size") {
-        this._pageSize = Number(evt.target.value);
+        this._paginationState.pageSize = Number(evt.target.value);
         this._paginationState.start = 0;
         this.init(this._numFiles, this._paginationState);
         this._emit();
@@ -134,17 +139,24 @@ class EntityGalleryPaginator extends TatorElement {
       }
     });
 
-
   }
 
   getPageSize() {
     return this._pageSize;
   }
 
+  set pageSize(val) {
+    // console.log(`Set function page size is ${val}`)
+    if (Number(val) !== this._pageSize) {
+      this._pageSize = val;
+      this.pageSizeEl.value = val;
+    }
+  }
+
   init(numFiles, paginationState) {
     // Set pagination properties from state
     // #TODO When the URL pagination is implemented, set page size based on start-stop
-    // this._pageSize = paginationState._pageSize
+    if(typeof paginationState.pageSize !== "undefined") this.pageSize = paginationState.pageSize
 
     // Use number of files to update the rest
     this._paginationState = paginationState;
@@ -249,7 +261,6 @@ class EntityGalleryPaginator extends TatorElement {
         start: this._page * this._pageSize,
         stop: Math.min(this._numFiles, (this._page + 1) * this._pageSize),
         page: this._page + 1,
-        pgsize: this._pageSize,
         pageSize: this._pageSize
       },
     }));

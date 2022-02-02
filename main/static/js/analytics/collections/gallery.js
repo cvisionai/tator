@@ -238,7 +238,7 @@ class CollectionsGallery extends EntityCardSlideGallery {
          start: evt.detail.start,
          stop: evt.detail.stop,
          page: evt.detail.page,
-         pageSize: evt.detail.pgsize,
+         pageSize: evt.detail.pageSize,
          init: false
       }
       this._paginationUpdate(paginationState);
@@ -474,13 +474,15 @@ class CollectionsGallery extends EntityCardSlideGallery {
       // setup navigation within this slider
       let topNav = document.createElement("entity-gallery-paginator");
       let bottomNav = document.createElement("entity-gallery-paginator");
-      
+      topNav.setupElements();
+      bottomNav.setupElements();
+
       // #todo
       slider._cardPaginationState = {
          page: 1,
          start: 0,
          stop: (this._previewCardCount - 1),
-         pgsize: (this._previewCardCount - 1)
+         pageSize: (this._previewCardCount - 1)
       };
 
       topNav.init(totalList, slider._cardPaginationState);

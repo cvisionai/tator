@@ -101,6 +101,8 @@ class UploadElement extends TatorElement {
     // Prevent browser default behavior.
     ev.preventDefault();
 
+    console.log(ev.target.files);
+
     // Send immediate notification of adding files.
     this.dispatchEvent(new Event("addingfiles", {composed: true}));
 
