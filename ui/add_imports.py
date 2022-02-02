@@ -5,7 +5,7 @@ for root, dirs, files in os.walk('src/js'):
         if not fname.endswith('.js'):
             continue
         depth = root.count('/')
-        prefix = depth * '../'
+        prefix = (depth - 1) * '../'
         path = os.path.join(root, fname)
         with open(path, 'r') as f:
             content = f.read()
@@ -28,7 +28,7 @@ for root, dirs, files in os.walk('src/js'):
             cls_file = "organization-settings/organization-type-form.js"
         elif "extends TypeForm" in content:
             cls = "TypeForm"
-            cls_file = "project-settings/type-form.js"
+            cls_file = "project-settings/type-forms/type-form.js"
         elif "extends AnnotationCanvas" in content:
             cls = "AnnotationCanvas"
             cls_file = "annotator/annotation.js"
@@ -37,7 +37,7 @@ for root, dirs, files in os.walk('src/js'):
             continue
         content = ("import { " + cls + " } from \"" + prefix +
                    cls_file + "\";\n\n" + content)
-        content.replace("class ", "export class ")
+        content = content.replace("class ", "export class ")
         with open(path, 'w') as f:
             f.write(content)
         
