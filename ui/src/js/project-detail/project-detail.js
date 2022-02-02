@@ -3,6 +3,8 @@ import { hasPermission } from "../util/has-permission.js";
 import { getCookie } from "../util/get-cookie.js";
 import { TatorData } from "../util/tator-data.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { LoadingSpinner } from "../components/loading-spinner.js";
+import { FilterData } from "../components/filter-data.js";
 
 export class ProjectDetail extends TatorPage {
   constructor() {
