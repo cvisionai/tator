@@ -810,22 +810,22 @@ class ProjectDetail extends TatorPage {
       let pageSize = Number(params.get("pagesize"));
       let page = Number(params.get("page"));
 
-      const samePageSize = pageSize == Number(this._mediaSection._paginator_top._pageSize);
-      const samePage = page == Number(this._mediaSection._paginator_top._page);
-      const paginationState = this._mediaSection._paginator_top._paginationState;
+      const samePageSize = pageSize == this._mediaSection._defaultPageSize;
+      const samePage = page == 1;
 
       if (!samePageSize) { 
-        paginationState.pageSize = pageSize;
+        this._mediaSection._paginator_bottom.pageSize = pageSize;
+        this._mediaSection._paginator_top.pageSize = pageSize;
       }
+
       if (!samePage) {
-        paginationState.page = page - 1;
-        paginationState.start = (page * pageSize);
-        paginationState.stop = ((page + 1) * pageSize)                            
+        this._mediaSection._paginator_bottom._setPage(page - 1);
+        this._mediaSection._paginator_top._setPage(page - 1);
       }
 
       if (!samePageSize || !samePage) {
-        this._mediaSection._paginator_top.init(this._mediaSection._numFilesCount, paginationState);// apply new page size
-        this._mediaSection._paginator_bottom.init(this._mediaSection._numFilesCount, paginationState);// apply new page size
+        this._mediaSection._paginator_top._emit();
+        this._mediaSection._paginator_bottom._emit();
       }  
     }
 
