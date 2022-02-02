@@ -187,7 +187,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   play_button = page.query_selector('play-button')
   seek_handle = page.query_selector('seek-bar .range-handle')
 
-  
+
   # Wait for hq buffer and verify it is red
   _wait_for_color(canvas, 0, timeout=30)
 
@@ -197,7 +197,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   # Pause the video
   play_button.click()
   _wait_for_color(canvas, 0, timeout=30)
-  
+
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
@@ -228,7 +228,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   play_button = page.query_selector('play-button')
   seek_handle = page.query_selector('seek-bar .range-handle')
 
-  
+
   # Wait for hq buffer and verify it is red
   _wait_for_color(canvas[0], 0, timeout=30)
   _wait_for_color(canvas[1], 0, timeout=30)
@@ -240,7 +240,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   play_button.click()
   _wait_for_color(canvas[0], 0, timeout=30)
   _wait_for_color(canvas[1], 0, timeout=30)
-  
+
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
@@ -260,8 +260,8 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   _wait_for_color(canvas[0], 0, timeout=30)
   _wait_for_color(canvas[1], 0, timeout=30)
   page.close()
-  
-  
+
+
 
 def test_playback_schedule(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
@@ -287,11 +287,17 @@ def test_playback_schedule(page_factory, project, count_test):
       schedule_msg = msg
   assert schedule_msg
 
+  monitor_fps_msg = None
+  for msg in console_msgs:
+    if msg.find('FPS interval =') >= 0:
+      monitor_fps_msg = msg
+  monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
+
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(schedule_lines[2].split('=')[1])
-  target_fps = int(schedule_lines[3].split('=')[1])
-  factor = int(schedule_lines[5].split('=')[1])
+  frame_increment = int(float(schedule_lines[2].split('=')[1]))
+  target_fps = int(float(schedule_lines[3].split('=')[1]))
+  factor = int(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 30
   assert frame_increment == 1
   assert factor == 1
@@ -309,11 +315,16 @@ def test_playback_schedule(page_factory, project, count_test):
       schedule_msg = msg
   assert schedule_msg
 
+  for msg in console_msgs:
+    if msg.find('FPS interval =') >= 0:
+      monitor_fps_msg = msg
+  monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
+
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(schedule_lines[2].split('=')[1])
-  target_fps = int(schedule_lines[3].split('=')[1])
-  factor = int(schedule_lines[5].split('=')[1])
+  frame_increment = int(float(schedule_lines[2].split('=')[1]))
+  target_fps = int(float(schedule_lines[3].split('=')[1]))
+  factor = int(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 30
   assert frame_increment == 4
   assert factor == 4
@@ -345,9 +356,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(schedule_lines[2].split('=')[1])
-  target_fps = int(schedule_lines[3].split('=')[1])
-  factor = int(schedule_lines[5].split('=')[1])
+  frame_increment = int(float(schedule_lines[2].split('=')[1]))
+  target_fps = int(float(schedule_lines[3].split('=')[1]))
+  factor = int(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 1
   assert frame_increment == 1
   assert factor == 1
@@ -367,9 +378,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(schedule_lines[2].split('=')[1])
-  target_fps = int(schedule_lines[3].split('=')[1])
-  factor = int(schedule_lines[5].split('=')[1])
+  frame_increment = int(float(schedule_lines[2].split('=')[1]))
+  target_fps = int(float(schedule_lines[3].split('=')[1]))
+  factor = int(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 2
   assert frame_increment == 1
   assert factor == 2
@@ -380,7 +391,7 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   play_button.click()
   time.sleep(5)
   play_button.click()
-  
+
 
   schedule_msg = None
   for msg in console_msgs:
@@ -390,9 +401,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(schedule_lines[2].split('=')[1])
-  target_fps = int(schedule_lines[3].split('=')[1])
-  factor = int(schedule_lines[5].split('=')[1])
+  frame_increment = int(float(schedule_lines[2].split('=')[1]))
+  target_fps = int(float(schedule_lines[3].split('=')[1]))
+  factor = int(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 4
   assert frame_increment == 1
   assert factor == 4
@@ -406,7 +417,7 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   play_button.click()
   time.sleep(5)
   play_button.click()
-  
+
 
   schedule_msg = None
   for msg in console_msgs:
@@ -416,9 +427,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(schedule_lines[2].split('=')[1])
-  target_fps = int(schedule_lines[3].split('=')[1])
-  factor = int(schedule_lines[5].split('=')[1])
+  frame_increment = int(float(schedule_lines[2].split('=')[1]))
+  target_fps = int(float(schedule_lines[3].split('=')[1]))
+  factor = int(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 15
   assert frame_increment == 3
   assert factor == 32
@@ -468,7 +479,7 @@ def test_audiosync(page_factory, project, slow_video):
 
 
 
-  
+
 
 
 
