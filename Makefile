@@ -200,7 +200,7 @@ webpack:
 else
 webpack:
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
-	cd ui && npm run build
+	cd ui && npm run buildDev
 endif
 
 .PHONY: migrate

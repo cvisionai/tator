@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack"
+    "buildDev": "webpack --config webpack.dev.js",
+    "build": "webpack --config webpack.prod.js"
   },
   "keywords": [],
   "author": "CVision AI, Inc.",
@@ -18,6 +19,7 @@
     "style-loader": "^3.3.1",
     "webpack": "^5.67.0",
     "webpack-cli": "^4.9.2",
+    "webpack-merge": "^5.8.0",
     "webpack-shell-plugin-next": "^2.2.2"
   },
   "dependencies": {
