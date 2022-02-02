@@ -1,4 +1,6 @@
-class SectionSearch extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class SectionSearch extends TatorElement {
   constructor() {
     super();
 

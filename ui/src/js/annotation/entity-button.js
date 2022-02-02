@@ -1,4 +1,7 @@
-class EntityButton extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class EntityButton extends TatorElement {
   constructor() {
     super();
 

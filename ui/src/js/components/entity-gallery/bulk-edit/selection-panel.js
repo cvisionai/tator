@@ -1,4 +1,6 @@
-class MultiSelectionPanel extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+
+export class MultiSelectionPanel extends TatorElement {
    constructor() {
       super();
 

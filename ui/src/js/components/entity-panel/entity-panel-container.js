@@ -1,4 +1,6 @@
-class EntityPanelContainer extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+
+export class EntityPanelContainer extends TatorElement {
    constructor() {
       super();
 

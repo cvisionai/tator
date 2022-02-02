@@ -1,4 +1,8 @@
-class AttributePanel extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { getCookie } from "../util/get-cookie.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class AttributePanel extends TatorElement {
   constructor() {
     super();
 

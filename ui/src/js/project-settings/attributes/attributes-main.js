@@ -1,3 +1,5 @@
+import { getCookie } from "../../util/get-cookie.js";
+
 /**
  * Main Attribute section for type forms
  * 
@@ -7,7 +9,7 @@
  * - Custom El cannot have children in constructor which is why main div defined in "_init"
  * 
  */
-class AttributesMain extends HTMLElement {
+export class AttributesMain extends HTMLElement {
   constructor() {
     super();
     this.loading = new LoadingSpinner();
@@ -439,7 +441,7 @@ class AttributesMain extends HTMLElement {
       return this._fetchAttributePatchPromise(this.fromId, attributeFormData);               
     });
 
-    // form class listener
+    // form export class listener
     // attrForm.addEventListener("change", () => {
     //   this.hasChanges = true;
     // });

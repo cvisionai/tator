@@ -1,7 +1,10 @@
+import { ModalDialog } from "./modal-dialog.js";
+import { FilterConditionData } from "../util/filter-utilities.js";
+
 /**
  * Element used to encapsulate the filter modal dialog.
  */
-class FilterDialog extends ModalDialog {
+export class FilterDialog extends ModalDialog {
 
   constructor()
   {

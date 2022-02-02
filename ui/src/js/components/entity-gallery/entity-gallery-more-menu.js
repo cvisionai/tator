@@ -1,4 +1,6 @@
-class EntityGalleryMoreMenu extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+
+export class EntityGalleryMoreMenu extends TatorElement {
    constructor() {
       super();
 

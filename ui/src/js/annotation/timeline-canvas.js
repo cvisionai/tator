@@ -1,4 +1,6 @@
-class TimelineCanvas extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class TimelineCanvas extends TatorElement {
   constructor() {
     super();
 

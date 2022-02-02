@@ -1,4 +1,6 @@
-class SectionFiles extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class SectionFiles extends TatorElement {
   constructor() {
     super();
 

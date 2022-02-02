@@ -1,8 +1,10 @@
+import { TatorElement } from "../tator-element.js";
+
 // This is a set of String data
 // It's value is an array, but is output as many inputs
 // Allows for more inputs to be added
 // Empty inputs = removing item (@TODO add an 'x' feature)
-class ArrayInput extends TatorElement {
+export class ArrayInput extends TatorElement {
     constructor() {
       super();
   

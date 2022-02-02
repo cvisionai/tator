@@ -1,4 +1,7 @@
-class RegisteredDashboard extends TatorPage {
+import { TatorPage } from "../../components/tator-page.js";
+import { getCookie } from "../../util/get-cookie.js";
+
+export class RegisteredDashboard extends TatorPage {
   constructor() {
     super();
     this._loading = document.createElement("img");

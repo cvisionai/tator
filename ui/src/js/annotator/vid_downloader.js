@@ -1,6 +1,8 @@
+import { fetchRetry } from "../util/fetch-retry.js";
+
 importScripts("/static/js/util/fetch-retry.js");
 
-class VideoDownloader
+export class VideoDownloader
 {
   constructor(media_files, blockSize, offsite_config)
   {

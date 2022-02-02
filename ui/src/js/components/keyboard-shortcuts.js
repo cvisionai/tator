@@ -1,4 +1,6 @@
-class KeyboardShortcuts extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class KeyboardShortcuts extends TatorElement {
   constructor() {
     super();
 

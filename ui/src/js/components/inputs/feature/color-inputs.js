@@ -1,4 +1,6 @@
-class ColorInputs extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+
+export class ColorInputs extends TatorElement {
    constructor() {
       super();
 

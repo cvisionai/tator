@@ -1,4 +1,7 @@
-class AnnouncementDialog extends ModalDialog {
+import { ModalDialog } from "./modal-dialog.js";
+import { sameOriginCredentials } from "../util/same-origin-credentials.js";
+
+export class AnnouncementDialog extends ModalDialog {
   constructor() {
     super();
    

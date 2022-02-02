@@ -1,4 +1,7 @@
-class CollectionsGallery extends EntityCardSlideGallery {
+import { getCookie } from "../../util/get-cookie.js";
+import { Utilities } from "../../util/utilities.js";
+
+export class CollectionsGallery extends EntityCardSlideGallery {
    constructor() {
       super();
       /*

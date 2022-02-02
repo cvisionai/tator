@@ -1,8 +1,12 @@
+import { getCookie } from "./get-cookie.js";
+import { FilterConditionData } from "./filter-utilities.js";
+import { fetchRetry } from "./fetch-retry.js";
+
 /**
  * Assumptions:
  * - All names given to types are unique
  **/
-class TatorData {
+export class TatorData {
 
   constructor(project) {
     this._project = project;

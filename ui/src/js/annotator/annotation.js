@@ -1,3 +1,7 @@
+import { TatorElement } from "../components/tator-element.js";
+import { hasPermission } from "../util/has-permission.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+
 
 var statusAnimator=null;
 var defaultDotWidth=10;
@@ -43,7 +47,7 @@ function enclosing_box(poly)
   return [minX,minY,maxX,maxY];
 }
 
-class PolyMaker
+export class PolyMaker
 {
   constructor(annotation)
   {
@@ -150,7 +154,7 @@ class PolyMaker
 // - If on a different frame a cut or copy places the object in the same spot on the new frame
 // - After a cut the 'cut buffer' is cleared so that pasting is a no-op.
 // - after a copy the 'copy buffer' is left along, so that pasting continues to duplicate the item.
-class Clipboard
+export class Clipboard
 {
   constructor(annotation)
   {
@@ -256,7 +260,7 @@ class Clipboard
 // Or the callback receives an object with start x/y and end x/y
 // and the start/stop time of the drag (start.time + end.time)
 //
-class CanvasDrag
+export class CanvasDrag
 {
   // @param canvas jquery object for canvas element
   // @param cb callback function to handle dragging
@@ -712,7 +716,7 @@ const MouseMode =
 
 
 // Defines a helper object to place text over the video canvas
-class TextOverlay extends TatorElement {
+export class TextOverlay extends TatorElement {
   constructor() {
     super();
     this._texts = [];
@@ -899,9 +903,9 @@ class TextOverlay extends TatorElement {
 }
 customElements.define("text-overlay", TextOverlay);
 
-// Convenience class to handle displaying annotation files out of a
+// Convenience export class to handle displaying annotation files out of a
 // data source into a draw buffer.
-class AnnotationCanvas extends TatorElement
+export class AnnotationCanvas extends TatorElement
 {
   // Construction requires a draw context +
   // data file

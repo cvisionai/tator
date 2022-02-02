@@ -1,4 +1,4 @@
-class CollectionSlideCardData extends HTMLElement {
+export class CollectionSlideCardData extends HTMLElement {
     constructor() {
         super();
 

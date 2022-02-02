@@ -1,4 +1,8 @@
-class EntityGallerySlider extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { Utilities } from "../../util/utilities.js";
+import { svgNamespace } from "../tator-element.js";
+
+export class EntityGallerySlider extends TatorElement {
    constructor() {
       super();
 

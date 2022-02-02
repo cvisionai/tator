@@ -1,4 +1,7 @@
-class TatorPage extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+import { sameOriginCredentials } from "../util/same-origin-credentials.js";
+
+export class TatorPage extends TatorElement {
   constructor() {
     super();
 
@@ -80,5 +83,7 @@ class TatorPage extends TatorElement {
   }
 }
 
-customElements.define("tator-page", TatorPage);
+if (!customElements.get("tator-page")) {
+  customElements.define("tator-page", TatorPage);
+}
 

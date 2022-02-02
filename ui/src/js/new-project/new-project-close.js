@@ -1,4 +1,7 @@
-class NewProjectClose extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class NewProjectClose extends TatorElement {
   constructor() {
     super();
 

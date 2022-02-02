@@ -1,4 +1,7 @@
-class DashboardPortal extends TatorPage {
+import { TatorPage } from "../../components/tator-page.js";
+import { getCookie } from "../../util/get-cookie.js";
+
+export class DashboardPortal extends TatorPage {
     constructor() {
       super();
       this._loading = document.createElement("img");

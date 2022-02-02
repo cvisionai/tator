@@ -1,4 +1,6 @@
-class MediaPanel extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class MediaPanel extends TatorElement {
   constructor() {
     super();
 

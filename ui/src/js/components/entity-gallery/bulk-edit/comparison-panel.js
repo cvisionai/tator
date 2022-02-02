@@ -1,4 +1,6 @@
-class AttributeComparisonPanel extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+
+export class AttributeComparisonPanel extends TatorElement {
    constructor() {
       super();
 

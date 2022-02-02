@@ -1,4 +1,6 @@
-class WormsAutoComplete {
+import { getCookie } from "../util/get-cookie.js";
+
+export class WormsAutoComplete {
   /// Construct a WormsAutocomplete handler based on
   /// a minimum rank. See
   /// https://www.marinespecies.org/rest/AphiaTaxonRanksByID/-1?AphiaID=2
@@ -290,7 +292,7 @@ class WormsAutoComplete {
 
 
 /// Class to setup autocomplete on an input element
-class TatorAutoComplete {
+export class TatorAutoComplete {
 
   /// Compute the lavenshetin distance of two strings
   static levenshtein_distance(a,b)

@@ -1,10 +1,13 @@
+import { TatorElement } from "./tator-element.js";
+import { TatorData } from "../util/tator-data.js";
+
 /**
  * This works in conjunction with FilterInterface. It is the backend portion
  * that connects with the database.
  *
  * #TODO Convert this to a TatorElement so that events can be dispatched
  */
-class FilterData {
+export class FilterData {
 
   /**
    * @param {TatorData} modelData

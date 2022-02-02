@@ -1,4 +1,6 @@
-class LocalizationEdit extends TypeForm {
+import { TypeForm } from "./type-form.js";
+
+export class LocalizationEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "LocalizationType";

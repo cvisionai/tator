@@ -1,4 +1,6 @@
-class InlineWarning extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class InlineWarning extends TatorElement {
     constructor() {
       super();
     }

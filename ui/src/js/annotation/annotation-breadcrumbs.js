@@ -1,4 +1,8 @@
-class AnnotationBreadcrumbs extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+
+export class AnnotationBreadcrumbs extends TatorElement {
   constructor() {
     super();
 

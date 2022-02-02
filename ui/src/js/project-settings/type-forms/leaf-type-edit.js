@@ -1,4 +1,6 @@
-class LeafTypeEdit extends TypeForm {
+import { TypeForm } from "./type-form.js";
+
+export class LeafTypeEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "LeafType";

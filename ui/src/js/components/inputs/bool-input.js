@@ -1,4 +1,7 @@
-class BoolInput extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { hasPermission } from "../../util/has-permission.js";
+
+export class BoolInput extends TatorElement {
   constructor() {
     super();
 

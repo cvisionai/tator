@@ -1,8 +1,10 @@
+import { TatorElement } from "../components/tator-element.js";
+
 /**
  * Events dispatched from this element:
  * #TODO Eventually should allow select?
  */
-class TimelineD3 extends TatorElement {
+export class TimelineD3 extends TatorElement {
   constructor() {
     super();
 

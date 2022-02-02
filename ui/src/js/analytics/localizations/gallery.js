@@ -1,4 +1,7 @@
-class AnnotationsGallery extends EntityCardGallery {
+import { getCookie } from "../../util/get-cookie.js";
+import { Utilities } from "../../util/utilities.js";
+
+export class AnnotationsGallery extends EntityCardGallery {
   constructor() {
     super();
     /*

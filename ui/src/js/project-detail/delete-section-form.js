@@ -1,4 +1,7 @@
-class DeleteSectionForm extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class DeleteSectionForm extends ModalDialog {
   constructor() {
     super();
 

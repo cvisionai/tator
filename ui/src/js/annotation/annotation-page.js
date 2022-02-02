@@ -1,4 +1,9 @@
-class AnnotationPage extends TatorPage {
+import { TatorPage } from "../components/tator-page.js";
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+import { Utilities } from "../util/utilities.js";
+
+export class AnnotationPage extends TatorPage {
   constructor() {
     super();
     this._loading = document.createElement("img");

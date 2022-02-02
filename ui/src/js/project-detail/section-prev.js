@@ -1,4 +1,7 @@
-class SectionPrev extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class SectionPrev extends TatorElement {
   constructor() {
     super();
 

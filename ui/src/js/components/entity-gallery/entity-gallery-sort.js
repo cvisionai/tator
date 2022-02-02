@@ -1,4 +1,6 @@
-class EntityGallerySort extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+
+export class EntityGallerySort extends TatorElement {
   constructor() {
     super();
 

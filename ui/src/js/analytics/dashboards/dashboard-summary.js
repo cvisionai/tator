@@ -1,4 +1,6 @@
-class DashboardSummary extends TatorElement {
+import { TatorElement } from "../../components/tator-element.js";
+
+export class DashboardSummary extends TatorElement {
   constructor() {
     super();
 

@@ -1,4 +1,9 @@
-class SectionCard extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class SectionCard extends TatorElement {
   constructor() {
     super();
 

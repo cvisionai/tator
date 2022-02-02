@@ -1,4 +1,6 @@
-class OrganizationSettings extends TatorPage {
+import { TatorPage } from "../components/tator-page.js";
+
+export class OrganizationSettings extends TatorPage {
   constructor() {
     super();
 

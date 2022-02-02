@@ -1,4 +1,11 @@
-class MediaSection extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { hasPermission } from "../util/has-permission.js";
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+import { joinParams } from "../util/join-params.js";
+import { Utilities } from "../util/utilities.js";
+
+export class MediaSection extends TatorElement {
   constructor() {
     super();
 

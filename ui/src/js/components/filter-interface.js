@@ -1,7 +1,10 @@
+import { TatorElement } from "./tator-element.js";
+import { FilterConditionData } from "../util/filter-utilities.js";
+
 /**
  * Filter/search widget
  */
-class FilterInterface extends TatorElement {
+export class FilterInterface extends TatorElement {
 
   constructor() {
     super();

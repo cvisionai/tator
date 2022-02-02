@@ -1,4 +1,6 @@
-class CreateCustom extends TatorElement {
+import { TatorElement } from "../../components/tator-element.js";
+
+export class CreateCustom extends TatorElement {
   constructor() {
     super();
 

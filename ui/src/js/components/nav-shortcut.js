@@ -1,4 +1,6 @@
-class NavShortcut extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class NavShortcut extends TatorElement {
   constructor() {
     super();
 

@@ -1,4 +1,6 @@
-class ConfirmRunAlgorithm extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+
+export class ConfirmRunAlgorithm extends ModalDialog {
   constructor() {
     super();
 

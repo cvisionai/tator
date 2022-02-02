@@ -1,7 +1,10 @@
+import { TatorPage } from "../../components/tator-page.js";
+import { TatorData } from "../../util/tator-data.js";
+
 /**
  * Page that displays a grid view of selected annotations
  */
-class AnalyticsLocalizationsCorrections extends TatorPage {
+export class AnalyticsLocalizationsCorrections extends TatorPage {
   constructor() {
     super();
 
@@ -102,7 +105,7 @@ class AnalyticsLocalizationsCorrections extends TatorPage {
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
 
-    // Card Data class collects raw model and parses into view-model format
+    // Card Data export class collects raw model and parses into view-model format
     this.cardData = document.createElement("annotation-card-data");
     await this.cardData.init(this._modelData);
 

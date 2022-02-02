@@ -1,4 +1,6 @@
-class NewAlgorithmForm extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+
+export class NewAlgorithmForm extends ModalDialog {
   constructor() {
     super();
 

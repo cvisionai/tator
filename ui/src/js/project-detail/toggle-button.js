@@ -1,4 +1,6 @@
-class ToggleButton extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class ToggleButton extends TatorElement {
   constructor() {
     super();
 

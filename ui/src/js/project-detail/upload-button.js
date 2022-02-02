@@ -1,4 +1,6 @@
-class UploadButton extends UploadElement {
+import { UploadElement } from "../components/upload-element.js";
+
+export class UploadButton extends UploadElement {
   constructor() {
     super();
 

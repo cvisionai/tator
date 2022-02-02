@@ -1,4 +1,7 @@
-class FilterDataButton extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+import { svgNamespace } from "./tator-element.js";
+
+export class FilterDataButton extends TatorElement {
   constructor() {
     super();
 

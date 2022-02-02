@@ -1,4 +1,6 @@
-class TypeDelete {
+import { getCookie } from "../../util/get-cookie.js";
+
+export class TypeDelete {
     constructor({
         type, typeId
       }){

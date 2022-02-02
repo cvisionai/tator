@@ -1,4 +1,6 @@
-class NewProjectDialog extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+
+export class NewProjectDialog extends ModalDialog {
   constructor() {
     super();
 

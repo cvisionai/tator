@@ -1,4 +1,7 @@
-class CancelConfirm extends ModalDialog {
+import { ModalDialog } from "./modal-dialog.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class CancelConfirm extends ModalDialog {
   constructor() {
     super();
 

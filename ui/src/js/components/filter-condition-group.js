@@ -1,7 +1,11 @@
+import { TatorElement } from "./tator-element.js";
+import { FilterConditionData } from "../util/filter-utilities.js";
+import { svgNamespace } from "./tator-element.js";
+
 /**
  * Element that encaspulates a group of filter conditions
  */
-class FilterConditionGroup extends TatorElement {
+export class FilterConditionGroup extends TatorElement {
 
   constructor() {
     super();

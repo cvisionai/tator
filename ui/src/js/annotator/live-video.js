@@ -1,6 +1,8 @@
+import { AnnotationCanvas } from "./annotation.js";
+
 var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
-class LiveCanvas extends AnnotationCanvas
+export class LiveCanvas extends AnnotationCanvas
 {
   constructor()
   {

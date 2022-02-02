@@ -1,4 +1,6 @@
-class FramePanel extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class FramePanel extends TatorElement {
   constructor() {
     super();
 

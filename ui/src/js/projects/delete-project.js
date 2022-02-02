@@ -1,4 +1,7 @@
-class DeleteProject extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class DeleteProject extends ModalDialog {
   constructor() {
     super();
 

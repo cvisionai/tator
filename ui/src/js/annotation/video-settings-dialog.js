@@ -1,4 +1,6 @@
-class VideoSettingsDialog extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+
+export class VideoSettingsDialog extends ModalDialog {
   constructor() {
     super();
 

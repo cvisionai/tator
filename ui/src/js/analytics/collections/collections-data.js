@@ -1,10 +1,13 @@
+import { FilterConditionData } from "../../util/filter-utilities.js";
+import { TatorData } from "../../util/tator-data.js";
+
 /**
  * Class that contains the data about the collections analytics gallery.
  * This provides an interface between the UI elements to the underlying data calls.
  * 
  * This will retrieve media-associated states
  */
-class CollectionsData extends HTMLElement {
+export class CollectionsData extends HTMLElement {
   constructor() {
     super();
   }

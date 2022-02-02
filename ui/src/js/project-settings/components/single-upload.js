@@ -1,5 +1,7 @@
+import { getCookie } from "../../util/get-cookie.js";
+
 // Manages an upload.
-class SingleUpload {
+export class SingleUpload {
 
   constructor(uploadData) {
     this.last_progress = Date.now();

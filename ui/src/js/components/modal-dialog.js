@@ -1,4 +1,6 @@
-class ModalDialog extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class ModalDialog extends TatorElement {
   constructor() {
     super();
 
@@ -58,4 +60,6 @@ class ModalDialog extends TatorElement {
   }
 }
 
-customElements.define("modal-dialog", ModalDialog);
+if (!customElements.get("modal-dialog")) {
+  customElements.define("modal-dialog", ModalDialog);
+}

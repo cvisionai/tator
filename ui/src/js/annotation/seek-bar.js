@@ -1,4 +1,6 @@
-class SeekBar extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class SeekBar extends TatorElement {
   constructor() {
     super();
     this.bar = document.createElement("div");

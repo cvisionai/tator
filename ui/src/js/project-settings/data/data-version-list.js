@@ -1,4 +1,4 @@
-class DataVersionList{
+export class DataVersionList{
     constructor(projectId){
       this.projectId = projectId;
       this.el = document.createElement("div");

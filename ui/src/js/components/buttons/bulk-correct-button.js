@@ -1,4 +1,7 @@
-class BulkCorrectButton extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { svgNamespace } from "../tator-element.js";
+
+export class BulkCorrectButton extends TatorElement {
    constructor() {
      super();
  

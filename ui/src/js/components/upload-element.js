@@ -1,4 +1,7 @@
-class UploadElement extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class UploadElement extends TatorElement {
   constructor() {
     super();
     this._fileSelectCallback = this._fileSelectCallback.bind(this);

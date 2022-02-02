@@ -1,4 +1,6 @@
-class RateControl extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class RateControl extends TatorElement {
   constructor() {
     super();
 

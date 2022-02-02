@@ -1,4 +1,7 @@
-// Video class handles interactions between HTML presentation layer and the
+import { AnnotationCanvas } from "./annotation.js";
+import { Utilities } from "../util/utilities.js";
+
+// Video export class handles interactions between HTML presentation layer and the
 // javascript application.
 //
 
@@ -65,9 +68,9 @@ const RATE_CUTOFF_FOR_ON_DEMAND = 4.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 /// Support multiple off-screen videos at varying resolutions
-/// the intention is this class is used to store raw video
+/// the intention is this export class is used to store raw video
 /// frames as they are downloaded.
-class VideoBufferDemux
+export class VideoBufferDemux
 {
   constructor()
   {
@@ -931,7 +934,7 @@ class VideoBufferDemux
 
 /// Used to determine system fps and calculate playback
 /// schedules based on a given video fps
-class MotionComp {
+export class MotionComp {
   constructor() {
     this._interval = null;
     this._monitorFps = null;
@@ -1175,7 +1178,7 @@ class MotionComp {
     return this._targetFPS;
   }
 }
-class VideoCanvas extends AnnotationCanvas {
+export class VideoCanvas extends AnnotationCanvas {
   constructor() {
     super();
 

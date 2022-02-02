@@ -1,4 +1,8 @@
-class EnumInput extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { hasPermission } from "../../util/has-permission.js";
+import { svgNamespace } from "../tator-element.js";
+
+export class EnumInput extends TatorElement {
   constructor() {
     super();
 

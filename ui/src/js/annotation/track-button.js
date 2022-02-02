@@ -1,4 +1,6 @@
-class TrackButton extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class TrackButton extends TatorElement {
   constructor() {
     super();
 

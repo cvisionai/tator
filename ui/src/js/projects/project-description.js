@@ -1,4 +1,6 @@
-class ProjectDescription extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class ProjectDescription extends TatorElement {
   constructor() {
     super();
 

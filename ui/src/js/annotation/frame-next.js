@@ -1,4 +1,7 @@
-class FrameNext extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class FrameNext extends TatorElement {
   constructor() {
     super();
 

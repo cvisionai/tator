@@ -1,4 +1,9 @@
-class FileInput extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+import { TypeForm } from "../../../project-settings/type-forms/type-form.js";
+import { hasPermission } from "../../../util/has-permission.js";
+import { getCookie } from "../../../util/get-cookie.js";
+
+export class FileInput extends TatorElement {
   constructor() {
     super();
 

@@ -1,4 +1,7 @@
-class ZoomOutButton extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class ZoomOutButton extends TatorElement {
   constructor() {
     super();
 

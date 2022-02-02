@@ -1,4 +1,6 @@
-class EntityGalleryPanelForm extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+
+export class EntityGalleryPanelForm extends TatorElement {
   constructor() {
     super();
 

@@ -1,5 +1,7 @@
+import { svgNamespace } from "../components/tator-element.js";
+
 /* Class with methods return content in a styled DIV boxes.*/
-class SettingsBox {
+export class SettingsBox {
   constructor( modal ) {
 
     this.modal = modal;

@@ -1,4 +1,6 @@
-class DataJobClusters {
+import { getCookie } from "../../util/get-cookie.js";
+
+export class DataJobClusters {
    constructor(organizationId) {
       this.organizationId = organizationId;
       this.el = document.createElement("div");

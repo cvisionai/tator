@@ -1,4 +1,7 @@
-class HeaderMenu extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+import { svgNamespace } from "./tator-element.js";
+
+export class HeaderMenu extends TatorElement {
   constructor() {
     super();
 

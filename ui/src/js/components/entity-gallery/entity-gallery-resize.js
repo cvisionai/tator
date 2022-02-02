@@ -1,4 +1,6 @@
-class EntityCardResize extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+
+export class EntityCardResize extends TatorElement {
   constructor() {
     super();
 

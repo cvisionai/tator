@@ -1,4 +1,7 @@
-class AnnotationSidebar extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { hasPermission } from "../util/has-permission.js";
+
+export class AnnotationSidebar extends TatorElement {
   constructor() {
     super();
 

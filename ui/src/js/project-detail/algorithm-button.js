@@ -1,4 +1,6 @@
-class AlgorithmButton extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class AlgorithmButton extends TatorElement {
   constructor() {
     super();
 

@@ -1,4 +1,6 @@
-class NewSection extends UploadElement {
+import { UploadElement } from "../components/upload-element.js";
+
+export class NewSection extends UploadElement {
   constructor() {
     super();
 

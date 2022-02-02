@@ -1,4 +1,7 @@
-class MultiAttributeEditPanel extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+import { svgNamespace } from "../../tator-element.js";
+
+export class MultiAttributeEditPanel extends TatorElement {
    constructor() {
       super();
 

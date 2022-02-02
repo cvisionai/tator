@@ -1,4 +1,6 @@
-class EntityGalleryPanel extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+
+export class EntityGalleryPanel extends TatorElement {
   constructor() {
     super();
 
@@ -36,7 +38,7 @@ class EntityGalleryPanel extends TatorElement {
     this.goToFrameButton.button.setAttribute("target", "_blank");
     this.goToFrameButton.style.marginLeft = "8px";
 
-    // #TODO Encapsulate this class into a LocalizationGalleryPanel
+    // #TODO Encapsulate this export class into a LocalizationGalleryPanel
     this._mediaHeading = document.createElement("h3");
     this._mediaHeading.setAttribute("class", "py-3 text-semibold");
     this._mediaHeading.style.margintop = "10px";

@@ -1,3 +1,5 @@
+import { sameOriginCredentials } from "../util/same-origin-credentials.js";
+
 
 function handleErrors(response) {
   return response.json()
@@ -9,7 +11,7 @@ function handleErrors(response) {
   });
 }
 
-class OrganizationData {
+export class OrganizationData {
   constructor(organizationId) {
     this.organizationId = organizationId;
   }

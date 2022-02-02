@@ -1,4 +1,4 @@
-class LoadingSpinner {
+export class LoadingSpinner {
     constructor(){
         this.img = document.createElement("img");
         this.img.setAttribute("class", "loading");

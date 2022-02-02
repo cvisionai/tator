@@ -1,4 +1,7 @@
-class ModalWarning extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { svgNamespace } from "../tator-element.js";
+
+export class ModalWarning extends TatorElement {
   constructor() {
     super();
 

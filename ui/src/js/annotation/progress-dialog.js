@@ -1,4 +1,9 @@
-class ProgressDialog extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class ProgressDialog extends ModalDialog {
   constructor() {
     super();
 

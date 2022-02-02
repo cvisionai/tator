@@ -1,4 +1,6 @@
-class SaveDialog extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class SaveDialog extends TatorElement {
   constructor() {
     super();
 

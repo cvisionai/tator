@@ -1,4 +1,7 @@
-class MediaMove extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class MediaMove extends TatorElement {
   constructor() {
     super();
 

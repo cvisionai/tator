@@ -1,4 +1,10 @@
-class ProjectDetail extends TatorPage {
+import { TatorPage } from "../components/tator-page.js";
+import { hasPermission } from "../util/has-permission.js";
+import { getCookie } from "../util/get-cookie.js";
+import { TatorData } from "../util/tator-data.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class ProjectDetail extends TatorPage {
   constructor() {
     super();
 

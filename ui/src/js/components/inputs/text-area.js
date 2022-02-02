@@ -1,4 +1,7 @@
-class TextArea extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { hasPermission } from "../../util/has-permission.js";
+
+export class TextArea extends TatorElement {
   constructor() {
     super();
 

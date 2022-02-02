@@ -1,4 +1,6 @@
-class AttributesForm extends TatorElement {
+import { TatorElement } from "../../components/tator-element.js";
+
+export class AttributesForm extends TatorElement {
   constructor() {
     super();
 

@@ -1,4 +1,8 @@
-class InvitationEdit extends OrganizationTypeForm {
+import { OrganizationTypeForm } from "./organization-type-form.js";
+import { TypeForm } from "../project-settings/type-forms/type-form.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class InvitationEdit extends OrganizationTypeForm {
   constructor() {
     super();
     this.typeName = "Invitation";

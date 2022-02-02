@@ -1,4 +1,7 @@
-class RenameButton extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class RenameButton extends TatorElement {
   constructor() {
     super();
 

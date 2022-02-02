@@ -1,4 +1,6 @@
-class GalleryPanelLocalization extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+
+export class GalleryPanelLocalization extends TatorElement {
   constructor() {
     super();
 

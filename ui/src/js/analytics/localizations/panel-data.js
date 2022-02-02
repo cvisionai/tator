@@ -1,4 +1,4 @@
-class AnnotationPanelData extends HTMLElement {
+export class AnnotationPanelData extends HTMLElement {
     constructor(){
         super();
     }

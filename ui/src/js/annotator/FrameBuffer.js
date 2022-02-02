@@ -1,5 +1,5 @@
 /// Object to contain frames indexes ready to display
-class FrameBuffer
+export class FrameBuffer
 {
     /// Construct a new frame buffer
     /// @param depth The depth of the buffer

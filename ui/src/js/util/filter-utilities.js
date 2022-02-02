@@ -1,7 +1,9 @@
+import { Utilities } from "./utilities.js";
+
 /**
  * Class used to encapsulate a condition for the data filtering interface
  */
-class FilterConditionData {
+export class FilterConditionData {
 
   /**
    * Note: There is no error checking (e.g. checking for nulls)
@@ -30,7 +32,7 @@ class FilterConditionData {
 /**
  * Library of utility functions related to the filtering of data
  */
-class FilterUtilities {
+export class FilterUtilities {
   /**
    * @returns {array of objects} Valid modifier choices given the dtype
    *                             Stored within the value property of the object because this

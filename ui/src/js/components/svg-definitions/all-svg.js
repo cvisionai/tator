@@ -1,4 +1,6 @@
-class SvgDefinition {
+import { svgNamespace } from "../tator-element.js";
+
+export class SvgDefinition {
   constructor({iconName, height = "1em", width = "1em"} = {}) {
    this.viewBox = "0 0 24 24";
    this.height = height;

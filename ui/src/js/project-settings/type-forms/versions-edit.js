@@ -1,4 +1,7 @@
-class VersionsEdit extends TypeForm {
+import { TypeForm } from "./type-form.js";
+import { getCookie } from "../../util/get-cookie.js";
+
+export class VersionsEdit extends TypeForm {
    constructor() {
       super();
       this.typeName = "Version";

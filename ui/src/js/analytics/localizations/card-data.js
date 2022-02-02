@@ -1,8 +1,11 @@
+import { FilterConditionData } from "../../util/filter-utilities.js";
+import { TatorData } from "../../util/tator-data.js";
+
 /**
  * Class that contains the data about the annotation analytics gallery.
  * This provides an interface between the UI elements to the underlying data calls.
  */
-class AnnotationCardData extends HTMLElement {
+export class AnnotationCardData extends HTMLElement {
   constructor() {
     super();
 

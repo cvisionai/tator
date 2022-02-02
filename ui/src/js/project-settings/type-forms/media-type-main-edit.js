@@ -1,4 +1,6 @@
-class MediaTypeMainEdit extends TypeForm {
+import { TypeForm } from "./type-form.js";
+
+export class MediaTypeMainEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "MediaType";

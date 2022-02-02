@@ -1,4 +1,6 @@
-class ProjectSettings extends TatorPage {
+import { TatorPage } from "../components/tator-page.js";
+
+export class ProjectSettings extends TatorPage {
   constructor() {
     super();
 

@@ -1,4 +1,7 @@
-class AnnotationLive extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { Utilities } from "../util/utilities.js";
+
+export class AnnotationLive extends TatorElement {
   constructor() {
     super();
 

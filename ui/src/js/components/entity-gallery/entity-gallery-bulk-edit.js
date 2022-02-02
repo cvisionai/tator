@@ -1,6 +1,11 @@
+import { TatorElement } from "../tator-element.js";
+import { getCookie } from "../../util/get-cookie.js";
+import { FilterConditionData } from "../../util/filter-utilities.js";
+import { svgNamespace } from "../tator-element.js";
 
 
-class GalleryBulkEdit extends TatorElement {
+
+export class GalleryBulkEdit extends TatorElement {
    constructor() {
       super();
       /**

@@ -1,4 +1,6 @@
-class AttributesDelete {
+import { getCookie } from "../../util/get-cookie.js";
+
+export class AttributesDelete {
     constructor({
         type, typeId, attributeName
     }){

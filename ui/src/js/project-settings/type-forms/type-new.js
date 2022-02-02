@@ -1,4 +1,6 @@
-class TypeNew {
+import { getCookie } from "../../util/get-cookie.js";
+
+export class TypeNew {
     constructor({
         type, projectId
       }){

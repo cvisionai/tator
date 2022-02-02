@@ -1,4 +1,6 @@
-class StateTypeEdit extends TypeForm {
+import { TypeForm } from "./type-form.js";
+
+export class StateTypeEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "StateType";

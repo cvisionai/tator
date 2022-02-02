@@ -1,4 +1,6 @@
-class HeaderMain extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class HeaderMain extends TatorElement {
   constructor() {
     super();
 

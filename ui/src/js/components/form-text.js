@@ -1,4 +1,6 @@
-class FormText extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class FormText extends TatorElement {
   constructor() {
     super();
 

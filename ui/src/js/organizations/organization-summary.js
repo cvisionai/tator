@@ -1,4 +1,6 @@
-class OrganizationSummary extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class OrganizationSummary extends TatorElement {
   constructor() {
     super();
 

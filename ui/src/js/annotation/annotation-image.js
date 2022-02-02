@@ -1,6 +1,8 @@
-/// TODO: Make a base class to collapse common functionality of this
+import { TatorElement } from "../components/tator-element.js";
+
+/// TODO: Make a base export class to collapse common functionality of this
 /// and annotation-player (e.g. zoom)
-class AnnotationImage extends TatorElement {
+export class AnnotationImage extends TatorElement {
   constructor() {
     super();
 

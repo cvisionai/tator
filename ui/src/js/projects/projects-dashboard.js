@@ -1,4 +1,7 @@
-class ProjectsDashboard extends TatorPage {
+import { TatorPage } from "../components/tator-page.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class ProjectsDashboard extends TatorPage {
   constructor() {
     super();
 

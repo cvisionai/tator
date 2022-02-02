@@ -1,4 +1,4 @@
-class ProjectTypesData {
+export class ProjectTypesData {
     constructor(projectId){
       this.projectId = projectId;
     }

@@ -1,4 +1,4 @@
-class Crc32 {
+export class Crc32 {
   constructor () {
     this.crc = -1
   }

@@ -1,4 +1,6 @@
-class AttachmentDialog extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+
+export class AttachmentDialog extends ModalDialog {
   constructor() {
     super();
    

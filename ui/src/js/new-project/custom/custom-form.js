@@ -1,4 +1,7 @@
-class CustomForm extends TatorElement {
+import { TatorElement } from "../../components/tator-element.js";
+import { getCookie } from "../../util/get-cookie.js";
+
+export class CustomForm extends TatorElement {
   constructor() {
     super();
 

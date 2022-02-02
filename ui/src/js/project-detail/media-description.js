@@ -1,4 +1,6 @@
-class MediaDescription extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class MediaDescription extends TatorElement {
   constructor() {
     super();
 

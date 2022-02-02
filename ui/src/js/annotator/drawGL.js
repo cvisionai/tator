@@ -20,7 +20,7 @@
 /// NOTE: When manually invoking this routine via the shell, subsequent calls
 /// to draw clear the glViewport because the draw buffer is empty.
 
-/// The drawGL class handles multiple coordinate frames. The user facing
+/// The drawGL export class handles multiple coordinate frames. The user facing
 /// coordinate frame (e.g. drawLine(), pushImage()) use the convention found
 /// in HTML5 canvas or QT painter, that (0,0) is the upper left. Vertices
 /// going into the shader use this convention and are flipped prior to
@@ -237,8 +237,8 @@ color.YELLOW, 1.0]);
 const quadIndices = new Uint8Array([0, 1, 2, 0, 2, 3]);
 
 
-// WebGL class to support drawing image frames + draw actions.
-class DrawGL
+// WebGL export class to support drawing image frames + draw actions.
+export class DrawGL
 {
   constructor(canvas)
   {

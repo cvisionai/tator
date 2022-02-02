@@ -1,4 +1,7 @@
-class AnalyticsBreadcrumbs extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { TatorPage } from "../components/tator-page.js";
+
+export class AnalyticsBreadcrumbs extends TatorElement {
   constructor() {
     super();
 

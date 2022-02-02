@@ -1,4 +1,7 @@
-class EmailListInput extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { hasPermission } from "../../util/has-permission.js";
+
+export class EmailListInput extends TatorElement {
   constructor() {
     super();
 

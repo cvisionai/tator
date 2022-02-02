@@ -1,4 +1,7 @@
-class DeleteFileForm extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class DeleteFileForm extends ModalDialog {
   constructor() {
     super();
 

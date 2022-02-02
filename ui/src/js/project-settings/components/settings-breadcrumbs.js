@@ -1,4 +1,6 @@
-class SettingsBreadcrumbs extends TatorElement {
+import { TatorElement } from "../../components/tator-element.js";
+
+export class SettingsBreadcrumbs extends TatorElement {
   constructor() {
     super();
 

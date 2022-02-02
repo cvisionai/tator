@@ -1,4 +1,8 @@
-class FavoriteButton extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+
+export class FavoriteButton extends TatorElement {
   constructor() {
     super();
 

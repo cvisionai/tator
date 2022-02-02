@@ -1,4 +1,6 @@
-class FileTypeDialog extends ModalDialog {
+import { ModalDialog } from "../../components/modal-dialog.js";
+
+export class FileTypeDialog extends ModalDialog {
   constructor() {
     super();
 

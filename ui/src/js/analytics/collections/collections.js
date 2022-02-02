@@ -1,4 +1,7 @@
-class AnalyticsCollections extends TatorPage {
+import { TatorPage } from "../../components/tator-page.js";
+import { TatorData } from "../../util/tator-data.js";
+
+export class AnalyticsCollections extends TatorPage {
     constructor() {
       super();
 

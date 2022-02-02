@@ -32,15 +32,15 @@ for root, dirs, files in os.walk('src/js'):
         path = os.path.join(root, fname)
         with open(path, 'r') as f:
             content = f.read()
+        imports = ""
         for symbol in symbols:
-            imports = ""
             if path != symbols[symbol] and symbol in content:
                 rel = os.path.relpath(symbols[symbol], os.path.dirname(path))
                 if '/' not in rel:
                     rel = "./" + rel
                 imports += "import { " + symbol + " } from \"" + rel + "\";\n"
-            if imports:
-                content = imports + "\n" + content
+        if imports:
+            content = imports + "\n" + content
         content = content.replace("class ", "export class ")
         with open(path, 'w') as f:
             f.write(content)

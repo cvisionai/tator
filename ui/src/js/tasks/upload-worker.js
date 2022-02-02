@@ -4,7 +4,7 @@ let window = self;
 import SparkMD5 from "spark-md5";
 
 // Import fetch retry.
-import fetchRetry from "../util/fetch-retry.js";
+import { fetchRetry } from "../util/fetch-retry.js";
 
 // List of uploads in progress.
 let activeUploads = {};
@@ -62,7 +62,7 @@ function removeFromActive(uid) {
 }
 
 // Manages an upload.
-class Upload {
+export class Upload {
 
   constructor(uploadData) {
     this.last_progress = Date.now();

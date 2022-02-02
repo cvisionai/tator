@@ -1,4 +1,6 @@
-class MembershipData {
+import { sameOriginCredentials } from "../../util/same-origin-credentials.js";
+
+export class MembershipData {
   constructor(projectId){
     this.projectId = projectId;
 

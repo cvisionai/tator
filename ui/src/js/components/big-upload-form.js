@@ -1,4 +1,6 @@
-class BigUploadForm extends ModalDialog {
+import { ModalDialog } from "./modal-dialog.js";
+
+export class BigUploadForm extends ModalDialog {
   constructor() {
     super();
 

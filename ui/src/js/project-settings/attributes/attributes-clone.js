@@ -1,5 +1,5 @@
 /* Class with methods return input types with preset values for editing.*/
-class AttributesClone {
+export class AttributesClone {
   constructor(attributeDataByType) {
     // Feature-related class(es) to customize form element. Applies to all elements.
     this.attributeDataByType = attributeDataByType;

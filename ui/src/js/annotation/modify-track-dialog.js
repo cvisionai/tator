@@ -1,4 +1,6 @@
-class ModifyTrackDialog extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class ModifyTrackDialog extends TatorElement {
   constructor() {
     super();
 

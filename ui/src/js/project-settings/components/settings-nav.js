@@ -1,4 +1,7 @@
-class SettingsNav extends TatorElement {
+import { TatorElement } from "../../components/tator-element.js";
+import { Utilities } from "../../util/utilities.js";
+
+export class SettingsNav extends TatorElement {
   constructor() {
     super();
 

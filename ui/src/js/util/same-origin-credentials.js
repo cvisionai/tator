@@ -1,4 +1,6 @@
-function sameOriginCredentials() {
+import { getCookie } from "./get-cookie.js";
+
+export function sameOriginCredentials() {
   return {
     credentials: "same-origin",
     headers: {

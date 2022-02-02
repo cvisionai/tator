@@ -1,7 +1,9 @@
+import { TatorElement } from "../components/tator-element.js";
+
 /**
  * Module for the settings portion of the analytics dashboard
  */
-class AnalyticsSettings extends TatorElement {
+export class AnalyticsSettings extends TatorElement {
   constructor () {
     super();
 

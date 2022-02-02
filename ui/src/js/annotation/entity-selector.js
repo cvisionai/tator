@@ -1,4 +1,8 @@
-class EntitySelector extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { hasPermission } from "../util/has-permission.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class EntitySelector extends TatorElement {
   constructor() {
     super();
 

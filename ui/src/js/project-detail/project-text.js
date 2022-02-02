@@ -1,4 +1,6 @@
-class ProjectText extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class ProjectText extends TatorElement {
   constructor() {
     super();
   }

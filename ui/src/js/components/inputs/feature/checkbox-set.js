@@ -1,4 +1,6 @@
-class CheckboxSet extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+
+export class CheckboxSet extends TatorElement {
    constructor() {
       super();
 

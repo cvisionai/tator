@@ -1,4 +1,7 @@
-class TextCalendarButton extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+import { svgNamespace } from "./tator-element.js";
+
+export class TextCalendarButton extends TatorElement {
   constructor() {
     super();
 

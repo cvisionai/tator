@@ -1,6 +1,8 @@
+import { getCookie } from "./get-cookie.js";
+
 // Misc. Utilities for Tator
 
-class Utilities
+export class Utilities
 {
   static showSuccessIcon(message, color, noFade)
   {

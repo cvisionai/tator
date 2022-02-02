@@ -1,4 +1,6 @@
-class AlgorithmMenu extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class AlgorithmMenu extends TatorElement {
   constructor() {
     super();
 

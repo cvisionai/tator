@@ -1,4 +1,6 @@
-class ModalNotify extends ModalDialog {
+import { ModalDialog } from "./modal-dialog.js";
+
+export class ModalNotify extends ModalDialog {
   constructor() {
     super();
 

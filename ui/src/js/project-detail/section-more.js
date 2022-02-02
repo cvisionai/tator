@@ -1,4 +1,7 @@
-class SectionMore extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { hasPermission } from "../util/has-permission.js";
+
+export class SectionMore extends TatorElement {
   constructor() {
     super();
 

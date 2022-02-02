@@ -1,6 +1,8 @@
+import { TatorElement } from "../../tator-element.js";
+
 // This is a set of Object data
 // You can specify the named properties each list item should have in it's object
-class ArrayObjectInput extends TatorElement {
+export class ArrayObjectInput extends TatorElement {
   constructor() {
     super();
 

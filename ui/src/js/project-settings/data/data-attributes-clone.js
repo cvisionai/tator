@@ -1,5 +1,7 @@
+import { getCookie } from "../../util/get-cookie.js";
+
 /* Class with methods return input types with preset values for editing.*/
-class AttributesData {
+export class AttributesData {
     constructor({projectId, typeName, typeId, selectedData}) {
       // Feature-related class(es) to customize form element. Applies to all elements.
       this.projectId = projectId;

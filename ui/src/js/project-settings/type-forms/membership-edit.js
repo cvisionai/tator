@@ -1,4 +1,6 @@
-class MembershipEdit extends TypeForm {
+import { TypeForm } from "./type-form.js";
+
+export class MembershipEdit extends TypeForm {
   constructor() {
     super();
     this.typeName = "Membership";

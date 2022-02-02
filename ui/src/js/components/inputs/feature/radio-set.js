@@ -1,4 +1,6 @@
-class RadioSet extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+
+export class RadioSet extends TatorElement {
    constructor() {
       super();
 

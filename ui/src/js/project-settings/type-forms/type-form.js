@@ -1,4 +1,8 @@
-class TypeForm extends TatorElement {
+import { TatorElement } from "../../components/tator-element.js";
+import { getCookie } from "../../util/get-cookie.js";
+import { Utilities } from "../../util/utilities.js";
+
+export class TypeForm extends TatorElement {
   constructor() {
     super();
 

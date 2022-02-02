@@ -1,4 +1,7 @@
-class DateTimeInput extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { hasPermission } from "../../util/has-permission.js";
+
+export class DateTimeInput extends TatorElement {
    constructor() {
       super();
 

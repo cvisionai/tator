@@ -1,4 +1,8 @@
-class AccountProfile extends TatorPage {
+import { TatorPage } from "../components/tator-page.js";
+import { getCookie } from "../util/get-cookie.js";
+import { Utilities } from "../util/utilities.js";
+
+export class AccountProfile extends TatorPage {
   constructor() {
     super();
 

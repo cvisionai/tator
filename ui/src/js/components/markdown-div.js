@@ -1,5 +1,5 @@
 // An unstyled div for displaying parsed markdown.
-class MarkdownDiv extends HTMLElement {
+export class MarkdownDiv extends HTMLElement {
   constructor() {
     super();
     this._shadow = this.attachShadow({mode: "open"});

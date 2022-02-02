@@ -1,4 +1,6 @@
-class CanvasContextMenu extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class CanvasContextMenu extends TatorElement {
   constructor() {
     super();
 

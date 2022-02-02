@@ -1,6 +1,6 @@
 // Generate a color pallette
 
-// Convience class to RGB values for some common colors.
+// Convience export class to RGB values for some common colors.
 const color =
 {
   BLACK: [0,0,0],

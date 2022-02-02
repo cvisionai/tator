@@ -1,7 +1,12 @@
+import { TatorElement } from "./tator-element.js";
+import { FilterConditionData } from "../util/filter-utilities.js";
+import { FilterUtilities } from "../util/filter-utilities.js";
+import { Utilities } from "../util/utilities.js";
+
 /**
  * Element used to encapsulate a filtering condition
  */
-class FilterCondition extends TatorElement {
+export class FilterCondition extends TatorElement {
 
   constructor() {
     super();

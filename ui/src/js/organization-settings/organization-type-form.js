@@ -1,4 +1,9 @@
-class OrganizationTypeForm extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { TypeForm } from "../project-settings/type-forms/type-form.js";
+import { getCookie } from "../util/get-cookie.js";
+import { Utilities } from "../util/utilities.js";
+
+export class OrganizationTypeForm extends TatorElement {
   constructor() {
     super();
 

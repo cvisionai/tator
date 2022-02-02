@@ -1,6 +1,9 @@
+import { AnnotationCanvas } from "./annotation.js";
+import { getCookie } from "../util/get-cookie.js";
+
 var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
-class ImageCanvas extends AnnotationCanvas
+export class ImageCanvas extends AnnotationCanvas
 {
   constructor()
   {

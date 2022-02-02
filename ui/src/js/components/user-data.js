@@ -1,4 +1,7 @@
-class UserData extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class UserData extends TatorElement {
   constructor() {
     super();
 

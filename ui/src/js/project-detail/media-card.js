@@ -1,4 +1,9 @@
-class MediaCard extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { hasPermission } from "../util/has-permission.js";
+import { getCookie } from "../util/get-cookie.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class MediaCard extends TatorElement {
   constructor() {
     super();
 

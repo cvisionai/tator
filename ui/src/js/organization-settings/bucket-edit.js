@@ -1,4 +1,7 @@
-class BucketEdit extends OrganizationTypeForm {
+import { OrganizationTypeForm } from "./organization-type-form.js";
+import { TypeForm } from "../project-settings/type-forms/type-form.js";
+
+export class BucketEdit extends OrganizationTypeForm {
   constructor() {
     super();
     this.typeName = "Bucket";

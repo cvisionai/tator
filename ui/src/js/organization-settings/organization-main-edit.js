@@ -1,4 +1,8 @@
-class OrganizationMainEdit extends TypeForm {
+import { TypeForm } from "../project-settings/type-forms/type-form.js";
+import { hasPermission } from "../util/has-permission.js";
+import { getCookie } from "../util/get-cookie.js";
+
+export class OrganizationMainEdit extends TypeForm {
   constructor() {
     super();
 

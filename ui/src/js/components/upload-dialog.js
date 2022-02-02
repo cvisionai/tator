@@ -1,4 +1,6 @@
-class UploadDialog extends ModalDialog {
+import { ModalDialog } from "./modal-dialog.js";
+
+export class UploadDialog extends ModalDialog {
   constructor() {
     super();
 

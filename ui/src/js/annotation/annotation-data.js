@@ -1,4 +1,6 @@
-class AnnotationData extends HTMLElement {
+import { fetchRetry } from "../util/fetch-retry.js";
+
+export class AnnotationData extends HTMLElement {
   constructor() {
     super();
 

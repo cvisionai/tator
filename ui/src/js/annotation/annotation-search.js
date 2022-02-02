@@ -1,4 +1,6 @@
-class AnnotationSearch extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+
+export class AnnotationSearch extends TatorElement {
   constructor() {
     super();
 

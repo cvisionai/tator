@@ -1,4 +1,7 @@
-class EntityGalleryPanelTop extends TatorElement {
+import { TatorElement } from "../tator-element.js";
+import { svgNamespace } from "../tator-element.js";
+
+export class EntityGalleryPanelTop extends TatorElement {
   constructor() {
     super();
 

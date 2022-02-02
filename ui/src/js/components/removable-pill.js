@@ -1,4 +1,7 @@
-class RemovablePill extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+import { svgNamespace } from "./tator-element.js";
+
+export class RemovablePill extends TatorElement {
   constructor() {
     super();
 

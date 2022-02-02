@@ -1,4 +1,8 @@
-class EntityBrowser extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { identifyingAttribute } from "../util/identifying-attribute.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class EntityBrowser extends TatorElement {
   constructor() {
     super();
 

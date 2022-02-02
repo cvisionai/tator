@@ -1,4 +1,10 @@
-class FavoritesPanel extends TatorElement {
+import { TatorElement } from "../components/tator-element.js";
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+import { identifyingAttribute } from "../util/identifying-attribute.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class FavoritesPanel extends TatorElement {
   constructor() {
     super();
 

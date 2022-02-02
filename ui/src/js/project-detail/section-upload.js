@@ -1,4 +1,7 @@
-class SectionUpload extends UploadElement {
+import { UploadElement } from "../components/upload-element.js";
+import { svgNamespace } from "../components/tator-element.js";
+
+export class SectionUpload extends UploadElement {
   constructor() {
     super();
 

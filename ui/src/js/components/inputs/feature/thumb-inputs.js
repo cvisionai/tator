@@ -1,4 +1,9 @@
-class ThumbInput extends TatorElement {
+import { TatorElement } from "../../tator-element.js";
+import { TypeForm } from "../../../project-settings/type-forms/type-form.js";
+import { hasPermission } from "../../../util/has-permission.js";
+import { getCookie } from "../../../util/get-cookie.js";
+
+export class ThumbInput extends TatorElement {
     constructor() {
       super();
   
@@ -15,7 +20,7 @@ class ThumbInput extends TatorElement {
 
       // Preview Image
       this._previewImg = document.createElement("img");
-      this._previewImg.style.height = "84px"; // @TODO create a class in form css for thumb input?
+      this._previewImg.style.height = "84px"; // @TODO create a export class in form css for thumb input?
       this._previewImg.style.width = "84px";
       this._previewImg.setAttribute("class", "projects__image py-4");
       this.styleSpan.appendChild(this._previewImg);

@@ -1,4 +1,8 @@
-class UndoBuffer extends HTMLElement {
+import { getCookie } from "../util/get-cookie.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+import { Utilities } from "../util/utilities.js";
+
+export class UndoBuffer extends HTMLElement {
   constructor() {
     super();
 

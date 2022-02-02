@@ -1,4 +1,6 @@
-class NavMain extends TatorElement {
+import { TatorElement } from "./tator-element.js";
+
+export class NavMain extends TatorElement {
   constructor() {
     super();
 
