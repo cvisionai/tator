@@ -47,9 +47,12 @@ class MediaSection extends TatorElement {
     this._more.setAttribute("class", "px-2");
     actions.appendChild(this._more);
 
+    this._defaultPageSize = 25;
+    this._maxPageSizeDefault = 100;
+
     this._paginator_top = document.createElement("entity-gallery-paginator");
-    this._paginator_top._pageSize = 25;
-    this._paginator_top._pageMax = 100;
+    this._paginator_top._pageSize = this._defaultPageSize;
+    this._paginator_top._pageMax = this._maxPageSizeDefault;
     this._paginator_top.setupElements();
     section.appendChild(this._paginator_top);
 
@@ -63,8 +66,8 @@ class MediaSection extends TatorElement {
     div.appendChild(this._files);
 
     this._paginator_bottom = document.createElement("entity-gallery-paginator");
-    this._paginator_bottom._pageSize = 25;
-    this._paginator_bottom._pageMax = 100;
+    this._paginator_bottom._pageSize = this._defaultPageSize;
+    this._paginator_bottom._pageMax = this._maxPageSizeDefault;
     this._paginator_bottom.setupElements();
     section.appendChild(this._paginator_bottom);
 
@@ -752,7 +755,7 @@ class MediaSection extends TatorElement {
     }
 
     // Only add back params if we're not on default page 1, and pageSize 10
-    if (this._start !== 0 || this._paginator_top._pageSize !== 10) {
+    if (this._start !== 0 || this._paginator_top._pageSize !== this._defaultPageSize) {
       if (!firstParm) {
         newUrl += "&";
       } else {
