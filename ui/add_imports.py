@@ -1,7 +1,7 @@
 import os
 
 symbols = {
-    "TatorElement": "src/js/componeents/tator-element.js",
+    "TatorElement": "src/js/components/tator-element.js",
     "ModalDialog": "src/js/components/modal-dialog.js",
     "TatorPage": "src/js/components/tator-page.js",
     "UploadElement": "src/js/components/upload-element.js",
@@ -25,6 +25,8 @@ for root, dirs, files in os.walk('src/js'):
     for fname in files:
         if not fname.endswith('.js'):
             continue
+        if fname == 'index.js':
+            continue
         depth = root.count('/')
         prefix = (depth - 1) * '../'
         path = os.path.join(root, fname)
@@ -34,6 +36,8 @@ for root, dirs, files in os.walk('src/js'):
             imports = ""
             if path != symbols[symbol] and symbol in content:
                 rel = os.path.relpath(symbols[symbol], os.path.dirname(path))
+                if '/' not in rel:
+                    rel = "./" + rel
                 imports += "import { " + symbol + " } from \"" + rel + "\";\n"
             if imports:
                 content = imports + "\n" + content
