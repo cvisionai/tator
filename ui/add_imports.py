@@ -33,9 +33,7 @@ for root, dirs, files in os.walk('src/js'):
         for symbol in symbols:
             imports = ""
             if path != symbols[symbol] and symbol in content:
-                print(f"TARGET PATH: {symbols[symbol]}")
-                print(f"CURRENT PATH: {path}")
-                rel = os.path.relpath(symbols[symbol], path)
+                rel = os.path.relpath(symbols[symbol], os.path.dirname(path))
                 imports += "import { " + symbol + " } from \"" + rel + "\";\n"
             if imports:
                 content = imports + "\n" + content
