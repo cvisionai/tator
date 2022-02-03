@@ -3,7 +3,7 @@
 # Usage: ./check-migration.sh <path_to_repo>
 # If <path_to_repo> is not supplied PWD is assumed.
 #
-# Set TATOR_ALWAYS_UPGRADE to 1 to bypass the check.
+# Set TATOR_ALWAYS_MIGRATE to 1 to bypass the check.
 #
 # Returns 0 if upgrade is deemed non-migratory or authorized, else 255
 
