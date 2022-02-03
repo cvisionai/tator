@@ -1989,6 +1989,13 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+  updateAllLocalizations() {
+    for (let video of this._videos)
+    {
+      video.updateAllLocalizations();
+    }
+  }
+
   enableFillTrackGapsOption() {
     for (let video of this._videos)
     {
