@@ -1091,6 +1091,10 @@ class AnnotationPlayer extends TatorElement {
     this._video.addCreateTrackType(stateTypeObj);
   }
 
+  addAlgoLaunchOption(algoName) {
+    this._video.addAlgoLaunchOption(algoName);
+  }
+
   enableFillTrackGapsOption() {
     this._video.enableFillTrackGapsOption();
   }
