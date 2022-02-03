@@ -780,6 +780,13 @@ class AnnotationMulti extends TatorElement {
              this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
              this._currentFrameText.style.width = (15 * String(frame).length) + "px";
            });
+        prime.addPauseListener(() => {
+          const frame = this._videos[this._primaryVideoIndex].currentFrame();
+          for (let video of this._videos)
+          {
+            video._dispFrame = Math.min(frame, video._numFrames-1);
+          }
+        });
         prime.addEventListener("rateChange", evt => {
           if (this.is_paused())
           {
@@ -787,16 +794,6 @@ class AnnotationMulti extends TatorElement {
               video.onDemandDownloadPrefetch();
             }
             this.checkReady();
-          }
-        });
-
-        prime.addPauseListener(() => {
-          const prime_frame = prime.currentFrame();
-          for (let idx = 1; idx < this._videos.length; idx++)
-          {
-            this._videos[idx]._dispFrame =
-              Math.min(prime_frame,
-                       this._videos[idx]._numFrames-1);
           }
         });
       }
@@ -1801,7 +1798,7 @@ class AnnotationMulti extends TatorElement {
     }
     clearTimeout(this._syncThread);
     Promise.all(pausePromises).then(failSafeFunction);
-    
+
   }
 
   disablePlayUI() {
