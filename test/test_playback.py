@@ -134,6 +134,7 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   play_button.click() # play the video
   time.sleep(5) # This is simulating the user watching, not dependent on any events.
   play_button.click() # pause the video
+  time.sleep(1)
   current_frame = int(display_div.inner_text())
   assert(current_frame > 0)
   _wait_for_frame(canvas[0], current_frame)
@@ -189,6 +190,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
 
   # Wait for hq buffer and verify it is red
+  time.sleep(10)
   _wait_for_color(canvas, 0, timeout=30)
 
   play_button.click()
@@ -230,6 +232,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
   # Wait for hq buffer and verify it is red
+  time.sleep(10)
   _wait_for_color(canvas[0], 0, timeout=30)
   _wait_for_color(canvas[1], 0, timeout=30)
 
@@ -277,21 +280,30 @@ def test_playback_schedule(page_factory, project, count_test):
   console_msgs=[]
   page.on("console", lambda msg: console_msgs.append(msg.text))
 
-  play_button.click()
-  time.sleep(5)
-  play_button.click()
+  keep_running = True
+  while keep_running:
+      play_button.click()
+      time.sleep(5)
+      play_button.click()
 
-  schedule_msg = None
-  for msg in console_msgs:
-    if msg.find('Playback schedule') >= 0:
-      schedule_msg = msg
-  assert schedule_msg
+      schedule_msg = None
+      for msg in console_msgs:
+        if msg.find('Playback schedule') >= 0:
+          schedule_msg = msg
+      assert schedule_msg
 
-  monitor_fps_msg = None
-  for msg in console_msgs:
-    if msg.find('FPS interval =') >= 0:
-      monitor_fps_msg = msg
-  monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
+      monitor_fps_msg = None
+      for msg in console_msgs:
+        if msg.find('FPS interval =') >= 0:
+          monitor_fps_msg = msg
+      monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
+
+      if monitor_fps >= 30:
+          keep_running = False
+      else:
+          # Re-run because the monitor's FPS is lower than the video's FPS, which will
+          # mess up the assert conditions. This test does not account for this scenario.
+          time.sleep(1)
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
@@ -303,22 +315,31 @@ def test_playback_schedule(page_factory, project, count_test):
   assert factor == 1
 
   # repeat at 4x
-  console_msgs=[]
-  page.keyboard.press("4")
-  play_button.click()
-  time.sleep(5)
-  play_button.click()
+  keep_running = True
+  while keep_running:
+      console_msgs=[]
+      page.keyboard.press("4")
+      play_button.click()
+      time.sleep(5)
+      play_button.click()
 
-  schedule_msg = None
-  for msg in console_msgs:
-    if msg.find('Playback schedule') >= 0:
-      schedule_msg = msg
-  assert schedule_msg
+      schedule_msg = None
+      for msg in console_msgs:
+        if msg.find('Playback schedule') >= 0:
+          schedule_msg = msg
+      assert schedule_msg
 
-  for msg in console_msgs:
-    if msg.find('FPS interval =') >= 0:
-      monitor_fps_msg = msg
-  monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
+      for msg in console_msgs:
+        if msg.find('FPS interval =') >= 0:
+          monitor_fps_msg = msg
+      monitor_fps = float(monitor_fps_msg.split("(")[1].split(")")[0])
+
+      if monitor_fps >= 30:
+          keep_running = False
+      else:
+          # Re-run because the monitor's FPS is lower than the video's FPS, which will
+          # mess up the assert conditions. This test does not account for this scenario.
+          time.sleep(1)
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
