@@ -347,19 +347,20 @@ class AttributesForm extends TatorElement {
       this._default = null;
     }
 
-    // this will be a slider true/false - fale == default
-    if (dtype == "bool") {
-      this._default = document.createElement("bool-input");
-      this.placeholderDefault.appendChild(this._default);
-      this._default.setAttribute("name", "Default");
+    // this will be a slider true/false - false == default // tmp removing this to allow for unset
+    // if (dtype == "bool") {
+    //   this._default = document.createElement("bool-input");
+    //   this.placeholderDefault.appendChild(this._default);
+    //   this._default.setAttribute("name", "Default");
 
-      this._default.setAttribute("on-text", "Yes");
-      this._default.setAttribute("off-text", "No");
-      this._default.default = value;
-      this._default.setValue(value);
+    //   this._default.setAttribute("on-text", "Yes");
+    //   this._default.setAttribute("off-text", "No");
+    //   this._default.default = value;
+    //   this._default.setValue(value);
   
-      this._default.addEventListener("change", this._formChanged.bind(this));
-    } else if (dtype == "enum") {
+    //   this._default.addEventListener("change", this._formChanged.bind(this));
+    // } else
+    if (dtype == "enum") {
       // enum default set in place, hide default input
       this.placeholderDefault.classList.add("hidden");
       this._default = document.createElement("text-input");
@@ -768,6 +769,14 @@ class AttributesForm extends TatorElement {
         // backend does this but not when value is ""
         if ((dtype == "int" || dtype == "float")) { // #TODO see above error on backend, etc... && defaultVal !== ""
           defaultVal = Number(defaultVal);
+        }
+
+        if (dtype == "bool" && defaultVal.toLowerCase().trim() == "false") {
+          defaultVal = false;
+        }
+
+        if (dtype == "bool" && defaultVal.toLowerCase().trim() == "true") {
+          defaultVal = true;
         }
 
         formData["default"] = defaultVal;
