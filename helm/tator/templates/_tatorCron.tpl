@@ -50,6 +50,16 @@ spec:
                   value: {{ .Values.elasticsearchHost }}
                 - name: MAIN_HOST
                   value: {{ .Values.domain }}
+                {{- if hasKey .Values "aliases" }}
+                {{- $alias_hosts := "" }}
+                {{- range .Values.aliases }}
+                {{- $alias_hosts = cat $alias_hosts "," . }}
+                {{- end }}
+                {{- $alias_hosts = nospace $alias_hosts }}
+                {{- $alias_hosts = trimPrefix "," $alias_hosts }}
+                - name: ALIAS_HOSTS
+                  value: {{ $alias_hosts }}
+                {{- end }}
                 - name: DOCKER_USERNAME
                   value: {{ .Values.dockerUsername }}
                 - name: DOCKER_PASSWORD
