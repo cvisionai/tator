@@ -757,13 +757,19 @@ class AttributesForm extends TatorElement {
     // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
     // Don't send if the value is null => invalid
     // Don't send "" because it will fail as valid type for the default in some cases
-    if (this.isClone || this._dtype.changed()) {
-      if (dtype === "enum" && this._enumDefault !== {} && this._enumDefault.changed && this._enumDefault.value !== null && this._enumDefault.value !== "") {
-        formData["default"] = this._enumDefault.value; 
-      } else if (dtype !== "enum" && this._default.changed() && this._default.getValue() !== null && this._default.getValue() !== "") {
+    // - String: can be ""
+    // - Int, or Float: Don't convert "" to Number or it will be 0; #TODO BUG backend will not allow "" -> Invalid attribute value for float attribute; Invalid attribute value for integer attribute
+    // - 
+    if (this.isClone || this._dtype.changed() || this._default.changed()) {
+      // check enum.default.changed value
+      if (this._default.getValue() !== null) { //&& this._default.getValue() !== ""
         let defaultVal = this._default.getValue();
-        //backend does this but not when value is ""
-        if (dtype == "int" || dtype == "float") defaultVal = Number(defaultVal);
+        
+        // backend does this but not when value is ""
+        if ((dtype == "int" || dtype == "float")) { // #TODO see above error on backend, etc... && defaultVal !== ""
+          defaultVal = Number(defaultVal);
+        }
+
         formData["default"] = defaultVal;
       }
     }
@@ -775,8 +781,10 @@ class AttributesForm extends TatorElement {
       }
     }
   
-    // Min and Max: Only dtype in numeric & (changed, or when it is a Clone pass the value along)
+    // Min and Max:
+    // Only dtype in numeric & (changed, or when it is a Clone pass the value along)
     // Don't send if the value is null => invalid
+    // #TODO does this have the same issue with ""?
     if (dtype === "int" || dtype === "float") {
       // getValue for text-input int comes back as null when default is undefined bc it is NaN
       if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
@@ -787,13 +795,24 @@ class AttributesForm extends TatorElement {
       }
     }
   
-    // Choices: Always send when dtype enum
+    // ENUM Choices & Labels: (For now always sending both)
+    // - Always send CHOICES with dtype enum #todo why? (this was in place before I saw labels getting erased #todo)
+    // - If you don't send LABELS and you save a default it gets wiped out #todo why?
+    // There is also an issue losing the default value if the choices, or labels are updated (moving enum default here
+    // 
     if (dtype === "enum") {
-      formData.choices = this._choices.getValue();
-  
-      if ((this._labels.changed() || this.isClone)) {
-        formData.labels = this._labels.getValue();
+
+      if ((this.isClone || this._dtype.changed() || this._enumDefault.changed || this._choices.changed() || this._labels.changed()) && this._enumDefault.value !== null) { //&& this._enumDefault.value !== ""
+        formData["default"] = this._enumDefault.value;
       }
+
+      // if ((this._choices.changed() || )) {
+        formData.choices = this._choices.getValue();
+      // }
+  
+      // if ((this._labels.changed() || this.isClone)) {
+        formData.labels = this._labels.getValue();
+      // }
     }
     // console.log(formData);
     return formData;
