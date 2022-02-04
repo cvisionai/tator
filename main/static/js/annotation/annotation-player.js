@@ -172,6 +172,7 @@ class AnnotationPlayer extends TatorElement {
       let frame = Math.round(evt.detail.percent_complete * Number(this._mediaInfo.num_frames)-1);
       this._zoomSlider.setLoadProgress(frame);
       this._slider.onBufferLoaded(evt);
+      this.checkReady();
     });
 
     this._video.addEventListener("onDemandDetail", evt => {
@@ -192,7 +193,11 @@ class AnnotationPlayer extends TatorElement {
     });
 
     this._video.addEventListener("rateChange", evt => {
-      this.checkReady();
+      if (this.is_paused())
+      {
+        this._video.onDemandDownloadPrefetch();
+        this.checkReady();
+      }
     });
 
     // #TODO Combine with this._slider.addEventListener
@@ -589,7 +594,7 @@ class AnnotationPlayer extends TatorElement {
       this._lastScrub = Date.now()
       this._video.onDemandDownloadPrefetch(frame);
       this._videoStatus = "paused";
-      this.handleNotReadyEvent();
+      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     }).catch((e) => {
       console.error(`"ERROR: ${e}`)
@@ -884,11 +889,20 @@ class AnnotationPlayer extends TatorElement {
       }
       if (not_ready == false)
       {
-        console.log(`Video playback check - Ready [Now: ${new Date().toISOString()}]`);
-        this._play._button.removeAttribute("disabled");
-        this._rewind.removeAttribute("disabled")
-        this._fastForward.removeAttribute("disabled");
-        this._play.removeAttribute("tooltip");
+        this._video.seekFrame(this._video.currentFrame(), this._video.drawFrame, true, null, true).then(() => {
+          console.log(`Video playback check - Ready [Now: ${new Date().toISOString()}]`);
+          this._play._button.removeAttribute("disabled");
+          this._rewind.removeAttribute("disabled")
+          this._fastForward.removeAttribute("disabled");
+          this._play.removeAttribute("tooltip");
+        }).catch((e) => {
+          console.log(e);
+          console.log(`Video playback check - Ready [Now: ${new Date().toISOString()}] (not hq pause)`);
+          this._play._button.removeAttribute("disabled");
+          this._rewind.removeAttribute("disabled")
+          this._fastForward.removeAttribute("disabled");
+          this._play.removeAttribute("tooltip");
+        });
       }
     };
 
@@ -902,7 +916,7 @@ class AnnotationPlayer extends TatorElement {
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
-      if (!this._video.canPlayRate(this._rate))
+      if (!this._video.canPlayRate(this._rate, this._video.currentFrame()))
       {
         window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
@@ -910,7 +924,7 @@ class AnnotationPlayer extends TatorElement {
     }
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
-    if (this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
       return;
@@ -942,7 +956,7 @@ class AnnotationPlayer extends TatorElement {
     {
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
-      if (!this._video.canPlayRate(this._rate))
+      if (!this._video.canPlayRate(this._rate, this._video.currentFrame()))
       {
         window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
         return;
