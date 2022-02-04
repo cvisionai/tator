@@ -58,7 +58,7 @@ spec:
             {{- if hasKey .Values "aliases" }}
             {{- $alias_hosts := "" }}
             {{- range .Values.aliases }}
-            {{- $alias_hosts = cat $alias_hosts "," . }}
+            {{- $alias_hosts = cat $alias_hosts "," .domain }}
             {{- end }}
             {{- $alias_hosts = nospace $alias_hosts }}
             {{- $alias_hosts = trimPrefix "," $alias_hosts }}
