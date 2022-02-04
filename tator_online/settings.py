@@ -39,8 +39,9 @@ else:
 
 ALLOWED_HOSTS = [
     os.getenv('MAIN_HOST'),
-    os.getenv('ALIAS_HOSTS').split(','),
 ]
+if os.getenv('ALIAS_HOSTS'):
+    ALLOWED_HOSTS += os.getenv('ALIAS_HOSTS').split(',')
 
 # Application definition
 
