@@ -2019,10 +2019,25 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+
+  addAlgoLaunchOption(algoName) {
+    for (let video of this._videos)
+    {
+      video.addAlgoLaunchOption(algoName);
+    }
+  }
+
+  updateAllLocalizations() {
+    for (let video of this._videos)
+    {
+      video.updateAllLocalizations();
+    }
+  }
+
   enableFillTrackGapsOption() {
     for (let video of this._videos)
     {
-      this._video.enableFillTrackGapsOption();
+      video.enableFillTrackGapsOption();
     }
   }
 
