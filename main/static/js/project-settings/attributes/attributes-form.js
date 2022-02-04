@@ -772,18 +772,14 @@ class AttributesForm extends TatorElement {
         if ((dtype == "int" || dtype == "float")) { // #TODO see above error on backend, etc... && defaultVal !== ""
           defaultVal = Number(defaultVal);
           formData["default"] = defaultVal;
-        } else if (dtype == "datetime" && defaultVal == "" && this._useCurrent.getValue() != true) {
+        } else if (dtype == "datetime" && defaultVal != "" && this._useCurrent.getValue() != true) {
           formData["default"] = defaultVal;
-        } else if (dtype == "datetime" && defaultVal == "" && this._useCurrent.getValue() == true) {
-          // don't send it!! formData["default"] = defaultVal;
-        }else if (dtype == "geopos" && defaultVal != "") {
+        } else if (dtype == "geopos" && defaultVal != "") {
           formData["default"] = defaultVal;
-        } else if (dtype == "geopos" && defaultVal == "") {
-          // don't send it! formData["default"] = defaultVal;
         } else if (dtype == "bool" && (defaultVal.toLowerCase().trim() == "false" || defaultVal.toLowerCase().trim() == "true")) {
           defaultVal = defaultVal.toLowerCase().trim();
           formData["default"] = defaultVal;
-        } else if (dtype != "bool") {
+        } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must me the cases above
           formData["default"] = defaultVal;
         }
       }
