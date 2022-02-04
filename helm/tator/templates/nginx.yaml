@@ -48,6 +48,18 @@ spec:
               subPath: {{ .Values.tlsKeyFile | default "domain.key" }}
               readOnly: true
               name: {{ .Values.tlsKeySecretName | default "tls-key" }}
+            {{- if hasKey .Values "aliases" }}
+            {{- range .Values.aliases }}
+            - mountPath: /ssl/{{ .tlsCertFile }}
+              subPath: {{ .tlsCertFile }}
+              readOnly: true
+              name: {{ .tlsCertSecretName }}
+            - mountPath: /ssl/{{ .tlsKeyFile }}
+              subPath: {{ .tlsKeyFile }}
+              readOnly: true
+              name: {{ .tlsKeySecretName }}
+            {{- end }}
+            {{- end }}
             {{- if hasKey .Values "redirects" }}
             {{- range .Values.redirects }}
             - mountPath: /ssl/{{ .tlsCertFile }}
@@ -97,6 +109,22 @@ spec:
             items:
               - key: {{ .Values.tlsKeyFile | default "domain.key" }}
                 path: {{ .Values.tlsKeyFile | default "domain.key" }}
+        {{- if hasKey .Values "aliases" }}
+        {{- range .Values.aliases }}
+        - name: {{ .tlsCertSecretName }}
+          secret:
+            secretName: {{ .tlsCertSecretName }}
+            items:
+              - key: {{ .tlsCertFile }}
+                path: {{ .tlsCertFile }}
+        - name: {{ .tlsKeySecretName }}
+          secret:
+            secretName: {{ .tlsKeySecretName }}
+            items:
+              - key: {{ .tlsKeyFile }}
+                path: {{ .tlsKeyFile }}
+        {{- end }}
+        {{- end }}
         {{- if hasKey .Values "redirects" }}
         {{- range .Values.redirects }}
         - name: {{ .tlsCertSecretName }}
