@@ -761,13 +761,11 @@ class AttributesForm extends TatorElement {
     // - String: can be ""
     // - Int, or Float: Don't convert "" to Number or it will be 0; #TODO BUG backend will not allow "" -> Invalid attribute value for float attribute; Invalid attribute value for integer attribute
     // - 
-    console.log("TEST");
     if (dtype !== "enum" && (this.isClone || this._dtype.changed() || this._default.changed())) {
       // check enum.default.changed value
       if (this._default.getValue() !== null) { //&& this._default.getValue() !== ""
         let defaultVal = this._default.getValue();
 
-        console.log(`FORMDATA dtype ${dtype} and defaultVal ${defaultVal} typeof ${typeof defaultVal}`)
         // backend does this but not when value is ""
         if ((dtype == "int" || dtype == "float")) { // #TODO see above error on backend, etc... && defaultVal !== ""
           defaultVal = Number(defaultVal);
