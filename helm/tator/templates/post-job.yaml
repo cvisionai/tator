@@ -36,6 +36,14 @@
 {{- end }}
 {{include "postjob.template" $letsencryptSettings }}
 ---
+{{- if hasKey .Values "aliases" }}
+{{- range .Values.aliases }}
+{{- $name := printf "letsencrypt-challenge-%s" .tlsKeySecretName }}
+{{- $letsencryptSettings := dict "Values" $.Values "Release" $.Release "Chart" $.Chart "name" $name "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "hookWeight" "2" "hook" "post-install" "domain" .domain "tlsCertFile" .tlsCertFile "tlsKeyFile" .tlsKeyFile "tlsCertSecretName" .tlsCertSecretName "tlsKeySecretName" .tlsKeySecretName }}
+{{include "postjob.template" $letsencryptSettings }}
+---
+{{ end }}
+{{ end }}
 {{- if hasKey .Values "redirects" }}
 {{- range .Values.redirects }}
 {{- $name := printf "letsencrypt-challenge-%s" .tlsKeySecretName }}

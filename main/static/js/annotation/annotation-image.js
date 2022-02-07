@@ -123,6 +123,14 @@ class AnnotationImage extends TatorElement {
   toggleTextOverlays(on) {
     this._image.toggleTextOverlays(on);
   }
+
+  addAlgoLaunchOption(algoName) {
+    this._image.addAlgoLaunchOption(algoName);
+  }
+
+  updateAllLocalizations() {
+    this._image.updateAllLocalizations();
+  }
 }
 
 customElements.define("annotation-image", AnnotationImage);
