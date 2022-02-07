@@ -91,8 +91,6 @@ class AnnotationLive extends TatorElement {
 
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 1080;
-    this._focusQuality = 1080;
-    this._dockQuality = 144;
     if (searchParams.has("playQuality"))
     {
       this._quality = Number(searchParams.get("playQuality"));
@@ -412,8 +410,6 @@ class AnnotationLive extends TatorElement {
     const seekInfo = this._videos[idx].getQuality("seek");
     const scrubInfo = this._videos[idx].getQuality("scrub");
     const playInfo = this._videos[idx].nearestQuality(this._quality);
-    const focusedInfo = this._videos[idx].nearestQuality(this._focusQuality);
-    const dockedInfo = this._videos[idx].nearestQuality(this._dockQuality);
 
     this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
       composed: true,
@@ -425,10 +421,6 @@ class AnnotationLive extends TatorElement {
         scrubFPS: scrubInfo.fps,
         playQuality: playInfo.quality,
         playFPS: playInfo.fps,
-        focusedQuality: focusedInfo.quality,
-        focusedFPS: focusedInfo.fps,
-        dockedQuality: dockedInfo.quality,
-        dockedFPS: dockedInfo.fps
       }
     }));
   }
@@ -483,12 +475,12 @@ class AnnotationLive extends TatorElement {
       video.contextMenuNone.hideMenu();
       if (videoId != vid_id)
       {
-        this.assignToSecondary(Number(videoId), this._dockQuality);
+        this.assignToSecondary(Number(videoId), this._quality);
       }
       else
       {
         this.setMultiviewUrl("focus", Number(videoId));
-        this.assignToPrimary(Number(videoId), this._focusQuality);
+        this.assignToPrimary(Number(videoId), this._quality);
       }
     }
   }
