@@ -167,6 +167,9 @@ class AlgorithmEdit extends TypeForm {
          }
 
          this._form.appendChild(this._clusterEnumInput);
+      } else {
+         this._clusterEnumInput = document.createElement("text-input");
+         this._clusterEnumInput.default = this.data.cluster;
       }
 
       // Files per job
@@ -230,7 +233,8 @@ class AlgorithmEdit extends TypeForm {
          formData.manifest = null;         
       }
 
-      if (!this.userCantSaveCluster || !this.userCantSeeCluster) {
+      console.log(`UserCantSaveCluster ${this.userCantSaveCluster} and userCantSeeCluster ${this.userCantSeeCluster}`)
+      if (!(this.userCantSaveCluster || this.userCantSeeCluster)) {
          if (this._clusterEnumInput.changed() || isNew) {
             let clusterValue = this._clusterEnumInput.getValue();
             // console.log(clusterValue);
