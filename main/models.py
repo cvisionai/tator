@@ -1074,6 +1074,7 @@ class Resource(Model):
     media = ManyToManyField(Media, related_name='resource_media')
     generic_files = ManyToManyField(File, related_name='resource_files')
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
+    backed_up = BooleanField(default=False)
 
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):

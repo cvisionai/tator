@@ -15,6 +15,14 @@
 {{ end }}
 {{include "prejob.template" $selfsignedSettings }}
 ---
+{{- if hasKey .Values "aliases" }}
+{{- range .Values.aliases }}
+{{- $name := printf "make-selfsigned-%s" .tlsKeySecretName }}
+{{- $selfsignedSettings := dict "Values" $.Values "Release" $.Release "Chart" $.Chart "name" $name "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/selfsigned.sh\"]" "hookWeight" "2" "hook" "pre-install" "domain" .domain "tlsCertFile" .tlsCertFile "tlsKeyFile" .tlsKeyFile "tlsCertSecretName" .tlsCertSecretName "tlsKeySecretName" .tlsKeySecretName }}
+{{include "prejob.template" $selfsignedSettings }}
+---
+{{ end }}
+{{ end }}
 {{- if hasKey .Values "redirects" }}
 {{- range .Values.redirects }}
 {{- $name := printf "make-selfsigned-%s" .tlsKeySecretName }}

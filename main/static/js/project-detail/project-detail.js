@@ -265,7 +265,7 @@ class ProjectDetail extends TatorPage {
           }
           spec.name = newSectionDialog._input.value;
 
-          // TODO 
+          // TODO
           if (params.has("search")) {
             if (spec.lucene_search) {
               spec.lucene_search = `(${spec.lucene_search}) AND (${params.get("search")})`;
@@ -534,7 +534,7 @@ class ProjectDetail extends TatorPage {
     const projectId = this.getAttribute("project-id");
     this._settingsButton.setAttribute("href", `/${projectId}/project-settings`);
     this._activityNav.init(projectId);
-    
+
     // Get info about the project.
     const projectPromise = fetch("/rest/Project/" + projectId, {
       method: "GET",
@@ -545,7 +545,7 @@ class ProjectDetail extends TatorPage {
         "Content-Type": "application/json"
       }
     });
-    
+
     // Get sections
     const sectionPromise = fetch("/rest/Sections/" + projectId, {
       method: "GET",
@@ -591,13 +591,22 @@ class ProjectDetail extends TatorPage {
         const sectionData = sectionResponse.json();
         const bookmarkData = bookmarkResponse.json();
         const algoData = algoResponse.json();
-        
+
         Promise.all([projectData, sectionData, bookmarkData, algoData])
           .then(([project, sections, bookmarks, algos]) => {
             // First hide algorithms if needed. These are not appropriate to be
             // run at the project/section/media level.
-            const hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
+            var hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
+            const hiddenAlgoCategories = ['annotator-view'];
+
             const parsedAlgos = algos.filter(function (alg) {
+              if (Array.isArray(alg.categories)) {
+                for (const category of alg.categories) {
+                  if (hiddenAlgoCategories.includes(category)) {
+                    return false;
+                  }
+                }
+              }
               return !hiddenAlgos.includes(alg.name);
             });
             if (!hasPermission(project.permission, "Full Control")) {
@@ -611,7 +620,7 @@ class ProjectDetail extends TatorPage {
             this._description.setAttribute("text", project.summary);
             this._collaborators.usernames = project.usernames;
             // this._search.autocomplete = project.filter_autocomplete;
-            
+
             let projectParams = null;
             const home = document.createElement("section-card");
             home.init(null, false);
@@ -623,7 +632,7 @@ class ProjectDetail extends TatorPage {
               home.active = true;
             });
             this._folders.appendChild(home);
-            
+
             for (const section of sections) {
               const hasSection = Boolean(section.tator_user_sections);
               const hasSearch = (Boolean(section.lucene_search)
@@ -689,26 +698,26 @@ class ProjectDetail extends TatorPage {
                       child.click();
                       this.loading.hideSpinner();
                       this.hideDimmer();
-                    } 
-                    
+                    }
+
                     break;
                   }
                 }
               }
-            } else { 
+            } else {
               //
               try {
                 home.active = true;
                 this._selectSection(null, projectId).then( async () => {
                   this.loading.hideSpinner();
-                  this.hideDimmer();   
+                  this.hideDimmer();
                 });
               } catch (err) {
                 console.error("Error getting home section.", err);
                 home.click();
                 this.loading.hideSpinner();
                 this.hideDimmer();
-              } 
+              }
             }
 
             // Is there a search to apply?
@@ -732,21 +741,21 @@ class ProjectDetail extends TatorPage {
                 // Set UI and results to any url param conditions that exist (from URL)
                 this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
                 if (this._mediaSection._filterConditions.length > 0) {
-                  this._updateFilterResults({ detail: { conditions: this._mediaSection._filterConditions }});                  
+                  this._updateFilterResults({ detail: { conditions: this._mediaSection._filterConditions }});
                 }
 
                 // Listen for filter events
                 this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
-              
+
               });
-            
+
             } catch (err) {
               console.error("Could not initialize filter interface.", err);
               this.loading.hideSpinner();
               this.hideDimmer();
             }
-            
-            
+
+
           }).catch(err => {
             console.log("Error setting up page with all promises", err);
             this.loading.hideSpinner();
@@ -758,8 +767,8 @@ class ProjectDetail extends TatorPage {
         this.loading.hideSpinner();
         this.hideDimmer();
       });
-    
-                
+
+
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -783,7 +792,7 @@ class ProjectDetail extends TatorPage {
       params.delete("page");
       params.delete("pagesize");
     }
-    
+
     this._mediaSection.addEventListener("remove", this._removeCallback);
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
     this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
@@ -810,20 +819,22 @@ class ProjectDetail extends TatorPage {
       let pageSize = Number(params.get("pagesize"));
       let page = Number(params.get("page"));
 
-      const samePageSize = pageSize == Number(this._mediaSection._paginator._pageSize);
-      const samePage = page == Number(this._mediaSection._paginator._page);
-      if (!samePageSize) {
-        this._mediaSection._paginator.pageSize = pageSize;
-        this._mediaSection._paginator.init(this._mediaSection._numFilesCount);// apply new page size          
+      const samePageSize = pageSize == this._mediaSection._defaultPageSize;
+      const samePage = page == 1;
+
+      if (!samePageSize) { 
+        this._mediaSection._paginator_bottom.pageSize = pageSize;
+        this._mediaSection._paginator_top.pageSize = pageSize;
       }
+
       if (!samePage) {
-        this._mediaSection._paginator._setPage(page - 1);
-        this._mediaSection._start = (page * pageSize);
-        this._mediaSection._stop = ((page + 1) * pageSize)                            
+        this._mediaSection._paginator_bottom._setPage(page - 1);
+        this._mediaSection._paginator_top._setPage(page - 1);
       }
 
       if (!samePageSize || !samePage) {
-        this._mediaSection._paginator._emit();
+        this._mediaSection._paginator_top._emit();
+        this._mediaSection._paginator_bottom._emit();
       }  
     }
 
@@ -923,7 +934,7 @@ class ProjectDetail extends TatorPage {
     } catch (err) {
       console.error("Couldn't update results with current filter.", err);
     }
-    
+
     this.loading.hideSpinner();
     this.hideDimmer();
   }
@@ -932,7 +943,7 @@ class ProjectDetail extends TatorPage {
     showDimmer() {
       return this.setAttribute("has-open-modal", "");
     }
-  
+
     hideDimmer() {
       return this.removeAttribute("has-open-modal");
     }

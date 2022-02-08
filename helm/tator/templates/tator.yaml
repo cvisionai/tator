@@ -66,6 +66,14 @@
 {{- end }}
 {{include "tatorCron.template" $certSettings }}
 ---
+{{- if hasKey .Values "aliases" }}
+{{ range .Values.aliases }}
+{{- $name := printf "cert-cron-%s" .tlsKeySecretName }}
+{{- $certSettings := dict "Values" $.Values "name" $name "app" "cert" "selector" "webServer: \"yes\""  "command" "[bash]" "args" "[\"-c\", \"scripts/cert/letsencrypt.sh\"]" "schedule" "50 5 16 * *" "domain" .domain "tlsCertFile" .tlsCertFile "tlsKeyFile" .tlsKeyFile "tlsCertSecretName" .tlsCertSecretName "tlsKeySecretName" .tlsKeySecretName }}
+{{include "tatorCron.template" $certSettings }}
+---
+{{- end }}
+{{- end }}
 {{- if hasKey .Values "redirects" }}
 {{- range .Values.redirects }}
 {{- $name := printf "cert-cron-%s" .tlsKeySecretName }}

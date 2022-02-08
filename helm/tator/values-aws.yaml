@@ -1,15 +1,26 @@
 domain: www.yourdomain.com
+# These domains will work the same way as the primary domain.
+#aliases:
+#  - domain: alias.duckdns.org
+#    # Key filename that will be used in secret for this domain.
+#    tlsKeyFile: alias_key.key
+#    # Cert filename that will be used in secret for this domain.
+#    tlsCertFile: alias_cert.crt
+#    # Key secret name that will be used in secret for this domain.
+#    tlsKeySecretName: alias-tls-key
+#    # Cert secret name that will be used in secret for this domain.
+#    tlsCertSecretName: alias-tls-cert
 # Requests for these domains will be redirected to the actual domain.
-redirects:
-  - domain: mysite.duckdns.org
-    # Key filename that will be used in secret for this domain.
-    tlsKeyFile: mysite_key.key
-    # Cert filename that will be used in secret for this domain.
-    tlsCertFile: mysite_cert.crt
-    # Key secret name that will be used in secret for this domain.
-    tlsKeySecretName: mysite-tls-key
-    # Cert secret name that will be used in secret for this domain.
-    tlsCertSecretName: mysite-tls-cert
+#redirects:
+#  - domain: mysite.duckdns.org
+#    # Key filename that will be used in secret for this domain.
+#    tlsKeyFile: mysite_key.key
+#    # Cert filename that will be used in secret for this domain.
+#    tlsCertFile: mysite_cert.crt
+#    # Key secret name that will be used in secret for this domain.
+#    tlsKeySecretName: mysite-tls-key
+#    # Cert secret name that will be used in secret for this domain.
+#    tlsCertSecretName: mysite-tls-cert
 # Enable this to allow cross origin resource sharring (CORS).
 allowCors: false
 # Enable this to turn on "down for maintenance" page.

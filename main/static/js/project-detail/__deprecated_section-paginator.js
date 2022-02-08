@@ -232,6 +232,7 @@ class SectionPaginator extends TatorElement {
       detail: {
         start: this._page * this._pageSize,
         stop: Math.min(this._numFiles, (this._page + 1) * this._pageSize),
+        pageSize: this._pageSize
       },
     }));
   }
