@@ -1,6 +1,5 @@
 import json
 import os
-import traceback
 import psycopg2
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -1022,6 +1021,17 @@ class Media(Model, ModelDiffMixin):
                     total_size += tator_store.get_size(media_def.get('segment_info'))
         return (total_size, download_size)
 
+    def is_backed_up(self):
+        """
+        Returns True if all resources referenced by the media are backed up.
+        """
+        if self.meta.dtype == "multi":
+            media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
+            return all(media.is_backed_up() for media in media_qs.iterator())
+
+        resource_qs = Resource.objects.filter(media=self)
+        return all(resource.backed_up for resource in resource_qs.iterator())
+
 
 class FileType(Model):
     """ Non-media generic file. Has user-defined attributes.
@@ -1166,8 +1176,7 @@ def safe_delete(path):
         logger.info(f"Deleting resource for {path}")
         Resource.delete_resource(path)
     except:
-        logger.warning(f"Could not remove {path}")
-        logger.warning(f"{traceback.format_exc()}")
+        logger.warning(f"Could not remove {path}", exc_info=True)
 
 def drop_file_from_resource(path, generic_file):
     """ Drops the specified generic file from the resource. This should be called when
@@ -1179,8 +1188,7 @@ def drop_file_from_resource(path, generic_file):
         obj = Resource.objects.get(path=path)
         obj.generic_files.remove(generic_file)
     except:
-        logger.warning(f"Could not remove {generic_file} from {path}")
-        logger.warning(f"{traceback.format_exc()}")
+        logger.warning(f"Could not remove {generic_file} from {path}", exc_info=True)
 
 def drop_media_from_resource(path, media):
     """ Drops the specified media from the resource. This should be called when
@@ -1192,8 +1200,7 @@ def drop_media_from_resource(path, media):
         obj = Resource.objects.get(path=path)
         obj.media.remove(media)
     except:
-        logger.warning(f"Could not remove {media} from {path}")
-        logger.warning(f"{traceback.format_exc()}")
+        logger.warning(f"Could not remove {media} from {path}", exc_info=True)
 
 @receiver(pre_delete, sender=Media)
 def media_delete(sender, instance, **kwargs):
