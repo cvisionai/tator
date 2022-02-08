@@ -1,6 +1,8 @@
 import { TatorElement } from "../../components/tator-element.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
+import { LoadingSpinner } from "../../components/loading-spinner.js";
+import { SettingsBox } from "../settings-box-helpers.js";
 
 export class TypeForm extends TatorElement {
   constructor() {
@@ -25,9 +27,6 @@ export class TypeForm extends TatorElement {
     this._attributeContainer.setAttribute("class", "col-4");
     this._attributeContainer.hidden = true; // not alway in use
     this._formContainer.appendChild(this._attributeContainer);
-
-    // Required helpers.
-    this.attributeFormHelper = new AttributesForm();
 
     // Loading spinner
     this.loading = new LoadingSpinner();
@@ -887,4 +886,6 @@ export class TypeForm extends TatorElement {
 
 }
 
-customElements.define("type-form", TypeForm);
+if (!customElements.get("type-form")) {
+  customElements.define("type-form", TypeForm);
+}

@@ -1,4 +1,7 @@
 import { TatorPage } from "../components/tator-page.js";
+import { LoadingSpinner } from "../components/loading-spinner.js";
+import { OrganizationData } from "./organization-data.js";
+import { OrganizationMainEdit } from "./organization-main-edit.js";
 
 export class OrganizationSettings extends TatorPage {
   constructor() {

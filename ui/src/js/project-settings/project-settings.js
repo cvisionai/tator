@@ -1,4 +1,11 @@
 import { TatorPage } from "../components/tator-page.js";
+import { LoadingSpinner } from "../components/loading-spinner.js";
+import { ProjectMainEdit } from "./type-forms/project-main-edit.js";
+import { ProjectTypesData } from "./data/data-project-types.js";
+import { DataMediaList } from "./data/data-media-list.js";
+import { DataVersionList } from "./data/data-version-list.js";
+import { DataJobClusters } from "./data/data-clusters.js";
+import { MembershipData } from "./data/data-memberships.js";
 
 export class ProjectSettings extends TatorPage {
   constructor() {
