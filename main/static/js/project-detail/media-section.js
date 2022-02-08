@@ -47,8 +47,17 @@ class MediaSection extends TatorElement {
     this._more.setAttribute("class", "px-2");
     actions.appendChild(this._more);
 
+    this._defaultPageSize = 25;
+    this._maxPageSizeDefault = 100;
+
+    this._paginator_top = document.createElement("entity-gallery-paginator");
+    this._paginator_top._pageSize = this._defaultPageSize;
+    this._paginator_top._pageMax = this._maxPageSizeDefault;
+    this._paginator_top.setupElements();
+    section.appendChild(this._paginator_top);
+
     const div = document.createElement("div");
-    div.setAttribute("class", "d-flex");
+    div.setAttribute("class", "d-flex py-3");
     section.appendChild(div);
 
     this._files = document.createElement("section-files");
@@ -56,8 +65,11 @@ class MediaSection extends TatorElement {
     this._files.mediaParams = this._sectionParams.bind(this);
     div.appendChild(this._files);
 
-    this._paginator = document.createElement("section-paginator");
-    section.appendChild(this._paginator);
+    this._paginator_bottom = document.createElement("entity-gallery-paginator");
+    this._paginator_bottom._pageSize = this._defaultPageSize;
+    this._paginator_bottom._pageMax = this._maxPageSizeDefault;
+    this._paginator_bottom.setupElements();
+    section.appendChild(this._paginator_bottom);
 
     this._searchParams = new URLSearchParams();
     this._numFilesCount = 0;
@@ -85,7 +97,7 @@ class MediaSection extends TatorElement {
     this._more.section = section;
 
     this._start = 0;
-    this._stop = this._paginator._pageSize;
+    this._stop = this._paginator_top._pageSize;
     this._after = new Map();
     
     return this.reload();
@@ -166,12 +178,19 @@ class MediaSection extends TatorElement {
     this._numFiles.nodeValue = `${numFiles} ${fileText}`;
     this._numFilesCount = Number(numFiles);
     
-    if (numFiles != this._paginator._numFiles) {
+    if (numFiles != this._paginator_top._numFiles) {
       this._start = 0;
-      this._stop = this._paginator._pageSize;
+      this._stop = this._paginator_top._pageSize;
       this._after = new Map();
-      this._paginator.init(numFiles);
-      this._pagePosition.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
+      this._paginationState = {
+        start: this._start,
+        stop: this._stop,
+        page: 1,
+        pageSize: this._paginator_top._pageSize
+      }
+      this._paginator_top.init(numFiles, this._paginationState);
+      this._paginator_bottom.init(numFiles, this._paginationState);
+      this._pagePosition.nodeValue = `Page ${typeof this._paginationState.page == "undefined" ? 1 : (this._paginationState.page)} of ${this._paginator_top._numPages}`;
     }
   }
 
@@ -253,7 +272,7 @@ class MediaSection extends TatorElement {
       })
         .then(response => response.json())
         .then(media => {
-          this._files.numMedia = this._paginator._numFiles;
+          this._files.numMedia = this._paginator_top._numFiles;
           this._files.startMediaIndex = this._start;
           this._files.cardInfo = media;
           this._reload.ready();
@@ -649,12 +668,7 @@ class MediaSection extends TatorElement {
     }
   }
 
-  async _setPage(evt) {
-    this._start = evt.detail.start;
-    this._stop = evt.detail.stop;
-    
-    await this._loadMedia();
-  }
+
 
   _findAfters() {
     // Find the media for each batch of 10000 medias.
@@ -694,12 +708,26 @@ class MediaSection extends TatorElement {
       }));
     });
 
-    this._paginator.addEventListener("selectPage", (evt) => {
-      this._setPage(evt);
-      this._updatePageArgs();
+    this._paginator_top.addEventListener("selectPage", (evt) => {
+      this._setPage(evt, this._paginator_bottom); 
+    });
+
+    this._paginator_bottom.addEventListener("selectPage", (evt) => {
+      this._setPage(evt, this._paginator_top); 
     });
 
     this._reload.addEventListener("click", this.reload.bind(this));
+  }
+
+  async _setPage(evt, otherPaginator) {
+    this._start = evt.detail.start;
+    this._stop = evt.detail.stop;
+    this._paginationState = evt.detail;
+
+    otherPaginator.init(otherPaginator._numFiles, this._paginationState);        
+    
+    this._updatePageArgs();
+    await this._loadMedia();
   }
 
   _updatePageArgs() {
@@ -707,9 +735,6 @@ class MediaSection extends TatorElement {
     const searchArgs = new URLSearchParams(window.location.search);
     var newUrl = `${document.location.origin}${document.location.pathname}`;
     let firstParm = true;
-
-    console.log(document.location);
-    console.log(`start ${this._start} and stop ${this._stop} ... this._paginator._page ${this._paginator._page}`)
 
     if (searchArgs.toString !== "") {
       searchArgs.delete('page');
@@ -727,18 +752,18 @@ class MediaSection extends TatorElement {
       
     }
 
-    // Only add back params if we're not on default page 1
-    if (this._start !== 0) {
+    // Only add back params if we're not on default page 1, and pageSize 10
+    if (this._start !== 0 || this._paginator_top._pageSize !== this._defaultPageSize) {
       if (!firstParm) {
         newUrl += "&";
       } else {
         newUrl += "?";
       }
-      newUrl += `page=${Number(this._paginator._page) + 1}&pagesize=${this._paginator._pageSize}`      
+      newUrl += `page=${Number(this._paginator_top._page) + 1}&pagesize=${this._paginator_top._pageSize}`      
     }
 
     window.history.pushState({}, "", newUrl);
-    this._pagePosition.nodeValue = `Page ${typeof this._paginator._page == "undefined" ? 1 : (this._paginator._page + 1)} of ${this._paginator._numPages}`;
+    this._pagePosition.nodeValue = `Page ${typeof this._paginator_top._page == "undefined" ? 1 : (this._paginator_top._page + 1)} of ${this._paginator_top._numPages}`;
   }
 
   async updateFilterResults(conditions) {

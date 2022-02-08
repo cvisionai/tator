@@ -1177,6 +1177,10 @@ class AnnotationPage extends TatorPage {
               canvas.enableFillTrackGapsOption();
             }
           }
+          else {
+            // Use the generic right click menu option
+            canvas.addAlgoLaunchOption(alg.name);
+          }
         }
       }
       console.log("Registered annotator algorithms: " + registeredAnnotatorAlgos);
@@ -1467,6 +1471,50 @@ class AnnotationPage extends TatorPage {
     menu.addEventListener("cancel", () => {
       this._closeModal(menu);
       canvas.refresh();
+    });
+
+    canvas.addEventListener("launchAlgorithm", evt => {
+      const algoName = evt.detail.algoName;
+      let body = {
+        "algorithm_name": algoName,
+        "extra_params": [
+          {name: 'version', value: this._version.id},
+          {name: 'frame', value: evt.detail.frame}]};
+
+      body["media_ids"] = [evt.detail.mediaId];
+
+      fetch("/rest/AlgorithmLaunch/" + evt.detail.projectId, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body),
+      })
+      .then(response => {
+        if (response.status != 201) {
+          window.alert(`Error launching ${algoName}!`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log(data);
+        this.showAlgoRunningDialog(
+          data.uid,
+          `Launched ${algoName}. Status will be provided in the annotator when complete.`,
+          (jobSuccessful) => {
+            if (jobSuccessful) {
+              canvas.updateAllLocalizations();
+              Utilities.showSuccessIcon(`Successfully ran algorithm workflow: ${algoName}`);
+            }
+            else {
+              Utilities.warningAlert(`Error with algorithm workflow: ${algoName}`, "#ff3e1d", false);
+            }
+          });
+      });
+
     });
 
     canvas.addEventListener("modifyTrack", evt => {

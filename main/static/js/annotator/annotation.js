@@ -946,6 +946,7 @@ class AnnotationCanvas extends TatorElement
     this._contextMenuTrack.addMenuEntry("Merge into main track", this.contextMenuCallback.bind(this));
     this._contextMenuTrack.disableEntry("Merge into main track", true, "Need to set main track first");
     this._selectedMergeTrack = null;
+    this._algoLaunchOptions = [];
 
     // Don't display the fill track gaps option until it has been verified the algorithm has been registered.
     this._contextMenuTrack.displayEntry("Fill track gaps", false);
@@ -1186,6 +1187,15 @@ class AnnotationCanvas extends TatorElement
   }
 
   /**
+   * Add the given algorithm to the right click menu launch option
+   * @param {string} algoName - Unique algorithm name to add to the right click menu
+   */
+  addAlgoLaunchOption(algoName) {
+    this._algoLaunchOptions.push(algoName);
+    this._contextMenuNone.addMenuEntry(algoName, this.contextMenuCallback.bind(this));
+  }
+
+  /**
    * Enables the fill track gaps context menu option
    */
   enableFillTrackGapsOption()
@@ -1226,6 +1236,19 @@ class AnnotationCanvas extends TatorElement
    */
   contextMenuCallback(menuText)
   {
+    if (this._algoLaunchOptions.includes(menuText)) {
+      this.dispatchEvent(new CustomEvent("launchAlgorithm", {
+        detail: {
+          algoName: menuText,
+          frame: this.currentFrame(),
+          mediaId: this._videoObject.id,
+          projectId: this._data._projectId
+        },
+        composed: true,
+      }));
+      return;
+    }
+
     // It's possible that right clicking on a localization didn't actually set
     // the active track.
     // Handle case when localization is in a track

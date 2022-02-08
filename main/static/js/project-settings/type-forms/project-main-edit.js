@@ -189,7 +189,7 @@ class ProjectMainEdit extends TypeForm {
       const patch = this._fetchPatchPromise({ id, formData });
 
       if (patch) {
-        patch.then(response => {
+        return patch.then(response => {
           return response.json().then(data => {
             if (response.status == "200") {
               this._modalSuccess(data.message);

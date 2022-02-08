@@ -102,9 +102,7 @@ class VideoSettingsDialog extends ModalDialog {
         detail: {
           playback: this.getSourceObject("play"),
           seek: this.getSourceObject("seek"),
-          scrub: this.getSourceObject("scrub"),
-          focusPlayback: this.getSourceObject("focusPlayback"),
-          dockPlayback: this.getSourceObject("dockPlayback")
+          scrub: this.getSourceObject("scrub")
         }
       }));
 
@@ -146,8 +144,6 @@ class VideoSettingsDialog extends ModalDialog {
     this._createBuffer(2, "scrub", "Scrub Buffer", "Timeline scrubbing, downloaded playback, greater than 4x playback");
     this._createBuffer(3, "seek", "Seek Quality", "Pause quality");
     this._createBuffer(4, "play", "On-Demand 1x-4x Playback", "1x-4x playback for single vidoes and grid videos");
-    this._createBuffer(5, "focusPlayback", "Focused On-Demand 1x-4x Playback", "1x-4x playback for the focused video (if present)");
-    this._createBuffer(6, "dockPlayback", "Docked On-Demand 1x-4x Playback", "1x-4x playback for docked videos (if present)");
   }
 
   _createBuffer(gridRow, id, title, description) {
@@ -194,14 +190,6 @@ class VideoSettingsDialog extends ModalDialog {
     settingsStr = this.createSourceString(settings.playQuality, settings.playFPS);
     this._divOptions["play"].choice.setValue(settingsStr);
 
-    if (this._mode == "multiview") {
-      settingsStr = this.createSourceString(settings.focusedQuality, settings.focusedFPS);
-      this._divOptions["focusPlayback"].choice.setValue(settingsStr);
-
-      settingsStr = this.createSourceString(settings.dockedQuality, this._defaultSources.dockedFPS);
-      this._divOptions["dockPlayback"].choice.setValue(settingsStr);
-    }
-
     this._safeModeOption.setValue(settings.allowSafeMode);
   }
 
@@ -229,11 +217,6 @@ class VideoSettingsDialog extends ModalDialog {
    * @returns {object} Has .fps {Number} and .quality {Number} and .name {string} properties
    */
   getSourceObject(sourceName) {
-
-    if ((sourceName == "focusPlayback" && this._mode != "multiview") ||
-        (sourceName == "dockPlayback" && this._mode != "multiview")) {
-      return null;
-    }
 
     var str = this._divOptions[sourceName].choice.getValue();
     const quality = parseInt(str.split("p")[0]);
@@ -280,28 +263,7 @@ class VideoSettingsDialog extends ModalDialog {
     this._divOptions["scrub"].choice.choices = sourceList;
     this._divOptions["seek"].choice.choices = sourceList;
     this._divOptions["play"].choice.choices = sourceList;
-    this._divOptions["focusPlayback"].choice.choices = sourceList;
-    this._divOptions["dockPlayback"].choice.choices = sourceList;
 
-    if (mode == "single")
-    {
-      this._divOptions["focusPlayback"].textDiv.style.display = "none";
-      this._divOptions["dockPlayback"].textDiv.style.display = "none";
-      this._divOptions["focusPlayback"].choiceDiv.style.display = "none";
-      this._divOptions["dockPlayback"].choiceDiv.style.display = "none";
-
-    }
-    else if (mode == "multiview")
-    {
-      this._divOptions["focusPlayback"].textDiv.style.display = "block";
-      this._divOptions["dockPlayback"].textDiv.style.display = "block";
-      this._divOptions["focusPlayback"].choiceDiv.style.display = "block";
-      this._divOptions["dockPlayback"].choiceDiv.style.display = "block";
-    }
-    else if (mode == "live")
-    {
-      // TODO
-    }
     this.applyDefaults();
   }
 
@@ -313,10 +275,6 @@ class VideoSettingsDialog extends ModalDialog {
    *     scrubFPS
    *     playQuality
    *     playFPS
-   *     focusedQuality
-   *     focusedFPS
-   *     dockedQuality
-   *     dockedFPS
    *     allowSafeMode
    */
   set defaultSources(val)
@@ -351,17 +309,10 @@ class VideoSettingsDialog extends ModalDialog {
       params = new URLSearchParams(window.location.search)
     }
 
-    params.delete("focusQuality");
-    params.delete("dockQuality");
     params.delete("scrubQuality");
     params.delete("seekQuality");
     params.delete("playQuality");
     params.delete("safeMode");
-
-    if (this._mode == "multiview") {
-      params.set("focusQuality", parseInt(this._divOptions["focusPlayback"].choice.getValue().split("p")[0]));
-      params.set("dockQuality", parseInt(this._divOptions["dockPlayback"].choice.getValue().split("p")[0]));
-    }
     
     if (this._mode == "single" || this._mode == "multiview") {
       params.set("scrubQuality", parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0]));

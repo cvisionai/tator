@@ -109,8 +109,8 @@ class TextInput extends TatorElement {
     this._input.disabled = val;
   }
 
-  changed(){
-    return this.getValue() !== this._default;
+  changed() {
+    return String(this.getValue()) !== String(this._default);
   }
 
   reset() {

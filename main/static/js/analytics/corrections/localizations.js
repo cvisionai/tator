@@ -295,7 +295,7 @@ class AnalyticsLocalizationsCorrections extends TatorPage {
     this._paginationState.start = evt.detail.start;
     this._paginationState.stop = evt.detail.stop;
     this._paginationState.page = evt.detail.page;
-    this._paginationState.pageSize = evt.detail.pgsize;
+    this._paginationState.pageSize = evt.detail.pageSize;
     this._paginationState.init = false;
 
     // get the gallery

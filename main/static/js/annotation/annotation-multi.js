@@ -148,8 +148,6 @@ class AnnotationMulti extends TatorElement {
 
     const searchParams = new URLSearchParams(window.location.search);
     this._quality = 720;
-    this._focusQuality = this._quality;
-    this._dockQuality = this._quality;
     this._seekQuality = null;
     this._scrubQuality = null;
     this._allowSafeMode = true;
@@ -161,12 +159,6 @@ class AnnotationMulti extends TatorElement {
     }
     if (searchParams.has("scrubQuality")) {
       this._scrubQuality = Number(searchParams.get("scrubQuality"));
-    }
-    if (searchParams.has("focusQuality")) {
-      this._focusQuality = Number(searchParams.get("focusQuality"));
-    }
-    if (searchParams.has("dockQuality")) {
-      this._dockQuality = Number(searchParams.get("dockQuality"));
     }
     if (searchParams.has("safeMode")) {
       this._allowSafeMode = Number(searchParams.get("safeMode")) == 1;
@@ -1061,8 +1053,6 @@ class AnnotationMulti extends TatorElement {
     const seekInfo = this._videos[idx].getQuality("seek");
     const scrubInfo = this._videos[idx].getQuality("scrub");
     const playInfo = this._videos[idx].nearestQuality(this._quality);
-    const focusedInfo = this._videos[idx].nearestQuality(this._focusQuality);
-    const dockedInfo = this._videos[idx].nearestQuality(this._dockQuality);
 
     this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
       composed: true,
@@ -1074,10 +1064,6 @@ class AnnotationMulti extends TatorElement {
         scrubFPS: scrubInfo.fps,
         playQuality: playInfo.quality,
         playFPS: playInfo.fps,
-        focusedQuality: focusedInfo.quality,
-        focusedFPS: focusedInfo.fps,
-        dockedQuality: dockedInfo.quality,
-        dockedFPS: dockedInfo.fps,
         allowSafeMode: this._allowSafeMode
       }
     }));
@@ -1133,12 +1119,12 @@ class AnnotationMulti extends TatorElement {
       video.contextMenuNone.hideMenu();
       if (videoId != vid_id)
       {
-        this.assignToSecondary(Number(videoId), this._dockQuality);
+        this.assignToSecondary(Number(videoId), this._quality);
       }
       else
       {
         this.setMultiviewUrl("focus", Number(videoId));
-        this.assignToPrimary(Number(videoId), this._focusQuality);
+        this.assignToPrimary(Number(videoId), this._quality);
       }
     }
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
@@ -1837,13 +1823,11 @@ class AnnotationMulti extends TatorElement {
 
   setQuality(quality, buffer, isDefault) {
     if (buffer == "focusPlayback") {
-      this._focusQuality = quality;
       for (let videoDiv of this._focusDiv.children) {
         videoDiv.children[0].setQuality(quality, "play");
       }
     }
     else if (buffer == "dockPlayback") {
-      this._dockQuality = quality;
       for (let videoDiv of this._focusTopDockDiv.children) {
         videoDiv.children[0].setQuality(quality, "play");
       }
@@ -2019,10 +2003,25 @@ class AnnotationMulti extends TatorElement {
     }
   }
 
+
+  addAlgoLaunchOption(algoName) {
+    for (let video of this._videos)
+    {
+      video.addAlgoLaunchOption(algoName);
+    }
+  }
+
+  updateAllLocalizations() {
+    for (let video of this._videos)
+    {
+      video.updateAllLocalizations();
+    }
+  }
+
   enableFillTrackGapsOption() {
     for (let video of this._videos)
     {
-      this._video.enableFillTrackGapsOption();
+      video.enableFillTrackGapsOption();
     }
   }
 
@@ -2094,10 +2093,6 @@ class AnnotationMulti extends TatorElement {
         scrubFPS: scrubInfo.fps,
         playQuality: playInfo.quality,
         playFPS: playInfo.fps,
-        focusedQuality: this._focusQuality,
-        focusedFPS: playInfo.fps,
-        dockedQuality: this._dockQuality,
-        dockedFPS: playInfo.fps,
         allowSafeMode: this._allowSafeMode
       };
   }
