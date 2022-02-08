@@ -26,6 +26,7 @@ def _request_restore_multi(multi, expiry_days):
     multi_restored = [_request_restore_single(obj, expiry_days) for obj in media_qs]
 
     if all(multi_restored):
+        multi.archive_status_date = datetime.now(timezone.utc)
         multi.restoration_requested = True
         multi.save()
 
@@ -51,6 +52,7 @@ def _request_restore_single(media, expiry_days):
                 media_requested = media_requested and resource_requested
 
     if media_requested:
+        media.archive_status_date = datetime.now(timezone.utc)
         media.restoration_requested = True
         media.save()
 
