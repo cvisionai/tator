@@ -26,6 +26,9 @@
 /// going into the shader use this convention and are flipped prior to
 /// conversion to clip space (-1, 1).
 
+import { FrameBuffer } from "./FrameBuffer.js";
+import { color } from "./drawGL_colors.js";
+
 const vsSource = `#version 300 es
     in vec2 vertex;
 

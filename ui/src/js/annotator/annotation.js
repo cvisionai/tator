@@ -1,6 +1,8 @@
 import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
 import { fetchRetry } from "../util/fetch-retry.js";
+import { DrawGL } from "./drawGL.js";
+import { color } from "./drawGL_colors.js";
 
 
 var statusAnimator=null;

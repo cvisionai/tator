@@ -1,7 +1,7 @@
 // Generate a color pallette
 
 // Convience export class to RGB values for some common colors.
-const color =
+export const color =
 {
   BLACK: [0,0,0],
   WHITE: [255,255,255],

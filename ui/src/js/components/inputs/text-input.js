@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { TatorAutoComplete } from "../text-autocomplete.js";
 import { hasPermission } from "../../util/has-permission.js";
 
 export class TextInput extends TatorElement {
