@@ -57,14 +57,14 @@ import { Utilities } from "../util/utilities.js";
 
 // Constrain the video display FPS to not allow dropped frames during playback
 //
-var guiFPS=30;
+export var guiFPS=30;
 
 var Direction = { BACKWARDS:-1, STOPPED: 0, FORWARD: 1};
 var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
-const RATE_CUTOFF_FOR_ON_DEMAND = 4.0;
+export const RATE_CUTOFF_FOR_ON_DEMAND = 4.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 /// Support multiple off-screen videos at varying resolutions
@@ -3631,4 +3631,6 @@ export class VideoCanvas extends AnnotationCanvas {
   //////////////////////////////////
 };
 
-customElements.define("video-canvas", VideoCanvas);
+if (!customElements.get("video-canvas")) {
+  customElements.define("video-canvas", VideoCanvas);
+}

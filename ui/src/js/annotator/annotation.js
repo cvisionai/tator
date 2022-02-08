@@ -903,7 +903,9 @@ export class TextOverlay extends TatorElement {
     return this._texts.length-1;
   }
 }
-customElements.define("text-overlay", TextOverlay);
+if (!customElements.get("text-overlay")) {
+  customElements.define("text-overlay", TextOverlay);
+}
 
 // Convenience export class to handle displaying annotation files out of a
 // data source into a draw buffer.

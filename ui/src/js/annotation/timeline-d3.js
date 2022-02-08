@@ -1,4 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
+import * as d3 from "d3";
+import { v1 as uuidv1 } from "uuid";
 
 /**
  * Events dispatched from this element:

@@ -30,14 +30,14 @@ export const color =
   hexToRgb : function (hex)
   {
 	  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	  rgb=result ? {
+	  let rgb = result ? {
       r: parseInt(result[1], 16),
       g: parseInt(result[2], 16),
       b: parseInt(result[3], 16)
 	  } : null;
 	  if (rgb)
 	  {
-	    l=Array(3)
+	    let l = Array(3)
 	    l[0]=rgb.r;
 	    l[1]=rgb.g;
 	    l[2]=rgb.b;
@@ -93,7 +93,7 @@ export const color =
       hsv[2] -= 0.5;
     }
     
-    newColor = this.hsvToRgb(hsv);
+    let newColor = this.hsvToRgb(hsv);
 
     for (var idx = 0; idx < 3; idx++)
     {
