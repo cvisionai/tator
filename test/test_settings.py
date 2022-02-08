@@ -49,7 +49,8 @@ def test_settings_mediaTypes(page_factory, project):
         page.fill('#itemDivId-MediaType-New text-input[name="Name"] input', 'My '+dtypeName+' Type')
         page.select_option('#itemDivId-MediaType-New enum-input[name="Data Type"] select', label=dtypeName)
         page.fill('#itemDivId-MediaType-New text-input[name="Description"] input', 'Media description for automated test.')
-        page.fill('#itemDivId-MediaType-New text-input[name="Default volume"] input', '50')
+        if dtypeName != "Image":
+            page.fill('#itemDivId-MediaType-New text-input[name="Default volume"] input', '50')
         page.click('#itemDivId-MediaType-New bool-input[name="Visible"] label[for="on"]')
         page.click('#itemDivId-MediaType-New button[value="Save"]')
         page.wait_for_selector(f'text="Media type created successfully!"')
