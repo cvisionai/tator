@@ -151,9 +151,7 @@ class EntitySelector extends TatorElement {
     });
 
     this._del.addEventListener("click", () => {
-      console.log(this._data);
-      let isOpenData = JSON.stringify(this._data[0]);
-      this._delConfirm.setAttribute("is-open", isOpenData)
+      this._delConfirm.confirm();
     });
 
     this._delConfirm.addEventListener("confirmDelete", () => {

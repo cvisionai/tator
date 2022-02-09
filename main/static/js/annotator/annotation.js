@@ -1764,9 +1764,7 @@ class AnnotationCanvas extends TatorElement
     {
       if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
       {
-        console.log(this.activeLocalization);
-        let isOpenData = JSON.stringify(this.activeLocalization);
-        this._delConfirm.setAttribute("is-open", isOpenData);
+        this._delConfirm.confirm()
       }
 
       if (event.code == 'Tab')
