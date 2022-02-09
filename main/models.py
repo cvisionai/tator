@@ -478,20 +478,34 @@ class Project(Model):
                                related_name='+')
     """ If set, uploads will use this bucket by default.
     """
+    backup_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
+                               related_name='+')
+    """ If set, backups will use this bucket by default.
+    """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
                                related_name='+')
     """ Default media type for uploads.
     """
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
+
     def user_permission(self, user_id):
         permission = None
         qs = self.membership_set.filter(user_id=user_id)
         if qs.exists():
             permission = qs[0].permission
         return permission
+
     def __str__(self):
         return self.name
+
+    def get_bucket(self, *, upload=False, backup=False):
+        """Abstracts getting the bucket from a project for ease of use"""
+        if upload:
+            return self.upload_bucket
+        if backup:
+            return self.backup_bucket
+        return self.bucket
 
     def delete(self, *args, **kwargs):
         Version.objects.filter(project=self).delete()
