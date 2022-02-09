@@ -1000,6 +1000,16 @@ class AnnotationCanvas extends TatorElement
 
     this._errorTextId = this._textOverlay.addText(0.5,0.5,"",{'fontSize': '14pt',color: 'red'});
 
+
+    this._delConfirm = document.createElement("entity-delete-confirm");
+    this._shadow.appendChild(this._delConfirm);
+
+    this._delConfirm.addEventListener("confirmDelete", () => {
+      this.deleteLocalization(this.activeLocalization);
+      this.activeLocalization=null;
+      this._mouseMode == MouseMode.QUERY;
+    });
+
     try
     {
       this._offscreen = new OffscreenCanvas(100, 100);
@@ -1777,9 +1787,7 @@ class AnnotationCanvas extends TatorElement
     {
       if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
       {
-        this.deleteLocalization(this.activeLocalization);
-        this.activeLocalization=null;
-        this._mouseMode == MouseMode.QUERY;
+        this._delConfirm.confirm()
       }
 
       if (event.code == 'Tab')

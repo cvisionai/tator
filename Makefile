@@ -450,6 +450,7 @@ FILES = \
     annotation/entity-track-button.js \
     annotation/entity-detection-button.js \
     annotation/entity-more.js \
+    annotation/entity-delete-confirm.js \
     annotation/entity-selector.js \
     annotation/annotation-browser.js \
     annotation/undo-buffer.js \
