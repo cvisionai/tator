@@ -122,10 +122,10 @@ class FileDetailAPI(BaseDetailView):
 
         # Delete the correlated file
         if os.path.exists(obj.path.path):
-            safe_delete(path=obj.path.path)
+            safe_delete(obj.path.path, obj.project.id)
         else:
             drop_file_from_resource(obj.path.name, obj)
-            safe_delete(obj.path.name)
+            safe_delete(obj.path.name, obj.project.id)
 
         # Delete ES document
         TatorSearch().delete_document(obj)
@@ -158,7 +158,7 @@ class FileDetailAPI(BaseDetailView):
             check_file_resource_prefix(new_path, obj)
             if old_path != new_path:
                 drop_file_from_resource(old_path, obj)
-                safe_delete(old_path)
+                safe_delete(old_path, obj.project.id)
                 Resource.add_resource(new_path, None, obj)
                 obj.path = new_path
 

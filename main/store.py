@@ -638,7 +638,7 @@ def get_tator_store(
     :rtype: TatorStorage
     """
     if upload and backup:
-        raise ValueError("Cannot set `upload` and `backup` to True")
+        raise ValueError("Cannot set both `upload` and `backup` to True")
     if bucket is not None and (upload or backup):
         raise ValueError(
             f"Cannot specify a bucket and set `{'upload' if upload else 'backup'}` to True"
@@ -679,9 +679,9 @@ def get_tator_store(
         external_host = None
 
     if endpoint:
-        # Strip the bucket name from the url to use path-style access
         # TODO change back to virtual-host-style access when it works again, as path-style access is
         # on delayed deprecation
+        # Strip the bucket name from the url to use path-style access
         endpoint = endpoint.replace(f"{bucket_name}.", "")
         config = Config(
             connect_timeout=connect_timeout,

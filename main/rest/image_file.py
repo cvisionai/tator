@@ -101,7 +101,7 @@ class ImageFileDetailAPI(BaseDetailView):
         media = Media.objects.get(pk=params['id'])
         if old_path != new_path:
             drop_media_from_resource(old_path, media)
-            safe_delete(old_path)
+            safe_delete(old_path, media.project.id)
             Resource.add_resource(new_path, media)
         TatorSearch().create_document(media)
         return {'message': f"Media file in media object {media.id} successfully updated!"}
@@ -125,7 +125,7 @@ class ImageFileDetailAPI(BaseDetailView):
             qs.update(media_files=media_files)
         media = Media.objects.get(pk=params['id'])
         drop_media_from_resource(deleted['path'], media)
-        safe_delete(deleted['path'])
+        safe_delete(deleted['path'], media.project.id)
         TatorSearch().create_document(media)
         return {'message': f'Media file in media object {params["id"]} successfully deleted!'}
 

@@ -172,7 +172,7 @@ class ProjectDetailAPI(BaseDetailView):
             generic_store.put_object(new_key, fp)
 
             if project.thumb:
-                safe_delete(project.thumb)
+                safe_delete(project.thumb, project.id)
             project.thumb = new_key
         if 'enable_downloads' in params:
             project.enable_downloads = params['enable_downloads']

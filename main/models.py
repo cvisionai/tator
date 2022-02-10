@@ -559,7 +559,7 @@ def project_save(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=Project)
 def project_delete(sender, instance, **kwargs):
     if instance.thumb:
-        safe_delete(instance.thumb)
+        safe_delete(instance.thumb, instance.id)
 
 @receiver(pre_delete, sender=Project)
 def delete_index_project(sender, instance, **kwargs):
@@ -1116,18 +1116,39 @@ class Resource(Model):
             obj.media.add(media)
 
     @transaction.atomic
-    def delete_resource(path_or_link):
+    def delete_resource(path_or_link, project_id):
         path=path_or_link
         if os.path.exists(path_or_link):
             if os.path.islink(path_or_link):
                 path=os.readlink(path_or_link)
                 os.remove(path_or_link)
         obj = Resource.objects.get(path=path)
-        if obj.media.all().count() == 0 and obj.generic_files.all().count() == 0:
-            logger.info(f"Deleting object {path}")
-            obj.delete()
-            tator_store = get_tator_store(obj.bucket)
-            tator_store.delete_object(path)
+
+        # If any media or generic files still reference this resource, don't delete it
+        if obj.media.all().count() > 0 or obj.generic_files.all().count() > 0:
+            return
+
+        logger.info(f"Deleting object {path}")
+        obj.delete()
+        tator_store = get_tator_store(obj.bucket)
+        tator_store.delete_object(path)
+
+        # If the resource is not backed up or a `project_id` is not provided, don't try to delete
+        # its backup
+        if not obj.backed_up or project_id is None:
+            return
+
+        # If an object is backed up, that means it is either in a project-specific backup bucket or
+        # the default backup bucket
+        backup_bucket = Project.objects.get(pk=project_id).get_bucket(backup=True)
+        if backup_bucket:
+            # Resources are backed up to at most one bucket; return after finding a project
+            # specific backup bucket
+            get_tator_store(backup_bucket).delete_object(path)
+            return
+
+        # Found no project-specific backup bucket, use the default one
+        get_tator_store(backup=True).delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):
@@ -1185,12 +1206,18 @@ def media_save(sender, instance, created, **kwargs):
                 if key == 'streaming':
                     Resource.add_resource(fp['segment_info'], instance)
 
-def safe_delete(path):
+def safe_delete(path, project_id=None):
+    logger.info(
+        f"Deleting resource for {path}{f' from project {project_id}' if project_id else ''}"
+    )
+
     try:
-        logger.info(f"Deleting resource for {path}")
-        Resource.delete_resource(path)
+        Resource.delete_resource(path, project_id)
     except:
-        logger.warning(f"Could not remove {path}", exc_info=True)
+        logger.warning(
+            f"Could not remove {path}{f' from project {project_id}' if project_id else ''}",
+            exc_info=True,
+        )
 
 def drop_file_from_resource(path, generic_file):
     """ Drops the specified generic file from the resource. This should be called when
@@ -1231,10 +1258,10 @@ def media_post_delete(sender, instance, **kwargs):
                 files = []
             for obj in files:
                 path = obj['path']
-                safe_delete(path)
+                safe_delete(path, instance.project.id)
                 if key == 'streaming':
                     path = obj['segment_info']
-                    safe_delete(path)
+                    safe_delete(path, instance.project.id)
 
 @receiver(post_save, sender=File)
 def file_save(sender, instance, created, **kwargs):
@@ -1250,7 +1277,7 @@ def file_delete(sender, instance, **kwargs):
 def file_post_delete(sender, instance, **kwargs):
     # Delete the path reference
     if not instance.path is None:
-        safe_delete(instance.path)
+        safe_delete(instance.path, instance.project.id)
 
 class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')
