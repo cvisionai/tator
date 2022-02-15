@@ -340,6 +340,7 @@ class TatorStorage(ABC):
         if response.get("StorageClass", "") == archive_storage_class:
             logger.warning(f"Storage class not changed for object {path}")
             return False
+        logger.info(f"Object {path} successfully restored: {response}")
         return True
 
     def paths_from_media(self, media):
@@ -494,7 +495,15 @@ class MinIOStorage(TatorStorage):
         self.client.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
 
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
-        self.copy(path, path, {"StorageClass": desired_storage_class, "MetadataDirective": "COPY"})
+        self.copy(
+            path,
+            path,
+            {
+                "StorageClass": desired_storage_class,
+                "MetadataDirective": "COPY",
+                "TaggingDirective": "REPLACE",
+            },
+        )
 
 
 class S3Storage(MinIOStorage):
