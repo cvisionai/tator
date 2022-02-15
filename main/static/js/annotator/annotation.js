@@ -1130,7 +1130,9 @@ class AnnotationCanvas extends TatorElement
         const d = new Date(time_since_epoch + milliseconds);
 
         // Output to the text format specified by the media type schema
-        this._textOverlay.modifyText(time_idx,{content: d.toLocaleString(locale, options), style: this.overlayTextStyle});
+        let proposal_time = d.toLocaleString(locale, options);
+        proposal_time = proposal_time.replace(", 24:", ", 00:");
+        this._textOverlay.modifyText(time_idx,{content: proposal_time, style: this.overlayTextStyle});
       };
 
       // Run first update
