@@ -53,6 +53,10 @@ class MediaUtil:
             self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
             self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
                                                           ['segments']) if x['name'] == 'moof']
+            self._start_bias_frame = 0
+            if self._moof_data[0][1]["frame_start"] > 0:
+                self._start_bias_frame = self._moof_data[0][1]["frame_start"]
+
         elif "image" in video.media_files:
             if quality is None:
                 # Select highest quality if not specified
@@ -87,7 +91,14 @@ class MediaUtil:
             max_idx = len(self._moof_data)-1
             # Handle frames and files with frame biases
             if frame < self._moof_data[0][1]['frame_start']:
+                # Force add the first two segments and all the data in between
                 frame_seg.add(self._moof_data[0][0])
+                for data_idx in range(self._moof_data[0][0] + 1, self._moof_data[1][0], 1):
+                    frame_seg.add(data_idx)
+                frame_seg.add(self._moof_data[1][0])
+                frame_seg = list(frame_seg)
+                frame_seg.sort()
+                segment_list.append((frame, frame_seg))
                 continue
 
             last_segment = self._moof_data[max_idx][1] #Frame start/stop is in the moof
@@ -151,7 +162,6 @@ class MediaUtil:
             preferred_block_size = 16*1024
             sc_graph = [(0, 0)]
             segment_frame_start = sys.maxsize
-            segment_num_frames = 0
             # create a scatter/gather
             for segment_idx in segments:
                 segment = self._segment_info['segments'][segment_idx]
@@ -171,6 +181,8 @@ class MediaUtil:
                     # A new block
                     sc_graph.append((segment['offset'], segment['size']))
 
+            if segment_frame_start == sys.maxsize:
+                segment_frame_start = frame
             lookup[frame] = (segment_frame_start, temp_video)
 
             logger.info(f"Scatter gather graph = {sc_graph}")
@@ -186,7 +198,12 @@ class MediaUtil:
     def _frame_to_time_str(self, frame, relative_to=None):
         """ TODO: add documentation for this """
         if relative_to:
+            logger.info(f"Relative to = {relative_to} | provided frame = {frame}")
             frame -= relative_to
+
+        if frame < 0:
+            frame += self._start_bias_frame
+
         total_seconds = frame / self._fps
         hours = math.floor(total_seconds / 3600)
         minutes = math.floor((total_seconds % 3600) / 60)
