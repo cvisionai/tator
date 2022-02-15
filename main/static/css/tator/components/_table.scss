@@ -204,14 +204,19 @@
     fill: #a2afcd;
   }
   th {
-    background-color: #696cff;
-  }
-
-  th,
-  td {
     text-align: center;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     border: 1px solid #a2afcd;
+    background-color: #696cff;
+    overflow-wrap: break-word;
+  }
+  td {
+    vertical-align: middle;
+    text-align: center;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    border: 1px solid #a2afcd;
+    overflow-wrap: break-word;
   }
 }

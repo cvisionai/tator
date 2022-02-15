@@ -103,14 +103,194 @@ class FilesPage extends TatorPage {
     });
   }
 
-  _selectFileType(fileType) {
+  _getSortedList(fileList, field, ascending) {
 
-    this._fileTypeButton.text = fileType.name;
+    var outList = [];
+    for (const data of fileList) {
+      outList.push(data);
+    }
+
+    const built_in_fields = ["id", "name", "description", "created_datetime", "modified_datetime"];
+    if (built_in_fields.includes(field)) {
+      if (ascending) {
+        outList.sort((a, b) => (a[field] > b[field] ? 1 : -1));
+      }
+      else {
+        outList.sort((a, b) => (a[field] > b[field] ? -1 : 1));
+      }
+    }
+    else {
+      if (ascending) {
+        outList.sort((a, b) => (a.attributes[field] > b.attributes[field] ? 1 : -1));
+      }
+      else {
+        outList.sort((a, b) => (a.attributes[field] > b.attributes[field] ? -1 : 1));
+      }
+    }
+
+    return outList;
+  }
+
+  _createTable(fileType, fileList) {
+    const sortSVG = `<span class="sort-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path d="M11 7H5l3-4zM5 9h6l-3 4z"/></svg></span>`;
 
     while (this._fileTableDiv.firstChild) {
       this._fileTableDiv.removeChild(this._fileTableDiv.firstChild);
     }
 
+    const table = document.createElement("table");
+    table.setAttribute("class", "file-table text-gray f2");
+    this._fileTableDiv.appendChild(table);
+
+    // Create the table header using the attributes of the current file type
+    const thead = document.createElement("thead");
+    thead.setAttribute("class", "text-white");
+    table.appendChild(thead);
+    const trHead = document.createElement("tr");
+    thead.appendChild(trHead);
+
+    var th;
+    th = document.createElement("th");
+    th.setAttribute("class", "py-2 clickable");
+    th.textContent = "ID";
+    th.innerHTML += sortSVG;
+    th.addEventListener("click", () => {
+      this._sortAscending = !this._sortAscending;
+      const sortedList = this._getSortedList(fileList, "id", this._sortAscending);
+      this._createTable(fileType, sortedList);
+    });
+    trHead.appendChild(th);
+
+    th = document.createElement("th");
+    th.setAttribute("class", "py-2 clickable");
+    th.textContent = "Name";
+    th.innerHTML += sortSVG;
+    th.addEventListener("click", () => {
+      this._sortAscending = !this._sortAscending;
+      const sortedList = this._getSortedList(fileList, "name", this._sortAscending);
+      this._createTable(fileType, sortedList);
+    });
+    trHead.appendChild(th);
+
+    th = document.createElement("th");
+    th.setAttribute("class", "py-2 clickable");
+    th.textContent = "Description";
+    th.innerHTML += sortSVG;
+    th.addEventListener("click", () => {
+      this._sortAscending = !this._sortAscending;
+      const sortedList = this._getSortedList(fileList, "description", this._sortAscending);
+      this._createTable(fileType, sortedList);
+    });
+    trHead.appendChild(th);
+
+    th = document.createElement("th");
+    th.setAttribute("class", "py-2 clickable");
+    th.textContent = "Created Datetime";
+    th.innerHTML += sortSVG;
+    th.addEventListener("click", () => {
+      this._sortAscending = !this._sortAscending;
+      const sortedList = this._getSortedList(fileList, "created_datetime", this._sortAscending);
+      this._createTable(fileType, sortedList);
+    });
+    trHead.appendChild(th);
+
+    th = document.createElement("th");
+    th.setAttribute("class", "py-2 clickable");
+    th.textContent = "Modified Datetime";
+    th.innerHTML += sortSVG;
+    th.addEventListener("click", () => {
+      this._sortAscending = !this._sortAscending;
+      const sortedList = this._getSortedList(fileList, "modified_datetime", this._sortAscending);
+      this._createTable(fileType, sortedList);
+    });
+    trHead.appendChild(th);
+
+    var attrTypeNames = []
+    for (const attrType of fileType.attribute_types) {
+      attrTypeNames.push(attrType.name);
+
+      th = document.createElement("th");
+      th.setAttribute("class", "py-2 clickable");
+      th.textContent = attrType.name;
+      th.innerHTML += sortSVG;
+      th.addEventListener("click", () => {
+        this._sortAscending = !this._sortAscending;
+        const sortedList = this._getSortedList(fileList, attrType.name, this._sortAscending);
+        this._createTable(fileType, sortedList);
+      });
+      trHead.appendChild(th);
+    }
+
+    th = document.createElement("th");
+    th.setAttribute("class", "py-2 clickable");
+    th.textContent = "Download";
+    trHead.appendChild(th);
+
+    // Create the table data
+    const tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+
+    for (const fileData of fileList) {
+      const trData = document.createElement("tr");
+      tbody.appendChild(trData);
+
+      var td;
+      td = document.createElement("td");
+      td.textContent = `${fileData.id}`;
+      trData.appendChild(td);
+
+      td = document.createElement("td");
+      td.textContent = `${fileData.name}`;
+      trData.appendChild(td);
+
+      td = document.createElement("td");
+      td.textContent = `${fileData.description}`;
+      trData.appendChild(td);
+
+      td = document.createElement("td");
+      td.textContent = `${fileData.created_datetime}`;
+      trData.appendChild(td);
+
+      td = document.createElement("td");
+      td.textContent = `${fileData.modified_datetime}`;
+      trData.appendChild(td);
+
+      for (const attrName of attrTypeNames) {
+        var td;
+        td = document.createElement("td");
+        if (attrName in fileData.attributes) {
+          td.textContent = `${fileData.attributes[attrName]}`;
+        }
+        else {
+          td.textContent = "";
+        }
+        trData.appendChild(td);
+      }
+
+      td = document.createElement("td");
+      var linksWrapper = document.createElement("div");
+      td.appendChild(linksWrapper);
+
+      let svgDiv = document.createElement("div");
+      svgDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+      let action = document.createElement("a");
+      action.setAttribute("class", "clickable text-gray align-center");
+      action.setAttribute("target", "_blank");
+      action.addEventListener("click", () => {
+        // Get a presigned URL if the file object has a non-blank path
+      });
+      action.appendChild(svgDiv);
+      linksWrapper.appendChild(action);
+      trData.appendChild(td);
+    }
+
+    // Ready to rock and roll
+    this._loading.style.display = "none";
+  }
+
+  _selectFileType(fileType) {
+
+    this._fileTypeButton.text = fileType.name;
     this._loading.style.display = "block";
 
     const fileListPromise = fetch(`/rest/Files/${this._projectId}?meta=${fileType.id}`, {
@@ -126,115 +306,11 @@ class FilesPage extends TatorPage {
       const fileListData = response.json();
       fileListData.then((fileList) => {
 
-        const table = document.createElement("table");
-        table.setAttribute("class", "file-table text-gray f2");
-        this._fileTableDiv.appendChild(table);
-
-        // Create the table header using the attributes of the current file type
-        const thead = document.createElement("thead");
-        thead.setAttribute("class", "text-white");
-        table.appendChild(thead);
-        const trHead = document.createElement("tr");
-        thead.appendChild(trHead);
-
-        var th;
-        th = document.createElement("th");
-        th.setAttribute("class", "py-2");
-        th.textContent = "ID";
-        trHead.appendChild(th);
-
-        th = document.createElement("th");
-        th.setAttribute("class", "py-2");
-        th.textContent = "Name";
-        trHead.appendChild(th);
-
-        th = document.createElement("th");
-        th.setAttribute("class", "py-2");
-        th.textContent = "Description";
-        trHead.appendChild(th);
-
-        th = document.createElement("th");
-        th.setAttribute("class", "py-2");
-        th.textContent = "Created Datetime";
-        trHead.appendChild(th);
-
-        th = document.createElement("th");
-        th.setAttribute("class", "py-2");
-        th.textContent = "Modified Datetime";
-        trHead.appendChild(th);
-
-        var attrTypeNames = []
-        for (const attrType of fileType.attribute_types) {
-          attrTypeNames.push(attrType.name);
-
-          th = document.createElement("th");
-          th.setAttribute("class", "py-2");
-          th.textContent = attrType.name;
-          trHead.appendChild(th);
-        }
-
-        th = document.createElement("th");
-        th.setAttribute("class", "py-2");
-        th.textContent = "Link";
-        trHead.appendChild(th);
-
-        // Create the table data
-        const tbody = document.createElement("tbody");
-        table.appendChild(tbody);
-
-        for (const fileData of fileList) {
-          const trData = document.createElement("tr");
-          tbody.appendChild(trData);
-
-          var td;
-          td = document.createElement("td");
-          td.textContent = `${fileData.id}`;
-          trData.appendChild(td);
-
-          td = document.createElement("td");
-          td.textContent = `${fileData.name}`;
-          trData.appendChild(td);
-
-          td = document.createElement("td");
-          td.textContent = `${fileData.description}`;
-          trData.appendChild(td);
-
-          td = document.createElement("td");
-          td.textContent = `${fileData.created_datetime}`;
-          trData.appendChild(td);
-
-          td = document.createElement("td");
-          td.textContent = `${fileData.modified_datetime}`;
-          trData.appendChild(td);
-
-          for (const attrName of attrTypeNames) {
-            var td;
-            td = document.createElement("td");
-            if (attrName in fileData.attributes) {
-              td.textContent = `${fileData.attributes[attrName]}`;
-            }
-            else {
-              td.textContent = "";
-            }
-            trData.appendChild(td);
-          }
-
-          td = document.createElement("td");
-          var linksWrapper = document.createElement("div");
-          linksWrapper.setAttribute("class", "d-flex flex-column");
-          td.appendChild(linksWrapper);
-      
-          let action = document.createElement("a");
-          action.setAttribute("class", "clickable text-purple text-bold");
-          action.setAttribute("target", "_blank");
-          action.setAttribute("href", `${fileData.path}`);
-          action.appendChild(document.createTextNode("Link"));
-          linksWrapper.appendChild(action);
-          trData.appendChild(td);
-        }
-
-        // Ready to rock and roll
-        this._loading.style.display = "none";
+        // Default is to show the newest ID at the top of the table
+        this._sortOrder = "id";
+        this._sortAscending = false;
+        const sortedFileList = this._getSortedList(fileList, this._sortOrder, this._sortAscending);
+        this._createTable(fileType, sortedFileList);
 
       });
     });
