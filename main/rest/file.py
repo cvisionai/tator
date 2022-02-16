@@ -88,10 +88,13 @@ class FileListAPI(BaseListView):
         metas = {obj.id:obj for obj in meta_qs.iterator()}
 
         # Get required fields for attributes.
+        attributes = params[fields.attributes]
+        if attributes is None:
+            attributes = []
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
         attrs = check_required_fields(required_fields[params[fields.meta]][0],
                                       required_fields[params[fields.meta]][2],
-                                      params[fields.attributes])
+                                      attributes)
 
         # Create File object
         new_file = File.objects.create(
@@ -121,15 +124,16 @@ class FileDetailAPI(BaseDetailView):
         obj = File.objects.get(pk=params[fields.id])
 
         # Delete the correlated file
-        if os.path.exists(obj.path.path):
-            safe_delete(obj.path.path, obj.project.id)
-        else:
-            drop_file_from_resource(obj.path.name, obj)
-            safe_delete(obj.path.name, obj.project.id)
+        if obj.path and hasattr(obj.path, "path"):
+            if os.path.exists(obj.path.path):
+                safe_delete(obj.path.path, obj.project.id)
+            else:
+                drop_file_from_resource(obj.path.name, obj)
+                safe_delete(obj.path.name, obj.project.id)
 
         # Delete ES document
         TatorSearch().delete_document(obj)
-        msg = f'Registered file deleted successfully! {obj.path.path} {obj.path.name}'
+        msg = f'Registered file deleted successfully!'
 
         # Delete from database
         obj.delete()
