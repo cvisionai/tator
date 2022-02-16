@@ -88,7 +88,7 @@ class FileListAPI(BaseListView):
         metas = {obj.id:obj for obj in meta_qs.iterator()}
 
         # Get required fields for attributes.
-        attributes = fields.attributes
+        attributes = params[fields.attributes]
         if attributes is None:
             attributes = []
         required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
