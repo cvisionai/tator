@@ -535,8 +535,10 @@ def fix_bad_restores(
         *, project_id_list=None, live_run=False, force_update=False, restored_by_date=None
 ):
     from pprint import pformat
-    media_to_update = set()
-    path_filename = "still_archived.txt"
+    update_sc = set()
+    update_tag = set()
+    sc_filename = "still_archived.txt"
+    tag_filename = "still_tagged.txt"
 
     def _tag_needs_updating(path, store):
         try:
@@ -548,7 +550,7 @@ def fix_bad_restores(
     def _sc_needs_updating(path, store):
         return (
             force_update
-            or store.head_object(path).get("StorageClass", "DEEP_ARCHIVE") != store.get_live_sc()
+            or store.head_object(path).get("StorageClass", "STANDARD") != store.get_live_sc()
         )
 
     def _update_tag(path, store):
@@ -559,51 +561,41 @@ def fix_bad_restores(
                 logger.warning(f"Tag operation on {path} failed", exc_info=True)
                 return False
         else:
-            media_to_update.add(f"{path}\n")
+            update_tag.add(f"{path}\n")
 
         return True
 
-    def _update_sc(path, store):
+    def _update_sc(single, store):
         success = True
         if live_run:
             try:
-                success = store.request_restoration(path, 30)
+                single.archive_state = "to_live"
+                single.save()
             except:
-                logger.warning(f"restoration request on {path} failed", exc_info=True)
+                logger.warning(f"archive state update on {single.id} failed", exc_info=True)
                 return False
-            if success:
-                try:
-                    success = store.restore_resource(path)
-                except:
-                    logger.warning(f"sc update on {path} failed", exc_info=True)
-                    return False
         else:
-            media_to_update.add(f"{path}\n")
+            update_sc.add(f"{single.id}\n")
 
         return success
 
-    def _check_and_update(db_object, key, store, segment_info=False):
+    def _check_and_update(file_info, key, store, segment_info=False):
         success = True
         sc_needs_updating = False
         tag_needs_updating = False
         path_key = "segment_info" if segment_info else "path"
         try:
-            path = db_object[path_key]
+            path = file_info[path_key]
         except:
             logger.warning(f"Could not get {path_key}", exc_info=True)
             return False, False, False
 
         if _sc_needs_updating(path, store):
+            # Storage class updates occur at the media level, so just set the flag
             sc_needs_updating = True
-            try:
-                success = _update_sc(path, store) and success
-            except:
-                logger.warning(
-                    f"Storage class operation on {path} from {single.id} failed", exc_info=True
-                )
-                success = False
 
         if _tag_needs_updating(path, store):
+            # Set the flag and update the tag on each path
             tag_needs_updating = True
             try:
                 success = _update_tag(path, store) and success
@@ -612,7 +604,7 @@ def fix_bad_restores(
                 success = False
 
         if key == "streaming" and (tag_needs_updating or sc_needs_updating):
-            stream_stats = _check_and_update(db_object, path_key, store, segment_info=True)
+            stream_stats = _check_and_update(file_info, path_key, store, segment_info=True)
             success = success and stream_stats[0]
             sc_needs_updating = sc_needs_updating or stream_stats[1]
             tag_needs_updating = tag_needs_updating or stream_stats[2]
@@ -650,6 +642,15 @@ def fix_bad_restores(
                         success = success and bools[0]
                         sc_needs_updating = sc_needs_updating or bools[1]
                         tag_needs_updating = tag_needs_updating or bools[2]
+
+            if sc_needs_updating:
+              try:
+                  success = _update_sc(single, store) and success
+              except:
+                  logger.warning(
+                      f"Storage class operation on {path} from {single.id} failed", exc_info=True
+                  )
+                  success = False
         else:
             logger.warning(f"Media {single.id} has no media files")
 
@@ -675,6 +676,7 @@ def fix_bad_restores(
             logger.info(f"No archived media in project {proj_id}, moving on")
             continue
 
+        logger.info(f"Found {media_count} media to check...")
         live_state_dict[proj_id] = {
             "correct_sc": 0,
             "wrong_sc": 0,
@@ -719,6 +721,9 @@ def fix_bad_restores(
                 live_state_dict[proj_id]["failed"] += 1
 
     logger.info(f"fix_bad_restores stats:\n{pformat(live_state_dict)}\n")
-    if media_to_update:
-        with open(path_filename, "w") as fp:
-            fp.writelines(media_to_update)
+    if update_sc:
+        with open(sc_filename, "w") as fp:
+            fp.writelines(update_sc)
+    if update_tag:
+        with open(tag_filename, "w") as fp:
+            fp.writelines(update_tag)
