@@ -91,8 +91,21 @@ class FilesPage extends TatorPage {
 
         // Grab the list of file types and display them as selectable options.
         if (fileTypes.length > 0) {
-          this._fileTypeModal.init(fileTypes, 0);
-          this._selectFileType(fileTypes[0]);
+
+          var params = new URLSearchParams(window.location.search);
+          var selectedIndex = 0;
+          if (params.has("fileType")) {
+            var fileTypeId = Number(params.get("fileType"));
+            for (let index = 0; index < fileTypes.length; index++) {
+              if (fileTypes[index].id == fileTypeId) {
+                selectedIndex = index;
+                break;
+              }
+            }
+          }
+
+          this._fileTypeModal.init(fileTypes, selectedIndex);
+          this._selectFileType(fileTypes[selectedIndex]);
         }
         else {
           // Ready to rock and roll
@@ -316,6 +329,11 @@ class FilesPage extends TatorPage {
   }
 
   _selectFileType(fileType) {
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("fileType");
+    url.searchParams.set("fileType", fileType.id);
+    window.history.replaceState(null, null, url);
 
     this._fileTypeButton.text = fileType.name;
     this._loading.style.display = "block";
