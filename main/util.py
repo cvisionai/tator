@@ -529,3 +529,196 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
     if media_to_update:
         with open(path_filename, "w") as fp:
             fp.writelines(media_to_update)
+
+
+def fix_bad_restores(
+        *, project_id_list=None, live_run=False, force_update=False, restored_by_date=None
+):
+    from pprint import pformat
+    media_to_update = set()
+    path_filename = "still_archived.txt"
+
+    def _tag_needs_updating(path, store):
+        try:
+            return force_update or store._object_tagged_for_archive(path)
+        except:
+            logging.warning(f"Could not detect object tags for {path}", exc_info=True)
+            return False
+
+    def _sc_needs_updating(path, store):
+        return (
+            force_update
+            or store.head_object(path).get("StorageClass", "DEEP_ARCHIVE") != store.get_live_sc()
+        )
+
+    def _update_tag(path, store):
+        if live_run:
+            try:
+                store.delete_all_tags(path)
+            except:
+                logger.warning(f"Tag operation on {path} failed", exc_info=True)
+                return False
+        else:
+            media_to_update.add(f"{path}\n")
+
+        return True
+
+    def _update_sc(path, store):
+        success = True
+        if live_run:
+            try:
+                success = store.request_restoration(path, 30)
+            except:
+                logger.warning(f"restoration request on {path} failed", exc_info=True)
+                return False
+            if success:
+                try:
+                    success = store.restore_resource(path)
+                except:
+                    logger.warning(f"sc update on {path} failed", exc_info=True)
+                    return False
+        else:
+            media_to_update.add(f"{path}\n")
+
+        return success
+
+    def _check_and_update(db_object, key, store, segment_info=False):
+        success = True
+        sc_needs_updating = False
+        tag_needs_updating = False
+        path_key = "segment_info" if segment_info else "path"
+        try:
+            path = db_object[path_key]
+        except:
+            logger.warning(f"Could not get {path_key}", exc_info=True)
+            return False, False, False
+
+        if _sc_needs_updating(path, store):
+            sc_needs_updating = True
+            try:
+                success = _update_sc(path, store) and success
+            except:
+                logger.warning(
+                    f"Storage class operation on {path} from {single.id} failed", exc_info=True
+                )
+                success = False
+
+        if _tag_needs_updating(path, store):
+            tag_needs_updating = True
+            try:
+                success = _update_tag(path, store) and success
+            except:
+                logger.warning(f"Tag operation on {path} from {single.id} failed", exc_info=True)
+                success = False
+
+        if key == "streaming" and (tag_needs_updating or sc_needs_updating):
+            stream_stats = _check_and_update(db_object, path_key, store, segment_info=True)
+            success = success and stream_stats[0]
+            sc_needs_updating = sc_needs_updating or stream_stats[1]
+            tag_needs_updating = tag_needs_updating or stream_stats[2]
+
+        return success, sc_needs_updating, tag_needs_updating
+
+    def _archive_multi(multi, store):
+        media_ids = multi.media_files.get("ids")
+        if not media_ids:
+            return "failed"
+
+        success = True
+        sc_needs_updating = False
+        tag_needs_updating = False
+        media_qs = Media.objects.filter(pk__in=media_ids)
+        for single in media_qs.iterator():
+            single_success, single_sc_needs_updating, single_tag_needs_updating = _archive_single(
+                single, store
+            )
+            success = success and single_success
+            sc_needs_updating = sc_needs_updating or single_sc_needs_updating
+            tag_needs_updating = tag_needs_updating or single_tag_needs_updating
+
+        return success, sc_needs_updating, tag_needs_updating
+
+    def _archive_single(single, store):
+        success = True
+        sc_needs_updating = False
+        tag_needs_updating = False
+        if single.media_files:
+            for key in ["streaming", "archival", "audio", "image"]:
+                if key in single.media_files and single.media_files[key]:
+                    for obj in single.media_files[key]:
+                        bools = _check_and_update(obj, key, store)
+                        success = success and bools[0]
+                        sc_needs_updating = sc_needs_updating or bools[1]
+                        tag_needs_updating = tag_needs_updating or bools[2]
+        else:
+            logger.warning(f"Media {single.id} has no media files")
+
+        return success, sc_needs_updating, tag_needs_updating
+
+    logger.info(f"fix_bad_restore {'live' if live_run else 'dry'} run")
+
+    live_state_dict = {}
+    project_qs = Project.objects.all()
+
+    if project_id_list:
+        project_qs = project_qs.filter(pk__in=project_id_list)
+
+    for project in project_qs.iterator():
+        tator_store = get_tator_store(project.bucket)
+        proj_id = project.id
+        logger.info(f"Analyzing project {proj_id}...")
+        live_media_qs = Media.objects.filter(project=project, archive_state="live")
+        if restored_by_date is not None:
+            live_media_qs = live_media_qs.filter(archive_status_date__gte=restored_by_date)
+        media_count = live_media_qs.count()
+        if media_count < 1:
+            logger.info(f"No archived media in project {proj_id}, moving on")
+            continue
+
+        live_state_dict[proj_id] = {
+            "correct_sc": 0,
+            "wrong_sc": 0,
+            "correct_tag": 0,
+            "wrong_tag": 0,
+            "failed": 0,
+        }
+        idx = 0
+        for media in live_media_qs.iterator():
+            idx += 1
+            if idx % 250 == 0 or idx == media_count:
+                logger.info(
+                    f"Processed {idx} of {media_count} archived media for project {project.id}"
+                )
+
+            if not media.meta:
+                logger.warning(f"No dtype for '{media.id}'")
+                continue
+
+            media_dtype = media.meta.dtype
+            if media_dtype in ["image", "video"]:
+                success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
+            elif media_dtype == "multi":
+                success, sc_needs_updating, tag_needs_updating = _archive_multi(media, tator_store)
+            else:
+                logger.warning(
+                    f"Unrecognized dtype '{media_dtype}' for media {media.id}, failed to archive"
+                )
+                continue
+
+            if success:
+                if tag_needs_updating:
+                    live_state_dict[proj_id]["wrong_tag"] += 1
+                else:
+                    live_state_dict[proj_id]["correct_tag"] += 1
+
+                if sc_needs_updating:
+                    live_state_dict[proj_id]["wrong_sc"] += 1
+                else:
+                    live_state_dict[proj_id]["correct_sc"] += 1
+            else:
+                live_state_dict[proj_id]["failed"] += 1
+
+    logger.info(f"fix_bad_restores stats:\n{pformat(live_state_dict)}\n")
+    if media_to_update:
+        with open(path_filename, "w") as fp:
+            fp.writelines(media_to_update)
