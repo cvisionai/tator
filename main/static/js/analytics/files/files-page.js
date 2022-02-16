@@ -278,6 +278,33 @@ class FilesPage extends TatorPage {
       action.setAttribute("target", "_blank");
       action.addEventListener("click", () => {
         // Get a presigned URL if the file object has a non-blank path
+        if (fileData.path) {
+          if (fileData.path.includes("media")) {
+            // Legacy path where the path is not an object
+            var url = fileData.path
+            action.setAttribute("href", url);
+            window.open(url, '_blank').focus();
+          }
+          else {
+            // Path is an object key
+            fetch(`/rest/DownloadInfo/${fileType.project}?expiration=3600`, {
+              method: "POST",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({keys: [fileData.path]}),
+            })
+            .then(response => { return response.json(); })
+            .then(result => {
+              var url = result[0].url;
+              action.setAttribute("href", url);
+              window.open(url, '_blank').focus();
+            });
+          }
+        }
       });
       action.appendChild(svgDiv);
       linksWrapper.appendChild(action);
