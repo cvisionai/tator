@@ -68,7 +68,11 @@ server {
   location /static {
     alias /static/;
     autoindex off;
+    {{- if .Values.useMinJs }}
+    add_header Cache-Control "max-age=300, must-revalidate";
+    {{- else }}
     add_header Cache-Control "max-age=0, must-revalidate";
+    {{- end }}
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
     add_header Access-Control-Allow-Origin *;
