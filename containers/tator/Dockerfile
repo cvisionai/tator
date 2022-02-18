@@ -42,6 +42,7 @@ RUN python3 setup.py install
 
 # Copy over the project
 COPY . /tator_online
+COPY ui/dist/* /tator_online/main/static/.
 
 # Delete front end unit tests
 RUN rm -fr /tator_online/test

@@ -139,7 +139,6 @@ echo "Installing tator."
 make main/version.py
 make cluster-deps
 make cluster-install
-make collect-static
 
 # Create a superuser.
 echo "Creating a superuser."
