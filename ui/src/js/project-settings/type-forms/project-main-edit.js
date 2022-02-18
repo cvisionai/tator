@@ -2,6 +2,7 @@ import { TypeForm } from "./type-form.js";
 import { hasPermission } from "../../util/has-permission.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { SettingsBox } from "../settings-box-helpers.js";
+import { ProjectDelete } from "./project-delete.js";
 
 export class ProjectMainEdit extends TypeForm {
   constructor() {

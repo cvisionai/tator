@@ -5,6 +5,7 @@ import { TatorData } from "../util/tator-data.js";
 import { svgNamespace } from "../components/tator-element.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
 import { FilterData } from "../components/filter-data.js";
+import { v1 as uuidv1 } from "uuid";
 
 export class ProjectDetail extends TatorPage {
   constructor() {

@@ -3,6 +3,7 @@ import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
+import { TypeNew } from "./type-new.js";
 
 export class TypeForm extends TatorElement {
   constructor() {
