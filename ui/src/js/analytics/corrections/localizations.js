@@ -1,5 +1,7 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { TatorData } from "../../util/tator-data.js";
+import { LoadingSpinner } from "../../components/loading-spinner.js";
+import { FilterData } from "../../components/filter-data.js";
 
 /**
  * Page that displays a grid view of selected annotations

@@ -73,4 +73,6 @@ export class EntityCardSlideGallery extends TatorElement {
 
 }
 
-customElements.define("entity-card-slide-gallery", EntityCardSlideGallery);
+if (!customElements.get("entity-card-slide-gallery")) {
+  customElements.define("entity-card-slide-gallery", EntityCardSlideGallery);
+}

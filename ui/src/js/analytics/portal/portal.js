@@ -1,4 +1,5 @@
 import { TatorPage } from "../../components/tator-page.js";
+import { SvgDefinition } from "../../components/svg-definitions/all-svg.js";
 
 export class AnalyticsPortal extends TatorPage {
   constructor() {

@@ -1,5 +1,6 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
+import { EntityCardGallery } from "../../components/entity-gallery/entity-gallery_grid.js";
 
 export class AnnotationsCorrectionsGallery extends EntityCardGallery {
   constructor() {

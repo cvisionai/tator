@@ -2,6 +2,7 @@ import { TatorElement } from "../tator-element.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { FilterConditionData } from "../../util/filter-utilities.js";
 import { svgNamespace } from "../tator-element.js";
+import { SettingsBox } from "../../project-settings/settings-box-helpers.js";
 
 
 

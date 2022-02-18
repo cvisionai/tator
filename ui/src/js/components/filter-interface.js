@@ -1,5 +1,6 @@
 import { TatorElement } from "./tator-element.js";
 import { FilterConditionData } from "../util/filter-utilities.js";
+import { AlgorithmButton } from "../project-detail/algorithm-button.js";
 
 /**
  * Filter/search widget

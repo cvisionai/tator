@@ -1,5 +1,6 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
+import { EntityCardSlideGallery } from "../../components/entity-gallery/entity-gallery_h-slide.js";
 
 export class CollectionsGallery extends EntityCardSlideGallery {
    constructor() {

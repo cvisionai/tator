@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { AnnotationImage } from "../../annotation/annotation-image.js";
 
 export class GalleryPanelLocalization extends TatorElement {
   constructor() {

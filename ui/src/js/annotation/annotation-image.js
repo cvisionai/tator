@@ -1,4 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
+import { ImageCanvas } from "../annotator/image.js";
 
 /// TODO: Make a base export class to collapse common functionality of this
 /// and annotation-player (e.g. zoom)
@@ -135,4 +136,6 @@ export class AnnotationImage extends TatorElement {
   }
 }
 
-customElements.define("annotation-image", AnnotationImage);
+if (!customElements.get("annotation-image")) {
+  customElements.define("annotation-image", AnnotationImage);
+}

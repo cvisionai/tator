@@ -41,4 +41,6 @@ export class AlgorithmMenu extends TatorElement {
   }
 }
 
-customElements.define("algorithm-menu", AlgorithmMenu);
+if (!customElements.get("algorithm-menu")) {
+  customElements.define("algorithm-menu", AlgorithmMenu);
+}

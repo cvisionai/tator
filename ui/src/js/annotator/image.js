@@ -218,4 +218,6 @@ export class ImageCanvas extends AnnotationCanvas
   }
 }
 
-customElements.define("image-canvas", ImageCanvas);
+if (!customElements.get("image-canvas")) {
+  customElements.define("image-canvas", ImageCanvas);
+}

@@ -1,4 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
+import { AlgorithmMenu } from "./algorithm-menu.js";
 
 export class AlgorithmButton extends TatorElement {
   constructor() {
@@ -56,4 +57,6 @@ export class AlgorithmButton extends TatorElement {
   }
 }
 
-customElements.define("algorithm-button", AlgorithmButton);
+if (!customElements.get("algorithm-button")) {
+  customElements.define("algorithm-button", AlgorithmButton);
+}
