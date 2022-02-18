@@ -133,10 +133,6 @@ class TatorStorage(ABC):
         """
 
     @abstractmethod
-    def delete_all_tags(self, path: str) -> None:
-        """Deletes all storage tags associated with a given key"""
-
-    @abstractmethod
     def delete_object(self, path: str) -> None:
         """Deletes the object at the given path"""
 
@@ -415,9 +411,6 @@ class MinIOStorage(TatorStorage):
     def _restore_object(self, path, live_storage_class, min_exp_days):
         self._update_storage_class(path, live_storage_class)
 
-    def delete_all_tags(self, path):
-        self.client.delete_object_tagging(Bucket=self.bucket_name, Key=self._path_to_key(path))
-
     def delete_object(self, path):
         self.client.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
@@ -561,10 +554,6 @@ class GCPStorage(TatorStorage):
         blob = self._get_blob(path)
         blob.custom_time = datetime.now()
         blob.patch()
-
-    def delete_all_tags(self, path):
-        # Unnecessary for GCP
-        return
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(

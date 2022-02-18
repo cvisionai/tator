@@ -532,13 +532,15 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
 
 
 def fix_bad_restores(
-        *, project_id_list=None, live_run=False, force_update=False, restored_by_date=None
+        *, media_id_list, live_run=False, force_update=False, restored_by_date=None
 ):
     from pprint import pformat
     update_sc = set()
     update_tag = set()
-    sc_filename = "still_archived.txt"
-    tag_filename = "still_tagged.txt"
+    archived_resources = set()
+    sc_filename = "still_archived.json"
+    tag_filename = "still_tagged.json"
+    ar_filename = "archived_resources.json"
 
     def _tag_needs_updating(path, store):
         try:
@@ -552,18 +554,6 @@ def fix_bad_restores(
             force_update
             or store.head_object(path).get("StorageClass", "STANDARD") != store.get_live_sc()
         )
-
-    def _update_tag(path, store):
-        if live_run:
-            try:
-                store.delete_all_tags(path)
-            except:
-                logger.warning(f"Tag operation on {path} failed", exc_info=True)
-                return False
-        else:
-            update_tag.add(f"{path}\n")
-
-        return True
 
     def _update_sc(single, store):
         success = True
@@ -579,35 +569,29 @@ def fix_bad_restores(
 
         return success
 
-    def _check_and_update(file_info, key, store, segment_info=False):
+    def _check_and_update(file_info, store, has_segment_info):
         success = True
         sc_needs_updating = False
         tag_needs_updating = False
-        path_key = "segment_info" if segment_info else "path"
-        try:
-            path = file_info[path_key]
-        except:
-            logger.warning(f"Could not get {path_key}", exc_info=True)
-            return False, False, False
+        path_keys = ["path"]
+        if has_segment_info:
+            path_keys.append("segment_info")
 
-        if _sc_needs_updating(path, store):
-            # Storage class updates occur at the media level, so just set the flag
-            sc_needs_updating = True
-
-        if _tag_needs_updating(path, store):
-            # Set the flag and update the tag on each path
-            tag_needs_updating = True
+        for path_key in path_keys:
             try:
-                success = _update_tag(path, store) and success
+                path = file_info[path_key]
             except:
-                logger.warning(f"Tag operation on {path} from {single.id} failed", exc_info=True)
+                logger.warning(f"Could not get {path_key}", exc_info=True)
                 success = False
+                continue
 
-        if key == "streaming" and (tag_needs_updating or sc_needs_updating):
-            stream_stats = _check_and_update(file_info, path_key, store, segment_info=True)
-            success = success and stream_stats[0]
-            sc_needs_updating = sc_needs_updating or stream_stats[1]
-            tag_needs_updating = tag_needs_updating or stream_stats[2]
+            if _sc_needs_updating(path, store):
+                sc_needs_updating = True
+                archived_resources.add(path)
+
+            if _tag_needs_updating(path, store):
+                tag_needs_updating = True
+                update_tag.add(f"{path}\n")
 
         return success, sc_needs_updating, tag_needs_updating
 
@@ -637,8 +621,9 @@ def fix_bad_restores(
         if single.media_files:
             for key in ["streaming", "archival", "audio", "image"]:
                 if key in single.media_files and single.media_files[key]:
-                    for obj in single.media_files[key]:
-                        bools = _check_and_update(obj, key, store)
+                    for file_info in single.media_files[key]:
+                        has_segment_info = key == "streaming"
+                        bools = _check_and_update(file_info, store, has_segment_info)
                         success = success and bools[0]
                         sc_needs_updating = sc_needs_updating or bools[1]
                         tag_needs_updating = tag_needs_updating or bools[2]
@@ -659,71 +644,62 @@ def fix_bad_restores(
     logger.info(f"fix_bad_restore {'live' if live_run else 'dry'} run")
 
     live_state_dict = {}
-    project_qs = Project.objects.all()
+    tator_store_lookup = {}
+    media_qs = Media.objects.filter(pk__in=media_id_list)
+    media_count = media_qs.count()
 
-    if project_id_list:
-        project_qs = project_qs.filter(pk__in=project_id_list)
+    for idx, media in enumerate(media_qs.iterator()):
+        proj_id = media.project.id
+        if proj_id not in tator_store_lookup:
+            tator_store_lookup[proj_id] = get_tator_store(media.project.bucket)
+        if proj_id not in live_state_dict:
+            live_state_dict[proj_id] = {
+                "correct_sc": 0,
+                "wrong_sc": 0,
+                "correct_tag": 0,
+                "wrong_tag": 0,
+                "failed": 0,
+            }
 
-    for project in project_qs.iterator():
-        tator_store = get_tator_store(project.bucket)
-        proj_id = project.id
-        logger.info(f"Analyzing project {proj_id}...")
-        live_media_qs = Media.objects.filter(project=project, archive_state="live")
-        if restored_by_date is not None:
-            live_media_qs = live_media_qs.filter(archive_status_date__gte=restored_by_date)
-        media_count = live_media_qs.count()
-        if media_count < 1:
-            logger.info(f"No archived media in project {proj_id}, moving on")
+        if idx % 250 == 0 or idx == media_count:
+            logger.info(f"Processed {idx} of {media_count} media")
+
+        if not media.meta:
+            logger.warning(f"No dtype for '{media.id}'")
             continue
 
-        logger.info(f"Found {media_count} media to check...")
-        live_state_dict[proj_id] = {
-            "correct_sc": 0,
-            "wrong_sc": 0,
-            "correct_tag": 0,
-            "wrong_tag": 0,
-            "failed": 0,
-        }
-        idx = 0
-        for media in live_media_qs.iterator():
-            idx += 1
-            if idx % 250 == 0 or idx == media_count:
-                logger.info(
-                    f"Processed {idx} of {media_count} archived media for project {project.id}"
-                )
+        media_dtype = media.meta.dtype
+        tator_store = tator_store_lookup[proj_id]
+        if media_dtype in ["image", "video"]:
+            success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
+        elif media_dtype == "multi":
+            success, sc_needs_updating, tag_needs_updating = _archive_multi(media, tator_store)
+        else:
+            logger.warning(
+                f"Unrecognized dtype '{media_dtype}' for media {media.id}, failed to archive"
+            )
+            continue
 
-            if not media.meta:
-                logger.warning(f"No dtype for '{media.id}'")
-                continue
-
-            media_dtype = media.meta.dtype
-            if media_dtype in ["image", "video"]:
-                success, sc_needs_updating, tag_needs_updating = _archive_single(media, tator_store)
-            elif media_dtype == "multi":
-                success, sc_needs_updating, tag_needs_updating = _archive_multi(media, tator_store)
+        if success:
+            if tag_needs_updating:
+                live_state_dict[proj_id]["wrong_tag"] += 1
             else:
-                logger.warning(
-                    f"Unrecognized dtype '{media_dtype}' for media {media.id}, failed to archive"
-                )
-                continue
+                live_state_dict[proj_id]["correct_tag"] += 1
 
-            if success:
-                if tag_needs_updating:
-                    live_state_dict[proj_id]["wrong_tag"] += 1
-                else:
-                    live_state_dict[proj_id]["correct_tag"] += 1
-
-                if sc_needs_updating:
-                    live_state_dict[proj_id]["wrong_sc"] += 1
-                else:
-                    live_state_dict[proj_id]["correct_sc"] += 1
+            if sc_needs_updating:
+                live_state_dict[proj_id]["wrong_sc"] += 1
             else:
-                live_state_dict[proj_id]["failed"] += 1
+                live_state_dict[proj_id]["correct_sc"] += 1
+        else:
+            live_state_dict[proj_id]["failed"] += 1
 
     logger.info(f"fix_bad_restores stats:\n{pformat(live_state_dict)}\n")
     if update_sc:
         with open(sc_filename, "w") as fp:
-            fp.writelines(update_sc)
+            json.dump(list(update_sc), fp)
     if update_tag:
         with open(tag_filename, "w") as fp:
-            fp.writelines(update_tag)
+            json.dump(list(update_tag), fp)
+    if archived_resources:
+        with open(ar_filename, "w") as fp:
+            json.dump(list(archived_resources), fp)
