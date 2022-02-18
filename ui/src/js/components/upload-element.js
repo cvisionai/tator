@@ -1,5 +1,6 @@
 import { TatorElement } from "./tator-element.js";
 import { getCookie } from "../util/get-cookie.js";
+import { v1 as uuidv1 } from "uuid";
 
 export class UploadElement extends TatorElement {
   constructor() {

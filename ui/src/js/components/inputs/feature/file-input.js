@@ -4,6 +4,7 @@ import { hasPermission } from "../../../util/has-permission.js";
 import { getCookie } from "../../../util/get-cookie.js";
 import { TypeFormValidation } from "../../../project-settings/type-form-validation.js";
 import { InlineWarning } from "../../inline-warning.js";
+import { SingleUpload } from "../../../project-settings/components/single-upload.js";
 
 export class FileInput extends TatorElement {
   constructor() {
