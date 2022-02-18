@@ -196,11 +196,11 @@ USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/value
 ifeq ($(USE_MIN_JS),True)
 webpack:
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
-	cd ui && npm run build
+	cd ui && python3 make_index_files.py && npm run build
 else
 webpack:
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
-	cd ui && npm run buildDev
+	cd ui && python3 make_index_files.py && npm run buildDev
 endif
 
 .PHONY: migrate
