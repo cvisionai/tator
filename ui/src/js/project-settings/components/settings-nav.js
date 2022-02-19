@@ -1,5 +1,6 @@
 import { TatorElement } from "../../components/tator-element.js";
 import { Utilities } from "../../util/utilities.js";
+import Spinner from "../../../images/spinner-transparent.svg";
 
 export class SettingsNav extends TatorElement {
   constructor() {
@@ -203,7 +204,7 @@ export class SettingsNav extends TatorElement {
     // Use a spinner if we are waiting to get the subItem list
     if (pendingSubItems) {
       let spinnerImg = document.createElement('img');
-      spinnerImg.src = "/static/images/spinner-transparent.svg";
+      spinnerImg.src = Spinner;
       hiddenSubNav.appendChild(spinnerImg);
     }
 

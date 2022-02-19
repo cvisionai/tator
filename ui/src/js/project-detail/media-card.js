@@ -2,6 +2,8 @@ import { TatorElement } from "../components/tator-element.js";
 import { hasPermission } from "../util/has-permission.js";
 import { getCookie } from "../util/get-cookie.js";
 import { svgNamespace } from "../components/tator-element.js";
+import Spinner from "../../images/spinner-transparent.svg";
+import LiveThumb from "../../images/live-thumb.png";
 
 export class MediaCard extends TatorElement {
   constructor() {
@@ -17,7 +19,7 @@ export class MediaCard extends TatorElement {
     this._li.appendChild(this._link);
 
     this._img = document.createElement("img");
-    this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
+    this._img.setAttribute("src", Spinner);
     this._img.setAttribute("class", "col-12 rounded-1");
     this._link.appendChild(this._img);
 
@@ -275,7 +277,7 @@ export class MediaCard extends TatorElement {
       {
         // Default to tator thumbnail
         // TODO: Have some visual indication if stream is active.
-        this._img.setAttribute("src", "/static/images/live-thumb.png");
+        this._img.setAttribute("src", LiveThumb);
 
       }
     }

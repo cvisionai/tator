@@ -1,4 +1,6 @@
 import { AnnotationCanvas } from "./annotation.js";
+import TatorSymbol from "../../images/tator-logo-symbol-only.png";
+import PleaseStandBy from "../../images/please_stand_by.jpg";
 
 var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
@@ -8,9 +10,9 @@ export class LiveCanvas extends AnnotationCanvas
   {
     super();
     this._poster = document.createElement("img");
-    this._poster.setAttribute("src", "/static/images/tator-logo-symbol-only.png");
+    this._poster.setAttribute("src", TatorSymbol);
     this._loading = document.createElement("img");
-    this._loading.setAttribute("src", "/static/images/please_stand_by.jpg");
+    this._loading.setAttribute("src", PleaseStandBy);
     this._dims = [1920,1080]; // default size
     this._draw.resizeViewport(1920,1080);
     this.resetRoi();

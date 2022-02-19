@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import Spinner from "../../../images/spinner-transparent.svg";
 
 export class EntityCard extends TatorElement {
     constructor() {
@@ -29,7 +30,7 @@ export class EntityCard extends TatorElement {
   
       // Image, spinner until SRC set
       this._img = document.createElement("img");
-      this._img.setAttribute("src", "/static/images/spinner-transparent.svg");
+      this._img.setAttribute("src", Spinner);
       this._img.setAttribute("class", "entity-card__image rounded-1");
       this._link.appendChild(this._img);
   
@@ -184,8 +185,8 @@ export class EntityCard extends TatorElement {
         this.reader.readAsDataURL(obj.graphic); // converts the blob to base64
         this.reader.addEventListener("load", this._setImgSrc.bind(this));
       } else {
-        //this.setAttribute("thumb", "/static/images/spinner-transparent.svg");
-        this.setImageStatic("/static/images/spinner-transparent.svg");
+        //this.setAttribute("thumb", Spinner);
+        this.setImageStatic(Spinner);
       }
   
       // Add position text related to pagination

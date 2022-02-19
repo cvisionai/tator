@@ -1,5 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { getCookie } from "../util/get-cookie.js";
+import TatorLogo from "../../images/tator-logo.png";
 
 export class RegistrationPage extends TatorElement {
   constructor() {
@@ -15,7 +16,7 @@ export class RegistrationPage extends TatorElement {
 
     const img = document.createElement("img");
     img.setAttribute("class", "py-4");
-    img.setAttribute("src", "/static/images/tator-logo.png");
+    img.setAttribute("src", TatorLogo);
     img.setAttribute("width", "400");
     div.appendChild(img);
 

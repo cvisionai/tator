@@ -1,4 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
+import Spinner from "../../images/spinner-transparent.svg";
 
 export class SectionFiles extends TatorElement {
   constructor() {
@@ -52,7 +53,7 @@ export class SectionFiles extends TatorElement {
       card.setAttribute("duration", duration);
     }
 
-    card.setAttribute("thumb", "/static/images/spinner-transparent.svg");
+    card.setAttribute("thumb", Spinner);
     if (media.media_files) {
       if (media.media_files.thumbnail) {
         card.setAttribute("thumb", media.media_files.thumbnail[0].path);

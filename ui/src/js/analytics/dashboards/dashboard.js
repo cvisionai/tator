@@ -1,12 +1,13 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { getCookie } from "../../util/get-cookie.js";
+import TatorLoading from "../../../images/tator_loading.gif";
 
 export class RegisteredDashboard extends TatorPage {
   constructor() {
     super();
     this._loading = document.createElement("img");
     this._loading.setAttribute("class", "loading");
-    this._loading.setAttribute("src", "/static/images/tator_loading.gif");
+    this._loading.setAttribute("src", TatorLoading);
     this._shadow.appendChild(this._loading);
 
     // Init params

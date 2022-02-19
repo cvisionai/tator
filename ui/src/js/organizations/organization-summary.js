@@ -1,4 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
+import TatorSymbol from "../../images/tator-logo-symbol-only.png";
 
 export class OrganizationSummary extends TatorElement {
   constructor() {

@@ -1,6 +1,7 @@
 import { TatorElement } from "./tator-element.js";
 import { getCookie } from "../util/get-cookie.js";
 import { v1 as uuidv1 } from "uuid";
+import TatorLoading from "../../images/tator_loading.gif";
 
 export class UploadElement extends TatorElement {
   constructor() {
@@ -122,7 +123,7 @@ export class UploadElement extends TatorElement {
     // Show loading gif.
     const loading = document.createElement("img");
     loading.setAttribute("class", "loading");
-    loading.setAttribute("src", "/static/images/tator_loading.gif");
+    loading.setAttribute("src", TatorLoading);
     page._projects.appendChild(loading);
     page.setAttribute("has-open-modal", "");
 

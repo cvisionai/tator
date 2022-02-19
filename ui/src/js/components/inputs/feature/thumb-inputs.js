@@ -5,6 +5,7 @@ import { getCookie } from "../../../util/get-cookie.js";
 import { TypeFormValidation } from "../../../project-settings/type-form-validation.js";
 import { InlineWarning } from "../../../components/inline-warning.js";
 import { SingleUpload } from "../../../project-settings/components/single-upload.js";
+import TatorSymbol from "../../../../images/tator-logo-symbol-only.png";
 
 export class ThumbInput extends TatorElement {
     constructor() {
@@ -193,7 +194,7 @@ export class ThumbInput extends TatorElement {
       try {
         this._previewImg.src = URL.createObjectURL( img );
        } catch (e) {
-        this._previewImg.src = "/static/images/tator-logo-symbol-only.png";
+        this._previewImg.src = TatorSymbol;
       }    
     } else {
       this._previewImg.src = img;
