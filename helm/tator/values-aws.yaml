@@ -76,14 +76,14 @@ pv:
     - noresvport
   path: "/"
 uploadBucket:
-  enable: true
+  enabled: true
   host: "https://<Your S3 bucket endpoint>"
   name: "<Your S3 bucket name>"
   region: "<Your S3 bucket region>"
   accessKey: "<Your S3 bucket access key>"
   secretKey: "<Your S3 bucket secret key>"
 backupBucket:
-  enable: false
+  enabled: false
   host: "https://<Your S3 bucket endpoint>"
   name: "<Your S3 bucket name>"
   region: "<Your S3 bucket region>"
