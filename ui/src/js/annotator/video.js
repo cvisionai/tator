@@ -1396,7 +1396,7 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     var that = this;
 
-    this._dlWorker = new Worker(`${src_path}/vid_downloader.js`);
+    this._dlWorker = new Worker(new URL("./vid_downloader.js", import.meta.url));
     this._scrubDownloadCount = 0;
 
     this._dlWorker.onmessage =

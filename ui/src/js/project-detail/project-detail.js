@@ -12,7 +12,7 @@ export class ProjectDetail extends TatorPage {
   constructor() {
     super();
 
-    window._uploader = new Worker("/static/js/tasks/upload-worker.js");
+    window._uploader = new Worker(new URL("../tasks/upload-worker.js", import.meta.url));
 
     const main = document.createElement("main");
     main.setAttribute("class", "d-flex");

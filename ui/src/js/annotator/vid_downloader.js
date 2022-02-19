@@ -712,7 +712,7 @@ export class VideoDownloader
 var ref = null;
 onmessage = function(e)
 {
-  msg = e.data;
+  const msg = e.data;
   var type = msg['type'];
   if (type == 'start')
   {
