@@ -98,6 +98,17 @@ class TatorCache:
         else:
             jobs = []
         return jobs
+
+    def set_presigned(self, user, key, url, ttl=3600):
+        """ Stores presigned url. """
+        self.rds.set(f"{user}__{key}", url, ex=ttl)
+
+    def get_presigned(self, user, key):
+        """ Retrieves presigned url. """
+        url = self.rds.get(f"{user}__{key}")
+        if url is not None:
+            url = url.decode()
+        return url
             
     def invalidate_all(self):
         """Invalidates all caches.
