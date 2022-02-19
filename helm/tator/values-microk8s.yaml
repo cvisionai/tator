@@ -86,7 +86,7 @@ staticPv:
 pvc:
   size: 10Ti
 uploadBucket:
-  enabled: true
+  enabled: false
   host: "https://<Your S3 bucket endpoint>"
   name: "<Your S3 bucket name>"
   region: "<Your S3 bucket region>"
