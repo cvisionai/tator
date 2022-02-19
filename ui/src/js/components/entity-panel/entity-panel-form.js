@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { AttributePanel } from "../../annotation/attribute-panel.js";
 
 export class EntityGalleryPanelForm extends TatorElement {
   constructor() {
