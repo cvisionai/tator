@@ -55,15 +55,23 @@ class MediaTypeMainEdit extends TypeForm {
     this._form.appendChild(this._editDescription);
 
     // default volume (video, multi)
-    if (data.dtype != 'image') {
-      this._defaultVolume = document.createElement("text-input");
-      this._defaultVolume.setAttribute("name", "Default volume");
-      this._defaultVolume.setAttribute("type", "number");
-      this._defaultVolume.setValue(this.data.default_volume);
-      this._defaultVolume.default = this.data.default_volume;
-      this._defaultVolume.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._defaultVolume);
-    }
+    this._volumeDiv = document.createElement("div");
+    this._volumeDiv.hidden = (typeof data.dtype !== "undefined" && data.dtype === "image") || data.dtype == "";
+    this._form.appendChild(this._volumeDiv);
+
+    const defaultVol = typeof this.data.default_volume !== "undefined" ? this.data.default_volume : 0;
+    this._defaultVolume = document.createElement("text-input");
+    this._defaultVolume.setAttribute("name", "Default volume");
+    this._defaultVolume.setAttribute("type", "number");
+    this._defaultVolume.setValue(defaultVol);
+    this._defaultVolume.default = defaultVol;
+    this._defaultVolume.addEventListener("change", this._formChanged.bind(this));
+    this._volumeDiv.appendChild(this._defaultVolume);
+
+    const infoDefaultVol = document.createElement("div");
+    infoDefaultVol.setAttribute("class", "col-8 float-right f3 text-gray");
+    infoDefaultVol.innerText = "Note: Range from 0 (no sound) to 100.";
+    this._volumeDiv.appendChild(infoDefaultVol);
 
     // visible
     this._visibleBool = document.createElement("bool-input");
@@ -75,15 +83,20 @@ class MediaTypeMainEdit extends TypeForm {
     this._visibleBool.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._visibleBool);
 
-    current.appendChild(this._form)
+    current.appendChild(this._form);
+
+    this.dtypeSelect.addEventListener("change", this._showHideVolume.bind(this));
 
     return current;
   }
 
+  _showHideVolume(evt) {
+    const chosenDtype = evt.target.getValue();
+    this._volumeDiv.hidden = !(chosenDtype == "multi" || chosenDtype == "video");
+  }
+
   _getFormData() {
     const formData = {};
-
-    console.log(`Data ID: ${this.data.id}`);
     const isNew = this.data.id == "New" ? true : false;
     
     if (this._editName.changed() || isNew) {
@@ -91,11 +104,15 @@ class MediaTypeMainEdit extends TypeForm {
     }
 
     if (this.dtypeSelect.changed() || isNew) {
-      formData.dtype = this.dtypeSelect.getValue()
+      formData.dtype = this.dtypeSelect.getValue();
     }
 
     if (this._editDescription.changed() || isNew) {
       formData.description = this._editDescription.getValue();
+    }
+
+    if ((this._defaultVolume.changed() || isNew) && this.dtypeSelect.getValue() !== "image") {
+      formData.default_volume = Number(this._defaultVolume.getValue());
     }
 
     if (this._visibleBool.changed() || isNew) {

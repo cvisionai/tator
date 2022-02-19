@@ -146,7 +146,7 @@ class ProjectDetailAPI(BaseDetailView):
             fname = tokens[-1]
 
             # Set up S3 clients.
-            upload_store = get_tator_store(project.upload_bucket, upload=True)
+            upload_store = get_tator_store(project.get_bucket(upload=True), upload=True)
             generic_store = get_tator_store()
 
             # Check prefix.
@@ -172,7 +172,7 @@ class ProjectDetailAPI(BaseDetailView):
             generic_store.put_object(new_key, fp)
 
             if project.thumb:
-                safe_delete(project.thumb)
+                safe_delete(project.thumb, project.id)
             project.thumb = new_key
         if 'enable_downloads' in params:
             project.enable_downloads = params['enable_downloads']

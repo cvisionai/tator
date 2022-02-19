@@ -115,6 +115,20 @@ spec:
               value: {{ .Values.uploadBucket.secretKey }}
             {{- end }}
             {{- end }}
+            {{- if hasKey .Values "backupBucket" }}
+            {{- if .Values.backupBucket.enabled }}
+            - name: BACKUP_STORAGE_HOST
+              value: {{ .Values.backupBucket.host }}
+            - name: BACKUP_STORAGE_BUCKET_NAME
+              value: {{ .Values.backupBucket.name }}
+            - name: BACKUP_STORAGE_REGION_NAME
+              value: {{ .Values.backupBucket.region }}
+            - name: BACKUP_STORAGE_ACCESS_KEY
+              value: {{ .Values.backupBucket.accessKey }}
+            - name: BACKUP_STORAGE_SECRET_KEY
+              value: {{ .Values.backupBucket.secretKey }}
+            {{- end }}
+            {{- end }}
             - name: TATOR_DEBUG
             {{- if .Values.tatorDebug }}
               value: "true"

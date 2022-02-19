@@ -84,7 +84,7 @@ class TatorSES:
                 if upload:
                     project_from_key = int(key.split('/')[3])
                     project_obj = main.models.Project.objects.get(pk=project_from_key)
-                    bucket = project_obj.upload_bucket if upload else project_obj.bucket
+                    bucket = project_obj.get_bucket(upload=upload)
                 tator_store = get_tator_store(bucket, upload=upload)
 
                 f_p = io.BytesIO()

@@ -6,6 +6,7 @@ from django.db import transaction
 from ..models import Organization
 from ..models import Affiliation
 from ..models import database_qs
+from ..models import safe_delete
 from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
 from ..store import get_tator_store

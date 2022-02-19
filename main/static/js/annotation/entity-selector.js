@@ -68,6 +68,9 @@ class EntitySelector extends TatorElement {
     this._del.style.display = "none";
     controls.appendChild(this._del);
 
+    this._delConfirm = document.createElement("entity-delete-confirm");
+    this._shadow.appendChild(this._delConfirm);
+
     const capture = document.createElement("button");
     capture.setAttribute("class", "btn-clear d-flex flex-justify-center px-2 py-2 rounded-2 f2 text-white entity__button");
     capture.style.marginLeft="8px";
@@ -148,6 +151,10 @@ class EntitySelector extends TatorElement {
     });
 
     this._del.addEventListener("click", () => {
+      this._delConfirm.confirm();
+    });
+
+    this._delConfirm.addEventListener("confirmDelete", () => {
       let endpoint;
       const index = parseInt(this._current.textContent) - 1;
       if (this._dataType.isLocalization) {
@@ -161,7 +168,6 @@ class EntitySelector extends TatorElement {
           }
         });
       }
-
     });
 
     redraw.addEventListener("click", () => {

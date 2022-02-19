@@ -97,7 +97,7 @@ class TatorStorage(ABC):
         raise ValueError(f"Server type '{server}' is not supported")
 
     def _path_to_key(self, path: str) -> str:
-        """ Returns the storage key for the given path """
+        """Returns the storage key for the given path"""
         return path
 
     @property
@@ -106,7 +106,7 @@ class TatorStorage(ABC):
 
     @abstractmethod
     def check_key(self, path: str) -> bool:
-        """ Checks that at least one key matches the given path """
+        """Checks that at least one key matches the given path"""
 
     def head_object(self, path: str) -> dict:
         """
@@ -123,7 +123,7 @@ class TatorStorage(ABC):
 
     @abstractmethod
     def _head_object(self, path: str) -> dict:
-        """ The server-specific implementation for getting object metadata. """
+        """The server-specific implementation for getting object metadata."""
 
     @abstractmethod
     def copy(self, source_path: str, dest_path: str, extra_args: Optional[dict] = None) -> None:
@@ -134,11 +134,11 @@ class TatorStorage(ABC):
 
     @abstractmethod
     def delete_object(self, path: str) -> None:
-        """ Deletes the object at the given path """
+        """Deletes the object at the given path"""
 
     @abstractmethod
     def get_download_url(self, path: str, expiration: int) -> str:
-        """ Gets the presigned url for accessing an object """
+        """Gets the presigned url for accessing an object"""
 
     @abstractmethod
     def _get_multiple_upload_urls(
@@ -152,12 +152,12 @@ class TatorStorage(ABC):
     def _get_single_upload_url(
         self, key: str, expiration: int, domain: str
     ) -> Tuple[List[str], str]:
-        """ Gets a signle presigned upload url for uploading an object in one part. """
+        """Gets a signle presigned upload url for uploading an object in one part."""
 
     def get_upload_urls(
         self, path: str, expiration: int, num_parts: int, domain: str
     ) -> Tuple[List[str], str]:
-        """ Generates the pre-signed urls for uploading objects for a given path. """
+        """Generates the pre-signed urls for uploading objects for a given path."""
         key = self._path_to_key(path)
 
         if num_parts == 1:
@@ -186,41 +186,41 @@ class TatorStorage(ABC):
 
     @abstractmethod
     def _list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> list:
-        """ The server-specific implementation for listing object metadata. """
+        """The server-specific implementation for listing object metadata."""
 
     @abstractmethod
     def complete_multipart_upload(self, path: str, parts: int, upload_id: str) -> None:
-        """ Completes a previously started multipart upload. """
+        """Completes a previously started multipart upload."""
 
     @abstractmethod
     def put_object(self, path: str, body: IO) -> None:
-        """ Uploads the contents of `body` with the path as the basis for the key. """
+        """Uploads the contents of `body` with the path as the basis for the key."""
 
     @abstractmethod
     def put_string(self, path: str, body: Union[bytes, str]) -> None:
-        """ Uploads the contents of `body` with the path as the basis for the key. """
+        """Uploads the contents of `body` with the path as the basis for the key."""
 
     @abstractmethod
     def get_object(
         self, path: str, start: Optional[int] = None, stop: Optional[int] = None
     ) -> bytes:
-        """ Gets the byte range of the object for the given path. """
+        """Gets the byte range of the object for the given path."""
 
     @abstractmethod
     def download_fileobj(self, path: str, fp: IO) -> None:
-        """ Downloads the object for the given path to a file. """
+        """Downloads the object for the given path to a file."""
 
     @abstractmethod
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
-        """ Moves the object into the desired storage class """
+        """Moves the object into the desired storage class"""
 
     @abstractmethod
     def _object_tagged_for_archive(self, path):
-        """ Returns True if an object is tagged in storage for archive """
+        """Returns True if an object is tagged in storage for archive"""
 
     @abstractmethod
     def _put_archive_tag(self, path):
-        """ Adds tag to object marking it for archival. """
+        """Adds tag to object marking it for archival."""
 
     def archive_object(self, path: str) -> bool:
         """
@@ -340,6 +340,7 @@ class TatorStorage(ABC):
         if response.get("StorageClass", "") == archive_storage_class:
             logger.warning(f"Storage class not changed for object {path}")
             return False
+        logger.info(f"Object {path} successfully restored: {response}")
         return True
 
     def paths_from_media(self, media):
@@ -414,7 +415,7 @@ class MinIOStorage(TatorStorage):
         self.client.delete_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
     def get_download_url(self, path, expiration):
-        """ Gets the presigned url for accessing an object """
+        """Gets the presigned url for accessing an object"""
         if os.getenv("REQUIRE_HTTPS") == "TRUE":
             PROTO = "https"
         else:
@@ -494,7 +495,15 @@ class MinIOStorage(TatorStorage):
         self.client.download_fileobj(self.bucket_name, self._path_to_key(path), fp)
 
     def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
-        self.copy(path, path, {"StorageClass": desired_storage_class, "MetadataDirective": "COPY"})
+        self.copy(
+            path,
+            path,
+            {
+                "StorageClass": desired_storage_class,
+                "MetadataDirective": "COPY",
+                "TaggingDirective": "REPLACE",
+            },
+        )
 
 
 class S3Storage(MinIOStorage):
@@ -619,7 +628,7 @@ class GCPStorage(TatorStorage):
 
 
 def get_tator_store(
-    bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5, upload=False
+    bucket=None, connect_timeout=5, read_timeout=5, max_attempts=5, upload=False, backup=False
 ) -> TatorStorage:
     """
     Determines the type of object store required by the given bucket and returns it. All returned
@@ -637,23 +646,39 @@ def get_tator_store(
     :type max_attempts: int
     :rtype: TatorStorage
     """
-    if bucket is not None and upload:
-        raise ValueError("Cannot specify a bucket and set `upload` to True")
+    if upload and backup:
+        raise ValueError("Cannot set both `upload` and `backup` to True")
+    if bucket is not None and (upload or backup):
+        raise ValueError(
+            f"Cannot specify a bucket and set `{'upload' if upload else 'backup'}` to True"
+        )
+
+    # Google Cloud Storage uses a different client class, handle this case first
+    if getattr(bucket, "gcs_key_info", None):
+        gcs_key_info = json.loads(bucket.gcs_key_info)
+        gcs_project = gcs_key_info["project_id"]
+        client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
+        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
 
     if bucket is None:
-        prefix = "UPLOAD" if upload and os.getenv("UPLOAD_STORAGE_HOST") else "OBJECT"
-        bucket_env_name = "UPLOAD_STORAGE_BUCKET_NAME" if prefix == "UPLOAD" else "BUCKET_NAME"
+        if upload and os.getenv("UPLOAD_STORAGE_HOST"):
+            # Configure for upload
+            prefix = "UPLOAD"
+            bucket_env_name = "UPLOAD_STORAGE_BUCKET_NAME"
+        elif backup:
+            # Configure for backup
+            prefix = "BACKUP"
+            bucket_env_name = "BACKUP_STORAGE_BUCKET_NAME"
+        else:
+            # Configure for standard use
+            prefix = "OBJECT"
+            bucket_env_name = "BUCKET_NAME"
         endpoint = os.getenv(f"{prefix}_STORAGE_HOST")
         region = os.getenv(f"{prefix}_STORAGE_REGION_NAME")
         access_key = os.getenv(f"{prefix}_STORAGE_ACCESS_KEY")
         secret_key = os.getenv(f"{prefix}_STORAGE_SECRET_KEY")
         bucket_name = os.getenv(bucket_env_name)
         external_host = os.getenv(f"{prefix}_STORAGE_EXTERNAL_HOST")
-    elif bucket.gcs_key_info:
-        gcs_key_info = json.loads(bucket.gcs_key_info)
-        gcs_project = gcs_key_info["project_id"]
-        client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
-        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
     else:
         endpoint = bucket.endpoint_url
         region = bucket.region
@@ -662,12 +687,11 @@ def get_tator_store(
         bucket_name = bucket.name
         external_host = None
 
-    # Strip the bucket name from the url to use path-style access
-    # TODO change back to virtual-host-style access when it works again, as path-style access is
-    # on delayed deprecation
-    endpoint = endpoint.replace(f"{bucket_name}.", "")
-
     if endpoint:
+        # TODO change back to virtual-host-style access when it works again, as path-style access is
+        # on delayed deprecation
+        # Strip the bucket name from the url to use path-style access
+        endpoint = endpoint.replace(f"{bucket_name}.", "")
         config = Config(
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
@@ -692,7 +716,7 @@ def get_tator_store(
         logger.warning(
             f"Failed to retrieve remote bucket information, inferring server type from endpoint"
         )
-        if "amazonaws" in endpoint:
+        if endpoint and "amazonaws" in endpoint:
             server = ObjectStore.AWS
         else:
             server = ObjectStore.MINIO

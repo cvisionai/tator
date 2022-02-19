@@ -1,6 +1,5 @@
 import json
 import os
-import traceback
 import psycopg2
 
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -479,20 +478,34 @@ class Project(Model):
                                related_name='+')
     """ If set, uploads will use this bucket by default.
     """
+    backup_bucket = ForeignKey(Bucket, null=True, blank=True, on_delete=SET_NULL,
+                               related_name='+')
+    """ If set, backups will use this bucket by default.
+    """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
                                related_name='+')
     """ Default media type for uploads.
     """
     def has_user(self, user_id):
         return self.membership_set.filter(user_id=user_id).exists()
+
     def user_permission(self, user_id):
         permission = None
         qs = self.membership_set.filter(user_id=user_id)
         if qs.exists():
             permission = qs[0].permission
         return permission
+
     def __str__(self):
         return self.name
+
+    def get_bucket(self, *, upload=False, backup=False):
+        """Abstracts getting the bucket from a project for ease of use"""
+        if upload:
+            return self.upload_bucket
+        if backup:
+            return self.backup_bucket
+        return self.bucket
 
     def delete(self, *args, **kwargs):
         Version.objects.filter(project=self).delete()
@@ -546,7 +559,7 @@ def project_save(sender, instance, created, **kwargs):
 @receiver(post_delete, sender=Project)
 def project_delete(sender, instance, **kwargs):
     if instance.thumb:
-        safe_delete(instance.thumb)
+        safe_delete(instance.thumb, instance.id)
 
 @receiver(pre_delete, sender=Project)
 def delete_index_project(sender, instance, **kwargs):
@@ -1022,6 +1035,17 @@ class Media(Model, ModelDiffMixin):
                     total_size += tator_store.get_size(media_def.get('segment_info'))
         return (total_size, download_size)
 
+    def is_backed_up(self):
+        """
+        Returns True if all resources referenced by the media are backed up.
+        """
+        if self.meta.dtype == "multi":
+            media_qs = Media.objects.filter(pk__in=self.media_files["ids"])
+            return all(media.is_backed_up() for media in media_qs.iterator())
+
+        resource_qs = Resource.objects.filter(media=self)
+        return all(resource.backed_up for resource in resource_qs.iterator())
+
 
 class FileType(Model):
     """ Non-media generic file. Has user-defined attributes.
@@ -1092,18 +1116,39 @@ class Resource(Model):
             obj.media.add(media)
 
     @transaction.atomic
-    def delete_resource(path_or_link):
+    def delete_resource(path_or_link, project_id):
         path=path_or_link
         if os.path.exists(path_or_link):
             if os.path.islink(path_or_link):
                 path=os.readlink(path_or_link)
                 os.remove(path_or_link)
         obj = Resource.objects.get(path=path)
-        if obj.media.all().count() == 0 and obj.generic_files.all().count() == 0:
-            logger.info(f"Deleting object {path}")
-            obj.delete()
-            tator_store = get_tator_store(obj.bucket)
-            tator_store.delete_object(path)
+
+        # If any media or generic files still reference this resource, don't delete it
+        if obj.media.all().count() > 0 or obj.generic_files.all().count() > 0:
+            return
+
+        logger.info(f"Deleting object {path}")
+        obj.delete()
+        tator_store = get_tator_store(obj.bucket)
+        tator_store.delete_object(path)
+
+        # If the resource is not backed up or a `project_id` is not provided, don't try to delete
+        # its backup
+        if not obj.backed_up or project_id is None:
+            return
+
+        # If an object is backed up, that means it is either in a project-specific backup bucket or
+        # the default backup bucket
+        backup_bucket = Project.objects.get(pk=project_id).get_bucket(backup=True)
+        if backup_bucket:
+            # Resources are backed up to at most one bucket; return after finding a project
+            # specific backup bucket
+            get_tator_store(backup_bucket).delete_object(path)
+            return
+
+        # Found no project-specific backup bucket, use the default one
+        get_tator_store(backup=True).delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):
@@ -1161,13 +1206,18 @@ def media_save(sender, instance, created, **kwargs):
                 if key == 'streaming':
                     Resource.add_resource(fp['segment_info'], instance)
 
-def safe_delete(path):
+def safe_delete(path, project_id=None):
+    logger.info(
+        f"Deleting resource for {path}{f' from project {project_id}' if project_id else ''}"
+    )
+
     try:
-        logger.info(f"Deleting resource for {path}")
-        Resource.delete_resource(path)
+        Resource.delete_resource(path, project_id)
     except:
-        logger.warning(f"Could not remove {path}")
-        logger.warning(f"{traceback.format_exc()}")
+        logger.warning(
+            f"Could not remove {path}{f' from project {project_id}' if project_id else ''}",
+            exc_info=True,
+        )
 
 def drop_file_from_resource(path, generic_file):
     """ Drops the specified generic file from the resource. This should be called when
@@ -1179,8 +1229,7 @@ def drop_file_from_resource(path, generic_file):
         obj = Resource.objects.get(path=path)
         obj.generic_files.remove(generic_file)
     except:
-        logger.warning(f"Could not remove {generic_file} from {path}")
-        logger.warning(f"{traceback.format_exc()}")
+        logger.warning(f"Could not remove {generic_file} from {path}", exc_info=True)
 
 def drop_media_from_resource(path, media):
     """ Drops the specified media from the resource. This should be called when
@@ -1192,8 +1241,7 @@ def drop_media_from_resource(path, media):
         obj = Resource.objects.get(path=path)
         obj.media.remove(media)
     except:
-        logger.warning(f"Could not remove {media} from {path}")
-        logger.warning(f"{traceback.format_exc()}")
+        logger.warning(f"Could not remove {media} from {path}", exc_info=True)
 
 @receiver(pre_delete, sender=Media)
 def media_delete(sender, instance, **kwargs):
@@ -1210,10 +1258,10 @@ def media_post_delete(sender, instance, **kwargs):
                 files = []
             for obj in files:
                 path = obj['path']
-                safe_delete(path)
+                safe_delete(path, instance.project.id)
                 if key == 'streaming':
                     path = obj['segment_info']
-                    safe_delete(path)
+                    safe_delete(path, instance.project.id)
 
 @receiver(post_save, sender=File)
 def file_save(sender, instance, created, **kwargs):
@@ -1229,7 +1277,7 @@ def file_delete(sender, instance, **kwargs):
 def file_post_delete(sender, instance, **kwargs):
     # Delete the path reference
     if not instance.path is None:
-        safe_delete(instance.path)
+        safe_delete(instance.path, instance.project.id)
 
 class Localization(Model, ModelDiffMixin):
     project = ForeignKey(Project, on_delete=SET_NULL, null=True, blank=True, db_column='project')

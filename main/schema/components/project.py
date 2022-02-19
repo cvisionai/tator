@@ -28,6 +28,11 @@ project_properties = {
         'type': 'integer',
         'minimum': 1,
     },
+    'backup_bucket': {
+        'description': 'Unique integer identifying a bucket for backups.',
+        'type': 'integer',
+        'minimum': 1,
+    },
 }
 
 project_spec = {
@@ -54,6 +59,7 @@ project_update = {
         },
         'bucket': project_properties['bucket'],
         'upload_bucket': project_properties['upload_bucket'],
+        'backup_bucket': project_properties['backup_bucket'],
     },
 }
 

@@ -67,7 +67,7 @@ class TranscodeAPI(BaseListView):
             if len(tokens) > 6:
                 if tokens[-6] == '_uploads':
                     num_tokens = 6
-                    bucket = project_obj.upload_bucket
+                    bucket = project_obj.get_bucket(upload=True)
                     upload = True
             path = '/'.join(parsed.path.split('/')[-num_tokens:])
             logger.info(f"Attempting to retrieve size for object key {path}...")

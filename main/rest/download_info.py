@@ -37,7 +37,7 @@ class DownloadInfoAPI(BaseListView):
         response_data = []
         for key in keys:
             upload = key.startswith('_uploads')
-            bucket = project_obj.upload_bucket if upload else project_obj.bucket
+            bucket = project_obj.get_bucket(upload=upload)
             store_default = get_tator_store(bucket, upload=upload)
 
             tator_store = store_lookup.get(key, store_default)
