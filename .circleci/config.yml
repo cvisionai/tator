@@ -33,7 +33,7 @@ jobs:
         command: pip3 install setuptools wheel sphinx-rtd-theme recommonmark mako progressbar2 pyyaml
     - run:
         name: Install node packages
-        command: npm install
+        command: cd ui && npm install && cd ..
     - run:
         name: Make version.py
         command: make main/version.py

@@ -43,7 +43,7 @@ def updateProjectTotals(force=False):
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if media:
-                tator_store = get_tator_store(project.bucket)
+                tator_store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
                 if "thumbnail" in media.media_files and media.media_files["thumbnail"]:
                     src_path = media.media_files['thumbnail'][0]['path']
                     dest_path = f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"

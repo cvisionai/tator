@@ -4,9 +4,8 @@
     <head>
         <title>{{ msg }}</title>
         <meta charset="UTF-8" />
-        <link rel="stylesheet" type="text/css"
-              href="/static/css/tator-ui.min.css" />
-        <script src={% static "js/utilities.js" %}></script>
+        <link rel="stylesheet" type="text/css" href={% static "components.css" %} />
+        <script src={% static "components.js" %}></script>
     </head>
     <body onload="Utilities.errorPageFunction( {{ code }} );">
         <h1 class="h1">{{ msg }}</h1>
