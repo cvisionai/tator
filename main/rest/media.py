@@ -34,6 +34,7 @@ from ..schema.components import media as media_schema
 from ..notify import Notify
 from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
+from ..cache import TatorCache
 
 from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
 from ._base_views import BaseListView, BaseDetailView
@@ -64,7 +65,7 @@ def _get_next_archive_state(desired_archive_state, last_archive_state):
     raise ValueError(f"Received invalid value '{desired_archive_state}' for archive_state")
 
 
-def _presign(expiration, medias, fields=None):
+def _presign(user_id, expiration, medias, fields=None):
     """ Replaces specified media fields with presigned urls.
     """
     # First get resources referenced by the given media.
@@ -72,6 +73,8 @@ def _presign(expiration, medias, fields=None):
     media_ids = [media['id'] for media in medias]
     resources = Resource.objects.filter(media__in=media_ids)
     store_lookup = get_storage_lookup(resources)
+    cache = TatorCache()
+    ttl = expiration - 3600
 
     # Get replace all keys with presigned urls.
     for media_idx, media in enumerate(medias):
@@ -83,13 +86,26 @@ def _presign(expiration, medias, fields=None):
                 continue
 
             for idx, media_def in enumerate(media["media_files"][field]):
-                tator_store = store_lookup[media_def["path"]]
-                media_def["path"] = tator_store.get_download_url(media_def["path"], expiration)
+                # Get path url
+                url = cache.get_presigned(user_id, media_def["path"])
+                if url is None:
+                    tator_store = store_lookup[media_def["path"]]
+                    url = tator_store.get_download_url(media_def["path"], expiration)
+                    if ttl > 0:
+                        cache.set_presigned(user_id, media_def["path"], url, ttl)
+                media_def["path"] = url
+                # Get segment url
                 if field == "streaming":
                     if "segment_info" in media_def:
-                        media_def["segment_info"] = tator_store.get_download_url(
-                            media_def["segment_info"], expiration
-                        )
+                        url = cache.get_presigned(user_id, media_def["segment_info"])
+                        if url is None:
+                            tator_store = store_lookup[media_def["segment_info"]]
+                            url = tator_store.get_download_url(
+                                media_def["segment_info"], expiration
+                            )
+                            if ttl > 0:
+                                cache.set_presigned(user_id, media_def["segment_info"], url, ttl)
+                        media_def["segment_info"] = url
                     else:
                         logger.warning(
                             f"No segment file in media {media['id']} for file {media_def['path']}!"
@@ -160,7 +176,7 @@ class MediaListAPI(BaseListView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            _presign(presigned, response_data)
+            _presign(self.request.user.pk, presigned, response_data)
         return response_data
 
     def _post(self, params):
@@ -578,7 +594,7 @@ class MediaDetailAPI(BaseDetailView):
         response_data = list(qs.values(*MEDIA_PROPERTIES))
         presigned = params.get('presigned')
         if presigned is not None:
-            _presign(presigned, response_data)
+            _presign(self.request.user.pk, presigned, response_data)
         return response_data[0]
 
     def _patch(self, params):
