@@ -304,4 +304,6 @@ export class AnnotationData extends HTMLElement {
   }
 }
 
-customElements.define("annotation-data", AnnotationData);
+if (!customElements.get("annotation-data")) {
+  customElements.define("annotation-data", AnnotationData);
+}

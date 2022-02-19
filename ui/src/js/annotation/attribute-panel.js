@@ -903,4 +903,6 @@ export class AttributePanel extends TatorElement {
   }
 }
 
-customElements.define("attribute-panel", AttributePanel);
+if (!customElements.get("attribute-panel")) {
+  customElements.define("attribute-panel", AttributePanel);
+}

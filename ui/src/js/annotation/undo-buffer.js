@@ -395,4 +395,6 @@ export class UndoBuffer extends HTMLElement {
   }
 }
 
-customElements.define("undo-buffer", UndoBuffer);
+if (!customElements.get("undo-buffer")) {
+  customElements.define("undo-buffer", UndoBuffer);
+}
