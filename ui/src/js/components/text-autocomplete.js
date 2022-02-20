@@ -1,4 +1,5 @@
 import { getCookie } from "../util/get-cookie.js";
+import autocomplete from "autocompleter";
 
 export class WormsAutoComplete {
   /// Construct a WormsAutocomplete handler based on

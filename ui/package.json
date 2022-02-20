@@ -23,7 +23,7 @@
     "webpack-shell-plugin-next": "2.2.2"
   },
   "dependencies": {
-    "autocomplete.js": "0.38.1",
+    "autocompleter": "6.1.2",
     "d3": "7.3.0",
     "js-yaml": "4.1.0",
     "jszip": "3.7.1",
