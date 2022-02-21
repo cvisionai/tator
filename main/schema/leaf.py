@@ -26,8 +26,8 @@ class LeafSuggestionSchema(AutoSchema):
         return dedent("""\
         Get list of autocomplete suggestions.
 
-        This endpoint is compatible with <a href=https://github.com/kraaden/autocomplete>
-        devbridge suggestion format</a>. It performs a glob search on leaf objects in the project.
+        This endpoint is compatible with [devbridge suggestion format](https://github.com/kraaden/autocomplete)
+        . It performs a glob search on leaf objects in the project.
         """)
 
     def get_path_parameters(self, path, method):
