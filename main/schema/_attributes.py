@@ -4,8 +4,8 @@ attribute_filter_parameter_schema = [
         'in': 'query',
         'required': False,
         'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See <a href=https://www.elastic.co/guide/en/elasticsearch/'
-                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax>reference</a>. '
+                       'See [reference](https://www.elastic.co/guide/en/elasticsearch/'
+                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax). '
                        'This search string only applies to the relevant objects, not children or '
                        'parents. For media, child annotations can be searched with `annotation_search`. '
                        'For localizations and states, parent media can be searched with `media_search`.',

@@ -95,8 +95,8 @@ media_filter_parameter_schema = [
         'in': 'query',
         'required': False,
         'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See <a href=https://www.elastic.co/guide/en/elasticsearch/'
-                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax>reference</a>. '
+                       'See [reference](href=https://www.elastic.co/guide/en/elasticsearch/'
+                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax). '
                        'This search is applied to child annotations of media only.',
         'schema': {'type': 'string'},
     },
