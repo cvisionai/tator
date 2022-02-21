@@ -25,7 +25,7 @@ audio_definition = {
         },
         'http_auth': {
             'description': 'If specified will be used for HTTP authorization in '
-                           'request for media, i.e. "bearer <token>".',
+                           'request for media, i.e. "bearer TOKEN".',
             'type': 'string',
         },
         'codec_mime': {
@@ -83,7 +83,7 @@ video_definition = {
         },
         'http_auth': {
             'description': 'If specified will be used for HTTP authorization in '
-                           'request for media, i.e. "bearer <token>".',
+                           'request for media, i.e. "bearer TOKEN".',
             'type': 'string',
         },
         'codec_mime': {
@@ -128,7 +128,7 @@ image_definition = {
         },
         'http_auth': {
             'description': 'If specified will be used for HTTP authorization in '
-                           'request for media, i.e. "bearer <token>".',
+                           'request for media, i.e. "bearer TOKEN".',
             'type': 'string',
         },
         'mime': {
@@ -176,7 +176,7 @@ auxiliary_file_definition = {
         },
         'http_auth': {
             'description': 'If specified will be used for HTTP authorization in '
-                           'request for media, i.e. "bearer <token>".',
+                           'request for media, i.e. "bearer TOKEN".',
             'type': 'string',
         },
         'mime': {
