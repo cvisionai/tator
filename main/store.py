@@ -261,7 +261,8 @@ class TatorStorage(ABC):
         live_storage_class = self.get_live_sc()
         response = self.head_object(path)
         if not response:
-            return False
+            logger.warning(f"Object {path} not found, skipping")
+            return True
         if response.get("StorageClass", "STANDARD") == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
             return True
@@ -294,13 +295,13 @@ class TatorStorage(ABC):
         live_storage_class = self.get_live_sc()
         response = self.head_object(path)
         if not response:
-            logger.warning(f"Could not check the state of the restoration request for {path}")
-            return False
+            logger.warning(f"Object {path} not found, skipping")
+            return True
 
         request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
-            storage_class = response.get("StorageClass", "STANDARD")
+            storage_class = response.get("StorageClass", None)
             if storage_class == archive_storage_class:
                 # Something went wrong with the original restoration request
                 logger.warning(f"Object {path} has no associated restoration request")
@@ -308,7 +309,7 @@ class TatorStorage(ABC):
             if storage_class == live_storage_class:
                 logger.info(f"Object {path} live")
                 return True
-            if not storage_class:
+            if storage_class is None:
                 # The resource was already restored
                 logger.info(f"Object {path} already restored")
                 return True
@@ -321,7 +322,7 @@ class TatorStorage(ABC):
             logger.info(f"Object {path} not in standard access yet, skipping")
             return False
         if 'ongoing-request="false"' not in request_state:
-            # This should not happen unless the API for s3.head_object changes
+            # This should not happen unless the API for head_object changes
             logger.error(f"Unexpected request state '{request_state}' received for object {path}")
             return False
 
