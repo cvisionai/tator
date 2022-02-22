@@ -231,7 +231,7 @@ class TatorStorage(ABC):
         response = self.head_object(path)
         if not response:
             return False
-        if response.get("StorageClass", "") == archive_storage_class:
+        if response.get("StorageClass", "STANDARD") == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
         if self._object_tagged_for_archive(path):
@@ -262,10 +262,10 @@ class TatorStorage(ABC):
         response = self.head_object(path)
         if not response:
             return False
-        if response.get("StorageClass", "") == live_storage_class:
+        if response.get("StorageClass", "STANDARD") == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
             return True
-        if 'ongoing-request="true"' in response.get("Restore", ""):
+        if "ongoing-request=" in response.get("Restore", ""):
             logger.info(f"Object {path} has an ongoing restoration request, skipping")
             return True
         try:
@@ -278,7 +278,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not confirm restoration request status for {path}")
             return False
-        if response.get("StorageClass", "") == live_storage_class:
+        if response.get("StorageClass", "STANDARD") == live_storage_class:
             logger.info(f"Object {path} live")
             return True
         if "ongoing-request" in response.get("Restore", ""):
@@ -300,7 +300,7 @@ class TatorStorage(ABC):
         request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
-            storage_class = response.get("StorageClass", "")
+            storage_class = response.get("StorageClass", "STANDARD")
             if storage_class == archive_storage_class:
                 # Something went wrong with the original restoration request
                 logger.warning(f"Object {path} has no associated restoration request")
@@ -337,7 +337,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not check the restoration state for {path}")
             return False
-        if response.get("StorageClass", "") == archive_storage_class:
+        if response.get("StorageClass", "STANDARD") == archive_storage_class:
             logger.warning(f"Storage class not changed for object {path}")
             return False
         logger.info(f"Object {path} successfully restored: {response}")
