@@ -969,7 +969,7 @@ export class AnnotationPlayer extends TatorElement {
     }
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
-    if (this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
     {
       this.handleNotReadyEvent();
       return;

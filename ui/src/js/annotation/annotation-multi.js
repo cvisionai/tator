@@ -1718,7 +1718,7 @@ export class AnnotationMulti extends TatorElement {
 
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx]._onDemandPlaybackReady != true)
+	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx]._onDemandPlaybackReady != true)
 	    {
 	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
         this.handleNotReadyEvent(idx);
