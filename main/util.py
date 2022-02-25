@@ -705,12 +705,20 @@ def fix_bad_restores(
             json.dump(list(archived_resources), fp)
 
 
-def get_blocking_clones(media, dtype, filter_dict):
+def get_clones(media: Media, filter_dict: dict = None):
     """
-    Checks the given media for clones and determines their readiness for archiving using the
-    key-value pairs in `filter_dict`. They are used as keyword arguments to exclude media that match
-    from the returned list of blocking media.
+    Gets the exhaustive list of clones of the given media. If a `filter_dict` argument is given, it
+    is used to exclude media from the results to determine the subset of clones that do not match.
+    An example use can be found in `main/management/commands/archivemedia.py`, where it filters out
+    clones in the ready to archive or archived state.
+
+    :param media: The media to find clones of.
+    :type media: Media
+    :param filter_dict: If specified, it is the keyword arguments to pass to the `exclude` operation
+                        on the clones' queryset.
+    :type filter_dict: dict
     """
+
     def _get_multi_blocking_clones(media):
         """
         Checks the given multiview's individual media for clones.
@@ -718,7 +726,6 @@ def get_blocking_clones(media, dtype, filter_dict):
         multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
         media_readiness = [_get_single_blocking_clones(obj) for obj in multi_qs.iterator()]
         return [ele for lst in media_readiness for ele in lst]
-
 
     def _get_single_blocking_clones(media):
         """
@@ -740,14 +747,20 @@ def get_blocking_clones(media, dtype, filter_dict):
             # Shared base queryset
             media_qs = Media.objects.filter(resource_media__path__in=paths)
 
+            # Apply exclude filter, if given
+            if filter_dict:
+                media_qs = media_qs.exclude(**filter_dict)
+
             # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
-            media_not_ready.update(list(media_qs.exclude(**filter_dict).values_list("id", flat=True)))
+            media_not_ready.update(list(media_qs.values_list("id", flat=True)))
 
         return list(media_not_ready)
 
+    dtype = getattr(media.meta, "dtype", None)
     if dtype in ["image", "video"]:
         return _get_single_blocking_clones(media)
-    if dtype == "multi":
+    elif dtype == "multi":
         return _get_multi_blocking_clones(media)
-
-    raise ValueError(f"Expected dtype in ['multi', 'image', 'video'], got {dtype}")
+    else:
+        logger.error(f"Expected dtype in ['multi', 'image', 'video'], got '{dtype}'")
+        return []

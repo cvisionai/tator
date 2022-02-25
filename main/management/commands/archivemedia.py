@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import Affiliation, Media, Project, Resource, User
 from main.ses import TatorSES
-from main.util import get_blocking_clones
+from main.util import get_clones
 
 logger = logging.getLogger(__name__)
 FILES_TO_ARCHIVE = ["streaming", "archival", "audio", "image"]
@@ -96,12 +96,9 @@ class Command(BaseCommand):
                 media.save()
                 continue
 
-            if media.meta is None:
-                continue
-
-            media_dtype = media.meta.dtype
+            media_dtype = getattr(media.meta, "dtype", None)
             if media_dtype in ["multi", "image", "video"]:
-                media_not_ready = get_blocking_clones(media, media_dtype, filter_dict)
+                media_not_ready = get_clones(media, filter_dict)
             else:
                 logger.warning(
                     f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
