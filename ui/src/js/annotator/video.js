@@ -3397,6 +3397,15 @@ export class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  // #TODO - Add comments
+  setOnDemandBlockSizes(playingSize, pausedSize) {
+    this._dlWorker.postMessage({
+      "type": "onDemandBlockSizes",
+      "playingSize": playingSize,
+      "pausedSize": pausedSize
+    });
+  }
+
   // Return whether the video is paused/stopped
   isPaused()
   {

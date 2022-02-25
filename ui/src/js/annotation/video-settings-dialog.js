@@ -90,6 +90,85 @@ export class VideoSettingsDialog extends ModalDialog {
     safeModeGridDiv.appendChild(safeModeOption);
     this._safeModeOption = safeModeOption;
 
+    const onDemandDiv = document.createElement("div");
+    onDemandDiv.setAttribute("class", "video__settings py-4 px-4 text-gray");
+    this._main.appendChild(onDemandDiv);
+
+    const onDemandHeaderDiv = document.createElement("div");
+    onDemandHeaderDiv.style.gridColumn = 1;
+    onDemandHeaderDiv.style.gridRow = 1;
+    onDemandDiv.appendChild(onDemandHeaderDiv);
+
+    const onDemandHeader = document.createElement("div");
+    onDemandHeader.textContent = "On-Demand Configuration";
+    onDemandHeader.setAttribute("class", "h3 d-flex flex-items-center text-uppercase")
+    onDemandHeaderDiv.appendChild(onDemandHeader);
+
+    const onDemandSubHeader = document.createElement("div");
+    onDemandSubHeader.textContent = "Configure on-demand playback parameters";
+    onDemandSubHeader.setAttribute("class", "text-gray f2");
+    onDemandHeaderDiv.appendChild(onDemandSubHeader);
+
+    const blockSizeChoices = [
+      {"value": 2*1024*1024, "label": "2MB"},
+      {"value": 4*1024*1024, "label": "4MB"},
+      {"value": 8*1024*1024, "label": "8MB"},
+      {"value": 16*1024*1024, "label": "16MB"},
+      {"value": 32*1024*1024, "label": "32MB"},
+    ];
+
+    var onDemandTextDiv;
+    var onDemandTextHeader;
+    var onDemandTextSubHeader;
+
+    onDemandTextDiv = document.createElement("div");
+    onDemandTextDiv.style.gridColumn = 1;
+    onDemandTextDiv.style.gridRow = 2;
+    onDemandDiv.appendChild(onDemandTextDiv);
+    
+    onDemandTextHeader = document.createElement("div");
+    onDemandTextHeader.textContent = "Block Size (Paused)";
+    onDemandTextHeader.setAttribute("class", "text-semibold text-white h3");
+    onDemandTextDiv.appendChild(onDemandTextHeader);
+
+    onDemandTextSubHeader = document.createElement("div");
+    onDemandTextSubHeader.textContent = "Max download chunk while video is paused.";
+    onDemandTextSubHeader.setAttribute("class", "text-gray f2");
+    onDemandTextDiv.appendChild(onDemandTextSubHeader);
+
+    this.blockSizePausedEnum = document.createElement("enum-input");
+    this.blockSizePausedEnum.setAttribute("name", "Block Size");
+    this.blockSizePausedEnum.choices = blockSizeChoices;
+    this.blockSizePausedEnum.setValue(2*1024*1024);
+    this.blockSizePausedEnum.setAttribute("class", "col-12");
+    this.blockSizePausedEnum.style.gridColumn = 2;
+    this.blockSizePausedEnum.style.gridRow = 2;
+    onDemandDiv.appendChild(this.blockSizePausedEnum);
+
+    onDemandTextDiv = document.createElement("div");
+    onDemandTextDiv.style.gridColumn = 1;
+    onDemandTextDiv.style.gridRow = 3;
+    onDemandDiv.appendChild(onDemandTextDiv);
+    
+    onDemandTextHeader = document.createElement("div");
+    onDemandTextHeader.textContent = "Block Size";
+    onDemandTextHeader.setAttribute("class", "text-semibold text-white h3");
+    onDemandTextDiv.appendChild(onDemandTextHeader);
+
+    onDemandTextSubHeader = document.createElement("div");
+    onDemandTextSubHeader.textContent = "Max download chunk while video is playing.";
+    onDemandTextSubHeader.setAttribute("class", "text-gray f2");
+    onDemandTextDiv.appendChild(onDemandTextSubHeader);
+
+    this.blockSizePlayingEnum = document.createElement("enum-input");
+    this.blockSizePlayingEnum.setAttribute("name", "Block Size");
+    this.blockSizePlayingEnum.choices = blockSizeChoices;
+    this.blockSizePlayingEnum.setValue(4*1024*1024);
+    this.blockSizePlayingEnum.setAttribute("class", "col-12");
+    this.blockSizePlayingEnum.style.gridColumn = 2;
+    this.blockSizePlayingEnum.style.gridRow = 3;
+    onDemandDiv.appendChild(this.blockSizePlayingEnum);
+
     const apply = document.createElement("button");
     apply.setAttribute("class", "btn btn-clear");
     apply.textContent = "Apply";
@@ -102,9 +181,17 @@ export class VideoSettingsDialog extends ModalDialog {
       this.dispatchEvent(new CustomEvent("applyVideoSources", {
         composed: true,
         detail: {
-          playback: this.getSourceObject("play"),
+          play: this.getSourceObject("play"),
           seek: this.getSourceObject("seek"),
-          scrub: this.getSourceObject("scrub")
+          scrub: this.getSourceObject("scrub"),
+        }
+      }));
+
+      this.dispatchEvent(new CustomEvent("applyOnDemandParameters", {
+        composed: true,
+        detail: {
+          playingBlockSize: this.blockSizePlayingEnum.getValue(),
+          pausedBlockSize: this.blockSizePausedEnum.getValue()
         }
       }));
 
@@ -315,7 +402,7 @@ export class VideoSettingsDialog extends ModalDialog {
     params.delete("seekQuality");
     params.delete("playQuality");
     params.delete("safeMode");
-    
+
     if (this._mode == "single" || this._mode == "multiview") {
       params.set("scrubQuality", parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0]));
       params.set("seekQuality", parseInt(this._divOptions["seek"].choice.getValue().split("p")[0]));
