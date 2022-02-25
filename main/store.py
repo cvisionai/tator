@@ -310,9 +310,9 @@ class TatorStorage(ABC):
             elif storage_class == live_storage_class:
                 # If the object is still tagged for archive, it still needs updating
                 if self._object_tagged_for_archive(path):
-                    logger.info(f"Object {path} live, but still has archive tag, removing...")
+                    logger.info(f"Object {path} live, but still needs update...")
                 else:
-                    logger.info(f"Object {path} live")
+                    logger.info(f"Object {path} live and up to date")
                     return True
             else:
                 # The resource is in an unexpected storage class
