@@ -707,10 +707,10 @@ def fix_bad_restores(
 
 def get_clones(media: Media, filter_dict: dict = None):
     """
-    Gets the exhaustive list of clones of the given media. If a `filter_dict` argument is given, it
-    is used to exclude media from the results to determine the subset of clones that do not match.
-    An example use can be found in `main/management/commands/archivemedia.py`, where it filters out
-    clones in the ready to archive or archived state.
+    Gets the exhaustive list of clone ids of the given media. If a `filter_dict` argument is given,
+    it is used to exclude media from the results to determine the subset of clones that do not
+    match.  An example use can be found in `main/management/commands/archivemedia.py`, where it
+    filters out clones in the ready to archive or archived state.
 
     :param media: The media to find clones of.
     :type media: Media
