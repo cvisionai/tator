@@ -1,5 +1,6 @@
 import { AnnotationCanvas } from "./annotation.js";
 import { Utilities } from "../util/utilities.js";
+import { TatorVideoDecoder} from "./video-codec.js";
 
 // Video export class handles interactions between HTML presentation layer and the
 // javascript application.
@@ -2038,10 +2039,21 @@ export class VideoCanvas extends AnnotationCanvas {
     this._seek_idx = hq_idx;
     console.log(`video buffer indexes: ${play_idx} ${scrub_idx} ${hq_idx}`);
 
+    let construct_demuxer = () => {
+      let searchParams = new URLSearchParams(window.location.search);
+      if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1)
+      {
+        return new VideoBufferDemux();
+      }
+      else
+      {
+        return new TatorVideoDecoder();
+      }
+    }
     this._videoElement = [];
     for (let idx = 0; idx < streaming_files.length; idx++)
     {
-      this._videoElement.push(new VideoBufferDemux());
+      this._videoElement.push(construct_demuxer());
       this._videoElement[idx].named_idx = idx;
     }
     // Clear the buffer in case this is a hot-swap
