@@ -2,10 +2,11 @@ import { fetchRetry } from "../util/fetch-retry.js";
 
 export class VideoDownloader
 {
-  constructor(media_files, blockSize, offsite_config)
+  constructor(media_files, blockSize, offsite_config, playingBlockSize)
   {
     this._media_files = media_files;
     this._blockSize = blockSize;
+    this._playingBlockSize = playingBlockSize;
     this._offsite_config = offsite_config;
     this._headers = {};
     if (this._offsite_config && this._offsite_config.method)
@@ -312,23 +313,30 @@ export class VideoDownloader
    * Downloads the next block of video using the initialized blockSize
    * setupOnDemandDownload must have been called prior to running this function.
    */
-  downloadNextOnDemandBlock()
+  downloadNextOnDemandBlock(requestTime, playing)
   {
     var currentSize = 0;
     var packetIndex = this._onDemandConfig["currentPacket"];
     var mediaFileIndex = this._onDemandConfig["mediaFileIndex"];
     var offsets = [];  // Stores the segments (aka packets)
     var startByte;
-    var iterBlockSize = this._blockSize;
     var initialDownload = false;
     var initalPacketIndex = 0;
+
+    var iterBlockSize;
+    if (playing) {
+      iterBlockSize = this._playingBlockSize;
+    }
+    else {
+      iterBlockSize = this._blockSize;
+    }
 
     if (!this._onDemandConfig["init"])
     {
       // Set the current packet based on the play start frame plus some wiggle room
       this._onDemandConfig["init"] = true;
       var frameToStart;
-      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 20); // Support a bit more behind us
+      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 1); // Support a bit more behind us
       if (this._onDemandConfig["direction"] == "forward")
       {
         frameToStart = this._onDemandConfig["frame"] - startBuffer;
@@ -369,13 +377,6 @@ export class VideoDownloader
       var initalPacketIndex = segmentResult2.matchIdx;
       initialDownload = true;
     }
-
-    // Establish the size of downloads
-    // First set of segments will be downloaded more quickly (smaller chunks)
-    //if (this._onDemandConfig["numPacketsDownloaded"] < Infinity)
-    //{
-    //  iterBlockSize = this._startUpBlockSize * 2;
-    //}
 
     // Determine the startByte for this block of data to download
     // Download range based on the block size and the direction
@@ -506,7 +507,10 @@ export class VideoDownloader
                            "buf_idx" : mediaFileIndex,
                            "offsets": offsets,
                            "buffer": buffer,
-                           "id": onDemandId};
+                           "id": onDemandId,
+                           "blockSize": iterBlockSize,
+                           "requestTime": requestTime,
+                           "downloadTime": Date.now()};
                   postMessage(data, [data.buffer]);
                 });
             });
@@ -636,12 +640,7 @@ export class VideoDownloader
       startByte = 0;
     }
 
-    // Use 1 Mb blocks if in the first 5 packets
     var iterBlockSize=this._blockSize;
-    //if (idx < 5)
-    //{
-    //    iterBlockSize=1024*1024;
-    //}
     var offsets=[];
     while (currentSize < iterBlockSize && idx < this._numPackets[buf_idx] && offsets.length < packet_limit)
     {
@@ -720,7 +719,8 @@ onmessage = function(e)
     {
       ref = new VideoDownloader(msg.media_files,
                                 2*1024*1024,
-                                msg.offsite_config);
+                                msg.offsite_config,
+                                5*1024*1024);
     }
   }
   else if (type == 'download')
@@ -751,7 +751,7 @@ onmessage = function(e)
   {
     if (ref.inOnDemandMode())
     {
-      ref.downloadNextOnDemandBlock();
+      ref.downloadNextOnDemandBlock(msg['requestTime'], msg["playing"]);
     }
 
     if (msg["playing"]) {
