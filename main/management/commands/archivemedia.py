@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import Affiliation, Media, Project, Resource, User
 from main.ses import TatorSES
+from main.util import get_clones
 
 logger = logging.getLogger(__name__)
 FILES_TO_ARCHIVE = ["streaming", "archival", "audio", "image"]
@@ -62,55 +63,6 @@ def _archive_single(media):
     return media_archived
 
 
-def _get_clone_readiness(media, dtype):
-    """
-    Checks the given media for clones and determines their readiness for archiving.
-    """
-    if dtype in ["image", "video"]:
-        return _get_single_clone_readiness(media)
-    if dtype == "multi":
-        return _get_multi_clone_readiness(media)
-
-    raise ValueError(f"Expected dtype in ['multi', 'image', 'video'], got {dtype}")
-
-
-def _get_multi_clone_readiness(media):
-    """
-    Checks the given multiview's individual media for clones.
-    """
-    multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
-    media_readiness = [_get_clone_readiness(obj, "video") for obj in multi_qs.iterator()]
-    return [ele for lst in media_readiness for ele in lst]
-
-
-def _get_single_clone_readiness(media):
-    """
-    Checks the given media for clones. Starts with the first entry of `keys` and moves on if the key
-    is not found in `media.media_files`. Returns a tuple of lists, where the former is the list of
-    media whose `archive_state` is `to_archive` and the latter whose `archive_state` is anything
-    else.
-    """
-    for key in FILES_TO_ARCHIVE:
-        # If the given key does not exist in `media_files` or the list of files is empty, move on to
-        # the next key, if any
-        if not (key in media.media_files and media.media_files[key]):
-            continue
-
-        paths = [obj["path"] for obj in media.media_files[key]]
-
-        # Shared base queryset
-        media_qs = Media.objects.filter(resource_media__path__in=paths)
-
-        # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
-        media_not_ready = list(media_qs.exclude(archive_state__in=READY_TO_ARCHIVE).values("id"))
-
-        return media_not_ready
-
-    # If no key from the list of keys is found in `media.media_files`, assume there is no blocking
-    # clone
-    return []
-
-
 class Command(BaseCommand):
     help = "Archives any media files marked with `to_archive`."
 
@@ -133,6 +85,8 @@ class Command(BaseCommand):
             logger.info(f"No media to archive!")
             return
 
+        # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
+        filter_dict = {"archive_state__in": READY_TO_ARCHIVE}
         cloned_media_not_ready = defaultdict(list)
         for media in archived_qs.iterator():
             if not media.media_files:
@@ -142,9 +96,9 @@ class Command(BaseCommand):
                 media.save()
                 continue
 
-            media_dtype = media.meta.dtype
+            media_dtype = getattr(media.meta, "dtype", None)
             if media_dtype in ["multi", "image", "video"]:
-                media_not_ready = _get_clone_readiness(media, media_dtype)
+                media_not_ready = get_clones(media, filter_dict)
             else:
                 logger.warning(
                     f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
@@ -152,7 +106,7 @@ class Command(BaseCommand):
                 continue
 
             if media_not_ready:
-                # Accumulate the lists of cloned media that are(n't) ready
+                # Accumulate the lists of cloned media that aren't ready
                 cloned_media_not_ready[media.project.id].append(
                     {
                         "media_requesting_archive": media.id,

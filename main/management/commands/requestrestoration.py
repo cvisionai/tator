@@ -1,8 +1,12 @@
+from collections import defaultdict
 from datetime import datetime, timezone
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import Media, Resource
+from main.ses import TatorSES
+from main.util import get_clones
 
 logger = logging.getLogger(__name__)
 
@@ -80,21 +84,68 @@ class Command(BaseCommand):
             logger.info(f"No media requesting restoration!")
             return
 
+        filter_dict = {"archive_state__in": ["to_live", "live"]}
+        cloned_media_not_ready = defaultdict(list)
         for media in restoration_qs:
+            media_dtype = getattr(media.meta, "dtype", None)
+            if media_dtype in ["multi", "image", "video"]:
+                media_not_ready = get_clones(media, filter_dict)
+            else:
+                logger.warning(
+                    f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
+                )
+                continue
+
+            if media_not_ready:
+                # Accumulate the lists of cloned media that aren't ready
+                cloned_media_not_ready[media.project.id].append(
+                    {
+                        "media_requesting_restoration": media.id,
+                        "media_not_ready": media_not_ready,
+                    }
+                )
+                continue
+
             if not media.media_files:
                 # No files to restore from archive storage, consider this media live
                 media.archive_state = "live"
                 media.save()
                 continue
 
-            media_dtype = media.meta.dtype
             num_media = 0
             if media_dtype == "multi":
                 num_media = _request_restore_multi(media, expiry_days)
-            elif media_dtype in ["image", "video"]:
-                num_media = int(_request_restore_single(media, expiry_days))
             else:
-                logger.warning(f"Unknown media dtype '{media_dtype}', skipping restoration")
+                num_media = int(_request_restore_single(media, expiry_days))
 
             num_rr += num_media
         logger.info(f"Requested restoration of a total of {num_rr} media!")
+
+        # Notify owners of blocked archive attempt
+        if settings.TATOR_EMAIL_ENABLED:
+            ses = TatorSES()
+
+        for project_id, blocking_media in cloned_media_not_ready.items():
+            email_text_list = []
+            for instance in blocking_media:
+                msg = f"Restoring '{instance['media_requesting_restoration']}' blocked by: {instance['media_not_ready']}."
+                logger.warning(msg)
+                email_text_list.append(msg)
+
+            if settings.TATOR_EMAIL_ENABLED:
+                project = Project.objects.get(pk=project_id)
+
+                # Get project administrators
+                recipient_ids = Affiliation.objects.filter(
+                    organization=project.organization, permission="Admin"
+                ).values_list("user", flat=True)
+                recipients = list(
+                    User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
+                )
+
+                ses.email(
+                    sender=settings.TATOR_EMAIL_SENDER,
+                    recipients=recipients,
+                    title=f"Nightly restoration for {project.name} ({project.id}) failed",
+                    text="\n\n".join(email_text_list),
+                )
