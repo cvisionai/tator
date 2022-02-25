@@ -84,7 +84,7 @@ class Command(BaseCommand):
             logger.info(f"No media requesting restoration!")
             return
 
-        filter_dict = {}
+        filter_dict = {"archive_state__in": ["to_live", "live"]}
         cloned_media_not_ready = defaultdict(list)
         for media in restoration_qs:
             media_dtype = media.meta.dtype

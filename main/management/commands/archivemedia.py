@@ -96,6 +96,9 @@ class Command(BaseCommand):
                 media.save()
                 continue
 
+            if media.meta is None:
+                continue
+
             media_dtype = media.meta.dtype
             if media_dtype in ["multi", "image", "video"]:
                 media_not_ready = get_blocking_clones(media, media_dtype, filter_dict)

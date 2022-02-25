@@ -741,7 +741,7 @@ def get_blocking_clones(media, dtype, filter_dict):
             media_qs = Media.objects.filter(resource_media__path__in=paths)
 
             # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
-            media_not_ready.update(list(media_qs.exclude(**filter_dict).values("id")))
+            media_not_ready.update(list(media_qs.exclude(**filter_dict).values_list("id", flat=True)))
 
         return list(media_not_ready)
 

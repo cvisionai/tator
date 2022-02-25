@@ -269,6 +269,7 @@ class TatorStorage(ABC):
         if "ongoing-request=" in response.get("Restore", ""):
             logger.info(f"Object {path} has an ongoing restoration request, skipping")
             return True
+
         try:
             self._restore_object(path, live_storage_class, min_exp_days)
         except:
@@ -301,29 +302,25 @@ class TatorStorage(ABC):
         request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
-            storage_class = response.get("StorageClass", None)
+            storage_class = response.get("StorageClass", live_storage_class)
             if storage_class == archive_storage_class:
                 # Something went wrong with the original restoration request
                 logger.warning(f"Object {path} has no associated restoration request")
                 return False
-            if storage_class == live_storage_class:
-                logger.info(f"Object {path} live")
-                return True
-            if storage_class is None:
-                # The resource was already restored
-                logger.info(f"Object {path} already restored")
-                return True
-
-            # The resource is in an unexpected storage class
-            logger.error(f"Object {path} in unexpected storage class {storage_class}")
-            return False
-        if 'ongoing-request="true"' in request_state:
+            elif storage_class == live_storage_class:
+                # If the object is still tagged for archive, it still needs updating
+                if self._object_tagged_for_archive(path):
+                    logger.info(f"Object {path} live, but still has archive tag, removing...")
+                else:
+                    logger.info(f"Object {path} live")
+                    return True
+            else:
+                # The resource is in an unexpected storage class
+                logger.error(f"Object {path} in unexpected storage class '{storage_class}'")
+                return False
+        elif 'ongoing-request="true"' in request_state:
             # There is an ongoing request and the object is not ready to be permanently restored
             logger.info(f"Object {path} not in standard access yet, skipping")
-            return False
-        if 'ongoing-request="false"' not in request_state:
-            # This should not happen unless the API for head_object changes
-            logger.error(f"Unexpected request state '{request_state}' received for object {path}")
             return False
 
         # Then ongoing-request="false" must be in request_state, which means its storage class can
