@@ -1546,6 +1546,8 @@ export class VideoCanvas extends AnnotationCanvas {
             return;
           }
 
+          console.info(`Processing ${idx} of ${offsets.length} for ${e.data["buf_idx"]}`);
+
           if (idx == offsets.length)
           {
             if (e.data["buf_idx"] == that._scrub_idx)

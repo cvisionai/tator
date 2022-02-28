@@ -7,23 +7,102 @@ class TatorVideoBuffer {
   constructor(parent, name)
   {
     this._name = name;
+    this._parent = parent;
+
+    this._configured = false;
+
+    // Create MP4 unpacking elements
     this._mp4File = MP4Box.createFile();
-    this._mp4File.onError = (e) => {
-      console.error(`${name} buffer reports ${e}`);
-      if (this._loadedDataError)
-      {
-        this._loadedDataError();
-      }
+    this._mp4File.onError = this._mp4OnError.bind(this);
+    this._mp4File.onReady = this._mp4OnReady.bind(this);
+    this._mp4File.onSamples = this._mp4Samples.bind(this);
+
+    this._videoDecoder = new VideoDecoder({
+      output: this._frameReady.bind(this),
+      error: this._frameError.bind(this)});
+
+    // For  lack of a better guess put the default video cursor at 0
+    this._current_cursor = 0.0;
+  }
+
+  _mp4OnError(e)
+  {
+    console.error(`${this._name} buffer reports ${e}`);
+    if (this._loadedDataError)
+    {
+      this._loadedDataError();
+    }
+  }
+
+  _mp4OnReady(info)
+  {
+    this._codecString = info.tracks[0].codec;
+    this._trackWidth = Math.round(info.tracks[0].track_width);
+    this._trackHeight = Math.round(info.tracks[0].track_height);
+    let codecConfig = {
+      codec: this._codecString,
+      codedWidth: Number(this._trackWidth),
+      codedHeight: Number(this._trackHeight),
+      hardwareAcceleration: "prefer-hardware",
+      optimizeForLatency: true
     };
-    this._mp4File.onReady = (info) => {
-      this._codecString = info.tracks[0].codec;
-      console.info(`${name} buffer reports fragmented=${info.isFragmented} codec=${this._codecString}`)};
-      if (parent._loadedDataCallback)
-      {
-        parent._loadedDataCallback();
-        parent._loadedDataCallback=null;
-      }
-      this._mp4File.onMoovStart = () => {console.debug(`${name} buffer reports start of moov.`)};
+    console.info(JSON.stringify(info.tracks[0]));
+    console.info(`${this._name} is configuring decoder = ${JSON.stringify(codecConfig)}`);
+    this._videoDecoder.configure(codecConfig);
+    console.info(`${this._name} decoder reports ${this._videoDecoder.state}`);
+
+    // Configure segment callback
+    this._mp4File.setExtractionOptions(info.tracks[0].id);
+
+    // Notify higher level code we loaded our first bit of data
+    if (this._parent._loadedDataCallback)
+    {
+      this._parent._loadedDataCallback();
+      this._parent._loadedDataCallback=null;
+    }
+  }
+
+  _mp4Samples(track_id, ref, samples) {
+    for (const sample of samples)
+    {
+      console.info(`Handling sample: ${sample.cts} ${sample.is_sync} ${sample.duration}`);
+    }
+  }
+
+  _frameReady(frame)
+  {
+    console.info(`${this._name} decode frame callback`);
+  }
+
+  _frameError(error)
+  {
+    console.error(`${this._name} DECODE ERROR ${error}`);
+  }
+
+  // Public interface mirrors that of a standard HTML5 video
+
+  set currentTime(video_time)
+  {
+    if (this._current_cursor == video_time)
+    {
+      console.debug("Not duping low-level seek")
+      return;
+    }
+    console.info(`${this._name} commanded to ${video_time}`);
+    this._mp4File.seek(video_time);
+    this._seekComplete = false;
+    this._mp4File.start();
+
+  }
+  get currentTime()
+  {
+    return this._current_cursor;
+  }
+
+  get currentFrame()
+  {
+    // TODO return decoded video image if available else
+    return null;
   }
   appendBuffer(data)
   {
@@ -188,7 +267,7 @@ export class TatorVideoDecoder {
   appendLatestBuffer(data, callback)
   {
     this._scrubBuffer.appendBuffer(data);
-    callback();
+    setTimeout(callback,0); // defer to next clock
   }
 
   /**
@@ -221,6 +300,6 @@ export class TatorVideoDecoder {
       this._scrubBuffer.appendBuffer(data);
     }
     this._init = true;
-    callback();
+    setTimeout(callback,0); // defer to next clock
   }
 }
