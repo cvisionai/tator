@@ -1056,7 +1056,7 @@ export class MotionComp {
   computePlaybackSchedule(videoFps, factor)
   {
     // Cache these in case we need to recalculate later
-    this._videoFps = videoFps;
+    this._videoFps = Math.round(1000*videoFps)/1000;
     this._factor = factor;
 
     // Compute a 3-slot schedule for playback
