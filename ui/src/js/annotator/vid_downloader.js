@@ -518,6 +518,7 @@ export class VideoDownloader
                            "id": onDemandId,
                            "blockSize": iterBlockSize,
                            "requestTime": requestTime,
+                           "startByte": startByte,
                            "downloadTime": Date.now()};
                   postMessage(data, [data.buffer]);
                 });
@@ -607,7 +608,8 @@ export class VideoDownloader
                  var data={"type": "seek_result",
                            "time": time,
                            "buffer": buffer,
-                           "frame": frame};
+                           "frame": frame,
+                           "startByte": startByte};
                  postMessage(data, [data.buffer]);
                });
            });
@@ -683,7 +685,8 @@ export class VideoDownloader
                            "percent_complete": percent_complete,
                            "offsets": offsets,
                            "buffer": buffer,
-                           "init": packet_limit == 2};
+                           "init": packet_limit == 2,
+                           "startByte": startByte};
                   postMessage(data, [data.buffer]);
 
                  if (packet_limit == 2) {
