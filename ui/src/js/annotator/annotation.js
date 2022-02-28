@@ -3328,14 +3328,50 @@ export class AnnotationCanvas extends TatorElement
   {
     clickEvent.preventDefault();
     var clickLocation = this.scaleToViewport([clickEvent.offsetX, clickEvent.offsetY]);
-    var localization = this.localizationByLocation(clickLocation);
-    if (localization)
+    var relativeLocation = this.scaleToRelative(clickLocation);
+    if (clickEvent.altKey == true && this.isPaused() == true)
     {
-      this.makeModalEditPrompt(localization);
+      if (clickEvent.button == 0)
+      {
+        let [_, __, width, height] = this._roi;
+        width /= 2.0;
+        height /= 2.0;
+        let x = relativeLocation[0] - (width/2);
+        let y = relativeLocation[1] - (height/2);
+        this.setRoi(x, y, width, height);
+        this._dirty = true;
+        this.refresh();
+      }
+    }
+    else if (clickEvent.ctrlKey == true && this.isPaused() == true)
+    {
+      if (clickEvent.button == 0)
+      {
+        let [_, __, width, height] = this._roi;
+        width *= 2.0;
+        height *= 2.0;
+        width = Math.min(width, 1.0);
+        height = Math.min(width, 1.0);
+        let x = relativeLocation[0] - (width/2);
+        let y = relativeLocation[1] - (height/2);
+        x = Math.max(x,0.0);
+        y = Math.max(y,0.0);
+        this.setRoi(x, y, width, height);
+        this._dirty = true;
+        this.refresh();
+      }
     }
     else
     {
-      console.info("No Localization here");
+      var localization = this.localizationByLocation(clickLocation);
+      if (localization)
+      {
+        this.makeModalEditPrompt(localization);
+      }
+      else
+      {
+        console.info("No Localization here");
+      }
     }
   }
 
