@@ -1213,6 +1213,17 @@ class Resource(Model):
         logger.info(f"Restoring object {path}")
         return get_tator_store(obj.bucket).restore_resource(path)
 
+    @transaction.atomic
+    def perform_backup(path):
+        """
+        Backs up the object in storage defined by `path` to the correct backup bucket. If a
+        project-specific backup bucket is defined, it will be backed up there; if not, but a default
+        backup bucket is defined for the whole tator instance, it will be backed up there;
+        otherwise, it will not be backed up.
+        """
+        logger.info(f"Backing up object {path} not implemented yet")
+        return False
+
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
