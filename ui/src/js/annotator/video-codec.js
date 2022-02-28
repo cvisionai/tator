@@ -4,9 +4,30 @@
 import * as MP4Box from "mp4box";
 
 class TatorVideoBuffer {
-  constructor()
+  constructor(parent, name)
   {
-
+    this._name = name;
+    this._mp4File = MP4Box.createFile();
+    this._mp4File.onError = (e) => {
+      console.error(`${name} buffer reports ${e}`);
+      if (this._loadedDataError)
+      {
+        this._loadedDataError();
+      }
+    };
+    this._mp4File.onReady = (info) => {
+      this._codecString = info.tracks[0].codec;
+      console.info(`${name} buffer reports fragmented=${info.isFragmented} codec=${this._codecString}`)};
+      if (parent._loadedDataCallback)
+      {
+        parent._loadedDataCallback();
+        parent._loadedDataCallback=null;
+      }
+      this._mp4File.onMoovStart = () => {console.debug(`${name} buffer reports start of moov.`)};
+  }
+  appendBuffer(data)
+  {
+    this._mp4File.appendBuffer(data);
   }
 }
 export class TatorVideoDecoder {
@@ -14,36 +35,10 @@ export class TatorVideoDecoder {
   {
     console.info("Created WebCodecs based Video Decoder");
 
-    let setup_generic_callbacks = (name, file) => {
-      file.onError = (e) => {
-        console.error(`${name} buffer reports ${e}`);
-        if (this._loadedDataError)
-        {
-          this._loadedDataError();
-        }
-      };
-      file.onReady = (info) => {
-        this._codecString = info.tracks[0].codec;
-        console.info(`${name} buffer reports fragmented=${info.isFragmented} codec=${this._codecString}`)};
-        if (this._loadedDataCallback)
-        {
-          this._loadedDataCallback();
-          this._loadedDataCallback=null;
-        }
-      file.onMoovStart = () => {console.debug(`${name} buffer reports start of moov.`)};
-    }
-    this._codecString = null;
-    this._seekFile = MP4Box.createFile();
-    this._onDemandFile = MP4Box.createFile();
-    this._scrubFile = MP4Box.createFile();
+    this._seekBuffer = new TatorVideoBuffer(this, "Seek");
+    this._onDemandBuffer = new TatorVideoBuffer(this, "OnDemand");
+    this._scrubBuffer = new TatorVideoBuffer(this, "Scrub");
     this._init = false;
-    setup_generic_callbacks("Seek", this._seekFile);
-    setup_generic_callbacks("OnDemand", this._onDemandFile);
-    setup_generic_callbacks("Scrub",this._scrubFile);
-
-    this._seekBuffer = new TatorVideoBuffer();
-    this._onDemandBuffer = new TatorVideoBuffer();
-    this._scrubBuffer = new TatorVideoBuffer();
   }
 
   getMediaElementCount() {
@@ -192,7 +187,8 @@ export class TatorVideoDecoder {
 
   appendLatestBuffer(data, callback)
   {
-    //this._scrubFile.appendBuffer(data);
+    this._scrubBuffer.appendBuffer(data);
+    callback();
   }
 
   /**
@@ -220,10 +216,9 @@ export class TatorVideoDecoder {
     console.info("Appending All Buffers");
     if (this._init == false || force == true)
     {
-      data.fileStart = 0; // init data is at the start of the file
-      this._seekFile.appendBuffer(data);
-      this._onDemandFile.appendBuffer(data);
-      this._scrubFile.appendBuffer(data);
+      this._seekBuffer.appendBuffer(data);
+      this._onDemandBuffer.appendBuffer(data);
+      this._scrubBuffer.appendBuffer(data);
     }
     this._init = true;
     callback();
