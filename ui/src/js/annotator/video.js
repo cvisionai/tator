@@ -1449,6 +1449,7 @@ export class VideoCanvas extends AnnotationCanvas {
           console.warn(`Out of order seek operations detected. Expected=${this.seekFrame}, Got=${e.data["frame"]}`);
           return;
         }
+        e.data["buffer"].fileStart = e.data["startByte"];
         that._videoElement[that._seek_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
         let seek_time = performance.now() - that._seekStart;
@@ -1509,9 +1510,11 @@ export class VideoCanvas extends AnnotationCanvas {
               console.log(`Video init of: ${e.data["buf_idx"]}`);
               var begin=offsets[idx][0];
               var end=offsets[idx+1][0]+offsets[idx+1][1];
+              var bufferToSend = data.slice(begin, end);
+              bufferToSend.fileStart = e.data["startByte"]+begin;
               video_buffer.saveBufferInitData(data.slice(begin, end));
-              video_buffer.appendAllBuffers(data.slice(begin, end), callback);
-              video_buffer.appendOnDemandBuffer(data.slice(begin, end), () => {});
+              video_buffer.appendAllBuffers(bufferToSend, callback);
+              video_buffer.appendOnDemandBuffer(bufferToSend, () => {});
               idx+=2;
             }
             else
@@ -1519,12 +1522,14 @@ export class VideoCanvas extends AnnotationCanvas {
               // Rest of the fragmented mp4 segment info
               var begin=offsets[idx][0];
               var end=offsets[idx][0] + offsets[idx][1];
+              var bufferToSend = data.slice(begin, end);
+              bufferToSend.fileStart = e.data["startByte"]+begin;
               if (typeof video_buffer._dataLag != "undefined" && video_buffer._dataLag.length > 0) {
                 console.log("dataLag has data: " + video_buffer._dataLag.length);
-                video_buffer._dataLag.push({data: data.slice(begin, end), callback: callback});
+                video_buffer._dataLag.push({data: bufferToSend, callback: callback});
               }
               else {
-                video_buffer.appendLatestBuffer(data.slice(begin, end), callback);
+                video_buffer.appendLatestBuffer(bufferToSend, callback);
               }
               idx++;
             }
@@ -1651,7 +1656,9 @@ export class VideoCanvas extends AnnotationCanvas {
             var data2 = that._ftypInfo[that._play_idx]["buffer"];
             var begin2 = offsets2[0][0];
             var end2 = offsets2[1][0]+offsets2[1][1];
-            video.appendOnDemandBuffer(data2.slice(begin2, end2), playCallback);
+            var bufferToSend = data2.slice(begin2, end2);
+            bufferToSend.fileStart = 0;
+            video.appendOnDemandBuffer(bufferToSend, playCallback);
           }
 
           var playCallback = function () {
@@ -1675,11 +1682,12 @@ export class VideoCanvas extends AnnotationCanvas {
               // "moov" atom to define the file information
               var begin = offsets[idx][0];
               var end = offsets[idx+1][0] + offsets[idx+1][1];
-
+              var bufferToSend = data2.slice(begin2, end2);
+              bufferToSend.fileStart = 0;
               // Note: There is only one buffer for the onDemand buffer, unlike the other
               //       scrub buffers. So, we only need to initialize a single buffer
               //       with this video information.
-              video_buffer.appendOnDemandBuffer(data.slice(begin, end), callback);
+              video_buffer.appendOnDemandBuffer(bufferToSend, callback);
               idx += 2;
             }
             else
@@ -1687,15 +1695,18 @@ export class VideoCanvas extends AnnotationCanvas {
               // Rest of the video segment information (moof / mdat / mfra)
               var begin = offsets[idx][0];
               var end = offsets[idx][0] + offsets[idx][1];
-
+              var bufferToSend = data.slice(begin, end);
+              bufferToSend.fileStart = data["startByte"] + begin;
               try {
                 if (!that._makeVideoError) {
-                  video_buffer.appendOnDemandBuffer(data.slice(begin, end), callback);
+                  video_buffer.appendOnDemandBuffer(bufferToSend, callback);
                 }
                 else {
                   // #DEBUG path - Used to induce a decoding error
                   that._makeVideoError = false;
-                  video_buffer.appendOnDemandBuffer(data.slice(begin, end - 5), callback);
+                  bufferToSend = data.slice(begin, end-5);
+                  bufferToSend.fileStart = data["startByte"] + begin;
+                  video_buffer.appendOnDemandBuffer(bufferToSend, callback);
                 }
               }
               catch {
