@@ -2008,11 +2008,17 @@ export class AnnotationMulti extends TatorElement {
     }
   }
 
-
   addAlgoLaunchOption(algoName) {
     for (let video of this._videos)
     {
       video.addAlgoLaunchOption(algoName);
+    }
+  }
+
+  addAppletToMenu(appletName) {
+    for (let video of this._videos)
+    {
+      video.addAppletToMenu(appletName);
     }
   }
 

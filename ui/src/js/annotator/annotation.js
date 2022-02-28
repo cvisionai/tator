@@ -3,6 +3,7 @@ import { hasPermission } from "../util/has-permission.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { DrawGL } from "./drawGL.js";
 import { color } from "./drawGL_colors.js";
+import { Utilities } from "../util/utilities.js";
 
 
 var statusAnimator=null;
@@ -955,6 +956,7 @@ export class AnnotationCanvas extends TatorElement
     this._contextMenuTrack.disableEntry("Merge into main track", true, "Need to set main track first");
     this._selectedMergeTrack = null;
     this._algoLaunchOptions = [];
+    this._appletLaunchOptions = [];
 
     // Don't display the fill track gaps option until it has been verified the algorithm has been registered.
     this._contextMenuTrack.displayEntry("Fill track gaps", false);
@@ -1207,10 +1209,33 @@ export class AnnotationCanvas extends TatorElement
   }
 
   /**
+   * Add the given applet to the right click menu launch option
+   * @param {string} appletName - Unique applet name name to add to the right click menu
+   */
+  addAppletToMenu(appletName) {
+    if (this._appletLaunchOptions.includes(appletName)) {
+      Utilities.warningAlert(`Duplicate name registered for menu: ${appletName}`)
+    }
+    if (this._algoLaunchOptions.includes(appletName)) {
+      Utilities.warningAlert(`Duplicate name registered for menu: ${appletName}`)
+    }
+
+    this._appletLaunchOptions.push(appletName);
+    this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this));
+  }
+
+  /**
    * Add the given algorithm to the right click menu launch option
    * @param {string} algoName - Unique algorithm name to add to the right click menu
    */
   addAlgoLaunchOption(algoName) {
+    if (this._appletLaunchOptions.includes(algoName)) {
+      Utilities.warningAlert(`Duplicate name registered for menu: ${algoName}`)
+    }
+    if (this._algoLaunchOptions.includes(algoName)) {
+      Utilities.warningAlert(`Duplicate name registered for menu: ${algoName}`)
+    }
+
     this._algoLaunchOptions.push(algoName);
     this._contextMenuNone.addMenuEntry(algoName, this.contextMenuCallback.bind(this));
   }
@@ -1256,6 +1281,20 @@ export class AnnotationCanvas extends TatorElement
    */
   contextMenuCallback(menuText)
   {
+    if (this._appletLaunchOptions.includes(menuText)) {
+      this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+        detail: {
+          appletName: menuText,
+          frame: this.currentFrame(),
+          mediaId: this._videoObject.id,
+          projectId: this._data._projectId,
+          versionId: this._data.getVersion().id,
+        },
+        composed: true,
+      }));
+      return;
+    }
+
     if (this._algoLaunchOptions.includes(menuText)) {
       this.dispatchEvent(new CustomEvent("launchAlgorithm", {
         detail: {
