@@ -1112,7 +1112,7 @@ export class MotionComp {
     this._targetFPS = (this._schedule.length*1000) / (this._lengthOfSchedule * this._interval)
     let msg = "Playback schedule = " + this._schedule + "\n";
     msg += "Updates @ " + this._updatesAt + "\n";
-    msg += "Frame Increment = " + this.frameIncrement(videoFps, factor) + "\n";
+    msg += "Frame Increment = " + this.frameIncrement(this._videoFps, factor) + "\n";
     msg += "Target FPS = " + this._targetFPS + "\n";
     msg += "video FPS = " + videoFps + "\n";
     msg += "factor = " + factor + "\n";
@@ -2019,7 +2019,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Resize the viewport
     this._draw.resizeViewport(dims[0], dims[1]);
-    this._fps=fps;
+    this._fps=Math.round(1000*fps)/1000;
     this._numFrames=numFrames-1;
     this._numSeconds=fps*numFrames;
     this._dims=dims;
