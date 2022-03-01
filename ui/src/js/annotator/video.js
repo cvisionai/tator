@@ -2461,7 +2461,13 @@ export class VideoCanvas extends AnnotationCanvas {
           // rasterizer.
           // Need to bind the member function to the result handler
           callback=callback.bind(that);
-          callback(frame, video, that._dims[0], that._dims[1])
+          let image_buffer = video;
+          if (video.use_codec_buffer)
+          {
+            image_buffer = video.codec_image_buffer;
+          }
+          console.info(`${performance.now()}: SEEK END`);
+          callback(frame, image_buffer, that._dims[0], that._dims[1])
           resolve();
           video.oncanplay=null;
           that.dispatchEvent(new CustomEvent("seekComplete",
@@ -2508,6 +2514,7 @@ export class VideoCanvas extends AnnotationCanvas {
         }
       });
 
+    console.info(`${performance.now()}: SEEK BEGIN`);
     if (time <= video.duration || isNaN(video.duration))
     {
       video.currentTime = time;

@@ -63,6 +63,7 @@ class TatorVideoBuffer {
   {
     this._name = name;
     this._parent = parent;
+    this.use_codec_buffer = true;
 
     this._configured = false;
 
@@ -130,6 +131,7 @@ class TatorVideoBuffer {
     this._codecString = info.tracks[0].codec;
     this._trackWidth = Math.round(info.tracks[0].track_width);
     this._trackHeight = Math.round(info.tracks[0].track_height);
+    this._timescale = info.tracks[0].timescale;
     let codecConfig = {
       codec: this._codecString,
       codedWidth: Number(this._trackWidth),
@@ -156,29 +158,117 @@ class TatorVideoBuffer {
       this._parent._loadedDataCallback=null;
     }
     this._duration_time = 0;
+    this._hot_frames = new Map(); // This stores the hot frames (decoded) ready to serve up via image_buffer property
   }
 
-  _mp4Samples(track_id, ref, samples) {
+  _mp4Samples(track_id, ref, samples)
+  {
     console.info(`${this._name}: Got samples ${samples.length}`);
-    let timestamp = samples[0].cts;
-    let buffers = [];
-    for (const sample of samples)
+
+    if (this._muted == false)
     {
-      buffers.push(sample.data);
+      console.info(`${this._name}: UNMUTED processing ${samples.length}`);
+      let timestamp = samples[0].cts;
+      let buffers = [];
+      if (samples[0].is_sync != true)
+      {
+        // Did not seek to the nearest keyframe; oops
+        console.error("Invalid seek attempted (not aligned to key frame!)");
+      }
+      let idx = 0;
+      let duration = 0;
+      // initialize CTS vector
+      this._cts = [];
+      this._segment_pos = 0;
+      for (idx = 0; idx < samples.length; idx++)
+      {
+        // Only decode one segment at a time.
+        if (idx > 0 && samples[idx].is_sync)
+        {
+          break;
+        }
+        buffers.push(samples[idx].data);
+        this._cts.push(samples[idx].cts);
+        duration += samples[idx].duration;
+      }
+      console.info(`Sending ${idx} frames for decode`);
+      let bigBuffer = arrayBufferConcat(...buffers);
+      const chunk = new EncodedVideoChunk({
+        type: "key",
+        timestamp: timestamp,
+        data: bigBuffer,
+        duration: duration
+      });
+      this._videoDecoder.decode(chunk);
+      this._videoDecoder.flush();
+      this._muted = true;
+      this._mp4File.seek(0);
     }
-    let bigBuffer = arrayBufferConcat(...buffers);
-    const chunk = new EncodedVideoChunk({
-      type: "key",
-      timestamp: timestamp,
-      data: bigBuffer
-    });
-    this._videoDecoder.decode(chunk);
-    //this._muted = true;
+    else
+    {
+      // Figure out buffered regions here
+    }
   }
 
+  _hot_frame_range()
+  {
+    let min = Number.MAX_SAFE_INTEGER;
+    let max = Number.MIN_SAFE_INTEGER;
+    let timestamps = this._hot_frames.keys();
+    for (let timestamp of timestamps)
+    {
+      const frame_time = timestamp/ this._timescale;
+      if (frame_time < min)
+      {
+        min = frame_time;
+      }
+      if (frame_time > max)
+      {
+        max = frame_time;
+      }
+    }
+    return {'min': min, 'max': max};
+  }
+
+  // Returns true if the cursor is in the range of the hot frames
+  _cursor_is_hot()
+  {
+    const min_max = this._hot_frame_range();
+    if (this._current_cursor >= min_max.min && this._current_cursor <= min_max.max)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
+  // Trims out the hot buffer based on the cursor position
+  _run_garbage_collect()
+  {
+    // @TODO: Implement this routine (needs frames per second)
+  }
   _frameReady(frame)
   {
-    console.info(`${this._name} decode frame callback`);
+    console.info(`${this._name} decode frame callback TS=${frame.timestamp} DUR=${frame.duration}`);
+
+    // Can't trust timestamp from frame
+    this._hot_frames.set(this._cts[this._segment_pos],frame);
+    if (this._cursor_is_hot())
+    {
+      this._seekComplete = true;
+      this._safeCall(this.oncanplay);
+    }
+    this._segment_pos++;
+  }
+
+  _safeCall(func_ptr)
+  {
+    if (func_ptr)
+    {
+      func_ptr();
+    }
   }
 
   _frameError(error)
@@ -186,21 +276,49 @@ class TatorVideoBuffer {
     console.error(`${this._name} DECODE ERROR ${error}`);
   }
 
+  _closest_frame_to_cursor()
+  {
+    const cursorInCts = this._current_cursor*this._timescale;
+    let lastDistance = Number.MAX_VALUE;
+    let lastTimestamp = 0;
+    for (let timestamp of this._hot_frames.keys())
+    {
+      let thisDistance = Math.abs(timestamp-cursorInCts);
+      if (thisDistance > lastDistance)
+      {
+        break;
+      }
+      else
+      {
+        lastDistance = thisDistance
+        lastTimestamp = timestamp;
+      }
+    }
+    console.info(`${this._name}: Returning ${lastTimestamp} for ${cursorInCts}`);
+    return this._hot_frames.get(lastTimestamp);
+  }
+
   // Public interface mirrors that of a standard HTML5 video
 
   set currentTime(video_time)
   {
+    if (this._codecString == undefined)
+    {
+      console.info("Can not seek until file is loaded.")
+      return;
+    }
     if (this._current_cursor == video_time)
     {
       console.debug("Not duping low-level seek")
       return;
     }
     console.info(`${this._name} commanded to ${video_time}`);
-    //this._mp4File.stop();
-    //this._mp4File.seek(video_time);
+    this._mp4File.stop();
+    this._mp4File.seek(video_time);
     this._muted = false;
     this._seekComplete = false;
-    //this._mp4File.start();
+    this._mp4File.start();
+    this._current_cursor = video_time;
 
   }
   get currentTime()
@@ -208,10 +326,18 @@ class TatorVideoBuffer {
     return this._current_cursor;
   }
 
-  get currentFrame()
+  // Property to get the underlying video object R/O property
+  // Would be nice if we could somehow derive off of canvas image source
+  get codec_image_buffer()
   {
-    // TODO return decoded video image if available else
-    return null;
+    if (this._cursor_is_hot() && this._seekComplete == true)
+    {
+      return this._closest_frame_to_cursor();
+    }
+    else
+    {
+      return null;
+    }
   }
   appendBuffer(data)
   {
