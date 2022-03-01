@@ -3,6 +3,61 @@
 
 import * as MP4Box from "mp4box";
 
+function arrayBufferConcat () {
+  var length = 0
+  var buffer = null
+
+  for (var i in arguments) {
+    buffer = arguments[i]
+    length += buffer.byteLength
+  }
+
+  var joined = new Uint8Array(length)
+  var offset = 0
+
+  for (var i in arguments) {
+    buffer = arguments[i]
+    joined.set(new Uint8Array(buffer), offset)
+    offset += buffer.byteLength
+  }
+
+  return joined.buffer
+}
+
+class Writer {
+  constructor(size) {
+    this.data = new Uint8Array(size);
+    this.idx = 0;
+    this.size = size;
+  }
+
+  getData() {
+    if(this.idx != this.size)
+      throw "Mismatch between size reserved and sized used"
+
+    return this.data.slice(0, this.idx);
+  }
+
+  writeUint8(value) {
+    this.data.set([value], this.idx);
+    this.idx++;
+  }
+
+  writeUint16(value) {
+    // TODO: find a more elegant solution to endianess.
+    var arr = new Uint16Array(1);
+    arr[0] = value;
+    var buffer = new Uint8Array(arr.buffer);
+    this.data.set([buffer[1], buffer[0]], this.idx);
+    this.idx +=2;
+  }
+
+  writeUint8Array(value) {
+    this.data.set(value, this.idx);
+    this.idx += value.length;
+  }
+}
+
 class TatorVideoBuffer {
   constructor(parent, name)
   {
@@ -23,6 +78,7 @@ class TatorVideoBuffer {
 
     // For  lack of a better guess put the default video cursor at 0
     this._current_cursor = 0.0;
+    this._current_duration = 0.0;
   }
 
   _mp4OnError(e)
@@ -34,6 +90,41 @@ class TatorVideoBuffer {
     }
   }
 
+  _getExtradata(avccBox) {
+    var i;
+    var size = 7;
+    for (i = 0; i < avccBox.SPS.length; i++) {
+      // nalu length is encoded as a uint16.
+      size+= 2 + avccBox.SPS[i].length;
+    }
+    for (i = 0; i < avccBox.PPS.length; i++) {
+      // nalu length is encoded as a uint16.
+      size+= 2 + avccBox.PPS[i].length;
+    }
+
+    var writer = new Writer(size);
+
+    writer.writeUint8(avccBox.configurationVersion);
+    writer.writeUint8(avccBox.AVCProfileIndication);
+    writer.writeUint8(avccBox.profile_compatibility);
+    writer.writeUint8(avccBox.AVCLevelIndication);
+    writer.writeUint8(avccBox.lengthSizeMinusOne + (63<<2));
+
+    writer.writeUint8(avccBox.nb_SPS_nalus + (7<<5));
+    for (i = 0; i < avccBox.SPS.length; i++) {
+      writer.writeUint16(avccBox.SPS[i].length);
+      writer.writeUint8Array(avccBox.SPS[i].nalu);
+    }
+
+    writer.writeUint8(avccBox.nb_PPS_nalus);
+    for (i = 0; i < avccBox.PPS.length; i++) {
+      writer.writeUint16(avccBox.PPS[i].length);
+      writer.writeUint8Array(avccBox.PPS[i].nalu);
+    }
+
+    return writer.getData();
+  }
+
   _mp4OnReady(info)
   {
     this._codecString = info.tracks[0].codec;
@@ -43,8 +134,9 @@ class TatorVideoBuffer {
       codec: this._codecString,
       codedWidth: Number(this._trackWidth),
       codedHeight: Number(this._trackHeight),
-      hardwareAcceleration: "prefer-hardware",
-      optimizeForLatency: true
+      description: this._getExtradata(this._mp4File.moov.traks[0].mdia.minf.stbl.stsd.entries[0].avcC),
+      //hardwareAcceleration: "prefer-hardware"//,
+      //optimizeForLatency: true
     };
     console.info(JSON.stringify(info.tracks[0]));
     console.info(`${this._name} is configuring decoder = ${JSON.stringify(codecConfig)}`);
@@ -53,6 +145,9 @@ class TatorVideoBuffer {
 
     // Configure segment callback
     this._mp4File.setExtractionOptions(info.tracks[0].id);
+    this._muted = true;
+    this._mp4File.start();
+    console.info(JSON.stringify(info));
 
     // Notify higher level code we loaded our first bit of data
     if (this._parent._loadedDataCallback)
@@ -60,13 +155,25 @@ class TatorVideoBuffer {
       this._parent._loadedDataCallback();
       this._parent._loadedDataCallback=null;
     }
+    this._duration_time = 0;
   }
 
   _mp4Samples(track_id, ref, samples) {
+    console.info(`${this._name}: Got samples ${samples.length}`);
+    let timestamp = samples[0].cts;
+    let buffers = [];
     for (const sample of samples)
     {
-      console.info(`Handling sample: ${sample.cts} ${sample.is_sync} ${sample.duration}`);
+      buffers.push(sample.data);
     }
+    let bigBuffer = arrayBufferConcat(...buffers);
+    const chunk = new EncodedVideoChunk({
+      type: "key",
+      timestamp: timestamp,
+      data: bigBuffer
+    });
+    this._videoDecoder.decode(chunk);
+    //this._muted = true;
   }
 
   _frameReady(frame)
@@ -89,9 +196,11 @@ class TatorVideoBuffer {
       return;
     }
     console.info(`${this._name} commanded to ${video_time}`);
-    this._mp4File.seek(video_time);
+    //this._mp4File.stop();
+    //this._mp4File.seek(video_time);
+    this._muted = false;
     this._seekComplete = false;
-    this._mp4File.start();
+    //this._mp4File.start();
 
   }
   get currentTime()
@@ -107,6 +216,18 @@ class TatorVideoBuffer {
   appendBuffer(data)
   {
     this._mp4File.appendBuffer(data);
+  }
+
+  pause()
+  {
+    // Shouldn't be called
+    console.error("Calling pause() on underlying media.");
+  }
+
+  play()
+  {
+    // Shouldn't be called
+    console.error("Calling play() on underlying media.");
   }
 }
 export class TatorVideoDecoder {
@@ -142,6 +263,18 @@ export class TatorVideoDecoder {
   status()
   {
     
+  }
+
+  pause()
+  {
+    // Shouldn't be called
+    console.error("Calling pause() on underlying media.");
+  }
+
+  play()
+  {
+    // Shouldn't be called
+    console.error("Calling play() on underlying media.");
   }
 
   /**
