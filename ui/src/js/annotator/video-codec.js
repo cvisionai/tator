@@ -132,6 +132,10 @@ class TatorVideoBuffer {
     this._trackWidth = Math.round(info.tracks[0].track_width);
     this._trackHeight = Math.round(info.tracks[0].track_height);
     this._timescale = info.tracks[0].timescale;
+
+    this._canvas = new OffscreenCanvas(this._trackWidth, this._trackHeight);
+    this._canvasCtx = this._canvas.getContext("2d");
+
     let codecConfig = {
       codec: this._codecString,
       codedWidth: Number(this._trackWidth),
@@ -251,23 +255,31 @@ class TatorVideoBuffer {
   }
   _frameReady(frame)
   {
-    console.info(`${this._name} decode frame callback TS=${frame.timestamp} DUR=${frame.duration}`);
+    console.info(`${this._name} decode frame callback TS=${this._segment_pos}`);
 
+    let frameCopy = null;
+    if (this._canvas)
+    {
+      this._canvasCtx.drawImage(frame,0,0);
+      frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
+    }
     // Can't trust timestamp from frame
-    this._hot_frames.set(this._cts[this._segment_pos],frame);
+    this._hot_frames.set(this._cts[this._segment_pos],frameCopy);
     if (this._cursor_is_hot())
     {
       this._seekComplete = true;
       this._safeCall(this.oncanplay);
     }
     this._segment_pos++;
+    frame.close();
   }
 
   _safeCall(func_ptr)
   {
+    // Defer call out of the context of a video decode event
     if (func_ptr)
     {
-      func_ptr();
+      setTimeout(func_ptr, 0);
     }
   }
 
@@ -281,7 +293,8 @@ class TatorVideoBuffer {
     const cursorInCts = this._current_cursor*this._timescale;
     let lastDistance = Number.MAX_VALUE;
     let lastTimestamp = 0;
-    for (let timestamp of this._hot_frames.keys())
+    let timestamps = [...this._hot_frames.keys()].sort(); // make sure keys are sorted!
+    for (let timestamp of timestamps)
     {
       let thisDistance = Math.abs(timestamp-cursorInCts);
       if (thisDistance > lastDistance)
