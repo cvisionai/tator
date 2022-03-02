@@ -1515,14 +1515,16 @@ export class AnnotationPage extends TatorPage {
     });
 
     canvas.addEventListener("launchMenuApplet", evt => {
-      this._menuAppletDialog.applet = evt.detail.appletName;
-      this._menuAppletDialog.data = {
+      var data = {
         frame: evt.detail.frame,
-        versionId: evt.detail.versionId,
-        mediaId: evt.detail.mediaId,
+        version: evt.detail.version,
+        media: evt.detail.media,
         projectId: evt.detail.projectId
       };
+      this._menuAppletDialog.setApplet(evt.detail.appletName, data);
+    });
 
+    this._menuAppletDialog.addEventListener("appletReady", () => {
       this._menuAppletDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
       document.body.classList.add("shortcuts-disabled");

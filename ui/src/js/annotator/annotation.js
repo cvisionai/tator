@@ -1286,9 +1286,9 @@ export class AnnotationCanvas extends TatorElement
         detail: {
           appletName: menuText,
           frame: this.currentFrame(),
-          mediaId: this._videoObject.id,
+          media: this._videoObject,
           projectId: this._data._projectId,
-          versionId: this._data.getVersion().id,
+          version: this._data.getVersion(),
         },
         composed: true,
       }));
