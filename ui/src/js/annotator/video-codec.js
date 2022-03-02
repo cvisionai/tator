@@ -58,6 +58,44 @@ class Writer {
   }
 }
 
+class KeyHeap {
+  constructor()
+  {
+    this.clear();
+  }
+  clear()
+  {
+    this._buf = [];
+  }
+  push(val)
+  {
+    if (!(val in this._buf))
+    {
+      this._buf.push(val);
+      this._buf.sort((a,b)=>a-b);
+    }
+  }
+  closest_keyframe(val)
+  {
+    let lastDistance = Number.MAX_VALUE;
+    let lastTimestamp = 0;
+    for (let timestamp of this._buf)
+    {
+      let thisDistance = Math.abs(timestamp-val);
+      if (thisDistance > lastDistance)
+      {
+        break;
+      }
+      else
+      {
+        lastDistance = thisDistance
+        lastTimestamp = timestamp;
+      }
+    }
+    return lastTimestamp;
+  }
+}
+
 class TatorVideoBuffer {
   constructor(parent, name)
   {
@@ -72,6 +110,7 @@ class TatorVideoBuffer {
     this._mp4File.onError = this._mp4OnError.bind(this);
     this._mp4File.onReady = this._mp4OnReady.bind(this);
     this._mp4File.onSamples = this._mp4Samples.bind(this);
+    this._keyframes = new KeyHeap();
 
     this._videoDecoder = new VideoDecoder({
       output: this._frameReady.bind(this),
@@ -191,6 +230,10 @@ class TatorVideoBuffer {
         {
           break;
         }
+        if (samples[idx].is_sync)
+        {
+          this._keyframes.push(samples[idx].cts/this._timescale);
+        }
         buffers.push(samples[idx].data);
         this._cts.push(samples[idx].cts);
         duration += samples[idx].duration;
@@ -210,18 +253,25 @@ class TatorVideoBuffer {
     }
     else
     {
-      // Figure out buffered regions here
+      for (let idx = 0; idx < samples.length; idx++)
+      {
+        if (samples[idx].is_sync)
+        {
+          this._keyframes.push(samples[idx].cts/this._timescale);
+        }
+      }
     }
   }
 
+  // Returns the range of the hot frames in seconds (inclusive min, exclusive max)
   _hot_frame_range()
   {
     let min = Number.MAX_SAFE_INTEGER;
     let max = Number.MIN_SAFE_INTEGER;
-    let timestamps = this._hot_frames.keys();
+    let timestamps = [...this._hot_frames.keys()].sort((a,b)=>a-b); // make sure keys are sorted!
     for (let timestamp of timestamps)
     {
-      const frame_time = timestamp/ this._timescale;
+      const frame_time = timestamp;
       if (frame_time < min)
       {
         min = frame_time;
@@ -231,14 +281,18 @@ class TatorVideoBuffer {
         max = frame_time;
       }
     }
-    return {'min': min, 'max': max};
+    if (timestamps.length > 1)
+    {
+      max += (timestamps[1]-timestamps[0]); // add duration
+    }
+    return {'min': min/this._timescale, 'max': max/this._timescale};
   }
 
   // Returns true if the cursor is in the range of the hot frames
   _cursor_is_hot()
   {
     const min_max = this._hot_frame_range();
-    if (this._current_cursor >= min_max.min && this._current_cursor <= min_max.max)
+    if (this._current_cursor >= min_max.min && this._current_cursor < min_max.max)
     {
       return true;
     }
@@ -293,7 +347,7 @@ class TatorVideoBuffer {
     const cursorInCts = this._current_cursor*this._timescale;
     let lastDistance = Number.MAX_VALUE;
     let lastTimestamp = 0;
-    let timestamps = [...this._hot_frames.keys()].sort(); // make sure keys are sorted!
+    let timestamps = [...this._hot_frames.keys()].sort((a,b)=>a-b); // make sure keys are sorted!
     for (let timestamp of timestamps)
     {
       let thisDistance = Math.abs(timestamp-cursorInCts);
@@ -307,7 +361,7 @@ class TatorVideoBuffer {
         lastTimestamp = timestamp;
       }
     }
-    console.info(`${this._name}: Returning ${lastTimestamp} for ${cursorInCts}`);
+    console.info(`${this._name}: Returning ${lastTimestamp} for ${cursorInCts} out of ${timestamps.length}`);
     return this._hot_frames.get(lastTimestamp);
   }
 
@@ -320,11 +374,7 @@ class TatorVideoBuffer {
       console.info("Can not seek until file is loaded.")
       return;
     }
-    if (this._current_cursor == video_time)
-    {
-      console.debug("Not duping low-level seek")
-      return;
-    }
+    
     this._current_cursor = video_time;
     if (this._cursor_is_hot())
     {
@@ -333,9 +383,10 @@ class TatorVideoBuffer {
       return;
     }
 
-    console.info(`${this._name} commanded to ${video_time}`);
+    let nearest_keyframe = this._keyframes.closest_keyframe(video_time);
+    console.info(`${this._name} commanded to ${video_time}, nearest key@${nearest_keyframe}`);
     this._mp4File.stop();
-    this._mp4File.seek(video_time);
+    this._mp4File.seek(nearest_keyframe);
     this._muted = false;
     this._seekComplete = false;
     this._mp4File.start();
@@ -349,6 +400,11 @@ class TatorVideoBuffer {
 
   // Property to get the underlying video object R/O property
   // Would be nice if we could somehow derive off of canvas image source
+  // The actual type being returned here is either null or a valid ImageData
+  // ImageData can be pashed to texIamge2d in webgl2 contexts or putImageData in
+  // 2d contexts, or one can use image bitmap renderer contexts. 
+  // @TODO: Do we need to handle a GL mode a bit more optimized? 
+  //        - We could return back a gl buffer in the context of the rendering stack
   get codec_image_buffer()
   {
     if (this._cursor_is_hot() && this._seekComplete == true)
