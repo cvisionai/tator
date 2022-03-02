@@ -1,72 +1,17 @@
 from collections import defaultdict
 import logging
-from typing import List
+from typing import Iterable
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+
+from main.backup import TatorBackupManager
 from main.models import Affiliation, Project, Resource, User
 from main.ses import TatorSES
+from main.util import ravel_paths
 
 
 logger = logging.getLogger(__name__)
-
-
-def ravel_paths(path_list: List[str]) -> dict:
-    """
-    Turns this:
-        [
-          "15/30/1688560/144_lULnWYaJtR.json",
-          "15/30/1688392/720_aGbrbhECuf.json",
-          "15/30/1690071/720_iOLoNSFShU.json",
-          "15/30/1688431/720_txxsnNAKXy.json",
-          "15/57/1877245/720_nvPFIMzSUx.json",
-          "15/30/1689577/720_qnFdJYBgCy.json",
-          "15/30/1688559/144_TGJipUvjoB.json",
-          "15/57/1876652/360_ThCsZQBSrP.json",
-          "15/30/1689885/360_wzFbWwtVBv.json",
-          "15/30/1690057/720_bfuLSfwSgv.json"
-        ]
-    into this:
-        {
-          "15": {
-            "30": {
-              "1688392": ["720_aGbrbhECuf.json"],
-              "1688431": ["720_txxsnNAKXy.json"],
-              "1688559": ["144_TGJipUvjoB.json"],
-              "1688560": ["144_lULnWYaJtR.json"],
-              "1689577": ["720_qnFdJYBgCy.json"],
-              "1689885": ["360_wzFbWwtVBv.json"],
-              "1690057": ["720_bfuLSfwSgv.json"],
-              "1690071": ["720_iOLoNSFShU.json"]
-            },
-            "57": {
-              "1876652": ["360_ThCsZQBSrP.json"],
-              "1877245": ["720_nvPFIMzSUx.json"]
-            }
-          }
-        }
-    """
-
-    def _impl(_d: dict, _key: str, _string: str) -> None:
-        _parts = _string.split("/")
-
-        # If this is the last part, set it as the value and return
-        if len(_parts) == 1:
-            _d.setdefault(_key, []).append(_string)
-            return
-
-        # Recurse, setting the first part as the new key and using the remaining parts as the new
-        # string
-        _impl(_d.setdefault(_key, {}), _parts[0], "/".join(_parts[1:]))
-
-    # Create the dictionary for storing the raveled path names
-    ravel_dict = {}
-
-    for path in path_list:
-        parts = path.split("/")
-        _impl(ravel_dict, parts[0], "/".join(parts[1:]))
-
-    return ravel_dict
 
 
 class Command(BaseCommand):
@@ -78,18 +23,21 @@ class Command(BaseCommand):
             logger.info(f"No resources to back up!")
             return
 
+        path_dict = ravel_paths(resource.path for resource in resource_qs.iterator())
+
         num_resources_backed_up = 0
         failed_backups = defaultdict(set)
-        for resource in resource_qs.iterator():
-            success = Resource.perform_backup(resource.path)
+        for org_id, org_dict in path_dict.items():
+            for proj_id, proj_dict in org_dict.items():
+                backup_mgr = TatorBackupManager(Project.objects.get(pk=proj_id))
+                for media_id, media_lst in proj_dict.items():
+                    for filename in media_lst:
+                        path = "/".join(org_id, proj_id, media_id, filename)
 
-            if success:
-                num_resources_backed_up += 1
-            else:
-                path_parts = resource.path.split("/")
-                project_id = path_parts[1]
-                media_id = path_parts[2]
-                failed_backups[project_id].add(media_id)
+                        if backup_mgr.backup_path(path):
+                            num_resources_backed_up += 1
+                        else:
+                            failed_backups[proj_id].add(media_id)
 
         logger.info(f"Backed up a total of {num_resources_backed_up} resources!")
 
