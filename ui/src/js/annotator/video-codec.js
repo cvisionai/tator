@@ -325,13 +325,21 @@ class TatorVideoBuffer {
       console.debug("Not duping low-level seek")
       return;
     }
+    this._current_cursor = video_time;
+    if (this._cursor_is_hot())
+    {
+      this._seekComplete = true;
+      this._safeCall(this.oncanplay);
+      return;
+    }
+
     console.info(`${this._name} commanded to ${video_time}`);
     this._mp4File.stop();
     this._mp4File.seek(video_time);
     this._muted = false;
     this._seekComplete = false;
     this._mp4File.start();
-    this._current_cursor = video_time;
+    
 
   }
   get currentTime()
