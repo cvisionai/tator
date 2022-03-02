@@ -1,4 +1,6 @@
-class EntityDeleteConfirm extends ModalDialog {
+import { ModalDialog } from "../components/modal-dialog.js";
+
+export class EntityDeleteConfirm extends ModalDialog {
   constructor() {
     super();
 

@@ -1,7 +1,7 @@
-import { TatorElement } from "../components/tator-element.js";
-import { svgNamespace } from "../components/tator-element.js";
+import { TatorElement } from "./tator-element.js";
+import { svgNamespace } from "./tator-element.js";
 
-export class EntityNextButton extends TatorElement {
+export class EntityPrevButton extends TatorElement {
   constructor() {
     super();
 
@@ -16,13 +16,13 @@ export class EntityNextButton extends TatorElement {
     button.appendChild(svg);
 
     const title = document.createElementNS(svgNamespace, "title");
-    title.textContent = "Next";
+    title.textContent = "Previous";
     svg.appendChild(title);
 
     const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute("d", "M12.943 24.943l8-8c0.521-0.521 0.521-1.365 0-1.885l-8-8c-0.521-0.521-1.365-0.521-1.885 0s-0.521 1.365 0 1.885l7.057 7.057-7.057 7.057c-0.521 0.521-0.521 1.365 0 1.885s1.365 0.521 1.885 0z");
+    path.setAttribute("d", "M20.943 23.057l-7.057-7.057 7.057-7.057c0.521-0.521 0.521-1.365 0-1.885s-1.365-0.521-1.885 0l-8 8c-0.521 0.521-0.521 1.365 0 1.885l8 8c0.521 0.521 1.365 0.521 1.885 0s0.521-1.365 0-1.885z");
     svg.appendChild(path);
   }
 }
 
-customElements.define("entity-next-button", EntityNextButton);
+customElements.define("entity-prev-button", EntityPrevButton);

@@ -1,5 +1,4 @@
 import { TatorElement } from "../components/tator-element.js";
-import { LockButton } from "../annotation/lock-button.js";
 
 /**
  * Module for the settings portion of the analytics dashboard

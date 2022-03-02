@@ -6,7 +6,7 @@ import { svgNamespace } from "../components/tator-element.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
 import { FilterData } from "../components/filter-data.js";
 import { v1 as uuidv1 } from "uuid";
-import Gear from "../../images/svg/gear.svg#path";
+import Gear from "../../images/svg/gear.svg";
 
 export class ProjectDetail extends TatorPage {
   constructor() {
@@ -133,7 +133,7 @@ export class ProjectDetail extends TatorPage {
     this._settingsButton.appendChild(settingsSvg);
 
     const settingsPath = document.createElementNS(svgNamespace, "use");
-    settingsPath.setAttribute("href", Gear);
+    settingsPath.setAttribute("href", `${Gear}#path`);
     settingsSvg.appendChild(settingsPath);
 
     this._projectText = document.createTextNode("");

@@ -1,5 +1,5 @@
-import { TatorElement } from "../components/tator-element.js";
-import { svgNamespace } from "../components/tator-element.js";
+import { TatorElement } from "./tator-element.js";
+import { svgNamespace } from "./tator-element.js";
 
 export class EntityDeleteButton extends TatorElement {
   constructor() {

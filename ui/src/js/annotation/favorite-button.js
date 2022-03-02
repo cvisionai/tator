@@ -1,7 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 import { getCookie } from "../util/get-cookie.js";
 import { fetchRetry } from "../util/fetch-retry.js";
-import { DeleteButton } from "../project-detail/delete-button.js";
 
 export class FavoriteButton extends TatorElement {
   constructor() {
