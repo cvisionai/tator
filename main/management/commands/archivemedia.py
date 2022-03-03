@@ -47,12 +47,18 @@ class Command(BaseCommand):
 
             media_dtype = getattr(media.meta, "dtype", None)
             if media_dtype in ["multi", "image", "video"]:
-                media_not_ready = get_clones(media, filter_dict)
+                clone_info = get_clones(media, filter_dict)
             else:
                 logger.warning(
                     f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
                 )
                 continue
+
+            media_not_ready = [
+                mid
+                for media_id, media_dict in clone_info.items()
+                for mid in media_dict["remaining"]
+            ]
 
             if media_not_ready:
                 # Accumulate the lists of cloned media that aren't ready

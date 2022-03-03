@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import os
 import time
@@ -6,6 +7,7 @@ import json
 import datetime
 import shutil
 import math
+from typing import Dict
 
 from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
@@ -779,36 +781,51 @@ def update_media_archive_state(
     return success
 
 
-def get_clones(media: Media, filter_dict: dict = None):
+def get_clones(media: Media, filter_dict: Dict[str, str] = None) -> Dict[int, Dict[str, set]]:
     """
     Gets the exhaustive list of clone ids of the given media. If a `filter_dict` argument is given,
-    it is used to exclude media from the results to determine the subset of clones that do not
-    match.  An example use can be found in `main/management/commands/archivemedia.py`, where it
-    filters out clones in the ready to archive or archived state.
+    it is used to filter media from the results to determine the subset of clones that match. The
+    return value is a dictionary with the keys being single media ids (i.e. the given media's id for
+    a single type or the media ids that compose a multiview) and the value being another dict, with
+    three keys:
+
+    - `all`: contains the set of all integer media ids of all clones of the given media.
+    - `original`: contains the set of integer media ids of the original clones. For a single media,
+      e.g. `media.meta.dtype` is `video` or `image`, `original` will contain exactly one element.
+      For multiviews, i.e. `media.meta.dtype` is `multi`, `original` will contain the same number of
+      elements as `media.media_files`.
+    - `remaining`: contains the set of integer media ids that are clones of the given media object
+      that do match the `filter_dict` arguments, if given, otherwise it is empty
 
     :param media: The media to find clones of.
     :type media: Media
     :param filter_dict: If specified, it is the keyword arguments to pass to the `exclude` operation
-                        on the clones' queryset.
+                        on the clones' queryset and will populate the `remaining` set.
     :type filter_dict: dict
+    :rtype: dict
     """
 
-    def _get_multi_blocking_clones(media):
+    def _find_multi_clones(media: Media, return_dict: Dict[int, Dict[str, set]]) -> None:
         """
         Checks the given multiview's individual media for clones.
         """
-        multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
-        media_readiness = [_get_single_blocking_clones(obj) for obj in multi_qs.iterator()]
-        return [ele for lst in media_readiness for ele in lst]
+        # If media.media_files is empty or none, there is nothing to check
+        if media.media_files:
+            # Get the queryset of all single media ids in the multiview
+            single_qs = Media.objects.filter(pk__in=media.media_files["ids"])
 
-    def _get_single_blocking_clones(media):
+            # Find the set of clones for each
+            for obj in single_qs.iterator():
+                _find_single_clones(obj, return_dict[obj.id])
+
+    def _find_single_clones(media: Media, clone_dict: Dict[str, set]) -> None:
         """
-        Checks the given media for clones. Starts with the first entry of `keys` and moves on if the
-        key is not found in `media.media_files`. Returns a tuple of lists, where the former is the
-        list of media whose `archive_state` is `to_archive` and the latter whose `archive_state` is
-        anything else.
+        Checks the given media for clones and applies `filter_dict`, if set. Starts with the first
+        entry of `keys` and moves on if the key is not found in `media.media_files`. For clones that
+        match the `filter_dict`, if set, this will update the `clone_dict["remaining"]` set with
+        their integer ids.
         """
-        media_not_ready = set()
+        original_media_ids = set()
 
         for key in ["streaming", "archival", "audio", "image"]:
             # If the given key does not exist in `media_files` or the list of files is empty, move
@@ -816,25 +833,40 @@ def get_clones(media: Media, filter_dict: dict = None):
             if not (key in media.media_files and media.media_files[key]):
                 continue
 
+            # Collect all paths for this key
             paths = [obj["path"] for obj in media.media_files[key]]
+
+            # Update the set of original_media_ids with the part of the path that is the media id to
+            # which this object was originally uploaded
+            original_media_ids.update(int(path.split("/")[2]) for path in paths)
 
             # Shared base queryset
             media_qs = Media.objects.filter(resource_media__path__in=paths)
+            media_dict["all"].update(list(media_qs.values_list("id", flat=True)))
 
-            # Apply exclude filter, if given
+            # Apply filter_dict, if given
             if filter_dict:
                 media_qs = media_qs.exclude(**filter_dict)
+                media_dict["remaining"].update(list(media_qs.values_list("id", flat=True)))
 
-            # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
-            media_not_ready.update(list(media_qs.values_list("id", flat=True)))
+        n_original_ids = len(original_media_ids)
+        if n_original_ids != 1:
+            logger.error(
+                f"Found {n_original_ids} original clones of {media.id}: {original_media_ids}"
+            )
 
-        return list(media_not_ready)
+        media_dict["original"].update(original_media_ids)
+
+    # Set up the return dict
+    return_value = defaultdict(lambda: {"all": set(), "original": set(), "remaining": set()})
 
     dtype = getattr(media.meta, "dtype", None)
+
     if dtype in ["image", "video"]:
-        return _get_single_blocking_clones(media)
+        _find_single_clones(media, return_value[media.id])
     elif dtype == "multi":
-        return _get_multi_blocking_clones(media)
+        _find_multi_clones(media, return_value)
     else:
         logger.error(f"Expected dtype in ['multi', 'image', 'video'], got '{dtype}'")
-        return []
+
+    return dict(return_value)
