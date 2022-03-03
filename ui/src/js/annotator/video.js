@@ -2508,8 +2508,8 @@ export class VideoCanvas extends AnnotationCanvas {
           {
             image_buffer = video.codec_image_buffer;
           }
-          that._decode_profiler.push(performance.now()-that._decode_start);
           callback(frame, image_buffer, that._dims[0], that._dims[1]);
+          that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
           video.oncanplay=null;
           that.dispatchEvent(new CustomEvent("seekComplete",
