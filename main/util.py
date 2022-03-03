@@ -705,6 +705,62 @@ def fix_bad_restores(
             json.dump(list(archived_resources), fp)
 
 
+def update_media_archive_state(
+    media: Media,
+    archive_state: str,
+    restoration_requested: bool,
+    **op_kwargs: dict,
+) -> bool:
+    """
+    Attempts to update the archive state of all media associated with a video or image, except for
+    thumbnails. If successful, the archive state of the media is changed according to the given
+    arguments and True is returned.
+
+    :param media: The media to update
+    :type media: Media
+    :param update_operator: The operation to apply to the media
+    :type update_operator: Callable[[str], int]
+    :param archive_state: The target for `media.archive_state`
+    :type archive_state: str
+    :param restoration_requested: The target for `media.restoration_requested`
+    :type restoration_requested: bool
+    :rtype: int
+    """
+    # Lookup table for operators based on the target `archive_state` and `restoration_requested`
+    # values. Operators must accept one string argument and return a boolean
+    operator = {
+        ("archived", False): Resource.archive_resource,
+        ("to_live", True): Resource.request_restoration,
+        ("live", False): Resource.restore_resource,
+    }.get((archive_state, restoration_requested), lambda path: False)
+
+    success = [True]
+    if media.media_files:
+        for key in ["streaming", "archival", "audio", "image"]:
+            for obj in media.media_files.get(key, []):
+                success.append(update_operator(obj["path"], **op_kwargs))
+                if key == "streaming":
+                    success.append(update_operator(obj["segment_info"]))
+
+    success = all(success)
+    if success:
+        new_status_date = datetime.now(timezone.utc)
+        media.archive_status_date = new_status_date
+        media.archive_state = archive_state
+        media.restoration_requested = restoration_requested
+        media.save()
+
+        # Check for multiviews containing this single and put them in the same state, if any exist
+        multi_qs = Media.objects.filter(meta__dtype="multi", media_files__ids__contains=media.id)
+        for multi in multi_qs.iterator():
+            multi.archive_status_date = new_status_date
+            multi.archive_state = archive_state
+            multi.restoration_requested = restoration_requested
+            multi.save()
+
+    return success
+
+
 def get_clones(media: Media, filter_dict: dict = None):
     """
     Gets the exhaustive list of clone ids of the given media. If a `filter_dict` argument is given,
