@@ -74,7 +74,7 @@ class DecodeProfiler
   {
     if (alert_interval == undefined)
     {
-      alert_interval=100;
+      alert_interval=25;
     }
     this._alert_interval = alert_interval;
     this._times=[]
@@ -2935,7 +2935,7 @@ export class VideoCanvas extends AnnotationCanvas {
   loaderThread(initialize, bufferName)
   {
     let fpsInterval = 1000.0 / (this._fps);
-    var bufferWaitTime=Math.min(fpsInterval*4, 100); // max delay is 100ms
+    var bufferWaitTime=Math.min(fpsInterval*4, 100); // max delay is 10ms
     if (bufferName == undefined)
     {
       bufferName = "seek";
@@ -2948,7 +2948,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // If the draw buffer is full try again in the load interval
     if (this._draw.canLoad() == false)
     {
-      this._loaderTimeout = setTimeout(loader, bufferWaitTime);
+      this._loaderTimeout = setTimeout(loader, 0);
       return;
     }
 
@@ -2997,7 +2997,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // Kick off the player thread
     if (this._playerTimeout == null && this._draw.canPlay())
     {
-      this._playerTimeout = setTimeout(()=>{this.playerThread();}, bufferWaitTime);
+      this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
     }
   }
 

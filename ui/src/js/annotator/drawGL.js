@@ -345,9 +345,8 @@ export class DrawGL
     }
 
     // Initialize the frame buffer in GPU memory
-    // @todo parametrize this buffer size.
-    // 30 fps x 4 (wait time) x 2 = 240
-    this.frameBuffer = new FrameBuffer(240, initTexture);
+    // We should only need one GOP pre-catched at a time, give or take.
+    this.frameBuffer = new FrameBuffer(32, initTexture);
 
     // Initialze the backbuffer to use for MSAA
     this.msaaBuffer = gl.createRenderbuffer();
