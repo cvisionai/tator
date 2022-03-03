@@ -90,6 +90,11 @@ class KeyHeap {
     {
       this._buf.push(val);
       this._buf.sort((a,b)=>a-b);
+      return false;
+    }
+    else
+    {
+      return true;
     }
   }
 
@@ -226,6 +231,7 @@ class TatorVideoBuffer {
 
   _mp4Samples(track_id, ref, samples)
   {
+    console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length}`);
     let muted = true;
 
     // Samples can be out of CTS order, when calculating frame diff
@@ -249,12 +255,15 @@ class TatorVideoBuffer {
         muted = false;
       }
     }
+    let done = false;
     if (muted == false)
     {
       // If the codec closed on us, opportunistically reopen it
       if (this._videoDecoder.state == 'closed')
       {
-        this._videoDecoder = new VideoDecoder();
+        this._videoDecoder = new VideoDecoder({
+          output: this._frameReady.bind(this),
+          error: this._frameError.bind(this)});
         this._videoDecoder.configure(this._codecConfig);
       }
       let timestamp = samples[0].cts;
@@ -272,7 +281,22 @@ class TatorVideoBuffer {
         // Only decode one segment at a time.
         if (sample_delta > 50)
         {
+          done=true;
           break;
+        }
+
+        let skip = false;
+        for (const timestamp of this._hot_frames.keys())
+        {
+          if (timestamp == samples[idx].cts)
+          {
+            console.info("Skipping already decoded frame.");
+            skip = true;
+          }
+        }
+        if (skip)
+        {
+          continue;
         }
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
@@ -280,18 +304,29 @@ class TatorVideoBuffer {
           data: samples[idx].data
         });
         this._videoDecoder.decode(chunk);
+        //console.info(`Decoding ${chunk.timestamp} from ${samples[0].cts} DELTA=${sample_delta}`);
       }
     }
     else
     {
-      for (let idx = 0; idx < samples.length; idx++)
+      // Push any undiscovered keyframes
+      for (let idx = samples.length-1; idx >= 0; idx--)
       {
         if (samples[idx].is_sync)
         {
-          this._keyframes.push(samples[idx].cts);
+          if (this._keyframes.push(samples[idx].cts))
+          {
+            done = true;
+            break;
+          }
         }
       }
     }
+    if (done == true)
+    {
+      this._mp4File.stop(); // stop processing samples if we have decoded plenty
+    }
+    console.info(`${performance.now()}: Finished mp4 samples, count=${samples.length}`);
   }
 
   // Returns the range of the hot frames in seconds (inclusive min, exclusive max)
@@ -338,8 +373,10 @@ class TatorVideoBuffer {
     let frameCopy = null;
     if (this._canvas)
     {
+      let start = performance.now();
       this._canvasCtx.drawImage(frame,0,0);
       frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
+      //console.info(`DRAW ${frame.timestamp} TOOK ${performance.now()-start} ms`);
     }
   
     this._hot_frames.set(frame.timestamp,frameCopy);
@@ -443,7 +480,6 @@ class TatorVideoBuffer {
     let nearest_keyframe = this._keyframes.closest_keyframe(video_time*this._timescale);
     this._mp4File.stop();
     this._mp4File.seek(nearest_keyframe/this._timescale);
-    this._muted = false;
     this._mp4File.start();
     
 
@@ -454,6 +490,7 @@ class TatorVideoBuffer {
   get buffered()
   {
     // @TODO: return what is downloaded
+    return [];
   }
 
   // Returns the current video cursor position
@@ -511,6 +548,7 @@ class TatorVideoBuffer {
     console.warn("Calling play() on underlying media. (NO-OP)");
   }
 }
+
 export class TatorVideoDecoder {
   constructor()
   {
