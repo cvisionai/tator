@@ -68,6 +68,47 @@ var src_path="/static/js/annotator/";
 export const RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
+class DecodeProfiler
+{
+  constructor(alert_interval)
+  {
+    if (alert_interval == undefined)
+    {
+      alert_interval=100;
+    }
+    this._alert_interval = alert_interval;
+    this._times=[]
+  }
+  push(this_time)
+  {
+    this._times.push(this_time);
+    if (this._times.length % this._alert_interval == 0)
+    {
+      this.stats(true);
+    }
+  }
+  stats(flush)
+  {
+    let maxDelta=Number.MIN_SAFE_INTEGER;
+    let minDelta=Number.MAX_SAFE_INTEGER;
+    let delta_sum = 0;
+    let max_delta = 0;
+    for (let idx=0; idx < this._times.length; idx++)
+    {
+      delta_sum += this._times[idx];
+      if (this._times[idx] > max_delta)
+      {
+        max_delta = this._times[idx];
+      }
+    }
+    let avg_delta = delta_sum / this._times.length;
+    console.info(`Video decode performance ${avg_delta}ms - Worst = ${max_delta} ms`);
+    if (flush)
+    {
+      this._times=[]
+    }
+  }
+}
 /// Support multiple off-screen videos at varying resolutions
 /// the intention is this export class is used to store raw video
 /// frames as they are downloaded.
@@ -1205,6 +1246,7 @@ export class VideoCanvas extends AnnotationCanvas {
     var that = this;
     this._diagnosticMode = false;
     this._videoVersion = 1;
+    this._decode_profiler = new DecodeProfiler();
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))
@@ -2466,8 +2508,8 @@ export class VideoCanvas extends AnnotationCanvas {
           {
             image_buffer = video.codec_image_buffer;
           }
-          console.info(`${performance.now()}: SEEK END`);
-          callback(frame, image_buffer, that._dims[0], that._dims[1])
+          that._decode_profiler.push(performance.now()-that._decode_start);
+          callback(frame, image_buffer, that._dims[0], that._dims[1]);
           resolve();
           video.oncanplay=null;
           that.dispatchEvent(new CustomEvent("seekComplete",
@@ -2514,7 +2556,7 @@ export class VideoCanvas extends AnnotationCanvas {
         }
       });
 
-    console.info(`${performance.now()}: SEEK BEGIN`);
+    this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
     {
       video.currentTime = time;
