@@ -55,7 +55,7 @@ class KeyHeap {
   // Skip any previously encountered keyframes
   push(val)
   {
-    let closest = this.closest_keyframe(val);
+    let closest = this.closest_keyframe(val).thisSegment;
     if (val != closest)
     {
       this._buf.push(val);
@@ -74,8 +74,10 @@ class KeyHeap {
   {
     let lastDistance = Number.MAX_VALUE;
     let lastTimestamp = 0;
-    for (let timestamp of this._buf)
+    let idx = 0;
+    for (idx = 0; idx < this._buf.length; idx++)
     {
+      let timestamp = this._buf[idx];
       let thisDistance = val-timestamp;
       // Great Scott: Don't pull keyframes from the future.
       if (thisDistance < lastDistance && thisDistance >= 0)
@@ -88,7 +90,19 @@ class KeyHeap {
         break;
       }
     }
-    return lastTimestamp;
+
+    let nextSegment=null;
+    let nearBoundary=false;
+    if (idx < this._buf.length)
+    {
+      nextSegment = this._buf[idx];
+      if (Math.abs(val-nextSegment) < Math.abs(val-lastTimestamp))
+      {
+        nearBoundary = true;
+      }
+    }
+
+    return {"thisSegment": lastTimestamp, "nextSegment": nextSegment, "nearBoundary": nearBoundary};
   }
 }
 
@@ -168,7 +182,8 @@ class TatorVideoBuffer {
     this._timescale = info.tracks[0].timescale;
 
     this._canvas = new OffscreenCanvas(this._trackWidth, this._trackHeight);
-    this._canvasCtx = this._canvas.getContext("2d");
+    //this._canvas = new OffscreenCanvas(320, 144);
+    this._canvasCtx = this._canvas.getContext("2d", {desynchronized:true});
 
     this._codecConfig = {
       codec: this._codecString,
@@ -176,7 +191,7 @@ class TatorVideoBuffer {
       codedHeight: Number(this._trackHeight),
       description: this._getExtradata(this._mp4File.moov.traks[0].mdia.minf.stbl.stsd.entries[0].avcC),
       //hardwareAcceleration: "prefer-hardware"//,
-      optimizeForLatency: true
+      //optimizeForLatency: true
     };
     console.info(JSON.stringify(info.tracks[0]));
     console.info(`${this._name} is configuring decoder = ${JSON.stringify(this._codecConfig)}`);
@@ -194,7 +209,7 @@ class TatorVideoBuffer {
 
   _mp4Samples(track_id, ref, samples)
   {
-    console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} ${samples[0].cts}`);
+    //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} ${samples[0].cts}`);
     let muted = true;
 
     // Samples can be out of CTS order, when calculating frame diff
@@ -226,21 +241,35 @@ class TatorVideoBuffer {
     let done = false;
     if (muted == false)
     {
+      this._seek_in_progress=true;
       let timestamp = samples[0].cts;
       let buffers = [];
       
       let idx = 0;
+      this._frame_count = 0;
+      this._ready_frames=[];
+      this._transfers=[];
       for (idx = 0; idx < samples.length; idx++)
       {
+        //console.info(`${idx}: ${samples[idx].is_sync} ${samples[idx].cts} ${samples[idx].dts}`);
         if (samples[idx].is_sync)
         {
           this._keyframes.push(samples[idx].cts);
         }
 
-        // Decode up to the next key frame.
+        // Decode upto 4 past the next key frame.
         if (idx > 0 && samples[idx].is_sync)
         {
           done=true;
+          for (let overrun_idx = idx; overrun_idx < Math.min(samples.length,idx+4); overrun_idx++)
+          {
+            const chunk = new EncodedVideoChunk({
+              type: (samples[overrun_idx].is_sync ? 'key' : 'delta'),
+              timestamp: samples[overrun_idx].cts,
+              data: samples[overrun_idx].data
+            });
+            this._videoDecoder.decode(chunk);
+          }
           break;
         }
 
@@ -250,8 +279,11 @@ class TatorVideoBuffer {
           data: samples[idx].data
         });
         this._videoDecoder.decode(chunk);
-        //console.info(`Decoding ${chunk.timestamp} DTS=${samples[idx].dts} CTS=${samples[idx].cts}`);
+
+        
       }
+      this._decode_block_size = idx;
+      //console.info(`Asking to decode ${idx} frames from ${samples.length} START=${samples[0].cts}`);
     }
     else
     {
@@ -279,24 +311,35 @@ class TatorVideoBuffer {
   _frameReady(frame)
   {
     let frameCopy = null;
+    //console.info(`${this._frame_count} ready`);
+    this._frame_count++;
     if (this._canvas)
     {
-      console.info(`${performance.now()}: frameReady ${frame.timestamp}`);
-      let start = performance.now();
+      //console.info(`${performance.now()}: frameReady ${frame.timestamp}`);
+      const timestamp = frame.timestamp;
       this._canvasCtx.drawImage(frame,0,0);
+      //this._canvasCtx
       frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
+      frame.close();
+
       //console.info(`DRAW ${frame.timestamp} TOOK ${performance.now()-start} ms`);
-      this._hot_frame_keys.push(frame.timestamp);
-      postMessage({"type": "frame", 
-                   "timestamp": frame.timestamp, 
-                   "data": frameCopy},
-                   [frameCopy]); // transfer frame copy to primary UI thread
+      this._hot_frame_keys.push(timestamp);
+      this._ready_frames.push({'timestamp': timestamp,
+                               'data': frameCopy});
+      this._transfers.push(frameCopy);
+      
+      if (this._ready_frames.length >= this._decode_block_size)
+      {
+        this._seek_in_progress=false;
+        console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
+        postMessage({"type": "frame",  
+                    "data": this._ready_frames},
+                    this._transfers
+                    ); // transfer frame copy to primary UI thread
+        this._ready_frames=[];
+        this._transfers=[];
+      }
     }
-  
-    // @todo dispatch a message with frame copy in it
-    
-  
-    frame.close();
   }
 
   _frameError(error)
@@ -315,6 +358,7 @@ class TatorVideoBuffer {
   {
     this._current_cursor = video_time;
 
+    let keyframe_info = this._keyframes.closest_keyframe(video_time*this._timescale);
     // Only parse MP4 if we have to
     if (informational == false)
     {
@@ -328,9 +372,9 @@ class TatorVideoBuffer {
       }
       this._videoDecoder.reset();
       this._videoDecoder.configure(this._codecConfig);
-      let nearest_keyframe = this._keyframes.closest_keyframe(video_time*this._timescale);
+      let nearest_keyframe = keyframe_info.thisSegment;
       this._mp4File.stop();
-      console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time}`);
+      //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time}`);
       this._mp4File.seek(nearest_keyframe/this._timescale);
       this._mp4File.start();
     }

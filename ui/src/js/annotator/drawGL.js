@@ -346,7 +346,7 @@ export class DrawGL
 
     // Initialize the frame buffer in GPU memory
     // We should only need one GOP pre-catched at a time, give or take.
-    this.frameBuffer = new FrameBuffer(12, initTexture);
+    this.frameBuffer = new FrameBuffer(64, initTexture);
 
     // Initialze the backbuffer to use for MSAA
     this.msaaBuffer = gl.createRenderbuffer();
@@ -762,7 +762,7 @@ export class DrawGL
   // Returns true if there is room for playing frames
   canPlay()
   {
-    return this.frameBuffer.availableDisplay() > 0;
+    return this.frameBuffer.availableDisplay();
   }
 
   // Begin drawing sequence. As draw actions are performed new vertex

@@ -2522,7 +2522,6 @@ export class VideoCanvas extends AnnotationCanvas {
             if (that._audioPlayer.currentTime != audio_time)
             {
               that._audioPlayer.currentTime = audio_time;
-              console.info("Setting audio to " + audio_time);
             }
           }
 
@@ -2804,6 +2803,7 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     /// This is the notional scheduled diagnostic interval
     var schedDiagInterval=2000.0;
+    //console.info(`PLAYER @ ${performance.now()}`);
 
     let player = (domtime) => {this.playerThread(domtime);};
     // Video player thread
@@ -2845,7 +2845,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._animationIdx = this._animationIdx + increment;
     }
 
-    if (this._draw.canPlay())
+    if (this._draw.canPlay() > 0)
     {
       // Ready to update the video.
       // Request browser to call player function to update an animation before the next repaint
@@ -2948,6 +2948,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // If the draw buffer is full try again in the load interval
     if (this._draw.canLoad() == false)
     {
+      //console.info("Loader Full");
       this._loaderTimeout = setTimeout(loader, 0);
       return;
     }
@@ -2994,8 +2995,8 @@ export class VideoCanvas extends AnnotationCanvas {
     // Seek to the current frame and call our atomic callback
     this.seekFrame(this._loadFrame, pushAndGoToNextFrame, false, bufferName);
 
-    // Kick off the player thread
-    if (this._playerTimeout == null && this._draw.canPlay())
+    // Kick off the player thread once we have 25 frames loaded
+    if (this._playerTimeout == null && this._draw.canPlay() > 50)
     {
       this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
     }

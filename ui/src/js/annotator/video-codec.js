@@ -54,7 +54,7 @@ class TatorVideoManager {
   }
 
   // Returns the range of the hot frames in seconds (inclusive min, exclusive max)
-  _hot_frame_range()
+  _hot_frame_ranges()
   {
     // !!! This is all wrong!
     let min = Number.MAX_SAFE_INTEGER;
@@ -82,30 +82,36 @@ class TatorVideoManager {
   // Returns true if the cursor is in the range of the hot frames
   _cursor_is_hot()
   {
-    const min_max = this._hot_frame_range();
-    //console.info(`${this._current_cursor} vs. ${min_max.min} to ${min_max.max}`);
-    if (this._current_cursor >= min_max.min && this._current_cursor < min_max.max)
+    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
+    let cursor_in_ctx = this._current_cursor * this._timescale;
+    for (let timestamp of timestamps)
     {
-      return true;
+      if (cursor_in_ctx >= timestamp && cursor_in_ctx < timestamp+this._frame_delta)
+      {
+        return true;
+      }
     }
-    else
-    {
-      return false;
-    }
+   
+    return false;
   }
 
   _frameReady(msg)
   {
-    if (this._hot_frames.has(msg.timestamp))
+    let start = performance.now();
+    for (let frame of msg.data)
     {
-      //console.warn(`Duped decoded frame..${msg.timestamp}`);
-      return;
+      if (this._hot_frames.has(frame.timestamp))
+      {
+        //console.warn(`Duped decoded frame..${msg.timestamp}`);
+        return;
+      }
+      this._hot_frames.set(frame.timestamp,frame.data);
+      if (this._cursor_is_hot())
+      {
+        this._safeCall(this.oncanplay);
+      }
     }
-    this._hot_frames.set(msg.timestamp,msg.data);
-    if (this._cursor_is_hot())
-    {
-      this._safeCall(this.oncanplay);
-    }
+    console.info(`Handled ${msg.data.length} frames in ${performance.now()-start}`);
   }
 
   _safeCall(func_ptr)
@@ -118,7 +124,7 @@ class TatorVideoManager {
 
   _clean_hot()
   {
-    if (this._hot_frames.size < 100)
+    if (this._hot_frames.size < 50)
     {
       return;
     }
@@ -205,10 +211,6 @@ class TatorVideoManager {
     {
       this._safeCall(this.oncanplay);
       return;
-    }
-    else
-    {
-      console.info(`Non informational seek to ${video_time} ${JSON.stringify(this._hot_frame_range())}`);
     }
   }
 
