@@ -1145,7 +1145,53 @@ export class AnnotationPage extends TatorPage {
    });
   }
 
+  _setupAnnotatorMenuApplets(canvas) {
+
+    // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
+    // a registered applet
+    this._menuAppletDialog = document.createElement("menu-applet-dialog");
+    this._main.appendChild(this._menuAppletDialog);
+    this._menuAppletDialog.addEventListener("close", () => {
+      this.removeAttribute("has-open-modal", "");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
+    this._menuAppletDialog.addEventListener("displayLoadingScreen", () => {
+      this._loading.style.display = "block";
+      this.setAttribute("has-open-modal", "");
+      document.body.classList.add("shortcuts-disabled");
+    });
+    this._menuAppletDialog.addEventListener("hideLoadingScreen", () => {
+      this._loading.style.display = "none";
+      this.removeAttribute("has-open-modal");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
+    const projectId = Number(this.getAttribute("project-id"));
+    fetch("/rest/Applets/" + projectId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    })
+    .then(response => response.json())
+    .then(applets => {
+      for (let applet of applets) {
+        if (applet.categories != null && applet.categories.includes("annotator-menu")) {
+          // Add the applet to the dialog
+          this._menuAppletDialog.saveApplet(applet);
+          canvas.addAppletToMenu(applet.name);
+        }
+      }
+    });
+  }
+
   _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
+
+    this._setupAnnotatorMenuApplets(canvas);
 
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
@@ -1477,6 +1523,22 @@ export class AnnotationPage extends TatorPage {
     menu.addEventListener("cancel", () => {
       this._closeModal(menu);
       canvas.refresh();
+    });
+
+    canvas.addEventListener("launchMenuApplet", evt => {
+      var data = {
+        frame: evt.detail.frame,
+        version: evt.detail.version,
+        media: evt.detail.media,
+        projectId: evt.detail.projectId
+      };
+      this._menuAppletDialog.setApplet(evt.detail.appletName, data);
+    });
+
+    this._menuAppletDialog.addEventListener("appletReady", () => {
+      this._menuAppletDialog.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+      document.body.classList.add("shortcuts-disabled");
     });
 
     canvas.addEventListener("launchAlgorithm", evt => {

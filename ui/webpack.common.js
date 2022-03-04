@@ -23,6 +23,8 @@ module.exports = {
   output: {
     filename: "[name].js",
     path: path.resolve(__dirname, "dist"),
+    libraryTarget: "umd",
+    library: ["tatorUi", "[name]"]
   },
   plugins: [
     new WebpackShellPluginNext({
@@ -53,5 +55,5 @@ module.exports = {
         type: 'asset/resource',
       }
     ]
-  }
+  },
 }
