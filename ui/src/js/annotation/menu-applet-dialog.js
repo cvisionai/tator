@@ -15,10 +15,10 @@ export class MenuAppletDialog extends ModalDialog {
     this._main.classList.remove("px-6");
     this._main.classList.add("px-2");
 
-    const accept = document.createElement("button");
-    accept.setAttribute("class", "btn btn-clear");
-    accept.textContent = "Accept";
-    this._footer.appendChild(accept);
+    this._acceptBtn = document.createElement("button");
+    this._acceptBtn.setAttribute("class", "btn btn-clear");
+    this._acceptBtn.textContent = "Accept";
+    this._footer.appendChild(this._acceptBtn);
 
     // Stores the Tator Applet objects this dialog will utilize
     // Each object property/key will be the applet name
@@ -30,7 +30,7 @@ export class MenuAppletDialog extends ModalDialog {
 
     // When the user clicks on the accept button,
     // call the active applet's accept function and close the dialog
-    accept.addEventListener("click", () => {
+    this._acceptBtn.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this.dispatchEvent(new Event("close"));
       this._appletElement.accept();
@@ -79,6 +79,13 @@ export class MenuAppletDialog extends ModalDialog {
   }
 
   /**
+   * @param {string} text - Text of accept button
+   */
+  _setAcceptButtonText(text) {
+    this._acceptBtn.textContent = text;
+  }
+
+  /**
    * Saves the applet object internally
    * @param {Tator.Applet} applet
    */
@@ -116,6 +123,9 @@ export class MenuAppletDialog extends ModalDialog {
     var width = this._appletElement.getModalWidth();
     this._setModalWidth(width);
 
+    var acceptText = this._appletElement.getAcceptButtonText();
+    this._setAcceptButtonText(acceptText);
+
     // Attach the standard event listeners.
     // If this is changed, update the corresponding documentation since this is an applet API change
     this._appletElement.addEventListener("setModalWidth", (evt) => {
@@ -136,6 +146,18 @@ export class MenuAppletDialog extends ModalDialog {
 
     this._appletElement.addEventListener("displaySuccessMessage", (evt) => {
       this._displaySuccessMessage(evt.detail.message);
+    });
+
+    this._appletElement.addEventListener("setAcceptButtonText", (evt) => {
+      this._setAcceptButtonText(evt.detail.text);
+    });
+
+    this._appletElement.addEventListener("displayLoadingScreen", () => {
+      this.dispatchEvent(new Event("displayLoadingScreen"));
+    });
+
+    this._appletElement.addEventListener("hideLoadingScreen", () => {
+      this.dispatchEvent(new Event("hideLoadingScreen"));
     });
 
     // Set the applet data

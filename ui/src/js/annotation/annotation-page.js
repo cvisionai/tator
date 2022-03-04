@@ -1156,6 +1156,17 @@ export class AnnotationPage extends TatorPage {
       document.body.classList.remove("shortcuts-disabled");
     });
 
+    this._menuAppletDialog.addEventListener("displayLoadingScreen", () => {
+      this._loading.style.display = "block";
+      this.setAttribute("has-open-modal", "");
+      document.body.classList.add("shortcuts-disabled");
+    });
+    this._menuAppletDialog.addEventListener("hideLoadingScreen", () => {
+      this._loading.style.display = "none";
+      this.removeAttribute("has-open-modal");
+      document.body.classList.remove("shortcuts-disabled");
+    });
+
     const projectId = Number(this.getAttribute("project-id"));
     fetch("/rest/Applets/" + projectId, {
       method: "GET",

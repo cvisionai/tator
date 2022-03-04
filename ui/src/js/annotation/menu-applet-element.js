@@ -31,6 +31,13 @@ export class MenuAppletElement extends TatorElement {
   }
 
   /**
+   * @returns string
+   */
+  getAcceptButtonText() {
+    return "Accept";
+  }
+
+  /**
    * @param {Object} data
    */
   updateData(data) {
