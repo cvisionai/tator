@@ -111,7 +111,7 @@ class TatorVideoManager {
         this._safeCall(this.oncanplay);
       }
     }
-    console.info(`Handled ${msg.data.length} frames in ${performance.now()-start}`);
+    //console.info(`Handled ${msg.data.length} frames in ${performance.now()-start}`);
   }
 
   _safeCall(func_ptr)

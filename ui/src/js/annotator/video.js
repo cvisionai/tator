@@ -2300,6 +2300,10 @@ export class VideoCanvas extends AnnotationCanvas {
                          sWidth,sHeight, // Use canvas size
                          this._dirty
                         );
+    if ('close' in source)
+    {
+      source.close();
+    }
     this._dirty=false;
   }
 

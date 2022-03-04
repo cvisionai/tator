@@ -317,21 +317,21 @@ class TatorVideoBuffer {
     {
       //console.info(`${performance.now()}: frameReady ${frame.timestamp}`);
       const timestamp = frame.timestamp;
-      this._canvasCtx.drawImage(frame,0,0);
+      //this._canvasCtx.drawImage(frame,0,0);
       //this._canvasCtx
-      frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
-      frame.close();
+      //frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
+      //frame.close();
 
       //console.info(`DRAW ${frame.timestamp} TOOK ${performance.now()-start} ms`);
       this._hot_frame_keys.push(timestamp);
       this._ready_frames.push({'timestamp': timestamp,
-                               'data': frameCopy});
-      this._transfers.push(frameCopy);
+                               'data': frame});
+      this._transfers.push(frame);
       
-      if (this._ready_frames.length >= this._decode_block_size)
+      if (this._ready_frames.length >= 0)
       {
         this._seek_in_progress=false;
-        console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
+        //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
         postMessage({"type": "frame",  
                     "data": this._ready_frames},
                     this._transfers
