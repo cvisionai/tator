@@ -83,6 +83,7 @@ class TatorVideoManager {
   _cursor_is_hot()
   {
     const min_max = this._hot_frame_range();
+    //console.info(`${this._current_cursor} vs. ${min_max.min} to ${min_max.max}`);
     if (this._current_cursor >= min_max.min && this._current_cursor < min_max.max)
     {
       return true;
@@ -97,11 +98,10 @@ class TatorVideoManager {
   {
     if (this._hot_frames.has(msg.timestamp))
     {
-      console.warn(`Duped decoded frame..${msg.timestamp}`);
+      //console.warn(`Duped decoded frame..${msg.timestamp}`);
+      return;
     }
     this._hot_frames.set(msg.timestamp,msg.data);
-    this._codec_worker.postMessage({"type": "hotFrames",
-                                     "hotFrames": [...this._hot_frames.keys()]});
     if (this._cursor_is_hot())
     {
       this._safeCall(this.oncanplay);
@@ -205,6 +205,10 @@ class TatorVideoManager {
     {
       this._safeCall(this.oncanplay);
       return;
+    }
+    else
+    {
+      console.info(`Non informational seek to ${video_time} ${JSON.stringify(this._hot_frame_range())}`);
     }
   }
 
