@@ -15,8 +15,8 @@ if __name__ == '__main__':
             if '**Parameters**' in line:
                 skip_newlines = True
             if '**Returns**' in line:
+                out.write('\n')
                 skip_newlines = False
-            if line.isspace() and skip_newlines:
-                continue
-            out.write(line)
+            if not (line.isspace() and skip_newlines):
+                out.write(line)
     out.close()
