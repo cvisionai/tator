@@ -54,10 +54,10 @@ jobs:
         command: pip3 install scripts/packages/tator-py/dist/*.whl
     - run:
         name: Generate Markdown Docs
-        command: make markdown-docs
+        command: make markdown-docs && tar cf doc/_build/tator-py.tar doc/_build/tator-py
     - store_artifacts:
-        path: doc/_build/tator-py
-        destination: docs/tator-py
+        path: doc/_build/tator-py.tar
+        destination: docs/tator-py.tar
     - run:
         name: Make postgis image
         command: make postgis-image
