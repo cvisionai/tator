@@ -385,6 +385,7 @@ markdown-docs:
 
 .PHONY: schema
 schema:
+	mkdir -p doc/_build
 	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 
 .PHONY: check_schema
