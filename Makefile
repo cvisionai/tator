@@ -257,15 +257,24 @@ lazyPush:
 
 .PHONY: python-bindings-only
 python-bindings-only:
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-py/schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
 	python3 setup.py sdist bdist_wheel
+	if [ ! -f dist/*.whl ]; then
+		exit 1
+	fi
 	cd ../../..
 
 .PHONY: python-bindings
 python-bindings: tator-image
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-py/schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
 	python3 setup.py sdist bdist_wheel
@@ -277,7 +286,10 @@ python-bindings: tator-image
 .PHONY: js-bindings
 js-bindings:
 	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-js/tator-openapi-schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-js/.
 	cd scripts/packages/tator-js
 	rm -rf pkg
 	mkdir pkg
@@ -309,7 +321,10 @@ js-bindings:
 .PHONY: r-docs
 r-docs:
 	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-r/.
 	rm -rf scripts/packages/tator-r/tmp
 	mkdir -p scripts/packages/tator-r/tmp
 	./scripts/packages/tator-r/codegen.py $(shell pwd)/scripts/packages/tator-r/schema.yaml
@@ -368,9 +383,13 @@ markdown-docs:
 	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/models.md ./doc/_build/tator-py/models.md
 	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/exceptions.md ./doc/_build/tator-py/exceptions.md
 
+.PHONY: schema
+schema:
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
+
 .PHONY: check_schema
-check_schema: tator-image
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false localhost:5000/tator_online:$(GIT_VERSION) python3 manage.py getschema
+check_schema:
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
 
 ifdef PROJECT_ID
 ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --project $(PROJECT_ID)
