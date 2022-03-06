@@ -1,9 +1,9 @@
 Tator Python Client Documentation
 =================================
 
-REST API wrapper functions (tator.api)
-**************************************
-.. automodule:: tator.api
+Model definitions (tator.models)
+********************************
+.. automodule:: tator.models
    :members:
    :undoc-members:
    :imported-members:

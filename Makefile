@@ -366,7 +366,11 @@ docs:
 .PHONY: markdown-docs
 markdown-docs:
 	sphinx-build -M markdown ./doc ./doc/_build
-	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py.md
+	mkdir -p ./doc/_build/tator-py
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/utilities.md ./doc/_build/tator-py/utilities.md
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py/api.md
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/models.md ./doc/_build/tator-py/models.md
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/exceptions.md ./doc/_build/tator-py/exceptions.md
 
 .PHONY: check_schema
 check_schema: tator-image
