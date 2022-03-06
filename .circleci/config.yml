@@ -50,6 +50,9 @@ jobs:
         name: Make python bindings
         command: make python-bindings-only
     - run:
+        name: Install python client
+        command: pip3 install scripts/packages/tator-py/dist/*.whl
+    - run:
         name: Generate Markdown Docs
         command: make markdown-docs
     - store_artifacts:
