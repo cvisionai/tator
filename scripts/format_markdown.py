@@ -17,6 +17,13 @@ if __name__ == '__main__':
             if '**Returns**' in line:
                 out.write('\n')
                 skip_newlines = False
+            if line.startswith('### tator') and line.endswith(')\n'):
+                func = line.split('(')[0]
+                signature = line.split(' ', 1)[1].strip('\n')
+                out.write('----------------------------------\n')
+                out.write(f"{func}\n")
+                out.write(f"`{signature}`\n")
+                continue
             if not (line.isspace() and skip_newlines):
                 out.write(line)
     out.close()
