@@ -63,6 +63,15 @@ jobs:
     - store_artifacts:
         path: /tmp/tator_py_whl
         destination: tator_py_whl
+    - store_artifacts:
+        path: scripts/packages/tator-py/schema.yaml
+        destination: docs/schema.yaml
+    - run:
+        name: Generate Markdown Docs
+        command: make markdown-docs
+    - store_artifacts:
+        path: doc/_build/tator-py
+        destination: docs/tator-py
     - run:
         name: Initialize REST tests
         command: make testinit
