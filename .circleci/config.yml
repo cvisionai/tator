@@ -38,8 +38,17 @@ jobs:
         name: Make version.py
         command: make main/version.py
     - run:
+        name: Make backend image
+        command: make tator-image
+    - run:
+        name: Make OpenAPI schema
+        command: make schema
+    - store_artifacts:
+        path: doc/_build/schema.yaml
+        destination: docs/schema.yaml
+    - run:
         name: Make python bindings
-        command: make python-bindings
+        command: make python-bindings-only
     - run:
         name: Make postgis image
         command: make postgis-image
@@ -63,9 +72,6 @@ jobs:
     - store_artifacts:
         path: /tmp/tator_py_whl
         destination: tator_py_whl
-    - store_artifacts:
-        path: scripts/packages/tator-py/schema.yaml
-        destination: docs/schema.yaml
     - run:
         name: Generate Markdown Docs
         command: make markdown-docs
