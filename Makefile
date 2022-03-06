@@ -150,7 +150,7 @@ dashboard-token:
 
 .PHONY: tator-image
 tator-image:
-	$(MAKE) webpack r-docs docs
+	$(MAKE) webpack
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
@@ -358,10 +358,6 @@ letsencrypt:
 .PHONY: selfsigned
 selfsigned:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/selfsigned.sh
-
-.PHONY: docs
-docs:
-	make -C doc html
 
 .PHONY: markdown-docs
 markdown-docs:

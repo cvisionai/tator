@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath('../scripts/packages/tator-py/examples'))
 # -- Project information -----------------------------------------------------
 
 project = 'Tator'
-copyright = '2020, CVision AI'
+copyright = '2022, CVision AI'
 author = 'CVision AI'
 
 # The short X.Y version
@@ -168,4 +168,4 @@ extensions = ['sphinx.ext.autodoc',
               'recommonmark']
 html_theme = 'sphinx_rtd_theme'
 
-autodoc_mock_imports = ['django', 'progressbar', 'tusclient']
+autodoc_mock_imports = ['django', 'progressbar']
