@@ -40,7 +40,7 @@ if __name__ == '__main__':
                 signature = line.split(' ', 1)[1].strip('\n')
                 out.write('----------------------------------\n\n')
                 out.write(f"### {func}\n\n")
-                out.write(f"#### {signature}\n\n")
+                out.write(f"{signature}\n\n")
                 continue
             if not (line.isspace() and skip_newlines):
                 out.write(line)
