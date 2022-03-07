@@ -18,7 +18,11 @@ if __name__ == '__main__':
         out.write('---\n\n\n')
         skip_newlines = False
         for line in f:
+            if line.startswith('#### openapi_types') or line.startswith('#### attribute_map'):
+                continue
             line = line.replace('# noqa: E501', '')
+            line = line.replace('models.md#tator.models.', 'models.md#')
+            line = line.replace('api.md#tator.api.', 'api.md#')
             if '**Parameters**' in line:
                 skip_newlines = True
             if '**Returns**' in line:
@@ -28,10 +32,10 @@ if __name__ == '__main__':
                  or line.startswith('### _class_')
                  or line.startswith('### _exception_'))
                 and line.endswith(')\n')):
-                func = line.split('(')[0].replace(' _class_', '').replace(' _exception_', '')
-                signature = line.split(' ', 1)[1].strip('\n')
+                func = line.split('(')[0].replace(' _class_', '').replace(' _exception_', '').split('.')[-1]
+                signature = line.split(' ', 1)[1].strip('\n').replace('_class_ ', '').replace('_exception_ ', '')
                 out.write('----------------------------------\n\n')
-                out.write(f"{func}\n\n")
+                out.write(f"### {func}\n\n")
                 out.write(f"`{signature}`\n\n")
                 continue
             if not (line.isspace() and skip_newlines):
