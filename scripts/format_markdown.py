@@ -25,7 +25,7 @@ if __name__ == '__main__':
             line = line.replace('api.md#tator.api.', 'api.md#')
             hash_start = line.find('models.md#')
             hash_end = line.rfind(')')
-            if hash_start and hash_end:
+            if hash_start != -1 and hash_end != -1:
                 line = line[:hash_start] + line[hash_start:hash_end].lower() + line[hash_end:]
             if '**Parameters**' in line:
                 skip_newlines = True
