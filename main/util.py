@@ -718,29 +718,42 @@ def update_media_archive_state(
 
     :param media: The media to update
     :type media: Media
-    :param update_operator: The operation to apply to the media
-    :type update_operator: Callable[[str], int]
     :param archive_state: The target for `media.archive_state`
     :type archive_state: str
     :param restoration_requested: The target for `media.restoration_requested`
     :type restoration_requested: bool
     :rtype: int
     """
-    # Lookup table for operators based on the target `archive_state` and `restoration_requested`
-    # values. Operators must accept one string argument and return a boolean
-    operator = {
-        ("archived", False): Resource.archive_resource,
-        ("to_live", True): Resource.request_restoration,
-        ("live", False): Resource.restore_resource,
-    }.get((archive_state, restoration_requested), lambda path: False)
 
-    success = [True]
+    def _archive_state_comp(_media):
+        """
+        Compares the `archive_state` and `restoration_requested` values of the given media object
+        against the desired target values. Returns `True` if they both match, `False` otherwise.
+        """
+        return (
+            _media.archive_state == archive_state
+            and _media.restoration_requested == restoration_requested
+        )
+
+    # Lookup table for operators based on the target `archive_state` and `restoration_requested`
+    # values. `update_operator` must accept one string argument and return a boolean; `multi_test`
+    # must accept an iterable and return a boolean
+    operators_key = (archive_state, restoration_requested)
+    one_in_false_out = lambda _in: False
+    default = (one_in_false_out, one_in_false_out)
+    update_operator, multi_test = {
+        ("archived", False): (Resource.archive_resource, any),
+        ("to_live", True): (Resource.request_restoration, all),
+        ("live", False): (Resource.restore_resource, all),
+    }.get(operators_key, default)
+
+    success = []
     if media.media_files:
-        for key in ["streaming", "archival", "audio", "image"]:
-            for obj in media.media_files.get(key, []):
-                success.append(update_operator(obj["path"], **op_kwargs))
-                if key == "streaming":
-                    success.append(update_operator(obj["segment_info"]))
+        for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
+            success.append(update_operator(path, **op_kwargs))
+    else:
+        # If there are no media files, consider the noop update attempt successful
+        success.append(True)
 
     success = all(success)
     if success:
@@ -750,13 +763,18 @@ def update_media_archive_state(
         media.restoration_requested = restoration_requested
         media.save()
 
-        # Check for multiviews containing this single and put them in the same state, if any exist
+        # Check for multiviews containing this single and put them in the same state if they need
+        # updating
         multi_qs = Media.objects.filter(meta__dtype="multi", media_files__ids__contains=media.id)
         for multi in multi_qs.iterator():
-            multi.archive_status_date = new_status_date
-            multi.archive_state = archive_state
-            multi.restoration_requested = restoration_requested
-            multi.save()
+            if not _archive_state_comp(multi) and multi_test(
+                _archive_state_comp(single)
+                for single in Media.objects.filter(pk__in=multi.media_files["ids"])
+            ):
+                multi.archive_status_date = new_status_date
+                multi.archive_state = archive_state
+                multi.restoration_requested = restoration_requested
+                multi.save()
 
     return success
 
