@@ -65,6 +65,10 @@ def _get_next_archive_state(desired_archive_state, last_archive_state):
     raise ValueError(f"Received invalid value '{desired_archive_state}' for archive_state")
 
 
+def _single_ids_from_multi_qs(multi_qs):
+    return set(ele for id_lst in multi_qs.values_list("media_files__ids", flat=True).distinct() for ele in id_lst)
+
+
 def _presign(user_id, expiration, medias, fields=None):
     """ Replaces specified media fields with presigned urls.
     """
@@ -482,10 +486,10 @@ class MediaListAPI(BaseListView):
             ids_to_update = list(qs.values_list("pk", flat=True).distinct())
 
             # Get the current representation of the object for comparison
-            new_attrs = validate_attributes(params, qs[0])
+            obj = qs.first()
+            new_attrs = validate_attributes(params, obj)
             if new_attrs is not None:
                 attr_count = len(ids_to_update)
-                obj = qs.first()
                 ref_table = ContentType.objects.get_for_model(obj)
                 original_dict = obj.model_dict
                 bulk_patch_attributes(new_attrs, qs)
@@ -520,6 +524,16 @@ class MediaListAPI(BaseListView):
                         continue
 
                     archive_qs = qs.filter(archive_state=state).exclude(pk__in=previously_updated)
+                    ids_to_update = list(archive_qs.values_list("pk", flat=True))
+
+                    # Add all single media ids that are part of a multiview that has requested a
+                    # state change
+                    multi_constituent_ids = _single_ids_from_multi_qs(
+                        archive_qs.filter(meta__dtype="multi")
+                    )
+                    archive_qs = Media.objects.filter(
+                        pk__in=multi_constituent_ids.update(ids_to_update)
+                    ).exclude(pk__in=previously_updated)
 
                     # If no media match the archive state, skip the update
                     if not archive_qs.exists():
@@ -676,8 +690,14 @@ class MediaDetailAPI(BaseDetailView):
                 )
 
                 if next_archive_state is not None:
+                    multi_constituent_ids = _single_ids_from_multi_qs(
+                        qs.filter(meta__dtype="multi")
+                    )
+                    archive_state_qs = Media.objects.select_for_update().filter(
+                        pk__in=multi_constituent_ids.add(params["id"])
+                    )
                     dt_now = datetime.datetime.now(datetime.timezone.utc)
-                    qs.update(
+                    archive_state_qs.update(
                         archive_status_date=dt_now,
                         archive_state=next_archive_state,
                         modified_datetime=dt_now,
