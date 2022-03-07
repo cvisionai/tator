@@ -23,6 +23,10 @@ if __name__ == '__main__':
             line = line.replace('# noqa: E501', '')
             line = line.replace('models.md#tator.models.', 'models.md#')
             line = line.replace('api.md#tator.api.', 'api.md#')
+            hash_start = line.find('models.md#')
+            hash_end = line.rfind(')')
+            if hash_start and hash_end:
+                line = line[:hash_start] + line[hash_start:hash_end].lower() + line[hash_end:]
             if '**Parameters**' in line:
                 skip_newlines = True
             if '**Returns**' in line:
@@ -33,10 +37,10 @@ if __name__ == '__main__':
                  or line.startswith('### _exception_'))
                 and line.endswith(')\n')):
                 func = line.split('(')[0].replace(' _class_', '').replace(' _exception_', '').split('.')[-1]
-                signature = line.split(' ', 1)[1].strip('\n').replace('_class_ ', '').replace('_exception_ ', '')
+                signature = line.split(' ', 1)[1].strip('\n')
                 out.write('----------------------------------\n\n')
                 out.write(f"### {func}\n\n")
-                out.write(f"`{signature}`\n\n")
+                out.write(f"#### {signature}\n\n")
                 continue
             if not (line.isspace() and skip_newlines):
                 out.write(line)
