@@ -12,7 +12,10 @@ if __name__ == '__main__':
     out = open(args.out_file, 'w')
     with open(args.in_file, 'r') as f:
         title = os.path.splitext(os.path.basename(args.out_file))[0]
-        title = title.capitalize()
+        if title == 'api':
+            title = title.upper()
+        else:
+            title = title.capitalize()
         out.write('---\n')
         out.write(f'title: {title}\n')
         out.write('---\n\n\n')
