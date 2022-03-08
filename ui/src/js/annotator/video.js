@@ -2250,12 +2250,12 @@ export class VideoCanvas extends AnnotationCanvas {
     this._fpsDiag++;
     this._dispFrame=this._draw.dispImage(hold);
     
-    //this.dispatchEvent(new CustomEvent("frameChange", {
-    //  detail: {frame: this._dispFrame},
-    //  composed: true
-    //}));
+    this.dispatchEvent(new CustomEvent("frameChange", {
+      detail: {frame: this._dispFrame},
+      composed: true
+    }));
 
-    //this.updateVideoDiagnosticOverlay(null, this._dispFrame);
+    this.updateVideoDiagnosticOverlay(null, this._dispFrame);
 
     let ended = false;
     if (this._direction == Direction.FORWARD &&
@@ -2822,7 +2822,7 @@ export class VideoCanvas extends AnnotationCanvas {
   playerThread(domtime)
   {
     /// This is the notional scheduled diagnostic interval
-    var schedDiagInterval=10000.0;
+    var schedDiagInterval=5000.0;
     //console.info(`PLAYER @ ${performance.now()}`);
 
     let player = (domtime) => {this.playerThread(domtime);};
@@ -2896,7 +2896,7 @@ export class VideoCanvas extends AnnotationCanvas {
     var calculatedFPS = (this._fpsDiag / diagInterval)*1000.0;
     var loadFPS = ((this._fpsLoadDiag / diagInterval)*1000.0);
     var targetFPS = this._motionComp.targetFPS;
-    let fps_msg = `(ID:${this._videoObject.id}) FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${this._fpsScore}, targetFPS=${targetFPS}`;
+    let fps_msg = "";
     this._audioCheck++;
     if (this._audioPlayer && this._audioCheck % AUDIO_CHECK_INTERVAL == 0)
     {
@@ -2906,13 +2906,17 @@ export class VideoCanvas extends AnnotationCanvas {
       const swag = Math.max(0.99,Math.min(1.01,correction));
       this._audioPlayer.playbackRate = (swag) * this._playbackRate;
 
-      fps_msg = fps_msg + `, Audio drift = ${audioDelta}ms`;
+      fps_msg = `(ID:${this._videoObject.id}) FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${this._fpsScore}, targetFPS=${targetFPS}, Audio drift = ${audioDelta}ms`;
       if (Math.abs(audioDelta) >= 100)
       {
         console.info("Readjusting audio time");
         const audio_increment = 1+this._motionComp.frameIncrement(this._fps,this._playbackRate);
         this._audioPlayer.currentTime = this.frameToAudioTime(this._dispFrame+audio_increment);
       }
+    }
+    else
+    {
+      fps_msg = `(ID:${this._videoObject.id}) FPS = ${calculatedFPS}, Load FPS = ${loadFPS}, Score=${this._fpsScore}, targetFPS=${targetFPS}`;
     }
     console.info(fps_msg);
     this._fpsDiag=0;
@@ -2948,13 +2952,13 @@ export class VideoCanvas extends AnnotationCanvas {
       }
     }
 
-    //this.updateVideoDiagnosticOverlay(
-    //  null, this._dispFrame, targetFPS.toFixed(2), calculatedFPS.toFixed(2));
+    this.updateVideoDiagnosticOverlay(
+      null, this._dispFrame, targetFPS.toFixed(2), calculatedFPS.toFixed(2));
 
     last = performance.now();
     if (this._direction!=Direction.STOPPED)
     {
-      this._diagTimeout = setTimeout(() => {this.diagThread(last);}, 10000.0);
+      this._diagTimeout = setTimeout(() => {this.diagThread(last);}, 5000.0);
     }
   }
 
