@@ -4,10 +4,9 @@
 // Attempt is made to partially implement the HTML5 MediaElement interface
 // such that this is a drop-in replacement for frame accurate MSE applications
 // 
-// Functions such as 'play()' and 'pause()' are not available currently
-// 
 // @TODO: Supply a 'cv2.VideoDecode.read()' type interface for client-side decode
 //        operations.
+
 
 class TatorVideoManager {
   constructor(parent, name)
@@ -53,32 +52,6 @@ class TatorVideoManager {
     }
   }
 
-  // Returns the range of the hot frames in seconds (inclusive min, exclusive max)
-  _hot_frame_ranges()
-  {
-    // !!! This is all wrong!
-    let min = Number.MAX_SAFE_INTEGER;
-    let max = Number.MIN_SAFE_INTEGER;
-    let timestamps = [...this._hot_frames.keys()].sort((a,b)=>a-b); // make sure keys are sorted!
-    for (let timestamp of timestamps)
-    {
-      const frame_time = timestamp;
-      if (frame_time < min)
-      {
-        min = frame_time;
-      }
-      if (frame_time > max)
-      {
-        max = frame_time;
-      }
-    }
-    if (timestamps.length > 1)
-    {
-      max += (timestamps[1]-timestamps[0]); // add duration
-    }
-    return {'min': min/this._timescale, 'max': max/this._timescale};
-  }
-
   // Returns true if the cursor is in the range of the hot frames
   _cursor_is_hot()
   {
@@ -93,14 +66,6 @@ class TatorVideoManager {
     }
    
     return false;
-  }
-
-  returnFrame(frame)
-  {
-    this._codec_worker.postMessage(
-      {"type": "returnFrame",
-       "frame": frame
-      }, [frame]);
   }
 
   _frameReady(msg)

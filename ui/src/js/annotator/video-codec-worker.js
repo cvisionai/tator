@@ -442,8 +442,4 @@ onmessage = function(e)
   {
     ref.play();
   }
-  else if (msg.type == "returnFrame")
-  {
-    msg.frame.close();
-  }
 }
