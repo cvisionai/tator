@@ -54,7 +54,7 @@ class Command(BaseCommand):
                 )
                 continue
 
-            num_rr += update_media_archive_state(media, "to_live", True, expiry_days=expiry_days)
+            num_rr += update_media_archive_state(media, "to_live", True, min_exp_days=expiry_days)
 
         logger.info(f"Requested restoration of a total of {num_rr} media!")
 

@@ -757,7 +757,7 @@ def update_media_archive_state(
 
     success = all(success)
     if success:
-        new_status_date = datetime.now(timezone.utc)
+        new_status_date = datetime.datetime.now(datetime.timezone.utc)
         media.archive_status_date = new_status_date
         media.archive_state = archive_state
         media.restoration_requested = restoration_requested
