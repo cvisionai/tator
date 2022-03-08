@@ -70,18 +70,20 @@ const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 class PeriodicTaskProfiler
 {
-  constructor(name, alert_interval)
+  constructor(name, alert_interval, verbose)
   {
     this._name = name
     if (alert_interval == undefined)
     {
-      alert_interval=25;
+      alert_interval=1000;
     }
     this._alert_interval = alert_interval;
     this._times=[]
+    this._verbose = verbose;
   }
   push(this_time)
   {
+    return;
     this._times.push(this_time);
     if (this._times.length % this._alert_interval == 0)
     {
@@ -104,6 +106,10 @@ class PeriodicTaskProfiler
     }
     let avg_delta = delta_sum / this._times.length;
     console.info(`${this._name} performance ${avg_delta}ms - Worst = ${max_delta} ms`);
+    if (this._verbose)
+    {
+      console.info(`${this._name} TIMES = ${this._times}`);
+    }
     if (flush)
     {
       this._times=[]
@@ -2240,12 +2246,14 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   displayLatest(hold)
   {
+    let gl_start = performance.now();
     this._fpsDiag++;
     this._dispFrame=this._draw.dispImage(hold);
-    this.dispatchEvent(new CustomEvent("frameChange", {
-      detail: {frame: this._dispFrame},
-      composed: true
-    }));
+    
+    //this.dispatchEvent(new CustomEvent("frameChange", {
+    //  detail: {frame: this._dispFrame},
+    //  composed: true
+    //}));
 
     //this.updateVideoDiagnosticOverlay(null, this._dispFrame);
 
@@ -2268,6 +2276,7 @@ export class VideoCanvas extends AnnotationCanvas {
       composed: true
       }));
     }
+    this._glProfiler.push(performance.now()-gl_start);
   }
 
   /**
@@ -2294,6 +2303,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // We want half of the margin to the left of the image frame
     var leftSide=margin/2;
 
+    
     this._draw.pushImage(frameIdx,
                          source,
                          this._roi[0],this._roi[1],
@@ -2302,10 +2312,6 @@ export class VideoCanvas extends AnnotationCanvas {
                          sWidth,sHeight, // Use canvas size
                          this._dirty
                         );
-    if ('close' in source)
-    {
-      source.close();
-    }
     this._dirty=false;
   }
 
@@ -2816,14 +2822,14 @@ export class VideoCanvas extends AnnotationCanvas {
   playerThread(domtime)
   {
     /// This is the notional scheduled diagnostic interval
-    var schedDiagInterval=2000.0;
+    var schedDiagInterval=10000.0;
     //console.info(`PLAYER @ ${performance.now()}`);
 
     let player = (domtime) => {this.playerThread(domtime);};
-    let function_start = performance.now();
     // Video player thread
     // This schedules the browser to update with the latest image and audio
     // Start the FPS monitor once we start playing
+    let function_start = performance.now();
     if (this._diagTimeout == null)
     {
       const lastTime = performance.now();
@@ -2841,6 +2847,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._lastTime = domtime;
     }
     
+    
     if (increment > 0)
     {
       this._lastTime=domtime;
@@ -2850,9 +2857,7 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         if (this._motionComp.timeToUpdate(this._animationIdx+increment))
         {
-          let gl_start = performance.now();
           this.displayLatest();
-          this._glProfiler.push(performance.now()-gl_start);
           if (this._audioEligible && this._audioPlayer.paused)
           {
             this._audioPlayer.play();
@@ -2861,7 +2866,9 @@ export class VideoCanvas extends AnnotationCanvas {
         }
       }
       this._animationIdx = this._animationIdx + increment;
+      
     }
+    
 
     if (this._draw.canPlay() > 0)
     {
@@ -2941,13 +2948,13 @@ export class VideoCanvas extends AnnotationCanvas {
       }
     }
 
-    this.updateVideoDiagnosticOverlay(
-      null, this._dispFrame, targetFPS.toFixed(2), calculatedFPS.toFixed(2));
+    //this.updateVideoDiagnosticOverlay(
+    //  null, this._dispFrame, targetFPS.toFixed(2), calculatedFPS.toFixed(2));
 
     last = performance.now();
     if (this._direction!=Direction.STOPPED)
     {
-      this._diagTimeout = setTimeout(() => {this.diagThread(last);}, 2000.0);
+      this._diagTimeout = setTimeout(() => {this.diagThread(last);}, 10000.0);
     }
   }
 
@@ -2957,22 +2964,27 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       return;
     }
+    this._push_profiler = new PeriodicTaskProfiler("Push");
     let push_pending = () => {
+      
       if (this._draw.canLoad() > 0)
       {
+        let start = performance.now();
         let frame = this._pendingFrames.shift();
         this.pushFrame(frame.data.frameNumber, frame.data, frame.data.displayWidth, frame.data.displayHeight);
         frame.data.close();
+        this._push_profiler.push(performance.now()-start);
       }
       if (this._pendingFrames.length > 0)
       {
-        this._pendingTimeout = setTimeout(push_pending, 16);
+        this._pendingTimeout = setTimeout(push_pending, (1000/this._videoFps)/2);
       }
+      
     }
 
     if (this._pendingFrames.length > 0)
     {
-      this._pendingTimeout = setTimeout(push_pending, 16);
+      this._pendingTimeout = setTimeout(push_pending, (1000/this._videoFps)/2);
     }
   }
   frameCallbackMethod()
@@ -2981,7 +2993,7 @@ export class VideoCanvas extends AnnotationCanvas {
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
     // Todo make this work not out of play buffer
     let video = this._videoElement[this._scrub_idx].playBuffer();
-    let frameProfiler = new PeriodicTaskProfiler("Frame Fetch", 100);
+    let frameProfiler = new PeriodicTaskProfiler("Frame Fetch");
 
     // Clear any old frames
     this._pendingFrames = [];
@@ -2989,12 +3001,13 @@ export class VideoCanvas extends AnnotationCanvas {
     this._pendingTimeout = null;
 
     // on frame processing logic
-    video.onFrame = (frames, timescale) => {
+    video.onFrame = (frames, timescale, parent) => {
       this._playing = true;
       let start = performance.now();
       for (let frame of frames)
       {
         frame.data.frameNumber = this.timeToFrame(frame.data.timestamp/timescale);
+        frame.data.parent=parent;
         this._fpsLoadDiag++;
         if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
         {
@@ -3009,7 +3022,7 @@ export class VideoCanvas extends AnnotationCanvas {
         frameProfiler.push(performance.now()-start)
       }
       // Kick off the player thread once we have 25 frames loaded
-      if (this._playerTimeout == null && this._draw.canPlay() > 8)
+      if (this._playerTimeout == null && this._draw.canPlay() > 4)
       {
         this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
       }
@@ -3082,7 +3095,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this.seekFrame(this._loadFrame, pushAndGoToNextFrame, false, bufferName);
 
     // Kick off the player thread once we have 25 frames loaded
-    if (this._playerTimeout == null && this._draw.canPlay() > 50)
+    if (this._playerTimeout == null && this._draw.canPlay() > 4)
     {
       this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
     }
@@ -3733,6 +3746,11 @@ export class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._playerTimeout);
       cancelAnimationFrame(this._playerTimeout)
       this._playerTimeout=null;
+    }
+    if (this._pendingTimeout)
+    {
+      clearTimeout(this._pendingTimeout)
+      this._pendingTimeout = null;
     }
     if (this._loaderTimeout)
     {

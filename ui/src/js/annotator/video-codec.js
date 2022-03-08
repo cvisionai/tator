@@ -95,13 +95,21 @@ class TatorVideoManager {
     return false;
   }
 
+  returnFrame(frame)
+  {
+    this._codec_worker.postMessage(
+      {"type": "returnFrame",
+       "frame": frame
+      }, [frame]);
+  }
+
   _frameReady(msg)
   {
     // If there is a frame handler callback potentially avoid 
     // internal buffering.
     if (this.onFrame)
     {
-      if (this.onFrame(msg.data, this._timescale))
+      if (this.onFrame(msg.data, this._timescale, this))
       {
         return;
       }

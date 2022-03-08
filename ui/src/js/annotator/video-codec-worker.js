@@ -418,6 +418,7 @@ onmessage = function(e)
   const msg = e.data;
   if (msg.type == "init")
   {
+    const random = Math.random();
     ref = new TatorVideoBuffer(msg.name);
   }
   else if (msg.type == "appendBuffer")
@@ -440,5 +441,9 @@ onmessage = function(e)
   else if (msg.type == "play")
   {
     ref.play();
+  }
+  else if (msg.type == "returnFrame")
+  {
+    msg.frame.close();
   }
 }

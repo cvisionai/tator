@@ -346,7 +346,7 @@ export class DrawGL
 
     // Initialize the frame buffer in GPU memory
     // We should only need one GOP pre-catched at a time, give or take.
-    this.frameBuffer = new FrameBuffer(16, initTexture);
+    this.frameBuffer = new FrameBuffer(8, initTexture);
 
     // Initialze the backbuffer to use for MSAA
     this.msaaBuffer = gl.createRenderbuffer();
@@ -533,6 +533,7 @@ export class DrawGL
   // sx, sy, sWidth, sHeight are in relative coordinates (0.0-1.0)
   pushImage(frameIdx, frameData, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight, dirty)
   {
+
     // local namespacing
     var gl = this.gl;
 
