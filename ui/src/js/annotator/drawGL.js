@@ -346,7 +346,7 @@ export class DrawGL
 
     // Initialize the frame buffer in GPU memory
     // We should only need one GOP pre-catched at a time, give or take.
-    this.frameBuffer = new FrameBuffer(64, initTexture);
+    this.frameBuffer = new FrameBuffer(16, initTexture);
 
     // Initialze the backbuffer to use for MSAA
     this.msaaBuffer = gl.createRenderbuffer();
@@ -724,13 +724,13 @@ export class DrawGL
       gl.bindFramebuffer(gl.FRAMEBUFFER,null);
       // Draw the full quad
       gl.drawElements(this.gl.TRIANGLES, quadIndices.length, this.gl.UNSIGNED_BYTE, 0)
+      
     }
 
     if (hold == false)
     {
       this.frameBuffer.doneDisplay();
     }
-
     return frameInfo.frame;
   }
 
@@ -756,7 +756,7 @@ export class DrawGL
   // Returns true if there is room for loading frames
   canLoad()
   {
-    return this.frameBuffer.availableLoad() > 0;
+    return this.frameBuffer.availableLoad();
   }
 
   // Returns true if there is room for playing frames

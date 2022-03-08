@@ -68,10 +68,11 @@ var src_path="/static/js/annotator/";
 export const RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
-class DecodeProfiler
+class PeriodicTaskProfiler
 {
-  constructor(alert_interval)
+  constructor(name, alert_interval)
   {
+    this._name = name
     if (alert_interval == undefined)
     {
       alert_interval=25;
@@ -102,7 +103,7 @@ class DecodeProfiler
       }
     }
     let avg_delta = delta_sum / this._times.length;
-    console.info(`Video decode performance ${avg_delta}ms - Worst = ${max_delta} ms`);
+    console.info(`${this._name} performance ${avg_delta}ms - Worst = ${max_delta} ms`);
     if (flush)
     {
       this._times=[]
@@ -1246,7 +1247,9 @@ export class VideoCanvas extends AnnotationCanvas {
     var that = this;
     this._diagnosticMode = false;
     this._videoVersion = 1;
-    this._decode_profiler = new DecodeProfiler();
+    this._decode_profiler = new PeriodicTaskProfiler("Video Decode");
+    this._playerProfiler = new PeriodicTaskProfiler("Display Logic");
+    this._glProfiler = new PeriodicTaskProfiler("GL Draw");
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))
@@ -2239,13 +2242,12 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     this._fpsDiag++;
     this._dispFrame=this._draw.dispImage(hold);
-
     this.dispatchEvent(new CustomEvent("frameChange", {
       detail: {frame: this._dispFrame},
       composed: true
     }));
 
-    this.updateVideoDiagnosticOverlay(null, this._dispFrame);
+    //this.updateVideoDiagnosticOverlay(null, this._dispFrame);
 
     let ended = false;
     if (this._direction == Direction.FORWARD &&
@@ -2717,9 +2719,17 @@ export class VideoCanvas extends AnnotationCanvas {
       this._audioPlayer.playbackRate = this._playbackRate;
     }
 
+    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
+    {
+      this.frameCallbackMethod();
+    }
+    else
+    {
+      this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub");}, 0);
+    }
     this._sentPlaybackReady = false;
     // Kick off the loader
-    this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub");}, 0);
+    
   }
 
   /**
@@ -2810,6 +2820,7 @@ export class VideoCanvas extends AnnotationCanvas {
     //console.info(`PLAYER @ ${performance.now()}`);
 
     let player = (domtime) => {this.playerThread(domtime);};
+    let function_start = performance.now();
     // Video player thread
     // This schedules the browser to update with the latest image and audio
     // Start the FPS monitor once we start playing
@@ -2822,13 +2833,14 @@ export class VideoCanvas extends AnnotationCanvas {
     let increment = 0;
     if (this._lastTime)
     {
-      this._motionComp.periodicRateCheck(this._lastTime);
+      //this._motionComp.periodicRateCheck(this._lastTime);
       increment = this._motionComp.animationIncrement(domtime, this._lastTime);
     }
     else
     {
       this._lastTime = domtime;
     }
+    
     if (increment > 0)
     {
       this._lastTime=domtime;
@@ -2838,7 +2850,9 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         if (this._motionComp.timeToUpdate(this._animationIdx+increment))
         {
+          let gl_start = performance.now();
           this.displayLatest();
+          this._glProfiler.push(performance.now()-gl_start);
           if (this._audioEligible && this._audioPlayer.paused)
           {
             this._audioPlayer.play();
@@ -2865,6 +2879,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._motionComp.clearTimesVector();
       this._playerTimeout = null;
     }
+    this._playerProfiler.push(performance.now()-function_start);
   }
 
   diagThread(last)
@@ -2936,6 +2951,73 @@ export class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  pendingFramesMethod()
+  {
+    if (this._pendingTimeout != null)
+    {
+      return;
+    }
+    let push_pending = () => {
+      if (this._draw.canLoad() > 0)
+      {
+        let frame = this._pendingFrames.shift();
+        this.pushFrame(frame.data.frameNumber, frame.data, frame.data.displayWidth, frame.data.displayHeight);
+        frame.data.close();
+      }
+      if (this._pendingFrames.length > 0)
+      {
+        this._pendingTimeout = setTimeout(push_pending, 16);
+      }
+    }
+
+    if (this._pendingFrames.length > 0)
+    {
+      this._pendingTimeout = setTimeout(push_pending, 16);
+    }
+  }
+  frameCallbackMethod()
+  {
+    this._video
+    let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
+    // Todo make this work not out of play buffer
+    let video = this._videoElement[this._scrub_idx].playBuffer();
+    let frameProfiler = new PeriodicTaskProfiler("Frame Fetch", 100);
+
+    // Clear any old frames
+    this._pendingFrames = [];
+    clearTimeout(this._pendingTimeout);
+    this._pendingTimeout = null;
+
+    // on frame processing logic
+    video.onFrame = (frames, timescale) => {
+      this._playing = true;
+      let start = performance.now();
+      for (let frame of frames)
+      {
+        frame.data.frameNumber = this.timeToFrame(frame.data.timestamp/timescale);
+        this._fpsLoadDiag++;
+        if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
+        {
+          this.pushFrame(frame.data.frameNumber, frame.data, frame.data.displayWidth, frame.data.displayHeight);
+          frame.data.close();
+        }
+        else
+        {
+          this._pendingFrames.push(frame);
+          this.pendingFramesMethod();
+        }
+        frameProfiler.push(performance.now()-start)
+      }
+      // Kick off the player thread once we have 25 frames loaded
+      if (this._playerTimeout == null && this._draw.canPlay() > 8)
+      {
+        this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
+      }
+      return true; 
+    };
+    video.play();
+  }
+
   loaderThread(initialize, bufferName)
   {
     let fpsInterval = 1000.0 / (this._fps);
@@ -2950,7 +3032,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // to the next frame.
     //
     // If the draw buffer is full try again in the load interval
-    if (this._draw.canLoad() == false)
+    if (this._draw.canLoad() == 0)
     {
       //console.info("Loader Full");
       this._loaderTimeout = setTimeout(loader, 0);

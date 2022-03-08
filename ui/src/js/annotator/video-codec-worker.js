@@ -180,6 +180,7 @@ class TatorVideoBuffer {
     this._trackWidth = Math.round(info.tracks[0].track_width);
     this._trackHeight = Math.round(info.tracks[0].track_height);
     this._timescale = info.tracks[0].timescale;
+    this._playing = false;
 
     this._canvas = new OffscreenCanvas(this._trackWidth, this._trackHeight);
     //this._canvas = new OffscreenCanvas(320, 144);
@@ -239,7 +240,7 @@ class TatorVideoBuffer {
       }
     }
     let done = false;
-    if (muted == false)
+    if (muted == false || this._playing == true)
     {
       this._seek_in_progress=true;
       let timestamp = samples[0].cts;
@@ -258,7 +259,7 @@ class TatorVideoBuffer {
         }
 
         // Decode upto 4 past the next key frame.
-        if (idx > 0 && samples[idx].is_sync)
+        if (idx > 0 && samples[idx].is_sync && this._playing == false)
         {
           done=true;
           for (let overrun_idx = idx; overrun_idx < Math.min(samples.length,idx+4); overrun_idx++)
@@ -307,9 +308,28 @@ class TatorVideoBuffer {
     //console.info(`${performance.now()}: Finished mp4 samples, count=${samples.length}`);
   }
 
+  pause()
+  {
+    this._playing = false;
+    this._mp4File.stop();
+  }
+
+  play()
+  {
+    console.info(`PLAYING VIDEO ${this._current_cursor}`);
+    this._playing = true;
+    this._mp4File.seek(this._current_cursor);
+    this._mp4File.start();
+  }
+
 
   _frameReady(frame)
   {
+    if (this._playing == false)
+    {
+      frame.close();
+      return;
+    }
     let frameCopy = null;
     //console.info(`${this._frame_count} ready`);
     this._frame_count++;
@@ -328,7 +348,7 @@ class TatorVideoBuffer {
                                'data': frame});
       this._transfers.push(frame);
       
-      if (this._ready_frames.length >= 0)
+      if (this._playing == true || this._ready_frames.length >= 2 || this._videoDecoder.decodeQueueSize == 0)
       {
         this._seek_in_progress=false;
         //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
@@ -412,5 +432,13 @@ onmessage = function(e)
   else if (msg.type == "hotFrames")
   {
     ref._hot_frame_keys = msg.hotFrames;
+  }
+  else if (msg.type == "pause")
+  {
+    ref.pause();
+  }
+  else if (msg.type == "play")
+  {
+    ref.play();
   }
 }

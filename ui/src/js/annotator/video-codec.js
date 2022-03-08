@@ -97,12 +97,22 @@ class TatorVideoManager {
 
   _frameReady(msg)
   {
+    // If there is a frame handler callback potentially avoid 
+    // internal buffering.
+    if (this.onFrame)
+    {
+      if (this.onFrame(msg.data, this._timescale))
+      {
+        return;
+      }
+    }
+    console.info(`hot_frames = ${this._hot_frames.size}`);
     let start = performance.now();
     for (let frame of msg.data)
     {
       if (this._hot_frames.has(frame.timestamp))
       {
-        //console.warn(`Duped decoded frame..${msg.timestamp}`);
+        console.warn(`Duped decoded frame..${frame.timestamp}`);
         return;
       }
       this._hot_frames.set(frame.timestamp,frame.data);
@@ -124,7 +134,7 @@ class TatorVideoManager {
 
   _clean_hot()
   {
-    if (this._hot_frames.size < 50)
+    if (this._hot_frames.size < 25)
     {
       return;
     }
@@ -135,14 +145,14 @@ class TatorVideoManager {
     for (let hot_frame of timestamps)
     {
       // Only keep a max of 100 frames in memory
-      if (Math.abs(hot_frame - cursor_in_ctx)/this._frame_delta >= 50)
+      if (Math.abs(hot_frame - cursor_in_ctx)/this._frame_delta >= 25)
       {
         delete_elements.push(hot_frame);
       }
     }
     for (let key of delete_elements)
     {
-      delete this._hot_frames.get(key); // delete the image data
+      this._hot_frames.get(key).close();
       this._hot_frames.delete(key);
     }
 
@@ -202,6 +212,7 @@ class TatorVideoManager {
     // Keep worker and manager up to date.
     this._current_cursor = video_time;
     const is_hot = this._cursor_is_hot();
+    console.info(`${performance.now()}: Looking for ${video_time*this._timescale} ${is_hot}`);
     this._codec_worker.postMessage(
       {"type": "currentTime",
        "currentTime": video_time,
@@ -271,15 +282,15 @@ class TatorVideoManager {
   // Empty function because we don't support a traditional playback interface
   pause()
   {
-    // Shouldn't be called
-    console.warn("Calling pause() on underlying media. (NO-OP)");
+    this._codec_worker.postMessage(
+      {"type": "pause"});
   }
 
   // Empty function because we don't support a traditional playback interface
   play()
   {
-    // Shouldn't be called
-    console.warn("Calling play() on underlying media. (NO-OP)");
+    this._codec_worker.postMessage(
+      {"type": "play"});
   }
 }
 
@@ -320,14 +331,18 @@ export class TatorVideoDecoder {
 
   pause()
   {
-    // Shouldn't be called
-    console.warn("Calling pause() on underlying media.");
+    this._scrubBuffer.pause();
   }
 
   play()
   {
-    // Shouldn't be called
-    console.warn("Calling play() on underlying media.");
+    let timestamps = this._hot_frames.keys();
+    for (let idx = 0; idx < timestamps.length; idx++)
+    {
+      this._hot_frames.get(timestamps[idx]).close();
+      this._hot_frames.delete(timestamps[idx]);
+    }
+    this._scrubBuffer.play();
   }
 
   /**
