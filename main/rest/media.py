@@ -66,7 +66,7 @@ def _get_next_archive_state(desired_archive_state, last_archive_state):
 
 
 def _single_ids_from_multi_qs(multi_qs):
-    return set(ele for id_lst in multi_qs.values_list("media_files__ids", flat=True).distinct() for ele in id_lst)
+    return set(ele for id_lst in multi_qs.values_list("media_files__ids", flat=True) for ele in id_lst)
 
 
 def _presign(user_id, expiration, medias, fields=None):
@@ -531,9 +531,10 @@ class MediaListAPI(BaseListView):
                     multi_constituent_ids = _single_ids_from_multi_qs(
                         archive_qs.filter(meta__dtype="multi")
                     )
-                    archive_qs = Media.objects.filter(
-                        pk__in=multi_constituent_ids.update(ids_to_update)
-                    ).exclude(pk__in=previously_updated)
+                    multi_constituent_ids.update(ids_to_update)
+                    archive_qs = Media.objects.filter(pk__in=multi_constituent_ids).exclude(
+                        pk__in=previously_updated
+                    )
 
                     # If no media match the archive state, skip the update
                     if not archive_qs.exists():
@@ -693,8 +694,9 @@ class MediaDetailAPI(BaseDetailView):
                     multi_constituent_ids = _single_ids_from_multi_qs(
                         qs.filter(meta__dtype="multi")
                     )
+                    multi_constituent_ids.add(params["id"])
                     archive_state_qs = Media.objects.select_for_update().filter(
-                        pk__in=multi_constituent_ids.add(params["id"])
+                        pk__in=multi_constituent_ids
                     )
                     dt_now = datetime.datetime.now(datetime.timezone.utc)
                     archive_state_qs.update(
