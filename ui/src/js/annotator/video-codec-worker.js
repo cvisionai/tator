@@ -189,6 +189,7 @@ class TatorVideoBuffer {
     this._trackHeight = Math.round(info.tracks[0].track_height);
     this._timescale = info.tracks[0].timescale;
     this._playing = false;
+    this._lastSeek = 0;
 
     // The canvas is used to render seek frames so we don't use up 
     // slots in the real-time memory of the VideoDecoder object, from the 
@@ -292,32 +293,27 @@ class TatorVideoBuffer {
           this._keyframes.push(samples[idx].cts);
         }
 
-        // Decode upto 4 past the next key frame.
-        if (idx > 0 && samples[idx].is_sync && this._playing == false)
-        {
-          done=true;
-          for (let overrun_idx = idx; overrun_idx < Math.min(samples.length,idx+4); overrun_idx++)
-          {
-            const chunk = new EncodedVideoChunk({
-              type: (samples[overrun_idx].is_sync ? 'key' : 'delta'),
-              timestamp: samples[overrun_idx].cts,
-              data: samples[overrun_idx].data
-            });
-            this._videoDecoder.decode(chunk);
-          }
-          break;
-        }
-
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
           timestamp: samples[idx].cts,
           data: samples[idx].data
         });
+        try
+        {
         this._videoDecoder.decode(chunk);
-
-        
+        }
+        catch(e)
+        {
+          console.warn(`${e}`);
+          done=true;
+          break;
+        }
+        if (this._playing == false && ((samples[idx].cts>cursor_in_ctx+(this._frame_delta*4))))
+        {
+          break;
+        }
       }
-      this._decode_block_size = idx;
+  
       //console.info(`Asking to decode ${idx} frames from ${samples.length} START=${samples[0].cts}`);
     }
     else
@@ -329,7 +325,6 @@ class TatorVideoBuffer {
         {
           if (this._keyframes.push(samples[idx].cts))
           {
-            done = true;
             break;
           }
         }
@@ -389,7 +384,8 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = this._current_cursor*this._timescale;
       const timestamp = frame.timestamp;
-      if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frame_delta))
+      //console.info(`${performance.now()}: FRAME ${frame.timestamp/this._timescale}`);
+      if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frame_delta) || this._fastMode == true)
       {
         // Make an ImageBitmap from the frame and release the memory
         this._canvasCtx.drawImage(frame,0,0);
@@ -398,7 +394,8 @@ class TatorVideoBuffer {
         postMessage({"type": "image",
                     "data": image,
                     "timestamp": timestamp,
-                    "seconds": timestamp/this._timescale},
+                    "seconds": timestamp/this._timescale,
+                    "fastMode": this._fastMode},
                     image);
       }
       else
@@ -427,6 +424,16 @@ class TatorVideoBuffer {
     {
       return;
     }
+    if ((performance.now() - this._lastSeek) < 100)
+    {
+      this._fastMode = true;
+    }
+    else
+    {
+      this._fastMode = false;
+    }
+
+    this._lastSeek = performance.now();
 
     let keyframe_info = this._keyframes.closest_keyframe(video_time*this._timescale);
     // If the codec closed on us, opportunistically reopen it
@@ -441,7 +448,7 @@ class TatorVideoBuffer {
     this._videoDecoder.configure(this._codecConfig);
     let nearest_keyframe = keyframe_info.thisSegment;
     this._mp4File.stop();
-    //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
+    console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
     this._mp4File.seek(nearest_keyframe/this._timescale);
     this._mp4File.start();
   }

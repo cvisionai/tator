@@ -91,10 +91,12 @@ class TatorVideoManager {
 
   _imageReady(image)
   {
+    console.info(`GOT ${image.timestamp}`);
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
-    if (this._cursor_is_hot())
+    if (this._cursor_is_hot() || image.fastMode == true)
     {
+      this._fastMode = image.fastMode;
       this._safeCall(this.oncanplay);
     }
   }
@@ -111,7 +113,7 @@ class TatorVideoManager {
   // to support extra fast prev/next 
   _clean_hot()
   {
-    if (this._hot_frames.size < 5)
+    if (this._hot_frames.size < 10)
     {
       return;
     }
@@ -122,7 +124,7 @@ class TatorVideoManager {
     for (let hot_frame of timestamps)
     {
       // Only keep a max of 100 frames in memory
-      if (Math.abs(hot_frame - cursor_in_ctx)/this._frame_delta >= 5)
+      if (Math.abs(hot_frame - cursor_in_ctx)/this._frame_delta >= 10)
       {
         delete_elements.push(hot_frame);
       }
@@ -134,7 +136,7 @@ class TatorVideoManager {
 
     this._codec_worker.postMessage({"type": "hotFrames",
                                      "hotFrames": [...this._hot_frames.keys()]});
-    if (this._hot_frames.size > 10)
+    if (this._hot_frames.size > 20)
     {
       console.error("Garbage collection is not working!");
     }
@@ -224,7 +226,7 @@ class TatorVideoManager {
   //        - Currently we use an 'ImageData' reference from the internal OffscreenCanvas data
   get codec_image_buffer()
   {
-    if (this._cursor_is_hot())
+    if (this._cursor_is_hot() || this._fastMode == true)
     {
       return this._closest_frame_to_cursor();
     }
