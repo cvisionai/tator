@@ -32,8 +32,9 @@ def workflow_to_job(workflow):
             job['start_time'] = status['startedAt']
         if 'finishedAt' in status:
             job['stop_time'] = status['finishedAt']
-        job['nodes'] = [node_to_job_node(status['nodes'][node_id])
-                        for node_id in status['nodes']]
+        nodes = status.get('nodes', [])
+        job['nodes'] = [node_to_job_node(nodes[node_id])
+                        for node_id in nodes]
     else:
         job['status'] = 'Running'
         job['nodes'] = []
