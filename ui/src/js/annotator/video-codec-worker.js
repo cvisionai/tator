@@ -127,7 +127,7 @@ class TatorVideoBuffer {
     this._current_cursor = 0.0;
     this._current_duration = 0.0;
 
-    this._hot_frame_keys=[];
+    this._ready_frames=[];
   }
 
   _mp4OnError(e)
@@ -244,7 +244,6 @@ class TatorVideoBuffer {
 
   _mp4Samples(track_id, ref, samples)
   {
-    //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} ${samples[0].cts}`);
     let muted = true;
 
     // Samples can be out of CTS order, when calculating frame diff
@@ -268,11 +267,12 @@ class TatorVideoBuffer {
     if (this._frame_delta != undefined)
     {
       let sample_delta = Math.abs(cursor_in_ctx-samples[0].cts) / this._frame_delta;
-      if (sample_delta <= 50)
+      if (sample_delta <= 25)
       {
         muted = false;
       }
     }
+    //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} sample_start=${samples[0].cts} delta=${this._frame_delta} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
     let done = false;
     if (muted == false || this._playing == true)
     {
@@ -386,7 +386,24 @@ class TatorVideoBuffer {
     }
     else
     {
-  
+      const cursor_in_ctx = this._current_cursor*this._timescale;
+      const timestamp = frame.timestamp;
+      if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frame_delta))
+      {
+        // Make an ImageBitmap from the frame and release the memory
+        this._canvasCtx.drawImage(frame,0,0);
+        let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
+        frame.close();
+        postMessage({"type": "image",
+                    "data": image,
+                    "timestamp": timestamp,
+                    "seconds": timestamp/this._timescale},
+                    image);
+      }
+      else
+      {
+        frame.close(); // don't care about the frame
+      }
     }
   }
 
@@ -406,10 +423,11 @@ class TatorVideoBuffer {
   {
     this._current_cursor = video_time;
 
-    let keyframe_info = this._keyframes.closest_keyframe(video_time*this._timescale);
     // Only parse MP4 if we have to
     if (informational == false)
     {
+      this._readyImages=[];
+      let keyframe_info = this._keyframes.closest_keyframe(video_time*this._timescale);
       // If the codec closed on us, opportunistically reopen it
       if (this._videoDecoder.state == 'closed')
       {
@@ -422,7 +440,7 @@ class TatorVideoBuffer {
       this._videoDecoder.configure(this._codecConfig);
       let nearest_keyframe = keyframe_info.thisSegment;
       this._mp4File.stop();
-      //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time}`);
+      //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
       this._mp4File.seek(nearest_keyframe/this._timescale);
       this._mp4File.start();
     }
@@ -457,10 +475,6 @@ onmessage = function(e)
   else if (msg.type == "currentTime")
   {
     ref._setCurrentTime(msg.currentTime, msg.informational);
-  }
-  else if (msg.type == "hotFrames")
-  {
-    ref._hot_frame_keys = msg.hotFrames;
   }
   else if (msg.type == "pause")
   {

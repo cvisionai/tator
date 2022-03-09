@@ -23,6 +23,7 @@ class TatorVideoManager {
     this._current_cursor = 0.0;
 
     this._hot_frames = new Map();
+    this._playing = false;
   }
 
   _on_message(msg)
@@ -50,6 +51,10 @@ class TatorVideoManager {
     {
       this._frame_delta = msg.data.frameDelta;
     }
+    else if (msg.data.type == "image")
+    {
+      this._imageReady(msg.data);
+    }
   }
 
   // Returns true if the cursor is in the range of the hot frames
@@ -72,7 +77,7 @@ class TatorVideoManager {
   {
     // If there is a frame handler callback potentially avoid 
     // internal buffering.
-    if (this.onFrame)
+    if (this.onFrame && this._playing == true)
     {
       if (this.onFrame(msg.data, this._timescale))
       {
@@ -84,6 +89,16 @@ class TatorVideoManager {
     msg.data.close();
   }
 
+  _imageReady(image)
+  {
+    this._hot_frames.set(image.timestamp, image.data);
+    this._clean_hot();
+    if (this._cursor_is_hot())
+    {
+      this._safeCall(this.oncanplay);
+    }
+  }
+
   _safeCall(func_ptr)
   {
     if (func_ptr)
@@ -92,9 +107,11 @@ class TatorVideoManager {
     }
   }
 
+  // The seek buffer can keep up to 10 frames pre-decoded ready to go in either direction
+  // to support extra fast prev/next 
   _clean_hot()
   {
-    if (this._hot_frames.size < 25)
+    if (this._hot_frames.size < 5)
     {
       return;
     }
@@ -105,20 +122,19 @@ class TatorVideoManager {
     for (let hot_frame of timestamps)
     {
       // Only keep a max of 100 frames in memory
-      if (Math.abs(hot_frame - cursor_in_ctx)/this._frame_delta >= 25)
+      if (Math.abs(hot_frame - cursor_in_ctx)/this._frame_delta >= 5)
       {
         delete_elements.push(hot_frame);
       }
     }
     for (let key of delete_elements)
     {
-      this._hot_frames.get(key).close();
       this._hot_frames.delete(key);
     }
 
     this._codec_worker.postMessage({"type": "hotFrames",
                                      "hotFrames": [...this._hot_frames.keys()]});
-    if (this._hot_frames.size > 100)
+    if (this._hot_frames.size > 10)
     {
       console.error("Garbage collection is not working!");
     }
@@ -146,11 +162,6 @@ class TatorVideoManager {
     return this._hot_frames.get(lastTimestamp);
   }
 
-  get _hot_buffered()
-  {
-    //Return 
-  }
-
   ///////////////////////////////////////////////////////////
   // Public interface mirrors that of a standard HTML5 video
   ///////////////////////////////////////////////////////////
@@ -172,7 +183,6 @@ class TatorVideoManager {
     // Keep worker and manager up to date.
     this._current_cursor = video_time;
     const is_hot = this._cursor_is_hot();
-    console.info(`${performance.now()}: Looking for ${video_time*this._timescale} ${is_hot}`);
     this._codec_worker.postMessage(
       {"type": "currentTime",
        "currentTime": video_time,
@@ -216,7 +226,6 @@ class TatorVideoManager {
   {
     if (this._cursor_is_hot())
     {
-      setTimeout(()=>{this._clean_hot();}, 0);
       return this._closest_frame_to_cursor();
     }
     else
@@ -242,6 +251,7 @@ class TatorVideoManager {
   // Empty function because we don't support a traditional playback interface
   pause()
   {
+    this._playing = false;
     this._codec_worker.postMessage(
       {"type": "pause"});
   }
@@ -249,6 +259,7 @@ class TatorVideoManager {
   // Empty function because we don't support a traditional playback interface
   play()
   {
+    this._playing = true;
     this._codec_worker.postMessage(
       {"type": "play"});
   }
