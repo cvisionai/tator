@@ -140,38 +140,46 @@ class TatorVideoBuffer {
   }
 
   _getExtradata(avccBox) {
-    var i;
-    var size = 7;
-    for (i = 0; i < avccBox.SPS.length; i++) {
-      // nalu length is encoded as a uint16.
-      size+= 2 + avccBox.SPS[i].length;
+    try
+    {
+      var i;
+      var size = 7;
+      for (i = 0; i < avccBox.SPS.length; i++) {
+        // nalu length is encoded as a uint16.
+        size+= 2 + avccBox.SPS[i].length;
+      }
+      for (i = 0; i < avccBox.PPS.length; i++) {
+        // nalu length is encoded as a uint16.
+        size+= 2 + avccBox.PPS[i].length;
+      }
+
+      var writer = new Writer(size);
+
+      writer.writeUint8(avccBox.configurationVersion);
+      writer.writeUint8(avccBox.AVCProfileIndication);
+      writer.writeUint8(avccBox.profile_compatibility);
+      writer.writeUint8(avccBox.AVCLevelIndication);
+      writer.writeUint8(avccBox.lengthSizeMinusOne + (63<<2));
+
+      writer.writeUint8(avccBox.nb_SPS_nalus + (7<<5));
+      for (i = 0; i < avccBox.SPS.length; i++) {
+        writer.writeUint16(avccBox.SPS[i].length);
+        writer.writeUint8Array(avccBox.SPS[i].nalu);
+      }
+
+      writer.writeUint8(avccBox.nb_PPS_nalus);
+      for (i = 0; i < avccBox.PPS.length; i++) {
+        writer.writeUint16(avccBox.PPS[i].length);
+        writer.writeUint8Array(avccBox.PPS[i].nalu);
+      }
+
+      return writer.getData();
     }
-    for (i = 0; i < avccBox.PPS.length; i++) {
-      // nalu length is encoded as a uint16.
-      size+= 2 + avccBox.PPS[i].length;
+    catch (e)
+    {
+      console.warn(e);
+      return null;
     }
-
-    var writer = new Writer(size);
-
-    writer.writeUint8(avccBox.configurationVersion);
-    writer.writeUint8(avccBox.AVCProfileIndication);
-    writer.writeUint8(avccBox.profile_compatibility);
-    writer.writeUint8(avccBox.AVCLevelIndication);
-    writer.writeUint8(avccBox.lengthSizeMinusOne + (63<<2));
-
-    writer.writeUint8(avccBox.nb_SPS_nalus + (7<<5));
-    for (i = 0; i < avccBox.SPS.length; i++) {
-      writer.writeUint16(avccBox.SPS[i].length);
-      writer.writeUint8Array(avccBox.SPS[i].nalu);
-    }
-
-    writer.writeUint8(avccBox.nb_PPS_nalus);
-    for (i = 0; i < avccBox.PPS.length; i++) {
-      writer.writeUint16(avccBox.PPS[i].length);
-      writer.writeUint8Array(avccBox.PPS[i].nalu);
-    }
-
-    return writer.getData();
   }
 
   _mp4OnReady(info)
@@ -182,18 +190,44 @@ class TatorVideoBuffer {
     this._timescale = info.tracks[0].timescale;
     this._playing = false;
 
+    // The canvas is used to render seek frames so we don't use up 
+    // slots in the real-time memory of the VideoDecoder object, from the 
+    // context we can generate ImageBitmap which should render fast enough
+    // for seek or scrub conops.
     this._canvas = new OffscreenCanvas(this._trackWidth, this._trackHeight);
     //this._canvas = new OffscreenCanvas(320, 144);
     this._canvasCtx = this._canvas.getContext("2d", {desynchronized:true});
 
-    this._codecConfig = {
-      codec: this._codecString,
-      codedWidth: Number(this._trackWidth),
-      codedHeight: Number(this._trackHeight),
-      description: this._getExtradata(this._mp4File.moov.traks[0].mdia.minf.stbl.stsd.entries[0].avcC),
-      //hardwareAcceleration: "prefer-hardware"//,
-      //optimizeForLatency: true
-    };
+    let description = this._getExtradata(this._mp4File.moov.traks[0].mdia.minf.stbl.stsd.entries[0].avcC);
+
+    if (description)
+    {
+      this._codecConfig = {
+        codec: this._codecString,
+        codedWidth: Number(this._trackWidth),
+        codedHeight: Number(this._trackHeight),
+        description: description};
+    }
+    else
+    {
+      // Resolve Issue parsing MIME string from AV1, digit isn't 0 padded, but should be.
+      this._codecString = this._codecString.replace('.0M', '.00M');
+      this._codecString = this._codecString.replace('.1M', '.01M');
+      this._codecString = this._codecString.replace('.2M', '.02M');
+      this._codecString = this._codecString.replace('.3M', '.03M');
+      this._codecString = this._codecString.replace('.4M', '.04M');
+      this._codecString = this._codecString.replace('.5M', '.05M');
+      this._codecString = this._codecString.replace('.6M', '.06M');
+      this._codecString = this._codecString.replace('.7M', '.07M');
+      this._codecString = this._codecString.replace('.8M', '.08M');
+      this._codecString = this._codecString.replace('.9M', '.09M');
+
+      // Configure codec
+      this._codecConfig = {
+        codec: this._codecString,
+        codedWidth: Number(this._trackWidth),
+        codedHeight: Number(this._trackHeight)};
+    }
     console.info(JSON.stringify(info.tracks[0]));
     console.info(`${this._name} is configuring decoder = ${JSON.stringify(this._codecConfig)}`);
     this._videoDecoder.configure(this._codecConfig);
@@ -325,40 +359,34 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
-    if (this._playing == false)
-    {
-      frame.close();
-      return;
-    }
     let frameCopy = null;
     //console.info(`${this._frame_count} ready`);
     this._frame_count++;
-    if (this._canvas)
-    {
-      //console.info(`${performance.now()}: frameReady ${frame.timestamp}`);
-      const timestamp = frame.timestamp;
-      //this._canvasCtx.drawImage(frame,0,0);
-      //this._canvasCtx
-      //frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
-      //frame.close();
+    //console.info(`${performance.now()}: frameReady ${frame.timestamp}`);
+    const timestamp = frame.timestamp;
+    //this._canvasCtx.drawImage(frame,0,0);
+    //this._canvasCtx
+    //frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
+    //frame.close();
+    //console.info(`DRAW ${frame.timestamp} TOOK ${performance.now()-start} ms`);
 
-      //console.info(`DRAW ${frame.timestamp} TOOK ${performance.now()-start} ms`);
-      this._hot_frame_keys.push(timestamp);
-      this._ready_frames.push({'timestamp': timestamp,
-                               'data': frame});
-      this._transfers.push(frame);
-      
-      if (this._playing == true || this._ready_frames.length >= 2 || this._videoDecoder.decodeQueueSize == 0)
+
+    if (this._playing == true)
+    {      
+      if (this._playing == true)
       {
-        this._seek_in_progress=false;
         //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
         postMessage({"type": "frame",  
-                    "data": this._ready_frames},
-                    this._transfers
+                    "data": frame},
+                    [frame]
                     ); // transfer frame copy to primary UI thread
         this._ready_frames=[];
         this._transfers=[];
       }
+    }
+    else
+    {
+  
     }
   }
 

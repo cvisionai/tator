@@ -2975,8 +2975,8 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         let start = performance.now();
         let frame = this._pendingFrames.shift();
-        this.pushFrame(frame.data.frameNumber, frame.data, frame.data.displayWidth, frame.data.displayHeight);
-        frame.data.close();
+        this.pushFrame(frame.frameNumber, frame, frame.displayWidth, frame.displayHeight);
+        frame.close();
         this._push_profiler.push(performance.now()-start);
       }
       if (this._pendingFrames.length > 0)
@@ -3005,26 +3005,23 @@ export class VideoCanvas extends AnnotationCanvas {
     this._pendingTimeout = null;
 
     // on frame processing logic
-    video.onFrame = (frames, timescale, parent) => {
+    video.onFrame = (frame, timescale) => {
       this._playing = true;
       let start = performance.now();
-      for (let frame of frames)
+      frame.frameNumber = this.timeToFrame(frame.timestamp/timescale);
+      this._fpsLoadDiag++;
+      if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
       {
-        frame.data.frameNumber = this.timeToFrame(frame.data.timestamp/timescale);
-        frame.data.parent=parent;
-        this._fpsLoadDiag++;
-        if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
-        {
-          this.pushFrame(frame.data.frameNumber, frame.data, frame.data.displayWidth, frame.data.displayHeight);
-          frame.data.close();
-        }
-        else
-        {
-          this._pendingFrames.push(frame);
-          this.pendingFramesMethod();
-        }
-        frameProfiler.push(performance.now()-start)
+        this.pushFrame(frame.frameNumber, frame, frame.displayWidth, frame.displayHeight);
+        frame.close();
       }
+      else
+      {
+        this._pendingFrames.push(frame);
+        this.pendingFramesMethod();
+      }
+      frameProfiler.push(performance.now()-start)
+      
       // Kick off the player thread once we have 25 frames loaded
       if (this._playerTimeout == null && this._draw.canPlay() > 4)
       {

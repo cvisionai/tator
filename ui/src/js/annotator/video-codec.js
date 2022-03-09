@@ -74,27 +74,14 @@ class TatorVideoManager {
     // internal buffering.
     if (this.onFrame)
     {
-      if (this.onFrame(msg.data, this._timescale, this))
+      if (this.onFrame(msg.data, this._timescale))
       {
         return;
       }
     }
-    console.info(`hot_frames = ${this._hot_frames.size}`);
-    let start = performance.now();
-    for (let frame of msg.data)
-    {
-      if (this._hot_frames.has(frame.timestamp))
-      {
-        console.warn(`Duped decoded frame..${frame.timestamp}`);
-        return;
-      }
-      this._hot_frames.set(frame.timestamp,frame.data);
-      if (this._cursor_is_hot())
-      {
-        this._safeCall(this.oncanplay);
-      }
-    }
-    //console.info(`Handled ${msg.data.length} frames in ${performance.now()-start}`);
+
+    // If the client didn't claim the frame, return the memory
+    msg.data.close();
   }
 
   _safeCall(func_ptr)
