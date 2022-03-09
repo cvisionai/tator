@@ -7,7 +7,7 @@ resolution_config = {
         'vcodec': {
             'type': 'string',
             'description': 'Video codec.',
-            'enum': ['h264'], #Growth for additional formats later
+            'enum': ['h264', 'av1'], #Growth for additional formats later
             'default': 'h264',
         },
         'crf': {
@@ -21,7 +21,7 @@ resolution_config = {
             'type': 'integer',
             'description': 'Vertical Resolution',
             'minimum': 0,
-            'maximum': 4096,
+            'maximum': 4320, # align to 8k
         }
     },
 }
