@@ -232,7 +232,7 @@ class TatorStorage(ABC):
         response = self.head_object(path)
         if not response:
             return False
-        if response.get("StorageClass", "STANDARD") == archive_storage_class:
+        if response.get("StorageClass", None) == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
         if self._object_tagged_for_archive(path):
@@ -264,7 +264,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Object {path} not found, skipping")
             return True
-        if response.get("StorageClass", "STANDARD") == live_storage_class:
+        if response.get("StorageClass", live_storage_class) == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
             return True
         if "ongoing-request=" in response.get("Restore", ""):
@@ -281,7 +281,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not confirm restoration request status for {path}")
             return False
-        if response.get("StorageClass", "STANDARD") == live_storage_class:
+        if response.get("StorageClass", live_storage_class) == live_storage_class:
             logger.info(f"Object {path} live")
             return True
         if "ongoing-request" in response.get("Restore", ""):
@@ -337,7 +337,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not check the restoration state for {path}")
             return False
-        if response.get("StorageClass", "STANDARD") != live_storage_class:
+        if response.get("StorageClass", live_storage_class) != live_storage_class:
             logger.warning(f"Storage class not changed for object {path}")
             return False
         logger.info(f"Object {path} successfully restored: {response}")
