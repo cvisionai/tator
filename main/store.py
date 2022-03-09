@@ -62,6 +62,7 @@ class TatorStorage(ABC):
         self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
         self.external_host = external_host
+        self._server = None
 
     def get_archive_sc(self) -> str:
         """
@@ -304,9 +305,10 @@ class TatorStorage(ABC):
             # There is no ongoing request and the object is not in the temporary restored state
             storage_class = response.get("StorageClass", live_storage_class)
             if storage_class == archive_storage_class:
-                # Something went wrong with the original restoration request
-                logger.warning(f"Object {path} has no associated restoration request")
-                return False
+                if self._server is ObjectStore.AWS:
+                    # Something went wrong with the original restoration request
+                    logger.warning(f"Object {path} has no associated restoration request")
+                    return False
             elif storage_class == live_storage_class:
                 # If the object is still tagged for archive, it still needs updating
                 if self._object_tagged_for_archive(path):
@@ -335,7 +337,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not check the restoration state for {path}")
             return False
-        if response.get("StorageClass", "STANDARD") == archive_storage_class:
+        if response.get("StorageClass", "STANDARD") != live_storage_class:
             logger.warning(f"Storage class not changed for object {path}")
             return False
         logger.info(f"Object {path} successfully restored: {response}")

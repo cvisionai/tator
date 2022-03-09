@@ -29,7 +29,7 @@ class Command(BaseCommand):
         max_datetime = datetime.now(timezone.utc) - min_delta
         archived_qs = Media.objects.filter(
             deleted=False, archive_state="to_archive", modified_datetime__lte=max_datetime
-        )
+        ).exclude(meta__dtype="multi")
         if not archived_qs.exists():
             logger.info(f"No media to archive!")
             return

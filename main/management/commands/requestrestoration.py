@@ -27,7 +27,7 @@ class Command(BaseCommand):
         num_rr = 0
         restoration_qs = Media.objects.filter(
             deleted=False, archive_state="to_live", restoration_requested=False
-        )
+        ).exclude(meta__dtype="multi")
         if not restoration_qs.exists():
             logger.info(f"No media requesting restoration!")
             return
