@@ -351,28 +351,29 @@ class TatorVideoBuffer {
   play()
   {
     console.info(`PLAYING VIDEO ${this._current_cursor}`);
+    this._videoDecoder.reset();
+    this._videoDecoder.configure(this._codecConfig);
+    let keyframe_info = this._keyframes.closest_keyframe(this._current_cursor*this._timescale);
+    let nearest_keyframe = keyframe_info.thisSegment;
     this._playing = true;
-    this._mp4File.seek(this._current_cursor);
+    this._mp4File.stop();
+    //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
+    this._mp4File.seek(nearest_keyframe/this._timescale);
     this._mp4File.start();
+    
   }
 
 
   _frameReady(frame)
   {
-    let frameCopy = null;
-    //console.info(`${this._frame_count} ready`);
-    this._frame_count++;
-    //console.info(`${performance.now()}: frameReady ${frame.timestamp}`);
-    const timestamp = frame.timestamp;
-    //this._canvasCtx.drawImage(frame,0,0);
-    //this._canvasCtx
-    //frameCopy = this._canvas.transferToImageBitmap(); //GPU copy of frame
-    //frame.close();
-    //console.info(`DRAW ${frame.timestamp} TOOK ${performance.now()-start} ms`);
-
-
     if (this._playing == true)
     {      
+      const cursor_in_ctx = this._current_cursor*this._timescale;
+      if (frame.timestamp < cursor_in_ctx)
+      {
+        frame.close();
+        return;
+      }
       if (this._playing == true)
       {
         //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
@@ -422,28 +423,27 @@ class TatorVideoBuffer {
   _setCurrentTime(video_time, informational)
   {
     this._current_cursor = video_time;
-
-    // Only parse MP4 if we have to
-    if (informational == false)
+    if (informational)
     {
-      this._readyImages=[];
-      let keyframe_info = this._keyframes.closest_keyframe(video_time*this._timescale);
-      // If the codec closed on us, opportunistically reopen it
-      if (this._videoDecoder.state == 'closed')
-      {
-        this._videoDecoder = new VideoDecoder({
-          output: this._frameReady.bind(this),
-          error: this._frameError.bind(this)});
-        
-      }
-      this._videoDecoder.reset();
-      this._videoDecoder.configure(this._codecConfig);
-      let nearest_keyframe = keyframe_info.thisSegment;
-      this._mp4File.stop();
-      //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
-      this._mp4File.seek(nearest_keyframe/this._timescale);
-      this._mp4File.start();
+      return;
     }
+
+    let keyframe_info = this._keyframes.closest_keyframe(video_time*this._timescale);
+    // If the codec closed on us, opportunistically reopen it
+    if (this._videoDecoder.state == 'closed')
+    {
+      this._videoDecoder = new VideoDecoder({
+        output: this._frameReady.bind(this),
+        error: this._frameError.bind(this)});
+      
+    }
+    this._videoDecoder.reset();
+    this._videoDecoder.configure(this._codecConfig);
+    let nearest_keyframe = keyframe_info.thisSegment;
+    this._mp4File.stop();
+    //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
+    this._mp4File.seek(nearest_keyframe/this._timescale);
+    this._mp4File.start();
   }
 
   // Append data to the mp4 file
