@@ -4,63 +4,12 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from main.models import Affiliation, Media, Project, Resource, User
+from main.models import Affiliation, Media, Project, User
 from main.ses import TatorSES
-from main.util import get_clones
+from main.util import get_clones, update_media_archive_state
 
 logger = logging.getLogger(__name__)
-FILES_TO_ARCHIVE = ["streaming", "archival", "audio", "image"]
 READY_TO_ARCHIVE = ["to_archive", "archived"]
-
-
-def _archive_multi(multi):
-    """
-    Attempts to archive all media associated with a multi view by iterating over its media file ids.
-    If successful, the archive state of the multi view is changed from `to_archive` to `archived`.
-    """
-    media_ids = multi.media_files.get("ids")
-
-    if not media_ids:
-        # No media associated with this multiview, consider it archived
-        multi.archive_status_date = datetime.now(timezone.utc)
-        multi.archive_state = "archived"
-        multi.save()
-        return 1
-
-    media_qs = Media.objects.filter(pk__in=media_ids)
-    multi_archived = [_archive_single(obj) for obj in media_qs.iterator()]
-
-    if all(multi_archived):
-        multi.archive_status_date = datetime.now(timezone.utc)
-        multi.archive_state = "archived"
-        multi.save()
-
-    return sum(multi_archived)
-
-
-def _archive_single(media):
-    """
-    Attempts to archive all media associated with a video or image, except for thumbnails. If
-    successful, the archive state of the media is changed from `to_archive` to `archived`.
-    """
-    media_archived = True
-    for key in FILES_TO_ARCHIVE:
-        if key not in media.media_files:
-            continue
-
-        for obj in media.media_files[key]:
-            resource_archived = Resource.archive_resource(obj["path"])
-            media_archived = media_archived and resource_archived
-            if key == "streaming":
-                resource_archived = Resource.archive_resource(obj["segment_info"])
-                media_archived = media_archived and resource_archived
-
-    if media_archived:
-        media.archive_status_date = datetime.now(timezone.utc)
-        media.archive_state = "archived"
-        media.save()
-
-    return media_archived
 
 
 class Command(BaseCommand):
@@ -80,7 +29,7 @@ class Command(BaseCommand):
         max_datetime = datetime.now(timezone.utc) - min_delta
         archived_qs = Media.objects.filter(
             deleted=False, archive_state="to_archive", modified_datetime__lte=max_datetime
-        )
+        ).exclude(meta__dtype="multi")
         if not archived_qs.exists():
             logger.info(f"No media to archive!")
             return
@@ -115,13 +64,7 @@ class Command(BaseCommand):
                 )
                 continue
 
-            num_media = 0
-            if media_dtype == "multi":
-                num_media = _archive_multi(media)
-            elif media_dtype in ["image", "video"]:
-                num_media = int(_archive_single(media))
-
-            num_archived += num_media
+            num_archived += update_media_archive_state(media, "archived", False)
         logger.info(f"Archived a total of {num_archived} media!")
 
         # Notify owners of blocked archive attempt

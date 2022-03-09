@@ -705,6 +705,80 @@ def fix_bad_restores(
             json.dump(list(archived_resources), fp)
 
 
+def update_media_archive_state(
+    media: Media,
+    archive_state: str,
+    restoration_requested: bool,
+    **op_kwargs: dict,
+) -> bool:
+    """
+    Attempts to update the archive state of all media associated with a video or image, except for
+    thumbnails. If successful, the archive state of the media is changed according to the given
+    arguments and True is returned.
+
+    :param media: The media to update
+    :type media: Media
+    :param archive_state: The target for `media.archive_state`
+    :type archive_state: str
+    :param restoration_requested: The target for `media.restoration_requested`
+    :type restoration_requested: bool
+    :rtype: int
+    """
+
+    def _archive_state_comp(_media):
+        """
+        Compares the `archive_state` and `restoration_requested` values of the given media object
+        against the desired target values. Returns `True` if they both match, `False` otherwise.
+        """
+        return (
+            _media.archive_state == archive_state
+            and _media.restoration_requested == restoration_requested
+        )
+
+    # Lookup table for operators based on the target `archive_state` and `restoration_requested`
+    # values. `update_operator` must accept one string argument and return a boolean; `multi_test`
+    # must accept an iterable and return a boolean
+    operators_key = (archive_state, restoration_requested)
+    one_in_false_out = lambda _in: False
+    default = (one_in_false_out, one_in_false_out)
+    update_operator, multi_test = {
+        ("archived", False): (Resource.archive_resource, any),
+        ("to_live", True): (Resource.request_restoration, all),
+        ("live", False): (Resource.restore_resource, all),
+    }.get(operators_key, default)
+
+    success = []
+    if media.media_files:
+        for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
+            success.append(update_operator(path, **op_kwargs))
+    else:
+        # If there are no media files, consider the noop update attempt successful
+        success.append(True)
+
+    success = all(success)
+    if success:
+        new_status_date = datetime.datetime.now(datetime.timezone.utc)
+        media.archive_status_date = new_status_date
+        media.archive_state = archive_state
+        media.restoration_requested = restoration_requested
+        media.save()
+
+        # Check for multiviews containing this single and put them in the same state if they need
+        # updating
+        multi_qs = Media.objects.filter(meta__dtype="multi", media_files__ids__contains=media.id)
+        for multi in multi_qs.iterator():
+            if not _archive_state_comp(multi) and multi_test(
+                _archive_state_comp(single)
+                for single in Media.objects.filter(pk__in=multi.media_files["ids"])
+            ):
+                multi.archive_status_date = new_status_date
+                multi.archive_state = archive_state
+                multi.restoration_requested = restoration_requested
+                multi.save()
+
+    return success
+
+
 def get_clones(media: Media, filter_dict: dict = None):
     """
     Gets the exhaustive list of clone ids of the given media. If a `filter_dict` argument is given,

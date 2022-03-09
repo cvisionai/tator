@@ -4,63 +4,11 @@ import logging
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from main.models import Media, Resource
+from main.models import Media
 from main.ses import TatorSES
-from main.util import get_clones
+from main.util import get_clones, update_media_archive_state
 
 logger = logging.getLogger(__name__)
-
-
-def _request_restore_multi(multi, expiry_days):
-    """
-    Requests restoration of all media associated with a multi view by iterating over its media file
-    ids. If successful, the restoration requested boolean is set to True and the archive state
-    remains `to_live`.
-    """
-    media_ids = multi.media_files.get("ids")
-
-    if not media_ids:
-        # No media associated with this multiview, consider it live
-        multi.archive_status_date = datetime.now(timezone.utc)
-        multi.archive_state = "live"
-        multi.save()
-        return 0
-
-    media_qs = Media.objects.filter(pk__in=media_ids)
-    multi_restored = [_request_restore_single(obj, expiry_days) for obj in media_qs]
-
-    if all(multi_restored):
-        multi.archive_status_date = datetime.now(timezone.utc)
-        multi.restoration_requested = True
-        multi.save()
-
-    return sum(multi_restored)
-
-
-def _request_restore_single(media, expiry_days):
-    """
-    Requests restoration of all media associated with a video or image, except for thumbnails. If
-    successful, the restoration requested boolean is set to True and the archive state remains
-    `to_live`.
-    """
-    media_requested = True
-    for key in ["streaming", "archival", "audio", "image"]:
-        if key not in media.media_files:
-            continue
-
-        for obj in media.media_files[key]:
-            resource_requested = Resource.request_restoration(obj["path"], expiry_days)
-            media_requested = media_requested and resource_requested
-            if key == "streaming":
-                resource_requested = Resource.request_restoration(obj["segment_info"], expiry_days)
-                media_requested = media_requested and resource_requested
-
-    if media_requested:
-        media.archive_status_date = datetime.now(timezone.utc)
-        media.restoration_requested = True
-        media.save()
-
-    return media_requested
 
 
 class Command(BaseCommand):
@@ -79,7 +27,7 @@ class Command(BaseCommand):
         num_rr = 0
         restoration_qs = Media.objects.filter(
             deleted=False, archive_state="to_live", restoration_requested=False
-        )
+        ).exclude(meta__dtype="multi")
         if not restoration_qs.exists():
             logger.info(f"No media requesting restoration!")
             return
@@ -106,19 +54,8 @@ class Command(BaseCommand):
                 )
                 continue
 
-            if not media.media_files:
-                # No files to restore from archive storage, consider this media live
-                media.archive_state = "live"
-                media.save()
-                continue
+            num_rr += update_media_archive_state(media, "to_live", True, min_exp_days=expiry_days)
 
-            num_media = 0
-            if media_dtype == "multi":
-                num_media = _request_restore_multi(media, expiry_days)
-            else:
-                num_media = int(_request_restore_single(media, expiry_days))
-
-            num_rr += num_media
         logger.info(f"Requested restoration of a total of {num_rr} media!")
 
         # Notify owners of blocked archive attempt
