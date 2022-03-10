@@ -1,6 +1,7 @@
 import json
 import os
 import psycopg2
+from typing import List, Generator
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -1045,6 +1046,23 @@ class Media(Model, ModelDiffMixin):
 
         resource_qs = Resource.objects.filter(media=self)
         return all(resource.backed_up for resource in resource_qs.iterator())
+
+    def path_iterator(self, keys: List[str] = None) -> Generator[str, None, None]:
+        """
+        Returns a generator that yields the path strings for the desired set of `media_files` entries.
+
+        :param keys: The list of keys to search `media_files` for.
+        :type keys: List[str]
+        :rtype: Generator[str, None, None]
+        """
+        keys = keys or self.media_files.keys()
+
+        for key in keys:
+            for obj in self.media_files.get(key, []):
+                yield obj["path"]
+
+                if key == "streaming":
+                    yield obj["segment_info"]
 
 
 class FileType(Model):

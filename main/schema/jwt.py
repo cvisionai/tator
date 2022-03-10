@@ -9,7 +9,7 @@ from ._message import message_with_id_schema
 boilerplate = dedent("""\
 Allows for logging into Tator from a JWT token. Upgrades the session from
 a JWT token, to a session for using the Tator UI pages. This is the redirect
-landing page from the <a href=https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html>Cognito REST endpoint</a>.
+landing page from the [Cognito REST endpoint](https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html).
 """)
 
 class JwtGatewaySchema(AutoSchema):

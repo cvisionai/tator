@@ -8,6 +8,7 @@ from ..models import Project
 from ..models import Resource
 from ..schema import DownloadInfoSchema
 from ..store import get_tator_store, get_storage_lookup
+from ..cache import TatorCache
 
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -35,21 +36,29 @@ class DownloadInfoAPI(BaseListView):
 
         # Set up S3 interfaces.
         response_data = []
+        cache = TatorCache()
+        user_id = self.request.user.pk
+        ttl = expiration - 3600
         for key in keys:
-            upload = key.startswith('_uploads')
-            bucket = project_obj.get_bucket(upload=upload)
-            store_default = get_tator_store(bucket, upload=upload)
+            url = cache.get_presigned(user_id, key)
+            if url is None:
+                upload = key.startswith('_uploads')
+                bucket = project_obj.get_bucket(upload=upload)
+                store_default = get_tator_store(bucket, upload=upload)
 
-            tator_store = store_lookup.get(key, store_default)
-            # Make sure the key corresponds to the correct project.
-            if upload:
-                project_from_key = int(key.split('/')[3])
-            else:
-                project_from_key = int(key.split('/')[1])
-            if project != project_from_key:
-                raise PermissionDenied
-            # Generate presigned url.
-            url = tator_store.get_download_url(key, expiration)
+                tator_store = store_lookup.get(key, store_default)
+                # Make sure the key corresponds to the correct project.
+                if upload:
+                    project_from_key = int(key.split('/')[3])
+                else:
+                    project_from_key = int(key.split('/')[1])
+                if project != project_from_key:
+                    raise PermissionDenied
+                # Generate presigned url.
+                url = tator_store.get_download_url(key, expiration)
+                # Store url in cache.
+                if ttl > 0:
+                    cache.set_presigned(user_id, key, url, ttl)
             response_data.append({'key': key, 'url': url})
         return response_data
 

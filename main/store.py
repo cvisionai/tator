@@ -62,6 +62,7 @@ class TatorStorage(ABC):
         self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
         self.external_host = external_host
+        self._server = None
 
     def get_archive_sc(self) -> str:
         """
@@ -231,7 +232,7 @@ class TatorStorage(ABC):
         response = self.head_object(path)
         if not response:
             return False
-        if response.get("StorageClass", "") == archive_storage_class:
+        if response.get("StorageClass", None) == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
         if self._object_tagged_for_archive(path):
@@ -261,13 +262,15 @@ class TatorStorage(ABC):
         live_storage_class = self.get_live_sc()
         response = self.head_object(path)
         if not response:
-            return False
-        if response.get("StorageClass", "") == live_storage_class:
+            logger.warning(f"Object {path} not found, skipping")
+            return True
+        if response.get("StorageClass", live_storage_class) == live_storage_class:
             logger.info(f"Object {path} already live, skipping")
             return True
-        if 'ongoing-request="true"' in response.get("Restore", ""):
+        if "ongoing-request=" in response.get("Restore", ""):
             logger.info(f"Object {path} has an ongoing restoration request, skipping")
             return True
+
         try:
             self._restore_object(path, live_storage_class, min_exp_days)
         except:
@@ -278,7 +281,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not confirm restoration request status for {path}")
             return False
-        if response.get("StorageClass", "") == live_storage_class:
+        if response.get("StorageClass", live_storage_class) == live_storage_class:
             logger.info(f"Object {path} live")
             return True
         if "ongoing-request" in response.get("Restore", ""):
@@ -294,35 +297,32 @@ class TatorStorage(ABC):
         live_storage_class = self.get_live_sc()
         response = self.head_object(path)
         if not response:
-            logger.warning(f"Could not check the state of the restoration request for {path}")
-            return False
+            logger.warning(f"Object {path} not found, skipping")
+            return True
 
         request_state = response.get("Restore", "")
         if not request_state:
             # There is no ongoing request and the object is not in the temporary restored state
-            storage_class = response.get("StorageClass", "")
+            storage_class = response.get("StorageClass", live_storage_class)
             if storage_class == archive_storage_class:
-                # Something went wrong with the original restoration request
-                logger.warning(f"Object {path} has no associated restoration request")
+                if self._server is ObjectStore.AWS:
+                    # Something went wrong with the original restoration request
+                    logger.warning(f"Object {path} has no associated restoration request")
+                    return False
+            elif storage_class == live_storage_class:
+                # If the object is still tagged for archive, it still needs updating
+                if self._object_tagged_for_archive(path):
+                    logger.info(f"Object {path} live, but still needs update...")
+                else:
+                    logger.info(f"Object {path} live and up to date")
+                    return True
+            else:
+                # The resource is in an unexpected storage class
+                logger.error(f"Object {path} in unexpected storage class '{storage_class}'")
                 return False
-            if storage_class == live_storage_class:
-                logger.info(f"Object {path} live")
-                return True
-            if not storage_class:
-                # The resource was already restored
-                logger.info(f"Object {path} already restored")
-                return True
-
-            # The resource is in an unexpected storage class
-            logger.error(f"Object {path} in unexpected storage class {storage_class}")
-            return False
-        if 'ongoing-request="true"' in request_state:
+        elif 'ongoing-request="true"' in request_state:
             # There is an ongoing request and the object is not ready to be permanently restored
             logger.info(f"Object {path} not in standard access yet, skipping")
-            return False
-        if 'ongoing-request="false"' not in request_state:
-            # This should not happen unless the API for s3.head_object changes
-            logger.error(f"Unexpected request state '{request_state}' received for object {path}")
             return False
 
         # Then ongoing-request="false" must be in request_state, which means its storage class can
@@ -337,7 +337,7 @@ class TatorStorage(ABC):
         if not response:
             logger.warning(f"Could not check the restoration state for {path}")
             return False
-        if response.get("StorageClass", "") == archive_storage_class:
+        if response.get("StorageClass", live_storage_class) != live_storage_class:
             logger.warning(f"Storage class not changed for object {path}")
             return False
         logger.info(f"Object {path} successfully restored: {response}")

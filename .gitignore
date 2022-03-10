@@ -14,8 +14,10 @@ main/static/js/tator.js
 main/static/js/tator/*
 main/static/js/.on-save.json
 #main/static/js/project-settings/*
-node_modules/*
-package-lock.json
+ui/node_modules/*
+ui/package-lock.json
+ui/dist/*
+ui/**/index.js
 containers/nginx/nginx.conf
 examples/algorithms/groundfish_demo/fishtrackingdata
 main/version.py

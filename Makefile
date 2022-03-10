@@ -150,7 +150,7 @@ dashboard-token:
 
 .PHONY: tator-image
 tator-image:
-	$(MAKE) min-js min-css r-docs docs
+	$(MAKE) webpack r-docs docs
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
@@ -184,330 +184,23 @@ main/version.py:
 	./scripts/version.sh > main/version.py
 	chmod +x main/version.py
 
-collect-static: min-css min-js
+collect-static: webpack
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -rf /tator_online/main/static
-	kubectl cp main/static $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///'):/tator_online/main
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator.js
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator.min.js
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/js/tator-ui.min.js
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -f /data/static/css/tator-ui.min.css
+	kubectl cp ui/dist $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///'):/tator_online/main/static
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- python3 manage.py collectstatic --noinput
 
 dev-push:
 	@scripts/dev-push.sh
 
-min-css:
-	node_modules/.bin/sass main/static/css/tator/styles.scss:main/static/css/tator-ui.min.css --style compressed
-
-FILES = \
-    node-uuid.js \
-    StreamSaver.js \
-    zip-stream.js \
-    util/get-cookie.js \
-    util/identifying-attribute.js \
-    util/fetch-retry.js \
-    util/has-permission.js \
-    util/join-params.js \
-    util/filter-utilities.js \
-    util/tator-data.js \
-    util/same-origin-credentials.js \
-    components/tator-element.js \
-    components/buttons/entity-frame-link-button.js \
-    components/buttons/bulk-correct-button.js \
-    components/inputs/array-input.js \
-    components/inputs/user-input.js \
-    components/inputs/email-list-input.js \
-    components/inputs/bool-input.js \
-    components/inputs/checkbox-input.js \
-    components/inputs/enum-input.js \
-    components/inputs/text-area.js \
-    components/inputs/datetime-input.js \
-    components/inputs/text-input.js \
-    components/inputs/feature/color-inputs.js \
-    components/inputs/feature/thumb-inputs.js \
-    components/inputs/feature/radio-set.js \
-    components/inputs/feature/checkbox-set.js \
-    components/inputs/feature/file-input.js \
-    components/inputs/feature/array-object-input.js \
-    components/labeled-checkbox.js \
-    components/markdown-div.js \
-    components/svg-definitions/chevron-right.js \
-    components/svg-definitions/modal-close.js \
-    components/svg-definitions/modal-warning.js \
-    components/svg-definitions/modal-success.js \
-    components/svg-definitions/more-icon.js \
-    components/svg-definitions/track-icon.js \
-    components/svg-definitions/all-svg.js \
-    components/modal-dialog.js \
-    components/modal-notify.js \
-    components/upload-dialog.js \
-    components/announcement-dialog.js \
-    components/cancel-button.js \
-    components/cancel-confirm.js \
-    components/canvas-ctxmenu.js \
-    components/big-upload-form.js \
-    components/upload-element.js \
-    components/entity-gallery/entity-gallery-card.js \
-    components/entity-gallery/entity-gallery-resize.js \
-    components/entity-gallery/entity-gallery-aspect-ratio.js \
-    components/entity-gallery/entity-gallery-paginator.js \
-    components/entity-gallery/entity-gallery-labels.js \
-    components/entity-gallery/entity-gallery-sort.js \
-    components/entity-gallery/entity-gallery-slider.js \
-    components/entity-gallery/entity-gallery_h-slide.js \
-    components/entity-gallery/entity-gallery_grid.js \
-    components/entity-gallery/entity-gallery-more-menu.js \
-    components/entity-gallery/bulk-edit/selection-panel.js \
-    components/entity-gallery/bulk-edit/comparison-panel.js \
-    components/entity-gallery/bulk-edit/edit-panel.js \
-    components/entity-gallery/entity-gallery-bulk-edit.js \
-    components/entity-panel/entity-panel-navigation.js \
-    components/entity-panel/entity-panel-localization.js \
-    components/entity-panel/entity-panel-form.js \
-    components/entity-panel/entity-panel-top.js \
-    components/entity-panel/entity-panel-container.js \
-    components/entity-panel/entity-panel.js \
-    components/header-notification.js \
-    components/header-menu.js \
-    components/header-user.js \
-    components/header-main.js \
-    components/nav-close.js \
-    components/nav-back.js \
-    components/nav-shortcut.js \
-    components/nav-main.js \
-    components/keyboard-shortcuts.js \
-    components/tator-page.js \
-    components/form-text.js \
-    components/form-file.js \
-    components/text-autocomplete.js \
-    components/success-light.js \
-    components/warning-light.js \
-    components/name-dialog.js \
-    components/filter-data-button.js \
-    components/filter-condition.js \
-    components/filter-condition-group.js \
-    components/filter-dialog.js \
-    components/filter-interface.js \
-    components/filter-data.js \
-    components/removable-pill.js \
-    components/user-data.js \
-    components/text-calendar-button.js \
-    registration/registration-page.js \
-    password-reset/password-reset-request-page.js \
-    password-reset/password-reset-page.js \
-    projects/settings-button.js \
-    projects/project-remove.js \
-    projects/project-nav.js \
-    projects/project-collaborators.js \
-    projects/project-description.js \
-    projects/project-summary.js \
-    projects/new-project.js \
-    projects/new-project-dialog.js \
-    projects/delete-project.js \
-    projects/projects-dashboard.js \
-    organizations/organization-summary.js \
-    organizations/new-organization.js \
-    organizations/organizations-dashboard.js \
-    organizations/new-organization-dialog.js \
-    account-profile/account-profile.js \
-    token/token-page.js \
-    new-project/new-project-close.js \
-    new-project/custom/custom-form.js \
-    new-project/custom/custom.js \
-    project-detail/new-algorithm-button.js \
-    project-detail/algorithm-menu.js \
-    project-detail/algorithm-button.js \
-    project-detail/confirm-run-algorithm.js \
-    project-detail/analytics-button.js \
-    project-detail/activity-button.js \
-    project-detail/project-text.js \
-    project-detail/project-search.js \
-    project-detail/new-section.js \
-    project-detail/reload-button.js \
-    project-detail/section-search.js \
-    project-detail/section-upload.js \
-    project-detail/big-download-form.js \
-    project-detail/download-button.js \
-    project-detail/rename-button.js \
-    project-detail/toggle-button.js \
-    project-detail/delete-button.js \
-    project-detail/section-more.js \
-    project-detail/section-card.js \
-    project-detail/media-move.js \
-    project-detail/media-more.js \
-    project-detail/media-description.js \
-    project-detail/media-card.js \
-    project-detail/attachment-dialog.js \
-    project-detail/section-prev.js \
-    project-detail/section-next.js \
-    project-detail/section-expand.js \
-    project-detail/section-paginator.js \
-    project-detail/section-files.js \
-    project-detail/media-section.js \
-    project-detail/delete-section-form.js \
-    project-detail/delete-file-form.js \
-    project-detail/activity-nav.js \
-    project-detail/new-algorithm-form.js \
-    project-detail/project-detail.js \
-    components/loading-spinner.js \
-    components/inline-warning.js \
-    project-settings/attributes/attributes-clone.js \
-    project-settings/attributes/attributes-delete.js \
-    project-settings/attributes/attributes-form.js \
-    project-settings/attributes/attributes-main.js \
-    project-settings/components/settings-breadcrumbs.js \
-    project-settings/components/settings-nav.js \
-    project-settings/components/single-upload.js \
-    project-settings/data/data-attributes-clone.js \
-    project-settings/data/data-clusters.js \
-    project-settings/data/data-media-list.js \
-    project-settings/data/data-memberships.js \
-    project-settings/data/data-project-types.js \
-    project-settings/data/data-version-list.js \
-    project-settings/type-forms/type-form.js \
-    project-settings/type-forms/applet-edit.js \
-    project-settings/type-forms/dashboard-edit.js \
-    project-settings/type-forms/algorithm-edit.js \
-    project-settings/type-forms/leaf-type-edit.js \
-    project-settings/type-forms/localization-type-edit.js \
-    project-settings/type-forms/media-type-main-edit.js \
-    project-settings/type-forms/membership-edit.js \
-    project-settings/type-forms/project-delete.js \
-    project-settings/type-forms/project-main-edit.js \
-    project-settings/type-forms/state-type-edit.js \
-    project-settings/type-forms/type-delete.js \
-    project-settings/type-forms/type-new.js \
-    project-settings/type-forms/versions-edit.js \
-    project-settings/settings-box-helpers.js \
-    project-settings/type-form-validation.js \
-    project-settings/project-settings.js \
-    organization-settings/organization-data.js \
-    organization-settings/organization-type-form.js \
-    organization-settings/organization-main-edit.js \
-    organization-settings/affiliation-edit.js \
-    organization-settings/invitation-edit.js \
-    organization-settings/bucket-edit.js \
-    organization-settings/job-cluster-edit.js \
-    organization-settings/organization-settings.js \
-    annotation/annotation-breadcrumbs.js \
-    annotation/lock-button.js \
-    annotation/fill-boxes-button.js \
-    annotation/toggle-text-button.js \
-    annotation/media-capture-button.js \
-    annotation/bookmark-button.js \
-    annotation/media-link-button.js \
-    annotation/media-prev-button.js \
-    annotation/media-next-button.js \
-    annotation/zoom-control.js \
-    annotation/rate-control.js \
-    annotation/quality-control.js \
-    annotation/annotation-settings.js \
-    annotation/edit-button.js \
-    annotation/box-button.js \
-    annotation/line-button.js \
-    annotation/point-button.js \
-    annotation/poly-button.js \
-    annotation/track-button.js \
-    annotation/zoom-in-button.js \
-    annotation/zoom-out-button.js \
-    annotation/pan-button.js \
-    annotation/annotation-sidebar.js \
-    annotation/rewind-button.js \
-    annotation/play-button.js \
-    annotation/fast-forward-button.js \
-    annotation/frame-prev.js \
-    annotation/frame-next.js \
-    annotation/timeline-canvas.js \
-    annotation/timeline-d3.js \
-    annotation/video-fullscreen.js \
-    annotator/FrameBuffer.js \
-    annotator/drawGL_colors.js \
-    annotator/drawGL.js \
-    annotator/annotation.js \
-    annotator/video.js \
-    annotator/image.js \
-    annotator/live-video.js \
-    annotation/annotation-player.js \
-    annotation/annotation-image.js \
-    annotation/annotation-multi.js \
-    annotation/annotation-live.js \
-    annotation/attribute-panel.js \
-    annotation/modify-track-dialog.js \
-    annotation/progress-dialog.js \
-    annotation/favorite-button.js \
-    annotation/favorites-panel.js \
-    annotation/save-dialog.js \
-    annotation/entity-button.js \
-    annotation/media-panel.js \
-    annotation/frame-panel.js \
-    annotation/annotation-search.js \
-    annotation/entity-browser.js \
-    annotation/entity-prev-button.js \
-    annotation/entity-next-button.js \
-    annotation/entity-delete-button.js \
-    annotation/entity-redraw-button.js \
-    annotation/entity-frame-button.js \
-    annotation/entity-track-button.js \
-    annotation/entity-detection-button.js \
-    annotation/entity-more.js \
-    annotation/entity-delete-confirm.js \
-    annotation/entity-selector.js \
-    annotation/annotation-browser.js \
-    annotation/undo-buffer.js \
-    annotation/annotation-data.js \
-    annotation/annotation-page.js \
-    annotation/seek-bar.js \
-    annotation/version-button.js \
-    annotation/version-select.js \
-    annotation/version-dialog.js \
-    annotation/video-settings-dialog.js \
-    annotation/volume-control.js \
-    analytics/analytics-breadcrumbs.js \
-    analytics/analytics-settings.js \
-    analytics/dashboards/dashboard-portal.js \
-    analytics/dashboards/dashboard-summary.js \
-    analytics/dashboards/dashboard.js \
-    analytics/localizations/gallery.js \
-    analytics/localizations/panel-data.js \
-    analytics/localizations/card-data.js \
-    analytics/localizations/localizations.js \
-    analytics/corrections/localizations.js \
-    analytics/corrections/gallery.js \
-    analytics/collections/collections.js \
-    analytics/collections/collections-data.js \
-    analytics/portal/portal.js \
-    analytics/files/files-page.js \
-    analytics/files/file-type-dialog.js \
-    analytics/files/file-type-button.js \
-    analytics/files/file-type-select.js \
-    third_party/autocomplete.js \
-    third_party/webrtcstreamer.js \
-    third_party/jszip.min.js \
-    utilities.js
-
-JSDIR = main/static/js
-OUTDIR = main/static/js
-
-define generate_minjs
-.min_js/${1:.js=.min.js}: $(JSDIR)/${1}
-	@mkdir -p .min_js/$(shell dirname ${1})
-	@echo "Building '${1:.js=.min.js}'"
-	node_modules/.bin/babel-minify $(JSDIR)/${1} -o .min_js/${1:.js=.min.js}
-endef
-$(foreach file,$(FILES),$(eval $(call generate_minjs,$(file))))
-
-
 USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
 ifeq ($(USE_MIN_JS),True)
-min-js:
-	@echo "Building min-js file, because USE_MIN_JS is true"
-	mkdir -p $(OUTDIR)
-	rm -f $(OUTDIR)/tator-ui.min.js
-	mkdir -p .min_js
-	@$(foreach file,$(FILES),make --no-print-directory .min_js/$(file:.js=.min.js); cat .min_js/$(file:.js=.min.js) >> $(OUTDIR)/tator-ui.min.js;)
+webpack:
+	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
+	cd ui && python3 make_index_files.py && npm run build
 else
-min-js:
-	@echo "Skipping min-js, because USE_MIN_JS is false"
+webpack:
+	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
+	cd ui && python3 make_index_files.py && npm run buildDev
 endif
 
 .PHONY: migrate
@@ -669,6 +362,11 @@ selfsigned:
 .PHONY: docs
 docs:
 	make -C doc html
+
+.PHONY: markdown-docs
+markdown-docs:
+	sphinx-build -M markdown ./doc ./doc/_build
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py.md
 
 .PHONY: check_schema
 check_schema: tator-image

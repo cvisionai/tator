@@ -8,7 +8,7 @@ from ._errors import error_responses
 
 boilerplate = dedent("""\
 Sections represent groups of media using saved queries. The queries can be in the form
-of a <a href=https://www.elastic.co/guide/en/elasticsearch/reference/7.10/query-dsl-query-string-query.html#query-string-syntax>lucene search string</a> or a list of <a href=https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html>boolean filter queries</a> applied to
+of a [lucene search string](https://www.elastic.co/guide/en/elasticsearch/reference/7.10/query-dsl-query-string-query.html#query-string-syntax) or a list of [boolean filter queries](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html>boolean filter queries) applied to
 either media or child annotations of media.
 """)
 

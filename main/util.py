@@ -43,7 +43,7 @@ def updateProjectTotals(force=False):
         if not project.thumb:
             media = Media.objects.filter(project=project, media_files__isnull=False).first()
             if media:
-                tator_store = get_tator_store(project.bucket)
+                tator_store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
                 if "thumbnail" in media.media_files and media.media_files["thumbnail"]:
                     src_path = media.media_files['thumbnail'][0]['path']
                     dest_path = f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"
@@ -703,3 +703,138 @@ def fix_bad_restores(
     if archived_resources:
         with open(ar_filename, "w") as fp:
             json.dump(list(archived_resources), fp)
+
+
+def update_media_archive_state(
+    media: Media,
+    archive_state: str,
+    restoration_requested: bool,
+    **op_kwargs: dict,
+) -> bool:
+    """
+    Attempts to update the archive state of all media associated with a video or image, except for
+    thumbnails. If successful, the archive state of the media is changed according to the given
+    arguments and True is returned.
+
+    :param media: The media to update
+    :type media: Media
+    :param archive_state: The target for `media.archive_state`
+    :type archive_state: str
+    :param restoration_requested: The target for `media.restoration_requested`
+    :type restoration_requested: bool
+    :rtype: int
+    """
+
+    def _archive_state_comp(_media):
+        """
+        Compares the `archive_state` and `restoration_requested` values of the given media object
+        against the desired target values. Returns `True` if they both match, `False` otherwise.
+        """
+        return (
+            _media.archive_state == archive_state
+            and _media.restoration_requested == restoration_requested
+        )
+
+    # Lookup table for operators based on the target `archive_state` and `restoration_requested`
+    # values. `update_operator` must accept one string argument and return a boolean; `multi_test`
+    # must accept an iterable and return a boolean
+    operators_key = (archive_state, restoration_requested)
+    one_in_false_out = lambda _in: False
+    default = (one_in_false_out, one_in_false_out)
+    update_operator, multi_test = {
+        ("archived", False): (Resource.archive_resource, any),
+        ("to_live", True): (Resource.request_restoration, all),
+        ("live", False): (Resource.restore_resource, all),
+    }.get(operators_key, default)
+
+    success = []
+    if media.media_files:
+        for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
+            success.append(update_operator(path, **op_kwargs))
+    else:
+        # If there are no media files, consider the noop update attempt successful
+        success.append(True)
+
+    success = all(success)
+    if success:
+        new_status_date = datetime.datetime.now(datetime.timezone.utc)
+        media.archive_status_date = new_status_date
+        media.archive_state = archive_state
+        media.restoration_requested = restoration_requested
+        media.save()
+
+        # Check for multiviews containing this single and put them in the same state if they need
+        # updating
+        multi_qs = Media.objects.filter(meta__dtype="multi", media_files__ids__contains=media.id)
+        for multi in multi_qs.iterator():
+            if not _archive_state_comp(multi) and multi_test(
+                _archive_state_comp(single)
+                for single in Media.objects.filter(pk__in=multi.media_files["ids"])
+            ):
+                multi.archive_status_date = new_status_date
+                multi.archive_state = archive_state
+                multi.restoration_requested = restoration_requested
+                multi.save()
+
+    return success
+
+
+def get_clones(media: Media, filter_dict: dict = None):
+    """
+    Gets the exhaustive list of clone ids of the given media. If a `filter_dict` argument is given,
+    it is used to exclude media from the results to determine the subset of clones that do not
+    match.  An example use can be found in `main/management/commands/archivemedia.py`, where it
+    filters out clones in the ready to archive or archived state.
+
+    :param media: The media to find clones of.
+    :type media: Media
+    :param filter_dict: If specified, it is the keyword arguments to pass to the `exclude` operation
+                        on the clones' queryset.
+    :type filter_dict: dict
+    """
+
+    def _get_multi_blocking_clones(media):
+        """
+        Checks the given multiview's individual media for clones.
+        """
+        multi_qs = Media.objects.filter(pk__in=media.media_files["ids"])
+        media_readiness = [_get_single_blocking_clones(obj) for obj in multi_qs.iterator()]
+        return [ele for lst in media_readiness for ele in lst]
+
+    def _get_single_blocking_clones(media):
+        """
+        Checks the given media for clones. Starts with the first entry of `keys` and moves on if the
+        key is not found in `media.media_files`. Returns a tuple of lists, where the former is the
+        list of media whose `archive_state` is `to_archive` and the latter whose `archive_state` is
+        anything else.
+        """
+        media_not_ready = set()
+
+        for key in ["streaming", "archival", "audio", "image"]:
+            # If the given key does not exist in `media_files` or the list of files is empty, move
+            # on to the next key, if any
+            if not (key in media.media_files and media.media_files[key]):
+                continue
+
+            paths = [obj["path"] for obj in media.media_files[key]]
+
+            # Shared base queryset
+            media_qs = Media.objects.filter(resource_media__path__in=paths)
+
+            # Apply exclude filter, if given
+            if filter_dict:
+                media_qs = media_qs.exclude(**filter_dict)
+
+            # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
+            media_not_ready.update(list(media_qs.values_list("id", flat=True)))
+
+        return list(media_not_ready)
+
+    dtype = getattr(media.meta, "dtype", None)
+    if dtype in ["image", "video"]:
+        return _get_single_blocking_clones(media)
+    elif dtype == "multi":
+        return _get_multi_blocking_clones(media)
+    else:
+        logger.error(f"Expected dtype in ['multi', 'image', 'video'], got '{dtype}'")
+        return []
