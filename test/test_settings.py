@@ -117,8 +117,8 @@ def test_settings_stateTypes(page_factory, project):
     page.select_option('#itemDivId-StateType-New enum-input[name="Interpolation"] select', label='Latest')
     page.click('#itemDivId-StateType-New bool-input[name="Delete Child Localizations"] label[for="on"]')
     page.click('#itemDivId-StateType-New button[value="Save"]')
-    page.click('modal-dialog modal-close .modal__close')
     page.wait_for_selector(f'text="State type created successfully!"')
+    page.click('modal-dialog modal-close .modal__close')
     print(f"State type created successfully - Association: Localization, Interpolation: Latest")
 
     page.click('.heading-for-StateType .Nav-action')
@@ -147,8 +147,8 @@ def test_settings_stateTypes(page_factory, project):
     page.select_option('#itemDivId-StateType-New enum-input[name="Interpolation"] select', label='Latest')
     page.click('#itemDivId-StateType-New bool-input[name="Delete Child Localizations"] label[for="on"]')
     page.click('#itemDivId-StateType-New button[value="Save"]')
-    page.click('modal-dialog modal-close .modal__close')
     page.wait_for_selector(f'text="State type created successfully!"')
+    page.click('modal-dialog modal-close .modal__close')
     print(f"State type created successfully - Association: Frame, Interpolation: Latest")
     page.close()
 
