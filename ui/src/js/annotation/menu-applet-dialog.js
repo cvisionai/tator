@@ -86,6 +86,14 @@ export class MenuAppletDialog extends ModalDialog {
   }
 
   /**
+   * Expected to be done at initialization
+   * @param {annotation-data} dataInterface - Interface to annotation page's data buffer
+   */
+  setDataInterface(dataInterface) {
+    this._dataInterface = dataInterface;
+  }
+
+  /**
    * Saves the applet object internally
    * @param {Tator.Applet} applet
    */
@@ -98,8 +106,8 @@ export class MenuAppletDialog extends ModalDialog {
    * @param {string} appletName - Name of loaded applet to display in modal
    * @param {Object} data - Applet data. Expected to have the following properties:
    *     frame {int}
-   *     versionId {int}
-   *     mediaId {int}
+   *     version {Tator.Version}
+   *     media {Tator.Media}
    *     projectId {int}
    */
   setApplet(appletName, data) {
@@ -128,14 +136,6 @@ export class MenuAppletDialog extends ModalDialog {
 
     // Attach the standard event listeners.
     // If this is changed, update the corresponding documentation since this is an applet API change
-    this._appletElement.addEventListener("setModalWidth", (evt) => {
-      this._setModalWidth(evt.detail.width);
-    });
-
-    this._appletElement.addEventListener("setModalTitle", (evt) => {
-      this._setModalTitle(evt.detail.title);
-    });
-
     this._appletElement.addEventListener("displayProgressMessage", (evt) => {
       this._displayProgressMessage(evt.detail.message);
     });
@@ -148,16 +148,22 @@ export class MenuAppletDialog extends ModalDialog {
       this._displaySuccessMessage(evt.detail.message);
     });
 
-    this._appletElement.addEventListener("setAcceptButtonText", (evt) => {
-      this._setAcceptButtonText(evt.detail.text);
-    });
-
     this._appletElement.addEventListener("displayLoadingScreen", () => {
       this.dispatchEvent(new Event("displayLoadingScreen"));
     });
 
     this._appletElement.addEventListener("hideLoadingScreen", () => {
       this.dispatchEvent(new Event("hideLoadingScreen"));
+    });
+
+    this._appletElement.addEventListener("refreshDataType", (evt) => {
+
+      // Get the key expected by the annotation data interface (e.g. box_1)
+      // and use that to get the data type object
+      const dataType = evt.detail.dataType;
+      const dataTypeKey = `${dataType.dtype}_${dataType.id}`;
+      const typeToUpdate = this._dataInterface._dataTypes[dataTypeKey];
+      this._dataInterface.updateType(typeToUpdate);
     });
 
     // Set the applet data

@@ -11,7 +11,7 @@ export class MenuAppletElement extends TatorElement {
   /**
    * @returns string
    */
-   getModalHeight() {
+  getModalHeight() {
     return "";
   }
 
