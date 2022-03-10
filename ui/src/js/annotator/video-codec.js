@@ -271,10 +271,7 @@ export class TatorVideoDecoder {
   constructor()
   {
     console.info("Created WebCodecs based Video Decoder");
-
-    this._seekBuffer = new TatorVideoManager(this, "Seek");
-    this._onDemandBuffer = new TatorVideoManager(this, "OnDemand");
-    this._scrubBuffer = new TatorVideoManager(this, "Scrub");
+    this._buffer = new TatorVideoManager(this, "Video Buffer");
     this._init = false;
   }
 
@@ -304,7 +301,7 @@ export class TatorVideoDecoder {
 
   pause()
   {
-    this._scrubBuffer.pause();
+    this._buffer.pause();
   }
 
   play()
@@ -315,7 +312,7 @@ export class TatorVideoDecoder {
       this._hot_frames.get(timestamps[idx]).close();
       this._hot_frames.delete(timestamps[idx]);
     }
-    this._scrubBuffer.play();
+    this._buffer.play();
   }
 
   /**
@@ -330,19 +327,19 @@ export class TatorVideoDecoder {
    */
   forTime(time, buffer, direction, maxTime)
   {
-    return this._scrubBuffer;
+    return this._buffer;
   }
 
   // Returns the seek buffer if it is present, or
   // The time buffer if in there
   returnSeekIfPresent(time, direction)
   {
-    return this._scrubBuffer;
+    return this._buffer;
   }
 
   playBuffer()
   {
-    return this._scrubBuffer;
+    return this._buffer;
   }
 
   /**
@@ -440,7 +437,7 @@ export class TatorVideoDecoder {
 
   appendLatestBuffer(data, callback)
   {
-    this._scrubBuffer.appendBuffer(data);
+    this._buffer.appendBuffer(data);
     setTimeout(callback,0); // defer to next clock
   }
 
@@ -469,9 +466,7 @@ export class TatorVideoDecoder {
     console.info("Appending All Buffers");
     if (this._init == false || force == true)
     {
-      this._seekBuffer.appendBuffer(data);
-      this._onDemandBuffer.appendBuffer(data);
-      this._scrubBuffer.appendBuffer(data);
+      this._buffer.appendBuffer(data);
     }
     this._init = true;
     setTimeout(callback,0); // defer to next clock
