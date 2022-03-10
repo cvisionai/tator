@@ -781,7 +781,7 @@ def update_media_archive_state(
     return success
 
 
-def get_clones(media: Media, filter_dict: Dict[str, str] = None) -> Dict[int, Dict[str, set]]:
+def get_clone_info(media: Media, filter_dict: Dict[str, str] = None) -> Dict[int, Dict[str, set]]:
     """
     Gets the exhaustive list of clone ids of the given media. If a `filter_dict` argument is given,
     it is used to filter media from the results to determine the subset of clones that match. The
@@ -790,83 +790,44 @@ def get_clones(media: Media, filter_dict: Dict[str, str] = None) -> Dict[int, Di
     three keys:
 
     - `all`: contains the set of all integer media ids of all clones of the given media.
-    - `original`: contains the set of integer media ids of the original clones. For a single media,
-      e.g. `media.meta.dtype` is `video` or `image`, `original` will contain exactly one element.
-      For multiviews, i.e. `media.meta.dtype` is `multi`, `original` will contain the same number of
-      elements as `media.media_files`.
-    - `remaining`: contains the set of integer media ids that are clones of the given media object
+    - `original`: contains the integer media id of the original clone.
+    - `match`: contains the set of integer media ids that are clones of the given media object
       that do match the `filter_dict` arguments, if given, otherwise it is empty
 
     :param media: The media to find clones of.
     :type media: Media
-    :param filter_dict: If specified, it is the keyword arguments to pass to the `exclude` operation
-                        on the clones' queryset and will populate the `remaining` set.
+    :param filter_dict: If specified, it is the keyword arguments to pass to the `filter` operation
+                        on the clones' queryset and will populate the `match` set.
     :type filter_dict: dict
     :rtype: dict
     """
 
-    def _find_multi_clones(media: Media, return_dict: Dict[int, Dict[str, set]]) -> None:
-        """
-        Checks the given multiview's individual media for clones.
-        """
-        # If media.media_files is empty or none, there is nothing to check
-        if media.media_files:
-            # Get the queryset of all single media ids in the multiview
-            single_qs = Media.objects.filter(pk__in=media.media_files["ids"])
-
-            # Find the set of clones for each
-            for obj in single_qs.iterator():
-                _find_single_clones(obj, return_dict[obj.id])
-
-    def _find_single_clones(media: Media, clone_dict: Dict[str, set]) -> None:
-        """
-        Checks the given media for clones and applies `filter_dict`, if set. Starts with the first
-        entry of `keys` and moves on if the key is not found in `media.media_files`. For clones that
-        match the `filter_dict`, if set, this will update the `clone_dict["remaining"]` set with
-        their integer ids.
-        """
-        original_media_ids = set()
-
-        for key in ["streaming", "archival", "audio", "image"]:
-            # If the given key does not exist in `media_files` or the list of files is empty, move
-            # on to the next key, if any
-            if not (key in media.media_files and media.media_files[key]):
-                continue
-
-            # Collect all paths for this key
-            paths = [obj["path"] for obj in media.media_files[key]]
-
-            # Update the set of original_media_ids with the part of the path that is the media id to
-            # which this object was originally uploaded
-            original_media_ids.update(int(path.split("/")[2]) for path in paths)
-
-            # Shared base queryset
-            media_qs = Media.objects.filter(resource_media__path__in=paths)
-            media_dict["all"].update(list(media_qs.values_list("id", flat=True)))
-
-            # Apply filter_dict, if given
-            if filter_dict:
-                media_qs = media_qs.exclude(**filter_dict)
-                media_dict["remaining"].update(list(media_qs.values_list("id", flat=True)))
-
-        n_original_ids = len(original_media_ids)
-        if n_original_ids != 1:
-            logger.error(
-                f"Found {n_original_ids} original clones of {media.id}: {original_media_ids}"
-            )
-
-        media_dict["original"].update(original_media_ids)
-
     # Set up the return dict
-    return_value = defaultdict(lambda: {"all": set(), "original": set(), "remaining": set()})
+    media_dict = {"all": set(), "original": {"project": None, "media": None}, "match": set()}
 
     dtype = getattr(media.meta, "dtype", None)
 
-    if dtype in ["image", "video"]:
-        _find_single_clones(media, return_value[media.id])
-    elif dtype == "multi":
-        _find_multi_clones(media, return_value)
-    else:
-        logger.error(f"Expected dtype in ['multi', 'image', 'video'], got '{dtype}'")
+    if dtype not in ["image", "video"]:
+        raise ValueError(f"get_clone_info expects media dtype `image` or `video`, got '{dtype}'")
 
-    return dict(return_value)
+    # Set media_dict["original"] to the part of the path that is the media id to which this object
+    # was originally uploaded
+    paths = [path for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"])]
+    if any(path0.split("/")[2] != path1.split("/")[2] for path0, path1 in zip(paths, paths[1:])):
+        logger.error(
+            f"Got at least two 'original ids' for media '{media.id}': {original_id} and {current_id}"
+        )
+        return media_dict
+
+    media_dict["original"]["project"], media_dict["original"]["media"] = paths[0].split("/")[1:3]
+
+    # Shared base queryset
+    media_qs = Media.objects.filter(resource_media__path__in=paths)
+    media_dict["all"].update(list(media_qs.values_list("id", flat=True)))
+
+    # Apply filter_dict, if given
+    if filter_dict:
+        media_qs = media_qs.filter(**filter_dict)
+        media_dict["match"].update(list(media_qs.values_list("id", flat=True)))
+
+    return media_dict

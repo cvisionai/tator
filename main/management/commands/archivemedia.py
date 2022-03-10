@@ -6,10 +6,9 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import Affiliation, Media, Project, User
 from main.ses import TatorSES
-from main.util import get_clones, update_media_archive_state
+from main.util import get_clone_info, update_media_archive_state
 
 logger = logging.getLogger(__name__)
-READY_TO_ARCHIVE = ["to_archive", "archived"]
 
 
 class Command(BaseCommand):
@@ -28,15 +27,17 @@ class Command(BaseCommand):
         min_delta = timedelta(days=options["min_age_days"])
         max_datetime = datetime.now(timezone.utc) - min_delta
         archived_qs = Media.objects.filter(
-            deleted=False, archive_state="to_archive", modified_datetime__lte=max_datetime
+            deleted=False, archive_state="to_archive", archive_status_date__lte=max_datetime
         ).exclude(meta__dtype="multi")
+
         if not archived_qs.exists():
             logger.info(f"No media to archive!")
             return
 
-        # Media not ready for archive is not in one of the READY_TO_ARCHIVE states
-        filter_dict = {"archive_state__in": READY_TO_ARCHIVE}
-        cloned_media_not_ready = defaultdict(list)
+        # Media not ready for archive is in one of the live states
+        filter_dict = {"archive_state__in": ["to_live", "live"]}
+        cloned_not_ready = defaultdict(list)
+        original_not_ready = defaultdict(list)
         for media in archived_qs.iterator():
             if not media.media_files:
                 # No files to move to archive storage, consider this media archived
@@ -46,41 +47,72 @@ class Command(BaseCommand):
                 continue
 
             media_dtype = getattr(media.meta, "dtype", None)
-            if media_dtype in ["multi", "image", "video"]:
-                clone_info = get_clones(media, filter_dict)
+            if media_dtype in ["image", "video"]:
+                clone_info = get_clone_info(media, filter_dict)
             else:
                 logger.warning(
                     f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
                 )
                 continue
 
-            media_not_ready = [
-                mid
-                for media_id, media_dict in clone_info.items()
-                for mid in media_dict["remaining"]
-            ]
-
-            if media_not_ready:
-                # Accumulate the lists of cloned media that aren't ready
-                cloned_media_not_ready[media.project.id].append(
-                    {
-                        "media_requesting_archive": media.id,
-                        "media_not_ready": media_not_ready,
-                    }
+            if clone_info["original"]["media"] is None:
+                logger.error(
+                    f"Could not collect clone information for media '{media.id}', skipping archive"
                 )
                 continue
 
-            num_archived += update_media_archive_state(media, "archived", False)
+            if clone_info["original"]["media"] != media.id:
+                # Accumulate the lists of cloned media that aren't ready
+                not_ready_entry = {
+                    "media_requesting_archive": media.id,
+                    "original_media": clone_info["original"]["media"],
+                    "original_project": clone_info["original"]["project"],
+                    "clone_project": media.project.id,
+                }
+                cloned_not_ready[not_ready_entry["clone_project"]].append(not_ready_entry)
+                original_not_ready[not_ready_entry["original_project"]].append(not_ready_entry)
+                continue
+
+            num_archived += int(
+                update_media_archive_state(
+                    media=media, archive_state="archived", restoration_requested=False
+                )
+            )
+
         logger.info(f"Archived a total of {num_archived} media!")
 
         # Notify owners of blocked archive attempt
         if settings.TATOR_EMAIL_ENABLED:
             ses = TatorSES()
 
-        for project_id, blocking_media in cloned_media_not_ready.items():
+        all_project_ids = set(list(cloned_not_ready.keys()) + list(original_not_ready.keys()))
+
+        for project_id in all_project_ids:
             email_text_list = []
+
+            blocked_media = cloned_not_ready[project_id]
+            if blocked_media:
+                email_text_list.append(f"Blocked media in `to_archive`:")
+
+            for instance in blocked_media:
+                msg = (
+                    f"Archiving '{instance['media_requesting_archive']}' blocked by: "
+                    f"{instance['original_media']} from project {instance['original_project']}."
+                )
+                logger.warning(msg)
+                email_text_list.append(msg)
+
+            blocking_media = original_not_ready[project_id]
+            if blocking_media:
+                email_text_list.append("\n")
+                email_text_list.append(f"Originals blocking clones in `to_archive`:")
+
             for instance in blocking_media:
-                msg = f"Archiving '{instance['media_requesting_archive']}' blocked by: {instance['media_not_ready']}."
+                msg = (
+                    f"The clone {instance['media_requesting_archive']} from project "
+                    f"{instance['original_project']} of original {instance['original_media']} "
+                    f"attempted to transition to the `archived` state. Consider archiving the original."
+                )
                 logger.warning(msg)
                 email_text_list.append(msg)
 

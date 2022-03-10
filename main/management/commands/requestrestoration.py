@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import Media
 from main.ses import TatorSES
-from main.util import get_clones, update_media_archive_state
+from main.util import get_clone_info, update_media_archive_state
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +32,20 @@ class Command(BaseCommand):
             logger.info(f"No media requesting restoration!")
             return
 
-        filter_dict = {"archive_state__in": ["to_live", "live"]}
         cloned_media_not_ready = defaultdict(list)
+        # Media not ready for restoration is in one of the archive states
+        filter_dict = {"archive_state__in": ["to_archive", "archived"]}
         for media in restoration_qs:
             media_dtype = getattr(media.meta, "dtype", None)
-            if media_dtype in ["multi", "image", "video"]:
-                media_not_ready = get_clones(media, filter_dict)
+            if media_dtype in ["image", "video"]:
+                clone_info = get_clone_info(media, filter_dict)
             else:
                 logger.warning(
                     f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping archive"
                 )
                 continue
 
+            media_not_ready = list(clone_info["match"])
             if media_not_ready:
                 # Accumulate the lists of cloned media that aren't ready
                 cloned_media_not_ready[media.project.id].append(
