@@ -715,8 +715,8 @@ def update_media_archive_state(
 ) -> int:
     """
     Attempts to update the archive state of all media associated with a video or image, except for
-    thumbnails. If successful, the archive state of the media is changed according to the given
-    arguments and 1 is returned.
+    thumbnails. If successful, the archive state of the media and its clones is changed according to
+    the given arguments and the number of media updated is returned.
 
     :param media: The media to update
     :type media: Media
@@ -743,9 +743,9 @@ def update_media_archive_state(
 
     # Lookup table for operators based on the target `archive_state` and `restoration_requested`
     # values. `update_operator` must accept one string argument and return a boolean; it performs
-    # the desired archive operation. `multi_state_comp_test` must accept an iterable and return a boolean; it
-    # combines the comparisons of a multi's single media against the target archive state with the
-    # desired boolean operation (AND or OR).
+    # the desired archive operation. `multi_state_comp_test` must accept an iterable and return a
+    # boolean; it combines the comparisons of a multi's single media against the target archive
+    # state with the desired boolean operation (AND or OR).
     operators_key = (archive_state, restoration_requested)
     one_in_false_out = lambda _in: False
     default = (one_in_false_out, one_in_false_out)
@@ -755,16 +755,15 @@ def update_media_archive_state(
         ("live", False): (Resource.restore_resource, all),
     }.get(operators_key, default)
 
-    success = []
+    # If there are no media files, consider the noop update attempt successful
+    n_successes = 0
+    update_success = True
     if media.media_files:
         for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
-            success.append(update_operator(path, **op_kwargs))
-    else:
-        # If there are no media files, consider the noop update attempt successful
-        success.append(True)
+            update_success = update_success and update_operator(path, **op_kwargs)
 
-    success = all(success)
-    if success:
+    if update_success:
+        n_successes = 1
         new_status_date = datetime.datetime.now(datetime.timezone.utc)
         media.archive_status_date = new_status_date
         media.archive_state = archive_state
@@ -777,6 +776,7 @@ def update_media_archive_state(
             archive_state=archive_state,
             restoration_requested=restoration_requested,
         )
+        n_successes += clone_qs.count()
 
         # Check for multiviews containing this single and put them in the same state if they need
         # updating
@@ -803,8 +803,9 @@ def update_media_archive_state(
             archive_state=archive_state,
             restoration_requested=restoration_requested,
         )
+        n_successes += multi_update_qs.count()
 
-    return int(success)
+    return n_successes
 
 
 def get_clone_info(media: Media) -> Dict[int, Dict[str, set]]:
@@ -831,13 +832,19 @@ def get_clone_info(media: Media) -> Dict[int, Dict[str, set]]:
     # Set media_dict["original"] to the part of the path that is the media id to which this object
     # was originally uploaded
     paths = [path for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"])]
-    if any(path0.split("/")[2] != path1.split("/")[2] for path0, path1 in zip(paths, paths[1:])):
-        logger.error(
-            f"Got at least two 'original ids' for media '{media.id}': {original_id} and {current_id}"
-        )
-        return media_dict
+    id0 = paths[0].split("/")[2]
+    for path in paths[1:]:
+        id1 = path.split("/")[2]
+        if id0 != id1:
+            logger.error(
+                f"Got at least two 'original ids' for media '{media.id}': {id0} and {id1}"
+            )
+            return media_dict
+        id0 = id1
 
-    media_dict["original"]["project"], media_dict["original"]["media"] = paths[0].split("/")[1:3]
+    media_dict["original"]["project"], media_dict["original"]["media"] = (
+        int(part) for part in paths[0].split("/")[1:3]
+    )
 
     # Shared base queryset
     media_qs = Media.objects.filter(resource_media__path__in=paths)
@@ -851,6 +858,7 @@ def update_queryset_archive_state(media_qs, target_state):
     """
     Manages updating the media contained in the given queryset with the given target state.
     """
+    num_updated = 0
     not_ready = {"cloned": defaultdict(list), "original": defaultdict(list)}
     for media in media_qs.iterator():
         if not media.media_files:
@@ -888,11 +896,11 @@ def update_queryset_archive_state(media_qs, target_state):
                 not_ready["original"][not_ready_entry["original_project"]].append(not_ready_entry)
             continue
 
-        num_archived += update_media_archive_state(
+        num_updated += update_media_archive_state(
             media=media, clone_ids=list(clone_info["clones"]), **target_state
         )
 
-    logger.info(f"Archived a total of {num_archived} media!")
+    logger.info(f"Updated a total of {num_updated} media!")
 
     return not_ready
 
