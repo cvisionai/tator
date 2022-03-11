@@ -4717,6 +4717,45 @@ export class AnnotationCanvas extends TatorElement
 
   }
 
+  moveToLocalization(localization) {
+    if (localization.meta.startsWith('box')) {
+      this.moveOffscreenBuffer([localization.x, localization.y,
+                                localization.width, localization.height]);
+    } else if (localization.meta.startsWith('line')) {
+      const x0 = localization.x;
+      const y0 = localization.y;
+      const x1 = localization.x + localization.u;
+      const y1 = localization.y + localization.v;
+      const width = Math.abs(x0 - x1);
+      const height = Math.abs(y0 - y1);
+      const x = Math.min(x0, x1);
+      const y = Math.min(y0, y1);
+      this.moveOffscreenBuffer([x, y, width, height]);
+    } else if (localization.meta.startsWith('dot')) {
+      const width = 0.2;
+      const height = 0.2;
+      const x = Math.min(Math.max(0, localization.x - 0.1), 0.8);
+      const y = Math.min(Math.max(0, localization.y - 0.1), 0.8);
+      this.moveOffscreenBuffer([x, y, width, height]);
+    } else if (localization.meta.startsWith('poly')) {
+      let x0 = 1.0;
+      let y0 = 1.0;
+      let x1 = 0.0;
+      let y1 = 0.0;
+      for (const [px, py] of localization.points) {
+        x0 = Math.min(x0, px);
+        y0 = Math.min(y0, py);
+        x1 = Math.max(x1, px);
+        y1 = Math.max(y1, py);
+      }
+      const width = Math.abs(x0 - x1);
+      const height = Math.abs(y0 - y1);
+      const x = Math.min(x0, x1);
+      const y = Math.min(y0, y1);
+      this.moveOffscreenBuffer([x, y, width, height]);
+    }
+  }
+
   makeDownloadableLocalization(localization)
   {
     var that = this;
@@ -4740,8 +4779,7 @@ export class AnnotationCanvas extends TatorElement
 
     if (this.currentFrame() == localization.frame)
     {
-      this.moveOffscreenBuffer([localization.x, localization.y,
-                                localization.width, localization.height]);
+      this.moveToLocalization(localization);
       makeSnapshot();
     }
     else
@@ -4749,8 +4787,7 @@ export class AnnotationCanvas extends TatorElement
       this.seekFrame(localization.frame,
                      (frameIdx, source, width, height) => {
                        this.updateOffscreenBuffer(frameIdx, source, width, height);
-                       this.moveOffscreenBuffer([localization.x, localization.y,
-                                localization.width, localization.height]);
+                       this.moveToLocalization(localization);
                        makeSnapshot();
                        // Put the off screen back to normal
                        this.seekFrame(this.currentFrame(),
