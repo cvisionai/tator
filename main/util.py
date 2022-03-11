@@ -858,6 +858,7 @@ def update_queryset_archive_state(media_qs, target_state):
     """
     Manages updating the media contained in the given queryset with the given target state.
     """
+    qs_ids = set(media_qs.values_list("id", flat=True))
     num_updated = 0
     not_ready = {"cloned": defaultdict(list), "original": defaultdict(list)}
     for media in media_qs.iterator():
@@ -884,7 +885,7 @@ def update_queryset_archive_state(media_qs, target_state):
             continue
 
         if media.id in clone_info["clones"]:
-            if not media_qs.filter(pk=clone_info["original"]["media"]).exists():
+            if clone_info["original"]["media"] not in qs_ids:
                 # Accumulate the lists of cloned media that aren't ready for an archive operation
                 not_ready_entry = {
                     "media_requesting_archive": media.id,
