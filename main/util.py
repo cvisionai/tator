@@ -7,7 +7,7 @@ import json
 import datetime
 import shutil
 import math
-from typing import Dict
+from typing import Dict, List
 
 from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
@@ -15,7 +15,6 @@ from boto3.s3.transfer import S3Transfer
 from PIL import Image
 
 from main.models import *
-from main.models import Resource
 from main.search import TatorSearch
 from main.store import get_tator_store
 
@@ -711,12 +710,13 @@ def update_media_archive_state(
     media: Media,
     archive_state: str,
     restoration_requested: bool,
+    clone_ids: List[int],
     **op_kwargs: dict,
-) -> bool:
+) -> int:
     """
     Attempts to update the archive state of all media associated with a video or image, except for
     thumbnails. If successful, the archive state of the media is changed according to the given
-    arguments and True is returned.
+    arguments and 1 is returned.
 
     :param media: The media to update
     :type media: Media
@@ -724,6 +724,10 @@ def update_media_archive_state(
     :type archive_state: str
     :param restoration_requested: The target for `media.restoration_requested`
     :type restoration_requested: bool
+    :param clone_ids: The clones to update if updating the original is successful
+    :type clone_ids: List[int]
+    :param op_kwargs: The keyword arguments to forward to the archive state change operation
+    :type op_kwargs: dict
     :rtype: int
     """
 
@@ -738,12 +742,14 @@ def update_media_archive_state(
         )
 
     # Lookup table for operators based on the target `archive_state` and `restoration_requested`
-    # values. `update_operator` must accept one string argument and return a boolean; `multi_test`
-    # must accept an iterable and return a boolean
+    # values. `update_operator` must accept one string argument and return a boolean; it performs
+    # the desired archive operation. `multi_state_comp_test` must accept an iterable and return a boolean; it
+    # combines the comparisons of a multi's single media against the target archive state with the
+    # desired boolean operation (AND or OR).
     operators_key = (archive_state, restoration_requested)
     one_in_false_out = lambda _in: False
     default = (one_in_false_out, one_in_false_out)
-    update_operator, multi_test = {
+    update_operator, multi_state_comp_test = {
         ("archived", False): (Resource.archive_resource, any),
         ("to_live", True): (Resource.request_restoration, all),
         ("live", False): (Resource.restore_resource, all),
@@ -765,45 +771,57 @@ def update_media_archive_state(
         media.restoration_requested = restoration_requested
         media.save()
 
+        clone_qs = Media.objects.select_for_update().filter(pk__in=clone_ids)
+        clone_qs.update(
+            archive_status_date=new_status_date,
+            archive_state=archive_state,
+            restoration_requested=restoration_requested,
+        )
+
         # Check for multiviews containing this single and put them in the same state if they need
         # updating
-        multi_qs = Media.objects.filter(meta__dtype="multi", media_files__ids__contains=media.id)
+        multi_qs = Media.objects.filter(
+            deleted=False, meta__dtype="multi", media_files__ids__contains=[media.id] + clone_ids
+        )
+        multi_ids_ready_for_update = []
         for multi in multi_qs.iterator():
-            if not _archive_state_comp(multi) and multi_test(
-                _archive_state_comp(single)
-                for single in Media.objects.filter(pk__in=multi.media_files["ids"])
-            ):
-                multi.archive_status_date = new_status_date
-                multi.archive_state = archive_state
-                multi.restoration_requested = restoration_requested
-                multi.save()
+            multi_in_correct_state = _archive_state_comp(multi)
+            if not multi_in_correct_state:
+                single_states = (
+                    _archive_state_comp(single)
+                    for single in Media.objects.filter(pk__in=multi.media_files["ids"])
+                )
+                singles_in_correct_state = multi_state_comp_test(single_states)
+                if singles_in_correct_state:
+                    multi_ids_ready_for_update.append(multi.id)
 
-    return success
+        multi_update_qs = Media.objects.select_for_update().filter(
+            pk__in=multi_ids_ready_for_update
+        )
+        multi_update_qs.update(
+            archive_status_date=new_status_date,
+            archive_state=archive_state,
+            restoration_requested=restoration_requested,
+        )
+
+    return int(success)
 
 
-def get_clone_info(media: Media, filter_dict: Dict[str, str] = None) -> Dict[int, Dict[str, set]]:
+def get_clone_info(media: Media) -> Dict[int, Dict[str, set]]:
     """
-    Gets the exhaustive list of clone ids of the given media. If a `filter_dict` argument is given,
-    it is used to filter media from the results to determine the subset of clones that match. The
-    return value is a dictionary with the keys being single media ids (i.e. the given media's id for
-    a single type or the media ids that compose a multiview) and the value being another dict, with
-    three keys:
+    Gets the exhaustive list of clone ids of the given media. The return value is a dictionary with
+    two keys:
 
-    - `all`: contains the set of all integer media ids of all clones of the given media.
-    - `original`: contains the integer media id of the original clone.
-    - `match`: contains the set of integer media ids that are clones of the given media object
-      that do match the `filter_dict` arguments, if given, otherwise it is empty
+    - `clones`: contains the set of all integer media ids of all clones of the original media.
+    - `original`: contains the integer media id and integer project id of the original clone.
 
     :param media: The media to find clones of.
     :type media: Media
-    :param filter_dict: If specified, it is the keyword arguments to pass to the `filter` operation
-                        on the clones' queryset and will populate the `match` set.
-    :type filter_dict: dict
     :rtype: dict
     """
 
     # Set up the return dict
-    media_dict = {"all": set(), "original": {"project": None, "media": None}, "match": set()}
+    media_dict = {"clones": set(), "original": {"project": None, "media": None}}
 
     dtype = getattr(media.meta, "dtype", None)
 
@@ -823,11 +841,112 @@ def get_clone_info(media: Media, filter_dict: Dict[str, str] = None) -> Dict[int
 
     # Shared base queryset
     media_qs = Media.objects.filter(resource_media__path__in=paths)
-    media_dict["all"].update(list(media_qs.values_list("id", flat=True)))
-
-    # Apply filter_dict, if given
-    if filter_dict:
-        media_qs = media_qs.filter(**filter_dict)
-        media_dict["match"].update(list(media_qs.values_list("id", flat=True)))
+    media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
+    media_dict["clones"].remove(media_dict["original"]["media"])
 
     return media_dict
+
+
+def update_queryset_archive_state(media_qs, target_state):
+    """
+    Manages updating the media contained in the given queryset with the given target state.
+    """
+    not_ready = {"cloned": defaultdict(list), "original": defaultdict(list)}
+    for media in media_qs.iterator():
+        if not media.media_files:
+            # No files to move to archive storage, consider this media archived
+            media.archive_status_date = datetime.now(timezone.utc)
+            media.archive_state = target_state["archive_state"]
+            media.save()
+            continue
+
+        media_dtype = getattr(media.meta, "dtype", None)
+        if media_dtype in ["image", "video"]:
+            clone_info = get_clone_info(media)
+        else:
+            logger.warning(
+                f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping operation"
+            )
+            continue
+
+        if clone_info["original"]["media"] is None:
+            logger.error(
+                f"Could not find original clone for media '{media.id}', skipping operation"
+            )
+            continue
+
+        if media.id in clone_info["clones"]:
+            if not media_qs.filter(pk=clone_info["original"]["media"]).exists():
+                # Accumulate the lists of cloned media that aren't ready for an archive operation
+                not_ready_entry = {
+                    "media_requesting_archive": media.id,
+                    "original_media": clone_info["original"]["media"],
+                    "original_project": clone_info["original"]["project"],
+                    "clone_project": media.project.id,
+                }
+                not_ready["cloned"][not_ready_entry["clone_project"]].append(not_ready_entry)
+                not_ready["original"][not_ready_entry["original_project"]].append(not_ready_entry)
+            continue
+
+        num_archived += update_media_archive_state(
+            media=media, clone_ids=list(clone_info["clones"]), **target_state
+        )
+
+    logger.info(f"Archived a total of {num_archived} media!")
+
+    return not_ready
+
+
+def notify_admins(not_ready, ses=None):
+    """
+    Using the dict returned by `update_queryset_archive_state`, this logs all blocked operations
+    and, if enabled, emails all project admins with the same information.
+    """
+    all_project_ids = set(list(not_ready["cloned"].keys()) + list(not_ready["original"].keys()))
+
+    for project_id in all_project_ids:
+        email_text_list = []
+
+        blocked_media = not_ready["cloned"].get(project_id, [])
+        if blocked_media:
+            email_text_list.append(f"Blocked media in `to_live`:")
+
+        for instance in blocked_media:
+            msg = (
+                f"Archive operation on '{instance['media_requesting_archive']}' blocked by: "
+                f"{instance['original_media']} from project {instance['original_project']}."
+            )
+            logger.warning(msg)
+            email_text_list.append(msg)
+
+        blocking_media = not_ready["original"].get(project_id, [])
+        if blocking_media:
+            email_text_list.append("\n")
+            email_text_list.append(f"Originals blocking clones in `to_archive`:")
+
+        for instance in blocking_media:
+            msg = (
+                f"The clone {instance['media_requesting_archive']} from project "
+                f"{instance['original_project']} of original {instance['original_media']} "
+                f"attempted to change archive state. Consider changing the original to match."
+            )
+            logger.warning(msg)
+            email_text_list.append(msg)
+
+        if settings.TATOR_EMAIL_ENABLED:
+            project = Project.objects.get(pk=project_id)
+
+            # Get project administrators
+            recipient_ids = Affiliation.objects.filter(
+                organization=project.organization, permission="Admin"
+            ).values_list("user", flat=True)
+            recipients = list(
+                User.objects.filter(pk__in=recipient_ids).values_list("email", flat=True)
+            )
+
+            ses.email(
+                sender=settings.TATOR_EMAIL_SENDER,
+                recipients=recipients,
+                title=f"Nightly archive for {project.name} ({project.id}) failed",
+                text="\n\n".join(email_text_list),
+            )
