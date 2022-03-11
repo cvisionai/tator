@@ -519,7 +519,8 @@ export class VideoDownloader
                            "blockSize": iterBlockSize,
                            "requestTime": requestTime,
                            "startByte": startByte,
-                           "downloadTime": Date.now()};
+                           "downloadTime": Date.now(),
+                           "startByte": startByte};
                   postMessage(data, [data.buffer]);
                 });
             });

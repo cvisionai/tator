@@ -102,7 +102,7 @@ class KeyHeap {
       }
     }
 
-    console.info(`${this._timescale} ${val} ${val/this._timescale} found ${lastTimestamp} ${lastTimestamp/this._timescale}`);
+    //console.info(`${this._timescale} ${val} ${val/this._timescale} found ${lastTimestamp} ${lastTimestamp/this._timescale}`);
 
     return {"thisSegment": lastTimestamp, "nextSegment": nextSegment, "nearBoundary": nearBoundary};
   }
@@ -250,6 +250,8 @@ class TatorVideoBuffer {
   {
     let muted = true;
 
+    let min_cts = Number.MAX_VALUE;
+    let max_cts = Number.MIN_VALUE;
     // Samples can be out of CTS order, when calculating frame diff
     // take that into consideration
     if (this._frame_delta == undefined)
@@ -276,30 +278,18 @@ class TatorVideoBuffer {
         muted = false;
       }
     }
+
     //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} sample_start=${samples[0].cts} delta=${this._frame_delta} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
-    let done = false;
     if (muted == false || this._playing == true)
     {
       this._seek_in_progress=true;
-      let timestamp = samples[0].cts;
-      let buffers = [];
-      
+      let finished=false;      
       let idx = 0;
       this._frame_count = 0;
       this._ready_frames=[];
       this._transfers=[];
       for (idx = 0; idx < samples.length; idx++)
       {
-        if (idx == 0)
-        {
-          console.info(`FIRST SAMPLE ${samples[idx].cts} ${samples[idx].is_sync}`);
-        }
-        //console.info(`${idx}: ${samples[idx].is_sync} ${samples[idx].cts} ${samples[idx].dts}`);
-        if (samples[idx].is_sync)
-        {
-          this._keyframes.push(samples[idx].cts);
-        }
-
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
           timestamp: samples[idx].cts,
@@ -322,13 +312,23 @@ class TatorVideoBuffer {
           break;
         }
       }
-      for (let idx; idx < samples.length; idx++)
+
+      if (idx !=  samples.length)
       {
-        if (samples[idx].is_sync)
+        // Handle all samples for processing keyframes and what not at the end of decoding
+        for (let idx=0; idx < samples.length; idx++)
         {
-          if (this._keyframes.push(samples[idx].cts))
+          if (samples[idx].cts < min_cts)
           {
-            break;
+            min_cts = samples[idx].cts;
+          }
+          if (samples[idx].cts > max_cts)
+          {
+            max_cts = samples[idx].cts;
+          }
+          if (samples[idx].is_sync)
+          {
+            this._keyframes.push(samples[idx].cts);
           }
         }
       }
@@ -339,6 +339,14 @@ class TatorVideoBuffer {
       // Push any undiscovered keyframes
       for (let idx = samples.length-1; idx >= 0; idx--)
       {
+        if (samples[idx].cts < min_cts)
+        {
+          min_cts = samples[idx].cts;
+        }
+        if (samples[idx].cts > max_cts)
+        {
+          max_cts = samples[idx].cts;
+        }
         if (samples[idx].is_sync)
         {
           if (this._keyframes.push(samples[idx].cts))
@@ -348,11 +356,15 @@ class TatorVideoBuffer {
         }
       }
     }
-    if (done == true)
+
+    if (max_cts >= min_cts)
     {
-      this._mp4File.stop(); // stop processing samples if we have decoded plenty
+      // Update the manager on what is buffered
+      postMessage({'type': "buffered",
+                  'start': min_cts/this._timescale,
+                  'end': (max_cts + this._frame_delta)/this._timescale});
+      //console.info(`${performance.now()}: Finished mp4 samples, count=${samples.length}`);
     }
-    //console.info(`${performance.now()}: Finished mp4 samples, count=${samples.length}`);
   }
 
   pause()

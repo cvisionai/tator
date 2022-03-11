@@ -1680,6 +1680,7 @@ export class VideoCanvas extends AnnotationCanvas {
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
+        data.fileStart = e.data.startByte;
         var video_buffer = that._videoElement[e.data["buf_idx"]];
         var error = video_buffer.error();
         if (error)
@@ -1747,7 +1748,7 @@ export class VideoCanvas extends AnnotationCanvas {
               var begin = offsets[idx][0];
               var end = offsets[idx][0] + offsets[idx][1];
               var bufferToSend = data.slice(begin, end);
-              bufferToSend.fileStart = data["startByte"] + begin;
+              bufferToSend.fileStart = data.fileStart + begin;
               try {
                 if (!that._makeVideoError) {
                   video_buffer.appendOnDemandBuffer(bufferToSend, callback);
@@ -1756,7 +1757,7 @@ export class VideoCanvas extends AnnotationCanvas {
                   // #DEBUG path - Used to induce a decoding error
                   that._makeVideoError = false;
                   bufferToSend = data.slice(begin, end-5);
-                  bufferToSend.fileStart = data["startByte"] + begin;
+                  bufferToSend.fileStart = data.fileStart + begin;
                   video_buffer.appendOnDemandBuffer(bufferToSend, callback);
                 }
               }
@@ -2101,7 +2102,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._seek_idx = hq_idx;
     console.log(`video buffer indexes: ${play_idx} ${scrub_idx} ${hq_idx}`);
 
-    let construct_demuxer = () => {
+    let construct_demuxer = (idx) => {
       let searchParams = new URLSearchParams(window.location.search);
       if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1)
       {
@@ -2109,13 +2110,13 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
-        return new TatorVideoDecoder();
+        return new TatorVideoDecoder(idx);
       }
     }
     this._videoElement = [];
     for (let idx = 0; idx < streaming_files.length; idx++)
     {
-      this._videoElement.push(construct_demuxer());
+      this._videoElement.push(construct_demuxer(idx));
       this._videoElement[idx].named_idx = idx;
     }
     // Clear the buffer in case this is a hot-swap
@@ -3187,7 +3188,9 @@ export class VideoCanvas extends AnnotationCanvas {
         var data2 = that._ftypInfo[that._play_idx]["buffer"];
         var begin2 = offsets2[0][0];
         var end2 = offsets2[1][0]+offsets2[1][1];
-        video.appendOnDemandBuffer(data2.slice(begin2, end2), playCallback);
+        var bufferToSend = data2.slice(begin2, end2);
+        bufferToSend.fileStart = 0;
+        video.appendOnDemandBuffer(bufferToSend, playCallback);
       }
 
       var playCallback = function () {

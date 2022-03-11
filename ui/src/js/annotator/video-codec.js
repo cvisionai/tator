@@ -8,12 +8,100 @@
 //        operations.
 
 
+// TimeRanges isn't user constructable so make our own
+class TatorTimeRanges {
+  constructor()
+  {
+    this._buffer=[];
+  }
+
+  get length()
+  {
+    return this._buffer.length;
+  }
+
+  start(idx)
+  {
+    if (idx >= this._buffer.length)
+    {
+      throw `${idx} not a valid segment`;
+    }
+    return this._buffer[idx][0];
+  }
+
+  end(idx)
+  {
+    if (idx >= this._buffer.length)
+    {
+      throw `${idx} not a valid segment`;
+    }
+    return this._buffer[idx][1];
+  }
+
+  push(start,end)
+  {
+    this._buffer.push([start,end]);
+    this._merge_collapse();
+  }
+
+  print(name)
+  {
+    if (name)
+      console.info(`${name} Buffered ranges:`)
+    else
+      console.info("Buffered ranges:")
+    for (let idx = 0; idx < this.length; idx++)
+    {
+      console.info(`\t${this.start(idx)} to ${this.end(idx)}`);
+    }
+  }
+
+  _merge_collapse()
+  {
+    // Sort by start time
+    this._buffer.sort((a,b)=>a[0]-b[0]);
+    let merge_list=[];
+    for (let idx = 0; idx < this._buffer.length-1; idx++)
+    {
+      if (this._buffer[idx][0] >= this._buffer[idx+1][0] && this._buffer[idx][0] < this._buffer[idx+1][1])
+      {
+        merge_list.push([idx,idx+1]);
+        break;
+      }
+      else if (this._buffer[idx][1] >= this._buffer[idx+1][0] && this._buffer[idx][0] < this._buffer[idx+1][1])
+      {
+        merge_list.push([idx,idx+1]);
+        break;
+      }
+      else if (this._buffer[idx][1] == this._buffer[idx+1][0])
+      {
+        merge_list.push([idx,idx+1]);
+        break;
+      }
+    }
+
+    if (merge_list.length > 0)
+    {
+      let first = merge_list[0][0];
+      let second = merge_list[0][1];
+      this._buffer[second][0] = Math.min(this._buffer[first][0], this._buffer[second][0]);
+      this._buffer[second][1] = Math.max(this._buffer[first][1], this._buffer[second][1]);
+      this._buffer.splice(first,1);
+      return this._merge_collapse();
+    }
+    else
+    {
+      return false;
+    }
+  }
+}
 class TatorVideoManager {
   constructor(parent, name)
   {
     this._name = name;
     this._parent = parent;
     this.use_codec_buffer = true;
+    this._time_ranges = new TatorTimeRanges();
 
     this._codec_worker = new Worker(new URL("./video-codec-worker.js", import.meta.url));
     this._codec_worker.onmessage = this._on_message.bind(this);
@@ -54,6 +142,11 @@ class TatorVideoManager {
     else if (msg.data.type == "image")
     {
       this._imageReady(msg.data);
+    }
+    else if (msg.data.type == "buffered")
+    {
+      this._time_ranges.push(msg.data.start, msg.data.end);
+      //this._time_ranges.print(this._name);
     }
   }
 
@@ -201,8 +294,7 @@ class TatorVideoManager {
   /// video data.
   get buffered()
   {
-    // @TODO: return what is downloaded
-    return [];
+    return this._time_ranges;
   }
 
   // Returns the current video cursor position
@@ -243,6 +335,10 @@ class TatorVideoManager {
   appendBuffer(data)
   {
     const fileStart = data.fileStart;
+    if (fileStart == undefined)
+    {
+      console.info("BAD");
+    }
     this._codec_worker.postMessage(
       {"type": "appendBuffer",
        "fileStart": fileStart,
@@ -268,10 +364,10 @@ class TatorVideoManager {
 }
 
 export class TatorVideoDecoder {
-  constructor()
+  constructor(idx)
   {
     console.info("Created WebCodecs based Video Decoder");
-    this._buffer = new TatorVideoManager(this, "Video Buffer");
+    this._buffer = new TatorVideoManager(this, `Video Buffer ${idx}`);
     this._init = false;
   }
 
@@ -347,7 +443,12 @@ export class TatorVideoDecoder {
    */
   resetOnDemandBuffer()
   {
-    
+    let p_func = (resolve, reject) => 
+    {
+      resolve();
+    };
+    let p = new Promise(p_func);
+    return p;
   }
 
   /**
@@ -363,7 +464,7 @@ export class TatorVideoDecoder {
    */
   isOnDemandBufferBusy()
   {
-    
+    return false;
   }
 
   /**
@@ -432,7 +533,7 @@ export class TatorVideoDecoder {
 
   appendSeekBuffer(data, time=undefined)
   {
-    //this._seekFile.appendBuffer(data);
+    //this._buffer.appendBuffer(data);
   }
 
   appendLatestBuffer(data, callback)
@@ -451,8 +552,8 @@ export class TatorVideoDecoder {
    */
   appendOnDemandBuffer(data, callback, force)
   {
-    //data.fileStart = 0;
-    //this._onDemandFile.appendBuffer(data);
+    this._buffer.appendBuffer(data);
+    setTimeout(callback,0);
   }
 
   /**
