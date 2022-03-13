@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings js-bindings postgis-image client-image
+IMAGES=python-bindings postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
