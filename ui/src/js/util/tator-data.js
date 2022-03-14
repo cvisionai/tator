@@ -889,6 +889,12 @@ export class TatorData {
             newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
             mediaFilters.push(newFilter);
           }
+          else if (filter.field == "_dtype") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "_meta";
+            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            mediaFilters.push(newFilter);
+          }
           else if (filter.field == "_id") {
             mediaIds.push(Number(filter.value))
           }
@@ -1015,6 +1021,12 @@ export class TatorData {
           else if (filter.field == "_id") {
             mediaIds.push(Number(filter.value))
           }
+          else if (filter.field == "_dtype") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "_meta";
+            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            mediaFilters.push(newFilter);
+          }
           else {
             mediaFilters.push(filter);
           }
@@ -1117,7 +1129,7 @@ export class TatorData {
     // Loop through the filters, if there are any media specific ones
     var mediaFilters = [];
     var localizationFilters = [];
-    var dtypeIds = [];
+    var locDtypeIds = [];
     var versionIds = [];
     var typePromises = [];
     var mediaIds = [];
@@ -1132,6 +1144,12 @@ export class TatorData {
             newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
             mediaFilters.push(newFilter);
           }
+          else if (filter.field == "_dtype") {
+            var newFilter = Object.assign({}, filter);
+            newFilter.field = "_meta";
+            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            mediaFilters.push(newFilter);
+          }
           else if (filter.field == "_id") {
             mediaIds.push(Number(filter.value))
           }
@@ -1144,7 +1162,7 @@ export class TatorData {
             versionIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
           else if (filter.field == "_dtype") {
-            dtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
+            locDtypeIds.push(Number(filter.value.split('(ID:')[1].replace(")","")));
           }
           else if (filter.field == "_user") {
             var newFilter = Object.assign({}, filter);
@@ -1159,8 +1177,8 @@ export class TatorData {
       });
     }
 
-    if (dtypeIds.length > 0) {
-      dtypeIds.forEach(dtypeId => {
+    if (locDtypeIds.length > 0) {
+      locDtypeIds.forEach(dtypeId => {
         typePromises.push(this._getAnnotationData(
           outputType,
           "Medias",
