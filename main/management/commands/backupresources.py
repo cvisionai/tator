@@ -8,7 +8,6 @@ from django.core.management.base import BaseCommand
 from main.backup import TatorBackupManager
 from main.models import Affiliation, Project, Resource, User
 from main.ses import TatorSES
-from main.util import ravel_paths
 
 
 logger = logging.getLogger(__name__)
@@ -19,27 +18,33 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         resource_qs = Resource.objects.filter(media__deleted=False, backed_up=False)
-        if not resource_qs.exists():
+        total_to_back_up = resource_qs.count()
+        if total_to_back_up == 0:
             logger.info(f"No resources to back up!")
             return
 
-        path_dict = ravel_paths(resource.path for resource in resource_qs.iterator())
-
+        backup_mgr_dict = {}
         num_resources_backed_up = 0
         failed_backups = defaultdict(set)
-        for org_id, org_dict in path_dict.items():
-            for proj_id, proj_dict in org_dict.items():
-                backup_mgr = TatorBackupManager(Project.objects.get(pk=proj_id))
-                for media_id, media_lst in proj_dict.items():
-                    for filename in media_lst:
-                        path = "/".join(org_id, proj_id, media_id, filename)
+        for resource in resource_qs.iterator():
+            path = resource.path
 
-                        if backup_mgr.backup_path(path):
-                            num_resources_backed_up += 1
-                        else:
-                            failed_backups[proj_id].add(media_id)
+            # Resource path looks like "org_id/proj_id/media_id/filename"
+            org_id, proj_id, media_id, filename = path.split("/")
 
-        logger.info(f"Backed up a total of {num_resources_backed_up} resources!")
+            # Only create the backup manager for each project once
+            if proj_id not in backup_mgr_dict:
+                backup_mgr_dict[proj_id] = TatorBackupManager(Project.objects.get(pk=proj_id))
+
+            backup_mgr = backup_mgr_dict[proj_id]
+            if backup_mgr.backup_resource(path):
+                num_resources_backed_up += 1
+            else:
+                failed_backups[proj_id].add(media_id)
+
+        logger.info(
+            f"Backed up {num_resources_backed_up} of {total_to_back_up} resources needing backup!"
+        )
 
         if failed_backups:
             # Notify owners of failed backup attempt
@@ -49,7 +54,10 @@ class Command(BaseCommand):
                 ses = None
 
             for project_id, failed_media_ids in failed_backups.items():
-                msg = f"Failed to back up at least one resource from the following media: {list(failed_media_ids)}"
+                msg = (
+                    f"Failed to back up at least one resource from each of the following media: "
+                    f"{list(failed_media_ids)}"
+                )
                 logger.warning(msg)
 
                 if ses:

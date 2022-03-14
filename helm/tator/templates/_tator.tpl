@@ -127,6 +127,8 @@ spec:
               value: {{ .Values.backupBucket.accessKey }}
             - name: BACKUP_STORAGE_SECRET_KEY
               value: {{ .Values.backupBucket.secretKey }}
+            - name: RCLONE_SO_PATH
+              value: {{ .Values.backupBucket.rcloneSoPath }}
             {{- end }}
             {{- end }}
             - name: TATOR_DEBUG
