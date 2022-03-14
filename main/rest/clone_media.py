@@ -41,6 +41,11 @@ class CloneMediaListAPI(BaseListView):
             yield new_obj
 
     def _post(self, params):
+        dest = params['dest_project']
+
+        # Make sure destination path exists.
+        os.makedirs(os.path.join('/media', str(dest)), exist_ok=True)
+
         # Retrieve media that will be cloned.
         response_data = []
         original_medias = get_media_queryset(self.kwargs['project'], params)
@@ -52,7 +57,6 @@ class CloneMediaListAPI(BaseListView):
                             'or after parameters.')
 
         # If given media type is not part of destination project, raise an exception.
-        dest = params['dest_project']
         if params['dest_type'] == -1:
             meta = MediaType.objects.filter(project=dest)[0]
         else:
