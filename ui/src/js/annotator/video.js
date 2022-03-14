@@ -2110,7 +2110,27 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
-        return new TatorVideoDecoder(idx);
+        let p = new TatorVideoDecoder(idx);
+        if (idx == this._play_idx)
+        {
+          p.onBuffered = () => {
+            const ranges = p.playBuffer().buffered;
+            let ranges_list = [];
+            for (let idx = 0; idx < ranges.length; idx++)
+            {
+              let startFrame = this.timeToFrame(ranges.start(idx));
+              let endFrame = this.timeToFrame(ranges.end(idx));
+              if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
+              {
+                ranges_list.push([startFrame, endFrame]);
+              }
+            }
+            this.dispatchEvent(new CustomEvent("onDemandDetail",
+                                              {composed: true,
+                                               detail: {"ranges": ranges_list}}));
+          };
+        }
+        return p;
       }
     }
     this._videoElement = [];
@@ -3001,8 +3021,7 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     this._video
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
-    // Todo make this work not out of play buffer
-    let video = this._videoElement[this._scrub_idx].playBuffer();
+    let video = this._videoElement[this._play_idx].playBuffer();
     let frameProfiler = new PeriodicTaskProfiler("Frame Fetch");
 
     // Clear any old frames
@@ -3011,12 +3030,18 @@ export class VideoCanvas extends AnnotationCanvas {
     this._pendingTimeout = null;
 
     // on frame processing logic
+
+    let increment_clk = 0;
     video.onFrame = (frame, timescale) => {
       this._playing = true;
       let start = performance.now();
       frame.frameNumber = this.timeToFrame(frame.timestamp/timescale);
       this._fpsLoadDiag++;
-      if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
+      if (increment_clk % frameIncrement != 0)
+      {
+        frame.close();
+      }
+      else if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
       {
         this.pushFrame(frame.frameNumber, frame, frame.displayWidth, frame.displayHeight);
         frame.close();
@@ -3026,6 +3051,9 @@ export class VideoCanvas extends AnnotationCanvas {
         this._pendingFrames.push(frame);
         this.pendingFramesMethod();
       }
+      
+      // Don't let increment clock blow up
+      increment_clk = (increment_clk + 1) % frameIncrement;
       frameProfiler.push(performance.now()-start)
       
       // Kick off the player thread once we have 25 frames loaded
@@ -3557,8 +3585,16 @@ export class VideoCanvas extends AnnotationCanvas {
       if (this._onDemandPlaybackReady && !this._loaderStarted && !inhibited)
       {
         console.log(`(ID:${this._videoObject.id}) Launching playback loader`);
-        this._loaderStarted = true;
-        this._loaderTimeout = setTimeout(() => {this.loaderThread(true, "play")}, 0);
+        if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
+        {
+          this._loaderStarted = true;
+          this.frameCallbackMethod();
+        }
+        else
+        {
+          this._loaderStarted = true;
+          this._loaderTimeout = setTimeout(() => {this.loaderThread(true, "play")}, 0);
+        }
       }
 
       this.updateVideoDiagnosticOverlay(null, this._dispFrame);
@@ -3810,7 +3846,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._pauseCb.forEach(cb => {cb();});
 
       this._direction=Direction.STOPPED;
-      this._videoElement[this._play_idx].pause();
+      this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame));
 
       // force a redraw at the currently displayed frame
       var finalPromise = new Promise((resolve, reject) => {

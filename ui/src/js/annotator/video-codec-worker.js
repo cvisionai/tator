@@ -304,6 +304,19 @@ class TatorVideoBuffer {
           console.warn(`${e}`);
         }
 
+        if (samples[idx].cts < min_cts)
+        {
+          min_cts = samples[idx].cts;
+        }
+        if (samples[idx].cts > max_cts)
+        {
+          max_cts = samples[idx].cts;
+        }
+        if (samples[idx].is_sync)
+        {
+          this._keyframes.push(samples[idx].cts);
+        }
+
         let keyframe_only_mode=(this._trackHeight >= 720 && samples[idx].is_sync && this._fastMode);
         let finished_enough_decode=(samples[idx].cts>cursor_in_ctx+(this._frame_delta*4));
         if (this._playing == false && 
@@ -313,23 +326,20 @@ class TatorVideoBuffer {
         }
       }
 
-      if (idx !=  samples.length)
+      // Handle all samples for processing keyframes and what not at the end of decoding
+      for (; idx < samples.length; idx++)
       {
-        // Handle all samples for processing keyframes and what not at the end of decoding
-        for (let idx=0; idx < samples.length; idx++)
+        if (samples[idx].cts < min_cts)
         {
-          if (samples[idx].cts < min_cts)
-          {
-            min_cts = samples[idx].cts;
-          }
-          if (samples[idx].cts > max_cts)
-          {
-            max_cts = samples[idx].cts;
-          }
-          if (samples[idx].is_sync)
-          {
-            this._keyframes.push(samples[idx].cts);
-          }
+          min_cts = samples[idx].cts;
+        }
+        if (samples[idx].cts > max_cts)
+        {
+          max_cts = samples[idx].cts;
+        }
+        if (samples[idx].is_sync)
+        {
+          this._keyframes.push(samples[idx].cts);
         }
       }
       //console.info(`Asking to decode ${idx} frames from ${samples.length} START=${samples[0].cts}`);
@@ -362,9 +372,9 @@ class TatorVideoBuffer {
       // Update the manager on what is buffered
       postMessage({'type': "buffered",
                   'start': min_cts/this._timescale,
-                  'end': (max_cts + this._frame_delta)/this._timescale});
-      //console.info(`${performance.now()}: Finished mp4 samples, count=${samples.length}`);
+                  'end': (max_cts + this._frame_delta)/this._timescale}); 
     }
+    console.info(`${this._name}: ${this._current_cursor} ${muted}: Finished mp4 samples, count=${samples.length} ${min_cts/this._timescale} to ${max_cts/this._timescale}`);
   }
 
   pause()
@@ -391,6 +401,7 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
+    console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this._timescale}`);
     if (this._playing == true)
     {      
       const cursor_in_ctx = this._current_cursor*this._timescale;
@@ -399,11 +410,13 @@ class TatorVideoBuffer {
         frame.close();
         return;
       }
+      this._current_cursor = frame.timestamp / this._timescale;
       if (this._playing == true)
       {
         //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
         postMessage({"type": "frame",  
-                    "data": frame},
+                    "data": frame,
+                    "cursor": this._current_cursor},
                     [frame]
                     ); // transfer frame copy to primary UI thread
         this._ready_frames=[];
@@ -421,6 +434,7 @@ class TatorVideoBuffer {
         this._canvasCtx.drawImage(frame,0,0);
         let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
         frame.close();
+        console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/this._timescale}`);
         postMessage({"type": "image",
                     "data": image,
                     "timestamp": timestamp,
@@ -430,6 +444,7 @@ class TatorVideoBuffer {
       }
       else
       {
+        console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/this._timescale}`);
         frame.close(); // don't care about the frame
       }
     }
@@ -450,6 +465,7 @@ class TatorVideoBuffer {
   _setCurrentTime(video_time, informational)
   {
     this._current_cursor = video_time;
+    console.info(`${this._name} now @ ${this._current_cursor}: ${informational}`);
     if (informational)
     {
       return;
@@ -478,7 +494,7 @@ class TatorVideoBuffer {
     this._videoDecoder.configure(this._codecConfig);
     let nearest_keyframe = keyframe_info.thisSegment;
     this._mp4File.stop();
-    //console.info(`${performance.now()}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
+    console.info(`${this._name}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
     this._mp4File.seek(nearest_keyframe/this._timescale);
     this._mp4File.start();
   }

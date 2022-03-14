@@ -601,11 +601,11 @@ export class AnnotationPlayer extends TatorElement {
       this._videoStatus = "paused";
       this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
-    }).catch((e) => {
+    });/*;.catch((e) => {
       console.error(`"ERROR: ${e}`)
       throw e;
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
-    });
+    });*/
   }
 
   /**
