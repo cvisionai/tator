@@ -17,15 +17,15 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
   - name: elasticsearch
-    version: 7.4.1
+    version: 7.10.2
     repository: https://helm.elastic.co
     condition: elasticsearch.enabled
   - name: filebeat
-    version: 7.4.1
+    version: 7.10.2
     repository: https://helm.elastic.co
     condition: filebeat.enabled
   - name: kibana
-    version: 7.4.1
+    version: 7.10.2
     repository: https://helm.elastic.co
     condition: kibana.enabled
   - name: minio
