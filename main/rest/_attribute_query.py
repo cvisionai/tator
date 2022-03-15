@@ -103,9 +103,9 @@ def get_attribute_es_query(query_params, query, bools, project,
                 'minimum_should_match': 1,
             }})
         if section_object.media_bools:
-            attr_query['media']['filter'].append(section_object.media_bools)
+            attr_query['media']['filter'] += section_object.media_bools
         if section_object.annotation_bools:
-            attr_query['annotation']['filter'].append(section_object.annotation_bools)
+            attr_query['annotation']['filter'] += section_object.annotation_bools
         if section_object.tator_user_sections:
             attr_query['media']['filter'].append({'match': {'tator_user_sections': {
                 'query': section_object.tator_user_sections,
