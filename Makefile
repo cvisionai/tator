@@ -103,7 +103,7 @@ _logs:
 	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
 	kubectl logs $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -f
 
-django_shell:
+django-shell:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py shell
 
 
@@ -231,22 +231,6 @@ cleanup-evicted:
 .PHONY: build-search-indices
 build-search-indices:
 	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)" -p objectStorageHost="$(OBJECT_STORAGE_HOST)" -p objectStorageRegionName="$(OBJECT_STORAGE_REGION_NAME)" -p objectStorageBucketName="$(OBJECT_STORAGE_BUCKET_NAME)" -p objectStorageAccessKey="$(OBJECT_STORAGE_ACCESS_KEY)" -p objectStorageSecretKey="$(OBJECT_STORAGE_SECRET_KEY)"
-
-.PHONY: s3-migrate
-s3-migrate:
-	argo submit workflows/s3-migrate.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
-
-.PHONY: s3-verify
-s3-verify:
-	argo submit workflows/s3-verify.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
-
-.PHONY: efs-delete
-efs-delete:
-	argo submit workflows/efs-delete.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
-
-.PHONY: clean_js
-clean_js:
-	rm -rf .min_js
 
 .PHONY: images
 images:
