@@ -9,7 +9,7 @@
 
 
 // TimeRanges isn't user constructable so make our own
-class TatorTimeRanges {
+export class TatorTimeRanges {
   constructor()
   {
     this._buffer=[];
@@ -18,6 +18,11 @@ class TatorTimeRanges {
   get length()
   {
     return this._buffer.length;
+  }
+
+  clear()
+  {
+    this._buffer=[];
   }
 
   start(idx)
@@ -103,6 +108,7 @@ class TatorVideoManager {
     this.use_codec_buffer = true;
     this._time_ranges = new TatorTimeRanges();
 
+    // TODO: This worker is really an mp4 demuxer, should rename
     this._codec_worker = new Worker(new URL("./video-codec-worker.js", import.meta.url));
     this._codec_worker.onmessage = this._on_message.bind(this);
 
@@ -145,7 +151,11 @@ class TatorVideoManager {
     }
     else if (msg.data.type == "buffered")
     {
-      this._time_ranges.push(msg.data.start, msg.data.end);
+      this._time_ranges.clear();
+      for (let idx = 0; idx < msg.data.ranges.length; idx++)
+      {
+        this._time_ranges.push(msg.data.ranges[0][0]/this._timescale, msg.data.ranges[0][1]/this._timescale);
+      }
       if (this.onBuffered)
       {
         setTimeout(this.onBuffered, 0);
@@ -339,9 +349,11 @@ class TatorVideoManager {
   appendBuffer(data)
   {
     const fileStart = data.fileStart;
+    const frameStart = data.frameStart;
     this._codec_worker.postMessage(
       {"type": "appendBuffer",
        "fileStart": fileStart,
+       "frameStart": frameStart,
        "data": data
       });
   }

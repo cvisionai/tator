@@ -1501,6 +1501,8 @@ export class VideoCanvas extends AnnotationCanvas {
           return;
         }
         e.data["buffer"].fileStart = e.data["startByte"];
+        console.info(`Converting ${e.data["frameStart"]} to ${e.data["frameStart"]/that._fps}`);
+        e.data["buffer"].frameStart = (e.data["frameStart"]/that._fps);
         that._videoElement[that._seek_idx].appendSeekBuffer(e.data["buffer"], e.data['time']);
         document.body.style.cursor = null;
         let seek_time = performance.now() - that._seekStart;
@@ -3051,7 +3053,7 @@ export class VideoCanvas extends AnnotationCanvas {
         this._pendingFrames.push(frame);
         this.pendingFramesMethod();
       }
-      
+
       // Don't let increment clock blow up
       increment_clk = (increment_clk + 1) % frameIncrement;
       frameProfiler.push(performance.now()-start)

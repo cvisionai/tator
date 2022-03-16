@@ -586,6 +586,7 @@ export class VideoDownloader
     }
 
     const start_packet = this._info[buf_idx]["segments"][matchIdx];
+    const start_frame = this._info[buf_idx]["segments"][matchIdx]["frame_start"];
     var startByte = parseInt(start_packet["offset"]);
     var offset = 0;
 
@@ -610,7 +611,8 @@ export class VideoDownloader
                            "time": time,
                            "buffer": buffer,
                            "frame": frame,
-                           "startByte": startByte};
+                           "startByte": startByte,
+                           "frameStart": start_frame};
                  postMessage(data, [data.buffer]);
                });
            });
