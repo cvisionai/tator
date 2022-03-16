@@ -85,7 +85,8 @@ class TatorBackupManager:
 
         # Only instantiate one rclone dll
         if TatorBackupManager.__rclone is None:
-            TatorBackupManager.__rclone = CDLL(os.getenv("RCLONE_SO_PATH"))
+            # Shared object location hard-coded in tator Dockerfile
+            TatorBackupManager.__rclone = CDLL("/usr/local/lib/librclone.so")
             TatorBackupManager.__rclone.RcloneRPC.restype = RcloneRPCResult
             TatorBackupManager.__rclone.RcloneRPC.argtypes = (c_char_p, c_char_p)
             TatorBackupManager.__rclone.RcloneFreeString.restype = None
