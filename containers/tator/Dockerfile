@@ -1,5 +1,17 @@
+# Build librclone shared object
+FROM golang:latest
+WORKDIR /go
+RUN git clone https://github.com/rclone/rclone.git
+
+WORKDIR /go/rclone/librclone/
+RUN go build --buildmode=c-shared -o librclone.so github.com/rclone/rclone/librclone
+
 FROM ubuntu:20.04
 MAINTAINER CVision AI <info@cvisionai.com>
+
+# Copy librclone shared object to this container
+COPY --from=0 /go/rclone/librclone/librclone.so /usr/local/lib/
+
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \
@@ -49,4 +61,3 @@ RUN rm -fr /tator_online/test
 COPY doc/_build/html /tator_online/main/static/docs
 WORKDIR /tator_online
 RUN rm -rf helm
-
