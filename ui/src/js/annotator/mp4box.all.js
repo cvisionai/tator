@@ -7562,7 +7562,7 @@ ISOFile.prototype.updateSampleLists = function() {
 						trak.samples_duration += sample.duration;
 						if (trak.first_traf_merged || k > 0) {
 							sample.dts = trak.samples[trak.samples.length-2].dts+trak.samples[trak.samples.length-2].duration;
-							if (this.dtsBias && k == 0)
+							if (this.dtsBias != undefined && k == 0)
 							{
 								sample.dts = this.dtsBias;
 							}
