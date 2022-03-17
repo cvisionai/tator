@@ -618,14 +618,6 @@ class TatorVideoBuffer {
     
     if (this._pendingSeek && data.frameStart != undefined)
     {
-      // If we got a frame start, safest thing to do is clear everything.
-      //let track = this._mp4File.getTrackById(1);
-      //for (let idx = 0; idx < track.samples.length; idx++)
-      //{
-      //  this._mp4File.releaseSample(track, idx);
-      //}
-      //this._mp4File.stream.buffers = [];
-      //this._bufferedRegions.clear();
       this._mp4File.lastBoxStartPosition = data.fileStart;
       this._mp4File.nextParsePosition = data.fileStart;
       this._mp4File.dtsBias = Math.round(data.frameStart * this._timescale);
@@ -640,6 +632,51 @@ class TatorVideoBuffer {
       this._mp4File.ctsBias = null;
       this._mp4File.appendBuffer(data);
     }
+  }
+
+  truncate()
+  {
+    let trak = this._mp4File.getTrackById(1);
+    const cursor_cts = this._current_cursor * this._timescale;
+    const keyframe_info = this._keyframes.closest_keyframe(cursor_cts);
+    const keyframe_cts = keyframe_info.thisSegment;
+    const keyframe_next_cts = keyframe_info.nextSegment;
+    let release_list=[];
+    let seconds_list=[];
+    this._bufferedRegions.clear();
+    const oldSize = this._mp4File.samplesDataSize;
+    for (let idx = 0; idx < trak.samples.length; idx++)
+    {
+      let sample_cts = trak.samples[idx].cts;
+      const sample_info = this._keyframes.closest_keyframe(sample_cts);
+      // If we are before this keyframe
+      if (sample_cts < keyframe_cts)
+      {
+        release_list.push(idx);
+        seconds_list.push(sample_cts/this._timescale);
+      }
+      // If we are beyond the next keyframe
+      else if (keyframe_next_cts != null && sample_cts > keyframe_next_cts)
+      {
+        release_list.push(idx);
+        seconds_list.push(sample_cts/this._timescale);
+      }
+      // If the sample is a sync frame beyond our targeted segment
+      else if (sample_cts > keyframe_cts && sample_cts == sample_info.thisSegment)
+      {
+        release_list.push(idx);
+        seconds_list.push(sample_cts/this._timescale);
+      }
+      else
+      {
+        // We found a keeper (in this GOP)
+        this._bufferedRegions.push(sample_cts, sample_cts+this._frame_delta);
+      }
+    }
+    console.info(`${this._name}: OLD_SIZE=${oldSize} NEW_SIZE=${this._mp4File.samplesDataSize}`);
+    this._bufferedRegions.print(`${this._name}: Post Truncate`)
+    postMessage({'type': "buffered",
+                 'ranges': this._bufferedRegions._buffer});
   }
 }
 
@@ -672,5 +709,9 @@ onmessage = function(e)
   else if (msg.type == "play")
   {
     ref.play();
+  }
+  else if (msg.type == "truncate")
+  {
+    ref.truncate();
   }
 }

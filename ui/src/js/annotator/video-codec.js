@@ -564,6 +564,7 @@ export class TatorVideoDecoder {
 
   appendSeekBuffer(data, time=undefined)
   {
+    this._buffer._codec_worker.postMessage({"type": "truncate"});
     this._buffer.appendBuffer(data);
   }
 
