@@ -7560,12 +7560,12 @@ ISOFile.prototype.updateSampleLists = function() {
 							sample.duration = trun.sample_duration[k];
 						}
 						trak.samples_duration += sample.duration;
-						if (trak.first_traf_merged || k > 0) {
+						if (this.dtsBias != undefined)
+						{
+							sample.dts = this.dtsBias;
+							this.dtsBias = null;
+						} else if (trak.first_traf_merged || k > 0) {
 							sample.dts = trak.samples[trak.samples.length-2].dts+trak.samples[trak.samples.length-2].duration;
-							if (this.dtsBias != undefined && k == 0)
-							{
-								sample.dts = this.dtsBias;
-							}
 						} else {
 							if (traf.tfdt) {
 								sample.dts = traf.tfdt.baseMediaDecodeTime;
