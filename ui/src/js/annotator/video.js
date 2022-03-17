@@ -1542,7 +1542,6 @@ export class VideoCanvas extends AnnotationCanvas {
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
-
         // Stores the downloaded data in the appropriate local buffer
         var appendBuffer=function(callback)
         {
@@ -1685,6 +1684,7 @@ export class VideoCanvas extends AnnotationCanvas {
         data.fileStart = e.data.startByte;
         var video_buffer = that._videoElement[e.data["buf_idx"]];
         var error = video_buffer.error();
+        var sentOffset = false;
         if (error)
         {
           updateStatus("Video decode error", "danger", "-1");
@@ -1751,6 +1751,11 @@ export class VideoCanvas extends AnnotationCanvas {
               var end = offsets[idx][0] + offsets[idx][1];
               var bufferToSend = data.slice(begin, end);
               bufferToSend.fileStart = data.fileStart + begin;
+              if (sentOffset == false)
+              {
+                bufferToSend.frameStart = e.data['frameStart'] / that._fps;
+                sentOffset = true;
+              }
               try {
                 if (!that._makeVideoError) {
                   video_buffer.appendOnDemandBuffer(bufferToSend, callback);
@@ -2138,7 +2143,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._videoElement = [];
     for (let idx = 0; idx < streaming_files.length; idx++)
     {
-      this._videoElement.push(construct_demuxer(idx));
+      this._videoElement.push(construct_demuxer(streaming_files[idx].resolution[0]));
       this._videoElement[idx].named_idx = idx;
     }
     // Clear the buffer in case this is a hot-swap

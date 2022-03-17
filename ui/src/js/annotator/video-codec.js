@@ -156,9 +156,17 @@ class TatorVideoManager {
       {
         this._time_ranges.push(msg.data.ranges[0][0]/this._timescale, msg.data.ranges[0][1]/this._timescale);
       }
+      this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
       {
         setTimeout(this.onBuffered, 0);
+      }
+    }
+    else if (msg.data.type == "onReset")
+    {
+      if (this.onReset)
+      {
+        this.onReset();
       }
     }
   }
@@ -346,7 +354,7 @@ class TatorVideoManager {
   // Append data to the mp4 file
   // - This data should either be sequentially added or added on a segment boundary
   // - Prior to adding video segments the mp4 header must be supplied first.
-  appendBuffer(data)
+  appendBuffer(data, reset)
   {
     const fileStart = data.fileStart;
     const frameStart = data.frameStart;
@@ -354,6 +362,7 @@ class TatorVideoManager {
       {"type": "appendBuffer",
        "fileStart": fileStart,
        "frameStart": frameStart,
+       "reset": reset,
        "data": data
       });
   }
@@ -377,10 +386,10 @@ class TatorVideoManager {
 }
 
 export class TatorVideoDecoder {
-  constructor(idx)
+  constructor(id)
   {
     console.info("Created WebCodecs based Video Decoder");
-    this._buffer = new TatorVideoManager(this, `Video Buffer ${idx}`);
+    this._buffer = new TatorVideoManager(this, `Video Buffer ${id}`);
     this._init = false;
     this._buffer.onBuffered = () => {
       if (this.onBuffered)
@@ -476,6 +485,7 @@ export class TatorVideoDecoder {
   {
     let p_func = (resolve, reject) => 
     {
+      this.reset();
       resolve();
     };
     let p = new Promise(p_func);
@@ -562,10 +572,14 @@ export class TatorVideoDecoder {
 
   }
 
+  reset()
+  {
+    this._buffer._codec_worker.postMessage({"type": "reset"});
+  }
+
   appendSeekBuffer(data, time=undefined)
   {
-    this._buffer._codec_worker.postMessage({"type": "truncate"});
-    this._buffer.appendBuffer(data);
+    this._buffer.appendBuffer(data, true);
   }
 
   appendLatestBuffer(data, callback)

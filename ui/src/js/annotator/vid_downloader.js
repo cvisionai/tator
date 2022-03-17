@@ -328,6 +328,7 @@ export class VideoDownloader
     var mediaFileIndex = this._onDemandConfig["mediaFileIndex"];
     var offsets = [];  // Stores the segments (aka packets)
     var startByte;
+    var start_frame;
     var initialDownload = false;
     var initalPacketIndex = 0;
 
@@ -398,6 +399,7 @@ export class VideoDownloader
       }
 
       startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex]["offset"]);
+      start_frame = this._info[mediaFileIndex]["segments"][packetIndex ]["frame_start"];
       while (packetIndex < this._numPackets[mediaFileIndex])
       {
         // Ensure the target packet has been downloaded if this is the first download
@@ -479,6 +481,7 @@ export class VideoDownloader
       // Set the startByte and the offsets now that we have figured out how many segments
       // we need to download
       startByte = parseInt(this._info[mediaFileIndex]["segments"][packetIndex + 1]["offset"]);
+      start_frame = this._info[mediaFileIndex]["segments"][packetIndex + 1]["frame_start"];
       for (var idx = packetData.length - 1; idx >= 0; idx--)
       {
         const packet = packetData[idx];
@@ -490,7 +493,7 @@ export class VideoDownloader
         currentSize = this._onDemandConfig["lastStartByte"] - startByte;
       }
     }
-
+    
     this._onDemandConfig["numPacketsDownloaded"] += offsets.length;
 
     this._onDemandConfig["currentPacket"] = packetIndex;
@@ -520,7 +523,8 @@ export class VideoDownloader
                            "requestTime": requestTime,
                            "startByte": startByte,
                            "downloadTime": Date.now(),
-                           "startByte": startByte};
+                           "startByte": startByte,
+                           "frameStart": start_frame};
                   postMessage(data, [data.buffer]);
                 });
             });

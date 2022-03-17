@@ -116,9 +116,9 @@ class TatorVideoBuffer {
     this.use_codec_buffer = true;
 
     // Create MP4 unpacking elements
-    //if (this._name == "Video Buffer 0")
+    //if (this._name == "Video Buffer 720")
     //{
-    //  MP4Box.Log.setLogLevel(MP4Box.Log.info);
+      //MP4Box.Log.setLogLevel(MP4Box.Log.info);
     //}
     this._mp4File = MP4Box.createFile();
     this._mp4File.onError = this._mp4OnError.bind(this);
@@ -257,7 +257,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, ref, samples)
   {
     let muted = true;
-
+    console.info(`${this._name} GOT=${samples.length}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     // Samples can be out of CTS order, when calculating frame diff
@@ -593,7 +593,10 @@ class TatorVideoBuffer {
   appendBuffer(data)
   {
     console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
-    
+    if (this._initData == undefined && data.fileStart == 0)
+    {
+      this._initData = data;
+    }
     if (this._pendingSeek && data.frameStart != undefined)
     {
       this._mp4File.lastBoxStartPosition = data.fileStart;
@@ -601,60 +604,38 @@ class TatorVideoBuffer {
       this._mp4File.dtsBias = Math.round(data.frameStart * this._timescale);
       console.info(`Setting dts bias to FS=${data.fileStart} BIAS=${this._mp4File.dtsBias} ${this._mp4File.dtsBias/this._timescale}`);
       this._mp4File.stop();
+      this._mp4File.appendBuffer(data);
       this._mp4File.seek(0); // Always go to 0 for this
       this._mp4File.start();
-      this._mp4File.appendBuffer(data);
     }
     else
     {
-      this._mp4File.ctsBias = null;
+      this._mp4File.dtsBias = null;
       this._mp4File.appendBuffer(data);
     }
   }
 
-  truncate()
+  reset()
   {
-    let trak = this._mp4File.getTrackById(1);
-    const cursor_cts = this._current_cursor * this._timescale;
-    const keyframe_info = this._keyframes.closest_keyframe(cursor_cts);
-    const keyframe_cts = keyframe_info.thisSegment;
-    const keyframe_next_cts = keyframe_info.nextSegment;
-    let release_list=[];
-    let seconds_list=[];
-    this._bufferedRegions.clear();
-    const oldSize = this._mp4File.samplesDataSize;
-    for (let idx = 0; idx < trak.samples.length; idx++)
-    {
-      let sample_cts = trak.samples[idx].cts;
-      const sample_info = this._keyframes.closest_keyframe(sample_cts);
-      // If we are before this keyframe
-      if (sample_cts < keyframe_cts)
-      {
-        release_list.push(idx);
-        seconds_list.push(sample_cts/this._timescale);
-      }
-      // If we are beyond the next keyframe
-      else if (keyframe_next_cts != null && sample_cts > keyframe_next_cts)
-      {
-        release_list.push(idx);
-        seconds_list.push(sample_cts/this._timescale);
-      }
-      // If the sample is a sync frame beyond our targeted segment
-      else if (sample_cts > keyframe_cts && sample_cts == sample_info.thisSegment)
-      {
-        release_list.push(idx);
-        seconds_list.push(sample_cts/this._timescale);
-      }
-      else
-      {
-        // We found a keeper (in this GOP)
-        this._bufferedRegions.push(sample_cts, sample_cts+this._frame_delta);
-      }
-    }
-    console.info(`${this._name}: OLD_SIZE=${oldSize} NEW_SIZE=${this._mp4File.samplesDataSize}`);
-    this._bufferedRegions.print(`${this._name}: Post Truncate`)
+    console.info(`${this._name} RESETTING`);    
+    this._mp4File = MP4Box.createFile();
+    this._mp4File.onError = this._mp4OnError.bind(this);
+    this._mp4File.onSamples = this._mp4Samples.bind(this);
+    this._keyframes = new KeyHeap();
+
+    let p = new Promise((resolve) => {
+      this._mp4File.onReady = (info) => {
+        this._mp4File.setExtractionOptions(info.tracks[0].id);
+        this._mp4File.seek(0);
+        this._mp4File.start();
+        resolve();
+      };
+    });
+    this.appendBuffer(this._initData); // re-init buffer
+    this._bufferedRegions = new TatorTimeRanges();
     postMessage({'type': "buffered",
-                 'ranges': this._bufferedRegions._buffer});
+                 'ranges': this._bufferedRegions._buffer});    
+    return p;
   }
 }
 
@@ -674,7 +655,16 @@ onmessage = function(e)
   {
     msg.data.fileStart = msg.fileStart;
     msg.data.frameStart = msg.frameStart;
-    ref.appendBuffer(msg.data);
+    if (msg.reset)
+    {
+      ref.reset().then(() => {
+        ref.appendBuffer(msg.data);
+      });
+    }
+    else
+    {
+      ref.appendBuffer(msg.data);
+    }
   }
   else if (msg.type == "currentTime")
   {
@@ -688,8 +678,10 @@ onmessage = function(e)
   {
     ref.play();
   }
-  else if (msg.type == "truncate")
+  else if (msg.type == "reset")
   {
-    ref.truncate();
+    ref.reset().then(() => {
+      postMessage({"type": "onReset"});
+    });
   }
 }
