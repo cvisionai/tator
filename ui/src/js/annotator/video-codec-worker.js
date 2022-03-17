@@ -318,16 +318,6 @@ class TatorVideoBuffer {
       if (samples[start_idx].cts >= nearest_keyframe)
         break;
     }
-    if (this._name == "Video Buffer 0")
-    {
-      console.info(`${this._name}: start_idx=${start_idx} ${samples[start_idx].cts} KF=${nearest_keyframe}`);
-      let dts_string="";
-      for (let p_idx = 0; p_idx < samples.length; p_idx++)
-      {
-        dts_string += `${samples[p_idx].dts}, `; 
-      }
-      console.info(dts_string);
-    }
     const cursor_in_ctx = this._current_cursor * this._timescale;
     if (this._frame_delta != undefined)
     {
@@ -349,10 +339,6 @@ class TatorVideoBuffer {
       this._transfers=[];
       for (idx = start_idx; idx < samples.length; idx++)
       {
-        if (this._name == "Video Buffer 0")
-        {
-          console.info(`GOT ${this._current_cursor} = ${samples[idx].cts/this._timescale}`);
-        }
         this._bufferedRegions.push(samples[idx].cts, samples[idx].cts+this._frame_delta);
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
@@ -402,10 +388,6 @@ class TatorVideoBuffer {
       // Handle all samples for processing keyframes and what not at the end of decoding
       for (; idx < samples.length; idx++)
       {
-        if (this._name == "Video Buffer 0")
-        {
-          console.info(`POST-GAME GOT ${this._current_cursor} = ${samples[idx].cts/this._timescale}`);
-        }
         this._bufferedRegions.push(samples[idx].cts, samples[idx].cts+this._frame_delta);
         if (samples[idx].cts < min_cts)
         {
@@ -428,10 +410,6 @@ class TatorVideoBuffer {
       // Push any undiscovered keyframes
       for (let idx = samples.length-1; idx >= 0; idx--)
       {
-        if (this._name == "Video Buffer 0")
-        {
-          console.info(`MUTED GOT = ${samples[idx].cts}`);
-        }
         this._bufferedRegions.push(samples[idx].cts, samples[idx].cts+this._frame_delta);
         if (samples[idx].cts < min_cts)
         {

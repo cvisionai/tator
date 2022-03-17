@@ -2595,6 +2595,14 @@ export class VideoCanvas extends AnnotationCanvas {
         }
       });
 
+
+    
+    // Always update play buffer.
+    if (this._videoElement[this._play_idx].playBuffer().use_codec_buffer && 
+        video != this._videoElement[this._play_idx].playBuffer())
+    {
+      this._videoElement[this._play_idx].playBuffer().currentTime = time;
+    }
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
     {
