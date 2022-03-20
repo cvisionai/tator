@@ -85,11 +85,11 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
     this.getDetectionType().then(() => {
       this.getImage().then((imageBlob) => {
         this.sendImage(imageBlob).then((results) => {
-          this.processResults(results).then((speciesCount) => {
+          this.processResults(results).then((objectCount) => {
 
             console.log("Results from Triton Inference Server:")
             console.log(results);
-            var msg = `${speciesCount} species detected`;
+            var msg = `${objectCount} objects detected`;
 
             this.dispatchEvent(new CustomEvent(
               "refreshDataType", {
@@ -283,7 +283,7 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
 
   /**
    * @param {Object} results - Results from adamant
-   * @returns Promise that is resolved with the number of species detected
+   * @returns Promise that is resolved with the number of objects detected
    */
   processResults(results){
     var resultPromise = new Promise((resolve, reject) => {
