@@ -12,8 +12,8 @@ input [
 output [
   {
     name: "DALI_OUTPUT_0"
-    data_type: TYPE_FP32
-    dims: [ 1024, 600, 3 ]
+    data_type: TYPE_UINT8
+    dims: [ 600, 1024, 3 ]
   }
 ]
 

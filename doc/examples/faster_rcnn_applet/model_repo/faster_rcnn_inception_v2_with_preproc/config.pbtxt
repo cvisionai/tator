@@ -29,7 +29,6 @@ output [
     name: "num_detections"
     data_type: TYPE_FP32
     dims: [ 1 ]
-    reshape { shape: [] }
   }
 ]
 ensemble_scheduling {
@@ -50,7 +49,7 @@ ensemble_scheduling {
       model_name: "faster_rcnn_inception_v2"
       model_version: -1
       input_map {
-        key: "input"
+        key: "image_tensor"
         value: "preprocessed_image"
       }
       output_map {
