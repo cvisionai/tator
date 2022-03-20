@@ -233,12 +233,11 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
         const context = canvas.getContext("2d");
         const image = new Image();
         image.onload = () => {
-            context.drawImage(image, 0, 0);
             this._imageWidth = image.width;
             this._imageHeight = image.height;
-            resolve(context.getImageData(0, 0, image.width, image.height));
         }
         image.src = URL.createObjectURL(imageBlob);
+        resolve(imageBlob);
       })
       .catch(error => {
         reject(error);
@@ -248,32 +247,35 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
   }
 
   /**
-   * @param {ImageData} image - Image to send to the Triton Inference Server
+   * @param {blob} image - Image to send to the Triton Inference Server
    * @returns Promise that is resolved with the result
    */
-  sendImage(image) {
+  sendImage(imageBlob) {
     var resultPromise = new Promise((resolve, reject) => {
-      const inputs = {
-        inputs: [{
-          name: "image_tensor",
-          shape: [1, 1024, 600, 3],
-          datatype: "UINT8",
-          data: Array.from(image.data),
-        }]
-      };
-      const requestOptions = {
-        method: "POST",
-        headers: {"Accept": "application/json"},
-        body: JSON.stringify(inputs),
-      };
-      const url = "https://xhi5j9d740.execute-api.us-west-2.amazonaws.com/v2/models/faster_rcnn_inception_v2/infer";
-      fetch(url, requestOptions)
-      .then(response => response.json())
-      .then(data => {
-        resolve(data);
-      })
-      .catch(error => {
-        reject(error);
+      imageBlob.arrayBuffer().then(buffer => {
+        const typedArray = new Uint8Array(buffer);
+        const inputs = {
+          inputs: [{
+            name: "INPUT",
+            shape: [1, typedArray.length],
+            datatype: "UINT8",
+            data: [Array.from(typedArray)],
+          }]
+        };
+        const requestOptions = {
+          method: "POST",
+          headers: {"Accept": "application/json"},
+          body: JSON.stringify(inputs),
+        };
+        const url = "https://xhi5j9d740.execute-api.us-west-2.amazonaws.com/v2/models/faster_rcnn_inception_v2_with_preproc/infer";
+        fetch(url, requestOptions)
+        .then(response => response.json())
+        .then(data => {
+          resolve(data);
+        })
+        .catch(error => {
+          reject(error);
+        });
       });
     });
     return resultPromise;
