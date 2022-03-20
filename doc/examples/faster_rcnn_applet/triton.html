@@ -166,8 +166,8 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
   getDetectionInfo() {
     return {
       name: "Box",
-      label: "Scientific Name",
-      score: "Algorithm Score"
+      label: "Label",
+      score: "Score"
     };
   }
 
@@ -287,21 +287,29 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
    */
   processResults(results){
     var resultPromise = new Promise((resolve, reject) => {
-      /*if (results.success) {
+      if (results.outputs) {
         var newLocSpecs = [];
-        for (const pred of results.predictions) {
+        let outputs = {}
+        for (const output of results.outputs) {
+          outputs[output.name] = output;
+        }
+        for (let i = 0; i < outputs.num_detections.data[0]; i++) {
+          const y0 = outputs.detection_boxes.data[i*4 + 0]
+          const x0 = outputs.detection_boxes.data[i*4 + 1]
+          const y1 = outputs.detection_boxes.data[i*4 + 2]
+          const x1 = outputs.detection_boxes.data[i*4 + 3]
           var newLocSpec = {
             media_id: this._data.media.id,
             type: this._detectionType.id,
             frame: this._data.frame,
-            version: this._data.version.id
+            version: this._data.version.id,
+            x: x0,
+            y: y0,
+            width: Math.abs(x1 - x0),
+            height: Math.abs(y1 - y0),
           };
-          newLocSpec.x = Math.max(0, Math.min(1, pred.bbox[0] / this._imageWidth));
-          newLocSpec.y = Math.max(0, Math.min(1, pred.bbox[1] / this._imageHeight));
-          newLocSpec.width = Math.max(0, Math.min(1, (pred.bbox[2] - pred.bbox[0]) / this._imageWidth));
-          newLocSpec.height = Math.max(0, Math.min(1, (pred.bbox[3] - pred.bbox[1]) / this._imageHeight));
-          newLocSpec[this._detectionLabelAttribute] = pred.category_id;
-          newLocSpec[this._detectionScoreAttribute] = pred.scores[0];
+          newLocSpec[this._detectionLabelAttribute] = outputs.detection_classes.data[i];
+          newLocSpec[this._detectionScoreAttribute] = outputs.detection_scores.data[i];
           newLocSpecs.push(newLocSpec);
         }
 
@@ -333,7 +341,7 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
       }
       else {
         reject("Server results.success == false");
-      }*/
+      }
     });
     return resultPromise;
   }

@@ -20,6 +20,7 @@ output [
     name: "detection_classes"
     data_type: TYPE_FP32
     dims: [ 100 ]
+    label_filename: "labels.txt"
   },
   {
     name: "detection_scores"
