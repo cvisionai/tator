@@ -58,6 +58,5 @@ COPY ui/dist/* /tator_online/main/static/
 
 # Delete front end unit tests
 RUN rm -fr /tator_online/test
-COPY doc/_build/html /tator_online/main/static/docs
 WORKDIR /tator_online
 RUN rm -rf helm
