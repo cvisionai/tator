@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: detectron2-od-
+spec:
+  entrypoint: infer
+  ttlStrategy:
+    secondsAfterCompletion: 30
+    secondsAfterSuccess: 30
+    secondsAfterFailure: 3600
+  volumes:
+  - name: dockersock
+    hostPath:
+      path: /var/run/docker.sock
+  - name: workdir
+    emptyDir:
+      medium: Memory
+  templates:
+  - name: infer
+    container:
+      image: localhost:32000/pytorch-tator
+      imagePullPolicy: Always
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 4Gi
+      env:
+      - name: PROJECT_ID
+        value: "{{workflow.parameters.project_id}}"
+      - name: MEDIA_IDS
+        value: "{{workflow.parameters.media_ids}}"
+      - name: HOST
+        value: "{{workflow.parameters.host}}"
+      - name: TOKEN
+        value: "{{workflow.parameters.rest_token}}"
+      volumeMounts:
+      - name: workdir
+        mountPath: /work
+      command: [python3]
+      args: [/infer.py]
