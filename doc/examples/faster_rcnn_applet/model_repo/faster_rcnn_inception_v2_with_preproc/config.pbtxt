@@ -1,0 +1,75 @@
+name: "faster_rcnn_inception_v2_with_preproc"
+platform: "ensemble"
+max_batch_size: 1
+input [
+  {
+    name: "INPUT"
+    data_type: TYPE_UINT8
+    dims: [ -1 ]
+  }
+]
+output [
+  {
+    name: "detection_boxes"
+    data_type: TYPE_FP32
+    dims: [ 100, 4]
+    reshape { shape: [100,4] }
+  },
+  {
+    name: "detection_classes"
+    data_type: TYPE_FP32
+    dims: [ 100 ]
+  },
+  {
+    name: "detection_scores"
+    data_type: TYPE_FP32
+    dims: [ 100 ]
+  },
+  {
+    name: "num_detections"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+    reshape { shape: [] }
+  }
+]
+ensemble_scheduling {
+  step [
+    {
+      model_name: "preproc"
+      model_version: -1
+      input_map {
+        key: "DALI_INPUT_0"
+        value: "INPUT"
+      }
+      output_map {
+        key: "DALI_OUTPUT_0"
+        value: "preprocessed_image"
+      }
+    },
+    {
+      model_name: "faster_rcnn_inception_v2"
+      model_version: -1
+      input_map {
+        key: "input"
+        value: "preprocessed_image"
+      }
+      output_map {
+        key: "detection_boxes"
+        value: "detection_boxes"
+      }
+      output_map {
+        key: "detection_classes"
+        value: "detection_classes"
+      }
+      output_map {
+        key: "detection_scores"
+        value: "detection_scores"
+      }
+      output_map {
+        key: "num_detections"
+        value: "num_detections"
+      }
+    }
+  ]
+}
+

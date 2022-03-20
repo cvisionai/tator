@@ -1,0 +1,25 @@
+name: "preproc"
+backend: "dali"
+max_batch_size: 1
+input [
+  {
+    name: "DALI_INPUT_0"
+    data_type: TYPE_UINT8
+    dims: [ -1 ]
+  }
+]
+
+output [
+  {
+    name: "DALI_OUTPUT_0"
+    data_type: TYPE_FP32
+    dims: [ 1024, 600, 3 ]
+  }
+]
+
+parameters: [
+  {
+    key: "num_threads"
+    value: { string_value: "12" }
+  }
+]
