@@ -267,7 +267,7 @@ class TritonApplet extends tatorUi.annotation.MenuAppletElement {
           headers: {"Accept": "application/json"},
           body: JSON.stringify(inputs),
         };
-        const url = "https://xhi5j9d740.execute-api.us-west-2.amazonaws.com/v2/models/faster_rcnn_inception_v2_with_preproc/infer";
+        const url = "https://YOUR_API_DOMAIN/v2/models/faster_rcnn_inception_v2_with_preproc/infer";
         fetch(url, requestOptions)
         .then(response => response.json())
         .then(data => {
