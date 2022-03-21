@@ -1,4 +1,4 @@
-$!/bin/bash
+#!/bin/bash
 
 mkdir -p model_repo/preproc/1
 mkdir -p model_repo/faster_rcnn_inception_v2/1
