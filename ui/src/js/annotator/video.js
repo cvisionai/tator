@@ -2109,7 +2109,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._seek_idx = hq_idx;
     console.log(`video buffer indexes: ${play_idx} ${scrub_idx} ${hq_idx}`);
 
-    let construct_demuxer = (idx) => {
+    let construct_demuxer = (idx, resolution) => {
       let searchParams = new URLSearchParams(window.location.search);
       if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1)
       {
@@ -2117,7 +2117,7 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
-        let p = new TatorVideoDecoder(idx);
+        let p = new TatorVideoDecoder(resolution);
         if (idx == this._play_idx)
         {
           p.onBuffered = () => {
@@ -2143,7 +2143,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._videoElement = [];
     for (let idx = 0; idx < streaming_files.length; idx++)
     {
-      this._videoElement.push(construct_demuxer(streaming_files[idx].resolution[0]));
+      this._videoElement.push(construct_demuxer(idx, streaming_files[idx].resolution[0]));
       this._videoElement[idx].named_idx = idx;
     }
     // Clear the buffer in case this is a hot-swap
@@ -3505,24 +3505,25 @@ export class VideoCanvas extends AnnotationCanvas {
                 break;
               }
               this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
+            }
 
-              if (this._direction == Direction.FORWARD)
+            // We can do GC even if we don't need more data.
+            if (this._direction == Direction.FORWARD)
+            {
+              var trimEnd = currentTime - 30;
+              if (trimEnd > start && this._playing)
               {
-                var trimEnd = currentTime - 30;
-                if (trimEnd > start && this._playing)
-                {
-                  console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
-                  video.deletePendingOnDemand([start, trimEnd]);
-                }
+                console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                video.deletePendingOnDemand([start, trimEnd]);
               }
-              else if (this._direction == Direction.BACKWARDS)
+            }
+            else if (this._direction == Direction.BACKWARDS)
+            {
+              var trimEnd = currentTime + 30;
+              if (trimEnd < end && this._playing)
               {
-                var trimEnd = currentTime + 30;
-                if (trimEnd < end && this._playing)
-                {
-                  console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
-                  video.deletePendingOnDemand([trimEnd, end]);
-                }
+                console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                video.deletePendingOnDemand([trimEnd, end]);
               }
             }
           }
