@@ -257,7 +257,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, ref, samples)
   {
     let muted = true;
-    //console.info(`${this._name} GOT=${samples.length}`);
+    console.info(`${this._name} ${ref} GOT=${samples.length}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     // Samples can be out of CTS order, when calculating frame diff
@@ -637,6 +637,58 @@ class TatorVideoBuffer {
     return p;
   }
 
+  // Make a new container to do seek operations
+  appendSeekBuffer(data)
+  {
+    let seekDecoder = new VideoDecoder({
+        output: this._frameReady.bind(this),
+        error: this._frameError.bind(this)});
+  
+    let tempFile = MP4Box.createFile();
+    tempFile.onError = this._mp4OnError.bind(this);
+    tempFile.onSamples = (track, user, samples) => {
+      seekDecoder.reset();
+      seekDecoder.configure(this._codecConfig);
+      for (let idx = 0; idx < samples.length; idx++)
+      {
+        const chunk = new EncodedVideoChunk({
+          type: (samples[idx].is_sync ? 'key' : 'delta'),
+          timestamp: samples[idx].cts,
+          data: samples[idx].data
+        });
+        try
+        {
+          seekDecoder.decode(chunk);
+        }
+        catch(e)
+        {
+          console.warn(`${e}`);
+        }
+      }
+      seekDecoder.flush().then(
+        ()=>{
+          setTimeout(() => {seekDecoder.close();},500);
+        });
+    };
+
+    tempFile.onReady = (info) => {
+      tempFile.setExtractionOptions(info.tracks[0].id, 'temp');
+      tempFile.seek(0);
+      tempFile.start();
+      tempFile.lastBoxStartPosition = data.fileStart;
+      tempFile.nextParsePosition = data.fileStart;
+      tempFile.dtsBias = Math.round(data.frameStart * this._timescale);
+      console.info(`TEMP Setting dts bias to FS=${data.fileStart} BIAS=${tempFile.dtsBias} ${tempFile.dtsBias/this._timescale}`);
+      tempFile.stop();
+      tempFile.appendBuffer(data);
+      tempFile.seek(0); // Always go to 0 for this
+      tempFile.start();
+      };
+
+    tempFile.appendBuffer(this._initData);
+    
+  }
+
   deleteUpTo(seconds)
   {
     const keyframe_info = this._keyframes.closest_keyframe(seconds*this._timescale);
@@ -691,6 +743,12 @@ onmessage = function(e)
     {
       ref.appendBuffer(msg.data);
     }
+  }
+  else if (msg.type == "appendSeekBuffer")
+  {
+    msg.data.fileStart = msg.fileStart;
+    msg.data.frameStart = msg.frameStart;
+    ref.appendSeekBuffer(msg.data);
   }
   else if (msg.type == "currentTime")
   {

@@ -379,6 +379,21 @@ class TatorVideoManager {
       });
   }
 
+   // Append data to the mp4 file (seek alt)
+  // - This data should either be sequentially added or added on a segment boundary
+  // - Prior to adding video segments the mp4 header must be supplied first.
+  appendSeekBuffer(data)
+  {
+    const fileStart = data.fileStart;
+    const frameStart = data.frameStart;
+    this._codec_worker.postMessage(
+      {"type": "appendSeekBuffer",
+       "fileStart": fileStart,
+       "frameStart": frameStart,
+       "data": data
+      });
+  }
+
   deleteUpTo(seconds)
   {
     this._codec_worker.postMessage({"type": "deleteUpTo",
@@ -601,9 +616,9 @@ export class TatorVideoDecoder {
                                 });
   }
 
-  appendSeekBuffer(data, time=undefined)
+  appendSeekBuffer(data)
   {
-    this._buffer.appendBuffer(data, true);
+    this._buffer.appendSeekBuffer(data);
   }
 
   appendLatestBuffer(data, callback)
