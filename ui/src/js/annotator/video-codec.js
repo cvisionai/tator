@@ -156,7 +156,7 @@ class TatorVideoManager {
       {
         this._time_ranges.push(msg.data.ranges[0][0]/this._timescale, msg.data.ranges[0][1]/this._timescale);
       }
-      this._time_ranges.print(`${this._name} Latest`);
+      //this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
       {
         setTimeout(this.onBuffered, 0);
@@ -485,8 +485,9 @@ export class TatorVideoDecoder {
   {
     let p_func = (resolve, reject) => 
     {
-      this.reset();
-      resolve();
+      this.reset().then(() => {
+        resolve();
+      });
     };
     let p = new Promise(p_func);
     return p;
@@ -574,7 +575,12 @@ export class TatorVideoDecoder {
 
   reset()
   {
-    this._buffer._codec_worker.postMessage({"type": "reset"});
+    return new Promise((resolve) => {
+      this._buffer.onReset = () => {resolve();
+                                    this._buffer.onReset=null
+                                  };
+      this._buffer._codec_worker.postMessage({"type": "reset"});
+                                });
   }
 
   appendSeekBuffer(data, time=undefined)

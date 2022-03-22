@@ -3205,6 +3205,11 @@ export class VideoCanvas extends AnnotationCanvas {
     }
 
     console.log("******* onDemandDownloadPrefetch");
+    if ('reset' in this._videoElement[this._play_idx].playBuffer())
+    {
+      console.info("Resetting buffer");
+      this._videoElement[this._playIdx].playBuffer().reset();
+    }
     this.stopPlayerThread();
     this.shutdownOnDemandDownload();
 
@@ -3265,9 +3270,12 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // If we moved out of the current on-demand buffer reload it.
     if (reqFrame == -1 || (timeToEnd < 15 && timeToAbsEnd >= 15))
-    setTimeout(function() {
-      restartOnDemand();
-    },0);
+    {
+      console.info(`reqFrame == ${reqFrame}, ${timeToEnd}, ${timeToAbsEnd}`);
+      setTimeout(function() {
+        restartOnDemand();
+      },0);
+    }
     /*
     this._videoElement[this._play_idx].resetOnDemandBuffer().then(() => {
       that.onDemandDownload(true);
@@ -3376,7 +3384,7 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
-        const appendThreshold = 20 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)); // Only append up to the fastest on-demand rate (Defensive)
+        const appendThreshold = 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)); // Only append up to the fastest on-demand rate (Defensive)
         var playbackReadyThreshold = appendThreshold;
 
         this._playbackAppendThreshold = `${appendThreshold} secs`;

@@ -257,7 +257,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, ref, samples)
   {
     let muted = true;
-    console.info(`${this._name} GOT=${samples.length}`);
+    //console.info(`${this._name} GOT=${samples.length}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     // Samples can be out of CTS order, when calculating frame diff
@@ -428,7 +428,7 @@ class TatorVideoBuffer {
         }
       }
     }
-    this._bufferedRegions.print(`${this._name} CTS ${this._timescale}`);
+    //this._bufferedRegions.print(`${this._name} CTS ${this._timescale}`);
 
     if (max_cts >= min_cts)
     {
@@ -436,7 +436,7 @@ class TatorVideoBuffer {
       postMessage({'type': "buffered",
                    'ranges': this._bufferedRegions._buffer}); 
     }
-    console.info(`${this._name}: ${this._current_cursor} ${this._current_cursor*this._timescale} ${muted}: Finished mp4 samples, count=${samples.length}`);
+    //console.info(`${this._name}: ${this._current_cursor} ${this._current_cursor*this._timescale} ${muted}: Finished mp4 samples, count=${samples.length}`);
     if (this._pendingSeek > 0)
     {
       const seek_timestamp = this._pendingSeek*this._timescale;
@@ -592,7 +592,7 @@ class TatorVideoBuffer {
   // - Prior to adding video segments the mp4 header must be supplied first.
   appendBuffer(data)
   {
-    console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
+    //console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
     if (this._initData == undefined && data.fileStart == 0)
     {
       this._initData = data;
@@ -617,7 +617,6 @@ class TatorVideoBuffer {
 
   reset()
   {
-    console.info(`${this._name} RESETTING`);    
     this._mp4File = MP4Box.createFile();
     this._mp4File.onError = this._mp4OnError.bind(this);
     this._mp4File.onSamples = this._mp4Samples.bind(this);
