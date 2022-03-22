@@ -23,7 +23,7 @@ setup(
     author_email="info@cvisionai.com",
     description="Native UI client for Tator Online REST API",
     keywords="tator",
-    url="http://cvision.tatorapp.com",   # project home page, if any
+    url="http://cloud.tator.io",   # project home page, if any
     #project_urls={
     #    "Bug Tracker": "https://bugs.example.com/HelloWorld/",
     #    "Documentation": "https://docs.example.com/HelloWorld/",

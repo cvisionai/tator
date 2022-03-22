@@ -9,7 +9,7 @@ import tator
 def parse_args():
     parser = argparse.ArgumentParser(description='Uploads transcoded video.')
     parser.add_argument('--host', type=str,
-                        default='https://www.tatorapp.com',
+                        default='https://cloud.tator.io',
                         help='REST API URL.')
     parser.add_argument('--token', type=str,
                         help='REST API token.')

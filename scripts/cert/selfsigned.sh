@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # The following may be supplied:
-#   DOMAIN - domain name (defaults to www.tatorapp.com)
+#   DOMAIN - domain name (defaults to cloud.tator.io)
 #   DOMAIN_KEY - path to domain key file (defaults to /tmp/domain.key)
 #   SIGNED_CHAIN - path to signed certficate file (defaults to /tmp/signed_chain.crt)
 #   CERT_SECRET_NAME - name of kubernetes secret containing signed certificate (defaults to tls-cert)
@@ -16,8 +16,8 @@
 #   ./selfsigned.sh
 
 if [ -z $DOMAIN ]; then
-  echo "DOMAIN not supplied, will be set to default www.tatorapp.com!"
-  DOMAIN=www.tatorapp.com
+  echo "DOMAIN not supplied, will be set to default cloud.tator.io!"
+  DOMAIN=cloud.tator.io
 else
   echo "DOMAIN is set to '$DOMAIN'"
 fi
