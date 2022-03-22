@@ -848,10 +848,10 @@ export class AnnotationPlayer extends TatorElement {
         return;
       }
 
-      timeoutCounter += performance.now() - last_check;
-      last_check = performance.now();
-
-      console.info(`${performance.now()}: Timeout Counter ${timeoutCounter}`);
+      const now = performance.now();
+      timeoutCounter += now - last_check;
+      console.info(`${now}: Timeout Counter ${timeoutCounter} LAST=${last_check}`);
+      last_check = now;
 
       this._handleNotReadyTimeout = null;
       let not_ready = false;
@@ -879,7 +879,7 @@ export class AnnotationPlayer extends TatorElement {
         // Heal the buffer state if duration increases since the last time we looked
         if (this._video.playBufferDuration() > this._last_duration)
         {
-          timeoutCounter /= 2; //half counter if we are progressing
+          timeoutCounter = 0; //truncate 
           timeoutIndex = 0;
         }
         this._last_duration = this._video.playBufferDuration();

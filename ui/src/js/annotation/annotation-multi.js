@@ -1545,7 +1545,7 @@ export class AnnotationMulti extends TatorElement {
         // Heal the buffer state if duration increases since the last time we looked
         if (this._videos[videoIndex].playBufferDuration() > this._last_duration)
         {
-          timeoutCounter /= 2;
+          timeoutCounter = 0;
           timeoutIndex = 0;
         }
         this._last_duration = this._videos[videoIndex].playBufferDuration();
