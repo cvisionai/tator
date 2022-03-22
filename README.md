@@ -46,7 +46,7 @@ Visit [our blog](https://www.tator.io/blog/) for upcoming features, development 
 Tator Enterprise Subscription
 =============================
 
-Tator is available under a commercial license with 24/7/365 technical support via a [Tator enterprise subscription](https://tator.io/product).
+Tator is available under a commercial license with direct-to-engineer technical support via a [Tator enterprise subscription](https://tator.io/product).
 
 Screenshots
 ===========
