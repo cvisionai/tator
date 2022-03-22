@@ -1,5 +1,6 @@
 import argparse
 import os
+import subprocess
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Formats markdown doc")
@@ -48,3 +49,4 @@ if __name__ == '__main__':
             if not (line.isspace() and skip_newlines):
                 out.write(line)
     out.close()
+    #subprocess.run(['scripts/fix_links.sh', args.out_file], check=True)
