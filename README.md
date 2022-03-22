@@ -13,10 +13,10 @@ What is Tator?
 * **Simplified MLOps** - AI-assisted annotation and scalable batch inference with one click.
 * **Visual analytics** - Aggregate, visualize, and report the information you need.
 
+Visit https://tator.io to learn more.
+
 Quick start
 ===========
-
-Start a [free trial of Tator Cloud](https://tator.io/docs/introduction-to-tator/free-trial-with-tator-cloud) or set up your own local deployment:
 
 From a node with a fresh [Ubuntu 20.04 LTS](https://releases.ubuntu.com/20.04/) install and a [reserved IP address](https://lifehacker.com/how-to-set-up-dhcp-reservations-and-never-check-an-ip-5822605):
 ```bash
@@ -24,6 +24,10 @@ git clone --recurse-submodules -b stable https://github.com/cvisionai/tator
 cd tator
 ./install.sh
 ```
+
+-or-
+
+Start a [free trial of Tator Cloud](https://tator.io/docs/introduction-to-tator/free-trial-with-tator-cloud), a cloud-based deployment of Tator maintained by the authors of Tator. 
 
 Documentation
 =============
