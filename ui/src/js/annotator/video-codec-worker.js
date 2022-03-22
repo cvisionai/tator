@@ -636,6 +636,33 @@ class TatorVideoBuffer {
                  'ranges': this._bufferedRegions._buffer});    
     return p;
   }
+
+  deleteUpTo(seconds)
+  {
+    const keyframe_info = this._keyframes.closest_keyframe(seconds*this._timescale);
+    const delete_val = keyframe_info.thisSegment;
+    let trak = this._mp4File.getTrackById(1);
+    let idx = 0;
+    let found_it = false;
+    for (idx; idx < trak.samples.length; idx++)
+    {
+      if (trak.samples[idx].cts > delete_val)
+      {
+        found_it = true;
+        break;
+      }
+    }
+    if (found_it == false)
+    {
+      console.warning("Ignoring bad delete");
+    }
+    console.info(`Requested delete up to ${delete_val} ${idx-1}`);
+    this._mp4File.releaseUsedSamples(1, idx-1);
+    this._bufferedRegions.remove(null, delete_val);
+    postMessage({'type': "buffered",
+                 'ranges': this._bufferedRegions._buffer});
+    this._bufferedRegions.print(`${this._name}: Post delete`);   
+  }
 }
 
 ///////////////////////////////////////
@@ -682,5 +709,9 @@ onmessage = function(e)
     ref.reset().then(() => {
       postMessage({"type": "onReset"});
     });
+  }
+  else if (msg.type == "deleteUpTo")
+  {
+    ref.deleteUpTo(msg.seconds);
   }
 }

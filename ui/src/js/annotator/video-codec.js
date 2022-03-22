@@ -49,6 +49,18 @@ export class TatorTimeRanges {
     this._merge_collapse();
   }
 
+  remove(start, end)
+  {
+    for (let idx = 0; idx < this.length; idx++)
+    {
+      if (end > this.start(idx) && end <= this.end(idx))
+      {
+        this._buffer[idx][0] = end;
+      }
+    }
+    this._merge_collapse();
+  }
+
   print(name)
   {
     if (name)
@@ -367,6 +379,12 @@ class TatorVideoManager {
       });
   }
 
+  deleteUpTo(seconds)
+  {
+    this._codec_worker.postMessage({"type": "deleteUpTo",
+                                   "seconds": seconds});
+  }
+
   // Empty function because we don't support a traditional playback interface
   pause()
   {
@@ -524,7 +542,7 @@ export class TatorVideoDecoder {
    */
   deletePendingOnDemand(delete_range)
   {
-    
+    this._buffer.deleteUpTo(delete_range[1]);
   }
 
   seekBuffer()
