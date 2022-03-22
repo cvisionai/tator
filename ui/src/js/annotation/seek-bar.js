@@ -164,8 +164,11 @@ export class SeekBar extends TatorElement {
 
   onDemandLoaded(evt)
   {
+    // If it is 0, that means we reset.
     if (evt.detail.ranges.length == 0)
     {
+      this.onDemandProgress.style.marginLeft = `0px`;
+      this.onDemandProgress.style.width = `0px`;
       return;
     }
     let range = evt.detail.ranges[0]
