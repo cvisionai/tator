@@ -49,4 +49,4 @@ if __name__ == '__main__':
             if not (line.isspace() and skip_newlines):
                 out.write(line)
     out.close()
-    #subprocess.run(['scripts/fix_links.sh', args.out_file], check=True)
+    subprocess.run(['scripts/fix_links.sh', args.out_file], check=True)
