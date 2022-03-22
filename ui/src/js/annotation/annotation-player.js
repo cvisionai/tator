@@ -830,12 +830,13 @@ export class AnnotationPlayer extends TatorElement {
     this._rewind.setAttribute("disabled","")
     this._fastForward.setAttribute("disabled","");
 
-    const timeouts = [2000, 4000, 8000, 16000];
+    const timeouts = [3000, 6000, 12000, 16000];
     var timeoutIndex = 0;
     var timeoutCounter = 0;
-    const clock_check = 100;
+    const clock_check = 1000/3;
     this._last_duration = this._video.playBufferDuration();
 
+    var last_check = performance.now();
     let check_ready = (checkFrame) => {
 
       if (this._videoStatus == "scrubbing") {
@@ -847,7 +848,10 @@ export class AnnotationPlayer extends TatorElement {
         return;
       }
 
-      timeoutCounter += clock_check;
+      timeoutCounter += performance.now() - last_check;
+      last_check = performance.now();
+
+      console.info(`${performance.now()}: Timeout Counter ${timeoutCounter}`);
 
       this._handleNotReadyTimeout = null;
       let not_ready = false;
@@ -863,7 +867,7 @@ export class AnnotationPlayer extends TatorElement {
       if (this._video._onDemandPlaybackReady != true)
       {
         not_ready = true;
-        if (timeoutCounter == timeouts[timeoutIndex]) {
+        if (timeoutCounter >= timeouts[timeoutIndex]) {
           timeoutCounter = 0;
           timeoutIndex += 1;
           console.log(`Video playback check - restart [Now: ${new Date().toISOString()}]`);
@@ -875,9 +879,10 @@ export class AnnotationPlayer extends TatorElement {
         // Heal the buffer state if duration increases since the last time we looked
         if (this._video.playBufferDuration() > this._last_duration)
         {
-          this._last_duration = this._video.playBufferDuration();
+          timeoutCounter /= 2; //half counter if we are progressing
           timeoutIndex = 0;
         }
+        this._last_duration = this._video.playBufferDuration();
         // For this logic to work it is actually based off the worst case
         // number of clocks in a given timeout attempt.
         if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {

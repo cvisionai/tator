@@ -1502,9 +1502,10 @@ export class AnnotationMulti extends TatorElement {
     const timeouts = [4000, 8000, 16000];
     var timeoutIndex = 0;
     var timeoutCounter = 0;
-    const clock_check = 100;
+    const clock_check = 1000/3;
     this._last_duration = this._videos[videoIndex].playBufferDuration();
 
+    var lastTime = performance.now();
     let check_ready = (checkFrame) => {
 
       if (this._videoStatus == "scrubbing") {
@@ -1516,8 +1517,9 @@ export class AnnotationMulti extends TatorElement {
         return;
       }
 
-      timeoutCounter += clock_check;
-
+      timeoutCounter += performance.now() - lastTime;
+      lastTime = performance.now();
+      
       let not_ready = false;
       if (checkFrame != this._videos[videoIndex].currentFrame()) {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._videos[videoIndex].currentFrame()} do not match. restarting check_ready`)
@@ -1543,9 +1545,10 @@ export class AnnotationMulti extends TatorElement {
         // Heal the buffer state if duration increases since the last time we looked
         if (this._videos[videoIndex].playBufferDuration() > this._last_duration)
         {
-          this._last_duration = this._videos[videoIndex].playBufferDuration();
+          timeoutCounter /= 2;
           timeoutIndex = 0;
         }
+        this._last_duration = this._videos[videoIndex].playBufferDuration();
         if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
           this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
             this._handleNotReadyTimeout[videoIndex] = null;
