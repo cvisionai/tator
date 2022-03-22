@@ -32,10 +32,7 @@ class Command(BaseCommand):
             # Resource path looks like "org_id/proj_id/media_id/filename"
             org_id, proj_id, media_id, filename = path.split("/")
 
-            # Add the project to the backup manager, if necessary (idempotent), and back it up if
-            # successful
-            project = Project.objects.get(pk=proj_id)
-            if backup_mgr.add_project(project) and backup_mgr.backup_resource(resource):
+            if backup_mgr.backup_resource(resource):
                 num_resources_backed_up += 1
             else:
                 failed_backups[proj_id].add(media_id)
