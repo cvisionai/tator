@@ -64,6 +64,18 @@ class GetFrameSchema(AutoSchema):
                     'schema': {'type': 'string'},
                 },
                 {
+                    'name': 'force_scale',
+                    'in': 'query',
+                    'required': False,
+                    'description': f'Size of each frame image to return in format wxh. This forces '
+                                   'scaling the image. Applied after ROI crop if any.'
+                                   'Default is the size of the frame for highest streaming resolution. ' +
+                                   'Example: 1024x768',
+                    'schema': {
+                        'type': 'string',
+                    },
+                },
+                {
                     'name': 'animate',
                     'in': 'query',
                     'required': False,

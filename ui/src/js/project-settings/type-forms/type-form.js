@@ -4,6 +4,7 @@ import { Utilities } from "../../util/utilities.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
 import { TypeNew } from "./type-new.js";
+import { TypeDelete } from "./type-delete.js";
 
 export class TypeForm extends TatorElement {
   constructor() {
@@ -420,6 +421,7 @@ export class TypeForm extends TatorElement {
   _deleteType() {
     this._modalCloseCallback();
     this.loading.showSpinner();
+    console.log("UI code is new!");
     let deleteType = new TypeDelete({
       "type": this.typeName,
       "typeId": this.typeId

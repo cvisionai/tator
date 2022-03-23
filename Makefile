@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings js-bindings postgis-image client-image
+IMAGES=python-bindings postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -103,7 +103,7 @@ _logs:
 	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
 	kubectl logs $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -f
 
-django_shell:
+django-shell:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- python3 manage.py shell
 
 
@@ -150,7 +150,7 @@ dashboard-token:
 
 .PHONY: tator-image
 tator-image:
-	$(MAKE) webpack r-docs docs
+	$(MAKE) webpack
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
@@ -232,22 +232,6 @@ cleanup-evicted:
 build-search-indices:
 	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)" -p objectStorageHost="$(OBJECT_STORAGE_HOST)" -p objectStorageRegionName="$(OBJECT_STORAGE_REGION_NAME)" -p objectStorageBucketName="$(OBJECT_STORAGE_BUCKET_NAME)" -p objectStorageAccessKey="$(OBJECT_STORAGE_ACCESS_KEY)" -p objectStorageSecretKey="$(OBJECT_STORAGE_SECRET_KEY)"
 
-.PHONY: s3-migrate
-s3-migrate:
-	argo submit workflows/s3-migrate.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
-
-.PHONY: s3-verify
-s3-verify:
-	argo submit workflows/s3-verify.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
-
-.PHONY: efs-delete
-efs-delete:
-	argo submit workflows/efs-delete.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)"
-
-.PHONY: clean_js
-clean_js:
-	rm -rf .min_js
-
 .PHONY: images
 images:
 	make ${IMAGES}
@@ -257,15 +241,24 @@ lazyPush:
 
 .PHONY: python-bindings-only
 python-bindings-only:
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-py/schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
 	python3 setup.py sdist bdist_wheel
+	if [ ! -f dist/*.whl ]; then
+		exit 1
+	fi
 	cd ../../..
 
 .PHONY: python-bindings
 python-bindings: tator-image
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-py/schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
 	python3 setup.py sdist bdist_wheel
@@ -277,7 +270,10 @@ python-bindings: tator-image
 .PHONY: js-bindings
 js-bindings:
 	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-js/tator-openapi-schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-js/.
 	cd scripts/packages/tator-js
 	rm -rf pkg
 	mkdir pkg
@@ -309,7 +305,10 @@ js-bindings:
 .PHONY: r-docs
 r-docs:
 	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
-	docker run -it --rm -e DJANGO_SECRET_KEY=asdf -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > scripts/packages/tator-r/schema.yaml
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	cp doc/_build/schema.yaml scripts/packages/tator-r/.
 	rm -rf scripts/packages/tator-r/tmp
 	mkdir -p scripts/packages/tator-r/tmp
 	./scripts/packages/tator-r/codegen.py $(shell pwd)/scripts/packages/tator-r/schema.yaml
@@ -347,10 +346,6 @@ HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml
 pytest:
 	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(HOST) --token $(TOKEN)
 
-.PHONY: pylint
-pylint:
-	docker run -it --rm -v $(shell pwd):/pwd localhost:5000/tator_online:$(GIT_VERSION) pylint --rcfile /pwd/pylint.ini --load-plugins pylint_django /pwd/main
-
 .PHONY: letsencrypt
 letsencrypt:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/letsencrypt.sh 
@@ -359,18 +354,24 @@ letsencrypt:
 selfsigned:
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- env DOMAIN=$(DOMAIN) env DOMAIN_KEY=$(DOMAIN_KEY) env SIGNED_CHAIN=$(SIGNED_CHAIN) env KEY_SECRET_NAME=$(KEY_SECRET_NAME) env CERT_SECRET_NAME=$(CERT_SECRET_NAME) scripts/cert/selfsigned.sh
 
-.PHONY: docs
-docs:
-	make -C doc html
-
 .PHONY: markdown-docs
 markdown-docs:
 	sphinx-build -M markdown ./doc ./doc/_build
-	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py.md
+	mkdir -p ./doc/_build/tator-py
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/utilities.md ./doc/_build/tator-py/utilities.md
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py/api.md
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/models.md ./doc/_build/tator-py/models.md
+	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/exceptions.md ./doc/_build/tator-py/exceptions.md
+
+.PHONY: schema
+schema:
+	mkdir -p doc/_build
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
+	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 .PHONY: check_schema
-check_schema: tator-image
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false localhost:5000/tator_online:$(GIT_VERSION) python3 manage.py getschema
+check_schema:
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
 
 ifdef PROJECT_ID
 ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --project $(PROJECT_ID)

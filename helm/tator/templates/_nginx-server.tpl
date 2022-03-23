@@ -93,9 +93,7 @@ server {
     {{- end }}
   }
   location /docs {
-    alias /static/docs;
-    autoindex off;
-    add_header Cache-Control "max-age=0, must-revalidate";
+    return 301 https://tator.io/docs;
   }
   location /media {
     alias /media/;

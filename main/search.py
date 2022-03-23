@@ -167,7 +167,7 @@ class TatorSearch:
                 '_exact_treeleaf_name': {'type': 'keyword'},
                 'tator_treeleaf_name': {'type': 'text'},
                 '_treeleaf_depth': {'type': 'integer'},
-                '_treeleaf_path': {'type': 'text'},
+                '_treeleaf_path': {'type': 'keyword'},
                 '_annotation_version': {'type': 'integer'},
                 '_modified': {'type': 'boolean'},
                 '_modified_datetime': {'type': 'date'},

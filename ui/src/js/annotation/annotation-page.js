@@ -1150,7 +1150,9 @@ export class AnnotationPage extends TatorPage {
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
+    this._menuAppletDialog.setDataInterface(this._data);
     this._main.appendChild(this._menuAppletDialog);
+
     this._menuAppletDialog.addEventListener("close", () => {
       this.removeAttribute("has-open-modal", "");
       document.body.classList.remove("shortcuts-disabled");

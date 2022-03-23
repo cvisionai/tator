@@ -225,12 +225,12 @@ class MediaUtil:
                     h = max(0,min(round(c[1]*self._height),self._height)) #pylint: disable=invalid-name
                     x = max(0,min(round(c[2]*self._width),self._width)) #pylint: disable=invalid-name
                     y = max(0,min(round(c[3]*self._height),self._height)) #pylint: disable=invalid-name
-                    if force_scale:
-                        scale_w=force_scale[0]
-                        scale_h=force_scale[1]
-                        crop_filter.append(f"crop={w}:{h}:{x}:{y},scale={scale_w}:{scale_h}")
-                    else:
-                        crop_filter.append(f"crop={w}:{h}:{x}:{y}")
+                    crop_filter.append(f"crop={w}:{h}:{x}:{y}")
+            scale_filter = None
+            if force_scale:
+                scale_w=force_scale[0]
+                scale_h=force_scale[1]
+                scale_filter = f"scale={scale_w}:{scale_h}"
 
             logger.info(f"Processing {self._video_file}")
             args = ["ffmpeg"]
@@ -245,8 +245,13 @@ class MediaUtil:
 
             for batch_idx, frame in enumerate(batch):
                 outputs.extend(["-map", f"{batch_idx}:v","-frames:v", "1", "-q:v", "3"])
+                video_filters = []
                 if crop_filter:
-                    outputs.extend(["-vf", crop_filter[frame_idx]])
+                    video_filters.append(crop_filter[frame_idx])
+                if scale_filter:
+                    video_filters.append(scale_filter)
+                if video_filters:
+                    outputs.extend(["-vf", ",".join(video_filters)])
 
                 outputs.append(os.path.join(self._temp_dir,f"{frame_idx}.{render_format}"))
                 if frame in lookup:

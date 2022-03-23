@@ -54,6 +54,17 @@ class GetFrameAPI(BaseDetailView):
         roi = params.get('roi', None)
         quality = params.get('quality', None)
 
+        # Extract the force image size argument and assert if there's a problem with the provided inputs
+        force_image_size = params.get('force_scale', None)
+        if force_image_size is not None:
+            img_width_height = force_image_size.split('x')
+            assert len(img_width_height) == 2
+            requested_width = int(img_width_height[0])
+            requested_height = int(img_width_height[1])
+            assert requested_width > 0
+            assert requested_height > 0
+            force_image_size = (requested_width, requested_height)
+
         for frame in frames:
             if int(frame) >= video.num_frames:
                 raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
@@ -102,13 +113,15 @@ class GetFrameAPI(BaseDetailView):
                 else:
                     self.request.accepted_renderer = GifRenderer()
                 gif_fp = media_util.get_animation(frames, roi_arg, fps=animate,
-                                                  render_format=self.request.accepted_renderer.format)
+                                                  render_format=self.request.accepted_renderer.format,
+                                                  force_scale=force_image_size)
                 with open(gif_fp, 'rb') as data_file:
                     response_data = data_file.read()
             else:
                 logger.info(f"Accepted format = {self.request.accepted_renderer.format}")
                 tiled_fp = media_util.get_tile_image(frames, roi_arg, tile_size,
-                                                     render_format=self.request.accepted_renderer.format)
+                                                     render_format=self.request.accepted_renderer.format,
+                                                     force_scale=force_image_size)
                 with open(tiled_fp, 'rb') as data_file:
                     response_data = data_file.read()
         return response_data

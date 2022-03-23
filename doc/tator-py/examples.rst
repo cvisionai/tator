@@ -13,7 +13,7 @@ Initializing a session
     :linenos:
 
     import tator
-    host = 'https://tatorapp.com'
+    host = 'https://cloud.tator.io'
     token = 'user_access_token'
     tator_api = tator.get_api(host=host, token=token)
 
@@ -28,7 +28,7 @@ Iterating over and downloading media elements
     import tator
 
     # Initialize session
-    host = 'https://tatorapp.com'
+    host = 'https://cloud.tator.io'
     token = 'user_access_token'
     tator_api = tator.get_api(host=host, token=token)
 

@@ -1,5 +1,17 @@
+# Build librclone shared object
+FROM golang:latest
+WORKDIR /go
+RUN git clone https://github.com/rclone/rclone.git
+
+WORKDIR /go/rclone/librclone/
+RUN go build --buildmode=c-shared -o librclone.so github.com/rclone/rclone/librclone
+
 FROM ubuntu:20.04
 MAINTAINER CVision AI <info@cvisionai.com>
+
+# Copy librclone shared object to this container
+COPY --from=0 /go/rclone/librclone/librclone.so /usr/local/lib/
+
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \
@@ -19,7 +31,7 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         hiredis==2.0.0 redis==4.1.1 greenlet==0.4.15 \
         gunicorn==20.1.0 django_admin_json_editor==0.2.3 django-ltree==0.5.3 \
         requests==2.27.0 python-dateutil==2.8.2 ujson==5.1.0 slackclient==2.9.3 \
-        google-auth==2.3.3 elasticsearch==7.1.0 progressbar2==4.0.0 \
+        google-auth==2.3.3 elasticsearch==7.10.1 progressbar2==4.0.0 \
         gevent==1.4.0 uritemplate==4.1.1 pylint pylint-django \
         django-cognito-jwt==0.0.4 boto3==1.20.41 \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
@@ -46,7 +58,5 @@ COPY ui/dist/* /tator_online/main/static/
 
 # Delete front end unit tests
 RUN rm -fr /tator_online/test
-COPY doc/_build/html /tator_online/main/static/docs
 WORKDIR /tator_online
 RUN rm -rf helm
-

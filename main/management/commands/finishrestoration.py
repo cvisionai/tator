@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from main.models import Media
-from main.util import update_media_archive_state
+from main.ses import TatorSES
+from main.util import notify_admins, update_queryset_archive_state
 
 logger = logging.getLogger(__name__)
 
@@ -12,19 +14,21 @@ class Command(BaseCommand):
     help = "Finalizes the restoration of any media files with restoration_requested == True."
 
     def handle(self, **options):
-        num_rr = 0
         restoration_qs = Media.objects.filter(
             deleted=False, archive_state="to_live", restoration_requested=True
         ).exclude(meta__dtype="multi")
+
         if not restoration_qs.exists():
             logger.info(f"No media requiring restoration finalization!")
             return
 
-        for media in restoration_qs:
-            media_dtype = getattr(media.meta, "dtype", None)
-            if media_dtype in ["image", "video", "multi"]:
-                num_rr += update_media_archive_state(media, "live", False)
-            else:
-                logger.warning(f"Unknown media dtype '{media_dtype}', skipping restoration")
+        # Update media ready for restoration
+        target_state = {
+            "archive_state": "live",
+            "restoration_requested": False,
+        }
+        not_ready = update_queryset_archive_state(restoration_qs, target_state)
 
-        logger.info(f"Finalized restoration of a total of {num_rr} media!")
+        # Notify owners of blocked restore attempt
+        ses = TatorSES() if settings.TATOR_EMAIL_ENABLED else None
+        notify_admins(not_ready, ses)

@@ -8,6 +8,7 @@ from rest_framework.authentication import SessionAuthentication
 from django.contrib.auth.models import AnonymousUser
 from django.shortcuts import get_object_or_404
 from django.http import Http404
+from django.conf import settings
 from redis import Redis
 
 from ..models import Permission
@@ -29,8 +30,8 @@ def _for_schema_view(request, view):
     """
     return (
         view.kwargs == {}
-        and type(request.authenticators[0]) == SessionAuthentication
-        and request.META['HTTP_HOST'] == f"{os.getenv('MAIN_HOST')}"
+        and isinstance(request.authenticators[0], SessionAuthentication)
+        and request.META['HTTP_HOST'] in settings.ALLOWED_HOSTS
         and request.META['RAW_URI'].startswith('/schema/')
     )
 

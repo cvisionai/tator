@@ -69,6 +69,7 @@ export class FilterData {
       this.algorithms = algorithms;
     }
 
+    // Allow filtering by dtype for the media, state, and localization types
     var stateTypeOptions = [];
     for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
       let stateType = this.mediaStateTypes[idx];
@@ -79,12 +80,16 @@ export class FilterData {
       stateTypeOptions.push(`${stateType.name} (ID:${stateType.id})`);
     }
 
-    // Want to be able to filter based on localization dtypes. Package up the localization types
-    // and add it as an attribute
     var localizationTypeOptions = [];
     for (let idx = 0; idx < this.localizationTypes.length; idx++) {
       let locType = this.localizationTypes[idx];
       localizationTypeOptions.push(`${locType.dtype}/${locType.name} (ID:${locType.id})`);
+    }
+
+    var mediaTypeOptions = [];
+    for (let idx = 0; idx < this.mediaTypes.length; idx++) {
+      let mediaType = this.mediaTypes[idx];
+      mediaTypeOptions.push(`${mediaType.dtype}/${mediaType.name} (ID:${mediaType.id})`);
     }
 
     // Allow options to filter by users
@@ -157,6 +162,13 @@ export class FilterData {
             dtype: "datetime"
           };
           entityType.attribute_types.push(modifiedDatetimeAttribute);
+
+          var dtypeAttribute = {
+            choices: mediaTypeOptions,
+            name: "_dtype",
+            dtype: "enum"
+          };
+          entityType.attribute_types.push(dtypeAttribute);
 
           this._allTypes.push(entityType);
         }
