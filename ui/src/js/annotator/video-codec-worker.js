@@ -257,7 +257,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, ref, samples)
   {
     let muted = true;
-    console.info(`${this._name} ${ref} GOT=${samples.length}`);
+    console.info(`${this._name} GOT=${samples.length}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     // Samples can be out of CTS order, when calculating frame diff
@@ -428,7 +428,7 @@ class TatorVideoBuffer {
         }
       }
     }
-    //this._bufferedRegions.print(`${this._name} CTS ${this._timescale}`);
+    this._bufferedRegions.print(`${this._name} ${max_cts} ${min_cts} CTS ${this._timescale}`);
 
     if (max_cts >= min_cts)
     {
@@ -592,7 +592,7 @@ class TatorVideoBuffer {
   // - Prior to adding video segments the mp4 header must be supplied first.
   appendBuffer(data)
   {
-    //console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
+    console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
     if (this._initData == undefined && data.fileStart == 0)
     {
       this._initData = data;
@@ -707,6 +707,7 @@ class TatorVideoBuffer {
     if (found_it == false)
     {
       console.warning("Ignoring bad delete");
+      return;
     }
     console.info(`Requested delete up to ${delete_val} ${idx-1}`);
     this._mp4File.releaseUsedSamples(1, idx-1);
