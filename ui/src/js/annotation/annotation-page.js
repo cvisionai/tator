@@ -677,12 +677,6 @@ export class AnnotationPage extends TatorPage {
       }
     });
 
-    this._videoSettingsDialog.addEventListener("applyOnDemandParameters", evt => {
-      if (canvas.setOnDemandParameters != null) {
-        canvas.setOnDemandParameters(evt.detail.playingBlockSize, evt.detail.pausedBlockSize)
-      }
-    });
-
     this._videoSettingsDialog.addEventListener("displayOverlays", evt => {
       canvas.displayVideoDiagnosticOverlay(evt.detail.displayDiagnostic);
     });

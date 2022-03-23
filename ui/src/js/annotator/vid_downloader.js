@@ -7,8 +7,6 @@ export class VideoDownloader
     this._media_files = media_files;
     this._blockSize = blockSize;
     this._playingBlockSize = playingBlockSize;
-    this._onDemandPlayingBlockSize = playingBlockSize;
-    this._onDemandPausedBlockSize = blockSize;
     this._offsite_config = offsite_config;
     this._headers = {};
     if (this._offsite_config && this._offsite_config.method)
@@ -46,12 +44,6 @@ export class VideoDownloader
     this._startUpBlockSize = 1024 * 1024
 
     this.initializeInfoObjects();
-  }
-
-  setOnDemandBlockSizes(playingSize, pausedSize)
-  {
-    this._onDemandPlayingBlockSize = playingSize;
-    this._onDemandPausedBlockSize = pausedSize;
   }
 
   specificBufferInitialized(buf_idx)
@@ -334,10 +326,10 @@ export class VideoDownloader
 
     var iterBlockSize;
     if (playing) {
-      iterBlockSize = this._onDemandPlayingBlockSize;
+      iterBlockSize = this._playingBlockSize;
     }
     else {
-      iterBlockSize = this._onDemandPausedBlockSize;
+      iterBlockSize = this._blockSize;
     }
 
     if (!this._onDemandConfig["init"])
@@ -738,7 +730,7 @@ onmessage = function(e)
       ref = new VideoDownloader(msg.media_files,
                                 2*1024*1024,
                                 msg.offsite_config,
-                                4*1024*1024);
+                                5*1024*1024);
     }
   }
   else if (type == 'download')
@@ -783,9 +775,5 @@ onmessage = function(e)
   {
     ref.shutdownOnDemandDownload();
     ref.reenableScrubDownload();
-  }
-  else if (type == 'onDemandBlockSizes')
-  {
-    ref.setOnDemandBlockSizes(msg['playingSize'], msg['pausedSize']);
   }
 }

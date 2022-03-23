@@ -1864,12 +1864,6 @@ export class AnnotationMulti extends TatorElement {
     this.forcePlaybackDownload();
   }
 
-  setOnDemandParameters(playingBlockSize, pausedBlockSize) {
-    for (let video of this._videos) {
-      video.setOnDemandBlockSizes(playingBlockSize, pausedBlockSize);
-    }
-  }
-
   /**
    * Expected to be set by something like annotation-page.
    * @param {tator.Media object} val
