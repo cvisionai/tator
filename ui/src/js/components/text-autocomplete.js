@@ -425,6 +425,9 @@ export class TatorAutoComplete {
         debounceWaitMs: 250,
         onSelect(item)
         {
+          if (input_element.classList.contains("disabled")) {
+            return;
+          }
           input_element.value = item.value;
           input_element.dispatchEvent(new Event("change"));
           input_element.blur();
@@ -451,6 +454,9 @@ export class TatorAutoComplete {
             return div;
           },
         fetch: (text, callback) => {
+          if (input_element.classList.contains("disabled")) {
+            return;
+          }
           input_element.style.cursor="progress";
           document.body.style.cursor="progress";
           if (fetch_method(config, text, callback) == false)
