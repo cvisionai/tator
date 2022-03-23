@@ -1840,8 +1840,7 @@ export class AnnotationMulti extends TatorElement {
         videoDiv.children[0].setQuality(quality, "play");
       }
     }
-    else if (buffer == "play") {
-
+    else {
       this._quality = quality;
       if (this._qualityControl._select != null) {
         this._qualityControl.quality = quality;
@@ -1853,12 +1852,6 @@ export class AnnotationMulti extends TatorElement {
 
       if (isDefault) {
         this.setDefaultVideoSettings(0);
-      }
-    }
-    else {
-      for (let video of this._videos)
-      {
-        video.setQuality(quality, buffer);
       }
     }
     this.forcePlaybackDownload();
