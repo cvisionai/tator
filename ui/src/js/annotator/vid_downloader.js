@@ -5,7 +5,14 @@ export class VideoDownloader
   constructor(media_files, blockSize, offsite_config)
   {
     this._media_files = media_files;
-    this._blockSize = blockSize;
+    this._blockSizes = [];
+    console.info(JSON.stringify(media_files));
+    for (let idx = 0; idx < media_files.length; idx++)
+    {
+      const two_seconds = media_files[idx].bit_rate * 2;
+      this._blockSizes.push(two_seconds);
+      console.info(`VID_DOWNLOADER: ${idx}: ${media_files[idx].resolution} 2 seconds of data = ${two_seconds} bytes or ${two_seconds/1024/1024} megabytes`);
+    }
     this._offsite_config = offsite_config;
     this._headers = {};
     if (this._offsite_config && this._offsite_config.method)
@@ -320,7 +327,7 @@ export class VideoDownloader
     var offsets = [];  // Stores the segments (aka packets)
     var startByte;
     var start_frame;
-    var iterBlockSize = this._blockSize;
+    var iterBlockSize = this._blockSizes[mediaFileIndex];
     var initialDownload = false;
     var initalPacketIndex = 0;
 
@@ -329,7 +336,7 @@ export class VideoDownloader
       // Set the current packet based on the play start frame plus some wiggle room
       this._onDemandConfig["init"] = true;
       var frameToStart;
-      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 20); // Support a bit more behind us
+      var startBuffer = Math.floor(this._onDemandConfig["fps"] * 2); // Support a bit more behind us
       if (this._onDemandConfig["direction"] == "forward")
       {
         frameToStart = this._onDemandConfig["frame"] - startBuffer;
@@ -649,7 +656,7 @@ export class VideoDownloader
     }
 
     // Use 1 Mb blocks if in the first 5 packets
-    var iterBlockSize=this._blockSize;
+    var iterBlockSize=this._blockSizes[buf_idx];
     //if (idx < 5)
     //{
     //    iterBlockSize=1024*1024;
