@@ -168,7 +168,7 @@ class TatorVideoManager {
       {
         this._time_ranges.push(msg.data.ranges[idx][0]/this._timescale, msg.data.ranges[idx][1]/this._timescale);
       }
-      this._time_ranges.print(`${this._name} Latest`);
+      //this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
       {
         setTimeout(this.onBuffered, 0);
@@ -618,7 +618,7 @@ export class TatorVideoDecoder {
 
   appendSeekBuffer(data)
   {
-    this._buffer.appendBuffer(data, true);
+    this._buffer.appendSeekBuffer(data);
   }
 
   appendLatestBuffer(data, callback)

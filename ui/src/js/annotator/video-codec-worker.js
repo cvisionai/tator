@@ -257,7 +257,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, ref, samples)
   {
     let muted = true;
-    console.info(`${this._name} GOT=${samples.length}`);
+    //console.info(`${this._name} GOT=${samples.length}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     // Samples can be out of CTS order, when calculating frame diff
@@ -301,7 +301,7 @@ class TatorVideoBuffer {
         }
         else
         {
-          console.info(`Avoiding dupe ${samples[d_idx]}`);
+          console.info(`Avoiding dupe ${samples[d_idx].cts}`);
         }
       }
     }
@@ -428,7 +428,7 @@ class TatorVideoBuffer {
         }
       }
     }
-    this._bufferedRegions.print(`${this._name} ${max_cts} ${min_cts} CTS ${this._timescale}`);
+    //this._bufferedRegions.print(`${this._name} ${max_cts} ${min_cts} CTS ${this._timescale}`);
 
     if (max_cts >= min_cts)
     {
@@ -592,7 +592,7 @@ class TatorVideoBuffer {
   // - Prior to adding video segments the mp4 header must be supplied first.
   appendBuffer(data)
   {
-    console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
+    //console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
     if (this._initData == undefined && data.fileStart == 0)
     {
       this._initData = data;
@@ -643,14 +643,32 @@ class TatorVideoBuffer {
     let seekDecoder = new VideoDecoder({
         output: this._frameReady.bind(this),
         error: this._frameError.bind(this)});
+    seekDecoder.reset();
+    seekDecoder.configure(this._codecConfig);
   
     let tempFile = MP4Box.createFile();
     tempFile.onError = this._mp4OnError.bind(this);
     tempFile.onSamples = (track, user, samples) => {
-      seekDecoder.reset();
-      seekDecoder.configure(this._codecConfig);
+
+      if (this._frame_delta == undefined)
+      {
+        if (samples.length > 2)
+        {
+          let times = [];
+          for (let idx=0; idx < Math.min(10,samples.length); idx++)
+          {
+            times.push(samples[idx].dts); // NOT CTS fix bug with frames more than 10 out of order
+          }
+          times.sort((a,b)=>a-b);
+          this._frame_delta = times[1]-times[0];
+          postMessage({"type": "frameDelta",
+                      "frameDelta": this._frame_delta});
+        }
+      }
+
       for (let idx = 0; idx < samples.length; idx++)
       {
+        //console.info(`TEMP FILE GOT ${samples[idx].cts}`);
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
           timestamp: samples[idx].cts,
@@ -673,8 +691,6 @@ class TatorVideoBuffer {
 
     tempFile.onReady = (info) => {
       tempFile.setExtractionOptions(info.tracks[0].id, 'temp');
-      tempFile.seek(0);
-      tempFile.start();
       tempFile.lastBoxStartPosition = data.fileStart;
       tempFile.nextParsePosition = data.fileStart;
       tempFile.dtsBias = Math.round(data.frameStart * this._timescale);
@@ -714,7 +730,7 @@ class TatorVideoBuffer {
     this._bufferedRegions.remove(null, delete_val);
     postMessage({'type': "buffered",
                  'ranges': this._bufferedRegions._buffer});
-    this._bufferedRegions.print(`${this._name}: Post delete`);   
+    //this._bufferedRegions.print(`${this._name}: Post delete`);   
   }
 }
 
