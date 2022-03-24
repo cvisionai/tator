@@ -1009,10 +1009,10 @@ export class AnnotationPlayer extends TatorElement {
 
     const paused = this.is_paused();
     if (paused == false) {
+      this._videoStatus = "paused";
       this._video.pause();
       this._play.setAttribute("is-paused", "")
     }
-    this._videoStatus = "paused";
     this.checkReady();
   }
 

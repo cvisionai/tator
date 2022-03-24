@@ -3210,7 +3210,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    const onDemandStatus = this.onDemandBufferAvailable(reqFrame);
+    let onDemandStatus = this.onDemandBufferAvailable(reqFrame);
     if (onDemandStatus == "yes" && reqFrame == this._dispFrame) {
       return;
     }
@@ -3227,13 +3227,20 @@ export class VideoCanvas extends AnnotationCanvas {
     }
 
     console.log(`******* onDemandDownloadPrefetch STATUS=${onDemandStatus}`);
-    if (onDemandStatus == "more")
+    if (this._direction != Direction.BACKWARDS && onDemandStatus == "more")
     {
       // In this case the on-demand buffer needs more data, but is otherwise in good shape.
+      // This logic is optimized for forward playback, we always re-init going forward on pause.
       this.onDemandDownload(true);
       return;
     }
-    else if (onDemandStatus == false && 'reset' in this._videoElement[this._play_idx].playBuffer())
+    else if (this._direction == Direction.BACKWARDS)
+    {
+      // Always re-initialize on pause going backwards.
+      onDemandStatus = false;
+    }
+
+    if (onDemandStatus == false && 'reset' in this._videoElement[this._play_idx].playBuffer())
     {
       console.info("Resetting buffer");
       this._videoElement[this._playIdx].playBuffer().reset();
@@ -3320,6 +3327,12 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       inhibited = false;
     }
+
+    if (this._direction == Direction.STOPPED && inhibited == false)
+    {
+      return;
+    }
+    
     const video = this._videoElement[this._play_idx];
     const ranges = video.playBuffer().buffered;
     let currentFrame = this._dispFrame;

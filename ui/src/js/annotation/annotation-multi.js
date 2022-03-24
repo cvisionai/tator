@@ -1783,6 +1783,7 @@ export class AnnotationMulti extends TatorElement {
     };
     clearTimeout(this._failSafeTimer);
     if (paused == false) {
+      this._videoStatus = "paused";
       for (let video of this._videos)
       {
         pausePromises.push(video.pause());
