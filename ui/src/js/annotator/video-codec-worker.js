@@ -725,7 +725,7 @@ class TatorVideoBuffer {
       console.warning("Ignoring bad delete");
       return;
     }
-    console.info(`Requested delete up to ${delete_val} ${idx-1}`);
+    //console.info(`Requested delete up to ${delete_val} ${idx-1}`);
     this._mp4File.releaseUsedSamples(1, idx-1);
     this._bufferedRegions.remove(null, delete_val);
     postMessage({'type': "buffered",

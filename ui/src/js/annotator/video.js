@@ -3631,7 +3631,7 @@ export class VideoCanvas extends AnnotationCanvas {
       if (this._onDemandPlaybackReady && !this._loaderStarted && !inhibited)
       {
         console.log(`(ID:${this._videoObject.id}) Launching playback loader`);
-        if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._direction == "forward")
+        if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._direction == Direction.FORWARD)
         {
           this._loaderStarted = true;
           this.frameCallbackMethod();
