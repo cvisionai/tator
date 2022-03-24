@@ -2624,7 +2624,7 @@ export class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._loaderTimeout);
       this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
     }
-    this._onDemandPlaybackReady = this.onDemandBufferAvailable(this._dispFrame);
+    this._onDemandPlaybackReady = (this.onDemandBufferAvailable(this._dispFrame) == "yes" ? true : false);
     this.dispatchEvent(new CustomEvent("rateChange", {
       detail: {rate: newRate},
       composed: true,
@@ -3125,9 +3125,47 @@ export class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  // Calculate if the on-demand buffer is present and has sufficient runway to play.
+  // Returns "yes", false, "more"
   onDemandBufferAvailable(frame)
   {
-    return this.videoBuffer(frame, "play", true) != null;
+    const appendThreshold = 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate));
+    let video = this.videoBuffer(frame, "play", true);
+    if (video == null)
+    {
+      return false;
+    }
+    else
+    {
+      let timeToEnd = null;
+      var ranges = video.buffered;
+      const currentTime = this.frameToTime(frame);
+      for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
+      {
+        var end = ranges.end(rangeIdx);
+        var start = ranges.start(rangeIdx);
+
+        if (this._direction == Direction.STOPPED) {
+          if (this._lastDirection == Direction.FORWARD) {
+            timeToEnd = end - currentTime;
+          }
+          else {
+            timeToEnd = currentTime - start;
+          }
+        }
+        else if (this._direction == Direction.FORWARD)
+        {
+          this._lastDirection = this._direction;
+          timeToEnd = end - currentTime;
+        }
+        else
+        {
+          this._lastDirection = this._direction;
+          timeToEnd = currentTime - start;
+        }
+      }
+      return (timeToEnd > appendThreshold ? "yes" : "more");
+    }
   }
 
   scrubBufferAvailable(frame)
@@ -3163,7 +3201,8 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Skip prefetch if the current frame is already in the buffer
     // If we're using onDemand, check that buffer. If we're using scrub, check that buffer too.
-    if (this.onDemandBufferAvailable(reqFrame) && reqFrame == this._dispFrame) {
+    const onDemandStatus = this.onDemandBufferAvailable(reqFrame);
+    if (onDemandStatus == "yes" && reqFrame == this._dispFrame) {
       return;
     }
     else if (this.videoBuffer(this.currentFrame(), "scrub") && this._play_idx == this._scrub_idx) {
@@ -3178,8 +3217,14 @@ export class VideoCanvas extends AnnotationCanvas {
       return;
     }
 
-    console.log("******* onDemandDownloadPrefetch");
-    if ('reset' in this._videoElement[this._play_idx].playBuffer())
+    console.log(`******* onDemandDownloadPrefetch STATUS=${onDemandStatus}`);
+    if (onDemandStatus == "more")
+    {
+      // In this case the on-demand buffer needs more data, but is otherwise in good shape.
+      this.onDemandDownload(true);
+      return;
+    }
+    else if (onDemandStatus == false && 'reset' in this._videoElement[this._play_idx].playBuffer())
     {
       console.info("Resetting buffer");
       this._videoElement[this._playIdx].playBuffer().reset();
@@ -3390,12 +3435,12 @@ export class VideoCanvas extends AnnotationCanvas {
           else if (this._direction == Direction.FORWARD)
           {
             this._lastDirection = this._direction;
-            var timeToEnd = end - currentTime;
+            timeToEnd = end - currentTime;
           }
           else
           {
             this._lastDirection = this._direction;
-            var timeToEnd = currentTime - start;
+            timeToEnd = currentTime - start;
           }
 
           if (currentTime <= end && currentTime >= start)
