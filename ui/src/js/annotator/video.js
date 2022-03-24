@@ -1636,6 +1636,12 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       else if (type == "onDemand")
       {
+        // Received the onDemand downloaded segments
+        if (that._onDemandId != e.data['id'])
+        {
+          console.warn(`On-Demand: Expected ${that._onDemandId} but got ${e.data['id']}`);
+          return;
+        }
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
@@ -3186,6 +3192,10 @@ export class VideoCanvas extends AnnotationCanvas {
 
   onDemandDownloadPrefetch(reqFrame)
   {
+    if (reqFrame == -1)
+    {
+      reqFrame = this._dispFrame;
+    }
     // This function can be called at anytime. If auto-download is disabled, then just stop
     // onDemand functionality completely
     if (this._disableAutoDownloads) {
@@ -3302,7 +3312,8 @@ export class VideoCanvas extends AnnotationCanvas {
     if (reqFrame == -1 || (timeToEnd < 15 && timeToAbsEnd >= 15))
     {
       console.info(`reqFrame == ${reqFrame}, ${timeToEnd}, ${timeToAbsEnd}`);
-      setTimeout(function() {
+      clearTimeout(this._restartOnDemandTimer);
+      this._restartOnDemandTimer = setTimeout(function() {
         restartOnDemand();
       },0);
     }

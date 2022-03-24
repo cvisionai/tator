@@ -839,6 +839,7 @@ export class AnnotationPlayer extends TatorElement {
     var last_check = performance.now();
     let check_ready = (checkFrame) => {
 
+      clearTimeout(this._handleNotReadyTimeout);
       if (this._videoStatus == "scrubbing") {
         console.log(`Player status == scrubbing | Cancelling check_ready`);
         return;

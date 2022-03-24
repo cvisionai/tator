@@ -9,8 +9,9 @@ export class VideoDownloader
     console.info(JSON.stringify(media_files));
     for (let idx = 0; idx < media_files.length; idx++)
     {
-      const second_chunk = 2;
-      const second_buffer = media_files[idx].bit_rate * second_chunk;
+      const bit_rate = (media_files[idx].bit_rate ? media_files[idx].bit_rate : 2000000);
+      const second_chunk = 16;
+      const second_buffer = bit_rate * second_chunk / 8;
       this._blockSizes.push(second_buffer);
       console.info(`VID_DOWNLOADER: ${idx}: ${media_files[idx].resolution} ${second_chunk} seconds of data = ${second_buffer} bytes or ${second_buffer/1024/1024} megabytes`);
     }
