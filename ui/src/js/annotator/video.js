@@ -2664,6 +2664,7 @@ export class VideoCanvas extends AnnotationCanvas {
       promise.then(() =>
         {
           this._pauseCb.forEach(cb => {cb(frameIdx);
+          document.body.style.cursor=null;
           resolve();
         });
       }).catch(error =>
@@ -3332,7 +3333,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       return;
     }
-    
+
     const video = this._videoElement[this._play_idx];
     const ranges = video.playBuffer().buffered;
     let currentFrame = this._dispFrame;
@@ -3907,6 +3908,7 @@ export class VideoCanvas extends AnnotationCanvas {
       var finalPromise = new Promise((resolve, reject) => {
         var seekPromise = this.seekFrame(this._dispFrame, this.drawFrame, true);
         seekPromise.then(() => {
+          document.body.style.cursor=null;
           resolve();
         }).catch(() => {
           resolve();
