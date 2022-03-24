@@ -3125,11 +3125,20 @@ export class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  //Calculate the appropriate appendThreshold
+  _calculateAppendThreshold()
+  {
+    // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
+    // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
+    const fps_swag = Math.max(1, 15 / this._fps);
+    return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
+  }
+
   // Calculate if the on-demand buffer is present and has sufficient runway to play.
   // Returns "yes", false, "more"
   onDemandBufferAvailable(frame)
   {
-    const appendThreshold = 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate));
+    const appendThreshold = this._calculateAppendThreshold();
     let video = this.videoBuffer(frame, "play", true);
     if (video == null)
     {
@@ -3403,7 +3412,7 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
-        const appendThreshold = 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)); // Only append up to the fastest on-demand rate (Defensive)
+        const appendThreshold = this._calculateAppendThreshold();
         var playbackReadyThreshold = appendThreshold;
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
