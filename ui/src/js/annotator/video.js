@@ -2909,7 +2909,7 @@ export class VideoCanvas extends AnnotationCanvas {
     var targetFPS = this._motionComp.targetFPS;
     let fps_msg = "";
     this._audioCheck++;
-    if (this._audioPlayer && this._audioCheck % AUDIO_CHECK_INTERVAL == 0)
+    if (this._audioEligible && this._audioPlayer && this._audioCheck % AUDIO_CHECK_INTERVAL == 0)
     {
       // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
       const audioDelta = (this.frameToAudioTime(this._dispFrame)-this._audioPlayer.currentTime) * 1000;
