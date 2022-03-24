@@ -640,16 +640,7 @@ export class TatorVideoDecoder {
   {
     // Fail-safe, if we have a frame start this is the start of a new buffer
     // and we need to clear everything we had.
-    if (data.frameStart != undefined)
-    {
-      this.reset().then(() => {
-      this.appendLatestBuffer(data, callback);
-      });
-    }
-    else
-    {
-      this.appendLatestBuffer(data, callback);
-    }
+    this.appendLatestBuffer(data, callback);
   }
 
   /**
