@@ -617,6 +617,7 @@ class TatorVideoBuffer {
 
   reset()
   {
+    console.info("RESETTING");
     this._mp4File = MP4Box.createFile();
     this._mp4File.onError = this._mp4OnError.bind(this);
     this._mp4File.onSamples = this._mp4Samples.bind(this);

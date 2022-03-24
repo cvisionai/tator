@@ -1664,6 +1664,8 @@ export class VideoCanvas extends AnnotationCanvas {
 
           var setupCallback = function() {
             console.log("******* restarting onDemand: Setting up new buffer");
+            clearTimeout(that._onDemandDownloadTimeout);
+            that._onDemandDownloadTimeout = null;
             if (that._ftypInfo[that._play_idx] == null) {
               // It's possible to get into a restart loop where this occurs before getting
               // the ftypInfo. Eventually the video download system will fill this in and
@@ -1685,7 +1687,7 @@ export class VideoCanvas extends AnnotationCanvas {
             that._playGenericOnDemand(that._direction)
           };
 
-          video.recreateOnDemandBuffers(setupCallback);
+          video.playBuffer().resetOnDemandBuffer().then(() => {(setupCallback);});
         }
 
         // Function used to apply the frame data to the onDemand buffer
@@ -3245,10 +3247,10 @@ export class VideoCanvas extends AnnotationCanvas {
       onDemandStatus = false;
     }
 
-    if (onDemandStatus == false && 'reset' in this._videoElement[this._play_idx].playBuffer())
+    if (onDemandStatus == false && 'reset' in this._videoElement[this._play_idx])
     {
       console.info("Resetting buffer");
-      this._videoElement[this._playIdx].playBuffer().reset();
+      this._videoElement[this._play_idx].reset();
     }
     this.stopPlayerThread();
     this.shutdownOnDemandDownload();
@@ -3266,12 +3268,20 @@ export class VideoCanvas extends AnnotationCanvas {
 
       console.log("******* restarting onDemand: Clearing old buffer");
       that.stopPlayerThread();
-
+      clearTimeout(that._onDemandDownloadTimeout);
+      that._onDemandDownloadTimeout = null;
       var video = that._videoElement[that._play_idx];
       if (that._ftypInfo[that._play_idx] == undefined) { return; }
 
+      if ('reset' in that._videoElement[that._play_idx])
+      {
+        console.info("REQUESTING RESET");
+        that._videoElement[that._play_idx].reset();
+      }
       var setupCallback = function() {
         console.log("******* restarting onDemand: Setting up new buffer");
+        clearTimeout(that._onDemandDownloadTimeout);
+        that._onDemandDownloadTimeout = null;
         var offsets2 = that._ftypInfo[that._play_idx]["offsets"];
         var data2 = that._ftypInfo[that._play_idx]["buffer"];
         var begin2 = offsets2[0][0];
@@ -3286,9 +3296,7 @@ export class VideoCanvas extends AnnotationCanvas {
         that._onDemandInitSent = false;
         that._onDemandPlaybackReady = false;
         that._onDemandFinished = false;
-        that._videoElement[that._play_idx].resetOnDemandBuffer().then(() => {
-          that.onDemandDownload(true);
-        })
+        setTimeout(() => {that.onDemandDownload(true)},0);
       };
 
       video.recreateOnDemandBuffers(setupCallback);

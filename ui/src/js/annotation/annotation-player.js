@@ -186,7 +186,7 @@ export class AnnotationPlayer extends TatorElement {
 
     // When a seek is complete check to make sure the display all set
     this._video.addEventListener("seekComplete", evt => {
-      clearTimeout(this._handleNotReadyTimeout)
+      clearTimeout(this._handleNotReadyTimeout);
       this._handleNotReadyTimeout = null;
       this.checkReady();
     });
@@ -840,6 +840,7 @@ export class AnnotationPlayer extends TatorElement {
     let check_ready = (checkFrame) => {
 
       clearTimeout(this._handleNotReadyTimeout);
+      this._handleNotReadyTimeout = null;
       if (this._videoStatus == "scrubbing") {
         console.log(`Player status == scrubbing | Cancelling check_ready`);
         return;
@@ -854,7 +855,7 @@ export class AnnotationPlayer extends TatorElement {
       console.info(`${now}: Timeout Counter ${timeoutCounter} LAST=${last_check}`);
       last_check = now;
 
-      this._handleNotReadyTimeout = null;
+      
       let not_ready = false;
       if (checkFrame != this._video.currentFrame()) {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._video.currentFrame()} do not match. restarting check_ready`)
