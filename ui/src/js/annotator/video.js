@@ -3841,10 +3841,6 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       clearTimeout(this._onDemandDownloadTimeout);
       this._onDemandDownloadTimeout=null;
-      console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: shutdown`);
-      this._dlWorker.postMessage({
-        "type": "onDemandShutdown"
-      });
     }
   }
 

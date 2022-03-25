@@ -787,6 +787,7 @@ onmessage = function(e)
   }
   else if (type == 'onDemandDownload')
   {
+    console.info(`${JSON.stringify(msg)} ${ref.inOnDemandMode()}`);
     if (ref.inOnDemandMode())
     {
       ref.downloadNextOnDemandBlock();
