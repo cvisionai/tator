@@ -218,10 +218,10 @@ class TatorVideoManager {
 
   _imageReady(image)
   {
-    //console.info(`${performance.now()}: GOT ${image.timestamp}`);
+    console.info(`${performance.now()}: GOT ${image.timestamp}`);
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
-    if (this._cursor_is_hot() || image.fastMode == true)
+    if (this._cursor_is_hot())
     {
       this._fastMode = image.fastMode;
       this._safeCall(this.oncanplay);
