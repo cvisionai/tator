@@ -1599,6 +1599,7 @@ export class VideoCanvas extends AnnotationCanvas {
         if (e.data["buf_idx"] == that._scrub_idx)
         {
           that._startBias = e.data["startBias"];
+          that._startBias += e.data["firstFrame"] / that._fps;
           that._videoVersion = e.data["version"];
           console.info(`Video has start bias of ${that._startBias} - buffer: ${that._scrub_idx}`);
           console.info("Setting hi performance mode");

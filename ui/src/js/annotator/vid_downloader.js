@@ -131,15 +131,31 @@ export class VideoDownloader
 
         }
         var startBias = 0.0;
+        var firstFrame = 0.0;
         if ('file' in data)
         {
           startBias = data.file.start;
+        }
+
+        // Find first frame number (not always 0!)
+        for (let idx = 0; idx < data.segments.length; idx++)
+        {
+          if (data.segments[idx].name == "moof")
+          {
+            firstFrame = data.segments[idx].frame_start;
+            break;
+          }
+        }
+        if (firstFrame != 0)
+        {
+          console.info("");
         }
 
         that._readyMessages.push(
           {
             "type": "ready",
             "startBias": startBias,
+            "firstFrame": firstFrame,
             "version": version,
             "buf_idx": buf_idx
           });
