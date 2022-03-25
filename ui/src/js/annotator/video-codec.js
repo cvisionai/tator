@@ -427,7 +427,7 @@ export class TatorVideoDecoder {
     this._buffer.onBuffered = () => {
       if (this.onBuffered)
       {
-        this._buffer.buffered.print(`${id} LATEST`);
+        //this._buffer.buffered.print(`${id} LATEST`);
         setTimeout(this.onBuffered,0);
       }
     };

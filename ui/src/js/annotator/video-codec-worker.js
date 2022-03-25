@@ -560,7 +560,7 @@ class TatorVideoBuffer {
     {
       if (seek_timestamp > this._bufferedRegions.start(idx) && seek_timestamp <= this._bufferedRegions.end(idx))
       {
-        console.info(`Found it, going in ${video_time} ${seek_timestamp} ${this._bufferedRegions.start(idx)} ${this._bufferedRegions.end(idx)}!`);
+        //console.info(`Found it, going in ${video_time} ${seek_timestamp} ${this._bufferedRegions.start(idx)} ${this._bufferedRegions.end(idx)}!`);
         this._lastSeek = performance.now();
 
         let keyframe_info = this._keyframes.closest_keyframe(seek_timestamp);
