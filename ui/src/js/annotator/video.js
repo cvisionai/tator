@@ -3508,46 +3508,11 @@ export class VideoCanvas extends AnnotationCanvas {
             }
 
             console.info(`TIME CHECK: ${timeToEnd} to ${appendThreshold}`);
-            if (timeToEnd < appendThreshold && this._onDemandPendingDownloads < 1)
+            if (timeToEnd < appendThreshold)
             {
               // Need to download more video playback data
               // Since we are requesting more data, trim the buffer
               needMoreData = true;
-
-              // #TODO This block of code is a candidate for removal, but it's here as defensive programming
-              //       if the user somehow gets into this state.
-              if (this._onDemandCompletedDownloads > this._onDemandDownloadCheck.lastDownloadCount &&
-                    !this._onDemandFinished &&
-                    ranges.length > 1 &&
-                    this._dispFrame == this._onDemandDownloadCheck.lastDispFrame) {
-
-                this._onDemandDownloadCheck.lastDownloadCount = this._onDemandCompletedDownloads;
-                if (end == this._onDemandDownloadCheck.lastEndTime && start == this._onDemandDownloadCheck.lastStartTime) {
-                  // Subsequent downloads are not increasing this range, which the current timet is a part of.
-                  // Restart the downloader.
-                  console.log("onDemand - fragmented data (matching range) - restarting downloader");
-
-                    for (let innerIdx = 0; innerIdx < ranges.length; innerIdx++) {
-                      video.deletePendingOnDemand([ranges.start(innerIdx), ranges.end(innerIdx)]);
-                    }
-
-                    video.resetOnDemandBuffer().then(() => {
-                      this._onDemandDownloadTimeout = setTimeout(() => {
-                        this._onDemandInit = false;
-                        this._onDemandInitSent = false;
-                        this._onDemandPlaybackReady = false;
-                        this._onDemandFinished = false;
-                        this.onDemandDownload()}, 50);
-                    });
-                    return;
-                }
-                this._onDemandDownloadCheck.lastEndTime = end;
-                this._onDemandDownloadCheck.lastStartTime = start;
-                this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
-                needMoreData = false;
-                break;
-              }
-              this._onDemandDownloadCheck.lastDispFrame = this._dispFrame;
             }
 
             // We can do GC even if we don't need more data.
