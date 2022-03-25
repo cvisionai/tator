@@ -38,9 +38,9 @@ export class SeekBar extends TatorElement {
     }
     this.bar.addEventListener("click", clickHandler);
 
-    var sendUpdate = (evt, evt_type) => {
-      // Only recalculate if it is an input, not a change
-      if (evt_type == "input")
+    var dragHandler=function(evt)
+    {
+      if (evt.button == 0)
       {
         var width = that.offsetWidth;
         if (width == 0)
@@ -53,30 +53,21 @@ export class SeekBar extends TatorElement {
         const percentage = Math.min(relativeX/width,
                                     that._loadedPercentage);
         that.value = Math.round((percentage * (that._max - that._min) + that._min));
-      }
-      that.dispatchEvent(
-        new CustomEvent(evt_type,
-                        {composed: true}));
-      evt.stopPropagation();
-      return false;
-    };
-    var dragHandler=function(evt)
-    {
-      if (evt.button == 0)
-      {
-        return sendUpdate(evt, "input");
+        evt.stopPropagation();
+        return false;
       }
       evt.cancelBubble=true;
       return false;
     }
     var releaseMouse=function(evt)
     {
-
+      clearInterval(that._periodicCheck);
       document.removeEventListener("mouseup",
                                    releaseMouse);
       document.removeEventListener("mousemove",
                                    dragHandler);
-      sendUpdate(evt, "change");
+      that.dispatchEvent(new CustomEvent("change",
+                                         {composed: true}));
       that.handle.classList.remove("range-handle-selected");
       // Add back in event handler next iteration (time=0)
       setTimeout(() =>
@@ -86,6 +77,15 @@ export class SeekBar extends TatorElement {
     }
     this.handle.addEventListener("mousedown", evt =>
                                  {
+                                   this._periodicCheck = setInterval(() =>
+                                     {
+                                     
+                                    this.dispatchEvent(
+                                      new CustomEvent("input",
+                                                      {composed: true,
+                                                      detail: {frame: this.value}}));
+                                     }
+                                    , 30);
                                    that.bar.removeEventListener("click", clickHandler);
                                    document.addEventListener("mouseup",
                                                              releaseMouse);

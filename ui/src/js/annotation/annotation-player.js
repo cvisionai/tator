@@ -138,7 +138,7 @@ export class AnnotationPlayer extends TatorElement {
 
     this._shortcutsDisabled = false;
 
-    this._scrubInterval = 250;
+    this._scrubInterval = 100;
     this._lastScrub = Date.now();
     this._rate = 1;
 
