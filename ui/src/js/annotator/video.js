@@ -3247,11 +3247,6 @@ export class VideoCanvas extends AnnotationCanvas {
       onDemandStatus = false;
     }
 
-    if (onDemandStatus == false && 'reset' in this._videoElement[this._play_idx])
-    {
-      console.info("Resetting buffer");
-      this._videoElement[this._play_idx].reset();
-    }
     this.stopPlayerThread();
     this.shutdownOnDemandDownload();
 
@@ -3273,11 +3268,6 @@ export class VideoCanvas extends AnnotationCanvas {
       var video = that._videoElement[that._play_idx];
       if (that._ftypInfo[that._play_idx] == undefined) { return; }
 
-      if ('reset' in that._videoElement[that._play_idx])
-      {
-        console.info("REQUESTING RESET");
-        that._videoElement[that._play_idx].reset();
-      }
       var setupCallback = function() {
         console.log("******* restarting onDemand: Setting up new buffer");
         clearTimeout(that._onDemandDownloadTimeout);
@@ -3299,7 +3289,7 @@ export class VideoCanvas extends AnnotationCanvas {
         setTimeout(() => {that.onDemandDownload(true)},0);
       };
 
-      video.recreateOnDemandBuffers(setupCallback);
+      video.recreateOnDemandBuffers(playCallback);
     }
 
     let timeToEnd = 0;

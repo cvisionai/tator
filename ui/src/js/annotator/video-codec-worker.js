@@ -628,6 +628,7 @@ class TatorVideoBuffer {
         this._mp4File.setExtractionOptions(info.tracks[0].id);
         this._mp4File.seek(0);
         this._mp4File.start();
+        this._pendingSeek = this._current_cursor;
         resolve();
       };
     });
