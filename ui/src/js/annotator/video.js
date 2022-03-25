@@ -1640,6 +1640,7 @@ export class VideoCanvas extends AnnotationCanvas {
         if (that._onDemandId != e.data['id'])
         {
           console.warn(`On-Demand: Expected ${that._onDemandId} but got ${e.data['id']}`);
+          this._onDemandPendingDownloads -= 1;
           return;
         }
         var idx = 0;
