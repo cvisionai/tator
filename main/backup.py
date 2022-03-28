@@ -134,6 +134,7 @@ class TatorBackupManager:
         :rtype: bool
         """
         success = True
+        retval = {}
         project = Project.objects.get(pk=int(project_id))
 
         # Get the `TatorStore` object that connects to live object storage
@@ -147,11 +148,13 @@ class TatorBackupManager:
                     exc_info=True,
                 )
             else:
-                TatorBackupManager.__project_stores[project_id] = {
-                    "store": store,
-                    "remote_name": project_id,
-                    "bucket_name": None,
-                }
+                retval.update(
+                    {
+                        "store": store,
+                        "remote_name": project_id,
+                        "bucket_name": None,
+                    }
+                )
 
         # Check the currently configured remotes for the current remote name
         remote_does_not_exist = project_id not in self._rpc("config/listremotes").get("remotes", [])
@@ -169,9 +172,7 @@ class TatorBackupManager:
                     exc_info=True,
                 )
             else:
-                TatorBackupManager.__project_stores[project_id][
-                    "bucket_name"
-                ] = backup_store.bucket_name
+                retval["bucket_name"] = backup_store.bucket_name
                 rclone_params = backup_store.rclone_params
                 remote_type = backup_store.remote_type
 
@@ -199,9 +200,9 @@ class TatorBackupManager:
         # If this was not completely successful, remove any parts that were so the first conditional
         # doesn't evaluate to `False` on subsequent attempts
         if not success:
-            TatorBackupManager.__project_stores.pop(project_id, None)
+            retval = {}
 
-        return success
+        return retval
 
     def backup_resource(self, resource) -> bool:
         """

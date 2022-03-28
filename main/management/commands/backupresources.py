@@ -30,7 +30,7 @@ class Command(BaseCommand):
             path = resource.path
 
             # Resource path looks like "org_id/proj_id/media_id/filename"
-            org_id, proj_id, media_id, filename = path.split("/")
+            proj_id, media_id = path.split("/")[1:3]
 
             if backup_mgr.backup_resource(resource):
                 num_resources_backed_up += 1
