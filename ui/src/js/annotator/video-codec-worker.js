@@ -515,8 +515,7 @@ class TatorVideoBuffer {
         postMessage({"type": "image",
                     "data": image,
                     "timestamp": timestamp,
-                    "seconds": timestamp/this._timescale,
-                    "fastMode": this._fastMode},
+                    "seconds": timestamp/this._timescale},
                     image);
       }
       else
@@ -546,14 +545,6 @@ class TatorVideoBuffer {
     if (informational)
     {
       return;
-    }
-    if ((performance.now() - this._lastSeek) < 100)
-    {
-      this._fastMode = true;
-    }
-    else
-    {
-      this._fastMode = false;
     }
     const seek_timestamp = video_time*this._timescale;
     for (let idx = 0; idx < this._bufferedRegions.length; idx++)

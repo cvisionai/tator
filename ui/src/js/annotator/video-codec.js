@@ -223,7 +223,6 @@ class TatorVideoManager {
     this._clean_hot();
     if (this._cursor_is_hot())
     {
-      this._fastMode = image.fastMode;
       this._safeCall(this.oncanplay);
     }
   }
@@ -261,8 +260,6 @@ class TatorVideoManager {
       this._hot_frames.delete(key);
     }
 
-    this._codec_worker.postMessage({"type": "hotFrames",
-                                     "hotFrames": [...this._hot_frames.keys()]});
     if (this._hot_frames.size > 20)
     {
       console.error("Garbage collection is not working!");
@@ -352,7 +349,7 @@ class TatorVideoManager {
   //        - Currently we use an 'ImageData' reference from the internal OffscreenCanvas data
   get codec_image_buffer()
   {
-    if (this._cursor_is_hot() || this._fastMode == true)
+    if (this._cursor_is_hot())
     {
       return this._closest_frame_to_cursor();
     }
