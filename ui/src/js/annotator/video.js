@@ -1,6 +1,7 @@
 import { AnnotationCanvas } from "./annotation.js";
 import { Utilities } from "../util/utilities.js";
 import { TatorVideoDecoder} from "./video-codec.js";
+import Hls, { HlsSkip } from "hls.js";
 
 // Video export class handles interactions between HTML presentation layer and the
 // javascript application.
@@ -623,6 +624,24 @@ export class VideoBufferDemux
     this._vidBuffers[0].src=videoUrl;
     this._vidBuffers[0].load();
     this._compat = true;
+  }
+
+  hls(playlistUrl)
+  {
+    this._hls = new Hls();
+
+    return new Promise((resolve) => {
+      this._hls.on(Hls.Events.MANIFEST_LOADING, () => {
+        console.info(`Parsed ${playlistUrl}`);
+        resolve();
+      });
+      this._hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+        this._hls.loadSource(playlistUrl);
+      });
+      this._hls.attachMedia(this._vidBuffers[0]);
+      
+      this._compat = true;
+    });
   }
 
   /**
@@ -1448,7 +1467,31 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     var that = this;
 
-    this._dlWorker = new Worker(new URL("./vid_downloader.js", import.meta.url));
+    if (streaming_files[0].hls)
+    {
+      this._videoElement[0].hls(streaming_files[0].hls).then(() => {
+        this.dispatchEvent(new CustomEvent("bufferLoaded",
+                                            {composed: true,
+                                            detail: {"percent_complete":1.00}
+                                            }));
+        this.dispatchEvent(new CustomEvent("playbackReady",
+                                          {composed: true,
+                                            detail: {playbackReadyId: this._waitId},
+                                            }));
+        this._onDemandPlaybackReady = true; // fake it
+        this.sendPlaybackReady();
+        // TODO get the real length...
+        const new_length =  1176*this._fps;
+        this.dispatchEvent(new CustomEvent("videoLengthChanged",
+                                          {composed: true,
+                                           detail: {length:new_length}}));
+      }); 
+      return;
+    }
+    else
+    {
+      this._dlWorker = new Worker(new URL("./vid_downloader.js", import.meta.url));
+    }
     this._scrubDownloadCount = 0;
 
     this._dlWorker.onmessage =
@@ -2092,8 +2135,9 @@ export class VideoCanvas extends AnnotationCanvas {
     console.log(`video buffer indexes: ${play_idx} ${scrub_idx} ${hq_idx}`);
 
     let construct_demuxer = (idx, resolution) => {
+      let use_hls = (videoObject.media_files.streaming[0].hls ? true : false);
       let searchParams = new URLSearchParams(window.location.search);
-      if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1)
+      if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1 || use_hls == true)
       {
         return new VideoBufferDemux();
       }
@@ -3874,7 +3918,10 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Let the downloader know the ondemand is paused.
     // Doesn't matter if the player was using the scrub buffer for playback
-    this._dlWorker.postMessage({"type": "onDemandPaused"});
+    if (this._dlWorker)
+    {
+      this._dlWorker.postMessage({"type": "onDemandPaused"});
+    }
 
     // If we weren't already paused send the event
     if (currentDirection != Direction.STOPPED)

@@ -184,6 +184,13 @@ export class AnnotationPlayer extends TatorElement {
       this._slider.onDemandLoaded(evt);
     });
 
+    this._video.addEventListener("videoLengthChanged", evt =>
+    {
+      this._slider.max = evt.detail.length;
+      this._totalTime.textContent = "/ " + this._frameToTime(evt.detail.length);
+      this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
+    });
+
     // When a seek is complete check to make sure the display all set
     this._video.addEventListener("seekComplete", evt => {
       clearTimeout(this._handleNotReadyTimeout);
