@@ -566,7 +566,7 @@ export class AnnotationPlayer extends TatorElement {
     const waitOk = now - this._lastScrub > this._scrubInterval;
     if (waitOk) {
 
-      this._videoStatus = "scrubbing";
+      this._videoStatus = "paused";
 
       this._play.setAttribute("is-paused","");
       this._video.stopPlayerThread();
@@ -599,7 +599,6 @@ export class AnnotationPlayer extends TatorElement {
       this._lastScrub = Date.now()
       this._video.onDemandDownloadPrefetch(frame);
       this._videoStatus = "paused";
-      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     });/*;.catch((e) => {
       console.error(`"ERROR: ${e}`)
@@ -801,7 +800,7 @@ export class AnnotationPlayer extends TatorElement {
 
   checkReady()
   {
-    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() != "yes")
     {
       this.handleNotReadyEvent();
     }
@@ -841,10 +840,7 @@ export class AnnotationPlayer extends TatorElement {
 
       clearTimeout(this._handleNotReadyTimeout);
       this._handleNotReadyTimeout = null;
-      if (this._videoStatus == "scrubbing") {
-        console.log(`Player status == scrubbing | Cancelling check_ready`);
-        return;
-      }
+
       if (this._videoStatus == "playing") {
         console.error(`Player status == playing | Cancelling check_ready`);
         return;
@@ -866,7 +862,7 @@ export class AnnotationPlayer extends TatorElement {
           check_ready(this._video.currentFrame())}, 100);
         return;
       }
-      if (this._video._onDemandPlaybackReady != true)
+      if (this._video.onDemandBufferAvailable() != "yes")
       {
         not_ready = true;
         if (timeoutCounter >= timeouts[timeoutIndex]) {
@@ -936,7 +932,7 @@ export class AnnotationPlayer extends TatorElement {
     }
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
-    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
+    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() != "yes")
     {
       this.handleNotReadyEvent();
       return;

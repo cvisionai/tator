@@ -3153,6 +3153,10 @@ export class VideoCanvas extends AnnotationCanvas {
   // Returns "yes", false, "more"
   onDemandBufferAvailable(frame)
   {
+    if (frame == undefined)
+    {
+      frame = this._dispFrame;
+    }
     const appendThreshold = this._calculateAppendThreshold();
     let video = this.videoBuffer(frame, "play", true);
     if (video == null)
