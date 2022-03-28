@@ -164,6 +164,7 @@ export class AnnotationPage extends TatorPage {
                !('streaming' in data.media_files) &&
                !('layout' in data.media_files) &&
                !('image' in data.media_files) &&
+               !('concat' in data.media_files) &&
                !('live' in data.media_files)))
           {
             this._loading.style.display = "none";
