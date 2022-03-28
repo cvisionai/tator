@@ -9,6 +9,7 @@ import datetime
 import random
 import time
 import socket
+import re
 
 from kubernetes.client import Configuration
 from kubernetes.client import ApiClient
@@ -34,6 +35,16 @@ if os.getenv('REQUIRE_HTTPS') == 'TRUE':
     PROTO = 'https://'
 else:
     PROTO = 'http://'
+
+def _transcode_name(project, media_name, media_id=None):
+    """ Generates name of transcode workflow.
+    """
+    slug_name = re.sub('[^0-9a-zA-Z.]+', '-', media_name).lower()
+    if media_id:
+        out = f"transcode-project-{project}-media-{media_id}-name-{slug_name}-"
+    else:
+        out = f"transcode-project-{project}-name-{slug_name}-"
+    return out
 
 def _select_storage_class():
     """ Randomly selects a workflow storage class.
@@ -788,7 +799,7 @@ class TatorTranscode(JobManagerMixin):
             'apiVersion': 'argoproj.io/v1alpha1',
             'kind': 'Workflow',
             'metadata': {
-                'generateName': 'transcode-workflow-',
+                'generateName': _transcode_name(project, name),
                 'labels': {
                     'job_type': 'upload',
                     'project': str(project),
@@ -906,7 +917,7 @@ class TatorTranscode(JobManagerMixin):
             'apiVersion': 'argoproj.io/v1alpha1',
             'kind': 'Workflow',
             'metadata': {
-                'generateName': 'transcode-workflow-',
+                'generateName': _transcode_name(project, name, media_id),
                 'labels': {
                     'job_type': 'upload',
                     'project': str(project),
