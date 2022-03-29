@@ -164,6 +164,18 @@ server {
     {{- end }}
     {{- end }}
   }
+  location /minio {
+    auth_request /auth-admin;
+    proxy_pass http://tator-minio:9000;
+    proxy_redirect off;
+    proxy_buffering off;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header Connection "Keep-Alive";
+    proxy_set_header Proxy-Connection "Keep-Alive";
+  }
   {{- end }}
   {{- if .Values.kibana.enabled }}
   location /logs/ {
