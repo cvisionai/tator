@@ -9,7 +9,7 @@ data:
   artifactRepository: |
     archiveLogs: true
     s3:
-      endpoint: tator-minio:9000
+      endpoint: tator-minio.default.svc.cluster.local:9000
       bucket: tator
       region: us-east-2
       insecure: true

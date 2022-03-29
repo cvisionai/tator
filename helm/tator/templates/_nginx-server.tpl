@@ -177,6 +177,18 @@ server {
     proxy_set_header Proxy-Connection "Keep-Alive";
   }
   {{- end }}
+  location /argo/ {
+    auth_request /auth-admin;
+    proxy_pass http://argo-server.argo.svc.cluster.local:2746/;
+    proxy_redirect off;
+    proxy_buffering off;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header Connection "Keep-Alive";
+    proxy_set_header Proxy-Connection "Keep-Alive";
+  }
   {{- if .Values.kibana.enabled }}
   location /logs/ {
     auth_request /auth-admin;

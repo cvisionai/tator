@@ -110,7 +110,8 @@ kubectl label nodes --overwrite --all cpuWorker=yes webServer=yes dbServer=yes
 echo "Setting up argo."
 kubectl create namespace argo --dry-run=client -o yaml | kubectl apply -f - \
     && kubectl apply -n argo -f $ARGO_MANIFEST_URL \
-    && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
+    && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml \
+    && kubectl apply -n argo -f argo/argo-server.yaml
 curl -sLO $ARGO_CLIENT_URL \
     && gunzip argo-linux-amd64.gz \
     && chmod +x argo-linux-amd64 \
