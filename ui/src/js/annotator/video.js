@@ -2146,7 +2146,8 @@ export class VideoCanvas extends AnnotationCanvas {
         let p = new TatorVideoDecoder(resolution);
         if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
         {
-          p.playBuffer().summaryLevel = 30;
+          // @TODO get this value from somewhere
+          p.playBuffer().summaryLevel = 15;
         }
         if (idx == this._play_idx)
         {
@@ -2561,6 +2562,16 @@ export class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
+          if (video.summaryLevel)
+          {
+            frame = that.timeToFrame(video.currentTime);
+            if (frame == that._lastSummaryFrame)
+            {
+              return;
+            }
+            that._lastSummaryFrame = frame;
+          }
+
           clearTimeout(that._seek_expire);
           that._seek_expire = null;
           // if we are masked, take it off

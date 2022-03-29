@@ -657,7 +657,7 @@ export class TatorVideoDecoder {
    */
   appendOnDemandBuffer(data, callback, force)
   {
-    console.info(`${JSON.stringify(data)}`);
+    //console.info(`${JSON.stringify(data)}`);
     // Fail-safe, if we have a frame start this is the start of a new buffer
     // and we need to clear everything we had.
     this.appendLatestBuffer(data, callback);
