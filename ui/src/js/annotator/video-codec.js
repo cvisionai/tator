@@ -305,13 +305,34 @@ class TatorVideoManager {
       return;
     }
     
-    
-    // Keep worker and manager up to date.
-    this._current_cursor = video_time;
+    // If we are approximating seeking, we should land on the nearest buffered time
+    if (this.summaryLevel)
+    {
+      const approx = Math.floor(video_time / this.summaryLevel)*this.summaryLevel;
+      for (let idx = 0; idx < this.buffered.length; idx++)
+      {
+        if (approx >= this.buffered.start(idx) && approx < this.buffered.end(idx))
+        {
+          this._current_cursor = approx;
+          break;
+        }
+        else if (Math.abs(approx - this.buffered.start(idx)) < this.summaryLevel)
+        {
+          this._current_cursor = this.buffered.start(idx);
+          break;
+        }
+      }
+      console.info(`${this._name}: SUMMARIZING ${video_time} to ${this._current_cursor} via ${this.summaryLevel}`);
+    }
+    else
+    {
+      // Keep worker and manager up to date.
+      this._current_cursor = video_time;
+    }
     const is_hot = this._cursor_is_hot();
     this._codec_worker.postMessage(
       {"type": "currentTime",
-       "currentTime": video_time,
+       "currentTime": this._current_cursor,
        "informational": is_hot
     });
     if (is_hot)

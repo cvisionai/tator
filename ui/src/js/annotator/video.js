@@ -2144,6 +2144,10 @@ export class VideoCanvas extends AnnotationCanvas {
       else
       {
         let p = new TatorVideoDecoder(resolution);
+        if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
+        {
+          p.playBuffer().summaryLevel = 30;
+        }
         if (idx == this._play_idx)
         {
           p.onBuffered = () => {
@@ -2581,6 +2585,7 @@ export class VideoCanvas extends AnnotationCanvas {
             console.warn("Image buffered cleared itself before we could use it.");
             return;
           }
+          
           callback(frame, image_buffer, that._dims[0], that._dims[1]);
           that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
@@ -2634,7 +2639,7 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._videoElement[this._play_idx].playBuffer().use_codec_buffer && 
         video != this._videoElement[this._play_idx].playBuffer())
     {
-      this._videoElement[this._play_idx].playBuffer().currentTime = time;
+      this._videoElement[this._play_idx].playBuffer().currentTime = video.currentTime;
     }
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
