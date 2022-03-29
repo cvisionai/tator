@@ -1481,10 +1481,10 @@ export class VideoCanvas extends AnnotationCanvas {
         this._onDemandPlaybackReady = true; // fake it
         this.sendPlaybackReady();
         // TODO get the real length...
-        const new_length =  1176*this._fps;
-        this.dispatchEvent(new CustomEvent("videoLengthChanged",
-                                          {composed: true,
-                                           detail: {length:new_length}}));
+        //const new_length =  1176*this._fps;
+        //this.dispatchEvent(new CustomEvent("videoLengthChanged",
+        //                                  {composed: true,
+         //                                  detail: {length:new_length}}));
       }); 
       return;
     }
