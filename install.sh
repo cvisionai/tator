@@ -7,8 +7,8 @@ set -e
 BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
 GIT_REVISION=$(git rev-parse HEAD)
 KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.19.13/bin/linux/amd64/kubectl"
-ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz"
-ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml"
+ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/argo-linux-amd64.gz"
+ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v3.3.1/manifests/install.yaml"
 
 # Install snaps.
 sudo snap install helm --classic
