@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 ARCHIVE_KEY = "archive"
+MEDIA_ID_KEY = "media_id"
 PATH_KEYS = ["streaming", "archival", "audio", "image"]
 
 
@@ -225,6 +226,10 @@ class TatorStorage(ABC):
     def _put_archive_tag(self, path):
         """Adds tag to object marking it for archival."""
 
+    @abstractmethod
+    def put_media_id_tag(self, path):
+        """Adds tag to object indicating its associated media ID."""
+
     def archive_object(self, path: str) -> bool:
         """
         Moves the object to the archive storage class, if necessary. Returns true if the storage
@@ -400,6 +405,13 @@ class MinIOStorage(TatorStorage):
             Tagging={"TagSet": [{"Key": ARCHIVE_KEY, "Value": "true"}]},
         )
 
+    def put_media_id_tag(self, path, media_id):
+        self.client.put_object_tagging(
+            Bucket=self.bucket_name,
+            Key=self._path_to_key(path),
+            Tagging={"TagSet": [{"Key": MEDIA_ID_KEY, "Value": str(media_id)}]},
+        )
+
     def _head_object(self, path):
         return self.client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
@@ -559,6 +571,9 @@ class GCPStorage(TatorStorage):
         blob = self._get_blob(path)
         blob.custom_time = datetime.now()
         blob.patch()
+
+    def put_media_id_tag(self, path):
+        pass # TODO: implement this
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(
