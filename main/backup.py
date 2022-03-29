@@ -9,11 +9,12 @@ from main.store import get_tator_store
 
 
 logger = logging.getLogger(__name__)
+LIVE_STORAGE_CLASS = "STANDARD"
 
 
 """
 The following license applies to the code adapted from the python wrapper example found at
-https://github.com/rclone/rclone/blob/master/librclone/python/rclone.py
+https://github.com/rclone/rclone/blob/286b152e7b6d5fa94d6f30bebda07be92feea14e/librclone/python/rclone.py
 
 -------------------------------------------------------------------------------------------
 
@@ -122,118 +123,134 @@ class TatorBackupManager:
             raise RcloneException(output, status)
         return output
 
-    def _add_project(self, project_id: str) -> bool:
+    def _get_bucket_info(self, project, store_types) -> dict:
         """
-        Adds the given project to the backup manager, if necessary. This requries two steps:
+        Sets (if necessary) and returns the necessary objects for interacting with the bucket of the
+        given store type for the given project.
 
-        1. Add the `TatorStore` object for the live bucket
-        3. Add the backup bucket to the Rclone configuration
-
-        :param project_id: The id of the project to add to the backup manager
-        :type project_id: str
-        :rtype: bool
+        :param project: The project whose bucket objects shall be returned.
+        :type project: main.models.Project
+        :param store_types: The types of buckets, valid values in ["live", "backup"]
+        :type store_types: List[str]
+        :rtype: dict
         """
-        success = True
-        retval = {}
-        project = Project.objects.get(pk=int(project_id))
+        failed = False
+        project_id = project.id
 
-        # Get the `TatorStore` object that connects to live object storage
         if project_id not in TatorBackupManager.__project_stores:
-            try:
-                store = get_tator_store(project.get_bucket())
-            except:
-                success = False
-                logger.error(
-                    f"Could not get TatorStore for project {project_id}'s live bucket!",
-                    exc_info=True,
-                )
-            else:
-                retval.update(
-                    {
-                        "store": store,
-                        "remote_name": project_id,
-                        "bucket_name": None,
-                    }
-                )
-
-        # Check the currently configured remotes for the current remote name
-        remote_does_not_exist = project_id not in self._rpc("config/listremotes").get("remotes", [])
-
-        if success and remote_does_not_exist:
-            backup_bucket = project.get_bucket(backup=True)
-            get_backup_store = backup_bucket is None
-
-            try:
-                backup_store = get_tator_store(bucket=backup_bucket, backup=get_backup_store)
-            except:
-                success = False
-                logger.error(
-                    f"Could not get TatorStore for project {project_id}'s backup bucket!",
-                    exc_info=True,
-                )
-            else:
-                retval["bucket_name"] = backup_store.bucket_name
-                rclone_params = backup_store.rclone_params
-                remote_type = backup_store.remote_type
-
-            if success:
-                if remote_type not in ["s3"]:
-                    raise ValueError(
-                        f"Cannot add backup bucket {bucket_name}, it is an unsupported type: "
-                        f"'{remote_type}'"
-                    )
+            TatorBackupManager.__project_stores[project_id] = {}
+            # Get the `TatorStore` object that connects to object storage for the given type
+            for store_type in store_types:
+                is_backup = store_type == "backup"
+                project_bucket = project.get_bucket(backup=is_backup)
+                use_default_bucket = project_bucket is None
                 try:
-                    result = self._rpc(
-                        "config/create",
-                        name=project_id,
-                        type=remote_type,
-                        parameters=rclone_params,
-                    )
+                    store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
                 except:
-                    success = False
+                    failed = True
                     logger.error(
-                        f"Failed to create remote config for backup bucket {bucket_name} on "
-                        f"project {project_id}",
+                        f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
                         exc_info=True,
                     )
+                else:
+                    TatorBackupManager.__project_stores[project_id][store_type] = {
+                        "store": store,
+                        "remote_name": f"{project_id}_{store_type}",
+                        "bucket_name": store.bucket_name,
+                    }
 
-        # If this was not completely successful, remove any parts that were so the first conditional
-        # doesn't evaluate to `False` on subsequent attempts
-        if not success:
-            retval = {}
+            if failed:
+                TatorBackupManager.__project_stores.pop(project_id, None)
 
-        return retval
+        return {
+            st: TatorBackupManager.__project_stores.get(project_id, {}).get(st)
+            for st in store_types
+        }
 
-    def backup_resource(self, resource) -> bool:
+    def _create_rclone_remote(self, remote_name, bucket_name, remote_type, rclone_params):
+        if remote_type not in ["s3"]:
+            raise ValueError(
+                f"Cannot add backup bucket {bucket_name}, it is an unsupported type: "
+                f"'{remote_type}'"
+            )
+        if remote_name not in self._rpc("config/listremotes").get("remotes", []):
+            self._rpc("config/create", name=remote_name, type=remote_type, parameters=rclone_params)
+
+    def _get_store_info(self, project) -> bool:
         """
-        Copies the given resource from the live store to the backup store. Returns True if the
-        operation was successful or if the object was already backed up, otherwise False
+        Adds the given project to the backup manager, if necessary, and returns the information
+        about all associated data stores. This requries four steps:
 
-        :param resource: The resource to back up
-        :type path: main.models.Resource
+        1. Add the `TatorStore` object for the live bucket
+        2. Add the `TatorStore` object for the backup bucket
+        3. Add the live bucket to the Rclone configuration
+        4. Add the backup bucket to the Rclone configuration
+
+        These steps are idempotent and if a project has already been added to the backup manager it
+        will return the existing configuration.
+
+        :param project: The project to add to the backup manager
+        :type project: main.models.Project
         :rtype: bool
         """
         success = True
-        path = resource.path
-        org_id, proj_id, media_id, filename = path.split("/")
         try:
-            store_info = TatorBackupManager.__project_stores.setdefault(
-                proj_id, self._add_project(proj_id)
-            )
+            store_info = self._get_bucket_info(project, ["live", "backup"])
         except:
-            logger.warning(f"Failed to get store info for project '{proj_id}'", exc_info=True)
+            store_info = {}
             success = False
 
+        if success and store_info:
+            for st, bucket_info in store_info.items():
+                try:
+                    self._create_rclone_remote(
+                        bucket_info["remote_name"],
+                        bucket_info["bucket_name"],
+                        bucket_info["store"].remote_type,
+                        bucket_info["store"].rclone_params,
+                    )
+                except:
+                    logger.error(
+                        f"Failed to create remote config for bucket {bucket_name} in project {project.id}",
+                        exc_info=True,
+                    )
+                    success = False
+        else:
+            logger.warning(f"Failed to get bucket info for project '{project.id}'", exc_info=True)
+
+        return success, store_info
+
+    def backup_resource(self, path, project) -> bool:
+        """
+        Copies the given resource from the live store to the backup store for the given project.
+        Returns True if the operation was successful or if the object was already backed up,
+        otherwise False. After running this, the `backed_up` field for the associated resource
+        should be set to the returned value.
+
+        :param path: The resource to back up
+        :type path: str
+        :param project: The project that the resource belongs to
+        :type project: main.models.Project
+        :rtype: bool
+        """
+        success, store_info = self._get_store_info(project)
+
         if success:
+            if store_info["backup"]["store"].check_key(path):
+                logger.info(f"Resource {path} already backed up")
+                return success
+
             # Get presigned url from the live bucket
-            download_url = store_info["store"].get_download_url(path, 3600)  # set to expire in 1h
+            download_url = store_info["live"]["store"].get_download_url(
+                path, 3600
+            )  # set to expire in 1h
 
             # Perform the actual copy operation directly from the presigned url
             try:
                 self._rpc(
                     "operations/copyurl",
-                    fs=f"{store_info['remote_name']}:",
-                    remote=f"{store_info['bucket_name']}/{path}",
+                    fs=f"{store_info['backup']['remote_name']}:",
+                    remote=f"{store_info['backup']['bucket_name']}/{path}",
                     url=download_url,
                 )
             except:
@@ -244,7 +261,121 @@ class TatorBackupManager:
                 )
             else:
                 logger.info(f"Successfully backed up '{path}'")
+
+        return success
+
+    def request_restore_resource(self, path, project, min_exp_days) -> bool:
+        """
+        Requests restoration of an object from the backup bucket
+
+        :param path: The resource to restore
+        :type path: str
+        :param project: The project that the resource belongs to
+        :type project: main.models.Project
+        :param min_exp_days: How long the resource should remain restored in the backup bucket
+        :type min_exp_days: int
+        :rtype: bool
+        """
+        success, store_info = self._get_store_info(project)
+
+        if success:
+            backup_store = store_info["backup"]["store"]
+            response = backup_store.head_object(path)
+            if not response:
+                logger.warning(f"Object {path} not found, skipping")
+                return success
+            if response.get("StorageClass", LIVE_STORAGE_CLASS) == LIVE_STORAGE_CLASS:
+                logger.info(f"Object {path} already live, skipping")
+                return success
+            if "ongoing-request=" in response.get("Restore", ""):
+                logger.info(f"Object {path} has an ongoing restoration request, skipping")
+                return success
+
+            try:
+                backup_store.restore_object(path, LIVE_STORAGE_CLASS, min_exp_days)
+            except:
+                logger.warning(
+                    f"Exception while requesting restoration of object {path}", exc_info=True
+                )
+                success = False
+
+        if success:
+            response = backup_store.head_object(path)
+            if not response:
+                logger.warning(f"Could not confirm restoration request status for {path}")
+                success = False
+            elif response.get("StorageClass", LIVE_STORAGE_CLASS) == LIVE_STORAGE_CLASS:
+                logger.info(f"Object {path} live")
+            elif "ongoing-request" in response.get("Restore", ""):
+                logger.info(f"Request to restore object {path} successful")
+            else:
+                logger.warning(f"Request to restore object {path} failed")
+                success = False
+
+        return success
+
+    def finish_restore_resource(self, path, project) -> bool:
+        """
+        Copies the resource from the backup bucket to the live bucket once it has been temporarily
+        restored.
+
+        :param path: The resource to restore
+        :type path: str
+        :param project: The project that the resource belongs to
+        :type project: main.models.Project
+        :rtype: bool
+        """
+        success, store_info = self._get_store_info(project)
+
+        if success:
+            backup_store = store_info["backup"]["store"]
+            response = backup_store.head_object(path)
+            if not response:
+                logger.warning(f"Object {path} not found, skipping")
+                return success
+
+            request_state = response.get("Restore", "")
+            if 'ongoing-request="true"' in request_state:
+                # There is an ongoing request and the object is not ready to be permanently restored
+                logger.info(f"Object {path} not in standard access yet, skipping")
+                success = False
+            elif response.get("StorageClass", LIVE_STORAGE_CLASS) != LIVE_STORAGE_CLASS:
+                logger.info(f"Object {path} not in the expected storage class")
+                success = False
+
+        if success:
+            # Get presigned url from the backup bucket
+            download_url = backup_store.get_download_url(path, 3600)  # set to expire in 1h
+
+            # Perform the actual copy operation directly from the presigned url
+            try:
+                self._rpc(
+                    "operations/copyurl",
+                    fs=f"{store_info['live']['remote_name']}:",
+                    remote=f"{store_info['live']['bucket_name']}/{path}",
+                    url=download_url,
+                )
+            except:
+                success = False
+                logger.error(
+                    f"Restoring resource '{path}' with presigned url {download_url} failed",
+                    exc_info=True,
+                )
+            else:
+                logger.info(f"Successfully backed up '{path}'")
                 resource.backed_up = True
                 resource.save()
+
+        if success:
+            live_store = store_info["live"]["store"]
+            response = live_store.head_object(path)
+            if not response:
+                logger.warning(f"Could not check the restoration state for {path}")
+                success = False
+            elif response.get("StorageClass", LIVE_STORAGE_CLASS) != LIVE_STORAGE_CLASS:
+                logger.warning(f"Storage class not changed for object {path}")
+                success = False
+            else:
+                logger.info(f"Object {path} successfully restored: {response}")
 
         return success

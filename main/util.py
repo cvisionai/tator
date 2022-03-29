@@ -760,9 +760,8 @@ def update_media_archive_state(
     # If there are no media files, consider the noop update attempt successful
     n_successes = 0
     update_success = True
-    if media.media_files:
-        for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
-            update_success = update_success and update_operator(path, **op_kwargs)
+    for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
+        update_success = update_success and update_operator(path, **op_kwargs)
 
     if update_success:
         n_successes = 1

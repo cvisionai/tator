@@ -4,6 +4,7 @@ from typing import Iterable
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from main.backup import TatorBackupManager
 from main.models import Affiliation, Project, Resource, User
@@ -24,21 +25,25 @@ class Command(BaseCommand):
             return
 
         backup_mgr = TatorBackupManager()
-        num_resources_backed_up = 0
         failed_backups = defaultdict(set)
+        successful_backups = set()
         for resource in resource_qs.iterator():
             path = resource.path
 
             # Resource path looks like "org_id/proj_id/media_id/filename"
             proj_id, media_id = path.split("/")[1:3]
 
-            if backup_mgr.backup_resource(resource):
-                num_resources_backed_up += 1
+            if backup_mgr.backup_resource(path, Project.objects.get(pk=proj_id)):
+                successful_backups.add(resource.id)
             else:
                 failed_backups[proj_id].add(media_id)
 
+        with transaction.atomic():
+            resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+            resource_qs.update(backed_up=True)
+
         logger.info(
-            f"Backed up {num_resources_backed_up} of {total_to_back_up} resources needing backup!"
+            f"Backed up {len(successful_backups)} of {total_to_back_up} resources needing backup!"
         )
 
         if failed_backups:
