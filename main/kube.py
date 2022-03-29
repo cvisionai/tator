@@ -1086,12 +1086,12 @@ class TatorAlgorithm(JobManagerMixin):
         }
         manifest['metadata']['annotations'] = {
             **manifest['metadata']['annotations'],
-            'generateName': _algo_name(self.alg.id, project, user, self.alg.name),
-            'name': _algo_name(self.alg.id, project, user, self.alg.name)[:-1],
             'sections': sections,
             'media_ids': media_ids,
+            'name': self.alg.name,
         }
 
+        manifest['metadata']['generateName'] = _algo_name(self.alg.id, project, user, self.alg.name)
         response = self.create_workflow(manifest)
 
         # Cache the job for cancellation/authentication.
