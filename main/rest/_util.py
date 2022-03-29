@@ -1,6 +1,7 @@
 import datetime
 from itertools import islice
 import logging
+from urllib.parse import urlparse
 
 from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
@@ -150,3 +151,26 @@ def check_file_resource_prefix(prefix, obj):
         raise PermissionDenied("Prefix does not match expected files location!")
     if obj_id != int(parts[3]):
         raise PermissionDenied("Prefix does not match expected object!")
+
+def url_to_key(url, project_obj):
+    """ Checks if URL corresponds to a presigned URL on a Tator upload bucket.
+        If yes, returns an object key, otherwise returns `None`.
+    """
+    parsed = urlparse(url)
+    tokens = parsed.path.split('/')
+    path = None
+    bucket = None
+    upload = False
+    if len(tokens) > 4:
+        # First assume this is a presigned url for S3. Parse
+        # out the object key and get object size via S3 api.
+        num_tokens = 4
+        bucket = project_obj.bucket
+        if len(tokens) > 6:
+            if tokens[-6] == '_uploads':
+                num_tokens = 6
+                bucket = project_obj.get_bucket(upload=True)
+                upload = True
+        path = '/'.join(parsed.path.split('/')[-num_tokens:])
+    return path, bucket, upload
+
