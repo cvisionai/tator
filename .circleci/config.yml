@@ -79,7 +79,10 @@ jobs:
         command: git submodule update --init
     - run:
         name: Clone source on lightsail
-        command: ssh lightsail CIRCLE_BRANCH=$CIRCLE_BRANCH 'git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator'
+        command: |
+          echo $CIRCLE_BRANCH;
+          env;
+          ssh lightsail CIRCLE_BRANCH=$CIRCLE_BRANCH 'git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator';
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'
