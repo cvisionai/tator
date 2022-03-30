@@ -3,18 +3,6 @@ orbs:
   node: circleci/node@4.5.1
   slack: circleci/slack@4.4.2
 jobs:
-  test-lightsail-install:
-    machine:
-      image: ubuntu-2004:202010-01
-    steps:
-    - checkout
-    - run:
-        name: Setup lightsail instance
-        command: ./scripts/lightsail.sh
-    - run:
-        name: Cleanup lightsail instance
-        command: ./scripts/lightsail_cleanup.sh
-        when: always
   build-docker-images:
     machine:
       image: ubuntu-2004:202010-01
@@ -84,25 +72,43 @@ jobs:
     steps:
     - checkout
     - run:
+        name: Setup lightsail instance
+        command: ./scripts/lightsail.sh
+    - run:
         name: Clone submodules
         command: git submodule update --init
     - run:
+        name: Copy source
+        command: scp -r /home/circleci/tator lightsail:/home/ubuntu
+    - run:
         name: Install Tator
-        command: ./install.sh 
+        command: ssh lightsail 'cd tator && ./install.sh'
+    - run:
+        name: Copy whl
+        command: scp -r lightsail:/tmp/tator_py_whl /tmp
     - store_artifacts:
         path: /tmp/tator_py_whl
         destination: tator_py_whl
     - run:
         name: Initialize REST tests
-        command: make testinit
+        command: ssh lightsail 'cd tator && make testinit'
     - run:
         name: Run REST tests
-        command: make test
+        command: ssh lightsail 'cd tator && make test'
+    - run:
+        name: Install front end test dependencies
+        command: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install ./google-chrome-stable_current_amd64.deb
+          sudo apt install tesseract-ocr
+          pip3 install playwright pytest-playwright==0.1.2 pytesseract opencv-python
+          export PATH=$PATH:$HOME/.local/bin:/snap/bin
+          playwright install
     - run:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          pytest test --base-url=http://$TATOR_UNIT_TEST_HOST_IP --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          pytest test --base-url=http://$(cat ~/ip_address.txt) --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -110,26 +116,20 @@ jobs:
         name: Copy test directories
         command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
     - run:
-        name: Find gunicorn pod
-        command: echo "export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')" >> $BASH_ENV
-    - run:
-        name: Create API token
-        command: echo "export TOKEN=$(echo $(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command='from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)') | tr -d '^@\r\000')" >> $BASH_ENV
+        name: Get API token
+        command: curl -d '{username: "admin", password: "admin", refresh: true}' -H 'Content-Type: application/json' http://$(cat ~/ip_address.txt)/rest/Token | jq '.token' > ~/token.txt
     - run:
         name: Run tator-py tests
-        command: pytest tatorpy_test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN -s --keep
+        command: pytest tatorpy_test --host=http://$(cat ~/ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+    - run:
+        name: Cleanup lightsail instance
+        command: ./scripts/lightsail_cleanup.sh
+        when: always
 workflows:
   version: 2
-  main-workflow:
+  build-and-test:
     jobs:
-    - test-lightsail-install:
-        context: cvisionai
-        filters:
-          tags:
-            only: /.*/
     - build-docker-images:
-        requires:
-        - test-lightsail-install
         context: cvisionai
         filters:
           tags:
