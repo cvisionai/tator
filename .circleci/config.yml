@@ -79,7 +79,7 @@ jobs:
         command: git submodule update --init
     - run:
         name: Copy source
-        command: scp -r /home/circleci/tator lightsail:/home/ubuntu
+        command: scp -r $(pwd) lightsail:/home/ubuntu
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'
