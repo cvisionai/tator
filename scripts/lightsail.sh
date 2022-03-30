@@ -2,12 +2,8 @@
 
 # Sets up a lightsail instance.
 
-# Get AWS CLI
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-
 # Create lightsail instance
+echo "Creating lightsail instance..."
 GIT_VERSION=$(git rev-parse HEAD)
 aws lightsail create-instances \
   --instance-names tator-ci-$GIT_VERSION \
@@ -16,6 +12,7 @@ aws lightsail create-instances \
   --bundle-id 2xlarge_2_0
 
 # Configure SSH
+echo "Configuring ssh..."
 aws lightsail download-default-key-pair \
   | jq '.privateKeyBase64' \
   | xargs printf '%b\n' \
@@ -32,6 +29,9 @@ Host lightsail
   Port 22
   IdentityFile /home/$USER/.ssh/lightsail.pem
 EOT
+echo "Contents of ssh config:"
+cat ~/.ssh/config
 sudo chmod 600 ~/.ssh/config
 sudo chmod 400 ~/.ssh/lightsail.pem
+echo "Testing ssh connection with ifconfig..."
 ssh lightsail 'ifconfig'
