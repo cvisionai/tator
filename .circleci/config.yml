@@ -78,8 +78,10 @@ jobs:
         name: Clone submodules
         command: git submodule update --init
     - run:
-        name: Copy source
-        command: scp -r $(pwd) lightsail:/home/ubuntu
+        name: Clone source on lightsail
+        command: |
+          ssh lightsail 'git clone --recurse-submodules https://github.com/cvisionai/tator'
+          ssh lightsail 'cd tator && git checkout $CIRCLE_TAG'
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'
