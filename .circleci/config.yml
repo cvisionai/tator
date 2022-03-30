@@ -3,6 +3,18 @@ orbs:
   node: circleci/node@4.5.1
   slack: circleci/slack@4.4.2
 jobs:
+  test-lightsail-install:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - checkout
+    - run:
+        name: Setup lightsail instance
+        command: ./scripts/lightsail.sh
+    - run:
+        name: Cleanup lightsail instance
+        command: ./scripts/lightsail_cleanup.sh
+        when: always
   build-docker-images:
     machine:
       image: ubuntu-2004:202010-01
@@ -67,7 +79,6 @@ jobs:
   install-and-test:
     machine:
       image: ubuntu-2004:202010-01
-      resource_class: xlarge
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
