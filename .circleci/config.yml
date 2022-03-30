@@ -117,7 +117,8 @@ jobs:
         command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
     - run:
         name: Get API token
-        command: curl -d '{username: "admin", password: "admin", refresh: true}' -H 'Content-Type: application/json' http://$(cat ~/ip_address.txt)/rest/Token | jq '.token' > ~/token.txt
+        command: |
+          curl -d '{username: "admin", password: "admin", refresh: true}' -H 'Content-Type: application/json' http://$(cat ~/ip_address.txt)/rest/Token | jq '.token' > ~/token.txt
     - run:
         name: Run tator-py tests
         command: pytest tatorpy_test --host=http://$(cat ~/ip_address.txt) --token=$(cat ~/token.txt) -s --keep
