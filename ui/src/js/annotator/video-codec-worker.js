@@ -588,7 +588,7 @@ class TatorVideoBuffer {
     {
       this._initData = data;
     }
-    if (this._pendingSeek && data.frameStart != undefined)
+    if (data.frameStart != undefined)
     {
       this._mp4File.lastBoxStartPosition = data.fileStart;
       this._mp4File.nextParsePosition = data.fileStart;

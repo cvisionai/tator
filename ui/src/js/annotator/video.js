@@ -3262,7 +3262,7 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       
       appendThreshold = Math.min(timeToAbsEnd, appendThreshold);
-      return (timeToEnd > appendThreshold ? "yes" : "more");
+      return (timeToEnd >= appendThreshold ? "yes" : "more");
     }
   }
 
@@ -3384,16 +3384,18 @@ export class VideoCanvas extends AnnotationCanvas {
     let timeToAbsEnd = Number.MAX_SAFE_INTEGER;
     let this_time =  this.frameToTime(reqFrame);
     timeToAbsEnd = absEnd - this_time;
+    let found_it = false;
     for (let idx = 0; idx < ranges.length; idx++)
     {
       if (reqFrame >= ranges.start(idx) && reqFrame <= ranges.end(idx))
       {
         timeToEnd = ranges.end(idx) - this_time;
+        found_it = true;
       }
-    }
+    } 
 
     // If we moved out of the current on-demand buffer reload it.
-    if (reqFrame == -1 || (timeToEnd < 15 && timeToAbsEnd >= 15))
+    if (reqFrame == -1 || found_it == false)
     {
       console.info(`reqFrame == ${reqFrame}, ${timeToEnd}, ${timeToAbsEnd}`);
       clearTimeout(this._restartOnDemandTimer);

@@ -445,7 +445,7 @@ export class TatorVideoDecoder {
     this._buffer.onBuffered = () => {
       if (this.onBuffered)
       {
-        //this._buffer.buffered.print(`${id} LATEST`);
+        this._buffer.buffered.print(`${id} LATEST`);
         setTimeout(this.onBuffered,0);
       }
     };
@@ -539,6 +539,7 @@ export class TatorVideoDecoder {
     let p_func = (resolve, reject) => 
     {
       this.reset().then(() => {
+        this.buffered.print(`${this._name} RESET`);
         resolve();
       });
     };
@@ -628,6 +629,7 @@ export class TatorVideoDecoder {
 
   reset()
   {
+    console.info(`RESETTING ${this._name}`)
     return new Promise((resolve) => {
       this._buffer.onReset = () => {resolve();
                                     this._buffer.onReset=null
