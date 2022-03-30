@@ -86,7 +86,7 @@ jobs:
         command: |
           ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator';
     - persist_to_workspace:
-        root: $HOME
+        root: /home/circleci
         paths:
         - .ssh/lightsail.pem
         - .ssh/config
@@ -96,7 +96,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-        at: $HOME
+        at: /home/circleci
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'
@@ -111,7 +111,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-        at: $HOME
+        at: /home/circleci
     - run:
         name: Initialize REST tests
         command: ssh lightsail 'cd tator && make testinit'
@@ -123,7 +123,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-        at: $HOME
+        at: /home/circleci
     - checkout
     - run:
         name: Install front end test dependencies
@@ -147,7 +147,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-        at: $HOME
+        at: /home/circleci
     - checkout
     - run:
         name: Clone submodules
@@ -167,7 +167,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-        at: $HOME
+        at: /home/circleci
     - checkout
     - run:
         name: Cleanup lightsail instance
