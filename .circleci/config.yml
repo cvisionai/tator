@@ -64,7 +64,7 @@ jobs:
     - run:
         name: Make client image
         command: make client-image
-  install-and-test:
+  install-tator:
     machine:
       image: ubuntu-2004:202010-01
     environment:
@@ -77,6 +77,12 @@ jobs:
     - run:
         name: Clone submodules
         command: git submodule update --init
+    - run:
+        name: Tell lightsail to self destruct
+        command: |
+          pip3 install --upgrade awscli;
+          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sleep 28800 && nohup aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION > foo.out 2> foo.err < /dev/null &';
+          ssh lightsail 'This lightsail instance will self-destruct in 8 hours.';
     - run:
         name: Clone source on lightsail
         command: |
@@ -101,7 +107,7 @@ jobs:
         command: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
           sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
-          sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
+          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
           pip3 install playwright pytest-playwright==0.1.2 pytesseract opencv-python;
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
           playwright install;
@@ -126,7 +132,6 @@ jobs:
     - run:
         name: Cleanup lightsail instance
         command: ./scripts/lightsail_cleanup.sh
-        when: always
 workflows:
   version: 2
   build-and-test:
