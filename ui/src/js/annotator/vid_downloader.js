@@ -517,7 +517,7 @@ export class VideoDownloader
     var downloadSize = currentSize - 1;
     var onDemandId = this._onDemandConfig["id"];
 
-    //console.log(`onDemand downloading '${downloadSize}' at '${startByte}' (next segment idx - ${packetIndex}) ID: ${onDemandId}`);
+    console.log(`onDemand downloading '${downloadSize}' at '${startByte}' (next segment idx - ${packetIndex}) ID: ${onDemandId}`);
 
     let headers = {'range':`bytes=${startByte}-${startByte+downloadSize}`,
                    ...self._headers};

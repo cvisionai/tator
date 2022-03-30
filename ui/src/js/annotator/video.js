@@ -3394,6 +3394,7 @@ export class VideoCanvas extends AnnotationCanvas {
       }
     } 
 
+    console.info(`FOUND IT = ${found_it}`);
     // If we moved out of the current on-demand buffer reload it.
     if (reqFrame == -1 || found_it == false)
     {
@@ -3678,7 +3679,7 @@ export class VideoCanvas extends AnnotationCanvas {
         }
       }
 
-      if (needMoreData && !this._onDemandFinished)// && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
+      if (needMoreData && !this._onDemandFinished && this._onDemandPendingDownloads == 0)// && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
       {
         // Kick of the download worker to get the next onDemand segments
         console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data (pendingDownloads/playbackReady/ranges.length): ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady} ${ranges.length}`);

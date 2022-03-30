@@ -593,7 +593,7 @@ class TatorVideoBuffer {
       this._mp4File.lastBoxStartPosition = data.fileStart;
       this._mp4File.nextParsePosition = data.fileStart;
       this._mp4File.dtsBias = Math.round(data.frameStart * this._timescale);
-      console.info(`Setting dts bias to FS=${data.fileStart} BIAS=${this._mp4File.dtsBias} ${this._mp4File.dtsBias/this._timescale}`);
+      console.info(`Setting dts bias to SF=${data.frameStart} FS=${data.fileStart} BIAS=${this._mp4File.dtsBias} ${this._mp4File.dtsBias/this._timescale}`);
       this._mp4File.stop();
       this._mp4File.appendBuffer(data);
       this._mp4File.seek(0); // Always go to 0 for this
