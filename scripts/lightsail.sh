@@ -33,5 +33,5 @@ echo "Contents of ssh config:"
 cat ~/.ssh/config
 sudo chmod 600 ~/.ssh/config
 sudo chmod 400 ~/.ssh/lightsail.pem
-echo "Testing ssh connection with ifconfig..."
-ssh lightsail 'ifconfig'
+echo "Testing ssh connection..."
+ssh lightsail 'echo \"Hello from lightsail instance!\"'
