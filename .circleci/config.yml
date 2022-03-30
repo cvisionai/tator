@@ -75,8 +75,9 @@ jobs:
     - run:
         name: Tell lightsail to self destruct
         command: |
-          pip3 install --upgrade awscli;
-          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sleep 28800 && nohup aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION > foo.out 2> foo.err < /dev/null &';
+          ssh lightsail 'sudo -E apt-get update && sudo -E apt-get install -yq --no-install-recommends python3-pip';
+          ssh lightsail 'pip3 install --upgrade awscli';
+          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sleep 28800 && nohup /home/ubuntu/.local/bin/aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION & > foo.out 2> foo.err < /dev/null &';
           ssh lightsail 'This lightsail instance will self-destruct in 8 hours.';
     - run:
         name: Clone source on lightsail
