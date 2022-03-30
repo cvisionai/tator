@@ -76,7 +76,7 @@ jobs:
         command: ./scripts/lightsail.sh
     - run:
         name: Copy environment variables to lightsail
-        command: env > ~/sshenv && scp sshenv lightsail:/home/ubuntu/.ssh/environment
+        command: env > ~/sshenv && scp ~/sshenv lightsail:/home/ubuntu/.ssh/environment
     - run:
         name: Clone submodules
         command: git submodule update --init
