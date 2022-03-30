@@ -34,4 +34,4 @@ cat ~/.ssh/config
 sudo chmod 600 ~/.ssh/config
 sudo chmod 400 ~/.ssh/lightsail.pem
 echo "Testing ssh connection..."
-ssh lightsail 'echo \"Hello from lightsail instance!\"'
+for i in {1..5}; do ssh lightsail 'echo \"Hello from lightsail instance!\"' && break || sleep 10; done
