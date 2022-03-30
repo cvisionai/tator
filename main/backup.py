@@ -4,7 +4,6 @@ import json
 import os
 from uuid import uuid4
 
-from main.models import Project
 from main.store import get_tator_store
 
 
