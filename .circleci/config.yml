@@ -80,9 +80,7 @@ jobs:
     - run:
         name: Clone source on lightsail
         command: |
-          echo 'AcceptEnv CIRCLE_BRANCH' > ~/sshd_conf;
-          scp ~/sshd_conf lightsail:/etc/ssh/sshd_config;
-          ssh lightsail 'git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator';
+          ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator';
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'

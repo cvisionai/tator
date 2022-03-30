@@ -23,7 +23,6 @@ aws lightsail get-instance \
   | xargs printf '%b\n' \
   > ~/ip_address.txt
 cat <<EOT >> ~/.ssh/config
-SendEnv CIRCLE_BRANCH
 Host lightsail
   HostName $(cat /home/$USER/ip_address.txt)
   User ubuntu
