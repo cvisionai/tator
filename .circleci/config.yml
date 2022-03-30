@@ -133,6 +133,8 @@ jobs:
           pip3 install playwright pytest-playwright==0.1.2 pytesseract opencv-python;
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
           playwright install;
+          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
+          pip3 install /tmp/tator*.whl;
     - run:
         name: Front end tests
         command: |
@@ -157,7 +159,9 @@ jobs:
     - run:
         name: Get API token
         command: |
-          curl -d '{username: "admin", password: "admin", refresh: true}' -H 'Content-Type: application/json' http://$(cat ~/ip_address.txt)/rest/Token | jq '.token' > ~/token.txt;
+          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
+          pip3 install /tmp/tator*.whl;
+          curl -d '{"username": "admin", "password": "admin", "refresh": "true"}' -H 'Content-Type: application/json' http://$(cat ~/ip_address.txt)/rest/Token | jq '.token' > ~/token.txt;
     - run:
         name: Run tator-py tests
         command: pytest tatorpy_test --host=http://$(cat ~/ip_address.txt) --token=$(cat ~/token.txt) -s --keep
