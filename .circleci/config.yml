@@ -132,8 +132,6 @@ workflows:
     jobs:
     - install-and-test:
         context: cvisionai
-        requires:
-        - build-docker-images
         filters:
           tags:
             only: /.*/
