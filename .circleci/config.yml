@@ -75,14 +75,11 @@ jobs:
         name: Setup lightsail instance
         command: ./scripts/lightsail.sh
     - run:
-        name: Copy environment variables to lightsail
-        command: env > ~/sshenv && scp ~/sshenv lightsail:/home/ubuntu/.ssh/environment
-    - run:
         name: Clone submodules
         command: git submodule update --init
     - run:
         name: Clone source on lightsail
-        command: ssh lightsail 'git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator'
+        command: ssh lightsail CIRCLE_BRANCH=$CIRCLE_BRANCH 'git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator'
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'
