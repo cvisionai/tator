@@ -93,7 +93,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-      at: $HOME
+        at: $HOME
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'
@@ -108,7 +108,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-      at: $HOME
+        at: $HOME
     - run:
         name: Initialize REST tests
         command: ssh lightsail 'cd tator && make testinit'
@@ -120,7 +120,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-      at: $HOME
+        at: $HOME
     - checkout
     - run:
         name: Install front end test dependencies
@@ -144,7 +144,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-      at: $HOME
+        at: $HOME
     - checkout
     - run:
         name: Clone submodules
@@ -164,7 +164,7 @@ jobs:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
-      at: $HOME
+        at: $HOME
     - checkout
     - run:
         name: Cleanup lightsail instance
