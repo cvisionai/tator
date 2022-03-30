@@ -98,7 +98,7 @@ jobs:
         at: ~/
     - run:
         name: Install Tator
-        command: ssh lightsail 'cd tator && ./install.sh'
+        command: ssh lightsail 'export HOST_IP='"'$(cat ~/ip_address.txt)'"';cd tator && ./install.sh'
     - run:
         name: Copy whl
         command: scp -r lightsail:/tmp/tator_py_whl /tmp
