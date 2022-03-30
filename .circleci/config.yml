@@ -100,8 +100,8 @@ jobs:
         name: Install front end test dependencies
         command: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
-          sudo apt install ./google-chrome-stable_current_amd64.deb;
-          sudo apt install tesseract-ocr;
+          sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
+          sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
           pip3 install playwright pytest-playwright==0.1.2 pytesseract opencv-python;
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
           playwright install;
