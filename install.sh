@@ -27,7 +27,7 @@ cd ui && npm install && cd ..
 # Install Chrome for front end testing.
 echo "Installing Chrome."
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo apt install -y ./google-chrome-stable_current_amd64.deb
+sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb
 
 # Get IP address if it is not set explicitly.
 # Credit to https://serverfault.com/a/1019371
