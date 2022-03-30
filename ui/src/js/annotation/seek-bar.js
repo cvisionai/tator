@@ -61,6 +61,7 @@ export class SeekBar extends TatorElement {
     }
     var releaseMouse=function(evt)
     {
+      console.info("RELEASE MOUSE.");
       clearInterval(that._periodicCheck);
       document.removeEventListener("mouseup",
                                    releaseMouse);
@@ -77,13 +78,21 @@ export class SeekBar extends TatorElement {
     }
     this.handle.addEventListener("mousedown", evt =>
                                  {
+                                  console.info("MOUSE DOWN.");
+                                   this._lastValue = this.value;
+          
                                    this._periodicCheck = setInterval(() =>
                                      {
-                                     
-                                    this.dispatchEvent(
-                                      new CustomEvent("input",
-                                                      {composed: true,
-                                                      detail: {frame: this.value}}));
+                                       console.info("INTERVAL CHECK");
+                                      if (this._value == this._lastValue)
+                                      {
+                                        return;
+                                      }
+                                      this._lastValue = this.value;
+                                      this.dispatchEvent(
+                                        new CustomEvent("input",
+                                                        {composed: true,
+                                                        detail: {frame: this.value}}));
                                      }
                                     , 30);
                                    that.bar.removeEventListener("click", clickHandler);

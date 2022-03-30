@@ -2650,7 +2650,8 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._videoElement[this._play_idx].playBuffer().use_codec_buffer && 
         video != this._videoElement[this._play_idx].playBuffer())
     {
-      this._videoElement[this._play_idx].playBuffer().currentTime = video.currentTime;
+      console.info(`Given ${time} ${video.currentTime} to play buffer`);
+      this._videoElement[this._play_idx].playBuffer().currentTime = time;//video.currentTime;
     }
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
@@ -3217,7 +3218,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       frame = this._dispFrame;
     }
-    const appendThreshold = this._calculateAppendThreshold();
+    let appendThreshold = this._calculateAppendThreshold();
     let video = this.videoBuffer(frame, "play", true);
     if (video == null)
     {
@@ -3227,6 +3228,9 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       let timeToEnd = null;
       var ranges = video.buffered;
+      const absEnd = this.frameToTime(this._numFrames-1);
+      const absStart = this.frameToTime(0);
+      let timeToAbsEnd = null;
       const currentTime = this.frameToTime(frame);
       for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
       {
@@ -3236,22 +3240,28 @@ export class VideoCanvas extends AnnotationCanvas {
         if (this._direction == Direction.STOPPED) {
           if (this._lastDirection == Direction.FORWARD) {
             timeToEnd = end - currentTime;
+            timeToAbsEnd = absEnd - currentTime;
           }
           else {
             timeToEnd = currentTime - start;
+            timeToAbsEnd = currentTime - absStart;
           }
         }
         else if (this._direction == Direction.FORWARD)
         {
           this._lastDirection = this._direction;
           timeToEnd = end - currentTime;
+          timeToAbsEnd = absEnd - currentTime;
         }
         else
         {
           this._lastDirection = this._direction;
           timeToEnd = currentTime - start;
+          timeToAbsEnd = currentTime - absStart;
         }
       }
+      
+      appendThreshold = Math.min(timeToAbsEnd, appendThreshold);
       return (timeToEnd > appendThreshold ? "yes" : "more");
     }
   }

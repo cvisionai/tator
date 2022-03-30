@@ -849,7 +849,7 @@ export class AnnotationPlayer extends TatorElement {
       this._handleNotReadyTimeout = null;
 
       if (this._videoStatus == "playing") {
-        console.error(`Player status == playing | Cancelling check_ready`);
+        console.warn(`Player status == ${this._videoStatus} | Cancelling check_ready`);
         return;
       }
 
