@@ -64,19 +64,14 @@ jobs:
     - run:
         name: Make client image
         command: make client-image
-  install-tator:
+  setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
-    environment:
-      DOCKER_REGISTRY: cvisionai
     steps:
     - checkout
     - run:
         name: Setup lightsail instance
         command: ./scripts/lightsail.sh
-    - run:
-        name: Clone submodules
-        command: git submodule update --init
     - run:
         name: Tell lightsail to self destruct
         command: |
@@ -87,6 +82,18 @@ jobs:
         name: Clone source on lightsail
         command: |
           ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator';
+    - persist_to_workspace:
+      root: $HOME
+      paths:
+      - .ssh/lightsail.pem
+      - .ssh/config
+      - ip_address.txt
+  install-tator:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+      at: $HOME
     - run:
         name: Install Tator
         command: ssh lightsail 'cd tator && ./install.sh'
@@ -96,12 +103,25 @@ jobs:
     - store_artifacts:
         path: /tmp/tator_py_whl
         destination: tator_py_whl
+  rest-tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+      at: $HOME
     - run:
         name: Initialize REST tests
         command: ssh lightsail 'cd tator && make testinit'
     - run:
         name: Run REST tests
         command: ssh lightsail 'cd tator && make test'
+  front-end-tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+      at: $HOME
+    - checkout
     - run:
         name: Install front end test dependencies
         command: |
@@ -119,6 +139,16 @@ jobs:
     - store_artifacts:
         path: /tmp/videos
         destination: videos
+  tator-py-tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+      at: $HOME
+    - checkout
+    - run:
+        name: Clone submodules
+        command: git submodule update --init
     - run:
         name: Copy test directories
         command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
@@ -129,6 +159,13 @@ jobs:
     - run:
         name: Run tator-py tests
         command: pytest tatorpy_test --host=http://$(cat ~/ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+  cleanup-lightsail:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+      at: $HOME
+    - checkout
     - run:
         name: Cleanup lightsail instance
         command: ./scripts/lightsail_cleanup.sh
@@ -141,9 +178,45 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - install-and-test:
+    - setup-lightsail:
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - install-tator:
         requires:
+        - setup-lightsail
         - build-docker-images
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - rest-tests:
+        requires:
+        - install-tator 
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - front-end-tests:
+        requires:
+        - install-tator 
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - tator-py-tests:
+        requires:
+        - install-tator 
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - cleanup-lightsail:
+        requires:
+        - rest-tests
+        - front-end-tests
+        - tator-py-tests
         context: cvisionai
         filters:
           tags:
