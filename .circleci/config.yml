@@ -77,7 +77,7 @@ jobs:
         command: |
           ssh lightsail 'curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py';
           ssh lightsail 'python3 get-pip.py';
-          ssh lightsail 'pip3 install --upgrade awscli';
+          ssh lightsail '/home/ubuntu/.local/bin/pip3 install --upgrade awscli';
           echo 'Initiating lightsail self-destruct sequence...';
           ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sh -c "sleep 60 && /home/ubuntu/.local/bin/aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION" >/dev/null 2>&1 &';
           ssh lightsail 'echo "This lightsail instance will self-destruct in 8 hours."';
