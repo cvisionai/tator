@@ -120,7 +120,8 @@ curl -sLO $ARGO_CLIENT_URL \
 
 # Copy out wheel from docker container.
 echo "Copying wheel from tator client image."
-kubectl run sleepy --image=$DOCKER_REGISTRY/tator_client:$GIT_REVISION -- sleep 60
+#kubectl run sleepy --image=$DOCKER_REGISTRY/tator_client:$GIT_REVISION -- sleep 60
+kubectl run sleepy --image=$DOCKER_REGISTRY/tator_client -- sleep 60
 kubectl wait pod/sleepy --for=condition=Ready=true --timeout=120s
 mkdir -p /tmp/tator_py_whl
 kubectl cp sleepy:/tmp /tmp/tator_py_whl
