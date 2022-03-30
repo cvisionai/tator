@@ -668,6 +668,7 @@ export class VideoDownloader
     }
 
     var startByte=parseInt(this._info[buf_idx]["segments"][idx]["offset"]);
+    var frameStart=parseInt(this._info[buf_idx]["segments"][idx]["frame_start"]);
     if (idx == 0)
     {
       startByte = 0;
@@ -692,7 +693,7 @@ export class VideoDownloader
 
     var percent_complete=idx/this._numPackets[buf_idx];
     //console.log(`Downloading '${currentSize}' at '${startByte}' (packet ${this._currentPacket[buf_idx]}:${idx} of ${this._numPackets[buf_idx]} ${parseInt(percent_complete*100)}) (buffer: ${buf_idx})`);
-    this._currentPacket[buf_idx] = idx;
+    this._currentPacket[buf_idx] = idx+240;
 
     let headers = {'range':`bytes=${startByte}-${startByte+currentSize-1}`,
                    ...self._headers};
@@ -714,6 +715,7 @@ export class VideoDownloader
                            "offsets": offsets,
                            "buffer": buffer,
                            "init": packet_limit == 2,
+                           "frameStart": frameStart,
                            "startByte": startByte};
                   postMessage(data, [data.buffer]);
 

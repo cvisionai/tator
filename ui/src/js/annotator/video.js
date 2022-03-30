@@ -1551,6 +1551,7 @@ export class VideoCanvas extends AnnotationCanvas {
         var idx = 0;
         var offsets = e.data["offsets"];
         var data = e.data["buffer"];
+        var sentOffset = false;
         // Stores the downloaded data in the appropriate local buffer
         var appendBuffer=function(callback)
         {
@@ -1585,6 +1586,11 @@ export class VideoCanvas extends AnnotationCanvas {
               var end=offsets[idx][0] + offsets[idx][1];
               var bufferToSend = data.slice(begin, end);
               bufferToSend.fileStart = e.data["startByte"]+begin;
+              if (sentOffset == false)
+              {
+                bufferToSend.frameStart = e.data['frameStart'] / that._fps;
+                sentOffset = true;
+              }
               if (typeof video_buffer._dataLag != "undefined" && video_buffer._dataLag.length > 0) {
                 console.log("dataLag has data: " + video_buffer._dataLag.length);
                 video_buffer._dataLag.push({data: bufferToSend, callback: callback});
