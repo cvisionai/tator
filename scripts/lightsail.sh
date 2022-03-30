@@ -13,7 +13,7 @@ aws lightsail create-instances \
   --instance-names tator-ci-$GIT_VERSION \
   --availability-zone us-east-1a \
   --blueprint-id ubuntu_20_04 \
-  --bundle_id 2xlarge_2_0
+  --bundle-id 2xlarge_2_0
 
 # Configure SSH
 aws lightsail download-default-key-pair \
