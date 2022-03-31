@@ -100,6 +100,9 @@ jobs:
         name: Install Tator
         command: |
           ssh lightsail 'cd tator && ./install.sh';
+    - run:
+        name: Add public IP as domain alias
+        command: |
           ssh lightsail 'echo "aliases:" >> tator/helm/tator/values.yaml';
           ssh lightsail 'export ALIAS_IP='"'$(cat ~/ip_address.txt)'"';echo "  - domain: $ALIAS_IP" >> tator/helm/tator/values.yaml';
           ssh lightsail 'cd tator && make cluster-update';
