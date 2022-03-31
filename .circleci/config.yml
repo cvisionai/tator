@@ -167,7 +167,7 @@ jobs:
         name: Install tator-py test dependencies
         command: |
           sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip;
-          pip3 install tator pandas opencv-python;
+          pip3 install tator pytest pandas opencv-python;
           wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
           unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
           sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.;
