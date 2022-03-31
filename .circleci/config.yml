@@ -104,9 +104,7 @@ jobs:
     - run:
         name: Set public IP as primary domain
         command: |
-          ssh lightsail 'sed -i "s/$(cat ~/private_ip_address.txt)/$(cat ~/public_ip_address.txt)/g" tator/helm/tator/values.yaml';
-          ssh lightsail 'echo "aliases:" >> tator/helm/tator/values.yaml';
-          ssh lightsail 'export ALIAS_IP='"'$(cat ~/private_ip_address.txt)'"';echo "  - domain: $ALIAS_IP" >> tator/helm/tator/values.yaml';
+          ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export PRIVATE_IP='"'$(cat ~/private_ip_address.txt)'"';sed -i "s/$PRIVATE_IP/$PUBLIC_IP/g" tator/helm/tator/values.yaml';
           ssh lightsail 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin; cd tator && make cluster-update';
     - run:
         name: Copy whl
