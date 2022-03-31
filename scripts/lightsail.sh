@@ -21,10 +21,15 @@ aws lightsail get-instance \
   --instance-name tator-ci-$GIT_VERSION \
   | jq '.instance.publicIpAddress' \
   | xargs printf '%b\n' \
-  > ~/ip_address.txt
+  > ~/public_ip_address.txt
+aws lightsail get-instance \
+  --instance-name tator-ci-$GIT_VERSION \
+  | jq '.instance.privateIpAddress' \
+  | xargs printf '%b\n' \
+  > ~/private_ip_address.txt
 cat <<EOT >> ~/.ssh/config
 Host lightsail
-  HostName $(cat /home/$USER/ip_address.txt)
+  HostName $(cat /home/$USER/public_ip_address.txt)
   User ubuntu
   Port 22
   IdentityFile /home/$USER/.ssh/lightsail.pem

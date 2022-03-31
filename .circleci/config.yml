@@ -89,7 +89,8 @@ jobs:
         root: ~/
         paths:
         - .ssh
-        - ip_address.txt
+        - public_ip_address.txt
+        - private_ip_address.txt
   install-tator:
     machine:
       image: ubuntu-2004:202010-01
@@ -101,10 +102,11 @@ jobs:
         command: |
           ssh lightsail 'cd tator && ./install.sh';
     - run:
-        name: Add public IP as domain alias
+        name: Set public IP as primary domain
         command: |
+          ssh lightsail 'sed -i "s/$(cat ~/private_ip_address.txt)/$(cat ~/public_ip_address.txt)/g" tator/helm/tator/values.yaml';
           ssh lightsail 'echo "aliases:" >> tator/helm/tator/values.yaml';
-          ssh lightsail 'export ALIAS_IP='"'$(cat ~/ip_address.txt)'"';echo "  - domain: $ALIAS_IP" >> tator/helm/tator/values.yaml';
+          ssh lightsail 'export ALIAS_IP='"'$(cat ~/private_ip_address.txt)'"';echo "  - domain: $ALIAS_IP" >> tator/helm/tator/values.yaml';
           ssh lightsail 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin; cd tator && make cluster-update';
     - run:
         name: Copy whl
@@ -149,7 +151,7 @@ jobs:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          pytest test --base-url=http://$(cat ~/ip_address.txt) --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          pytest test --base-url=http://$(cat ~/public_ip_address.txt) --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -183,7 +185,7 @@ jobs:
           curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://44.202.81.35/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
     - run:
         name: Run tator-py tests
-        command: pytest tatorpy_test --host=http://$(cat ~/ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+        command: pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
