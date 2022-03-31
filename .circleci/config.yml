@@ -105,7 +105,7 @@ jobs:
         command: |
           ssh lightsail 'echo "aliases:" >> tator/helm/tator/values.yaml';
           ssh lightsail 'export ALIAS_IP='"'$(cat ~/ip_address.txt)'"';echo "  - domain: $ALIAS_IP" >> tator/helm/tator/values.yaml';
-          ssh lightsail 'cd tator && make cluster-update';
+          ssh lightsail 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin; cd tator && make cluster-update';
     - run:
         name: Copy whl
         command: scp -r lightsail:/tmp/tator_py_whl /tmp
