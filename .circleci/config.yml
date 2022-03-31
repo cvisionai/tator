@@ -180,7 +180,7 @@ jobs:
         command: |
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
           pip3 install /tmp/tator*.whl;
-          curl -d '{"username": "admin", "password": "admin", "refresh": "true"}' -H 'Content-Type: application/json' http://$(cat ~/ip_address.txt)/rest/Token | jq '.token' > ~/token.txt;
+          curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://44.202.81.35/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
     - run:
         name: Run tator-py tests
         command: pytest tatorpy_test --host=http://$(cat ~/ip_address.txt) --token=$(cat ~/token.txt) -s --keep
