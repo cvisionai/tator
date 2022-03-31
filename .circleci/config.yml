@@ -167,7 +167,9 @@ jobs:
         name: Install tator-py test dependencies
         command: |
           sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip;
-          pip3 install tator pytest pandas opencv-python;
+          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
+          pip3 install /tmp/tator*.whl;
+          pip3 install pytest pandas opencv-python;
           wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
           unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
           sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.;
@@ -178,9 +180,7 @@ jobs:
     - run:
         name: Get API token
         command: |
-          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
-          pip3 install /tmp/tator*.whl;
-          curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://44.202.81.35/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
+          curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://$(cat ~/public_ip_address.txt)/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
     - run:
         name: Run tator-py tests
         command: pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
