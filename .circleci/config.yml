@@ -132,6 +132,9 @@ jobs:
         at: ~/
     - checkout
     - run:
+        name: Clone submodules
+        command: git submodule update --init
+    - run:
         name: Install front end test dependencies
         command: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
@@ -160,6 +163,15 @@ jobs:
     - run:
         name: Clone submodules
         command: git submodule update --init
+    - run:
+        name: Install tator-py test dependencies
+        command: |
+          sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip;
+          pip3 install tator pandas opencv-python;
+          wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
+          unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
+          sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.;
+          sudo chmod +x /usr/local/bin/mp4dump;
     - run:
         name: Copy test directories
         command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
