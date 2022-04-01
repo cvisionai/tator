@@ -258,8 +258,6 @@ class TatorBackupManager:
                     f"Backing up resource '{path}' with presigned url {download_url} failed",
                     exc_info=True,
                 )
-            else:
-                logger.info(f"Successfully backed up '{path}'")
 
         return success
 

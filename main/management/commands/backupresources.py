@@ -38,6 +38,9 @@ class Command(BaseCommand):
             else:
                 failed_backups[proj_id].add(media_id)
 
+            if idx + 1 % 1000 == 0:
+                logger.info(f"Processed {idx + 1} of {total_to_back_up} resources")
+
         with transaction.atomic():
             resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
             resource_qs.update(backed_up=True)
