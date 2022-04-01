@@ -1019,22 +1019,23 @@ class Media(Model, ModelDiffMixin):
         if not self.media_files:
             return (total_size, download_size)
 
-        resources = Resource.objects.filter(media__in=[self])
-        store_lookup = get_storage_lookup(resources)
-        store_default = get_tator_store(self.project.bucket)
-
         for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif", "attachment"]:
             if key not in self.media_files:
                 continue
 
             for media_def in self.media_files[key]:
-                tator_store = store_lookup.get(media_def["path"], store_default)
-                size = tator_store.get_size(media_def["path"])
+                size = media_def.get("size", 0)
+                # Not all path descriptions have a size field or have it populated with a valid
+                # value; if it is not an integer or less than 1, get it from storage
+                if type(size) != int or size < 1:
+                    size = TatorBackupManager().get_size(Resource.objects.get(path=media_def["path"]))
                 total_size += size
                 if key in ["archival", "streaming", "image"] and download_size is None:
                     download_size = size
                 if key == "streaming":
-                    total_size += tator_store.get_size(media_def.get('segment_info'))
+                    json_path = media_def.get("segment_info")
+                    if json_path:
+                        total_size += tator_store.get_size(Resource.objects.get(path=json_path))
         return (total_size, download_size)
 
     def is_backed_up(self):

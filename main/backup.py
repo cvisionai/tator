@@ -358,10 +358,6 @@ class TatorBackupManager:
                     f"Restoring resource '{path}' with presigned url {download_url} failed",
                     exc_info=True,
                 )
-            else:
-                logger.info(f"Successfully backed up '{path}'")
-                resource.backed_up = True
-                resource.save()
 
         if success:
             live_store = store_info["live"]["store"]
@@ -376,3 +372,18 @@ class TatorBackupManager:
                 logger.info(f"Object {path} successfully restored: {response}")
 
         return success
+
+    def get_size(self, resource):
+        # To avoid creating a circular import by importing main.models.Projects, get the related
+        # model from the resource's media relationship
+        Project = resource.media.model._meta.get_field("project").related_model
+        project = Project.objects.get(pk=int(resource.path.split("/")[1]))
+
+        success, store_info = self._get_store_info(project)
+
+        if success:
+            if resource.backed_up:
+                return store_info["backup"]["store"].get_size(resource.path)
+
+            return store_info["live"]["store"].get_size(resource.path)
+        return 0
