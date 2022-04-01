@@ -638,14 +638,14 @@ export class TatorVideoDecoder {
                                 });
   }
 
-  appendSeekBuffer(data)
+  appendSeekBuffer(data, timestampOffset)
   {
-    this._buffer.appendSeekBuffer(data);
+    this._buffer.appendSeekBuffer(data, timestampOffset);
   }
 
-  appendLatestBuffer(data, callback)
+  appendLatestBuffer(data, callback, timestampOffset)
   {
-    this._buffer.appendBuffer(data);
+    this._buffer.appendBuffer(data, timestampOffset);
     setTimeout(callback,0);
   }
 
@@ -657,12 +657,12 @@ export class TatorVideoDecoder {
    * @param {function} callback - Callback executed once the buffer has been updated
    * @param {bool} force - Force update if true. False will yield updates only if init'd
    */
-  appendOnDemandBuffer(data, callback, force)
+  appendOnDemandBuffer(data, callback, force, timestampOffset)
   {
     //console.info(`${JSON.stringify(data)}`);
     // Fail-safe, if we have a frame start this is the start of a new buffer
     // and we need to clear everything we had.
-    this.appendLatestBuffer(data, callback);
+    this.appendLatestBuffer(data, callback, timestampOffset);
   }
 
   /**
@@ -671,12 +671,12 @@ export class TatorVideoDecoder {
    * @param {*} callback 
    * @param {*} force 
    */
-  appendAllBuffers(data, callback, force)
+  appendAllBuffers(data, callback, force, timestampOffset)
   {
     console.info("Appending All Buffers");
     if (this._init == false || force == true)
     {
-      this._buffer.appendBuffer(data);
+      this._buffer.appendBuffer(data, timestampOffset);
     }
     this._init = true;
     setTimeout(callback,0); // defer to next clock

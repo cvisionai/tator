@@ -693,7 +693,7 @@ export class VideoDownloader
 
     var percent_complete=idx/this._numPackets[buf_idx];
     //console.log(`Downloading '${currentSize}' at '${startByte}' (packet ${this._currentPacket[buf_idx]}:${idx} of ${this._numPackets[buf_idx]} ${parseInt(percent_complete*100)}) (buffer: ${buf_idx})`);
-    this._currentPacket[buf_idx] = idx+240;
+    this._currentPacket[buf_idx] = idx; // @todo parameterize summary skip
 
     let headers = {'range':`bytes=${startByte}-${startByte+currentSize-1}`,
                    ...self._headers};
