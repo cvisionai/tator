@@ -404,7 +404,7 @@ class TatorVideoManager {
    // Append data to the mp4 file (seek alt)
   // - This data should either be sequentially added or added on a segment boundary
   // - Prior to adding video segments the mp4 header must be supplied first.
-  appendSeekBuffer(data, timestampOffset)
+  appendSeekBuffer(data, time, timestampOffset)
   {
     if (timestampOffset == undefined)
     {
@@ -647,9 +647,9 @@ export class TatorVideoDecoder {
                                 });
   }
 
-  appendSeekBuffer(data, timestampOffset)
+  appendSeekBuffer(data, time, timestampOffset)
   {
-    this._buffer.appendSeekBuffer(data, timestampOffset);
+    this._buffer.appendSeekBuffer(data, time, timestampOffset);
   }
 
   appendLatestBuffer(data, callback, timestampOffset)
