@@ -384,7 +384,7 @@ class TatorVideoManager {
   // Append data to the mp4 file
   // - This data should either be sequentially added or added on a segment boundary
   // - Prior to adding video segments the mp4 header must be supplied first.
-  appendBuffer(data, reset)
+  appendBuffer(data, timestampOffset)
   {
     const fileStart = data.fileStart;
     const frameStart = data.frameStart;
@@ -392,7 +392,7 @@ class TatorVideoManager {
       {"type": "appendBuffer",
        "fileStart": fileStart,
        "frameStart": frameStart,
-       "reset": reset,
+       "timestampOffset": timestampOffset,
        "data": data
       });
   }
@@ -400,7 +400,7 @@ class TatorVideoManager {
    // Append data to the mp4 file (seek alt)
   // - This data should either be sequentially added or added on a segment boundary
   // - Prior to adding video segments the mp4 header must be supplied first.
-  appendSeekBuffer(data)
+  appendSeekBuffer(data, timestampOffset)
   {
     const fileStart = data.fileStart;
     const frameStart = data.frameStart;
@@ -408,6 +408,7 @@ class TatorVideoManager {
       {"type": "appendSeekBuffer",
        "fileStart": fileStart,
        "frameStart": frameStart,
+       "timestampOffset": timestampOffset,
        "data": data
       });
   }
