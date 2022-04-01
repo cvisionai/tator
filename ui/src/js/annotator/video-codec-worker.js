@@ -120,6 +120,8 @@ class TatorVideoBuffer {
     //{
       //MP4Box.Log.setLogLevel(MP4Box.Log.info);
     //}
+
+    this._initDataMap = new Map();
     this._mp4File = MP4Box.createFile();
     this._mp4File.onError = this._mp4OnError.bind(this);
     this._mp4File.onReady = this._mp4OnReady.bind(this);
@@ -581,12 +583,13 @@ class TatorVideoBuffer {
   // Append data to the mp4 file
   // - This data should either be sequentially added or added on a segment boundary
   // - Prior to adding video segments the mp4 header must be supplied first.
-  appendBuffer(data)
+  appendBuffer(data, timestampOffset)
   {
+    
     //console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
-    if (this._initData == undefined && data.fileStart == 0)
+    if (data.fileStart == 0)
     {
-      this._initData = data;
+      this._initForOffset(timestampOffset, data);
     }
     if (data.frameStart != undefined)
     {
@@ -623,7 +626,7 @@ class TatorVideoBuffer {
         resolve();
       };
     });
-    this.appendBuffer(this._initData); // re-init buffer
+    this.appendBuffer(this._initForOffset(0)); // re-init buffer
     this._bufferedRegions = new TatorTimeRanges();
     postMessage({'type': "buffered",
                  'ranges': this._bufferedRegions._buffer});    
@@ -631,8 +634,12 @@ class TatorVideoBuffer {
   }
 
   // Make a new container to do seek operations
-  appendSeekBuffer(data)
+  appendSeekBuffer(data, timestampOffset)
   {
+    if (data.fileStart == 0)
+    {
+      this._initForOffset(timestampOffset, data);
+    }
     let seekDecoder = new VideoDecoder({
         output: this._frameReady.bind(this),
         error: this._frameError.bind(this)});
@@ -694,8 +701,36 @@ class TatorVideoBuffer {
       tempFile.start();
       };
 
-    tempFile.appendBuffer(this._initData);
+    // Only process the seek if we have been initialized
+    let this_init = this._initForOffset(timestampOffset);
+    if (this_init)
+    {
+      tempFile.appendBuffer(this_init);
+    }
     
+  }
+
+  _fileForOffset(offset)
+  {
+    // TODO return the underlying mp4 file for a given timestamp offset
+  }
+
+  // Supply or fetch init data for a given timestamp offset
+  _initForOffset(timestampOffset, init_data)
+  {
+    if (init_data)
+    {
+      this._initDataMap.set(timestampOffset, init_data);
+      return init_data;
+    }
+    else if (this._initDataMap.has(timestampOffset))
+    {
+      return this._initDataMap.get(timestampOffset);
+    }
+    else
+    {
+      return null;
+    }
   }
 
   deleteUpTo(seconds)
@@ -746,19 +781,19 @@ onmessage = function(e)
     if (msg.reset)
     {
       ref.reset().then(() => {
-        ref.appendBuffer(msg.data);
+        ref.appendBuffer(msg.data, msg.timestampOffset);
       });
     }
     else
     {
-      ref.appendBuffer(msg.data);
+      ref.appendBuffer(msg.data, msg.timestampOffset);
     }
   }
   else if (msg.type == "appendSeekBuffer")
   {
     msg.data.fileStart = msg.fileStart;
     msg.data.frameStart = msg.frameStart;
-    ref.appendSeekBuffer(msg.data);
+    ref.appendSeekBuffer(msg.data, msg.timestampOffset);
   }
   else if (msg.type == "currentTime")
   {
