@@ -386,6 +386,10 @@ class TatorVideoManager {
   // - Prior to adding video segments the mp4 header must be supplied first.
   appendBuffer(data, timestampOffset)
   {
+    if (timestampOffset == undefined)
+    {
+      timestampOffset = 0;
+    }
     const fileStart = data.fileStart;
     const frameStart = data.frameStart;
     this._codec_worker.postMessage(
@@ -402,6 +406,10 @@ class TatorVideoManager {
   // - Prior to adding video segments the mp4 header must be supplied first.
   appendSeekBuffer(data, timestampOffset)
   {
+    if (timestampOffset == undefined)
+    {
+      timestampOffset = 0;
+    }
     const fileStart = data.fileStart;
     const frameStart = data.frameStart;
     this._codec_worker.postMessage(
