@@ -23,7 +23,6 @@ spec:
           value: "false"
         - name: BASE_HREF
           value: /argo/
-        env: []
         image: quay.io/argoproj/argocli:latest
         name: argo-server
         ports:
