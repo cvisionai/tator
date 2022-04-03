@@ -22,7 +22,7 @@ class TokenAPI(BaseListView):
         if not user:
             raise ValueError("Could not authenticate with provided credentials!")
 
-        if (self.request.user != AnonymousUser) and (self.request.user != user):
+        if (not isinstance(self.request.user, AnonymousUser)) and (self.request.user != user):
             raise ValueError("Credentials do not match currently authenticated user!")
 
         # We have a valid user, get the token.

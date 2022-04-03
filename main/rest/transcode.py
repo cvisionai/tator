@@ -1,7 +1,6 @@
 import os
 import logging
 from uuid import uuid1
-from urllib.parse import urlparse
 
 from rest_framework.authtoken.models import Token
 import requests
@@ -15,6 +14,7 @@ from ..models import Media
 from ..schema import TranscodeSchema
 from ..notify import Notify
 
+from ._util import url_to_key
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
 
@@ -55,24 +55,15 @@ class TranscodeAPI(BaseListView):
                              "destination media type")
 
         # Attempt to determine upload size. Only use size parameter if size cannot be determined.
-        parsed = urlparse(url)
         upload_size = -1
-        tokens = parsed.path.split('/')
-        if len(tokens) > 4:
-            # First assume this is a presigned url for S3. Parse
-            # out the object key and get object size via S3 api.
-            num_tokens = 4
-            bucket = project_obj.bucket
-            upload = False
-            if len(tokens) > 6:
-                if tokens[-6] == '_uploads':
-                    num_tokens = 6
-                    bucket = project_obj.get_bucket(upload=True)
-                    upload = True
-            path = '/'.join(parsed.path.split('/')[-num_tokens:])
+        path, bucket, upload = url_to_key(url, project_obj)
+        if path is not None:
             logger.info(f"Attempting to retrieve size for object key {path}...")
             tator_store = get_tator_store(bucket, upload=upload)
             upload_size = tator_store.get_size(path)
+            # If we have the media ID, tag the object with the media ID.
+            if media_id:
+                tator_store.put_media_id_tag(path, media_id)
             logger.info(f"Got object size {upload_size} for object key {path}")
         if upload_size == -1:
             logger.info(f"Failed to get object size from object, trying HEAD at {url}...")
