@@ -2,6 +2,8 @@ import { AnnotationCanvas } from "./annotation.js";
 import { Utilities } from "../util/utilities.js";
 import { TatorVideoDecoder} from "./video-codec.js";
 import Hls, { HlsSkip } from "hls.js";
+import { fetchRetry } from "../util/fetch-retry.js";
+import { getCookie } from "../util/get-cookie.js";
 
 // Video export class handles interactions between HTML presentation layer and the
 // javascript application.
@@ -2003,6 +2005,47 @@ export class VideoCanvas extends AnnotationCanvas {
       this.mediaType = mediaType;
     this._videoObject = videoObject;
 
+    if ('concat' in videoObject.media_files)
+    {
+      let ids=[];
+      for (let idx = 0; idx< videoObject.media_files.concat.length; idx++)
+      {
+        ids.push(videoObject.media_files.concat[idx].id);
+      }
+      return new Promise((resolve, reject) => { 
+      fetchRetry(`/rest/Medias/${videoObject.project}`,
+                 {method: "PUT",
+                 credentials: "same-origin",
+                 headers: {
+                   "X-CSRFToken": getCookie("csrftoken"),
+                   "Accept": "application/json",
+                   "Content-Type": "application/json"},
+                 body: JSON.stringify({"ids": ids}),
+                  }).then(response => response.json())
+                    .then(json => {
+                      console.info(json)
+                      this._children = json;
+                      if (this._children.length != this._videoObject.media_files.concat.length)
+                      {
+                        console.error("returned children doesn't match request count")
+                        reject();
+                      }
+                      else
+                      {
+                        // Set the streaming objects to the same as the first media file
+                        // TODO: make this smarter.
+                        this._videoObject.media_files.streaming = json[0].media_files.streaming;
+                        this.dispatchEvent(new CustomEvent("discoveredQualities",
+                                          {composed: true, detail: {media: json[0]}}));
+                        resolve();
+                      }
+                    });
+      });
+    }
+
+    this.dispatchEvent(new CustomEvent("discoveredQualities",
+                       {composed: true, detail: {media: videoObject}}));
+
 
     // If quality is not supplied default to 720 or highest available
     let resolutions = videoObject.media_files["streaming"].length;
@@ -2040,15 +2083,6 @@ export class VideoCanvas extends AnnotationCanvas {
     // Note: dims is width,height here
     let videoUrl, fps, numFrames, dims;
 
-    if ('concat' in videoObject.media_files)
-    {
-      fetchRetry(`/rest/Medias/${videoObject.project}`,
-                 {method: "PUT",
-                 ...this._undo._headers(),
-                 body: JSON.stringify({"media_ids": children}),
-                  }).then(response => response.json())
-                    .then(json => {console.info(json)});
-    }
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
 
