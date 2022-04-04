@@ -1028,14 +1028,18 @@ class Media(Model, ModelDiffMixin):
                 # Not all path descriptions have a size field or have it populated with a valid
                 # value; if it is not an integer or less than 1, get it from storage
                 if type(size) != int or size < 1:
-                    size = TatorBackupManager().get_size(Resource.objects.get(path=media_def["path"]))
+                    size = TatorBackupManager().get_size(
+                        Resource.objects.get(path=media_def["path"])
+                    )
                 total_size += size
                 if key in ["archival", "streaming", "image"] and download_size is None:
                     download_size = size
                 if key == "streaming":
                     json_path = media_def.get("segment_info")
                     if json_path:
-                        total_size += tator_store.get_size(Resource.objects.get(path=json_path))
+                        total_size += TatorBackupManager().get_size(
+                            Resource.objects.get(path=json_path)
+                        )
         return (total_size, download_size)
 
     def is_backed_up(self):

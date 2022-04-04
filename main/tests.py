@@ -2837,8 +2837,18 @@ class VideoFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'VideoFiles'
         self.detail_uri = 'VideoFile'
-        self.create_json = {'path': self._generate_key(), 'resolution': [1, 1], 'codec': 'h264', 'segment_info': 'asdf'}
-        self.patch_json = {'path': self._generate_key(), 'resolution': [2, 2], 'codec': 'h264', 'segment_info': 'asdf'}
+        self.create_json = {
+            'path': self._generate_key(),
+            'resolution': [1, 1],
+            'codec': 'h264',
+            'segment_info': self._generate_key(),
+        }
+        self.patch_json = {
+            'path': self._generate_key(),
+            'resolution': [2, 2],
+            'codec': 'h264',
+            'segment_info': self._generate_key(),
+        }
 
     def test_streaming(self):
         self._test_methods('streaming')
