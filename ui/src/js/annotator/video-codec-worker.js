@@ -673,14 +673,16 @@ class TatorVideoBuffer {
 
   reset(limit)
   {
-    console.info("RESETTING");
+    console.info(`RESETTING LIMIT=${limit}`);
     let all = [];
 
-    for (let idx = 0; idx < this._mp4FileMap.keys(); idx++)
+    let timestamps = [...this._mp4FileMap.keys()];
+    for (let idx = 0; idx < timestamps.length; idx++)
     {
-      const timestamp = this._mp4FileMap.keys()[idx];
+      const timestamp = timestamps[idx];
       if (timestamp >= limit)
       {
+        console.info(`LIMIT HIT ${timestamp} > ${limit}`);
         break;
       }
       all.push(new Promise((resolve) => 
@@ -704,6 +706,7 @@ class TatorVideoBuffer {
       postMessage({'type': "buffered",
                   'ranges': this._bufferedRegions._buffer});
     }
+    console.info(`Resetting ${all.length} subfiles.`);
     return Promise.all(all);
   }
 
