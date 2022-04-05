@@ -3866,16 +3866,6 @@ export class VideoCanvas extends AnnotationCanvas {
         }
         else
         {
-          this._dlWorker.postMessage(
-          {
-            "type": "onDemandInit",
-            "frame": this._dispFrame,
-            "fps": this._fps,
-            "maxFrame": this._numFrames - 1,
-            "direction": "forward",
-            "mediaFileIndex": this._play_idx,
-            "id": this._onDemandId
-          });
           this._playGenericOnDemand(Direction.FORWARD);
         }
       }
