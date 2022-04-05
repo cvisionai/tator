@@ -122,7 +122,7 @@ class TatorBackupManager:
             raise RcloneException(output, status)
         return output
 
-    def _get_bucket_info(self, project, store_types) -> dict:
+    def _get_bucket_info(self, project, store_types=["live", "backup"]) -> dict:
         """
         Sets (if necessary) and returns the necessary objects for interacting with the bucket of the
         given store type for the given project.
@@ -152,19 +152,17 @@ class TatorBackupManager:
                         exc_info=True,
                     )
                 else:
-                    TatorBackupManager.__project_stores[project_id][store_type] = {
-                        "store": store,
-                        "remote_name": f"{project_id}_{store_type}",
-                        "bucket_name": store.bucket_name,
-                    }
+                    if store:
+                        TatorBackupManager.__project_stores[project_id][store_type] = {
+                            "store": store,
+                            "remote_name": f"{project_id}_{store_type}",
+                            "bucket_name": store.bucket_name,
+                        }
 
             if failed:
                 TatorBackupManager.__project_stores.pop(project_id, None)
 
-        return {
-            st: TatorBackupManager.__project_stores.get(project_id, {}).get(st)
-            for st in store_types
-        }
+        return TatorBackupManager.__project_stores.get(project_id, None)
 
     def _create_rclone_remote(self, remote_name, bucket_name, remote_type, rclone_params):
         if remote_type not in ["s3"]:
@@ -175,7 +173,16 @@ class TatorBackupManager:
         if remote_name not in self._rpc("config/listremotes").get("remotes", []):
             self._rpc("config/create", name=remote_name, type=remote_type, parameters=rclone_params)
 
-    def _get_store_info(self, project) -> bool:
+    @staticmethod
+    def _get_backup_store(store_info):
+        if "backup" in store_info:
+            return True, store_info["backup"]["store"]
+        if "live" in store_info:
+            return True, store_info["live"]["store"]
+
+        return False, None
+
+    def get_store_info(self, project) -> bool:
         """
         Adds the given project to the backup manager, if necessary, and returns the information
         about all associated data stores. This requries four steps:
@@ -194,7 +201,7 @@ class TatorBackupManager:
         """
         success = True
         try:
-            store_info = self._get_bucket_info(project, ["live", "backup"])
+            store_info = self._get_bucket_info(project)
         except:
             store_info = {}
             success = False
@@ -226,23 +233,25 @@ class TatorBackupManager:
         otherwise False. After running this, the `backed_up` field for the associated resource
         should be set to the returned value.
 
+        If there is no backup bucket for the given project (or a site-wide default), this will
+        return `False`.
+
         :param path: The resource to back up
         :type path: str
         :param project: The project that the resource belongs to
         :type project: main.models.Project
         :rtype: bool
         """
-        success, store_info = self._get_store_info(project)
+        success, store_info = self.get_store_info(project)
+        success = success and "backup" in store_info
 
         if success:
             if store_info["backup"]["store"].check_key(path):
                 logger.info(f"Resource {path} already backed up")
                 return success
 
-            # Get presigned url from the live bucket
-            download_url = store_info["live"]["store"].get_download_url(
-                path, 3600
-            )  # set to expire in 1h
+            # Get presigned url from the live bucket, set to expire in 1h
+            download_url = store_info["live"]["store"].get_download_url(path, 3600)
 
             # Perform the actual copy operation directly from the presigned url
             try:
@@ -273,15 +282,19 @@ class TatorBackupManager:
         :type min_exp_days: int
         :rtype: bool
         """
-        success, store_info = self._get_store_info(project)
+        success, store_info = self.get_store_info(project)
 
         if success:
-            backup_store = store_info["backup"]["store"]
-            response = backup_store.head_object(path)
+            # If no backup store is defined, use the live bucket
+            success, store = self._get_backup_store(store_info)
+
+        if success:
+            live_storage_class = store_info["live"]["store"].get_live_sc() or LIVE_STORAGE_CLASS
+            response = store.head_object(path)
             if not response:
                 logger.warning(f"Object {path} not found, skipping")
                 return success
-            if response.get("StorageClass", LIVE_STORAGE_CLASS) == LIVE_STORAGE_CLASS:
+            if response.get("StorageClass", live_storage_class) == live_storage_class:
                 logger.info(f"Object {path} already live, skipping")
                 return success
             if "ongoing-request=" in response.get("Restore", ""):
@@ -289,7 +302,7 @@ class TatorBackupManager:
                 return success
 
             try:
-                backup_store.restore_object(path, LIVE_STORAGE_CLASS, min_exp_days)
+                store.restore_object(path, live_storage_class, min_exp_days)
             except:
                 logger.warning(
                     f"Exception while requesting restoration of object {path}", exc_info=True
@@ -297,11 +310,11 @@ class TatorBackupManager:
                 success = False
 
         if success:
-            response = backup_store.head_object(path)
+            response = store.head_object(path)
             if not response:
                 logger.warning(f"Could not confirm restoration request status for {path}")
                 success = False
-            elif response.get("StorageClass", LIVE_STORAGE_CLASS) == LIVE_STORAGE_CLASS:
+            elif response.get("StorageClass", live_storage_class) == live_storage_class:
                 logger.info(f"Object {path} live")
             elif "ongoing-request" in response.get("Restore", ""):
                 logger.info(f"Request to restore object {path} successful")
@@ -322,11 +335,15 @@ class TatorBackupManager:
         :type project: main.models.Project
         :rtype: bool
         """
-        success, store_info = self._get_store_info(project)
+        success, store_info = self.get_store_info(project)
 
         if success:
-            backup_store = store_info["backup"]["store"]
-            response = backup_store.head_object(path)
+            # If no backup store is defined, use the live bucket
+            success, store = self._get_backup_store(store_info)
+
+        if success:
+            live_storage_class = store_info["live"]["store"].get_live_sc() or LIVE_STORAGE_CLASS
+            response = store.head_object(path)
             if not response:
                 logger.warning(f"Object {path} not found, skipping")
                 return success
@@ -336,13 +353,13 @@ class TatorBackupManager:
                 # There is an ongoing request and the object is not ready to be permanently restored
                 logger.info(f"Object {path} not in standard access yet, skipping")
                 success = False
-            elif response.get("StorageClass", LIVE_STORAGE_CLASS) != LIVE_STORAGE_CLASS:
+            elif response.get("StorageClass", live_storage_class) != live_storage_class:
                 logger.info(f"Object {path} not in the expected storage class")
                 success = False
 
         if success:
             # Get presigned url from the backup bucket
-            download_url = backup_store.get_download_url(path, 3600)  # set to expire in 1h
+            download_url = store.get_download_url(path, 3600)  # set to expire in 1h
 
             # Perform the actual copy operation directly from the presigned url
             try:
@@ -360,12 +377,11 @@ class TatorBackupManager:
                 )
 
         if success:
-            live_store = store_info["live"]["store"]
-            response = live_store.head_object(path)
+            response = store_info["live"]["store"].head_object(path)
             if not response:
                 logger.warning(f"Could not check the restoration state for {path}")
                 success = False
-            elif response.get("StorageClass", LIVE_STORAGE_CLASS) != LIVE_STORAGE_CLASS:
+            elif response.get("StorageClass", live_storage_class) != live_storage_class:
                 logger.warning(f"Storage class not changed for object {path}")
                 success = False
             else:
@@ -379,7 +395,7 @@ class TatorBackupManager:
         Project = resource.media.model._meta.get_field("project").related_model
         project = Project.objects.get(pk=int(resource.path.split("/")[1]))
 
-        success, store_info = self._get_store_info(project)
+        success, store_info = self.get_store_info(project)
 
         if success:
             if resource.backed_up:

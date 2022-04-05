@@ -474,7 +474,7 @@ class GCPStorage(TatorStorage):
         blob.patch()
 
     def put_media_id_tag(self, path):
-        pass # TODO: implement this
+        pass  # TODO: implement this
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(
@@ -631,6 +631,10 @@ def get_tator_store(
             config=config,
         )
     else:
+        # If a backup store was requested but not provided (`bucket` is None and the environment
+        # variables are empty), return `None` to signal no store exists
+        if backup:
+            return None
         # Client generator will not have env variables defined
         client = boto3.client("s3")
 

@@ -60,12 +60,19 @@ def create_test_bucket(organization):
         region='us-east-2',
     )
 
-def create_test_project(user, organization=None):
-    return Project.objects.create(
-        name="asdf",
-        creator=user,
-        organization=organization,
-    )
+def create_test_project(user, organization=None, backup_bucket=None):
+    kwargs = {
+        "name": "asdf",
+        "creator": user,
+    }
+
+    if organization:
+        kwargs["organization"] = organization
+
+    if backup_bucket:
+        kwargs["backup_bucket"] = backup_bucket
+
+    return Project.objects.create(**kwargs)
 
 def create_test_membership(user, project):
     return Membership.objects.create(
@@ -3242,6 +3249,70 @@ class ResourceTestCase(APITestCase):
         for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             media_def = self._get_media_def(role, keys, segment_key)
             self.assertFalse(Resource.objects.get(path=media_def["path"]).backed_up)
+
+    def test_archive_state_lifecycle(self):
+        from main.util import update_queryset_archive_state
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        media_id = media.id
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys(media)
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(
+                f"/rest/{endpoint}/{media_id}?role={role}", media_def, format='json'
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check the value of the media's `archive_state` flag
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "live")
+
+        # Patch the media object and put it in the `to_archive` state
+        response = self.client.patch(
+            f"/rest/Media/{media_id}", {"archive_state": "to_archive"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "to_archive")
+
+        # Archive the media object
+        target_state = {"archive_state": "archived", "restoration_requested": False}
+        media_qs = Media.objects.filter(pk=media_id)
+        update_queryset_archive_state(media_qs, target_state)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "archived")
+
+        # Patch the media object and put it in the `to_live` state
+        response = self.client.patch(
+            f"/rest/Media/{media_id}", {"archive_state": "to_live"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "to_live")
+
+        # Request restoration
+        target_state = {
+            "archive_state": "to_live",
+            "restoration_requested": True,
+            "min_exp_days": 7,
+        }
+        media_qs = Media.objects.filter(pk=media_id)
+        update_queryset_archive_state(media_qs, target_state)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "to_live")
+        self.assertTrue(media.restoration_requested)
+
+        # Finish restoration
+        target_state = {
+            "archive_state": "live",
+            "restoration_requested": False,
+        }
+        media_qs = Media.objects.filter(pk=media_id)
+        update_queryset_archive_state(media_qs, target_state)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "live")
+        self.assertFalse(media.restoration_requested)
 
 
 class AttributeTestCase(APITestCase):
