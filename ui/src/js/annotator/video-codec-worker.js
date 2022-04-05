@@ -674,22 +674,29 @@ class TatorVideoBuffer {
   reset()
   {
     console.info("RESETTING");
-    // @TODO Make this a loop
-    const timestamp = 0;
-    let p = new Promise((resolve) => {
-      this._setupFile(timestamp).then(() => {
-        let mp4File = this._fileForOffset(timestamp);
-        mp4File.seek(0);
-        mp4File.start();
-        this._pendingSeek = this._current_cursor;
-        resolve();
-      });
-    });
-    this.appendBuffer(this._initForOffset(0), 0); // re-init buffer
+    let all = [];
+
+    for (let idx = 0; idx < this._mp4FileMap.keys(); idx++)
+    {
+      const timestamp = this._mp4FileMap.keys()[idx];
+      all.push(new Promise((resolve) => 
+      {
+        this._setupFile(timestamp).then(() => 
+        {
+          let mp4File = this._fileForOffset(timestamp);
+          mp4File.seek(0);
+          mp4File.start();
+          this._pendingSeek = this._current_cursor;
+          resolve();
+        });
+      }));
+      this.appendBuffer(this._initForOffset(timestamp), timestamp); // re-init buffer
+    }
+    
     this._bufferedRegions = new TatorTimeRanges();
     postMessage({'type': "buffered",
                  'ranges': this._bufferedRegions._buffer});    
-    return p;
+    return Promise.all(all);
   }
 
   // Make a new container to do seek operations
