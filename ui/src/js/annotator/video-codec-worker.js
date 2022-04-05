@@ -469,51 +469,36 @@ class TatorVideoBuffer {
     
   }
 
-  get activeCodecConfig()
+  // Find the nearest object without going over
+  _barkerSearch(mapObject, key)
   {
-    let keys = [...this._encoderConfig.keys()].sort((a,b)=>{return a-b;});
+    let keys = [...mapObject.keys()].sort((a,b)=>{return a-b;});
     let idx = 0;
     for (idx = 0; idx < keys.length; idx++)
     {
-      if (keys[idx] > this._current_cursor)
+      if (keys[idx] > key)
       {
         break;
       }
     }
+
     let found_idx = Math.max(0, idx-1);
-    console.info(`${this._name}: For ${this._current_cursor} returning ${keys[found_idx]}`);
-    return this._encoderConfig.get(keys[found_idx]);
+
+    return {obj: mapObject.get(keys[found_idx]),
+            key: keys[found_idx]};
+  }
+  get activeCodecConfig()
+  {
+    return this._barkerSearch(this._encoderConfig, this._current_cursor).obj;
   }
   get activeMp4File()
   {
-    let keys = [...this._mp4FileMap.keys()].sort((a,b)=>{return a-b;});
-    let idx = 0;
-    for (idx = 0; idx < keys.length; idx++)
-    {
-      if (keys[idx] > this._current_cursor)
-      {
-        break;
-      }
-    }
-    let found_idx = Math.max(0, idx-1);
-    console.info(`${this._name}: For ${this._current_cursor} returning ${keys[found_idx]}`);
-    return this._mp4FileMap.get(keys[found_idx]);
+    return this._barkerSearch(this._mp4FileMap, this._current_cursor).obj;
   }
 
   get activeKeyframeFile()
   {
-    let keys = [...this._keyframeMap.keys()].sort((a,b)=>{return a-b;});
-    let idx = 0;
-    for (idx = 0; idx < keys.length; idx++)
-    {
-      if (keys[idx] > this._current_cursor)
-      {
-        break;
-      }
-    }
-    let found_idx = Math.max(0, idx-1);
-    console.info(`${this._name}: For ${this._current_cursor} returning ${keys[found_idx]}`);
-    return this._keyframeMap.get(keys[found_idx]);
+    return this._barkerSearch(this._keyframeMap, this._current_cursor).obj;
   }
 
   _frameReady(frame)
@@ -593,8 +578,9 @@ class TatorVideoBuffer {
       {
         //console.info(`Found it, going in ${video_time} ${seek_timestamp} ${this._bufferedRegions.start(idx)} ${this._bufferedRegions.end(idx)}!`);
         this._lastSeek = performance.now();
-
-        let keyframe_info = this.activeKeyframeFile.closest_keyframe(seek_timestamp);
+        let search = this._barkerSearch(this._keyframeMap, seek_timestamp);
+        let keyframe_info = search.obj.closest_keyframe(seek_timestamp-search.key);
+        let mp4File = this._barkerSearch(this._mp4FileMap, search.key).obj;
         // If the codec closed on us, opportunistically reopen it
         if (this._videoDecoder.state == 'closed')
         {
@@ -606,10 +592,10 @@ class TatorVideoBuffer {
         this._videoDecoder.reset();
         this._videoDecoder.configure(this.activeCodecConfig);
         let nearest_keyframe = keyframe_info.thisSegment;
-        this.activeMp4File.stop();
+        mp4File.stop();
         console.info(`${this._name}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/this._timescale}`);
-        this.activeMp4File.seek(nearest_keyframe/this._timescale);
-        this.activeMp4File.start();
+        mp4File.seek(nearest_keyframe/this._timescale);
+        mp4File.start();
         return;
       }
     }
