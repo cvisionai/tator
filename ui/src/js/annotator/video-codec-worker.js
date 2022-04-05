@@ -802,10 +802,11 @@ class TatorVideoBuffer {
 
   deleteUpTo(seconds)
   {
-    // @TODO Make this work for multiple files
-    const keyframe_info = this._keyframes.closest_keyframe(seconds*this._timescale);
+    let search = this._barkerSearch(this._keyframeMap, seconds);
+    let mp4File = this._barkerSearch(this._mp4FileMap, search.key).obj;
+    const keyframe_info = search.obj.closest_keyframe(seconds*this._timescale);
     const delete_val = keyframe_info.thisSegment;
-    let trak = this._mp4File.getTrackById(1);
+    let trak = mp4File.getTrackById(1);
     let idx = 0;
     let found_it = false;
     for (idx; idx < trak.samples.length; idx++)
@@ -822,7 +823,7 @@ class TatorVideoBuffer {
       return;
     }
     //console.info(`Requested delete up to ${delete_val} ${idx-1}`);
-    this._mp4File.releaseUsedSamples(1, idx-1);
+    mp4File.releaseUsedSamples(1, idx-1);
     this._bufferedRegions.remove(null, delete_val);
     postMessage({'type': "buffered",
                  'ranges': this._bufferedRegions._buffer});
