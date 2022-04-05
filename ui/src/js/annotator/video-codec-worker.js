@@ -671,7 +671,7 @@ class TatorVideoBuffer {
     return p;
   }
 
-  reset()
+  reset(limit)
   {
     console.info("RESETTING");
     let all = [];
@@ -679,6 +679,10 @@ class TatorVideoBuffer {
     for (let idx = 0; idx < this._mp4FileMap.keys(); idx++)
     {
       const timestamp = this._mp4FileMap.keys()[idx];
+      if (timestamp >= limit)
+      {
+        break;
+      }
       all.push(new Promise((resolve) => 
       {
         this._setupFile(timestamp).then(() => 
@@ -693,9 +697,13 @@ class TatorVideoBuffer {
       this.appendBuffer(this._initForOffset(timestamp), timestamp); // re-init buffer
     }
     
-    this._bufferedRegions = new TatorTimeRanges();
-    postMessage({'type': "buffered",
-                 'ranges': this._bufferedRegions._buffer});    
+    // If it is a partial delete don't clear buffered knowledge.
+    if (limit == undefined)
+    {
+      this._bufferedRegions = new TatorTimeRanges();
+      postMessage({'type': "buffered",
+                  'ranges': this._bufferedRegions._buffer});
+    }
     return Promise.all(all);
   }
 
@@ -823,10 +831,15 @@ class TatorVideoBuffer {
       return;
     }
     //console.info(`Requested delete up to ${delete_val} ${idx-1}`);
+
+    // This resets temp files up to this point and the partial file as the logic
+    // above
     mp4File.releaseUsedSamples(1, idx-1);
-    this._bufferedRegions.remove(null, delete_val);
-    postMessage({'type': "buffered",
-                 'ranges': this._bufferedRegions._buffer});
+    this.reset(search.key).then(() => {
+      this._bufferedRegions.remove(null, delete_val+(search.key*this._timescale));
+      postMessage({'type': "buffered",
+                  'ranges': this._bufferedRegions._buffer});
+    });
     //this._bufferedRegions.print(`${this._name}: Post delete`);   
   }
 }
