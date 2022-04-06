@@ -329,13 +329,6 @@ class MediaListAPI(BaseListView):
 
             media_obj.save()
 
-            # If this is an upload to Tator, put media ID as object tag.
-            if url:
-                path, bucket, upload = url_to_key(url, project_obj)
-                if path is not None:
-                    tator_store = get_tator_store(bucket, upload=upload)
-                    tator_store.put_media_id_tag(path, media_obj.id)
-                
             response = {'message': "Image saved successfully!", 'id': media_obj.id}
 
         else:
@@ -380,6 +373,13 @@ class MediaListAPI(BaseListView):
                    f"{name} on project {media_type.project.name}")
             response = {'message': msg, 'id': media_obj.id}
             logger.info(msg)
+
+        # If this is an upload to Tator, put media ID as object tag.
+        if url:
+            path, bucket, upload = url_to_key(url, project_obj)
+            if path is not None:
+                tator_store = get_tator_store(bucket, upload=upload)
+                tator_store.put_media_id_tag(path, media_obj.id)
 
         cl = ChangeLog(
             project=media_obj.project,
