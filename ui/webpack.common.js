@@ -18,7 +18,7 @@ module.exports = {
     util: "./src/js/util/index.js",
     registration: "./src/js/registration/index.js",
     components: "./src/js/components/index.js",
-    analytics: "./src/js/analytics/index.js"
+    portal: "./src/js/analytics/index.js"
   },
   output: {
     filename: "[name].js",
