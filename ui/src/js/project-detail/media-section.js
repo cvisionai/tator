@@ -83,6 +83,10 @@ export class MediaSection extends TatorElement {
     this._numFilesCount = 0;
     this._searchString = "";
 
+    this._more.addEventListener("bulk-edit", () => {
+      this.dispatchEvent(new Event("bulk-edit"));
+    });
+    
     this._setCallbacks();
   }
 
@@ -98,6 +102,8 @@ export class MediaSection extends TatorElement {
     this._section = section;
     this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
+    
+    
     this._nameText.nodeValue = this._sectionName;
     this._upload.setAttribute("project-id", project);
     this._upload.setAttribute("username", username);
@@ -107,6 +113,7 @@ export class MediaSection extends TatorElement {
     this._start = 0;
     this._stop = this._paginator_top._pageSize;
     this._after = new Map();
+
     
     return this.reload();
   }
