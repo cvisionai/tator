@@ -14,13 +14,41 @@ export class ProjectDetail extends TatorPage {
 
     window._uploader = new Worker(new URL("../tasks/upload-worker.js", import.meta.url));
 
-    const main = document.createElement("main");
-    main.setAttribute("class", "d-flex");
-    this._shadow.appendChild(main);
+    // Wrapper to allow r.side bar to slide into left
+    this.mainWrapper = document.createElement("div");
+    this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-12 d-flex");
+    // this.mainWrapper.setAttribute("style", "padding-left: 25%;");
+    this._shadow.appendChild(this.mainWrapper);
 
+    // Original main element
+    this.main = document.createElement("main");
+    this.main.setAttribute("class", "d-flex col-9");
+    this.main.setAttribute("style", "padding-left: 25%;");
+    this.mainWrapper.appendChild(this.main);
+
+    // // Panel top bar
+    // const sectionContainer = document.createElement("entity-panel-container");
+    // sectionContainer.setAttribute("class", "");
+    // this.main.appendChild(sectionContainer);
+
+
+    //
+    /* LEFT*** Navigation Pane - Project Detail Viewer */
+    this.aside = document.createElement("aside");
+    this.aside.setAttribute("class", "entity-panel--container-left col-3"); //slide-close 
+    this.aside.hidden = true;
+    this.mainWrapper.appendChild(this.aside);
+
+    // Gallery navigation panel
+    this._panelContainer = document.createElement("entity-panel-container");
+    this.aside.appendChild(this._panelContainer);
+
+    //
     const section = document.createElement("section");
-    section.setAttribute("class", "sections-wrap py-6 px-5 col-3 text-gray");
-    main.appendChild(section);
+    section.setAttribute("class", "sections-wrap py-6 col-3 px-5 text-gray"); // 
+
+    // Content for panel is appended in panel code
+    // this._panelContainer._panelTop._shadow.appendChild(section);
 
     const folderHeader = document.createElement("div");
     folderHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
@@ -102,8 +130,26 @@ export class ProjectDetail extends TatorPage {
     section.appendChild(this._bookmarks);
 
     const mainSection = document.createElement("section");
-    mainSection.setAttribute("class", "project__main py-3 px-6 flex-grow");
-    main.appendChild(mainSection);
+    mainSection.setAttribute("class", "py-3 px-6 flex-grow"); //project__main 
+    this.main.appendChild(mainSection);
+
+    this.gallery = {};
+    this.gallery._main = mainSection;
+    this.gallery.customContentHandler = () => {
+      console.log("TESTTTTTT");
+    }
+
+    // Setup side panel
+    // Init panel side behavior
+    this._panelContainer.init({
+      main: this.main,
+      aside: this.aside,
+      pageModal: null,
+      modelData: null,
+      gallery: this.gallery,
+      contents: section,
+      position: "left"
+    });
 
     const div = document.createElement("div");
     div.setAttribute("class", "py-6");
@@ -205,7 +251,7 @@ export class ProjectDetail extends TatorPage {
     this._projects.appendChild(attachmentDialog);
 
     this._activityNav = document.createElement("activity-nav");
-    main.appendChild(this._activityNav);
+    this.main.appendChild(this._activityNav);
 
     this._leaveConfirmOk = false;
 
@@ -310,14 +356,14 @@ export class ProjectDetail extends TatorPage {
         })
           .then(response => response.json())
           .then(section => {
-            const card = document.createElement("section-card");
+            const card = document.createElement("entity-card");
             const sectionObj = {
               id: section.id,
               project: projectId,
               ...spec
             };
             if (newSectionDialog._sectionType == "folder") {
-              card.init(sectionObj, "folder");
+              card.sectionInit(sectionObj, "folder");
               if (sectionObj.visible) {
                 this._folders.appendChild(card);
               } else {
@@ -335,7 +381,7 @@ export class ProjectDetail extends TatorPage {
                 this._sectionVisibilityEL(evt)
               });
             } else if (newSectionDialog._sectionType == "savedSearch") {
-              card.init(sectionObj, "savedSearch");
+              card.sectionInit(sectionObj, "savedSearch");
               this._savedSearches.appendChild(card);
               card.addEventListener("click", () => {
                 const clearPage = true;
@@ -505,8 +551,8 @@ export class ProjectDetail extends TatorPage {
     }
 
     // Create new section card and add to new list
-    const card = document.createElement("section-card");
-    card.init(section, "folder");
+    const card = document.createElement("entity-card");
+    card.sectionInit(section, "folder");
     if (visible) {
       this._folders.appendChild(card);
     } else {
@@ -632,8 +678,8 @@ export class ProjectDetail extends TatorPage {
             // this._search.autocomplete = project.filter_autocomplete;
 
             let projectParams = null;
-            const home = document.createElement("section-card");
-            home.init(null, false);
+            const home = document.createElement("entity-card");
+            home.sectionInit(null, false);
             home.addEventListener("click", () => {
               this._selectSection(null, projectId, true);
               for (const child of this._allSections()) {
@@ -654,8 +700,8 @@ export class ProjectDetail extends TatorPage {
               } else {
                 sectionType = "savedSearch";
               }
-              const card = document.createElement("section-card");
-              card.init(section, sectionType);
+              const card = document.createElement("entity-card");
+              card.sectionInit(section, sectionType);
               if (sectionType == "folder") {
                 if (section.visible) {
                   this._folders.appendChild(card);
@@ -682,8 +728,8 @@ export class ProjectDetail extends TatorPage {
             const first = "Last visited";
             bookmarks.sort((a, b) => { return a.name == first ? -1 : b.name == first ? 1 : 0; });
             for (const bookmark of bookmarks) {
-              const card = document.createElement("section-card");
-              card.init(bookmark, "bookmark");
+              const card = document.createElement("entity-card");
+              card.sectionInit(bookmark, "bookmark");
               this._bookmarks.appendChild(card);
             }
 
@@ -756,7 +802,6 @@ export class ProjectDetail extends TatorPage {
 
                 // Listen for filter events
                 this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
-
               });
 
             } catch (err) {

@@ -15,19 +15,37 @@ export class EntityPanelContainer extends TatorElement {
       this.el = null;
    }
 
-   init({ main, aside, pageModal, modelData, gallery }) {
+   //
+   init({ position = "right", main, aside, pageModal, modelData, gallery, contents }) {
       this.lside = main;
       this.rside = aside;
       this.gallery = gallery;
+      this.position = position;
+      this.contents = contents;
 
       // listener to close panelContainer
-      if (this.gallery._customContent) {
+      if (this.modelData == null) {
+         //then we have the media section....
+         // this._panelTop.init({ pageModal, modelData, panelContainer: this });
+         this.open = true;
+         this._panelTop.init({
+            panelContainer: this,
+            customContentHandler: this.gallery.customContentHandler,
+            isMediaSection: true,
+            contents: this.contents
+         })
+      } else if (this.gallery._customContent) {
          this._panelTop.init({ pageModal, modelData, panelContainer: this, customContentHandler: this.gallery.customContentHandler});
       } else {
          this._panelTop.init({ pageModal, modelData, panelContainer: this });
       }
       
-      this._panelTop._topBarArrow.addEventListener("click", this._toggleRightOnClick.bind(this));
+      // if (position == "right") {
+      //    this._panelTop._topBarArrow.addEventListener("click", this._toggleLeftOnClick.bind(this));
+      // } else {
+         this._panelTop._topBarArrow.addEventListener("click", this._toggleRightOnClick.bind(this));
+      // }
+      
 
       // Check and set current permission level on annotationPanel
       if (this.hasAttribute("permissionValue")) {
@@ -70,6 +88,10 @@ export class EntityPanelContainer extends TatorElement {
       this.lside.classList.add("col-9");
       this.lside.classList.remove("col-12");
       this.lside.style.marginRight = "0";
+
+      if (this.position == "left") {
+         this.lside.style.paddingLeft = "25%";
+      }
       
       this.gallery._main.classList.remove("mr-6");
       this.gallery._main.classList.add("mr-3");
@@ -87,6 +109,11 @@ export class EntityPanelContainer extends TatorElement {
       
       this.lside.classList.remove("col-9");
       this.lside.style.marginRight = "2%";
+
+      if (this.position == "left") {
+         this.lside.style.paddingLeft = "2%";
+         this.lside.style.marginRight = "0";
+      }
 
       this.gallery._main.classList.add("mr-6");
       this.gallery._main.classList.remove("mr-3");

@@ -8,6 +8,11 @@ export class SectionFiles extends TatorElement {
     this._main = document.createElement("ul");
     this._main.setAttribute("class", "project__files d-flex");
     this._shadow.appendChild(this._main);
+
+    this._customContent = true;
+    this.customContentHandler = () => {
+      console.log("Hello!");
+    };
   }
 
   static get observedAttributes() {
