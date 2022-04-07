@@ -22,8 +22,9 @@ export class GalleryBulkEdit extends TatorElement {
        */
       // // Mesage bar top
       this._messageBar_top = document.createElement("div");
-      this._messageBar_top.setAttribute("class", "px-6 py-2 bulk-edit-bar_top text-center hidden")
-      // this._shadow.appendChild(this._messageBar_top);
+      this._messageBar_top.setAttribute("class", "px-6 py-2 bulk-edit-bar_top text-center hidden");
+      this._messageBar_top.hidden = true;
+      this._shadow.appendChild(this._messageBar_top);
 
       // this._h2 = document.createElement("h2");
       // this._h2.setAttribute("class", "py-2 px-2 f1 semi-bold");
@@ -155,6 +156,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    set elementList(val) {
+      console.log(val);
       this._elements = val;
    }
 
@@ -162,13 +164,17 @@ export class GalleryBulkEdit extends TatorElement {
       this._elementIndexes = val;
    }
 
-   init(page) {
+   init(page, gallery) {
       this._page = page;
-
-      // todo- generalize this
-      this._page._filterResults.addEventListener("multi-select", this._openEditMode.bind(this))
-      this.boxHelper = new SettingsBox( this._page.modal );
-      // this._page._filterResults.before(this._selectionPanel);
+      console.log(page);
+      
+      this.boxHelper = new SettingsBox(this._page.modal);
+      
+      if (gallery == null) {
+         this._gallery = this._page._filterResults
+      } else {
+         this._gallery = gallery;
+      }
    }
 
    _keyUpHandler(e) {
@@ -373,6 +379,7 @@ export class GalleryBulkEdit extends TatorElement {
       this._editMode = true;
 
       for (let el of this._elements) {
+         console.log(el);
          if (el.card._li.classList.contains("is-selected") && !this._currentMultiSelection.has(el.card.cardObj.id)) {
             this._addSelected({element: el.card, id: el.card.cardObj.id, isSelected: el.card._li.classList.contains("is-selected")})
          }
@@ -397,7 +404,8 @@ export class GalleryBulkEdit extends TatorElement {
       // // this._page.main.style.marginTop = "-100px";
       // this._page.main.style.paddingBottom = "300px";
       // this._page._filterView.classList.add("hidden");
-      this._page._filterResults._ul.classList.add("multi-select-mode");
+      // this._page._filterResults._ul.classList.add("multi-select-mode");
+      this._gallery._ul.classList.add("multi-select-mode");
 
       this.dispatchEvent(new Event("multi-enabled"));
 
@@ -433,7 +441,8 @@ export class GalleryBulkEdit extends TatorElement {
       this._page.aside.classList.remove("hidden");
       this._page.main.style.marginTop = "0";
       // this._page._filterView.classList.remove("hidden");
-      this._page._filterResults._ul.classList.remove("multi-select-mode");
+      // this._page._filterResults._ul.classList.remove("multi-select-mode");
+      this._gallery._ul.classList.remove("multi-select-mode");
 
       this._clearSelection();
       // this.resetElements();
@@ -468,10 +477,12 @@ export class GalleryBulkEdit extends TatorElement {
 
    }
    _showEditPanel(val = true) {
+      console.log("SHOW EDIT PANEL!");
+      console.log(this._page);
       // if (val) {
          this._page.showDimmer();
       //    this._comparisonPanel.show(false);
-      //    this._selectionPanel.show(false);
+         this._selectionPanel.show(true);
       // }
       // this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
       this._editPanel.show(val);
@@ -661,7 +672,7 @@ export class GalleryBulkEdit extends TatorElement {
                }
             }
             console.log(newCardData);
-            this._page._filterResults.updateCardData(newCardData);
+            this._gallery.updateCardData(newCardData);
             this._page.cardData.updateBulkCache(newCardData);
          } else {
             console.warn("Possibly an error with save. Could not find ID in currentSelectionObjects.")

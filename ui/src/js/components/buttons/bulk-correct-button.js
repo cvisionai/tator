@@ -34,7 +34,7 @@ export class BulkCorrectButton extends TatorElement {
      svg.appendChild(this._path2);
  
      this._button.addEventListener("click", () => {
-        button.classList.toggle("enabled");
+      this._button.classList.toggle("enabled");
      });
 
      this._span = document.createElement("span");

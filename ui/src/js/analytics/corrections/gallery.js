@@ -330,7 +330,6 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     }
 
     // Replace card info so that shift select can get cards in between
-    console.log("New list of card elements......");
     this._bulkEdit.elementList = this._cardElements;
     this._bulkEdit.elementIndexes = this._currentCardIndexes;
     this._bulkEdit.startEditMode();

@@ -16,7 +16,7 @@ export class EntityPanelContainer extends TatorElement {
    }
 
    //
-   init({ position = "right", main, aside, pageModal, modelData, gallery, contents }) {
+   init({ position = "right", main, isMediaSection = false, aside, pageModal, modelData, gallery, contents }) {
       this.lside = main;
       this.rside = aside;
       this.gallery = gallery;
@@ -24,7 +24,7 @@ export class EntityPanelContainer extends TatorElement {
       this.contents = contents;
 
       // listener to close panelContainer
-      if (this.modelData == null) {
+      if (isMediaSection) {
          //then we have the media section....
          // this._panelTop.init({ pageModal, modelData, panelContainer: this });
          this.open = true;

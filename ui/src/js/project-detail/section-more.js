@@ -31,6 +31,9 @@ export class SectionMore extends TatorElement {
     this._otherButtons.setAttribute("class", "d-flex flex-column px-4 py-3 lh-condensed");
     this._div.appendChild(this._otherButtons);
 
+    this._cardLink = document.createElement("div");
+    this._otherButtons.appendChild(this._cardLink);
+
     this._bulkEditMedia = document.createElement("bulk-correct-button");
     this._bulkEditMedia.setAttribute("text", "Edit media attributes");
     this._otherButtons.appendChild(this._bulkEditMedia);
@@ -57,7 +60,13 @@ export class SectionMore extends TatorElement {
 
     this._bulkEditMedia.addEventListener("click", () => {
       details.removeAttribute("open");
+      console.log("dispatch bulk edit!")
       this.dispatchEvent(new Event("bulk-edit"));
+    });
+
+    this._cardLink.addEventListener("click", () => {
+      details.removeAttribute("open");
+      // this.dispatchEvent(new Event("bulk-edit"));
     });
 
     this._algorithmMenu.addEventListener("click", () => {
@@ -121,9 +130,6 @@ export class SectionMore extends TatorElement {
     this._algorithmMenu.algorithms = val;
   }
 
-  _prependLink(link) {
-    this._otherButtons.prepend(link);
-  }
 }
 
 customElements.define("section-more", SectionMore);

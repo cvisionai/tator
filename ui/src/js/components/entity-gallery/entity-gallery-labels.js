@@ -146,6 +146,8 @@ export class EntityGalleryLabels extends TatorElement {
     // # assumes values are in the accepted format for checkbox set
     //
     let valuesList = this._getValue(typeId);
+    console.log("valuesList");
+    console.log(valuesList);
     for(let box in valuesList){
       if(values.contains(box.name)){
         box.checked = true;
@@ -187,16 +189,17 @@ export class EntityGalleryLabels extends TatorElement {
     sorted.push(...hiddenAttrs);
 
     // Create an array for checkbox set el
-    let checked = checkedFirst == null ? false : checkedFirst;
+    console.log("checkedFirst "+checkedFirst)
+    let checkedValue = checkedFirst == null ? false : checkedFirst;
     for (let attr of sorted) {
       this.newList.push({
         id: encodeURI(attr.name),
         name: attr.name,
-        checked
+        checked: checkedValue
       });
 
       // reset checked - only check the first one
-      if(checked) checked = false;
+      checkedValue = false;
     }
     return this.newList;
   }
