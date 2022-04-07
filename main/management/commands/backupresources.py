@@ -1,4 +1,3 @@
-from collections import defaultdict
 import logging
 from typing import Iterable
 
@@ -24,26 +23,18 @@ class Command(BaseCommand):
             logger.info(f"No resources to back up!")
             return
 
-        backup_mgr = TatorBackupManager()
+        tbm = TatorBackupManager()
         failed_backups = defaultdict(set)
         successful_backups = set()
-        for resource in resource_qs.iterator():
-            path = resource.path
-
-            # Resource path looks like "org_id/proj_id/media_id/filename"
-            proj_id, media_id = path.split("/")[1:3]
-
-            if backup_mgr.backup_resource(path, Project.objects.get(pk=proj_id)):
+        for idx, (success, resource) in enumerate(tbm.backup_resources(resource_qs)):
+            if success:
                 successful_backups.add(resource.id)
             else:
-                failed_backups[proj_id].add(media_id)
+                project_id, media_id = resource.path.split("/")[1:3]
+                failed_backups[project_id].add(media_id)
 
             if idx + 1 % 1000 == 0:
                 logger.info(f"Processed {idx + 1} of {total_to_back_up} resources")
-
-        with transaction.atomic():
-            resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
-            resource_qs.update(backed_up=True)
 
         logger.info(
             f"Backed up {len(successful_backups)} of {total_to_back_up} resources needing backup!"

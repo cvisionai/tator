@@ -13,6 +13,8 @@ import re
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import Point
+from minio import Minio
+from minio.deleteobjects import DeleteObject
 from rest_framework import status
 from rest_framework.test import APITestCase
 from dateutil.parser import parse as dateutil_parse
@@ -2942,6 +2944,10 @@ class ResourceTestCase(APITestCase):
         )
         self.store = get_tator_store()
 
+    def tearDown(self):
+        self.project.delete()
+        self.organization.delete()
+
     def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
         """
@@ -3314,6 +3320,86 @@ class ResourceTestCase(APITestCase):
         self.assertEqual(media.archive_state, "live")
         self.assertFalse(media.restoration_requested)
 
+    def test_backup_lifecycle(self):
+        from main.backup import TatorBackupManager
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        media_id = media.id
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys(media)
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(
+                f"/rest/{endpoint}/{media_id}?role={role}", media_def, format='json'
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check the value of each resource's `backed_up` flag is `False`
+        resource_qs = Resource.objects.filter(path__in=keys.values(), backed_up=False)
+        self.assertEqual(
+            resource_qs.count(), len(keys)
+        )
+
+        # Back up the resource
+        n_successful_backups = 0
+        for success, resource in TatorBackupManager().backup_resources(resource_qs):
+            if success:
+                n_successful_backups += 1
+
+        self.assertEqual(n_successful_backups, len(keys))
+
+        # Check the value of each resource's `backed_up` flag is `True`
+        resource_qs = Resource.objects.filter(path__in=keys.values(), backed_up=True)
+        self.assertEqual(resource_qs.count(), len(keys))
+
+        # Check that each resource was copied to the backup bucket
+        success, store_info = TatorBackupManager().get_store_info(self.project)
+        self.assertTrue(success)
+        success, store = TatorBackupManager.get_backup_store(store_info)
+        self.assertTrue(success)
+        for resource in resource_qs.iterator():
+            self.assertTrue(store.check_key(resource.path))
+
+
+class ResourceWithBackupTestCase(ResourceTestCase):
+    """ This runs the same tests as `ResourceTestCase` but adds a project-specific backup bucket """
+    def setUp(self):
+        super().setUp()
+        endpoint = os.getenv(f"OBJECT_STORAGE_HOST")
+        secure = "https" in endpoint
+        endpoint_stripped = re.sub("https?://", "", endpoint)
+        access_key = os.getenv(f"OBJECT_STORAGE_ACCESS_KEY")
+        secret_key = os.getenv(f"OBJECT_STORAGE_SECRET_KEY")
+        self.mc = Minio(
+            endpoint=endpoint_stripped, secure=secure, access_key=access_key, secret_key=secret_key
+        )
+        self.backup_bucket_name = f"tator-backup-{uuid1()}"
+        self.mc.make_bucket(self.backup_bucket_name)
+        self.backup_bucket = Bucket.objects.create(
+            name=self.backup_bucket_name,
+            organization=self.organization,
+            access_key=access_key,
+            secret_key=secret_key,
+            endpoint_url=endpoint,
+            region=os.getenv(f"OBJECT_STORAGE_REGION_NAME"),
+        )
+        self.project.backup_bucket = self.backup_bucket
+        self.project.save()
+
+    def tearDown(self):
+        # Delete objects from temporary backup bucket
+        objs_to_delete = [DeleteObject(x.object_name) for x in self.mc.list_objects(self.backup_bucket_name, "", recursive=True)]
+
+        # `remove_objects` returns a generator, iterate over it to evaluate
+        _ = list(self.mc.remove_objects(self.backup_bucket_name, objs_to_delete))
+
+        # Delete temporary backup bucket
+        self.mc.remove_bucket(self.backup_bucket_name)
+
+        # Clean up project
+        self.project.delete()
+        self.backup_bucket.delete()
+        self.organization.delete()
 
 class AttributeTestCase(APITestCase):
     def setUp(self):

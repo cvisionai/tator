@@ -1,8 +1,12 @@
+from collections import defaultdict
 from ctypes import CDLL, c_char_p, c_int, Structure
 import logging
 import json
 import os
 from uuid import uuid4
+from typing import Dict, Tuple
+
+from django.db import transaction
 
 from main.store import get_tator_store
 
@@ -80,6 +84,7 @@ class RcloneException(Exception):
 class TatorBackupManager:
     __project_stores = None
     __rclone = None
+    __Project = None
 
     def __init__(self):
         # Use a shared copy of the `__project_stores` dictionary
@@ -100,10 +105,18 @@ class TatorBackupManager:
             TatorBackupManager.__rclone.RcloneFinalize.argtypes = ()
             TatorBackupManager.__rclone.RcloneInitialize()
 
+    @classmethod
+    def project_from_resource(cls, resource):
+        """Gets the `Project` object from a `Resource` object, avoiding circular imports"""
+        if cls.__Project is None:
+            cls.__Project = resource.media.model._meta.get_field("project").related_model
+        return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
+
     def _rpc(self, rclone_method: str, **kwargs):
         """
         A wrapper for Rclone's RcloneRPC method
         """
+        kwargs["log_file"] = "/dev/null"
         method = rclone_method.encode("utf-8")
         params = json.dumps(kwargs).encode("utf-8")
 
@@ -174,7 +187,7 @@ class TatorBackupManager:
             self._rpc("config/create", name=remote_name, type=remote_type, parameters=rclone_params)
 
     @staticmethod
-    def _get_backup_store(store_info):
+    def get_backup_store(store_info):
         if "backup" in store_info:
             return True, store_info["backup"]["store"]
         if "live" in store_info:
@@ -226,49 +239,58 @@ class TatorBackupManager:
 
         return success, store_info
 
-    def backup_resource(self, path, project) -> bool:
+    def backup_resources(self, resource_qs) -> Tuple[int, Dict[int, set]]:
         """
-        Copies the given resource from the live store to the backup store for the given project.
-        Returns True if the operation was successful or if the object was already backed up,
-        otherwise False. After running this, the `backed_up` field for the associated resource
-        should be set to the returned value.
+        Copies the resources in the given queryset from the live store to the backup store for their
+        respective projects.  Returns a tuple where the first element is the number of resources
+        that were successfully backed up and the second is a dict that maps project ids to lists of
+        media ids with at least one resource that failed to back up properly.
 
         If there is no backup bucket for the given project (or a site-wide default), this will
         return `False`.
 
-        :param path: The resource to back up
-        :type path: str
-        :param project: The project that the resource belongs to
-        :type project: main.models.Project
-        :rtype: bool
+        :param resource_qs: The resources to back up
+        :type resource_qs: Queryset
+        :rtype: Tuple[int, Dict[int, set]]
         """
-        success, store_info = self.get_store_info(project)
-        success = success and "backup" in store_info
+        successful_backups = set()
+        for resource in resource_qs.iterator():
+            project = self.project_from_resource(resource)
+            path = resource.path
+            success, store_info = self.get_store_info(project)
 
-        if success:
-            if store_info["backup"]["store"].check_key(path):
-                logger.info(f"Resource {path} already backed up")
-                return success
+            if success and "backup" in store_info:
+                if store_info["backup"]["store"].check_key(path):
+                    logger.info(f"Resource {path} already backed up")
+                    return True
 
-            # Get presigned url from the live bucket, set to expire in 1h
-            download_url = store_info["live"]["store"].get_download_url(path, 3600)
+                # Get presigned url from the live bucket, set to expire in 1h
+                download_url = store_info["live"]["store"].get_download_url(path, 3600)
 
-            # Perform the actual copy operation directly from the presigned url
-            try:
-                self._rpc(
-                    "operations/copyurl",
-                    fs=f"{store_info['backup']['remote_name']}:",
-                    remote=f"{store_info['backup']['bucket_name']}/{path}",
-                    url=download_url,
-                )
-            except:
-                success = False
-                logger.error(
-                    f"Backing up resource '{path}' with presigned url {download_url} failed",
-                    exc_info=True,
-                )
+                # Perform the actual copy operation directly from the presigned url
+                try:
+                    self._rpc(
+                        "operations/copyurl",
+                        fs=f"{store_info['backup']['remote_name']}:",
+                        remote=f"{store_info['backup']['bucket_name']}/{path}",
+                        url=download_url,
+                    )
+                except:
+                    success = False
+                    logger.error(
+                        f"Backing up resource '{path}' with presigned url {download_url} failed",
+                        exc_info=True,
+                    )
 
-        return success
+            if success:
+                successful_backups.add(resource.id)
+
+            yield success, resource
+
+        with transaction.atomic():
+            Resource = type(resource_qs.first())
+            resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
+            resource_qs.update(backed_up=True)
 
     def request_restore_resource(self, path, project, min_exp_days) -> bool:
         """
@@ -286,7 +308,7 @@ class TatorBackupManager:
 
         if success:
             # If no backup store is defined, use the live bucket
-            success, store = self._get_backup_store(store_info)
+            success, store = self.get_backup_store(store_info)
 
         if success:
             live_storage_class = store_info["live"]["store"].get_live_sc() or LIVE_STORAGE_CLASS
@@ -339,7 +361,7 @@ class TatorBackupManager:
 
         if success:
             # If no backup store is defined, use the live bucket
-            success, store = self._get_backup_store(store_info)
+            success, store = self.get_backup_store(store_info)
 
         if success:
             live_storage_class = store_info["live"]["store"].get_live_sc() or LIVE_STORAGE_CLASS
@@ -390,16 +412,18 @@ class TatorBackupManager:
         return success
 
     def get_size(self, resource):
-        # To avoid creating a circular import by importing main.models.Projects, get the related
-        # model from the resource's media relationship
-        Project = resource.media.model._meta.get_field("project").related_model
-        project = Project.objects.get(pk=int(resource.path.split("/")[1]))
-
+        """
+        Gets the size of the given resource from object storage.
+        """
+        size = 0
+        project = self.project_from_resource(resource)
         success, store_info = self.get_store_info(project)
 
         if success:
             if resource.backed_up:
-                return store_info["backup"]["store"].get_size(resource.path)
+                store_type = "backup"
+            else:
+                store_type = "live"
 
-            return store_info["live"]["store"].get_size(resource.path)
-        return 0
+            size = store_info[store_type]["store"].get_size(resource.path)
+        return size
