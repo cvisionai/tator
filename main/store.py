@@ -219,7 +219,7 @@ class TatorStorage(ABC):
         """Moves the object into the desired storage class"""
 
     @abstractmethod
-    def _object_tagged_for_archive(self, path):
+    def object_tagged_for_archive(self, path):
         """Returns True if an object is tagged in storage for archive"""
 
     @abstractmethod
@@ -242,7 +242,7 @@ class TatorStorage(ABC):
         if response.get("StorageClass", None) == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
-        if self._object_tagged_for_archive(path):
+        if self.object_tagged_for_archive(path):
             logger.info(f"Object {path} already tagged for archive, skipping")
             return True
 
@@ -251,7 +251,7 @@ class TatorStorage(ABC):
         except:
             logger.warning(f"Exception while tagging object {path} for archive", exc_info=True)
 
-        return self._object_tagged_for_archive(path)
+        return self.object_tagged_for_archive(path)
 
     @abstractmethod
     def restore_object(self, path: str, desired_storage_class: str, min_exp_days: int) -> None:
@@ -288,7 +288,7 @@ class MinIOStorage(TatorStorage):
     def check_key(self, path):
         return bool(self.list_objects_v2(self._path_to_key(path)))
 
-    def _object_tagged_for_archive(self, path):
+    def object_tagged_for_archive(self, path):
         tag_set = self.client.get_object_tagging(
             Bucket=self.bucket_name, Key=self._path_to_key(path)
         ).get("TagSet", [])
@@ -464,7 +464,7 @@ class GCPStorage(TatorStorage):
         blob = self._get_blob(path)
         return {"ContentLength": blob.size, "StorageClass": blob.storage_class}
 
-    def _object_tagged_for_archive(self, path):
+    def object_tagged_for_archive(self, path):
         blob = self._get_blob(path)
         return blob.custom_time is not None
 

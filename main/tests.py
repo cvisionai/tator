@@ -20,9 +20,11 @@ from rest_framework.test import APITestCase
 from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
 
+from .backup import TatorBackupManager
 from .models import *
-from .store import get_tator_store
 from .search import TatorSearch, ALLOWED_MUTATIONS
+from .store import get_tator_store, PATH_KEYS
+from .util import update_queryset_archive_state
 
 logger = logging.getLogger(__name__)
 
@@ -3257,12 +3259,12 @@ class ResourceTestCase(APITestCase):
             self.assertFalse(Resource.objects.get(path=media_def["path"]).backed_up)
 
     def test_archive_state_lifecycle(self):
-        from main.util import update_queryset_archive_state
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         media_id = media.id
 
         # Post one file of each role.
         keys, segment_key = self._generate_keys(media)
+        all_keys = list(keys.values()) + [segment_key]
         for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             media_def = self._get_media_def(role, keys, segment_key)
             response = self.client.post(
@@ -3270,9 +3272,23 @@ class ResourceTestCase(APITestCase):
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        if self.project.backup_bucket:
+            # Back up the resource
+            n_successful_backups = 0
+            resource_qs = Resource.objects.filter(path__in=all_keys)
+            for success, resource in TatorBackupManager().backup_resources(resource_qs):
+                if success:
+                    n_successful_backups += 1
+
+            self.assertEqual(n_successful_backups, len(all_keys))
+
         # Check the value of the media's `archive_state` flag
         media = Media.objects.get(pk=media_id)
         self.assertEqual(media.archive_state, "live")
+
+        # Check that none of the objects are tagged for archive yet
+        for path in media.path_iterator(keys=PATH_KEYS):
+            self.assertFalse(self.store.object_tagged_for_archive(path))
 
         # Patch the media object and put it in the `to_archive` state
         response = self.client.patch(
@@ -3288,6 +3304,8 @@ class ResourceTestCase(APITestCase):
         update_queryset_archive_state(media_qs, target_state)
         media = Media.objects.get(pk=media_id)
         self.assertEqual(media.archive_state, "archived")
+        for path in media.path_iterator(keys=PATH_KEYS):
+            self.assertTrue(self.store.object_tagged_for_archive(path))
 
         # Patch the media object and put it in the `to_live` state
         response = self.client.patch(
@@ -3319,14 +3337,16 @@ class ResourceTestCase(APITestCase):
         media = Media.objects.get(pk=media_id)
         self.assertEqual(media.archive_state, "live")
         self.assertFalse(media.restoration_requested)
+        for path in media.path_iterator(keys=PATH_KEYS):
+            self.assertFalse(self.store.object_tagged_for_archive(path))
 
     def test_backup_lifecycle(self):
-        from main.backup import TatorBackupManager
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         media_id = media.id
 
         # Post one file of each role.
         keys, segment_key = self._generate_keys(media)
+        all_keys = list(keys.values()) + [segment_key]
         for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             media_def = self._get_media_def(role, keys, segment_key)
             response = self.client.post(
@@ -3335,9 +3355,9 @@ class ResourceTestCase(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Check the value of each resource's `backed_up` flag is `False`
-        resource_qs = Resource.objects.filter(path__in=keys.values(), backed_up=False)
+        resource_qs = Resource.objects.filter(path__in=all_keys, backed_up=False)
         self.assertEqual(
-            resource_qs.count(), len(keys)
+            resource_qs.count(), len(all_keys)
         )
 
         # Back up the resource
@@ -3346,11 +3366,11 @@ class ResourceTestCase(APITestCase):
             if success:
                 n_successful_backups += 1
 
-        self.assertEqual(n_successful_backups, len(keys))
+        self.assertEqual(n_successful_backups, len(all_keys))
 
         # Check the value of each resource's `backed_up` flag is `True`
-        resource_qs = Resource.objects.filter(path__in=keys.values(), backed_up=True)
-        self.assertEqual(resource_qs.count(), len(keys))
+        resource_qs = Resource.objects.filter(path__in=all_keys, backed_up=True)
+        self.assertEqual(resource_qs.count(), len(all_keys))
 
         # Check that each resource was copied to the backup bucket
         success, store_info = TatorBackupManager().get_store_info(self.project)
