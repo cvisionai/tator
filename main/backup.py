@@ -13,6 +13,7 @@ from main.store import get_tator_store
 
 logger = logging.getLogger(__name__)
 LIVE_STORAGE_CLASS = "STANDARD"
+ALL_STORE_TYPES = ["backup", "live"]
 
 
 """
@@ -135,15 +136,13 @@ class TatorBackupManager:
             raise RcloneException(output, status)
         return output
 
-    def _get_bucket_info(self, project, store_types=["live", "backup"]) -> dict:
+    def _get_bucket_info(self, project) -> dict:
         """
         Sets (if necessary) and returns the necessary objects for interacting with the bucket of the
         given store type for the given project.
 
         :param project: The project whose bucket objects shall be returned.
         :type project: main.models.Project
-        :param store_types: The types of buckets, valid values in ["live", "backup"]
-        :type store_types: List[str]
         :rtype: dict
         """
         failed = False
@@ -152,7 +151,7 @@ class TatorBackupManager:
         if project_id not in TatorBackupManager.__project_stores:
             TatorBackupManager.__project_stores[project_id] = {}
             # Get the `TatorStore` object that connects to object storage for the given type
-            for store_type in store_types:
+            for store_type in ALL_STORE_TYPES:
                 is_backup = store_type == "backup"
                 project_bucket = project.get_bucket(backup=is_backup)
                 use_default_bucket = project_bucket is None
@@ -164,6 +163,7 @@ class TatorBackupManager:
                         f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
                         exc_info=True,
                     )
+                    break
                 else:
                     if store:
                         TatorBackupManager.__project_stores[project_id][store_type] = {
@@ -230,12 +230,13 @@ class TatorBackupManager:
                     )
                 except:
                     logger.error(
-                        f"Failed to create remote config for bucket {bucket_name} in project {project.id}",
+                        f"Failed to create remote config for bucket {bucket_name} in project "
+                        f"{project.id}",
                         exc_info=True,
                     )
                     success = False
         else:
-            logger.warning(f"Failed to get bucket info for project '{project.id}'", exc_info=True)
+            logger.warning(f"Failed to get store info for project '{project.id}'", exc_info=True)
 
         return success, store_info
 

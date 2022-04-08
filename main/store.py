@@ -659,6 +659,9 @@ def get_tator_store(
             raise ValueError(f"Received unhandled server type '{response_server}'")
 
     provider = {ObjectStore.AWS: "AWS", ObjectStore.MINIO: "Minio"}[server]
+
+    # These parameters are used by `TatorBackupManager` to communicate with storage providers using
+    # the Python wrapper to the golang library `librclone`
     rclone_config_create_params = {
         "provider": provider,
         "env_auth": False,
