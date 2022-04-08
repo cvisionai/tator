@@ -293,9 +293,11 @@ export class VideoCanvas extends AnnotationCanvas {
 
   startDownload(streaming_files, offsite_config)
   {
-    var that = this;
-
-    if (streaming_files[0].hls)
+    if (this._children)
+    {
+      console.info("Launching concat downloader.");
+    }
+    else if (streaming_files[0].hls)
     {
       this._videoElement[0].hls(streaming_files[0].hls).then(() => {
         this.dispatchEvent(new CustomEvent("bufferLoaded",
@@ -319,16 +321,16 @@ export class VideoCanvas extends AnnotationCanvas {
     else
     {
       this._dlWorker = new DownloadManager(this);
-    }
-    this._scrubDownloadCount = 0;
+      this._scrubDownloadCount = 0;
 
-    // Start downloading the scrub buffer
-    this._dlWorker.postMessage({"type": "start",
-                                "media_files": streaming_files,
-                                "play_idx": this._play_idx,
-                                "hq_idx": this._seek_idx,
-                                "scrub_idx": this._scrub_idx,
-                                "offsite_config": offsite_config});
+      // Start downloading the scrub buffer
+      this._dlWorker.postMessage({"type": "start",
+                                  "media_files": streaming_files,
+                                  "play_idx": this._play_idx,
+                                  "hq_idx": this._seek_idx,
+                                  "scrub_idx": this._scrub_idx,
+                                  "offsite_config": offsite_config});
+    }
   }
 
   /**
@@ -368,24 +370,7 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   nearestQuality(quality)
   {
-    let find_closest = (videoObject, resolution) => {
-      let play_idx = -1;
-      let max_delta = Number.MAX_SAFE_INTEGER;
-      let resolutions = videoObject.media_files["streaming"].length;
-      for (let idx = 0; idx < resolutions; idx++)
-      {
-        let height = videoObject.media_files["streaming"][idx].resolution[0];
-        let delta = Math.abs(quality - height);
-        if (delta < max_delta)
-        {
-          max_delta = delta;
-          play_idx = idx;
-        }
-      }
-      return play_idx;
-    };
-
-    let selectedIndex = find_closest(this._videoObject, quality);
+    let selectedIndex = this.find_closest(this._videoObject, quality);
     let outValue = {
       quality: this._videoObject.media_files["streaming"][selectedIndex].resolution[0],
       fps: this._videoObject.fps
@@ -401,26 +386,10 @@ export class VideoCanvas extends AnnotationCanvas {
   setQuality(quality, buffer)
   {
     quality = Math.min(quality, this._maxHeight); // defensive programming
-    let find_closest = (videoObject, resolution) => {
-      let play_idx = -1;
-      let max_delta = Number.MAX_SAFE_INTEGER;
-      let resolutions = videoObject.media_files["streaming"].length;
-      for (let idx = 0; idx < resolutions; idx++)
-      {
-        let height = videoObject.media_files["streaming"][idx].resolution[0];
-        let delta = Math.abs(quality - height);
-        if (delta < max_delta)
-        {
-          max_delta = delta;
-          play_idx = idx;
-        }
-      }
-      return play_idx;
-    };
 
     if (this._videoObject)
     {
-      let new_play_idx = find_closest(this._videoObject, quality);
+      let new_play_idx = this.find_closest(this._videoObject, quality);
 
       if (buffer == undefined) {
         this._play_idx = new_play_idx;
@@ -460,6 +429,143 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     return this._videoObject.id;
   }
+
+  construct_demuxer(idx, resolution) 
+  {
+    let use_hls = (this._videoObject.media_files.streaming[0].hls ? true : false);
+    let searchParams = new URLSearchParams(window.location.search);
+    if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1 || use_hls == true)
+    {
+      return new VideoBufferDemux();
+    }
+    else
+    {
+      let p = new TatorVideoDecoder(resolution);
+      if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
+      {
+        // @TODO get this value from somewhere
+        p.playBuffer().summaryLevel = 15;
+      }
+      if (idx == this._play_idx)
+      {
+        p.onBuffered = () => {
+          const ranges = p.playBuffer().buffered;
+          let ranges_list = [];
+          for (let idx = 0; idx < ranges.length; idx++)
+          {
+            let startFrame = this.timeToFrame(ranges.start(idx));
+            let endFrame = this.timeToFrame(ranges.end(idx));
+            if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
+            {
+              ranges_list.push([startFrame, endFrame]);
+            }
+          }
+          this.dispatchEvent(new CustomEvent("onDemandDetail",
+                                            {composed: true,
+                                             detail: {"ranges": ranges_list}}));
+        };
+      }
+      return p;
+    }
+  }
+
+  find_closest(videoObject, target_quality) 
+  {
+    let play_idx = -1;
+    let max_delta = this._maxHeight;
+    let resolutions = videoObject.media_files["streaming"].length;
+    for (let idx = 0; idx < resolutions; idx++)
+    {
+      let height = videoObject.media_files["streaming"][idx].resolution[0];
+      let delta = Math.abs(target_quality - height);
+      if (delta < max_delta)
+      {
+        max_delta = delta;
+        play_idx = idx;
+      }
+    }
+    return play_idx;
+  };
+
+  // Based on the video object and the resolutions identifed set the various playback buffer
+  // indices
+  identify_qualities(videoObject, playQuality, scrubQuality, seekQuality, offsite_config)
+  {
+    let play_idx = -1;
+    let scrub_idx = -1;
+    let hq_idx = -1;
+    let streaming_files = null;
+    this._lastDownloadSeekFrame = -1;
+    
+    if (videoObject.media_files)
+    {
+      streaming_files = videoObject.media_files["streaming"];
+      play_idx = this.find_closest(videoObject, playQuality);
+
+      if (Number.isInteger(scrubQuality)) {
+        scrub_idx = this.find_closest(videoObject, scrubQuality);
+      }
+      else {
+        scrub_idx = this.find_closest(videoObject, 320);
+      }
+      console.info(`NOTICE: Choose video stream ${play_idx}`);
+
+      if ('audio' in videoObject.media_files && !offsite_config.hasOwnProperty('host'))
+      {
+        let audio_def = videoObject.media_files['audio'][0];
+        this._audioPlayer = document.createElement("AUDIO");
+        console.log("MediaSource element created: AUDIO");
+        this._audioPlayer.setAttribute('src', audio_def.path);
+        this._audioPlayer.volume = 0.5; // Default volume
+        this.audio = true;
+        this.addPauseListener(() => {
+          this._audioPlayer.pause();
+        });
+      }
+
+      // The streaming files may not be in order, find the largest resolution
+      hq_idx = 0;
+      var largest_height = 0;
+      var largest_width = 0;
+      for (let idx = 0; idx < videoObject.media_files["streaming"].length; idx++)
+      {
+        let height = videoObject.media_files["streaming"][idx].resolution[0];
+        if (height > largest_height)
+        {
+          largest_height = height;
+          largest_width = videoObject.media_files["streaming"][idx].resolution[1];
+          hq_idx = idx;
+        }
+      }
+      if (Number.isInteger(seekQuality)) {
+        hq_idx = this.find_closest(videoObject, seekQuality);
+      }
+    }
+    else
+    {
+      largest_height = videoObject.height;
+      largest_width = vidoObject.width;
+    }
+
+    if (play_idx == -1)
+    {
+      videoUrl = "/media/" + videoObject.file;
+      dims = [videoObject.width,videoObject.height];
+      console.warn("Using old access method!");
+      streaming_files = [{"path": "/media/" + videoObject.file,
+                          "resolution": [videoObject.height,videoObject.width]}];
+      play_idx = 0;
+      scrub_idx = 0;
+      hq_idx = 0;
+    }
+
+    this._play_idx = play_idx;
+    this._scrub_idx = scrub_idx;
+    this._seek_idx = hq_idx;
+    console.log(`video buffer indexes: ${play_idx} ${scrub_idx} ${hq_idx}`);
+
+    return [largest_width, largest_height];
+  }
   /// Load a video from URL (whole video) with associated metadata
   /// Returns a promise when the video resource is loaded
   //
@@ -477,6 +583,7 @@ export class VideoCanvas extends AnnotationCanvas {
     if ('concat' in videoObject.media_files)
     {
       let ids=[];
+      let offsetMap=new Map();
       for (let idx = 0; idx< videoObject.media_files.concat.length; idx++)
       {
         ids.push(videoObject.media_files.concat[idx].id);
@@ -501,11 +608,87 @@ export class VideoCanvas extends AnnotationCanvas {
                       }
                       else
                       {
+                        let new_length = 0;
+                        let streaming_files=[];
+
+                        // If quality is not supplied default to 720 or highest available
+                        let resolutions = this._children[0].media_files["streaming"].length;
+                        this._maxHeight = 0;
+                        for (let idx = 0; idx < resolutions; idx++)
+                        {
+                          let height = this._children[0].media_files["streaming"][idx].resolution[0];
+                          if (height > this._maxHeight)
+                          {
+                            this._maxHeight = height;
+                          }
+                        }
+                        if (quality == undefined || quality == null)
+                        {
+                          quality = 720;
+                        }
+                        quality = Math.min(quality, this._maxHeight);
+                        if (resizeHandler == undefined)
+                        {
+                          resizeHandler = true;
+                        }
+                        if (offsite_config == undefined)
+                        {
+                          offsite_config = {}
+                        }
+
+                        for (let idx = 0; idx < this._children.length; idx++)
+                        {
+                          if (idx + 1 < this._children.length)
+                          {
+                            new_length += (videoObject.media_files.concat[idx+1].timestampOffset-videoObject.media_files.concat[idx].timestampOffset)*this._children[idx].fps;
+                          }
+                          else
+                          {
+                            new_length += this._children[idx].num_frames;
+                          }
+                          streaming_files.push(this._children[idx].media_files.streaming);
+                        }
+                        this._numFrames = new_length;
+                        this.dispatchEvent(new CustomEvent("videoLengthChanged",
+                                           {composed: true,
+                                            detail: {length:new_length}}));
+                        this.startDownload(streaming_files, offsite_config);
+
                         // Set the streaming objects to the same as the first media file
                         // TODO: make this smarter.
                         this._videoObject.media_files.streaming = json[0].media_files.streaming;
                         this.dispatchEvent(new CustomEvent("discoveredQualities",
                                           {composed: true, detail: {media: json[0]}}));
+                                          this._videoElement = [];
+
+                        var largest_height = 0;
+                        var largest_width = 0;
+                        for (let idx = 0; idx < streaming_files[0].length; idx++)
+                        {
+                          if (streaming_files[0][idx].resolution[0] > largest_height)
+                          {
+                            largest_height = streaming_files[0][idx].resolution[0];
+                          }
+                          if (streaming_files[0][idx].resolution[1] > largest_width)
+                          {
+                            largest_width = streaming_files[0][idx].resolution[1];
+                          }
+                          this._videoElement.push(this.construct_demuxer(idx, streaming_files[0][idx].resolution[0]));
+                          this._videoElement[idx].named_idx = idx;
+                        }
+
+                        this.dispatchEvent(new CustomEvent("discoveredQualities",
+                       {composed: true, detail: {media: this._children[0]}}));
+                        
+                        let dims = this.identify_qualities(this._children[0], quality, scrubQuality, seekQuality, offsite_config);
+                        // Clear the buffer in case this is a hot-swap
+                        this._draw.clear();
+                        this._draw.resizeViewport(dims[0], dims[1]);
+                        this._fps=Math.round(1000*this._children[0].fps)/1000;
+                        this._numFrames=new_length;
+                        this._numSeconds=new_length / this._fps;
+                        this._dims=dims;
+                        this.resetRoi();
                         resolve();
                       }
                     });
@@ -555,135 +738,14 @@ export class VideoCanvas extends AnnotationCanvas {
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
 
-    let find_closest = (videoObject, target_quality) => {
-      let play_idx = -1;
-      let max_delta = this._maxHeight;
-      let resolutions = videoObject.media_files["streaming"].length;
-      for (let idx = 0; idx < resolutions; idx++)
-      {
-        let height = videoObject.media_files["streaming"][idx].resolution[0];
-        let delta = Math.abs(target_quality - height);
-        if (delta < max_delta)
-        {
-          max_delta = delta;
-          play_idx = idx;
-        }
-      }
-      return play_idx;
-    };
+    // Use the largest resolution to set the viewport
+    dims = this.identify_qualities(videoObject, quality, scrubQuality, seekQuality, offsite_config);
 
-    let play_idx = -1;
-    let scrub_idx = -1;
-    let hq_idx = -1;
-    let streaming_files = null;
-    this._lastDownloadSeekFrame = -1;
-    if (videoObject.media_files)
-    {
-      streaming_files = videoObject.media_files["streaming"];
-      play_idx = find_closest(videoObject, quality);
-
-      if (Number.isInteger(scrubQuality)) {
-        scrub_idx = find_closest(videoObject, scrubQuality);
-      }
-      else {
-        scrub_idx = find_closest(videoObject, 320);
-      }
-      console.info(`NOTICE: Choose video stream ${play_idx}`);
-
-      if ('audio' in videoObject.media_files && !offsite_config.hasOwnProperty('host'))
-      {
-        let audio_def = videoObject.media_files['audio'][0];
-        this._audioPlayer = document.createElement("AUDIO");
-        console.log("MediaSource element created: AUDIO");
-        this._audioPlayer.setAttribute('src', audio_def.path);
-        this._audioPlayer.volume = 0.5; // Default volume
-        this.audio = true;
-        this.addPauseListener(() => {
-          this._audioPlayer.pause();
-        });
-      }
-
-      // The streaming files may not be in order, find the largest resolution
-      hq_idx = 0;
-      var largest_height = 0;
-      var largest_width = 0;
-      for (let idx = 0; idx < videoObject.media_files["streaming"].length; idx++)
-      {
-        let height = videoObject.media_files["streaming"][idx].resolution[0];
-        if (height > largest_height)
-        {
-          largest_height = height;
-          largest_width = videoObject.media_files["streaming"][idx].resolution[1];
-          hq_idx = idx;
-        }
-      }
-      if (Number.isInteger(seekQuality)) {
-        hq_idx = find_closest(videoObject, seekQuality);
-      }
-
-      // Use the largest resolution to set the viewport
-      dims = [largest_width, largest_height];
-    }
-    // Handle cases when there are no streaming files in the set
-    if (play_idx == -1)
-    {
-      videoUrl = "/media/" + videoObject.file;
-      dims = [videoObject.width,videoObject.height];
-      console.warn("Using old access method!");
-      streaming_files = [{"path": "/media/" + videoObject.file,
-                          "resolution": [videoObject.height,videoObject.width]}];
-      play_idx = 0;
-      scrub_idx = 0;
-      hq_idx = 0;
-    }
-
-    // Set initial buffer index values
-    this._play_idx = play_idx;
-    this._scrub_idx = scrub_idx;
-    this._seek_idx = hq_idx;
-    console.log(`video buffer indexes: ${play_idx} ${scrub_idx} ${hq_idx}`);
-
-    let construct_demuxer = (idx, resolution) => {
-      let use_hls = (videoObject.media_files.streaming[0].hls ? true : false);
-      let searchParams = new URLSearchParams(window.location.search);
-      if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1 || use_hls == true)
-      {
-        return new VideoBufferDemux();
-      }
-      else
-      {
-        let p = new TatorVideoDecoder(resolution);
-        if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
-        {
-          // @TODO get this value from somewhere
-          p.playBuffer().summaryLevel = 15;
-        }
-        if (idx == this._play_idx)
-        {
-          p.onBuffered = () => {
-            const ranges = p.playBuffer().buffered;
-            let ranges_list = [];
-            for (let idx = 0; idx < ranges.length; idx++)
-            {
-              let startFrame = this.timeToFrame(ranges.start(idx));
-              let endFrame = this.timeToFrame(ranges.end(idx));
-              if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
-              {
-                ranges_list.push([startFrame, endFrame]);
-              }
-            }
-            this.dispatchEvent(new CustomEvent("onDemandDetail",
-                                              {composed: true,
-                                               detail: {"ranges": ranges_list}}));
-          };
-        }
-        return p;
-      }
-    }
     this._videoElement = [];
+    let streaming_files = this._videoObject.media_files.streaming;
     for (let idx = 0; idx < streaming_files.length; idx++)
     {
-      this._videoElement.push(construct_demuxer(idx, streaming_files[idx].resolution[0]));
+      this._videoElement.push(this.construct_demuxer(idx, streaming_files[idx].resolution[0]));
       this._videoElement[idx].named_idx = idx;
     }
     // Clear the buffer in case this is a hot-swap
