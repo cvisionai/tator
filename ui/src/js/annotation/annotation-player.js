@@ -186,7 +186,7 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("videoLengthChanged", evt =>
     {
-      this._slider.max = evt.detail.length;
+      this._slider.setAttribute('max',evt.detail.length);
       this._totalTime.textContent = "/ " + this._frameToTime(evt.detail.length);
       this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     });

@@ -6,6 +6,7 @@ import { getCookie } from "../util/get-cookie.js";
 import { PeriodicTaskProfiler } from "./periodic_task_profiler";
 import { VideoBufferDemux } from "./video_buffer_demux";
 import { MotionComp } from "./motion_comp";
+import { ConcatDownloadManager } from "./concat_download_manager.js";
 
 
 // Video export class handles interactions between HTML presentation layer and the
@@ -296,6 +297,12 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._children)
     {
       console.info("Launching concat downloader.");
+      this._dlWorker = new ConcatDownloadManager(this, this._children, this._videoObject.media_files.concat);
+      this._dlWorker.postMessage({"type": "start",
+                                  "play_idx": this._play_idx,
+                                  "hq_idx": this._seek_idx,
+                                  "scrub_idx": this._scrub_idx,
+                                  "offsite_config": offsite_config});
     }
     else if (streaming_files[0].hls)
     {
@@ -596,7 +603,7 @@ export class VideoCanvas extends AnnotationCanvas {
                    "X-CSRFToken": getCookie("csrftoken"),
                    "Accept": "application/json",
                    "Content-Type": "application/json"},
-                 body: JSON.stringify({"ids": ids}),
+                 body: JSON.stringify({"ids": ids, 'presigned': 86400}),
                   }).then(response => response.json())
                     .then(json => {
                       console.info(json)
@@ -652,7 +659,6 @@ export class VideoCanvas extends AnnotationCanvas {
                         this.dispatchEvent(new CustomEvent("videoLengthChanged",
                                            {composed: true,
                                             detail: {length:new_length}}));
-                        this.startDownload(streaming_files, offsite_config);
 
                         // Set the streaming objects to the same as the first media file
                         // TODO: make this smarter.
@@ -689,6 +695,8 @@ export class VideoCanvas extends AnnotationCanvas {
                         this._numSeconds=new_length / this._fps;
                         this._dims=dims;
                         this.resetRoi();
+
+                        this.startDownload(streaming_files, offsite_config);
                         resolve();
                       }
                     });

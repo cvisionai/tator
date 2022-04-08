@@ -9,7 +9,8 @@ export class DownloadManager
   constructor(parent)
   {
     this._parent = parent;
-    this._worker = new Worker(new URL("./vid_downloader.js", import.meta.url));
+    this._worker = new Worker(new URL("./vid_downloader.js", import.meta.url),
+    {'name': 'Video Download Worker'});
     this._worker.onmessage = this._onMessage.bind(this);
   }
 
