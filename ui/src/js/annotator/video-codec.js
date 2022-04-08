@@ -131,6 +131,7 @@ class TatorVideoManager {
 
     this._hot_frames = new Map();
     this._playing = false;
+    this._timescaleMap = new Map();
   }
 
   _on_message(msg)
@@ -139,7 +140,7 @@ class TatorVideoManager {
     if (msg.data.type == "ready")
     {
       this._codec_string = msg.data.data.tracks[0].codec;
-      this._timescale = msg.data.data.tracks[0].timescale;
+      this._timescaleMap.set(msg.timestampOffset,msg.data.data.tracks[0].timescale);
       if (this._parent._loadedDataCallback)
       {
         this._parent._loadedDataCallback();
@@ -165,9 +166,10 @@ class TatorVideoManager {
     else if (msg.data.type == "buffered")
     {
       this._time_ranges.clear();
+      const timescale = this._timescaleMap.get(msg.timestampOffset);
       for (let idx = 0; idx < msg.data.ranges.length; idx++)
       {
-        this._time_ranges.push(msg.data.ranges[idx][0]/this._timescale, msg.data.ranges[idx][1]/this._timescale);
+        this._time_ranges.push(msg.timestampOffset+msg.data.ranges[idx][0]/timescale, msg.timestampOffset+msg.data.ranges[idx][1]/timescale);
       }
       //this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
@@ -188,7 +190,8 @@ class TatorVideoManager {
   _cursor_is_hot()
   {
     let timestamps = this._hot_frames.keys() // make sure keys are sorted!
-    let cursor_in_ctx = this._current_cursor * this._timescale;
+    let timescale = this._barkerSearch(this._timescaleMap, this._current_cursor).obj;
+    let cursor_in_ctx = this._current_cursor * timescale;
     for (let timestamp of timestamps)
     {
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < timestamp+this._frame_delta)
@@ -207,7 +210,7 @@ class TatorVideoManager {
     if (this.onFrame && this._playing == true)
     {
       this._current_cursor = msg.data.cursor;
-      if (this.onFrame(msg.data, this._timescale))
+      if (this.onFrame(msg.data, this._timescaleMap.get(0)))
       {
         return;
       }
@@ -236,6 +239,25 @@ class TatorVideoManager {
     }
   }
 
+  // Find the nearest object without going over
+  _barkerSearch(mapObject, key)
+  {
+    let keys = [...mapObject.keys()].sort((a,b)=>{return a-b;});
+    let idx = 0;
+    for (idx = 0; idx < keys.length; idx++)
+    {
+      if (keys[idx] > key)
+      {
+        break;
+      }
+    }
+
+    let found_idx = Math.max(0, idx-1);
+
+    return {obj: mapObject.get(keys[found_idx]),
+            key: keys[found_idx]};
+  }
+
   // The seek buffer can keep up to 10 frames pre-decoded ready to go in either direction
   // to support extra fast prev/next 
   _clean_hot()
@@ -245,8 +267,9 @@ class TatorVideoManager {
       return;
     }
     
+    let timescale = this._barkerSearch(this._timescaleMap, this._current_cursor).obj;
     let delete_elements = [];
-    let cursor_in_ctx = this._current_cursor * this._timescale;
+    let cursor_in_ctx = this._current_cursor * timescale;
     let timestamps = [...this._hot_frames.keys()];
     for (let hot_frame of timestamps)
     {
@@ -269,7 +292,8 @@ class TatorVideoManager {
 
   _closest_frame_to_cursor()
   {
-    const cursorInCts = this._current_cursor*this._timescale;
+    let timescale = this._barkerSearch(this._timescaleMap, this._current_cursor).obj;
+    const cursorInCts = this._current_cursor*timescale;
     let lastDistance = Number.MAX_VALUE;
     let lastTimestamp = 0;
     let timestamps = [...this._hot_frames.keys()].sort((a,b)=>a-b); // make sure keys are sorted!

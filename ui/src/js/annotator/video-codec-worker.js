@@ -246,7 +246,8 @@ class TatorVideoBuffer {
     console.info(JSON.stringify(info));
 
     postMessage({"type": "ready",
-                 "data": info});
+                 "data": info,
+                 "timestampOffset": timestampOffset});
   }
 
   _mp4Samples(track_id, timestampOffset, samples)
@@ -429,7 +430,8 @@ class TatorVideoBuffer {
     {
       // Update the manager on what is buffered
       postMessage({'type': "buffered",
-                   'ranges': this._bufferedRegions._buffer}); 
+                   'ranges': this._bufferedRegions._buffer,
+                   'timestampOffset': timestampOffset}); 
     }
     //console.info(`${this._name}: ${this._current_cursor} ${this._current_cursor*this._timescale} ${muted}: Finished mp4 samples, count=${samples.length}`);
     if (this._pendingSeek > 0)
@@ -585,8 +587,8 @@ class TatorVideoBuffer {
       {
         //console.info(`Found it, going in ${video_time} ${seek_timestamp} ${this._bufferedRegions.start(idx)} ${this._bufferedRegions.end(idx)}!`);
         this._lastSeek = performance.now();
-        let search = this._barkerSearch(this._keyframeMap, seek_timestamp);
-        let keyframe_info = search.obj.closest_keyframe(seek_timestamp-search.key);
+        let search = this._barkerSearch(this._keyframeMap, video_time);
+        let keyframe_info = search.obj.closest_keyframe((video_time-search.key)*timescale);
         let mp4File = this._barkerSearch(this._mp4FileMap, search.key).obj;
         // If the codec closed on us, opportunistically reopen it
         if (this._videoDecoder.state == 'closed')
@@ -600,7 +602,7 @@ class TatorVideoBuffer {
         this._videoDecoder.configure(this.activeCodecConfig);
         let nearest_keyframe = keyframe_info.thisSegment;
         mp4File.stop();
-        console.info(`${this._name}: COMMANDING MP4 SEEK ${video_time} ${nearest_keyframe/timescale}`);
+        console.info(`${this._name}: COMMANDING MP4 SEEK ${search.key} ${video_time} ${nearest_keyframe/timescale}`);
         mp4File.seek(nearest_keyframe/timescale);
         mp4File.start();
         return;
@@ -779,8 +781,8 @@ class TatorVideoBuffer {
       seekDecoder.configure(this._encoderConfig.get(timestampOffset));
       tempFile.lastBoxStartPosition = data.fileStart;
       tempFile.nextParsePosition = data.fileStart;
-      tempFile.dtsBias = Math.round(data.frameStart * this._timescale);
-      console.info(`TEMP Setting dts bias to FS=${data.fileStart} BIAS=${tempFile.dtsBias} ${tempFile.dtsBias/this._timescale}`);
+      tempFile.dtsBias = Math.round(data.frameStart * this._timescaleMap.get(timestampOffset));
+      console.info(`TEMP Setting dts bias to FS=${data.fileStart} BIAS=${tempFile.dtsBias} ${tempFile.dtsBias/this._timescaleMap.get(timestampOffset)}`);
       tempFile.stop();
       tempFile.appendBuffer(data);
       tempFile.seek(0); // Always go to 0 for this
