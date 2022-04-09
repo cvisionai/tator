@@ -74,9 +74,27 @@ export class ConcatDownloadManager
       // This assumes all the videos are the same FPS.
       search.obj.postMessage(msg);
     }
+    else if (msg.type == "onDemandInit")
+    {
+      const time = msg.frame/this._fps;
+      let search = this._barkerSearch(this._workerMap, time);
+      this._activeTimestamp = search.key;
+      msg["frame"] -= Math.floor((this._fps * search.key));
+      // This assumes all the videos are the same FPS.
+      search.obj.postMessage(msg);
+    }
+    else if (msg.type == "onDemandDownload")
+    {
+      this._workerMap.get(this._activeTimestamp).postMessage(msg);
+    }
+    else if (msg.type == "onDemandPaused")
+    {
+      this._workerMap.get(this._activeTimestamp).postMessage(msg);
+      this._activeTimestamp = null;
+    }
     else
     {
-      console.info(`Ignoring ${JSON.stringify(msg)}`);
+      console.error(`Ignoring ${JSON.stringify(msg)}`);
       // Do nothing.
     }
   }
