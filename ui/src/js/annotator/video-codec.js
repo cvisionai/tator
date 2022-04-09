@@ -140,7 +140,7 @@ class TatorVideoManager {
     if (msg.data.type == "ready")
     {
       this._codec_string = msg.data.data.tracks[0].codec;
-      this._timescaleMap.set(msg.timestampOffset,msg.data.data.tracks[0].timescale);
+      this._timescaleMap.set(msg.data.timestampOffset,msg.data.data.tracks[0].timescale);
       if (this._parent._loadedDataCallback)
       {
         this._parent._loadedDataCallback();
@@ -166,10 +166,10 @@ class TatorVideoManager {
     else if (msg.data.type == "buffered")
     {
       this._time_ranges.clear();
-      const timescale = this._timescaleMap.get(msg.timestampOffset);
+      const timescale = this._timescaleMap.get(msg.data.timestampOffset);
       for (let idx = 0; idx < msg.data.ranges.length; idx++)
       {
-        this._time_ranges.push(msg.timestampOffset+msg.data.ranges[idx][0]/timescale, msg.timestampOffset+msg.data.ranges[idx][1]/timescale);
+        this._time_ranges.push(msg.data.timestampOffset+msg.data.ranges[idx][0]/timescale, msg.data.timestampOffset+msg.data.ranges[idx][1]/timescale);
       }
       //this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
