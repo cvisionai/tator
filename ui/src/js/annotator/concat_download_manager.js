@@ -85,11 +85,14 @@ export class ConcatDownloadManager
     }
     else if (msg.type == "onDemandDownload")
     {
-      this._workerMap.get(this._activeTimestamp).postMessage(msg);
+      if (this._activeTimestamp != undefined)
+      {
+        this._workerMap.get(this._activeTimestamp).postMessage(msg);
+      }
     }
     else if (msg.type == "onDemandPaused")
     {
-      if (this._activeTimestamp)
+      if (this._activeTimestamp != undefined)
       {
         this._workerMap.get(this._activeTimestamp).postMessage(msg);
       }
