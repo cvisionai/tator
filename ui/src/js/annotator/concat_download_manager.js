@@ -89,7 +89,10 @@ export class ConcatDownloadManager
     }
     else if (msg.type == "onDemandPaused")
     {
-      this._workerMap.get(this._activeTimestamp).postMessage(msg);
+      if (this._activeTimestamp)
+      {
+        this._workerMap.get(this._activeTimestamp).postMessage(msg);
+      }
       this._activeTimestamp = null;
     }
     else
@@ -327,7 +330,7 @@ export class ConcatDownloadManager
           var end2 = offsets2[1][0]+offsets2[1][1];
           var bufferToSend = data2.slice(begin2, end2);
           bufferToSend.fileStart = 0;
-          video.appendOnDemandBuffer(bufferToSend, playCallback, timestampOffset);
+          video.appendOnDemandBuffer(bufferToSend, playCallback, true,timestampOffset);
         }
 
         var playCallback = function () {
@@ -356,7 +359,7 @@ export class ConcatDownloadManager
             // Note: There is only one buffer for the onDemand buffer, unlike the other
             //       scrub buffers. So, we only need to initialize a single buffer
             //       with this video information.
-            video_buffer.appendOnDemandBuffer(bufferToSend, callback, timestampOffset);
+            video_buffer.appendOnDemandBuffer(bufferToSend, callback, true, timestampOffset);
             idx += 2;
           }
           else
@@ -373,14 +376,14 @@ export class ConcatDownloadManager
             }
             try {
               if (!this._parent._makeVideoError) {
-                video_buffer.appendOnDemandBuffer(bufferToSend, callback, timestampOffset);
+                video_buffer.appendOnDemandBuffer(bufferToSend, callback, true, timestampOffset);
               }
               else {
                 // #DEBUG path - Used to induce a decoding error
                 this._parent._makeVideoError = false;
                 bufferToSend = data.slice(begin, end-5);
                 bufferToSend.fileStart = data.fileStart + begin;
-                video_buffer.appendOnDemandBuffer(bufferToSend, callback, timestampOffset);
+                video_buffer.appendOnDemandBuffer(bufferToSend, callback, true, timestampOffset);
               }
             }
             catch {
