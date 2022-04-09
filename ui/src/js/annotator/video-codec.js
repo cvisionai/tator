@@ -210,7 +210,7 @@ class TatorVideoManager {
     if (this.onFrame && this._playing == true)
     {
       this._current_cursor = msg.data.cursor;
-      if (this.onFrame(msg.data, this._timescaleMap.get(0)))
+      if (this.onFrame(msg.data, this._timescaleMap.get(msg.timestampOffset), msg.timestampOffset))
       {
         return;
       }

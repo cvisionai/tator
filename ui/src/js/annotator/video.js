@@ -1676,10 +1676,10 @@ export class VideoCanvas extends AnnotationCanvas {
     // on frame processing logic
 
     let increment_clk = 0;
-    video.onFrame = (frame, timescale) => {
+    video.onFrame = (frame, timescale, timestampOffset) => {
       this._playing = true;
       let start = performance.now();
-      frame.frameNumber = this.timeToFrame(frame.timestamp/timescale);
+      frame.frameNumber = this.timeToFrame((frame.timestamp/timescale)+timestampOffset);
       this._fpsLoadDiag++;
       if (increment_clk % frameIncrement != 0)
       {

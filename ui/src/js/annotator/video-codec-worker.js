@@ -256,6 +256,7 @@ class TatorVideoBuffer {
     console.info(`${this._name} GOT=${samples.length} ${timestampOffset}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
+    const relative_cursor = this._current_cursor - timestampOffset;
     // Samples can be out of CTS order, when calculating frame diff
     // take that into consideration
     if (this._frame_delta == undefined)
@@ -277,7 +278,7 @@ class TatorVideoBuffer {
     // Sort by DTS / Find nearest keyframe cts in sample list
     // These can be out of order when random access occurs
     samples.sort((a,b) => {return a.dts-b.dts});
-    let keyframe_info = this._keyframeMap.get(timestampOffset).closest_keyframe(this._current_cursor*this._timescaleMap.get(timestampOffset));
+    let keyframe_info = this._keyframeMap.get(timestampOffset).closest_keyframe(relative_cursor*this._timescaleMap.get(timestampOffset));
     let nearest_keyframe = keyframe_info.thisSegment;
 
     let new_samples = [];
@@ -314,7 +315,7 @@ class TatorVideoBuffer {
       if (samples[start_idx].cts >= nearest_keyframe)
         break;
     }
-    const cursor_in_ctx = this._current_cursor * this._timescaleMap.get(timestampOffset);
+    const cursor_in_ctx = relative_cursor * this._timescaleMap.get(timestampOffset);
     if (this._frame_delta != undefined)
     {
       let sample_delta = Math.abs(cursor_in_ctx-samples[start_idx].cts) / this._frame_delta;
@@ -462,7 +463,9 @@ class TatorVideoBuffer {
     //console.info(`PLAYING VIDEO ${this._current_cursor}`);
     this._videoDecoder.reset();
     this._videoDecoder.configure(this.activeCodecConfig);
-    let keyframe_info = this.activeKeyframeFile.closest_keyframe(this._current_cursor*this.activeTimescale);
+    const timestampOffset = this.currentTimestampOffset;
+    const relative_cursor = this._current_cursor - timestampOffset;
+    let keyframe_info = this.activeKeyframeFile.closest_keyframe(relative_cursor*this.activeTimescale);
     let nearest_keyframe = keyframe_info.thisSegment;
     this._playing = true;
     this.activeMp4File.stop();
@@ -490,6 +493,11 @@ class TatorVideoBuffer {
     return {obj: mapObject.get(keys[found_idx]),
             key: keys[found_idx]};
   }
+
+  get currentTimestampOffset()
+  {
+    return this._barkerSearch(this._timescaleMap, this._current_cursor).key;
+  }
   get activeCodecConfig()
   {
     return this._barkerSearch(this._encoderConfig, this._current_cursor).obj;
@@ -511,22 +519,24 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
-    //console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this._timescale}`);
+    console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this.activeTimescale}`);
     if (this._playing == true)
     {      
-      const cursor_in_ctx = this._current_cursor*this.activeTimescale;
+      const timestampOffset = this.currentTimestampOffset;
+      const cursor_in_ctx = (this._current_cursor-timestampOffset)*this.activeTimescale;
       if (frame.timestamp < cursor_in_ctx)
       {
         frame.close();
         return;
       }
-      this._current_cursor = frame.timestamp / this.activeTimescale;
+      this._current_cursor = (frame.timestamp / this.activeTimescale)+timestampOffset;
       if (this._playing == true)
       {
         //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
         postMessage({"type": "frame",  
                     "data": frame,
-                    "cursor": this._current_cursor},
+                    "cursor": this._current_cursor,
+                    "timestampOffset": timestampOffset},
                     [frame]
                     ); // transfer frame copy to primary UI thread
         this._ready_frames=[];
@@ -535,7 +545,8 @@ class TatorVideoBuffer {
     }
     else
     {
-      const cursor_in_ctx = this._current_cursor*this.activeTimescale;
+      const timestampOffset = this.currentTimestampOffset;
+      const cursor_in_ctx = (this._current_cursor-timestampOffset)*this.activeTimescale;
       const timestamp = frame.timestamp;
       //console.info(`${performance.now()}: FRAME ${frame.timestamp/this._timescale}`);
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frame_delta))
@@ -547,8 +558,8 @@ class TatorVideoBuffer {
         frame.close();
         postMessage({"type": "image",
                     "data": image,
-                    "timestamp": timestamp,
-                    "seconds": timestamp/this.activeTimescale},
+                    "timestamp": timestamp+(timestampOffset*this.activeTimescale),
+                    "seconds": (timestamp+timestampOffset)/this.activeTimescale},
                     image);
       }
       else
