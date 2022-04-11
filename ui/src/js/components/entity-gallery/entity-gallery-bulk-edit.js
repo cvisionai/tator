@@ -164,9 +164,10 @@ export class GalleryBulkEdit extends TatorElement {
       this._elementIndexes = val;
    }
 
-   init(page, gallery, type = "localization") {
+   init(page, gallery, type = "localization", projectId = null) {
       this._page = page;
       console.log(page);
+      this._projectId = projectId !== null ? projectId : this._page.projectId;
 
       this._editType = type;
       
@@ -594,7 +595,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _patchMedia(formData){
-      return fetch(`/rest/Medias/${this._page.projectId}`, {
+      return fetch(`/rest/Medias/${this._projectId}`, {
          method: "PATCH",
          mode: "cors",
          credentials: "include",
@@ -608,7 +609,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _patchLocalizations(formData) {
-      return fetch(`/rest/Localizations/${this._page.projectId}`, {
+      return fetch(`/rest/Localizations/${this._projectId}`, {
          method: "PATCH",
          mode: "cors",
          credentials: "include",
@@ -760,7 +761,11 @@ export class GalleryBulkEdit extends TatorElement {
             }
             console.log(newCardData);
             this._gallery.updateCardData(newCardData);
-            this._page.cardData.updateBulkCache(newCardData);
+            if (this._page.cardData) {
+               this._page.cardData.updateBulkCache(newCardData);
+            } else if(this._page._mediaSection){
+               this._page._mediaSection.reload()
+            }
          } else {
             console.warn("Possibly an error with save. Could not find ID in currentSelectionObjects.")
          }

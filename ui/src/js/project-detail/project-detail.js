@@ -14,9 +14,6 @@ export class ProjectDetail extends TatorPage {
 
     window._uploader = new Worker(new URL("../tasks/upload-worker.js", import.meta.url));
 
-    //
-    this.projectId = Number(this.getAttribute("project-id"));
-
     // Success and warning Utility hooks
     const utilitiesDiv = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
@@ -755,7 +752,7 @@ export class ProjectDetail extends TatorPage {
 
             //
             this._mediaSection._files._cardAtributeLabels = this._cardAtributeLabels;
-            this._bulkEdit.init(this, this._mediaSection._files, "media");
+            this._bulkEdit.init(this, this._mediaSection._files, "media", projectId);
             // this._bulkEdit._showEditPanel();
 
             const parsedAlgos = algos.filter(function (alg) {
