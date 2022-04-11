@@ -108,7 +108,7 @@ export class ConcatDownloadManager
   // Forward a termination
   terminate()
   {
-    this._worker.terminate();
+    console.error("TODO - Implement me");
   }
 
   _onMessage(timestampOffset, msg)

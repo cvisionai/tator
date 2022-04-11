@@ -325,6 +325,7 @@ class TatorVideoBuffer {
       }
     }
 
+    const timestampOffsetInCtx=timestampOffset*this._timescaleMap.get(timestampOffset);
     //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} sample_start=${samples[0].cts} delta=${this._frame_delta} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
     if (muted == false || this._playing == true)
     {
@@ -336,10 +337,10 @@ class TatorVideoBuffer {
       this._transfers=[];
       for (idx = start_idx; idx < samples.length; idx++)
       {
-        this._bufferedRegions.push(samples[idx].cts, samples[idx].cts+this._frame_delta);
+        this._bufferedRegions.push(timestampOffsetInCtx+samples[idx].cts, timestampOffsetInCtx+samples[idx].cts+this._frame_delta);
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
-          timestamp: samples[idx].cts,
+          timestamp: timestampOffsetInCtx+samples[idx].cts,
           data: samples[idx].data
         });
         try
@@ -385,7 +386,7 @@ class TatorVideoBuffer {
       // Handle all samples for processing keyframes and what not at the end of decoding
       for (; idx < samples.length; idx++)
       {
-        this._bufferedRegions.push(samples[idx].cts, samples[idx].cts+this._frame_delta);
+        this._bufferedRegions.push(timestampOffsetInCtx+samples[idx].cts, timestampOffsetInCtx+samples[idx].cts+this._frame_delta);
         if (samples[idx].cts < min_cts)
         {
           min_cts = samples[idx].cts;
@@ -403,11 +404,11 @@ class TatorVideoBuffer {
     }
     else
     {
-      
+      const timestampOffsetInCtx=timestampOffset*this._timescaleMap.get(timestampOffset);
       // Push any undiscovered keyframes
       for (let idx = samples.length-1; idx >= 0; idx--)
       {
-        this._bufferedRegions.push(samples[idx].cts, samples[idx].cts+this._frame_delta);
+        this._bufferedRegions.push(timestampOffsetInCtx+samples[idx].cts, timestampOffsetInCtx+samples[idx].cts+this._frame_delta);
         if (samples[idx].cts < min_cts)
         {
           min_cts = samples[idx].cts;
@@ -519,34 +520,30 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
-    console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this.activeTimescale}`);
+    //console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this.activeTimescale}`);
     if (this._playing == true)
     {      
       const timestampOffset = this.currentTimestampOffset;
-      const cursor_in_ctx = (this._current_cursor-timestampOffset)*this.activeTimescale;
+      const cursor_in_ctx = (this._current_cursor)*this.activeTimescale;
       if (frame.timestamp < cursor_in_ctx)
       {
         frame.close();
         return;
       }
-      this._current_cursor = (frame.timestamp / this.activeTimescale)+timestampOffset;
-      if (this._playing == true)
-      {
-        //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
-        postMessage({"type": "frame",  
-                    "data": frame,
-                    "cursor": this._current_cursor,
-                    "timestampOffset": timestampOffset},
-                    [frame]
-                    ); // transfer frame copy to primary UI thread
-        this._ready_frames=[];
-        this._transfers=[];
-      }
+      this._current_cursor = (frame.timestamp / this.activeTimescale);
+      //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
+      postMessage({"type": "frame",  
+                  "data": frame,
+                  "cursor": this._current_cursor,
+                  "timestampOffset": timestampOffset},
+                  [frame]
+                  ); // transfer frame copy to primary UI thread
+      this._ready_frames=[];
+      this._transfers=[];
     }
     else
     {
-      const timestampOffset = this.currentTimestampOffset;
-      const cursor_in_ctx = (this._current_cursor-timestampOffset)*this.activeTimescale;
+      const cursor_in_ctx = (this._current_cursor)*this.activeTimescale;
       const timestamp = frame.timestamp;
       //console.info(`${performance.now()}: FRAME ${frame.timestamp/this._timescale}`);
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frame_delta))
@@ -558,8 +555,8 @@ class TatorVideoBuffer {
         frame.close();
         postMessage({"type": "image",
                     "data": image,
-                    "timestamp": timestamp+(timestampOffset*this.activeTimescale),
-                    "seconds": (timestamp+timestampOffset)/this.activeTimescale},
+                    "timestamp": timestamp,
+                    "seconds": timestamp/this.activeTimescale},
                     image);
       }
       else
@@ -765,9 +762,10 @@ class TatorVideoBuffer {
       for (let idx = 0; idx < samples.length; idx++)
       {
         //console.info(`TEMP FILE GOT ${samples[idx].cts}`);
+        const timestampOffsetCtx = timestampOffset * this._timescaleMap.get(timestampOffset);
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
-          timestamp: samples[idx].cts,
+          timestamp: timestampOffsetCtx + samples[idx].cts,
           data: samples[idx].data
         });
         try

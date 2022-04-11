@@ -169,7 +169,7 @@ class TatorVideoManager {
       const timescale = this._timescaleMap.get(msg.data.timestampOffset);
       for (let idx = 0; idx < msg.data.ranges.length; idx++)
       {
-        this._time_ranges.push(msg.data.timestampOffset+msg.data.ranges[idx][0]/timescale, msg.data.timestampOffset+msg.data.ranges[idx][1]/timescale);
+        this._time_ranges.push(msg.data.ranges[idx][0]/timescale, msg.data.ranges[idx][1]/timescale);
       }
       //this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
