@@ -129,7 +129,7 @@ export class SectionFiles extends TatorElement {
         * Card labels / attributes of localization or media type
         */
         this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
-        this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId] });
+        // this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId] });
 
 
         if (newCard) {
@@ -188,10 +188,10 @@ export class SectionFiles extends TatorElement {
 
         cardLabelOptions.push(...hiddenAttrs);
 
-        cardObj.attributes = entityType.attribute_types;
+        cardObj.attributes = media.attributes;
         cardObj.attributeOrder = cardLabelOptions;
-        console.log("MEDIA CARD? ................ cardObj=");
-        console.log(cardObj)
+        // console.log("MEDIA CARD? ................ cardObj=");
+        // console.log(cardObj)
 
         // Notifiy bulk edit about multi-select controls
         card.addEventListener("ctrl-select", (e) => {
@@ -229,7 +229,8 @@ export class SectionFiles extends TatorElement {
         if (newCard) {
           this._ul.appendChild(card);
         }
-
+        console.log('this.cardLabelsChosenByType[entityTypeId]')
+        console.log(this.cardLabelsChosenByType[entityTypeId]);
         // this is data used later by label chooser, and bulk edit
         card.init({
           obj: cardObj,

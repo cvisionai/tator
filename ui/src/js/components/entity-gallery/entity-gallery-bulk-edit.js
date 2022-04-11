@@ -164,9 +164,11 @@ export class GalleryBulkEdit extends TatorElement {
       this._elementIndexes = val;
    }
 
-   init(page, gallery) {
+   init(page, gallery, type = "localization") {
       this._page = page;
       console.log(page);
+
+      this._editType = type;
       
       this.boxHelper = new SettingsBox(this._page.modal);
       
@@ -480,7 +482,7 @@ export class GalleryBulkEdit extends TatorElement {
       console.log("SHOW EDIT PANEL!");
       console.log(this._page);
       // if (val) {
-         this._page.showDimmer();
+         // this._page.showDimmer();
       //    this._comparisonPanel.show(false);
          this._selectionPanel.show(true);
       // }
@@ -516,8 +518,8 @@ export class GalleryBulkEdit extends TatorElement {
       let confirmText = document.createTextNode("Yes")
       button.appendChild(confirmText);
       
-
-      let text = `<h2 class="py-2 h3">Edit ${this._currentMultiSelection.size} Localizations?</h2>`;
+      let typeText = this._editType == "media" ? 'Media(s)' : 'Localization(s)';
+      let text = `<h2 class="py-2 h3">Edit ${this._currentMultiSelection.size} ${typeText}?</h2>`;
 
       let inputValueArray = this._editPanel.getValue();
       
@@ -568,8 +570,124 @@ export class GalleryBulkEdit extends TatorElement {
       let confirmTextExit = document.createTextNode("Exit Select Mode")
       buttonExit.appendChild(confirmTextExit);
 
-  
       button.addEventListener("click", (e) => {
+         this.handleEdit(e, formData);
+      });
+      
+
+      buttonContinue.addEventListener("click", (e) => {
+         this.boxHelper.modal._closeCallback();
+         this._showSelectionPanel();
+      });
+
+      buttonExit.addEventListener("click", (e) => {
+         this.boxHelper.modal._closeCallback();
+         this._escapeEditMode();
+      });
+
+      this.boxHelper._modalConfirm({
+        "titleText" : `Confirm`,
+        "mainText" : text,
+        "buttonSave" : button,
+        "scroll" : false    
+      });
+   }
+
+   _patchMedia(formData){
+      return fetch(`/rest/Medias/${this._page.projectId}`, {
+         method: "PATCH",
+         mode: "cors",
+         credentials: "include",
+         body: JSON.stringify(formData),
+         headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+         }
+       });
+   }
+
+   _patchLocalizations(formData) {
+      return fetch(`/rest/Localizations/${this._page.projectId}`, {
+         method: "PATCH",
+         mode: "cors",
+         credentials: "include",
+         body: JSON.stringify(formData),
+         headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+         }
+       });
+   }
+
+   handleEdit(e, formData) {
+      if (this._editType == "media") {
+         this._editMedia(e, formData);
+      } else {
+         this._editLocalization(e, formData);
+      }
+   }
+
+   _editMedia(e, formData) {
+      // button.addEventListener("click", (e) => {
+         e.preventDefault();
+         this.boxHelper.modal._closeCallback();
+         this._page.showDimmer();
+         this._page.loading.showSpinner();
+         let promise = Promise.resolve();
+         let text = "";
+         let errorText = "";
+         let respCode = 0;
+         
+         for (let jsonData of formData) {
+            console.log(jsonData);
+            promise = promise.then(() => this._patchMedia(jsonData)).then((resp) => {
+               respCode = resp.status;
+               console.log(respCode);
+               return resp.json();
+            }).then((data) => {
+               console.log("Then reading message");
+               if (respCode == "200" ) {
+                  text += `${data.message} <br/><br/>`;
+                  this.updateSelectionObjects(jsonData);            
+               } else {
+                  errorText += `${data.message} <br/><br/>`;
+                  // this.updateSelectionObjects(jsonData);            
+               }
+
+            });
+         }
+
+         return promise.then(() => {
+            console.log("Then clean up");
+            this._editPanel.resetWidgets()
+            this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
+            this._clearSelection();
+            this._page.loading.hideSpinner();
+            this._page.hideDimmer();
+
+            if (errorText === "" && text !== "") {
+               this.boxHelper._modalSuccess(text);           
+            } else if (errorText !== "" && text === "") {
+               this.boxHelper._modalError(errorText, "Error");                
+            } else if (errorText !== "" && text !== "") {
+               this.boxHelper._modalWarn(text+errorText);                
+            }
+
+         // });  
+         }).catch(err => {
+            this._clearSelection();
+            this._page.loading.hideSpinner();
+            this._page.hideDimmer();
+            return this.boxHelper._modalError("Error with update: "+err);
+         });
+         
+      // });
+   }
+
+   _editLocalization(e, formData) {
+      // button.addEventListener("click", (e) => {
          e.preventDefault();
          this.boxHelper.modal._closeCallback();
          this._page.showDimmer();
@@ -622,42 +740,11 @@ export class GalleryBulkEdit extends TatorElement {
             return this.boxHelper._modalError("Error with update: "+err);
          });
          
-      });
-
-      buttonContinue.addEventListener("click", (e) => {
-         this.boxHelper.modal._closeCallback();
-         this._showSelectionPanel();
-      });
-
-      buttonExit.addEventListener("click", (e) => {
-         this.boxHelper.modal._closeCallback();
-         this._escapeEditMode();
-      });
-
-      this.boxHelper._modalConfirm({
-        "titleText" : `Confirm`,
-        "mainText" : text,
-        "buttonSave" : button,
-        "scroll" : false    
-      });
-   }
-
-   _patchLocalizations(formData) {
-      return fetch(`/rest/Localizations/${this._page.projectId}`, {
-         method: "PATCH",
-         mode: "cors",
-         credentials: "include",
-         body: JSON.stringify(formData),
-         headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-         }
-       });
+      // });
    }
 
    _updateShownAttributes({ typeId, values }) {
-      console.log(values);
+      // console.log(values);
       this._editPanel.setSelectionBoxValue({ typeId, values });
       // this._comparisonPanel.newColumns({ typeId, values });
    }

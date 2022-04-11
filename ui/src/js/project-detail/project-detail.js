@@ -14,6 +14,9 @@ export class ProjectDetail extends TatorPage {
 
     window._uploader = new Worker(new URL("../tasks/upload-worker.js", import.meta.url));
 
+    //
+    this.projectId = Number(this.getAttribute("project-id"));
+
     // Success and warning Utility hooks
     const utilitiesDiv = document.createElement("div");
     this._headerDiv = this._header._shadow.querySelector("header");
@@ -213,7 +216,7 @@ export class ProjectDetail extends TatorPage {
     // subheader.appendChild(this._search);
 
 
-    
+
 
     const filterdiv = document.createElement("div");
     filterdiv.setAttribute("class", "mt-3");
@@ -232,7 +235,7 @@ export class ProjectDetail extends TatorPage {
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
     this._bulkEdit._messageBar_top.hidden = false;
-    // this._bulkEdit._selectionPanel.hidden = true;
+    this._bulkEdit._selectionPanel.hidden = true;
     this._shadow.appendChild(this._bulkEdit);
     filterdiv.appendChild(this._bulkEdit._selectionPanel);
 
@@ -249,17 +252,17 @@ export class ProjectDetail extends TatorPage {
     this._cardAtributeLabels.titleEntityTypeName = "media";
     this._cardAtributeLabels._titleText = document.createTextNode("Select media labels to display.");
     this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Media Labels";
-    
+
     this._mediaSection._hiddenMediaLabel.appendChild(this._cardAtributeLabels);
     this._mediaSection._more._cardLink.appendChild(this._cardAtributeLabels.menuLink);
-    this._mediaSection._more.addEventListener("bulk-edit", this._bulkEdit._showEditPanel.bind(this));
- 
+    this._mediaSection._more.addEventListener("bulk-edit", this._openBulkEdit.bind(this));
+
     this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
-      this._mediaSection._files.dispatchEvent(new CustomEvent("labels-update", evt.detail) )
+      this._mediaSection._files.dispatchEvent(new CustomEvent("labels-update", evt.detail))
     });
 
     this._mediaSection.bulkEdit = this._bulkEdit;
-    this._mediaSection._files._cardAtributeLabels = this._cardAtributeLabels;
+
     this._mediaSection._files.bulkEdit = this._bulkEdit;
 
 
@@ -274,8 +277,8 @@ export class ProjectDetail extends TatorPage {
     const deleteFile = document.createElement("delete-file-form");
     this._projects.appendChild(deleteFile);
 
-    this._modal = document.createElement("modal-notify");
-    this._projects.appendChild(this._modal);
+    this.modal = document.createElement("modal-notify");
+    this._projects.appendChild(this.modal);
 
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
@@ -293,10 +296,6 @@ export class ProjectDetail extends TatorPage {
     this.main.appendChild(this._activityNav);
 
     this._leaveConfirmOk = false;
-
-    //
-    // init bulkEdit
-    this._bulkEdit.init(this, this._mediaSection._files);
 
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
@@ -576,7 +575,7 @@ export class ProjectDetail extends TatorPage {
     this._panelContainer.init({
       main: this.main,
       aside: this.aside,
-      pageModal: this._modal,
+      pageModal: this.modal,
       modelData: null,
       gallery: this.gallery,
       contents: section,
@@ -586,8 +585,8 @@ export class ProjectDetail extends TatorPage {
 
 
     //
-    this._modal.addEventListener("open", this.showDimmer.bind(this));
-    this._modal.addEventListener("close", this.hideDimmer.bind(this));
+    this.modal.addEventListener("open", this.showDimmer.bind(this));
+    this.modal.addEventListener("close", this.hideDimmer.bind(this));
     /*  */
 
     // State of chosen labels for gallery
@@ -597,6 +596,10 @@ export class ProjectDetail extends TatorPage {
 
   static get observedAttributes() {
     return ["project-id", "token"].concat(TatorPage.observedAttributes);
+  }
+
+  _openBulkEdit() {
+    this._bulkEdit._showEditPanel();
   }
 
   _sectionVisibilityEL(evt) {
@@ -643,8 +646,8 @@ export class ProjectDetail extends TatorPage {
   }
 
   _notify(title, message, error_or_ok) {
-    this._modal.init(title, message, error_or_ok);
-    this._modal.setAttribute("is-open", "");
+    this.modal.init(title, message, error_or_ok);
+    this.modal.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
   }
 
@@ -731,6 +734,29 @@ export class ProjectDetail extends TatorPage {
             // run at the project/this._section/media level.
             var hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
             const hiddenAlgoCategories = ['annotator-view'];
+
+            //
+            // Set up attributes for bulk edit
+            for (let mediaTypeData of mediaTypes) {
+
+              //init card labels with localization entity type definitions
+              this._cardAtributeLabels.add({
+                typeData: mediaTypeData,
+                checkedFirst: false
+              });
+
+              //init panel with localization entity type definitions
+              // console.log("ADDING MEDIA TYPE")
+              this._bulkEdit._editPanel.addLocType(mediaTypeData);
+              this.mediaTypesMap.set(mediaTypeData.id, mediaTypeData);
+            }
+
+            this._mediaSection.mediaTypesMap = this.mediaTypesMap;
+
+            //
+            this._mediaSection._files._cardAtributeLabels = this._cardAtributeLabels;
+            this._bulkEdit.init(this, this._mediaSection._files, "media");
+            // this._bulkEdit._showEditPanel();
 
             const parsedAlgos = algos.filter(function (alg) {
               if (Array.isArray(alg.categories)) {
@@ -871,6 +897,8 @@ export class ProjectDetail extends TatorPage {
                 this._filterDataView.init();
                 this._filterView.dataView = this._filterDataView;
 
+
+
                 // Set UI and results to any url param conditions that exist (from URL)
                 this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
                 if (this._mediaSection._filterConditions.length > 0) {
@@ -879,6 +907,8 @@ export class ProjectDetail extends TatorPage {
 
                 // Listen for filter events
                 this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
+
+
               });
 
             } catch (err) {
@@ -886,26 +916,6 @@ export class ProjectDetail extends TatorPage {
               this.loading.hideSpinner();
               this.hideDimmer();
             }
-
-            // Set up attributes for bulk edit
-            for (let mediaTypeData of mediaTypes) {
-
-              //init card labels with localization entity type definitions
-              this._cardAtributeLabels.add({
-                typeData: mediaTypeData,
-                checkedFirst: false
-              });
-
-              //init panel with localization entity type definitions
-              console.log("ADDING MEDIA TYPE")
-              this._bulkEdit._editPanel.addLocType(mediaTypeData);
-              this.mediaTypesMap.set(mediaTypeData.id, mediaTypeData);
-            }
-
-            this._mediaSection.mediaTypesMap = this.mediaTypesMap;
-
-
-            // this._bulkEdit._showEditPanel();
 
           }).catch(err => {
             console.log("Error setting up page with all promises", err);

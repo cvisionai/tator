@@ -343,8 +343,8 @@ export class MultiAttributeEditPanel extends TatorElement {
       // let inputs = this._bulkEditForm.querySelector(`#${typeId}`);
       let nameIsFilteredOn = false;
 
-      console.log("box value changed");
-      console.log(attributeNames);
+      // console.log("box value changed");
+      // console.log(attributeNames);
 
       if (this._bulkEditForm.children.length !== 0) {
          for (let input of this._inputsOnly) {
@@ -454,11 +454,11 @@ export class MultiAttributeEditPanel extends TatorElement {
       for (let selectionBoxes of Array.from(this._selectionValues)) {
          for (let box of selectionBoxes[1]._inputs) {
             let boxName = box.getAttribute("name");
-            console.log(`values.includes(boxName) ${values.includes(boxName)}  .....${boxName}....`);
+            // console.log(`values.includes(boxName) ${values.includes(boxName)}  .....${boxName}....`);
 
             if (values.includes(boxName)) {
                box._checked = true;
-               console.log(box);
+               // console.log(box);
             } else {
                box._checked = false;
             }

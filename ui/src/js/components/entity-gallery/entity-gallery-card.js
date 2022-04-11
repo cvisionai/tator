@@ -307,7 +307,7 @@ export class EntityCard extends TatorElement {
     this._mediaInit = mediaInit;
 
     if (this._idx !== null) {
-      console.log(`Tab index ${this._idx}`);
+      // console.log(`Tab index ${this._idx}`);
       this._li.setAttribute("tabindex", this._idx)
     }
 
@@ -340,6 +340,8 @@ export class EntityCard extends TatorElement {
      * Attributes hidden on card are controlled by outer menu 
     */
     if (obj.attributeOrder && obj.attributeOrder.length > 0) {
+      console.log("Setting up labels on card with this data:");
+      console.log(obj);
       // Clear this in case of reuse / re-init
       this.attributesDiv.innerHTML = "";
       for (const attr of obj.attributeOrder) {
@@ -365,11 +367,12 @@ export class EntityCard extends TatorElement {
         if (cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0) {
           // If we have any preferences saved check against it
           if (cardLabelsChosen.indexOf(key) > -1 ) {
-            console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));
-            
+            console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));   
           } else {
             attrStyleDiv.classList.add("hidden");
           }
+        } else {
+          attrStyleDiv.classList.add("hidden");
         }
 
         this.attributesDiv.appendChild(attrStyleDiv);
