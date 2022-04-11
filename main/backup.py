@@ -212,14 +212,14 @@ class TatorBackupManager:
         :type project: main.models.Project
         :rtype: bool
         """
-        success = True
         try:
             store_info = self._get_bucket_info(project)
         except:
             store_info = {}
-            success = False
 
-        if success and store_info:
+        success = bool(store_info)
+
+        if success:
             for st, bucket_info in store_info.items():
                 try:
                     self._create_rclone_remote(

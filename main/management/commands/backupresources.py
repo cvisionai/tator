@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 from typing import Iterable
 
@@ -8,6 +9,7 @@ from django.db import transaction
 from main.backup import TatorBackupManager
 from main.models import Affiliation, Project, Resource, User
 from main.ses import TatorSES
+from main.store import get_tator_store
 
 
 logger = logging.getLogger(__name__)
@@ -18,9 +20,29 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         resource_qs = Resource.objects.filter(media__deleted=False, backed_up=False)
+
+        # Check for existence of default backup store
+        default_backup_store = get_tator_store(backup=True)
+
+        if default_backup_store is None:
+            logger.info("No default backup bucket found, looking for project specific ones...")
+            projects_with_backup_buckets = Project.objects.exclude(backup_bucket=None)
+            if projects_with_backup_buckets.count() == 0:
+                logger.info("No project specific backup buckets found!")
+                return
+
+            # If there is no default backup bucket, restrict the resource queryset to those that
+            # reside in projects with defined project-specific backup buckets
+            logger.info(
+                f"Found project-specific backup buckets for: "
+                f"{','.join(str(p.id) for p in projects_with_backup_buckets)}, backing up resources in "
+                f"those projects, if necessary."
+            )
+            resource_qs = resource_qs.filter(media__project__in=projects_with_backup_buckets)
+
         total_to_back_up = resource_qs.count()
         if total_to_back_up == 0:
-            logger.info(f"No resources to back up!")
+            logger.info("No resources to back up!")
             return
 
         tbm = TatorBackupManager()
