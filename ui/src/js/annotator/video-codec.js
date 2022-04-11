@@ -132,6 +132,7 @@ class TatorVideoManager {
     this._hot_frames = new Map();
     this._playing = false;
     this._timescaleMap = new Map();
+    this._frameDeltaMap = new Map();
   }
 
   _on_message(msg)
@@ -157,7 +158,7 @@ class TatorVideoManager {
     }
     else if (msg.data.type == "frameDelta")
     {
-      this._frame_delta = msg.data.frameDelta;
+      this._frameDeltaMap.set(msg.data.timestampOffset, msg.data.frameDelta);
     }
     else if (msg.data.type == "image")
     {
@@ -165,13 +166,13 @@ class TatorVideoManager {
     }
     else if (msg.data.type == "buffered")
     {
+      this._time_ranges.print(`${this._name} Pre-Update`);
       this._time_ranges.clear();
-      const timescale = this._timescaleMap.get(msg.data.timestampOffset);
       for (let idx = 0; idx < msg.data.ranges.length; idx++)
       {
-        this._time_ranges.push(msg.data.ranges[idx][0]/timescale, msg.data.ranges[idx][1]/timescale);
+        this._time_ranges.push(msg.data.ranges[idx][0], msg.data.ranges[idx][1]);
       }
-      //this._time_ranges.print(`${this._name} Latest`);
+      this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
       {
         setTimeout(this.onBuffered, 0);
@@ -190,11 +191,12 @@ class TatorVideoManager {
   _cursor_is_hot()
   {
     let timestamps = this._hot_frames.keys() // make sure keys are sorted!
-    let timescale = this._barkerSearch(this._timescaleMap, this._current_cursor).obj;
+    let search = this._barkerSearch(this._timescaleMap, this._current_cursor);
+    let timescale = search.obj;
     let cursor_in_ctx = this._current_cursor * timescale;
     for (let timestamp of timestamps)
     {
-      if (cursor_in_ctx >= timestamp && cursor_in_ctx < timestamp+this._frame_delta)
+      if (cursor_in_ctx >= timestamp && cursor_in_ctx < timestamp+this._frameDeltaMap.get(search.key))
       {
         return true;
       }
@@ -267,14 +269,15 @@ class TatorVideoManager {
       return;
     }
     
-    let timescale = this._barkerSearch(this._timescaleMap, this._current_cursor).obj;
+    let search = this._barkerSearch(this._timescaleMap, this._current_cursor);
+    let timescale = search.obj;
     let delete_elements = [];
     let cursor_in_ctx = this._current_cursor * timescale;
     let timestamps = [...this._hot_frames.keys()];
     for (let hot_frame of timestamps)
     {
       // Only keep a max of 100 frames in memory
-      if (Math.abs(hot_frame - cursor_in_ctx)/this._frame_delta >= 10)
+      if (Math.abs(hot_frame - cursor_in_ctx)/this._frameDeltaMap.get(search.key) >= 10)
       {
         delete_elements.push(hot_frame);
       }
@@ -477,9 +480,9 @@ export class TatorVideoDecoder {
     this._buffer = new TatorVideoManager(this, `Video Buffer ${id}`);
     this._init = false;
     this._buffer.onBuffered = () => {
+      //this._buffer.buffered.print(`${id} LATEST`);
       if (this.onBuffered)
       {
-        this._buffer.buffered.print(`${id} LATEST`);
         setTimeout(this.onBuffered,0);
       }
     };
