@@ -811,6 +811,14 @@ export class AnnotationPlayer extends TatorElement {
     {
       this.handleNotReadyEvent();
     }
+    else
+    {
+      // TODO refactor this into a member function
+      this._play._button.removeAttribute("disabled");
+      this._rewind.removeAttribute("disabled")
+      this._fastForward.removeAttribute("disabled");
+      this._play.removeAttribute("tooltip");
+    }
   }
   handleNotReadyEvent()
   {
