@@ -25,7 +25,10 @@ class Command(BaseCommand):
         min_delta = timedelta(days=options["min_age_days"])
         max_datetime = datetime.now(timezone.utc) - min_delta
         archived_qs = Media.objects.filter(
-            deleted=False, archive_state="to_archive", archive_status_date__lte=max_datetime
+            deleted=False,
+            resource_media__backed_up=True,
+            archive_state="to_archive",
+            archive_status_date__lte=max_datetime,
         ).exclude(meta__dtype="multi")
 
         if not archived_qs.exists():

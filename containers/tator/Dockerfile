@@ -35,7 +35,7 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         gevent==1.4.0 uritemplate==4.1.1 pylint pylint-django \
         django-cognito-jwt==0.0.4 boto3==1.20.41 \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
-        kubernetes==21.7.0
+        kubernetes==21.7.0 minio==7.1.5
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
