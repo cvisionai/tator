@@ -365,17 +365,7 @@ class TatorStorage(ABC):
         return [ele for obj in media_qs.iterator() for ele in self._paths_from_single(obj)]
 
     def _paths_from_single(self, media):
-        paths = []
-        for key in PATH_KEYS:
-            if key not in media.media_files:
-                continue
-
-            for obj in media.media_files[key]:
-                paths.append(obj["path"])
-                if key == "streaming":
-                    paths.append(obj["segment_info"])
-
-        return paths
+        return [path for path in media.path_iterator(keys=PATH_KEYS)]
 
 
 class MinIOStorage(TatorStorage):
