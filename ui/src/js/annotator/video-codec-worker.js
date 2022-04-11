@@ -547,7 +547,7 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = (this._current_cursor)*this.activeTimescale;
       const timestamp = frame.timestamp;
-      //console.info(`${performance.now()}: FRAME ${frame.timestamp/this._timescale}`);
+      //console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
       {
         // Make an ImageBitmap from the frame and release the memory
@@ -757,7 +757,8 @@ class TatorVideoBuffer {
           const frame_delta = times[1]-times[0];
           this._frameDeltaMap.set(timestampOffset, frame_delta);
           postMessage({"type": "frameDelta",
-                      "frameDelta": frame_delta});
+                      "frameDelta": frame_delta,
+                      "timestampOffset": timestampOffset});
         }
       }
 
