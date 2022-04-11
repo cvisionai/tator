@@ -1,5 +1,7 @@
 from collections import defaultdict
+from functools import reduce
 import logging
+from operator import or_
 import os
 import time
 import subprocess
@@ -19,7 +21,7 @@ from main.search import TatorSearch
 from main.store import get_tator_store
 
 from django.conf import settings
-from django.db.models import F
+from django.db.models import F, Q
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import streaming_bulk
