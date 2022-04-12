@@ -275,7 +275,10 @@ export class ProjectDetail extends TatorPage {
     const deleteFile = document.createElement("delete-file-form");
     this._projects.appendChild(deleteFile);
 
-    this.modal = document.createElement("modal-notify");
+    this.modalNotify = document.createElement("modal-notify");
+    this._projects.appendChild(this.modalNotify);
+
+    this.modal = document.createElement("modal-dialog");
     this._projects.appendChild(this.modal);
 
     const cancelJob = document.createElement("cancel-confirm");
@@ -583,6 +586,8 @@ export class ProjectDetail extends TatorPage {
 
 
     //
+    this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
+    this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
     /*  */
@@ -644,8 +649,8 @@ export class ProjectDetail extends TatorPage {
   }
 
   _notify(title, message, error_or_ok) {
-    this.modal.init(title, message, error_or_ok);
-    this.modal.setAttribute("is-open", "");
+    this.modalNotify.init(title, message, error_or_ok);
+    this.modalNotify.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
   }
 
