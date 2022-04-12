@@ -122,7 +122,6 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       });
 
       //init panel with localization entity type definitions
-      console.log("ADDING LOC TYPE")
       this._bulkEdit._editPanel.addLocType(locTypeData);
     }
     
@@ -249,13 +248,13 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
 
         // Notifiy bulk edit about multi-select controls
         card.addEventListener("ctrl-select", (e) => {
-          console.log("Opening edit mode");
+          // console.log("Opening edit mode");
           this._bulkEdit._openEditMode(e);
           // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
         });
         card.addEventListener("shift-select", (e) => {
           // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
-          console.log("Opening edit mode");
+          // console.log("Opening edit mode");
           this._bulkEdit._openEditMode(e);
         });
 
@@ -305,7 +304,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
-      console.log(cardObj);
+      // console.log(cardObj);
       card.init({
         idx: index,
         obj: cardObj,
@@ -436,10 +435,6 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
   //     info.card._multiSelectionToggle = true;
   //   }
   // }
-
-  customContentHandler() {
-    console.log(this);
-  }
 
 }
 

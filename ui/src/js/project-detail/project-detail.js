@@ -152,9 +152,6 @@ export class ProjectDetail extends TatorPage {
 
     this.gallery = {};
     this.gallery._main = this._mainSection;
-    this.gallery.customContentHandler = () => {
-      console.log("TESTTTTTT");
-    }
 
     const div = document.createElement("div");
     div.setAttribute("class", "py-6");
@@ -236,9 +233,9 @@ export class ProjectDetail extends TatorPage {
     this._shadow.appendChild(this._bulkEdit);
     filterdiv.appendChild(this._bulkEdit._selectionPanel);
 
-    this._bulkEdit.addEventListener("multi-enabled", () => {
-      console.log("multi-enabled heard in project detail");
-    });
+    // this._bulkEdit.addEventListener("multi-enabled", () => {
+    //   // console.log("multi-enabled heard in project detail");
+    // });
 
     // Media section
     this._mediaSection = document.createElement("media-section");
@@ -920,13 +917,13 @@ export class ProjectDetail extends TatorPage {
             }
 
           }).catch(err => {
-            console.log("Error setting up page with all promises", err);
+            console.error("Error setting up page with all promises", err);
             this.loading.hideSpinner();
             this.hideDimmer();
           });
 
       }).catch(err => {
-        console.log("Error setting up page with all promises", err);
+        console.error("Error setting up page with all promises", err);
         this.loading.hideSpinner();
         this.hideDimmer();
       });

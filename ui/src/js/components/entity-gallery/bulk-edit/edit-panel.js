@@ -331,7 +331,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       this.div.innerHTML = "";
       this.div.appendChild(styleDiv);
 
-      console.log(selectionBoxes);
+      // console.log(selectionBoxes);
 
       // Now make the inputs
       this._addInputs(this._attribute_types.entries())
@@ -365,7 +365,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       let filterNames = [];
       for (let name of attributeNames) {
          if (this.resultsFilter.attributes.includes(name)) {
-            console.log("Warning: filter contains attribute.")
+            console.warn("Warning: filter contains attribute.")
             nameIsFilteredOn = true;
             filterNames.push(name);
          } 

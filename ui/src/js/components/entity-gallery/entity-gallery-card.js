@@ -256,7 +256,7 @@ export class EntityCard extends TatorElement {
   }
 
   set multiEnabled(val) {
-    console.log("multiEnabled set..."+val)
+    // console.log("multiEnabled set..."+val)
     this._multiEnabled = val;
     this._multiSelectionToggle = val;
 
@@ -311,7 +311,7 @@ export class EntityCard extends TatorElement {
         }
         break;
       case "duration":
-        console.log(newValue);
+        // console.log(newValue);
         this._duration.textContent = newValue;
       case "pos-text":
         this._pos_text.textContent = newValue;
@@ -389,7 +389,7 @@ export class EntityCard extends TatorElement {
         if (cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0) {
           // If we have any preferences saved check against it
           if (cardLabelsChosen.indexOf(key) > -1 ) {
-            console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));   
+            // console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));   
           } else {
             attrStyleDiv.classList.add("hidden");
           }
@@ -562,7 +562,7 @@ export class EntityCard extends TatorElement {
     if (this._link.getAttribute("href") !== "#" && !this._multiEnabled) {
       // follow the link...
       // otherwise do some panel, or multi stuff
-      console.log("clicked....");
+      // console.log("clicked....");
     } else {
       e.preventDefault();
 
@@ -571,11 +571,11 @@ export class EntityCard extends TatorElement {
         
         /* @ "card-click"*/
         if (e.shiftKey) {
-          console.log("Shift click!");
+          // console.log("Shift click!");
           // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         } else if (e.code == "Enter") {
-          console.log("Enter click!... " + this._li.hasFocus());
+          // console.log("Enter click!... " + this._li.hasFocus());
           if (this._li.hasFocus()) {
             //
           }
@@ -586,7 +586,7 @@ export class EntityCard extends TatorElement {
           // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         } else {
-          console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
+          // console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         }
       }
@@ -606,7 +606,7 @@ export class EntityCard extends TatorElement {
 
     // if it exists, close it!
     if (!this._multiSelectionToggle) {
-      console.log("unselecting this cardId: " + cardId)
+      // console.log("unselecting this cardId: " + cardId)
       if (typeof cardId !== "undefined" && cardId !== null) {
         let evt = new CustomEvent("unselected", { detail: { id: cardId } });
         this.panelContainer.dispatchEvent(evt); // this even unselected related card
@@ -642,7 +642,7 @@ export class EntityCard extends TatorElement {
 
   contextMenuHandler(e) {
     if (e.ctrlKey) {
-      console.log("Card was clicked with ctrl");
+      // console.log("Card was clicked with ctrl");
       this._multiSelectionToggle = true;
       e.preventDefault(); // stop contextmenu
       // this.togglePanel(e);
@@ -789,7 +789,7 @@ export class EntityCard extends TatorElement {
       });
 
       rename.addEventListener("click", () => {
-        console.log("Rename event......");
+        // console.log("Rename event......");
         input.style.display = "block";
         this._link.style.pointerEvents = "none";
         this._title.style.display = "none";

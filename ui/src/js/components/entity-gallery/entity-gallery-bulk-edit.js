@@ -134,8 +134,8 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    set elementList(val) {
-      console.log("this._elements  updated");
-      console.log(this._elements);
+      // console.log("this._elements  updated");
+      // console.log(this._elements);
       this._elements = val;
    }
 
@@ -144,13 +144,12 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    init(page, gallery, type = "localization", projectId = null) {
-      console.log("BULK EDIT INITIALIZED!");
+      // console.log("BULK EDIT INITIALIZED!");
       this._page = page;
       this._projectId = projectId !== null ? projectId : this._page.projectId;
 
       this._editType = type;
 
-      console.log()
       if (type == "media") {
          this._selectionPanel.xClose.classList.remove("hidden");
       }
@@ -178,21 +177,20 @@ export class GalleryBulkEdit extends TatorElement {
       // console.log(`Code: ${e.key}`);
 
       if (e.key == "Escape") {
-         console.log(`Escape!`)
+         // console.log(`Escape!`)
          // this._escapeEditMode();
          this._clearSelection();
       }
 
       if (e.code == "Control") {
          if (e.code == "a" || e.code == "A") {
-            console.log("asdasdasdasdasd+A");
             this.selectAllOnPage();
          }         
       }
 
       if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
          e.preventDefault();
-         console.log("Control+A");
+         // console.log("Control+A");
          this.selectAllOnPage();       
       }
 
@@ -215,7 +213,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    shiftSelect({ element, id, isSelected }) {
-      console.log("Shift select");
+      // console.log("Shift select");
       // if (!this._editMode) this.startEditMode();
 
       // // clicked element
@@ -286,7 +284,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _removeSelected({ element, id, isSelected }) {
-      console.log("remove selected");
+      // console.log("remove selected");
       if (isSelected) {
          element._li.classList.remove("is-selected");
       }
@@ -327,8 +325,8 @@ export class GalleryBulkEdit extends TatorElement {
 
 
    _openEditMode(e) {
-      console.log("Bulk edit is running open edit mode with this event....... detail");
-      console.log(e.detail);
+      // console.log("Bulk edit is running open edit mode with this event....... detail");
+      // console.log(e.detail);
       // let clickType = typeof e.detail.clickDetail == "undefined" ? e.type : e.detail.clickDetail.type;
 
       // if (clickType == "shift-select") {
@@ -345,7 +343,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _clearSelection() {
-      console.log("CLEARING SELECTION!");
+      // console.log("CLEARING SELECTION!");
       this._currentMultiSelection.clear();
       this._currentSelectionObjects.clear();
       // this._currentSelectionObjects.clear();
@@ -365,11 +363,11 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    startEditMode() {
-      console.log("startEditMode");
+      // console.log("startEditMode");
       this._editMode = true;
 
       for (let el of this._elements) {
-         console.log(el);
+         // console.log(el);
          el.card.multiEnabled = true;
          if (el.card._li.classList.contains("is-selected") && !this._currentMultiSelection.has(el.card.cardObj.id)) {
             this._addSelected({element: el.card, id: el.card.cardObj.id, isSelected: el.card._li.classList.contains("is-selected")})
@@ -380,14 +378,17 @@ export class GalleryBulkEdit extends TatorElement {
       this._messageBar_top.classList.remove("hidden");
       this._bulkEditBar.classList.remove("hidden");
 
-
-      if (this._page.main.classList.contains("col-9")) {
-         this._editPanelWasOpen = true;
-         this._page.main.classList.remove("col-9"); 
-         this._page.main.classList.add("col-12");
-      } else {
-         this._editPanelWasOpen = false;
+      if (this._editType != "media") {
+         if (this._page.main.classList.contains("col-9")) {
+            console.log("_editPanelWasOpen is being set to true");
+            this._editPanelWasOpen = true;
+            this._page.main.classList.remove("col-9"); 
+            this._page.main.classList.add("col-12");
+         } else {
+            this._editPanelWasOpen = false;
+         }       
       }
+
 
       // // hide page elements
       // this._page._header.classList.add("hidden");
@@ -404,10 +405,10 @@ export class GalleryBulkEdit extends TatorElement {
       if (this.resultsFilter.containsAttributes == true) {
          this._editPanel.addEventListener("attribute-is-filtered-on", (e) => {
             if (e.detail.names.length > 0 ){
-               console.log("Setting this._requiresPrefetch = true");
+               // console.log("Setting this._requiresPrefetch = true");
                this._requiresPrefetch = true;
             } else {
-               console.log("Setting this._requiresPrefetch = false");
+               // console.log("Setting this._requiresPrefetch = false");
                this._requiresPrefetch = false;
             }
          });
@@ -429,7 +430,7 @@ export class GalleryBulkEdit extends TatorElement {
          this._selectionPanel.show(false);
       }  
 
-      if (this._editPanelWasOpen) {
+      if (this._editPanelWasOpen && this._editType != "media") {
          this._page.main.classList.add("col-9"); 
          this._page.main.classList.remove("col-12");
          // reset this 
@@ -450,10 +451,10 @@ export class GalleryBulkEdit extends TatorElement {
 
       this._editPanel.removeEventListener("attribute-is-filtered-on", (e) => {
          if (e.detail.names.length > 0 ){
-            console.log("Setting this._requiresPrefetch = true");
+            // console.log("Setting this._requiresPrefetch = true");
             this._requiresPrefetch = true;
          } else {
-            console.log("Setting this._requiresPrefetch = false");
+            // console.log("Setting this._requiresPrefetch = false");
             this._requiresPrefetch = false;
          }
       });
@@ -472,14 +473,14 @@ export class GalleryBulkEdit extends TatorElement {
       // // } else {
          // this._page.hideDimmer();
          this._selectionPanel.show(val);
-         console.log("this._editMode.......... "+this._editMode)
+         // console.log("this._editMode.......... "+this._editMode)
          if (!this._editMode) this.startEditMode();
       // }
 
    }
    _showEditPanel(val = true) {
-      console.log("SHOW EDIT PANEL!");
-      console.log(this._page);
+      // console.log("SHOW EDIT PANEL!");
+      // console.log(this._page);
       // if (val) {
          // this._page.showDimmer();
       //    this._comparisonPanel.show(false);
@@ -539,9 +540,6 @@ export class GalleryBulkEdit extends TatorElement {
                   attributes: r.values,
                   ids: Array.from(this._currentMultiSelection)
                }
-
-               // console.log(`Form Data For Type ${r.typeId} :::::::::::::::::::::::::::::::::::::::::::::::::::::::::`);
-               console.log(formDataForType);
 
                formData.push(formDataForType)
             } else {
@@ -641,13 +639,13 @@ export class GalleryBulkEdit extends TatorElement {
          let respCode = 0;
          
          for (let jsonData of formData) {
-            console.log(jsonData);
+            // console.log(jsonData);
             promise = promise.then(() => this._patchMedia(jsonData)).then((resp) => {
                respCode = resp.status;
-               console.log(respCode);
+               // console.log(respCode);
                return resp.json();
             }).then((data) => {
-               console.log("Then reading message");
+               // console.log("Then reading message");
                if (respCode == "200" ) {
                   text += `${data.message} <br/><br/>`;
                   this.updateSelectionObjects(jsonData);            
@@ -698,13 +696,13 @@ export class GalleryBulkEdit extends TatorElement {
          let respCode = 0;
          
          for (let jsonData of formData) {
-            console.log(jsonData);
+            // console.log(jsonData);
             promise = promise.then(() => this._patchLocalizations(jsonData)).then((resp) => {
                respCode = resp.status;
-               console.log(respCode);
+               // console.log(respCode);
                return resp.json();
             }).then((data) => {
-               console.log("Then reading message");
+               // console.log("Then reading message");
                if (respCode == "200" ) {
                   text += `${data.message} <br/><br/>`;
                   this.updateSelectionObjects(jsonData);            
@@ -717,7 +715,7 @@ export class GalleryBulkEdit extends TatorElement {
          }
 
          return promise.then(() => {
-            console.log("Then clean up");
+            // console.log("Then clean up");
             this._editPanel.resetWidgets()
             this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
             this._clearSelection();
@@ -758,7 +756,7 @@ export class GalleryBulkEdit extends TatorElement {
                   newCardData.attributes[a] = b;
                }
             }
-            console.log(newCardData);
+            // console.log(newCardData);
             this._gallery.updateCardData(newCardData);
             if (this._page.cardData) {
                this._page.cardData.updateBulkCache(newCardData);
@@ -808,7 +806,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    async _prefetch() {
-      console.log("PREFETCH");
+      // console.log("PREFETCH");
       // let condition = new FilterConditionData("", "results", "==", "true", "CACHED");
       // this._page._filterView.addCachedPill(condition);
 

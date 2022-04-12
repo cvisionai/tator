@@ -198,23 +198,23 @@ export class SectionFiles extends TatorElement {
 
         // Notifiy bulk edit about multi-select controls
         card.addEventListener("ctrl-select", (e) => {
-          console.log("Opening edit mode");
+          // console.log("Opening edit mode");
           this._bulkEdit._openEditMode(e);
         });
         card.addEventListener("shift-select", (e) => {
-          console.log("Opening edit mode");
+          // console.log("Opening edit mode");
           this._bulkEdit._openEditMode(e);
         });
 
 
 
         this._bulkEdit.addEventListener("multi-enabled", () => {
-          console.log("multi-enabled heard in section files");
+          // console.log("multi-enabled heard in section files");
           card.multiEnabled = true;
           this.multiEnabled = true;
         });
         this._bulkEdit.addEventListener("multi-disabled", () => {
-          console.log("multi-disabled heard in section files");
+          // console.log("multi-disabled heard in section files");
           card.multiEnabled = false;
           this.multiEnabled = false;
         });
@@ -248,7 +248,7 @@ export class SectionFiles extends TatorElement {
         });
 
         //
-        console.log("Is this.multiEnabled??? "+this.multiEnabled)
+        // console.log("Is this.multiEnabled??? "+this.multiEnabled)
         card.multiEnabled = this.multiEnabled;
       }
 
