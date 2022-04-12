@@ -146,8 +146,7 @@ export class GalleryBulkEdit extends TatorElement {
    init(page, gallery, type = "localization", projectId = null) {
       // console.log("BULK EDIT INITIALIZED!");
       this._page = page;
-      this._projectId = projectId !== null ? projectId : this._page.projectId;
-
+      this._projectId = this._page.getAttribute("project-id");
       this._editType = type;
 
       if (type == "media") {

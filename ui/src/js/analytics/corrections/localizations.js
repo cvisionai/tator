@@ -98,14 +98,16 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
 
-    // Init after modal is defined
-    this._bulkEdit.init(this);
+
   }
 
   async _init() {
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
+
+    // Init after modal is defined
+    this._bulkEdit.init(this);
 
     // Card Data export class collects raw model and parses into view-model format
     this.cardData = document.createElement("annotation-card-data");
