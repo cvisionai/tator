@@ -440,7 +440,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'retryStrategy': {
                 'retryPolicy': 'Always',
-                'limit': 3,
+                'limit': 5,
                 'backoff': {
                     'duration': '5s',
                     'factor': 2
@@ -476,15 +476,6 @@ class TatorTranscode(JobManagerMixin):
                         'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
                     },
                 },
-            },
-            'outputs': {
-                'parameters': [{
-                    'name': 'workloads',
-                    'valueFrom': {'path': '/work/workloads.json'},
-                }, {
-                    'name': 'media_id',
-                    'valueFrom': {'path': '/work/media_id.txt'},
-                }],
             },
         }
         if use_ram_disk:
