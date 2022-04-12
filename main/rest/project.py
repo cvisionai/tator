@@ -132,14 +132,17 @@ class ProjectDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
+        made_changes = False
         project = Project.objects.get(pk=params['id'])
         if 'name' in params:
             if Project.objects.filter(
                 membership__user=self.request.user).filter(name__iexact=params['name']).exists():
                 raise Exception("Project with this name already exists!")
             project.name = params['name']
+            made_changes = True
         if 'summary' in params:
             project.summary = params['summary']
+            made_changes = True
         if 'thumb' in params:
             # Get filename from url.
             tokens = params['thumb'].split('/')
@@ -174,17 +177,32 @@ class ProjectDetailAPI(BaseDetailView):
             if project.thumb:
                 safe_delete(project.thumb, project.id)
             project.thumb = new_key
+            made_changes = True
         if 'enable_downloads' in params:
             project.enable_downloads = params['enable_downloads']
+            made_changes = True
         if 'bucket' in params:
             project.bucket = get_object_or_404(Bucket, pk=params['bucket'])
             if project.bucket.organization != project.organization:
                 raise PermissionDenied
+            made_changes = True
         if 'upload_bucket' in params:
             project.upload_bucket = get_object_or_404(Bucket, pk=params['upload_bucket'])
             if project.upload_bucket.organization != project.organization:
                 raise PermissionDenied
-        project.save()
+            made_changes = True
+        if 'backup_bucket' in params:
+            project.backup_bucket = get_object_or_404(Bucket, pk=params['backup_bucket'])
+            if project.backup_bucket.organization != project.organization:
+                raise PermissionDenied
+            made_changes = True
+
+        # Save the project if any changes were made, otherwise error
+        if made_changes:
+            project.save()
+        else:
+            raise ValueError(f"No recognized keys in request!")
+
         return {'message': f"Project {params['id']} updated successfully!"}
 
     def _delete(self, params):

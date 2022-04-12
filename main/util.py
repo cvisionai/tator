@@ -1,5 +1,7 @@
 from collections import defaultdict
+from functools import reduce
 import logging
+from operator import or_
 import os
 import time
 import subprocess
@@ -19,7 +21,7 @@ from main.search import TatorSearch
 from main.store import get_tator_store
 
 from django.conf import settings
-from django.db.models import F
+from django.db.models import F, Q
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import streaming_bulk
@@ -779,9 +781,11 @@ def update_media_archive_state(
         n_successes += clone_qs.count()
 
         # Check for multiviews containing this single and put them in the same state if they need
-        # updating
-        multi_qs = Media.objects.filter(
-            deleted=False, meta__dtype="multi", media_files__ids__contains=[media.id] + clone_ids
+        # updating. Filter on clone and original ids, but combine results with an OR operation
+        multi_qs = Media.objects.filter(deleted=False, meta__dtype="multi")
+        clones_and_original = clone_ids + [media.id]
+        multi_qs = multi_qs.filter(
+            reduce(or_, (Q(media_files__ids__contains=uid) for uid in clones_and_original))
         )
         multi_ids_ready_for_update = []
         for multi in multi_qs.iterator():

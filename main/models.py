@@ -46,6 +46,7 @@ from enumfields import EnumField
 from django_ltree.fields import PathField
 from django.db import transaction
 
+from .backup import TatorBackupManager
 from .search import TatorSearch
 from .ses import TatorSES
 from .download import download_file
@@ -1018,22 +1019,31 @@ class Media(Model, ModelDiffMixin):
         if not self.media_files:
             return (total_size, download_size)
 
-        resources = Resource.objects.filter(media__in=[self])
-        store_lookup = get_storage_lookup(resources)
-        store_default = get_tator_store(self.project.bucket)
-
         for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif", "attachment"]:
             if key not in self.media_files:
                 continue
 
             for media_def in self.media_files[key]:
-                tator_store = store_lookup.get(media_def["path"], store_default)
-                size = tator_store.get_size(media_def["path"])
+                size = media_def.get("size", 0)
+                # Not all path descriptions have a size field or have it populated with a valid
+                # value; if it is not an integer or less than 1, get it from storage and cache the
+                # result
+                if type(size) != int or size < 1:
+                    size = TatorBackupManager().get_size(
+                        Resource.objects.get(path=media_def["path"])
+                    )
+                    media_def["size"] = size
+
                 total_size += size
                 if key in ["archival", "streaming", "image"] and download_size is None:
                     download_size = size
                 if key == "streaming":
-                    total_size += tator_store.get_size(media_def.get('segment_info'))
+                    json_path = media_def.get("segment_info")
+                    if json_path:
+                        total_size += TatorBackupManager().get_size(
+                            Resource.objects.get(path=json_path)
+                        )
+
         return (total_size, download_size)
 
     def is_backed_up(self):
@@ -1055,7 +1065,10 @@ class Media(Model, ModelDiffMixin):
         :type keys: List[str]
         :rtype: Generator[str, None, None]
         """
-        keys = keys or self.media_files.keys()
+        if self.media_files:
+            keys = keys or self.media_files.keys()
+        else:
+            keys = []
 
         for key in keys:
             for obj in self.media_files.get(key, []):
@@ -1118,6 +1131,10 @@ class Resource(Model):
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
     backed_up = BooleanField(default=False)
 
+    def get_project_from_path(path):
+        project_id = path.split("/")[1]
+        return Project.objects.get(pk=project_id)
+
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):
         if os.path.islink(path_or_link):
@@ -1159,14 +1176,10 @@ class Resource(Model):
         # If an object is backed up, that means it is either in a project-specific backup bucket or
         # the default backup bucket
         backup_bucket = Project.objects.get(pk=project_id).get_bucket(backup=True)
-        if backup_bucket:
-            # Resources are backed up to at most one bucket; return after finding a project
-            # specific backup bucket
-            get_tator_store(backup_bucket).delete_object(path)
-            return
 
-        # Found no project-specific backup bucket, use the default one
-        get_tator_store(backup=True).delete_object(path)
+        # Use the default backup bucket if the project specific backup bucket is not set
+        use_default_backup_bucket = backup_bucket is None
+        get_tator_store(backup_bucket, backup=use_default_backup_bucket).delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):
@@ -1193,9 +1206,9 @@ class Resource(Model):
             media.restoration_requested = True
             media.save()
         """
-        obj = Resource.objects.get(path=path)
+        project = Resource.get_project_from_path(path)
         logger.info(f"Requesting restoration of object {path}")
-        return get_tator_store(obj.bucket).request_restoration(path, min_exp_days)
+        return TatorBackupManager().request_restore_resource(path, project, min_exp_days)
 
     @transaction.atomic
     def restore_resource(path):
@@ -1209,9 +1222,9 @@ class Resource(Model):
             media.archive_state = "live"
             media.save()
         """
-        obj = Resource.objects.get(path=path)
+        project = Resource.get_project_from_path(path)
         logger.info(f"Restoring object {path}")
-        return get_tator_store(obj.bucket).restore_resource(path)
+        return TatorBackupManager().finish_restore_resource(path, project)
 
 
 @receiver(post_save, sender=Media)
