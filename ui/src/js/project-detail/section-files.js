@@ -221,7 +221,7 @@ export class SectionFiles extends TatorElement {
 
         //
         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
-          console.log(evt);
+          // console.log(evt);
           card._updateShownAttributes(evt);
           this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: evt.detail.value });
 

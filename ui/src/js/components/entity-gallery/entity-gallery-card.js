@@ -412,9 +412,12 @@ export class EntityCard extends TatorElement {
   * Custom label display update
   */
   _updateShownAttributes(evt) {
+    console.log("_updateShownAttributes, evt.detail.value=");
+    console.log(evt.detail);
+    console.log(this.cardObj);
     let labelValues = evt.detail.value;
 
-    if (this.attributeDivs) {
+    if (this.attributeDivs && evt.detail.typeId === this.cardObj.entityType.id) {
       // show selected
       for (let [key, value] of Object.entries(this.attributeDivs)) {
         if (labelValues.includes(key)) {
