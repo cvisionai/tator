@@ -81,12 +81,14 @@ export class ConcatDownloadManager
       this._activeTimestamp = search.key;
       msg["frame"] -= Math.floor((this._fps * search.key));
       // This assumes all the videos are the same FPS.
+      this._lastInit = msg;
       search.obj.postMessage(msg);
     }
     else if (msg.type == "onDemandDownload")
     {
       if (this._activeTimestamp != undefined)
       {
+        this._lastDl = msg;
         this._workerMap.get(this._activeTimestamp).postMessage(msg);
       }
     }
@@ -113,6 +115,7 @@ export class ConcatDownloadManager
 
   _onMessage(timestampOffset, msg)
   {
+    // TODO: Refactor this so it isn't as much copy pasta between buffer and on-demand returns
     const type = msg.data["type"];
     if (type == "finished")
     {
@@ -138,6 +141,27 @@ export class ConcatDownloadManager
       //{
       //  Utilities.sendNotification(seek_msg);
       //}
+    }
+    else if (type == "onDemandFinished")
+    {
+      let search = this._barkerSearch(this._workerMap, this._activeTimestamp + 0.1);
+      let keys = [...this._workerMap.keys()].sort((a,b)=>{return a-b});
+      const next_idx = keys.findIndex(element => {return element == search.key}) + 1;
+      if (next_idx < keys.length)
+      {
+        let next_obj = this._workerMap.get(keys[next_idx]);
+        this._activeTimestamp = next_obj.key;
+        this._lastInit.frame = 0;
+        next_obj.postMessage(this._lastInit);
+        next_obj.postMessage(this._lastDl);
+      }
+      else
+      {
+        console.log("onDemand finished downloading. Reached end of video.");
+        this._parent._onDemandFinished = true;
+        this._parent._onDemandPlaybackReady = true; //if we reached the end, we are done.
+        this._parent.sendPlaybackReady();
+      }
     }
     else if (type == "buffer")
     {
@@ -280,13 +304,6 @@ export class ConcatDownloadManager
     {
       // Download worker's onDemand mode is ready
       this._parent._onDemandInit = true;
-    }
-    else if (type == "onDemandFinished")
-    {
-      console.log("onDemand finished downloading. Reached end of video.");
-      this._parent._onDemandFinished = true;
-      this._parent._onDemandPlaybackReady = true; //if we reached the end, we are done.
-      this._parent.sendPlaybackReady();
     }
     else if (type == "onDemand")
     {
