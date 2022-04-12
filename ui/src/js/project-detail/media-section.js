@@ -306,7 +306,7 @@ export class MediaSection extends TatorElement {
   }
 
   reload() {
-    console.log("Reload media...");
+    console.log("Reload media section...");
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();

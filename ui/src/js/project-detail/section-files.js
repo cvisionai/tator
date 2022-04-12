@@ -18,6 +18,9 @@ export class SectionFiles extends TatorElement {
     this.cardLabelsChosenByType = {};
     this._cardElements = [];
     this._currentCardIndexes = {};
+
+    //
+    this.multiEnabled = false;
   }
 
   static get observedAttributes() {
@@ -62,8 +65,6 @@ export class SectionFiles extends TatorElement {
   }
 
   set mediaTypesMap(val) {
-    console.log("MEDIA TYPE MAP SET..........");
-    console.log(val);
     this._mediaTypesMap = val;
   }
 
@@ -204,12 +205,14 @@ export class SectionFiles extends TatorElement {
         });
 
         this._bulkEdit.addEventListener("multi-enabled", () => {
-          card._multiSelectionToggle = true;
-          card._li.classList.add("multi-select");
+          console.log("multi-enabled heard in section files");
+          card.multiEnabled = true;
+          this.multiEnabled = true;
         });
         this._bulkEdit.addEventListener("multi-disabled", () => {
-          card._multiSelectionToggle = false;
-          card._li.classList.remove("multi-select");
+          console.log("multi-disabled heard in section files");
+          card.multiEnabled = false;
+          this.multiEnabled = false;
         });
 
         //
@@ -229,8 +232,8 @@ export class SectionFiles extends TatorElement {
         if (newCard) {
           this._ul.appendChild(card);
         }
-        console.log('this.cardLabelsChosenByType[entityTypeId]')
-        console.log(this.cardLabelsChosenByType[entityTypeId]);
+        // console.log('this.cardLabelsChosenByType[entityTypeId]')
+        // console.log(this.cardLabelsChosenByType[entityTypeId]);
         // this is data used later by label chooser, and bulk edit
         card.init({
           obj: cardObj,

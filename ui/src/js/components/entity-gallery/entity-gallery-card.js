@@ -230,6 +230,16 @@ export class EntityCard extends TatorElement {
 
     // Card click / List item click listener
     this.addEventListener("click", this.togglePanel.bind(this));
+    this._link.addEventListener("click", (e) => {
+      if (this._multiEnabled) {
+        e.preventDefault();
+      }
+    });
+    this._name.addEventListener("click", (e) => {
+      if (this._multiEnabled) {
+        e.preventDefault();
+      }
+    });
 
     // prep this var
     this._tmpHidden = null;
@@ -243,6 +253,18 @@ export class EntityCard extends TatorElement {
 
     /* Sends events related to selection clicks */
     this.addEventListener('contextmenu', this.contextMenuHandler.bind(this));
+  }
+
+  set multiEnabled(val) {
+    console.log("multiEnabled set..."+val)
+    this._multiEnabled = val;
+    this._multiSelectionToggle = val;
+
+    if (val) {
+      this._li.classList.add("multi-select");
+    } else {
+      this._li.classList.remove("multi-select");
+    }
   }
 
   static get observedAttributes() {
@@ -340,8 +362,8 @@ export class EntityCard extends TatorElement {
      * Attributes hidden on card are controlled by outer menu 
     */
     if (obj.attributeOrder && obj.attributeOrder.length > 0) {
-      console.log("Setting up labels on card with this data:");
-      console.log(obj);
+      // console.log("Setting up labels on card with this data:");
+      // console.log(obj);
       // Clear this in case of reuse / re-init
       this.attributesDiv.innerHTML = "";
       for (const attr of obj.attributeOrder) {
@@ -537,35 +559,34 @@ export class EntityCard extends TatorElement {
   }
 
   togglePanel(e) {
-    console.log("Console.log from toggle panel.. this._link.getAttribute href = " + this._link.getAttribute("href"))
-
-    if (this._link.getAttribute("href") !== "#" && !this.multiEnabled) {
+    if (this._link.getAttribute("href") !== "#" && !this._multiEnabled) {
       // follow the link...
       // otherwise do some panel, or multi stuff
       console.log("clicked....");
     } else {
       e.preventDefault();
 
-      if (this.multiEnabled) {
+      if (this._multiEnabled) {
+        this._multiSelectionToggle = true;
+        
         /* @ "card-click"*/
         if (e.shiftKey) {
           console.log("Shift click!");
-          this._multiSelectionToggle = true;
+          // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
-        }
-
-        if (e.code == "Enter") {
+        } else if (e.code == "Enter") {
           console.log("Enter click!... " + this._li.hasFocus());
           if (this._li.hasFocus()) {
             //
           }
-          this._multiSelectionToggle = true;
+          // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
-        }
-
-        if (e.ctrlKey || e.code == "Control") {
+        } else if (e.ctrlKey || e.code == "Control") {
           // usually context menu is hit, and not this keeping in case....
-          this._multiSelectionToggle = true;
+          // this._multiSelectionToggle = true;
+          this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        } else {
+          console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         }
       }

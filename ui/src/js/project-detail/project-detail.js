@@ -236,6 +236,10 @@ export class ProjectDetail extends TatorPage {
     this._shadow.appendChild(this._bulkEdit);
     filterdiv.appendChild(this._bulkEdit._selectionPanel);
 
+    this._bulkEdit.addEventListener("multi-enabled", () => {
+      console.log("multi-enabled heard in project detail");
+    });
+
     // Media section
     this._mediaSection = document.createElement("media-section");
     this._projects.appendChild(this._mediaSection);
@@ -596,7 +600,7 @@ export class ProjectDetail extends TatorPage {
   }
 
   _openBulkEdit() {
-    this._bulkEdit._showEditPanel();
+    this._bulkEdit.startEditMode();
   }
 
   _sectionVisibilityEL(evt) {

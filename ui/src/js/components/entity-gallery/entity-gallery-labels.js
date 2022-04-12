@@ -189,7 +189,7 @@ export class EntityGalleryLabels extends TatorElement {
     sorted.push(...hiddenAttrs);
 
     // Create an array for checkbox set el
-    console.log("checkedFirst "+checkedFirst)
+    // console.log("checkedFirst "+checkedFirst)
     let checkedValue = checkedFirst == null ? false : checkedFirst;
     for (let attr of sorted) {
       this.newList.push({

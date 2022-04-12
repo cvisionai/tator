@@ -260,13 +260,11 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
         });
 
         this._bulkEdit.addEventListener("multi-enabled", () => {
-          card._multiSelectionToggle = true;
-          card._li.classList.add("multi-select");
+          card.multiEnabled = true;
         });
 
         this._bulkEdit.addEventListener("multi-disabled", () => {
-          card._multiSelectionToggle = false;
-          card._li.classList.remove("multi-select");
+          card.multiEnabled = false;
         });
 
         // Update view

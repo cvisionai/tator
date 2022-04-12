@@ -252,7 +252,8 @@ export class SettingsBox {
   }
 
   _modalCloseCallback(){
-    return this.modal._closeCallback();
+    this.modal._closeCallback();
+    this._modalClear();
   }
 
 
