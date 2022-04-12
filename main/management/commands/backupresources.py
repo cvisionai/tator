@@ -33,12 +33,14 @@ class Command(BaseCommand):
 
             # If there is no default backup bucket, restrict the resource queryset to those that
             # reside in projects with defined project-specific backup buckets
+            project_ids = [str(p.id) for p in projects_with_backup_buckets]
             logger.info(
-                f"Found project-specific backup buckets for: "
-                f"{','.join(str(p.id) for p in projects_with_backup_buckets)}, backing up resources in "
-                f"those projects, if necessary."
+                f"Found project-specific backup buckets for: {','.join(project_ids)}, backing up "
+                f"resources in those projects, if necessary."
             )
-            resource_qs = resource_qs.filter(media__project__in=projects_with_backup_buckets)
+            # Use the fact that paths for resources take the form of `<org_id>/<proj_id>/<media_id>`
+            # and filter for only project ids with backup buckets
+            resource_qs = resource_qs.filter(path__iregex=f"\\d+/({'|'.join(project_ids)})/\\d+")
 
         total_to_back_up = resource_qs.count()
         if total_to_back_up == 0:
