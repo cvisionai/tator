@@ -409,7 +409,7 @@ class TatorTranscode(JobManagerMixin):
                 'args': ['-H', 'Content-Type: application/json',
                          '-H', 'Authorization: Token {{workflow.parameters.token}}',
                          '--request', 'POST',
-                         '--data', '{"message":"Transcode failed on {{workflow.parameters.upload_name}}, project {{workflow.parameters.project}}!"}',
+                         '--data', '{"message":"Transcode failed on {{workflow.parameters.upload_name}}, project {{workflow.parameters.project}}, media ID {{workflow.parameters.media_id}}!"}',
                          '{{workflow.parameters.host}}/rest/Notify',
                 ],
                 'resources': {
@@ -1002,7 +1002,10 @@ class TatorTranscode(JobManagerMixin):
                                 'secondsAfterCompletion': 86400},
                 'templates': [
                     self.get_one_shot_transcode_task(use_ram_disk),
+                    self.notify_failure,
+                    self.exit_handler,
                 ],
+                'onExit': 'exit-handler',
             },
         }
 
