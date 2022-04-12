@@ -432,6 +432,70 @@ class TatorTranscode(JobManagerMixin):
             ]],
         }
 
+    def get_one_shot_transcode_task(self, use_ram_disk):
+        task = {
+            'name': 'one-shot-transcode',
+            'metadata': {
+                'labels': {'app': 'transcoder'},
+            },
+            'retryStrategy': {
+                'retryPolicy': 'Always',
+                'limit': 3,
+                'backoff': {
+                    'duration': '5s',
+                    'factor': 2
+                },
+            },
+            'nodeSelector' : {'cpuWorker' : 'yes'},
+            'container': {
+                'image': '{{workflow.parameters.client_image}}',
+                'imagePullPolicy': 'IfNotPresent',
+                'command': ['python3',],
+                'args': ['-m', 'tator.transcode',
+                         '--url', '{{workflow.parameters.url}}',
+                         '--work_dir', '/work',
+                         '--host', '{{workflow.parameters.host}}',
+                         '--token', '{{workflow.parameters.token}}',
+                         '--project', '{{workflow.parameters.project}}',
+                         '--type', '{{workflow.parameters.type}}',
+                         '--name', '{{workflow.parameters.upload_name}}',
+                         '--section', '{{workflow.parameters.section}}',
+                         '--gid', '{{workflow.parameters.gid}}',
+                         '--uid', '{{workflow.parameters.uid}}',
+                         '--attributes', '{{workflow.parameters.attributes}}',
+                         '--media_id', '{{workflow.parameters.media_id}}',
+                ],
+                'workingDir': '/scripts',
+                'volumeMounts': [{
+                    'name': 'scratch-prepare',
+                    'mountPath': '/work',
+                }],
+                'resources': {
+                    'limits': {
+                        'memory': os.getenv('TRANSCODER_MEMORY_LIMIT'),
+                        'cpu': os.getenv('TRANSCODER_CPU_LIMIT'),
+                    },
+                },
+            },
+            'outputs': {
+                'parameters': [{
+                    'name': 'workloads',
+                    'valueFrom': {'path': '/work/workloads.json'},
+                }, {
+                    'name': 'media_id',
+                    'valueFrom': {'path': '/work/media_id.txt'},
+                }],
+            },
+        }
+        if use_ram_disk:
+            task['volumes'] = [{
+                'name': 'scratch-prepare',
+                'emptyDir': {
+                    'medium': 'Memory',
+                },
+            }]
+        return task
+
     def get_prepare_task(self, use_ram_disk):
         prepare_task = {
             'name': 'prepare',
@@ -938,7 +1002,7 @@ class TatorTranscode(JobManagerMixin):
                 },
             },
             'spec': {
-                'entrypoint': 'single-file-pipeline',
+                'entrypoint': 'one-shot-transcode',
                 'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
@@ -946,10 +1010,7 @@ class TatorTranscode(JobManagerMixin):
                                 'secondsAfterFailure': 86400,
                                 'secondsAfterCompletion': 86400},
                 'templates': [
-                    self.get_prepare_task(use_ram_disk),
-                    self.get_transcode_task(use_ram_disk),
-                    self.get_transcode_dag(media_id),
-                    pipeline_task,
+                    self.get_one_shot_transcode_task(use_ram_disk),
                 ],
             },
         }
