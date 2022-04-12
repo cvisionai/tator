@@ -756,6 +756,7 @@ export class ProjectDetail extends TatorPage {
 
             //
             this._mediaSection._files._cardAtributeLabels = this._cardAtributeLabels;
+            this._mediaSection._bulkEdit = this._bulkEdit;
             this._bulkEdit.init(this, this._mediaSection._files, "media", projectId);
             // this._bulkEdit._showEditPanel();
 

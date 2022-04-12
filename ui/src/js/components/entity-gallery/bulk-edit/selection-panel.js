@@ -53,8 +53,8 @@ export class MultiSelectionPanel extends TatorElement {
       this._minimizeBar.appendChild(this._clearSelection);
 
       // Escape Bulk Edit
-      this.xClose = document.createElement("button");
-      this.xClose.setAttribute("class", "hidden text-white btn-clear px-2 py-2 h2");
+      this.xClose = document.createElement("a");
+      this.xClose.setAttribute("class", "hidden text-white btn-clear px-2 py-2 clickable text-underline");
       this._minimizeBar.appendChild(this.xClose);
   
       const svg = document.createElementNS(svgNamespace, "svg");
@@ -72,7 +72,7 @@ export class MultiSelectionPanel extends TatorElement {
       path.setAttribute("d", "M5.293 6.707l5.293 5.293-5.293 5.293c-0.391 0.391-0.391 1.024 0 1.414s1.024 0.391 1.414 0l5.293-5.293 5.293 5.293c0.391 0.391 1.024 0.391 1.414 0s0.391-1.024 0-1.414l-5.293-5.293 5.293-5.293c0.391-0.391 0.391-1.024 0-1.414s-1.024-0.391-1.414 0l-5.293 5.293-5.293-5.293c-0.391-0.391-1.024-0.391-1.414 0s-0.391 1.024 0 1.414z");
       svg.appendChild(path);
 
-      const exitText = document.createTextNode("Exit");
+      const exitText = document.createTextNode("Exit bulk edit");
       this.xClose.appendChild(exitText);
             // this._h2 = document.createElement("h2");
       // this._h2.setAttribute("class", "py-2 px-2 f1 semi-bold");

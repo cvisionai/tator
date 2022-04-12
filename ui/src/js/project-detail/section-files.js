@@ -166,6 +166,8 @@ export class SectionFiles extends TatorElement {
         let cardInfo = {
           card: card
         };
+
+        
         this._cardElements.push(cardInfo);
         this._currentCardIndexes[cardObj.id] = index;
 
@@ -204,6 +206,8 @@ export class SectionFiles extends TatorElement {
           this._bulkEdit._openEditMode(e);
         });
 
+
+
         this._bulkEdit.addEventListener("multi-enabled", () => {
           console.log("multi-enabled heard in section files");
           card.multiEnabled = true;
@@ -239,8 +243,13 @@ export class SectionFiles extends TatorElement {
           obj: cardObj,
           idx: index,
           mediaInit: true,
-          cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
-        })
+          cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
+          // enableMultiselect: this.multiEnabled
+        });
+
+        //
+        console.log("Is this.multiEnabled??? "+this.multiEnabled)
+        card.multiEnabled = this.multiEnabled;
       }
 
       

@@ -134,6 +134,8 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    set elementList(val) {
+      console.log("this._elements  updated");
+      console.log(this._elements);
       this._elements = val;
    }
 
@@ -414,9 +416,8 @@ export class GalleryBulkEdit extends TatorElement {
       this._showEditPanel(true);
    }
 
-   _escapeEditMode() {
-      console.log("ESC edit mode ya, this._editPanelWasOpen? "+this._editPanelWasOpen);
-      console.log(this);
+   _escapeEditMode(e) {
+      e.preventDefault();
       this._editMode = false;
 
       // hide edit drawer and tools

@@ -749,6 +749,9 @@ export class MediaSection extends TatorElement {
     this._stop = evt.detail.stop;
     this._paginationState = evt.detail;
 
+    console.log("SHOULDN'T WE CLEAR THIS NOW?????????")
+    this._bulkEdit._clearSelection();
+
     otherPaginator.init(otherPaginator._numFiles, this._paginationState);        
     
     this._updatePageArgs();
