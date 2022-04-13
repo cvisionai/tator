@@ -455,7 +455,6 @@ class TatorVideoManager {
                                    "seconds": seconds});
   }
 
-  // Empty function because we don't support a traditional playback interface
   pause()
   {
     this.onFrame = null;
@@ -464,7 +463,6 @@ class TatorVideoManager {
       {"type": "pause"});
   }
 
-  // Empty function because we don't support a traditional playback interface
   play()
   {
     this._playing = true;

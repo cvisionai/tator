@@ -254,7 +254,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, timestampOffset, samples)
   {
     let muted = true;
-    //console.info(`${this._name} GOT=${samples.length} ${timestampOffset}`);
+    console.info(`${this._name} GOT=${samples.length} ${timestampOffset}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     const relative_cursor = this._current_cursor - timestampOffset;
@@ -327,7 +327,7 @@ class TatorVideoBuffer {
       }
     }
 
-    const timestampOffsetInCtx=timestampOffset*this._timescaleMap.get(timestampOffset);
+    const timestampOffsetInCtx=Math.floor(timestampOffset*this._timescaleMap.get(timestampOffset));
     console.info(`${this._name}: TIMESTAMP ${timestampOffset} is ${timestampOffsetInCtx}`);
     //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} sample_start=${samples[0].cts} delta=${this._frame_delta} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
     if (muted == false || this._playing == true)
@@ -340,6 +340,7 @@ class TatorVideoBuffer {
       this._transfers=[];
       for (idx = start_idx; idx < samples.length; idx++)
       {
+        //console.info(`SENDING ${timestampOffsetInCtx} + ${samples[idx].cts} ${this._timescaleMap.get(timestampOffset)}`);
         this._bufferedRegions.push(timestampOffset+samples[idx].cts/this._timescaleMap.get(timestampOffset), timestampOffset+(samples[idx].cts+this._frameDeltaMap.get(timestampOffset))/this._timescaleMap.get(timestampOffset));
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
@@ -522,7 +523,7 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
-    //console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this.activeTimescale}`);
+    console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this.activeTimescale}`);
     if (this._playing == true)
     {      
       const timestampOffset = this.currentTimestampOffset;
@@ -547,7 +548,7 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = (this._current_cursor)*this.activeTimescale;
       const timestamp = frame.timestamp;
-      //console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
+      console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
       {
         // Make an ImageBitmap from the frame and release the memory

@@ -116,8 +116,6 @@ export class VideoCanvas extends AnnotationCanvas {
     // This flag is used to force a vertex reload
     this._dirty = true;
 
-    this._startBias = 0.0;
-
     if (this._diagnosticMode == true)
     {
       let msg = "Startup Diagnostic\n";
@@ -1025,12 +1023,13 @@ export class VideoCanvas extends AnnotationCanvas {
 
   frameToTime(frame)
   {
-    return this._startBias + ((1/this._fps)*frame)+(1/(this._fps*4));
+    const time = ((1/this._fps)*frame)+(1/(this._fps*4));
+    return this._dlWorker.biasForTime(time) + time;
   }
 
   timeToFrame(time, bias)
   {
-    let video_time = time - this._startBias;
+    let video_time = time - this._dlWorker.biasForTime(time);
     if (bias)
     {
       video_time -= (1/(this._fps*4));
@@ -1040,7 +1039,8 @@ export class VideoCanvas extends AnnotationCanvas {
 
   frameToAudioTime(frame)
   {
-    return this._startBias + ((1/this._fps)*frame);
+    const time = ((1/this._fps)*frame);
+    return this._dlWorker.biasForTime(time) + time;
   }
 
   /**

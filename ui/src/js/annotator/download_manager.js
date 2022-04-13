@@ -12,6 +12,7 @@ export class DownloadManager
     this._worker = new Worker(new URL("./vid_downloader.js", import.meta.url),
     {'name': 'Video Download Worker'});
     this._worker.onmessage = this._onMessage.bind(this);
+    this._startBias = 0.0;
   }
 
   // Forward a message to the underlying worker
@@ -24,6 +25,11 @@ export class DownloadManager
   terminate()
   {
     this._worker.terminate();
+  }
+
+  biasForTime(time)
+  {
+    return this._startBias;
   }
 
   _onMessage(msg)
@@ -178,10 +184,10 @@ export class DownloadManager
     {
       if (msg.data["buf_idx"] == this._parent._scrub_idx)
       {
-        this._parent._startBias = msg.data["startBias"];
-        this._parent._startBias += msg.data["firstFrame"] / this._parent._fps;
+        this._startBias = msg.data["startBias"];
+        this._startBias += msg.data["firstFrame"] / this._parent._fps;
         this._parent._videoVersion = msg.data["version"];
-        console.info(`Video has start bias of ${this._parent._startBias} - buffer: ${this._parent._scrub_idx}`);
+        console.info(`Video has start bias of ${this._startBias} - buffer: ${this._parent._scrub_idx}`);
         console.info("Setting hi performance mode");
         guiFPS = 60;
       }

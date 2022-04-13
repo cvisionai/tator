@@ -11,6 +11,7 @@ export class ConcatDownloadManager
     this._parent = parent;
     this._workerMap = new Map();
     this._mediaMap = new Map();
+    this._startBias = 0.0;
     for (let idx = 0; idx < media_objects.length; idx++)
     {
       // @TODO sort media by res, take out extras, etc. 
@@ -50,6 +51,11 @@ export class ConcatDownloadManager
 
     return {obj: mapObject.get(keys[found_idx]),
             key: keys[found_idx]};
+  }
+
+  biasForTime(time)
+  {
+    return this._startBias;
   }
 
   // Forward a message to the underlying worker
@@ -288,10 +294,10 @@ export class ConcatDownloadManager
     {
       if (msg.data["buf_idx"] == this._parent._scrub_idx)
       {
-        this._parent._startBias = msg.data["startBias"];
-        this._parent._startBias += msg.data["firstFrame"] / this._parent._fps;
+        this._startBias = msg.data["startBias"];
+        this._startBias += msg.data["firstFrame"] / this._parent._fps;
         this._parent._videoVersion = msg.data["version"];
-        console.info(`Video has start bias of ${this._parent._startBias} - buffer: ${this._parent._scrub_idx}`);
+        console.info(`Video has start bias of ${this._startBias} - buffer: ${this._scrub_idx}`);
         console.info("Setting hi performance mode");
         guiFPS = 60;
       }
