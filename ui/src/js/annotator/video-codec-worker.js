@@ -349,7 +349,9 @@ class TatorVideoBuffer {
         });
         try
         {
-        this._videoDecoder.decode(chunk);
+          this.frameTimescale = this._timescaleMap.get(timestampOffset);
+          this.frameFrameDelta = this._frameDeltaMap.get(timestampOffset);
+          this._videoDecoder.decode(chunk);
         }
         catch(e)
         {
@@ -523,17 +525,17 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
-    console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this.activeTimescale}`);
+    //console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/this.frameTimescale}`);
     if (this._playing == true)
     {      
       const timestampOffset = this.currentTimestampOffset;
-      const cursor_in_ctx = (this._current_cursor)*this.activeTimescale;
+      const cursor_in_ctx = (this._current_cursor)*this.frameTimescale;
       if (frame.timestamp < cursor_in_ctx)
       {
         frame.close();
         return;
       }
-      this._current_cursor = (frame.timestamp / this.activeTimescale);
+      this._current_cursor = (frame.timestamp / this.frameTimescale);
       //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
       postMessage({"type": "frame",  
                   "data": frame,
@@ -546,20 +548,22 @@ class TatorVideoBuffer {
     }
     else
     {
-      const cursor_in_ctx = (this._current_cursor)*this.activeTimescale;
+      const cursor_in_ctx = (this._current_cursor)*this.frameTimescale;
       const timestamp = frame.timestamp;
-      console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
+      //console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
       {
         // Make an ImageBitmap from the frame and release the memory
         this._canvasCtx.drawImage(frame,0,0);
         let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
-        console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/this.activeTimescale}-${(frame.timestamp+this._frameDeltaMap.get(this.currentTimestampOffset))/this.activeTimescale}`);
+        console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/this.frameTimescale}-${(frame.timestamp+this._frameDeltaMap.get(this.currentTimestampOffset))/this.frameTimescale}`);
         frame.close();
         postMessage({"type": "image",
                     "data": image,
                     "timestamp": timestamp,
-                    "seconds": timestamp/this.activeTimescale},
+                    "timescale": this.frameTimescale,
+                    "frameDelta": this.frameFrameDelta,
+                    "seconds": timestamp/this.frameTimescale},
                     image);
       }
       else
@@ -582,7 +586,7 @@ class TatorVideoBuffer {
   // Timing considerations:
   // - This will either grab from pre-decoded frames and run very quickly or
   //   jump to the nearest preceding keyframe and decode new frames (slightly slower)
-  _setCurrentTime(video_time, informational)
+  _setCurrentTime(video_time, informational, raw_video_time)
   {
     this._current_cursor = video_time;
     console.info(`${this._name} now @ ${this._current_cursor}: ${informational}`);
@@ -590,14 +594,30 @@ class TatorVideoBuffer {
     {
       return;
     }
-    const timescale = this._barkerSearch(this._timescaleMap,video_time).obj;
+    let timescale = null;
+    if (raw_video_time)
+    {
+      timescale = this._barkerSearch(this._timescaleMap,raw_video_time).obj;
+    }
+    else
+    {
+      timescale = this._barkerSearch(this._timescaleMap,video_time).obj;
+    }
     for (let idx = 0; idx < this._bufferedRegions.length; idx++)
     {
       if (video_time > this._bufferedRegions.start(idx) && video_time <= this._bufferedRegions.end(idx))
       {
         //console.info(`Found it, going in ${video_time} ${seek_timestamp} ${this._bufferedRegions.start(idx)} ${this._bufferedRegions.end(idx)}!`);
         this._lastSeek = performance.now();
-        let search = this._barkerSearch(this._keyframeMap, video_time);
+        let search = null;
+        if (raw_video_time)
+        {
+          search = this._barkerSearch(this._keyframeMap, raw_video_time);
+        }
+        else
+        {
+          search = this._barkerSearch(this._keyframeMap, video_time);
+        }
         let keyframe_info = search.obj.closest_keyframe((video_time-search.key)*timescale);
         let mp4File = this._barkerSearch(this._mp4FileMap, search.key).obj;
         // If the codec closed on us, opportunistically reopen it
@@ -774,6 +794,8 @@ class TatorVideoBuffer {
         });
         try
         {
+          this.frameTimescale = this._timescaleMap.get(timestampOffset);
+          this.frameFrameDelta = this._frameDeltaMap.get(timestampOffset);
           seekDecoder.decode(chunk);
         }
         catch(e)
@@ -905,7 +927,7 @@ onmessage = function(e)
   }
   else if (msg.type == "currentTime")
   {
-    ref._setCurrentTime(msg.currentTime, msg.informational);
+    ref._setCurrentTime(msg.currentTime, msg.informational, msg.videoTime);
   }
   else if (msg.type == "pause")
   {

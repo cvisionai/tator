@@ -1023,8 +1023,15 @@ export class VideoCanvas extends AnnotationCanvas {
 
   frameToTime(frame)
   {
+    let comps = this.frameToComps(frame);
+    return comps.bias + comps.time;
+  }
+
+  frameToComps(frame)
+  {
     const time = ((1/this._fps)*frame)+(1/(this._fps*4));
-    return this._dlWorker.biasForTime(time) + time;
+    const bias = this._dlWorker.biasForTime(time);
+    return {'time': time, 'bias': bias};
   }
 
   timeToFrame(time, bias)
@@ -1060,7 +1067,8 @@ export class VideoCanvas extends AnnotationCanvas {
   seekFrame(frame, callback, forceSeekBuffer, bufferType, forceSeekDownload)
   {
     var that = this;
-    var time = this.frameToTime(frame);
+    var time_comps = this.frameToComps(frame);
+    var time = time_comps.time+time_comps.bias;
     var audio_time = this.frameToAudioTime(frame);
     var downloadSeekFrame = false;
     var createTimeout = false;
@@ -1235,7 +1243,16 @@ export class VideoCanvas extends AnnotationCanvas {
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
     {
-      video.currentTime = time;
+      if (video.use_codec_buffer)
+      {
+        // Let the video decoder do the bias addition
+        video.bias = time_comps.bias;
+        video.currentTime = time_comps.time;
+      }
+      else
+      {
+        video.currentTime = time;
+      }
     }
     else if (time > video.duration)
     {

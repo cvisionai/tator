@@ -133,6 +133,7 @@ class TatorVideoManager {
     this._playing = false;
     this._timescaleMap = new Map();
     this._frameDeltaMap = new Map();
+    this._bias = 0;
   }
 
   _on_message(msg)
@@ -191,12 +192,12 @@ class TatorVideoManager {
   _cursor_is_hot()
   {
     let timestamps = this._hot_frames.keys() // make sure keys are sorted!
-    let search = this._barkerSearch(this._timescaleMap, this._current_cursor);
-    let timescale = search.obj;
-    let cursor_in_ctx = this._current_cursor * timescale;
     for (let timestamp of timestamps)
     {
-      if (cursor_in_ctx >= timestamp && cursor_in_ctx < timestamp+this._frameDeltaMap.get(search.key))
+      let image_timescale = this._hot_frames.get(timestamp).timescale;
+      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
+      let cursor_in_ctx = this._current_cursor * image_timescale;
+      if (cursor_in_ctx >= timestamp && cursor_in_ctx < timestamp+frame_delta)
       {
         return true;
       }
@@ -225,6 +226,8 @@ class TatorVideoManager {
   _imageReady(image)
   {
     console.info(`${performance.now()}: GOT ${image.timestamp}`);
+    image.data.timescale = image.timescale;
+    image.data.frameDelta = image.frameDelta;
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
     if (this._cursor_is_hot())
@@ -320,6 +323,10 @@ class TatorVideoManager {
   // Public interface mirrors that of a standard HTML5 video
   ///////////////////////////////////////////////////////////
 
+  set bias(bias)
+  {
+    this._bias = bias;
+  }
   // Set the current video time
   //
   // Timing considerations:
@@ -355,12 +362,14 @@ class TatorVideoManager {
     else
     {
       // Keep worker and manager up to date.
-      this._current_cursor = video_time;
+      this._current_cursor = video_time+this._bias;
     }
     const is_hot = this._cursor_is_hot();
     this._codec_worker.postMessage(
       {"type": "currentTime",
        "currentTime": this._current_cursor,
+       "videoTime": video_time,
+       "bias": this._bias,
        "informational": is_hot
     });
     if (is_hot)
