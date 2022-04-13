@@ -55,14 +55,7 @@ export class ConcatDownloadManager
 
   biasForTime(time)
   {
-    let biasSum = 0.0;
-    let keys = [...this._startBiasMap.keys()].sort((a,b)=>{return a-b});
-    for (let idx = 0; idx < keys.length && keys[idx] < time; idx++)
-    {
-      biasSum += this._startBiasMap.get(keys[idx]);
-    }
-    console.info(`BIAS ${biasSum} for ${time}`);
-    return biasSum;
+    return this._barkerSearch(this._startBiasMap, time).obj;
   }
 
   // Forward a message to the underlying worker
