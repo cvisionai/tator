@@ -55,7 +55,13 @@ export class ConcatDownloadManager
 
   biasForTime(time)
   {
-    return this._barkerSearch(this._startBiasMap, time).obj;
+    let biasSum = 0.0;
+    let keys = [...this._startBiasMap.keys()].sort((a,b)=>{return a-b;});
+    for (let idx = 0; idx < keys.length && keys[idx] < time; idx++)
+    {
+      biasSum += this._startBiasMap.get(keys[idx]);
+    }
+    return biasSum;
   }
 
   // Forward a message to the underlying worker
@@ -130,6 +136,7 @@ export class ConcatDownloadManager
     else if (type == "seek_result")
     {
       msg.data.frame += timestampOffset*this._fps;
+      msg.data.frame = Math.round(msg.data.frame);
       if (this._parent._seekFrame != msg.data["frame"])
       {
         console.warn(`Out of order seek operations detected. Expected=${this._parent._seekFrame}, Got=${msg.data["frame"]}`);

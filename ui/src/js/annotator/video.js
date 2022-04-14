@@ -686,6 +686,7 @@ export class VideoCanvas extends AnnotationCanvas {
                         
                         let dims = this.identify_qualities(this._children[0], quality, scrubQuality, seekQuality, offsite_config);
                         // Clear the buffer in case this is a hot-swap
+                        this.startDownload(streaming_files, offsite_config);
                         this._draw.clear();
                         this._draw.resizeViewport(dims[0], dims[1]);
                         this._fps=Math.round(1000*this._children[0].fps)/1000;
@@ -693,8 +694,7 @@ export class VideoCanvas extends AnnotationCanvas {
                         this._numSeconds=new_length / this._fps;
                         this._dims=dims;
                         this.resetRoi();
-
-                        this.startDownload(streaming_files, offsite_config);
+                        this.seekFrame(this._dispFrame, ()=>{}, true);
                         resolve();
                       }
                     });
@@ -1397,18 +1397,6 @@ export class VideoCanvas extends AnnotationCanvas {
     this._lastTime = performance.now();
     this._animationIdx = 0;
 
-    // We are eligible for audio if we are at a supported playback rate
-    // have audio, and are going forward.
-    this._audioEligible=false;
-    if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
-        this._audioPlayer &&
-        direction == Direction.FORWARD)
-    {
-      this._audioEligible = true;
-      this._audioPlayer.playbackRate = this._playbackRate;
-    }
-
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
     {
       this.frameCallbackMethod();
@@ -1474,7 +1462,8 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._playbackRate >= 1.0 &&
         this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
         this._audioPlayer &&
-        direction == Direction.FORWARD)
+        direction == Direction.FORWARD &&
+        this._children == undefined)
     {
       this._audioEligible = true;
       this._audioPlayer.playbackRate = this._playbackRate;

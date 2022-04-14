@@ -167,13 +167,13 @@ class TatorVideoManager {
     }
     else if (msg.data.type == "buffered")
     {
-      this._time_ranges.print(`${this._name} Pre-Update`);
+      //this._time_ranges.print(`${this._name} Pre-Update`);
       this._time_ranges.clear();
       for (let idx = 0; idx < msg.data.ranges.length; idx++)
       {
         this._time_ranges.push(msg.data.ranges[idx][0], msg.data.ranges[idx][1]);
       }
-      this._time_ranges.print(`${this._name} Latest`);
+      //this._time_ranges.print(`${this._name} Latest`);
       if (this.onBuffered)
       {
         setTimeout(this.onBuffered, 0);
@@ -213,7 +213,7 @@ class TatorVideoManager {
     if (this.onFrame && this._playing == true)
     {
       this._current_cursor = msg.data.cursor;
-      if (this.onFrame(msg.data, this._timescaleMap.get(msg.timestampOffset), msg.timestampOffset))
+      if (this.onFrame(msg.data, msg.timescale))
       {
         return;
       }
