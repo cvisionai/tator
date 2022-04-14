@@ -31,7 +31,7 @@ export class GalleryBulkEdit extends TatorElement {
       // this._h2.innerHTML = `<span class="text-bold">Selection Mode:</span> <kbd>Ctrl</kbd> + <kbd>A</kbd> to select all. <kbd>Esc</kbd> to exit.`;
       // this._messageBar_top.appendChild(this._h2);
 
-      
+
 
       // Message Panel
       this._bulkEditBar = document.createElement("div");
@@ -42,7 +42,7 @@ export class GalleryBulkEdit extends TatorElement {
       /**
        * Listen for actions: edit and compare to change panel
        */
-       this._selectionPanel = document.createElement("entity-gallery-multi-selection-panel");
+      this._selectionPanel = document.createElement("entity-gallery-multi-selection-panel");
       // this._selectionPanel.addEventListener("bulk-edit-click", this._showEditPanel.bind(this));
       this._selectionPanel.addEventListener("bulk-edit-click", this._saveBulkEdit.bind(this));
       this._selectionPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
@@ -152,9 +152,9 @@ export class GalleryBulkEdit extends TatorElement {
       if (type == "media") {
          this._selectionPanel.xClose.classList.remove("hidden");
       }
-      
+
       this.boxHelper = new SettingsBox(this._page.modal);
-      
+
       if (gallery == null) {
          this._gallery = this._page._filterResults
       } else {
@@ -184,13 +184,13 @@ export class GalleryBulkEdit extends TatorElement {
       if (e.code == "Control") {
          if (e.code == "a" || e.code == "A") {
             this.selectAllOnPage();
-         }         
+         }
       }
 
       if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
          e.preventDefault();
          // console.log("Control+A");
-         this.selectAllOnPage();       
+         this.selectAllOnPage();
       }
 
       // if (e.code == "Enter") {
@@ -256,7 +256,7 @@ export class GalleryBulkEdit extends TatorElement {
             if (el.card._li.classList.contains("is-selected")) {
                //this._removeSelected({ element:el.card, id, isSelected: el.card._li.classList.contains("is-selected") });
             } else {
-               this._addSelected({ element:el.card, id, isSelected: el.card._li.classList.contains("is-selected") });
+               this._addSelected({ element: el.card, id, isSelected: el.card._li.classList.contains("is-selected") });
             }
          }
       }
@@ -274,7 +274,7 @@ export class GalleryBulkEdit extends TatorElement {
       this._updatePanelCount(this._currentMultiSelection.size);
       this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
       let entityId = element.cardObj.entityType.id;
-      
+
       // list is a set to ensure uniqueness of additions in list
       let list = typeof this._currentMultiSelectionToId.get(entityId) !== "undefined" ? this._currentMultiSelectionToId.get(entityId) : new Set();
       list.add(id);
@@ -296,12 +296,12 @@ export class GalleryBulkEdit extends TatorElement {
       let entityId = element.cardObj.entityType.id;
       let idsInType = this._currentMultiSelectionToId.get(entityId);
 
-      
+
       if (idsInType.length == 1) {
          // if the only id selected for this type is this one, then clean it out and update view
          this._currentMultiSelectionToId.delete(entityId);
          this.setOfSelectedMetaIds.delete(entityId);
-         this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);        
+         this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
       } else {
          // just remove it from the selection list
          idsInType.delete(id);
@@ -331,11 +331,11 @@ export class GalleryBulkEdit extends TatorElement {
       // if (clickType == "shift-select") {
       //    this.shiftSelect(e.detail);
       // } else {
-         if (e.detail.isSelected) {
-            this._removeSelected(e.detail);
-         } else {
-            this._addSelected(e.detail);
-         } 
+      if (e.detail.isSelected) {
+         this._removeSelected(e.detail);
+      } else {
+         this._addSelected(e.detail);
+      }
       // }
 
       this._updatePanelCount(this._currentMultiSelection.size);
@@ -369,10 +369,10 @@ export class GalleryBulkEdit extends TatorElement {
          // console.log(el);
          el.card.multiEnabled = true;
          if (el.card._li.classList.contains("is-selected") && !this._currentMultiSelection.has(el.card.cardObj.id)) {
-            this._addSelected({element: el.card, id: el.card.cardObj.id, isSelected: el.card._li.classList.contains("is-selected")})
+            this._addSelected({ element: el.card, id: el.card.cardObj.id, isSelected: el.card._li.classList.contains("is-selected") })
          }
       }
-      
+
       // show edit drawer and tools
       this._messageBar_top.classList.remove("hidden");
       this._bulkEditBar.classList.remove("hidden");
@@ -381,18 +381,18 @@ export class GalleryBulkEdit extends TatorElement {
          if (this._page.main.classList.contains("col-9")) {
             console.log("_editPanelWasOpen is being set to true");
             this._editPanelWasOpen = true;
-            this._page.main.classList.remove("col-9"); 
+            this._page.main.classList.remove("col-9");
             this._page.main.classList.add("col-12");
          } else {
             this._editPanelWasOpen = false;
-         }       
+         }
       }
 
 
       // // hide page elements
       // this._page._header.classList.add("hidden");
       // this._page.aside.classList.add("hidden");
-      
+
       // // this._page.main.style.marginTop = "-100px";
       // this._page.main.style.paddingBottom = "300px";
       // this._page._filterView.classList.add("hidden");
@@ -403,7 +403,7 @@ export class GalleryBulkEdit extends TatorElement {
 
       if (this.resultsFilter.containsAttributes == true) {
          this._editPanel.addEventListener("attribute-is-filtered-on", (e) => {
-            if (e.detail.names.length > 0 ){
+            if (e.detail.names.length > 0) {
                // console.log("Setting this._requiresPrefetch = true");
                this._requiresPrefetch = true;
             } else {
@@ -427,10 +427,10 @@ export class GalleryBulkEdit extends TatorElement {
       // In correction page this panel stays open, in media is it open / shut
       if (this._editType == "media" && !this._selectionPanel.isHidden()) {
          this._selectionPanel.show(false);
-      }  
+      }
 
       if (this._editPanelWasOpen && this._editType != "media") {
-         this._page.main.classList.add("col-9"); 
+         this._page.main.classList.add("col-9");
          this._page.main.classList.remove("col-12");
          // reset this 
          this._editPanelWasOpen = false;
@@ -449,7 +449,7 @@ export class GalleryBulkEdit extends TatorElement {
       this.dispatchEvent(new Event("multi-disabled"));
 
       this._editPanel.removeEventListener("attribute-is-filtered-on", (e) => {
-         if (e.detail.names.length > 0 ){
+         if (e.detail.names.length > 0) {
             // console.log("Setting this._requiresPrefetch = true");
             this._requiresPrefetch = true;
          } else {
@@ -470,10 +470,10 @@ export class GalleryBulkEdit extends TatorElement {
       // //       this._page.hideDimmer();
       // //    });
       // // } else {
-         // this._page.hideDimmer();
-         this._selectionPanel.show(val);
-         // console.log("this._editMode.......... "+this._editMode)
-         if (!this._editMode) this.startEditMode();
+      // this._page.hideDimmer();
+      this._selectionPanel.show(val);
+      // console.log("this._editMode.......... "+this._editMode)
+      if (!this._editMode) this.startEditMode();
       // }
 
    }
@@ -481,9 +481,9 @@ export class GalleryBulkEdit extends TatorElement {
       // console.log("SHOW EDIT PANEL!");
       // console.log(this._page);
       // if (val) {
-         // this._page.showDimmer();
+      // this._page.showDimmer();
       //    this._comparisonPanel.show(false);
-         this._selectionPanel.show(true);
+      this._selectionPanel.show(true);
       // }
       // this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
       this._editPanel.show(true); //val
@@ -500,7 +500,7 @@ export class GalleryBulkEdit extends TatorElement {
       let shownAttributes = this._editPanel.shownAttrNames();
       this._editPanel.toggleAttribute("hide");
       this._comparisonPanel.init({ columns: shownAttributes });
-      
+
       if (typeof this._currentSelectionObjects !== "undefined" || this._currentSelectionObjects !== null) {
          this._comparisonPanel._refreshTable(this._currentSelectionObjects);
       }
@@ -517,40 +517,42 @@ export class GalleryBulkEdit extends TatorElement {
       button.setAttribute("class", "btn f1 text-semibold");
       let confirmText = document.createTextNode("Yes")
       button.appendChild(confirmText);
-      
+
       let typeText = this._editType == "media" ? 'Media(s)' : 'Localization(s)';
       let text = `<h2 class="py-2 h3">Edit ${this._currentMultiSelection.size} ${typeText}?</h2>`;
 
       let inputValueArray = this._editPanel.getValue();
-      
+
       let formData = [];
       for (let r of inputValueArray) {
-         // console.log(test);
-         // if(r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0){
-            // if (inputValueArray.length > 1) {
-            //    text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
-            // }
-            
+         console.log("test r.typeId +" + r.typeId);
+         console.log(r);
+         console.log(this._currentMultiSelectionToId.get(Number(r.typeId)));
+         if (r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0) {
+            if (inputValueArray.length > 1) {
+               text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
+            }
+
             if (r.values !== {}) {
-               for (let [name, value] of  Object.entries(r.values)) {
+               for (let [name, value] of Object.entries(r.values)) {
                   text += `<p class="py-2 px-2 text-gray">- Updating attribute '${name}' to value: <span class="text-italics ">${value}</span></p>`
                }
                let formDataForType = {
                   attributes: r.values,
-                  ids: Array.from(this._currentMultiSelection)
+                  ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
                }
 
                formData.push(formDataForType)
             } else {
                return text += `<p class="text-red py-2 px-2">- No valid values to update</p>`
             }
-            
+
             if (r.rejected !== {}) {
                for (let rej of Object.entries(r.rejected)) {
                   text += `<p class="text-red py-2 px-2">- Will not update attribute '${rej[0]}' - value is invalid, or null.</p>`
                }
             }
-         // }
+         }
       }
 
       if (formData.length == 0) {
@@ -570,7 +572,6 @@ export class GalleryBulkEdit extends TatorElement {
       button.addEventListener("click", (e) => {
          this.handleEdit(e, formData);
       });
-      
 
       buttonContinue.addEventListener("click", (e) => {
          this.boxHelper.modal._closeCallback();
@@ -583,14 +584,14 @@ export class GalleryBulkEdit extends TatorElement {
       });
 
       this.boxHelper._modalConfirm({
-        "titleText" : `Confirm`,
-        "mainText" : text,
-        "buttonSave" : button,
-        "scroll" : false    
+         "titleText": `Confirm`,
+         "mainText": text,
+         "buttonSave": button,
+         "scroll": false
       });
    }
 
-   _patchMedia(formData){
+   _patchMedia(formData) {
       return fetch(`/rest/Medias/${this._projectId}`, {
          method: "PATCH",
          mode: "cors",
@@ -601,7 +602,7 @@ export class GalleryBulkEdit extends TatorElement {
             "Accept": "application/json",
             "Content-Type": "application/json"
          }
-       });
+      });
    }
 
    _patchLocalizations(formData) {
@@ -615,7 +616,7 @@ export class GalleryBulkEdit extends TatorElement {
             "Accept": "application/json",
             "Content-Type": "application/json"
          }
-       });
+      });
    }
 
    handleEdit(e, formData) {
@@ -628,26 +629,29 @@ export class GalleryBulkEdit extends TatorElement {
 
    _editMedia(e, formData) {
       // button.addEventListener("click", (e) => {
-         e.preventDefault();
-         this.boxHelper.modal._closeCallback();
-         this._page.showDimmer();
-         this._page.loading.showSpinner();
-         let promise = Promise.resolve();
-         let text = "";
-         let errorText = "";
-         let respCode = 0;
-         
-         for (let jsonData of formData) {
-            // console.log(jsonData);
+      e.preventDefault();
+      this.boxHelper.modal._closeCallback();
+      this._page.showDimmer();
+      this._page.loading.showSpinner();
+      let promise = Promise.resolve();
+      let text = "";
+      let errorText = "";
+      let respCode = 0;
+
+      for (let jsonData of formData) {
+         console.log("jsonData-----------------------------------------------------------");
+         console.log(jsonData);
+
+         if (jsonData.attributes !== {}) {
             promise = promise.then(() => this._patchMedia(jsonData)).then((resp) => {
                respCode = resp.status;
                // console.log(respCode);
                return resp.json();
             }).then((data) => {
                // console.log("Then reading message");
-               if (respCode == "200" ) {
+               if (respCode == "200") {
                   text += `${data.message} <br/><br/>`;
-                  this.updateSelectionObjects(jsonData);            
+                  this.updateSelectionObjects(jsonData);
                } else {
                   errorText += `${data.message} <br/><br/>`;
                   // this.updateSelectionObjects(jsonData);            
@@ -655,88 +659,89 @@ export class GalleryBulkEdit extends TatorElement {
 
             });
          }
+      }
 
-         return promise.then(() => {
-            console.log("Then clean up");
-            this._editPanel.resetWidgets()
-            this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
-            this._clearSelection();
-            this._page.loading.hideSpinner();
-            this._page.hideDimmer();
+      return promise.then(() => {
+         console.log("Then clean up");
+         this._editPanel.resetWidgets()
+         this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
+         this._clearSelection();
+         this._page.loading.hideSpinner();
+         this._page.hideDimmer();
 
-            if (errorText === "" && text !== "") {
-               this.boxHelper._modalSuccess(text);           
-            } else if (errorText !== "" && text === "") {
-               this.boxHelper._modalError(errorText, "Error");                
-            } else if (errorText !== "" && text !== "") {
-               this.boxHelper._modalWarn(text+errorText);            
-            }
+         if (errorText === "" && text !== "") {
+            this.boxHelper._modalSuccess(text);
+         } else if (errorText !== "" && text === "") {
+            this.boxHelper._modalError(errorText, "Error");
+         } else if (errorText !== "" && text !== "") {
+            this.boxHelper._modalWarn(text + errorText);
+         }
 
          // });  
-         }).catch(err => {
-            this._clearSelection();
-            this._page.loading.hideSpinner();
-            this._page.hideDimmer();
-            return this.boxHelper._modalError("Error with update: "+err);
-         });
-         
+      }).catch(err => {
+         this._clearSelection();
+         this._page.loading.hideSpinner();
+         this._page.hideDimmer();
+         return this.boxHelper._modalError("Error with update: " + err);
+      });
+
       // });
    }
 
    _editLocalization(e, formData) {
       // button.addEventListener("click", (e) => {
-         e.preventDefault();
-         this.boxHelper.modal._closeCallback();
-         this._page.showDimmer();
-         this._page.loading.showSpinner();
-         let promise = Promise.resolve();
-         let text = "";
-         let errorText = "";
-         let respCode = 0;
-         
-         for (let jsonData of formData) {
-            // console.log(jsonData);
-            promise = promise.then(() => this._patchLocalizations(jsonData)).then((resp) => {
-               respCode = resp.status;
-               // console.log(respCode);
-               return resp.json();
-            }).then((data) => {
-               // console.log("Then reading message");
-               if (respCode == "200" ) {
-                  text += `${data.message} <br/><br/>`;
-                  this.updateSelectionObjects(jsonData);            
-               } else {
-                  errorText += `${data.message} <br/><br/>`;
-                  // this.updateSelectionObjects(jsonData);            
-               }
+      e.preventDefault();
+      this.boxHelper.modal._closeCallback();
+      this._page.showDimmer();
+      this._page.loading.showSpinner();
+      let promise = Promise.resolve();
+      let text = "";
+      let errorText = "";
+      let respCode = 0;
 
-            });
-         }
-
-         return promise.then(() => {
-            // console.log("Then clean up");
-            this._editPanel.resetWidgets()
-            this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
-            this._clearSelection();
-            this._page.loading.hideSpinner();
-            this._page.hideDimmer();
-
-            if (errorText === "" && text !== "") {
-               this.boxHelper._modalSuccess(text);           
-            } else if (errorText !== "" && text === "") {
-               this.boxHelper._modalError(errorText, "Error");                
-            } else if (errorText !== "" && text !== "") {
-               this.boxHelper._modalWarn(text+errorText);                
+      for (let jsonData of formData) {
+         // console.log(jsonData);
+         promise = promise.then(() => this._patchLocalizations(jsonData)).then((resp) => {
+            respCode = resp.status;
+            // console.log(respCode);
+            return resp.json();
+         }).then((data) => {
+            // console.log("Then reading message");
+            if (respCode == "200") {
+               text += `${data.message} <br/><br/>`;
+               this.updateSelectionObjects(jsonData);
+            } else {
+               errorText += `${data.message} <br/><br/>`;
+               // this.updateSelectionObjects(jsonData);            
             }
 
-         // });  
-         }).catch(err => {
-            this._clearSelection();
-            this._page.loading.hideSpinner();
-            this._page.hideDimmer();
-            return this.boxHelper._modalError("Error with update: "+err);
          });
-         
+      }
+
+      return promise.then(() => {
+         // console.log("Then clean up");
+         this._editPanel.resetWidgets()
+         this.dispatchEvent(new CustomEvent("bulk-attributes-edited", { detail: { editedIds: this._currentMultiSelection, editedObjs: this._currentSelectionObjects } }));
+         this._clearSelection();
+         this._page.loading.hideSpinner();
+         this._page.hideDimmer();
+
+         if (errorText === "" && text !== "") {
+            this.boxHelper._modalSuccess(text);
+         } else if (errorText !== "" && text === "") {
+            this.boxHelper._modalError(errorText, "Error");
+         } else if (errorText !== "" && text !== "") {
+            this.boxHelper._modalWarn(text + errorText);
+         }
+
+         // });  
+      }).catch(err => {
+         this._clearSelection();
+         this._page.loading.hideSpinner();
+         this._page.hideDimmer();
+         return this.boxHelper._modalError("Error with update: " + err);
+      });
+
       // });
    }
 
@@ -759,7 +764,7 @@ export class GalleryBulkEdit extends TatorElement {
             this._gallery.updateCardData(newCardData);
             if (this._page.cardData) {
                this._page.cardData.updateBulkCache(newCardData);
-            } else if(this._page._mediaSection){
+            } else if (this._page._mediaSection) {
                this._page._mediaSection.reload()
             }
          } else {
@@ -817,7 +822,7 @@ export class GalleryBulkEdit extends TatorElement {
       if (!this._editMode) this.startEditMode();
    }
 
-   prefetchWarning() {    
+   prefetchWarning() {
       // if (this._editMode) {
       //    // this._editPanel._warningShow();
       //    let buttonContinue = document.createElement("button")
@@ -847,6 +852,6 @@ export class GalleryBulkEdit extends TatorElement {
       //    this.boxHelper._modalWarningConfirm(`Current search results are filtered on ${names} attribute. Editing may change pagination.`, buttonExit, buttonContinue);
       // }
    }
-   
+
 }
 customElements.define("entity-gallery-bulk-edit", GalleryBulkEdit);

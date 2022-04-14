@@ -253,6 +253,10 @@ export class EntityCard extends TatorElement {
 
     /* Sends events related to selection clicks */
     this.addEventListener('contextmenu', this.contextMenuHandler.bind(this));
+
+    //
+    this._sectionInit = false;
+    this._mediaInit = false;
   }
 
   set multiEnabled(val) {
@@ -595,9 +599,9 @@ export class EntityCard extends TatorElement {
         }
       }
 
-      if (this._li.classList.contains("is-selected") && !this._multiSelectionToggle) {
+      if (this._li.classList.contains("is-selected") && !this._multiSelectionToggle && !this._mediaInit && !this._sectionInit) {
         this._deselectedCardAndPanel();
-      } else if (!this._multiSelectionToggle) {
+      } else if (!this._multiSelectionToggle && !this._mediaInit && !this._sectionInit) {
         this._selectedCardAndPanel();
       } else {
         this.cardClickEvent(false);
@@ -666,6 +670,7 @@ export class EntityCard extends TatorElement {
     this._styledDiv.remove();
     this._li.classList.add("section");
     this._li.classList.remove("entity-card");
+    this._sectionInit = true;
 
     if (section === null) {
       this._title.textContent = "All Media";

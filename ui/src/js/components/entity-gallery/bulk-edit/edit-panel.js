@@ -245,7 +245,7 @@ export class MultiAttributeEditPanel extends TatorElement {
    }
 
    addLocType(typeData) {
-      // console.log(typeData);
+      console.log(typeData);
       let typeName = typeData.name ? typeData.name : "";
       if (this._shownTypes.has(typeData.id)) {
          // don't re-add this type...
@@ -334,7 +334,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       // console.log(selectionBoxes);
 
       // Now make the inputs
-      this._addInputs(this._attribute_types.entries())
+      this._addInputs(typeData.attribute_types, typeData.id)
    }
 
    _boxValueChanged(checkBoxSet, typeId) {
@@ -469,31 +469,36 @@ export class MultiAttributeEditPanel extends TatorElement {
    }
 
    // Loop through and add hidden inputs for each data type
-   _addInputs(dataType) {
-      // console.log(dataType);
+   _addInputs(attributeTypes, dataTypeId) {
+      console.log("Creating div for inputs... type id "+dataTypeId)
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group_bulk-edit text-gray f2");
-      div.setAttribute("id", dataType.id);
-      this._bulkEditForm.innerHTML = "";
-      this._bulkEditForm.appendChild(div);
-      // this._inputGroup.set(dataType.id, div);
+      div.setAttribute("id", dataTypeId);
+
+      if (typeof this._inputGroup.get(dataTypeId) == "undefined") {
+         // this._bulkEditForm.innerHTML = "";
+         this._bulkEditForm.appendChild(div);
+         this._inputGroup.set(dataTypeId, div);
+      } else {
+         return true;
+      }
+      
       // div.hidden = true;
 
       // let label = document.createElement("label");
       // label.setAttribute("class", "bulk-edit-legend");
-      // label.textContent = `Type ID: ${dataType.id}`;
+      // label.textContent = `Type ID: ${dataTypeId}`;
       // div.appendChild(label);
 
       // User defined attributes
-      let array = Array.from(dataType);
-      const sorted = array.sort((a, b) => {
-         return a[1].order - b[1].order || a[1].name - b[1].name;
+      const sorted = attributeTypes.sort((a, b) => {
+         return a.order - b.order || a.name - b.name;
       });
 
-      for (let a of sorted) {
+      for (let attributeDef of sorted) {
          let widget;
          var ignorePermission = false;
-         let attributeDef = a[1];
+         // let attributeDef = a;
 
          if (attributeDef.dtype == "bool") {
             widget = document.createElement("bool-input");
@@ -577,7 +582,7 @@ export class MultiAttributeEditPanel extends TatorElement {
          widget.hidden = true;
          div.appendChild(widget);
 
-         this._inputs.set(`${attributeDef.name} type_${dataType.id}`, widget);
+         this._inputs.set(`${attributeDef.name} type_${dataTypeId}`, widget);
          this._inputsOnly.push(widget);
 
          widget.addEventListener("change", () => {
@@ -593,6 +598,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       //
       const value = [];
 
+      // Each group is related to a type ID
       for (const group of this._bulkEditForm.children) {
          if (!group.hidden) {
             let response = { typeId: group.id, values: {}, rejected: {} };
@@ -619,11 +625,12 @@ export class MultiAttributeEditPanel extends TatorElement {
 
    shownAttrNames() {
       let values = new Map();
+
+      // Each group is related to a type ID
       for (const group of this._bulkEditForm.children) {
          if (!group.hidden) {
             let typeId = group.id;
             for (const widget of group.children) {
-
                if (!widget.hidden && widget.tagName !== "LABEL") {
                   console.log(widget.getAttribute("name"));
                   //${e.detail.name} type_${e.detail.typeId}
