@@ -159,8 +159,8 @@ concat_definition = {
     'properties': {
         'id': {'type': 'integer',
                     'description': 'Primary key of video in append series'},
-        'numFrames': {'type': 'integer',
-                    'description': 'Number of frames to load from this video'},
+        'timestampOffset': {'type': 'float',
+                    'description': 'Insertion point for this video'},
     },
 }
 
