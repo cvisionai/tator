@@ -2180,7 +2180,7 @@ export class VideoCanvas extends AnnotationCanvas {
               }
             }
 
-            console.info(`TIME CHECK: ${timeToEnd} to ${appendThreshold}`);
+            //console.info(`TIME CHECK: ${timeToEnd} to ${appendThreshold}`);
             if (timeToEnd < appendThreshold)
             {
               // Need to download more video playback data

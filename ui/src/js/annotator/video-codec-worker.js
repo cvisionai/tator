@@ -373,7 +373,7 @@ class TatorVideoBuffer {
           }
           else
           {
-            this._frameInfoMap.set(timestampOffsetInCtx+samples[idx].cts, 
+            this._frameInfoMap.set(Math.floor(timestampOffsetInCtx+samples[idx].cts), 
                                   timestampOffset);
             this._videoDecoder.decode(chunk);
           }
@@ -567,6 +567,7 @@ class TatorVideoBuffer {
     //console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/timescale}`);
     if (this._frameInfoMap.has(frame.timestamp) == false)
     {
+      console.warn(`IGNORING unknown frame ${frame.timestamp}`);
       frame.close();
       return;
     }
@@ -597,6 +598,7 @@ class TatorVideoBuffer {
         this._mp4FileMap.get(this._oldTape).stop();
         this._videoDecoder.flush().then(() =>
         {
+          console.info("RESETTING DECODER TO NEXT TAPE");
           this._videoDecoder.reset();
           this._videoDecoder.configure(this._encoderConfig.get(this._switchTape));
           this._mp4FileMap.get(this._switchTape).seek(0);
@@ -854,8 +856,8 @@ class TatorVideoBuffer {
         });
         try
         {
-          this.frameTimescale = this._timescaleMap.get(timestampOffset);
-          this.frameFrameDelta = this._frameDeltaMap.get(timestampOffset);
+          console.info(`SEEK SUPPLYING ${timestampOffsetCtx + samples[idx].cts}`)
+          this._frameInfoMap.set(Math.floor(timestampOffsetCtx + samples[idx].cts), timestampOffset);
           seekDecoder.decode(chunk);
         }
         catch(e)
