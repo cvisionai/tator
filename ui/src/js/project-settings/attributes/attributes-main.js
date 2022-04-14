@@ -1,6 +1,7 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
+import { ProjectTypesData } from "./data/data-project-types.js";
 
 /**
  * Main Attribute section for type forms
