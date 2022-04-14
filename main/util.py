@@ -9,7 +9,7 @@ import json
 import datetime
 import shutil
 import math
-from typing import Dict, List
+from typing import List
 
 from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
@@ -812,7 +812,7 @@ def update_media_archive_state(
     return n_successes
 
 
-def get_clone_info(media: Media) -> Dict[int, Dict[str, set]]:
+def get_clone_info(media: Media) -> dict:
     """
     Gets the exhaustive list of clone ids of the given media. The return value is a dictionary with
     two keys:

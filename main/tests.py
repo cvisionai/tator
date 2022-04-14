@@ -3104,12 +3104,26 @@ class ResourceTestCase(APITestCase):
         clone_id = response.data['id'][0]
         TatorSearch().refresh(self.project.pk)
 
+        # Check the list of clones matches
+        response = self.client.get(f"/rest/GetClonedMedia/{media.id}")
+        clone_ids = response.data["ids"]
+        self.assertTrue(media.id in clone_ids)
+        self.assertTrue(clone_id in clone_ids)
+        self.assertEqual(len(clone_ids), 2)
+
         # Delete the clone.
         response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertTrue(self._store_obj_exists(keys[role]))
+
+        # Check the list of clones matches
+        response = self.client.get(f"/rest/GetClonedMedia/{media.id}")
+        clone_ids = response.data["ids"]
+        self.assertTrue(media.id in clone_ids)
+        self.assertFalse(clone_id in clone_ids)
+        self.assertEqual(len(clone_ids), 1)
 
         # Clone the media.
         body = {'dest_project': self.project.pk,
