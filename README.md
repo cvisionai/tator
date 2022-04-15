@@ -4,14 +4,16 @@
 What is Tator?
 ==============
 
-**Tator** is an open-source video analytics web platform that helps researchers explore and analyze colossal amounts of imagery data.
+**Tator** is a web platform for analyzing large video and image datasets. Tator lets you rapidly deploy custom analytics workflows to gain insights from your raw imagery. Tator runs on bare metal and all major cloud providers, and is open source under GNU AGPLv3.
 
-* **Media management** - Centralized storage and organization of video and imagery
-* **Custom metadata** - Any structure, any label, any way you want to describe your data
-* **Algorithm deployment** - Automate annotation or iterate on algorithms
-* **Analysis** - Generate reports, review results, and share with colleagues
-* **Collaboration** - Invite your team to help annotate, analyze, and review data
-* **REST API** - Develop custom scripts and tools. Clients available in Python and R
+* **Digital asset management** - Host, share, stream, and organize all your digital assets through a browser interface.
+* **Data management** - Define custom structured metadata and know its provenance.
+* **Extract, transform, load** - Support ETL workflows with instant frame-accurate image and clip extraction.
+* **Video and image annotation** - Annotate media, frames, objects, tracks, and activities. QA/QC with built-in review tools.
+* **Simplified MLOps** - AI-assisted annotation and scalable batch inference with one click.
+* **Visual analytics** - Aggregate, visualize, and report the information you need.
+
+Visit https://tator.io to learn more.
 
 Quick start
 ===========
@@ -23,72 +25,28 @@ cd tator
 ./install.sh
 ```
 
-Tutorials
-=========
+-or-
 
-Getting started
-* [Install Tator](https://www.tator.io/tutorials/2021-03-29-install-tator/)
-* [Install tator-py](https://www.tator.io/tutorials/2021-03-11-install-tator-py/)
-* [Get an API token](https://www.tator.io/tutorials/2021-03-12-get-an-api-token/)
-* [Create a project](https://www.tator.io/tutorials/2021-04-09-create-a-project/)
-* [Add team members](https://www.tator.io/tutorials/2021-03-12-add-team-members/)
+Start a [free trial of Tator Cloud](https://tator.io/docs/introduction-to-tator/free-trial-with-tator-cloud), a cloud-based deployment of Tator maintained by the authors of Tator. 
 
-Media management
-* [Upload media with the web interface](https://www.tator.io/tutorials/2021-03-02-upload-media-with-the-web-interface/)
-* [Upload media with python](https://www.tator.io/tutorials/2021-03-12-upload-media-with-python/)
-* [Import hosted media](https://www.tator.io/tutorials/2021-03-12-import-hosted-media/)
-* [Upload media and annotations from an archive](https://www.tator.io/tutorials/2021-03-13-upload-media-and-annotations-from-an-archive/)
-* [Create multi-stream videos](https://www.tator.io/tutorials/2021-03-15-create-multi-stream-videos/)
-* [Migrate data](https://www.tator.io/tutorials/2021-03-16-migrate-data/)
-* [Organize media with folders](https://www.tator.io/tutorials/2021-03-16-organize-media-with-folders/)
-* [Download media and annotations](https://www.tator.io/tutorials/2021-03-18-download-media-and-annotations/)
-* [Use a project specific bucket for storage](https://www.tator.io/tutorials/2021-03-09-use-a-project-specific-bucket-for-storage/)
-* [Use Google Cloud Storage as a project specific bucket for storage](https://www.tator.io/tutorials/2021-04-13-use-google-cloud-storage-as-a-project-specific-bucket-for-storage/)
-* [Retrieve frames and video clips](https://www.tator.io/tutorials/2021-03-19-retrieve-frames-and-video-clips/)
-* [Retrieve localization images and track animations](https://www.tator.io/tutorials/2021-03-19-retrieve-localization-images-and-track-animations/)
-* [Attach files to media](https://www.tator.io/tutorials/2021-05-19-attach-files-to-media/)
-
-Annotation
-* [Video playback](https://www.tator.io/tutorials/2021-06-27-video-playback/)
-* [Multi-stream video playback](https://www.tator.io/tutorials/2021-06-28-multi-stream-video-playback/)
-* [Draw localizations](https://www.tator.io/tutorials/2021-06-29-draw-localizations/)
-* [Pan and zoom](https://www.tator.io/tutorials/2021-06-29-pan-and-zoom/)
-* [Create tracks](https://www.tator.io/tutorials/2021-04-27-create-tracks/)
-* [Speed up annotation with favorites](https://www.tator.io/tutorials/2021-06-29-speed-up-annotation-with-favorites/)
-* [Pick up where you left off with bookmarks](https://www.tator.io/tutorials/2021-06-29-pick-up-where-you-left-off-with-bookmarks/)
-
-Analysis
-* [Explore and edit localizations](https://www.tator.io/tutorials/2021-07-09-localization-analytics-view/)
-* [Apply advanced localization filters](https://www.tator.io/tutorials/2021-07-09-apply-advanced-localization-filters/)
-
-Collaboration
-* [Make a project public](https://www.tator.io/tutorials/2021-07-27-make-a-project-public/)
-
-REST API
-* [Use Swagger UI for documentation and requests](https://www.tator.io/tutorials/2021-06-21-use-swagger-ui-for-documentation-and-requests/)
-* [Create a project with python](https://www.tator.io/tutorials/2021-03-11-create-a-project-with-python/)
-
-Administration
-* [Make announcements](https://www.tator.io/tutorials/2021-05-12-make-announcements/)
-* [Update your account profile](https://www.tator.io/tutorials/2021-06-12-update-your-account-profile/)
-* [Reset your password](https://www.tator.io/tutorials/2021-06-11-reset-your-password/)
-
-Advanced installation
-* [Set up a domain](https://www.tator.io/tutorials/2021-03-30-set-up-a-domain/)
-* [Enable HTTPS](https://www.tator.io/tutorials/2021-03-30-enable-https/)
-
-API Reference
+Documentation
 =============
-* [REST API documentation](https://www.tatorapp.com/anonymous-gateway?redirect=/rest)
-* [Python client (tator-py) documentation](https://www.tatorapp.com/docs/tator-py/api.html)
+
+* [Introduction to Tator](https://tator.io/docs/introduction-to-tator)
+* [User guide](https://tator.io/docs/user-guide)
+* [Developer guide](https://tator.io/docs/developer-guide)
+* [Administrator guide](https://tator.io/docs/administrator-guide)
+* [References](https://tator.io/docs/references)
 
 Blog
 ====
+
 Visit [our blog](https://www.tator.io/blog/) for upcoming features, development roadmap, news and announcements.
 
-Tator Cloud and Support Services
-================================
-Tator Cloud is a cloud-based deployment of Tator managed by the authors of Tator. Contact [CVision AI](https://www.cvisionai.com/#contact) to try Tator Cloud or for technical support for an on-premise install.
+Tator Enterprise Subscription
+=============================
+
+Tator is available under a commercial license with direct-to-engineer technical support via a [Tator enterprise subscription](https://tator.io/product).
 
 Screenshots
 ===========

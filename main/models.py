@@ -1,7 +1,7 @@
 import json
 import os
 import psycopg2
-from typing import List, Generator
+from typing import List, Generator, Tuple
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -46,6 +46,7 @@ from enumfields import EnumField
 from django_ltree.fields import PathField
 from django.db import transaction
 
+from .backup import TatorBackupManager
 from .search import TatorSearch
 from .ses import TatorSES
 from .download import download_file
@@ -1018,22 +1019,30 @@ class Media(Model, ModelDiffMixin):
         if not self.media_files:
             return (total_size, download_size)
 
-        resources = Resource.objects.filter(media__in=[self])
-        store_lookup = get_storage_lookup(resources)
-        store_default = get_tator_store(self.project.bucket)
+        media_keys = [
+            "archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif", "attachment"
+        ]
+        for key, media_def in self.media_def_iterator(keys=media_keys):
+            size = media_def.get("size", 0)
+            # Not all path descriptions have a size field or have it populated with a valid
+            # value; if it is not an integer or less than 1, get it from storage and cache the
+            # result
+            if type(size) != int or size < 1:
+                size = TatorBackupManager().get_size(
+                    Resource.objects.get(path=media_def["path"])
+                )
+                media_def["size"] = size
 
-        for key in ["archival", "streaming", "image", "audio", "thumbnail", "thumbnail_gif", "attachment"]:
-            if key not in self.media_files:
-                continue
+            total_size += size
+            if key in ["archival", "streaming", "image"] and download_size is None:
+                download_size = size
+            if key == "streaming":
+                json_path = media_def.get("segment_info")
+                if json_path:
+                    total_size += TatorBackupManager().get_size(
+                        Resource.objects.get(path=json_path)
+                    )
 
-            for media_def in self.media_files[key]:
-                tator_store = store_lookup.get(media_def["path"], store_default)
-                size = tator_store.get_size(media_def["path"])
-                total_size += size
-                if key in ["archival", "streaming", "image"] and download_size is None:
-                    download_size = size
-                if key == "streaming":
-                    total_size += tator_store.get_size(media_def.get('segment_info'))
         return (total_size, download_size)
 
     def is_backed_up(self):
@@ -1047,6 +1056,27 @@ class Media(Model, ModelDiffMixin):
         resource_qs = Resource.objects.filter(media=self)
         return all(resource.backed_up for resource in resource_qs.iterator())
 
+    def media_def_iterator(self, keys: List[str] = None) -> Generator[Tuple[str, dict], None, None]:
+        """
+        Returns a generator that yields the media definition dicts for the desired set of
+        `media_files` entries.
+
+        :param keys: The list of keys to search `media_files` for.
+        :type keys: List[str]
+        :rtype: Generator[Tuple[str, dict], None, None]
+        """
+        if self.media_files:
+            keys = keys or self.media_files.keys()
+        else:
+            keys = []
+
+        for key in keys:
+            files = self.media_files.get(key, [])
+            if files is None:
+                files = []
+            for obj in files:
+                yield (key, obj)
+
     def path_iterator(self, keys: List[str] = None) -> Generator[str, None, None]:
         """
         Returns a generator that yields the path strings for the desired set of `media_files` entries.
@@ -1055,14 +1085,16 @@ class Media(Model, ModelDiffMixin):
         :type keys: List[str]
         :rtype: Generator[str, None, None]
         """
-        keys = keys or self.media_files.keys()
+        if self.media_files:
+            keys = keys or self.media_files.keys()
+        else:
+            keys = []
 
-        for key in keys:
-            for obj in self.media_files.get(key, []):
-                yield obj["path"]
+        for key, media_def in self.media_def_iterator(keys):
+                yield media_def["path"]
 
                 if key == "streaming":
-                    yield obj["segment_info"]
+                    yield media_def["segment_info"]
 
 
 class FileType(Model):
@@ -1118,6 +1150,10 @@ class Resource(Model):
     bucket = ForeignKey(Bucket, on_delete=PROTECT, null=True, blank=True)
     backed_up = BooleanField(default=False)
 
+    def get_project_from_path(path):
+        project_id = path.split("/")[1]
+        return Project.objects.get(pk=project_id)
+
     @transaction.atomic
     def add_resource(path_or_link, media, generic_file=None):
         if os.path.islink(path_or_link):
@@ -1159,14 +1195,10 @@ class Resource(Model):
         # If an object is backed up, that means it is either in a project-specific backup bucket or
         # the default backup bucket
         backup_bucket = Project.objects.get(pk=project_id).get_bucket(backup=True)
-        if backup_bucket:
-            # Resources are backed up to at most one bucket; return after finding a project
-            # specific backup bucket
-            get_tator_store(backup_bucket).delete_object(path)
-            return
 
-        # Found no project-specific backup bucket, use the default one
-        get_tator_store(backup=True).delete_object(path)
+        # Use the default backup bucket if the project specific backup bucket is not set
+        use_default_backup_bucket = backup_bucket is None
+        get_tator_store(backup_bucket, backup=use_default_backup_bucket).delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):
@@ -1193,9 +1225,9 @@ class Resource(Model):
             media.restoration_requested = True
             media.save()
         """
-        obj = Resource.objects.get(path=path)
+        project = Resource.get_project_from_path(path)
         logger.info(f"Requesting restoration of object {path}")
-        return get_tator_store(obj.bucket).request_restoration(path, min_exp_days)
+        return TatorBackupManager().request_restore_resource(path, project, min_exp_days)
 
     @transaction.atomic
     def restore_resource(path):
@@ -1209,33 +1241,26 @@ class Resource(Model):
             media.archive_state = "live"
             media.save()
         """
-        obj = Resource.objects.get(path=path)
+        project = Resource.get_project_from_path(path)
         logger.info(f"Restoring object {path}")
-        return get_tator_store(obj.bucket).restore_resource(path)
+        return TatorBackupManager().finish_restore_resource(path, project)
 
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     TatorSearch().create_document(instance)
     if instance.media_files and created:
-        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif', 'attachment']:
-            for fp in instance.media_files.get(key, []):
-                Resource.add_resource(fp['path'], instance)
-                if key == 'streaming':
-                    Resource.add_resource(fp['segment_info'], instance)
+        for path in instance.path_iterator():
+            Resource.add_resource(path, instance)
 
 def safe_delete(path, project_id=None):
-    logger.info(
-        f"Deleting resource for {path}{f' from project {project_id}' if project_id else ''}"
-    )
+    proj_str = f" from project {project_id}" if project_id else ""
+    logger.info(f"Deleting resource for {path}{proj_str}")
 
     try:
         Resource.delete_resource(path, project_id)
     except:
-        logger.warning(
-            f"Could not remove {path}{f' from project {project_id}' if project_id else ''}",
-            exc_info=True,
-        )
+        logger.warning(f"Could not remove {path}{proj_str}", exc_info=True)
 
 def drop_file_from_resource(path, generic_file):
     """ Drops the specified generic file from the resource. This should be called when
@@ -1269,17 +1294,9 @@ def media_delete(sender, instance, **kwargs):
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
     # Delete all the files referenced in media_files
-    if not instance.media_files is None:
-        for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif', 'attachment']:
-            files = instance.media_files.get(key, [])
-            if files is None:
-                files = []
-            for obj in files:
-                path = obj['path']
-                safe_delete(path, instance.project.id)
-                if key == 'streaming':
-                    path = obj['segment_info']
-                    safe_delete(path, instance.project.id)
+    project_id = instance.project.id
+    for path in instance.path_iterator():
+        safe_delete(path, project_id)
 
 @receiver(post_save, sender=File)
 def file_save(sender, instance, created, **kwargs):

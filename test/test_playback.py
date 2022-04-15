@@ -283,7 +283,7 @@ def test_playback_schedule(page_factory, project, count_test):
   keep_running = True
   while keep_running:
       play_button.click()
-      time.sleep(5)
+      time.sleep(10)
       play_button.click()
 
       schedule_msg = None
@@ -320,7 +320,7 @@ def test_playback_schedule(page_factory, project, count_test):
       console_msgs=[]
       page.keyboard.press("4")
       play_button.click()
-      time.sleep(5)
+      time.sleep(10)
       play_button.click()
 
       schedule_msg = None

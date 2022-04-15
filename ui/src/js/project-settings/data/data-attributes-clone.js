@@ -1,4 +1,5 @@
 import { getCookie } from "../../util/get-cookie.js";
+import { AttributesForm } from "../attributes/attributes-form.js";
 
 /* Class with methods return input types with preset values for editing.*/
 export class AttributesData {
@@ -38,9 +39,9 @@ export class AttributesData {
       this.failedMessages = "";
       let promise = Promise.resolve();
   
-      for(let data of this.selectedData){
+      for (let data of this.selectedData) {
         let cloneValue = JSON.parse(data); //parse data attribute
-
+        cloneValue._default = cloneValue.default;
         // console.log("cloneValue");
         // console.log(cloneValue);
 

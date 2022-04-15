@@ -1,3 +1,5 @@
+import { AttributesForm } from "./attributes-form.js";
+
 /* Class with methods return input types with preset values for editing.*/
 export class AttributesClone {
   constructor(attributeDataByType) {

@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 ARCHIVE_KEY = "archive"
+MEDIA_ID_KEY = "media_id"
 PATH_KEYS = ["streaming", "archival", "audio", "image"]
 
 
@@ -218,12 +219,16 @@ class TatorStorage(ABC):
         """Moves the object into the desired storage class"""
 
     @abstractmethod
-    def _object_tagged_for_archive(self, path):
+    def object_tagged_for_archive(self, path):
         """Returns True if an object is tagged in storage for archive"""
 
     @abstractmethod
     def _put_archive_tag(self, path):
         """Adds tag to object marking it for archival."""
+
+    @abstractmethod
+    def put_media_id_tag(self, path):
+        """Adds tag to object indicating its associated media ID."""
 
     def archive_object(self, path: str) -> bool:
         """
@@ -237,7 +242,7 @@ class TatorStorage(ABC):
         if response.get("StorageClass", None) == archive_storage_class:
             logger.info(f"Object {path} already archived, skipping")
             return True
-        if self._object_tagged_for_archive(path):
+        if self.object_tagged_for_archive(path):
             logger.info(f"Object {path} already tagged for archive, skipping")
             return True
 
@@ -246,104 +251,15 @@ class TatorStorage(ABC):
         except:
             logger.warning(f"Exception while tagging object {path} for archive", exc_info=True)
 
-        return self._object_tagged_for_archive(path)
+        return self.object_tagged_for_archive(path)
 
     @abstractmethod
-    def _restore_object(self, path: str, desired_storage_class: str, min_exp_days: int) -> None:
+    def restore_object(self, path: str, desired_storage_class: str, min_exp_days: int) -> None:
         """
         Depending on the storage type, this method will either restore an object to the desired
         storage class or request its temporary restoration, which will be permanently updated during
         restore_resource.
         """
-
-    def request_restoration(self, path: str, min_exp_days: int) -> bool:
-        """
-        Requests object restortation from archive storage. Returns True if the request is successful
-        or a request is unnecessary.
-        """
-        live_storage_class = self.get_live_sc()
-        response = self.head_object(path)
-        if not response:
-            logger.warning(f"Object {path} not found, skipping")
-            return True
-        if response.get("StorageClass", live_storage_class) == live_storage_class:
-            logger.info(f"Object {path} already live, skipping")
-            return True
-        if "ongoing-request=" in response.get("Restore", ""):
-            logger.info(f"Object {path} has an ongoing restoration request, skipping")
-            return True
-
-        try:
-            self._restore_object(path, live_storage_class, min_exp_days)
-        except:
-            logger.warning(
-                f"Exception while requesting restoration of object {path}", exc_info=True
-            )
-        response = self.head_object(path)
-        if not response:
-            logger.warning(f"Could not confirm restoration request status for {path}")
-            return False
-        if response.get("StorageClass", live_storage_class) == live_storage_class:
-            logger.info(f"Object {path} live")
-            return True
-        if "ongoing-request" in response.get("Restore", ""):
-            logger.info(f"Request to restore object {path} successful")
-            return True
-
-        logger.warning(f"Request to restore object {path} failed")
-        return False
-
-    def restore_resource(self, path: str) -> bool:
-        # Check the current state of the restoration request
-        archive_storage_class = self.get_archive_sc()
-        live_storage_class = self.get_live_sc()
-        response = self.head_object(path)
-        if not response:
-            logger.warning(f"Object {path} not found, skipping")
-            return True
-
-        request_state = response.get("Restore", "")
-        if not request_state:
-            # There is no ongoing request and the object is not in the temporary restored state
-            storage_class = response.get("StorageClass", live_storage_class)
-            if storage_class == archive_storage_class:
-                if self._server is ObjectStore.AWS:
-                    # Something went wrong with the original restoration request
-                    logger.warning(f"Object {path} has no associated restoration request")
-                    return False
-            elif storage_class == live_storage_class:
-                # If the object is still tagged for archive, it still needs updating
-                if self._object_tagged_for_archive(path):
-                    logger.info(f"Object {path} live, but still needs update...")
-                else:
-                    logger.info(f"Object {path} live and up to date")
-                    return True
-            else:
-                # The resource is in an unexpected storage class
-                logger.error(f"Object {path} in unexpected storage class '{storage_class}'")
-                return False
-        elif 'ongoing-request="true"' in request_state:
-            # There is an ongoing request and the object is not ready to be permanently restored
-            logger.info(f"Object {path} not in standard access yet, skipping")
-            return False
-
-        # Then ongoing-request="false" must be in request_state, which means its storage class can
-        # be modified
-        try:
-            self._update_storage_class(path, live_storage_class)
-        except:
-            logger.warning(
-                f"Exception while changing storage class of object {path}", exc_info=True
-            )
-        response = self.head_object(path)
-        if not response:
-            logger.warning(f"Could not check the restoration state for {path}")
-            return False
-        if response.get("StorageClass", live_storage_class) != live_storage_class:
-            logger.warning(f"Storage class not changed for object {path}")
-            return False
-        logger.info(f"Object {path} successfully restored: {response}")
-        return True
 
     def paths_from_media(self, media):
         if media.meta.dtype == "multi":
@@ -360,17 +276,7 @@ class TatorStorage(ABC):
         return [ele for obj in media_qs.iterator() for ele in self._paths_from_single(obj)]
 
     def _paths_from_single(self, media):
-        paths = []
-        for key in PATH_KEYS:
-            if key not in media.media_files:
-                continue
-
-            for obj in media.media_files[key]:
-                paths.append(obj["path"])
-                if key == "streaming":
-                    paths.append(obj["segment_info"])
-
-        return paths
+        return [path for path in media.path_iterator(keys=PATH_KEYS)]
 
 
 class MinIOStorage(TatorStorage):
@@ -382,7 +288,7 @@ class MinIOStorage(TatorStorage):
     def check_key(self, path):
         return bool(self.list_objects_v2(self._path_to_key(path)))
 
-    def _object_tagged_for_archive(self, path):
+    def object_tagged_for_archive(self, path):
         tag_set = self.client.get_object_tagging(
             Bucket=self.bucket_name, Key=self._path_to_key(path)
         ).get("TagSet", [])
@@ -400,6 +306,13 @@ class MinIOStorage(TatorStorage):
             Tagging={"TagSet": [{"Key": ARCHIVE_KEY, "Value": "true"}]},
         )
 
+    def put_media_id_tag(self, path, media_id):
+        self.client.put_object_tagging(
+            Bucket=self.bucket_name,
+            Key=self._path_to_key(path),
+            Tagging={"TagSet": [{"Key": MEDIA_ID_KEY, "Value": str(media_id)}]},
+        )
+
     def _head_object(self, path):
         return self.client.head_object(Bucket=self.bucket_name, Key=self._path_to_key(path))
 
@@ -411,7 +324,7 @@ class MinIOStorage(TatorStorage):
             ExtraArgs=extra_args,
         )
 
-    def _restore_object(self, path, live_storage_class, min_exp_days):
+    def restore_object(self, path, live_storage_class, min_exp_days):
         self._update_storage_class(path, live_storage_class)
 
     def delete_object(self, path):
@@ -518,7 +431,7 @@ class S3Storage(MinIOStorage):
     def _path_to_key(self, path):
         return f"{self.bucket_name}/{path}"
 
-    def _restore_object(self, path, desired_storage_class, min_exp_days):
+    def restore_object(self, path, desired_storage_class, min_exp_days):
         return self.client.restore_object(
             Bucket=self.bucket_name,
             Key=self._path_to_key(path),
@@ -551,7 +464,7 @@ class GCPStorage(TatorStorage):
         blob = self._get_blob(path)
         return {"ContentLength": blob.size, "StorageClass": blob.storage_class}
 
-    def _object_tagged_for_archive(self, path):
+    def object_tagged_for_archive(self, path):
         blob = self._get_blob(path)
         return blob.custom_time is not None
 
@@ -559,6 +472,9 @@ class GCPStorage(TatorStorage):
         blob = self._get_blob(path)
         blob.custom_time = datetime.now()
         blob.patch()
+
+    def put_media_id_tag(self, path):
+        pass  # TODO: implement this
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(
@@ -627,7 +543,7 @@ class GCPStorage(TatorStorage):
     def _update_storage_class(self, path, desired_storage_class):
         self._get_blob(path).update_storage_class(desired_storage_class)
 
-    def _restore_object(self, path, desired_storage_class, min_exp_days):
+    def restore_object(self, path, desired_storage_class, min_exp_days):
         # TODO determine if we need to update the `current_time` field
         self._update_storage_class(path, desired_storage_class)
 
@@ -715,6 +631,10 @@ def get_tator_store(
             config=config,
         )
     else:
+        # If a backup store was requested but not provided (`bucket` is None and the environment
+        # variables are empty), return `None` to signal no store exists
+        if backup:
+            return None
         # Client generator will not have env variables defined
         client = boto3.client("s3")
 
@@ -739,6 +659,9 @@ def get_tator_store(
             raise ValueError(f"Received unhandled server type '{response_server}'")
 
     provider = {ObjectStore.AWS: "AWS", ObjectStore.MINIO: "Minio"}[server]
+
+    # These parameters are used by `TatorBackupManager` to communicate with storage providers using
+    # the Python wrapper to the golang library `librclone`
     rclone_config_create_params = {
         "provider": provider,
         "env_auth": False,

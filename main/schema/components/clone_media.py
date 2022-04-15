@@ -20,3 +20,19 @@ clone_media_spec = {
         },
     },
 }
+
+
+get_cloned_media_response = {
+    'type': 'object',
+    'properties': {
+        'message': {
+            'type': 'string',
+            'description': 'Message indicating return of cloned media list.',
+        },
+        'id': {
+            'type': 'array',
+            'description': 'List of unique integers identifying cloned objects.',
+            'items': {'type': 'integer'},
+        },
+    },
+}

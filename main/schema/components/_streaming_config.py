@@ -21,7 +21,7 @@ resolution_config = {
             'type': 'integer',
             'description': 'Vertical Resolution',
             'minimum': 0,
-            'maximum': 4320, # align to 8k
+            'maximum': 8192,
         }
     },
 }

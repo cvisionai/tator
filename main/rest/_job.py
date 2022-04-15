@@ -10,7 +10,7 @@ def node_to_job_node(node):
     job_node['children'] = []
     if 'children' in node:
         job_node['children'] = list(node['children'])
-    job_node['task'] = node['templateName']
+    job_node['task'] = node['displayName']
     job_node['status'] = node['phase']
     if 'startedAt' in node:
         job_node['start_time'] = node['startedAt']

@@ -64,61 +64,186 @@ jobs:
     - run:
         name: Make client image
         command: make client-image
-  install-and-test:
+  setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
-      resource_class: xlarge
-    environment:
-      DOCKER_REGISTRY: cvisionai
     steps:
+    - checkout
+    - run:
+        name: Setup lightsail instance
+        command: ./scripts/lightsail.sh
+    - run:
+        name: Tell lightsail to self destruct
+        command: |
+          ssh lightsail 'curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py';
+          ssh lightsail 'python3 get-pip.py';
+          ssh lightsail '/home/ubuntu/.local/bin/pip3 install --upgrade awscli';
+          echo 'Initiating lightsail self-destruct sequence...';
+          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sh -c "sleep 28800 && /home/ubuntu/.local/bin/aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION" >/dev/null 2>&1 &';
+          ssh lightsail 'echo "This lightsail instance will self-destruct in 8 hours."';
+    - run:
+        name: Clone source on lightsail
+        command: |
+          ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator';
+    - persist_to_workspace:
+        root: ~/
+        paths:
+        - .ssh
+        - public_ip_address.txt
+        - private_ip_address.txt
+  install-tator:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - run:
+        name: Install Tator
+        command: |
+          ssh lightsail 'cd tator && ./install.sh';
+    - run:
+        name: Set public IP as primary domain
+        command: |
+          ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export PRIVATE_IP='"'$(cat ~/private_ip_address.txt)'"';sed -i "s/$PRIVATE_IP/$PUBLIC_IP/g" tator/helm/tator/values.yaml';
+          ssh lightsail 'export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin; cd tator && make cluster-update';
+    - run:
+        name: Copy whl
+        command: scp -r lightsail:/tmp/tator_py_whl /tmp
+    - store_artifacts:
+        path: /tmp/tator_py_whl
+        destination: tator_py_whl
+  rest-tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - run:
+        name: Initialize REST tests
+        command: ssh lightsail 'cd tator && make testinit'
+    - run:
+        name: Run REST tests
+        command: ssh lightsail 'cd tator && make test'
+  front-end-tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    resource_class: large
+    steps:
+    - attach_workspace:
+        at: ~/
     - checkout
     - run:
         name: Clone submodules
         command: git submodule update --init
     - run:
-        name: Install Tator
-        command: ./install.sh 
-    - store_artifacts:
-        path: /tmp/tator_py_whl
-        destination: tator_py_whl
-    - run:
-        name: Initialize REST tests
-        command: make testinit
-    - run:
-        name: Run REST tests
-        command: make test
+        name: Install front end test dependencies
+        command: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
+          sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
+          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
+          pip3 install playwright pytest-playwright==0.1.2 pytesseract opencv-python;
+          export PATH=$PATH:$HOME/.local/bin:/snap/bin;
+          playwright install;
+          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
+          pip3 install /tmp/tator*.whl;
     - run:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          pytest test --base-url=http://$TATOR_UNIT_TEST_HOST_IP --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          pytest test --base-url=http://$(cat ~/public_ip_address.txt) --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
+  tator-py-tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - checkout
+    - run:
+        name: Clone submodules
+        command: git submodule update --init
+    - run:
+        name: Install tator-py test dependencies
+        command: |
+          sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip;
+          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
+          pip3 install /tmp/tator*.whl;
+          pip3 install pytest pandas opencv-python;
+          wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
+          unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
+          sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.;
+          sudo chmod +x /usr/local/bin/mp4dump;
     - run:
         name: Copy test directories
         command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
     - run:
-        name: Find gunicorn pod
-        command: echo "export GUNICORN_POD=$(kubectl get pod -l app=gunicorn -o name | head -n 1 | sed 's/pod\///')" >> $BASH_ENV
-    - run:
-        name: Create API token
-        command: echo "export TOKEN=$(echo $(kubectl exec -it $GUNICORN_POD -- python3 manage.py shell --command='from rest_framework.authtoken.models import Token; from main.models import User; token, _ = Token.objects.get_or_create(user=User.objects.first()); print(token)') | tr -d '^@\r\000')" >> $BASH_ENV
+        name: Get API token
+        command: |
+          curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://$(cat ~/public_ip_address.txt)/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
     - run:
         name: Run tator-py tests
-        command: pytest tatorpy_test --host=http://$TATOR_UNIT_TEST_HOST_IP --token=$TOKEN -s --keep
+        command: pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+  cleanup-lightsail:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - attach_workspace:
+        at: ~/
+    - checkout
+    - run:
+        name: Cleanup lightsail instance
+        command: ./scripts/lightsail_cleanup.sh
 workflows:
   version: 2
-  build-docker-images-workflow:
+  build-and-test:
     jobs:
     - build-docker-images:
         context: cvisionai
         filters:
           tags:
             only: /.*/
-    - install-and-test:
+    - setup-lightsail:
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - install-tator:
         requires:
+        - setup-lightsail
         - build-docker-images
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - rest-tests:
+        requires:
+        - install-tator 
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - front-end-tests:
+        requires:
+        - install-tator 
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - tator-py-tests:
+        requires:
+        - install-tator 
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - cleanup-lightsail:
+        requires:
+        - rest-tests
+        - front-end-tests
+        - tator-py-tests
+        context: cvisionai
         filters:
           tags:
             only: /.*/

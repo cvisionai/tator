@@ -5,17 +5,18 @@ from uuid import uuid1
 
 from django.conf import settings
 
-from ..schema import CloneMediaListSchema
+from ..schema import CloneMediaListSchema, GetClonedMediaSchema
 from ..models import Project
 from ..models import MediaType
 from ..models import Media
 from ..models import Section
 from ..models import Resource
 from ..search import TatorSearch
+from ..util import get_clone_info
 
 from ._media_query import get_media_queryset
-from ._base_views import BaseListView
-from ._permissions import ClonePermission
+from ._base_views import BaseDetailView, BaseListView
+from ._permissions import ClonePermission, ProjectEditPermission
 from ._util import bulk_create_from_generator
 
 logger = logging.getLogger(__name__)
@@ -100,3 +101,20 @@ class CloneMediaListAPI(BaseListView):
         ids = [media.id for media in medias]
         return {'message': f'Successfully cloned {len(ids)} medias!', 'id': ids}
 
+
+class GetClonedMediaAPI(BaseDetailView):
+    """ Clone a list of media without copying underlying files.
+    """
+    schema = GetClonedMediaSchema()
+    permission_classes = [ProjectEditPermission]
+    lookup_field = "id"
+    http_method_names = ["get"]
+
+    def _get(self, params):
+        media = Media.objects.get(pk=params["id"])
+        clone_info = get_clone_info(media)
+        ids = [clone_info["original"]["media"]] + list(clone_info["clones"])
+        return {"message": f"Found {len(ids)} clones", "ids": ids}
+
+    def get_queryset(self):
+        return Media.objects.all()

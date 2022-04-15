@@ -36,6 +36,7 @@ from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
 
+from ._util import url_to_key
 from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
 from ._base_views import BaseListView, BaseDetailView
 from ._media_query import get_media_queryset, get_media_es_query
@@ -327,6 +328,7 @@ class MediaListAPI(BaseListView):
                 Resource.add_resource(thumb_key, media_obj)
 
             media_obj.save()
+
             response = {'message': "Image saved successfully!", 'id': media_obj.id}
 
         else:
@@ -371,6 +373,13 @@ class MediaListAPI(BaseListView):
                    f"{name} on project {media_type.project.name}")
             response = {'message': msg, 'id': media_obj.id}
             logger.info(msg)
+
+        # If this is an upload to Tator, put media ID as object tag.
+        if url:
+            path, bucket, upload = url_to_key(url, project_obj)
+            if path is not None:
+                tator_store = get_tator_store(bucket, upload=upload)
+                tator_store.put_media_id_tag(path, media_obj.id)
 
         cl = ChangeLog(
             project=media_obj.project,

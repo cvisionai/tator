@@ -7,8 +7,8 @@ set -e
 BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
 GIT_REVISION=$(git rev-parse HEAD)
 KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.19.13/bin/linux/amd64/kubectl"
-ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v2.12.11/argo-linux-amd64.gz"
-ARGO_MANIFEST_URL="https://raw.githubusercontent.com/argoproj/argo-workflows/v2.12.11/manifests/install.yaml"
+ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/argo-linux-amd64.gz"
+ARGO_MANIFEST_URL="https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/install.yaml"
 
 # Install snaps.
 sudo snap install helm --classic
@@ -19,15 +19,10 @@ curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
     iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip \
-    build-essential tesseract-ocr nodejs
+    build-essential nodejs
 
 # Install node packages.
 cd ui && npm install && cd ..
-
-# Install Chrome for front end testing.
-echo "Installing Chrome."
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo apt install ./google-chrome-stable_current_amd64.deb
 
 # Get IP address if it is not set explicitly.
 # Credit to https://serverfault.com/a/1019371
@@ -110,7 +105,8 @@ kubectl label nodes --overwrite --all cpuWorker=yes webServer=yes dbServer=yes
 echo "Setting up argo."
 kubectl create namespace argo --dry-run=client -o yaml | kubectl apply -f - \
     && kubectl apply -n argo -f $ARGO_MANIFEST_URL \
-    && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml
+    && kubectl apply -n argo -f argo/workflow-controller-configmap.yaml \
+    && kubectl apply -n argo -f argo/argo-server.yaml
 curl -sLO $ARGO_CLIENT_URL \
     && gunzip argo-linux-amd64.gz \
     && chmod +x argo-linux-amd64 \
@@ -130,9 +126,8 @@ echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
 pip3 install pillow
-pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pyyaml playwright pytest-playwright==0.1.2 pytesseract opencv-python yq
+pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pyyaml yq
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
-playwright install
 
 # Install tator.
 echo "Installing tator."

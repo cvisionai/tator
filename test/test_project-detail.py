@@ -134,7 +134,7 @@ def test_features(request, page_factory, project):
    page.select_option('enum-input[name="Field"] select', value="filename")
 
    page.wait_for_selector('text-input[name="Value"] input')
-   page.fill('text-input[name="Value"] input', "black\-hole")
+   page.fill('text-input[name="Value"] input', "black-hole")
 
    filterGroupButtons = page.query_selector_all('.modal__footer button')
    filterGroupButtons[0].click()
