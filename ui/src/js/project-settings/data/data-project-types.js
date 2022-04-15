@@ -1,3 +1,5 @@
+import { MembershipData } from "./data-memberships.js";
+
 export class ProjectTypesData {
     constructor(projectId){
       this.projectId = projectId;

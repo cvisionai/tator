@@ -20,6 +20,7 @@ from .bucket import BucketListSchema
 from .bucket import BucketDetailSchema
 from .change_log import ChangeLogListSchema
 from .clone_media import CloneMediaListSchema
+from .clone_media import GetClonedMediaSchema
 from .applet import AppletListSchema
 from .applet import AppletDetailSchema
 from .download_info import DownloadInfoSchema

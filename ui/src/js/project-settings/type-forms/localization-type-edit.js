@@ -86,7 +86,7 @@ export class LocalizationEdit extends TypeForm {
     this._drawableBool.setAttribute("on-text", "Yes");
     this._drawableBool.setAttribute("off-text", "No");
     this._drawableBool.setValue(this.data.drawable);
-    this._drawableBool.default = this.data.visible;
+    this._drawableBool.default = this.data.drawable;
     this._drawableBool.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._drawableBool);
 
