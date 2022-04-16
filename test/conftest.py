@@ -60,10 +60,11 @@ def launch_time(request):
     yield dt_str
 
 @pytest.fixture(scope='session')
-def chrome(browser_type, browser_type_launch_args):
+def chrome(browser_type, base_url, browser_type_launch_args):
     yield browser_type.launch(
         **browser_type_launch_args,
         executable_path="/usr/bin/google-chrome",
+        args=[f'--unsafely_treat_insecure_origin_as_secure={base_url}']
     )
 
 @pytest.fixture(scope='session')
