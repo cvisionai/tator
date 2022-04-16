@@ -243,7 +243,7 @@ export class DownloadManager
         return;
       }
 
-      var restartOnDemand = function () {
+      var restartOnDemand = () => {
 
         console.log("******* restarting onDemand: Clearing old buffer");
         this._parent.stopPlayerThread();
@@ -269,13 +269,13 @@ export class DownloadManager
           video.appendOnDemandBuffer(bufferToSend, playCallback);
         }
 
-        var playCallback = function () {
+        var playCallback = () => {
           console.log("******* restarting onDemand: Playing");
           this._parent.onDemandDownloadPrefetch(-1);
           this._parent._playGenericOnDemand(this._parent._direction)
         };
 
-        video.playBuffer().resetOnDemandBuffer().then(() => {(setupCallback);});
+        video.resetOnDemandBuffer().then(() => {(setupCallback);});
       }
 
       // Function used to apply the frame data to the onDemand buffer
