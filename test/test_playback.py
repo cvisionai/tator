@@ -206,7 +206,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   page.mouse.move(seek_x, seek_y, steps=50)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.mouse.move(seek_x+5, seek_y, steps=50)
   _wait_for_color(canvas, 1, timeout=30, name='small scrub (play buffer)')
 
   page.mouse.move(seek_x+1000, seek_y, steps=50)
