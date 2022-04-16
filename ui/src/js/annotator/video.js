@@ -439,9 +439,10 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     let use_hls = (this._videoObject.media_files.streaming[0].hls ? true : false);
     let searchParams = new URLSearchParams(window.location.search);
+    console.info(`VideoDecoder: ${'VideoDecoder' in window}; Secure Context: ${window.isSecureContext}`);
     if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1 || use_hls == true)
     {
-      return new VideoBufferDemux();
+      window.alert("Engineering Pop-Up: Your browser does not support WebCodecs API.");
     }
     else
     {
