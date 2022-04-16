@@ -33,13 +33,13 @@ def _get_element_center(element):
   center_y = box['y'] + box['height'] / 2
   return center_x,center_y
 
-def _wait_for_color(canvas, color_idx, timeout=30):
+def _wait_for_color(canvas, color_idx, timeout=30, name='unknown'):
   for _ in range(timeout):
     canvas_color = _get_canvas_color(canvas)
     if np.argmax(canvas_color) == color_idx:
       break
     time.sleep(1)
-  assert np.argmax(canvas_color) == color_idx, f"canvas_color={canvas_color}, looking for {color_idx}"
+  assert np.argmax(canvas_color) == color_idx, f"canvas_color={canvas_color}, looking for {color_idx} during {name}"
 
 def _wait_for_frame(canvas, frame, timeout=30):
   for _ in range(timeout):
@@ -172,7 +172,7 @@ def test_small_res_file(page_factory, project, small_video):
   seek_handle = page.query_selector('seek-bar .range-handle')
 
   # Wait for hq buffer and verify it is blue
-  _wait_for_color(canvas, 2, timeout=30)
+  _wait_for_color(canvas, 2, timeout=30, name='seek')
   page.close()
 
 def test_buffer_usage_single(page_factory, project, rgb_test):
@@ -191,14 +191,14 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
   # Wait for hq buffer and verify it is red
   time.sleep(10)
-  _wait_for_color(canvas, 0, timeout=30)
+  _wait_for_color(canvas, 0, timeout=30, name='seek')
 
   play_button.click()
-  _wait_for_color(canvas, 1, timeout=30)
+  _wait_for_color(canvas, 1, timeout=30, name='playing')
 
   # Pause the video
   play_button.click()
-  _wait_for_color(canvas, 0, timeout=30)
+  _wait_for_color(canvas, 0, timeout=30, name='seek (pause)')
 
 
   # Click the scrub handle
@@ -207,14 +207,14 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   page.mouse.down()
 
   page.mouse.move(seek_x+500, seek_y, steps=50)
-  _wait_for_color(canvas, 1, timeout=30)
+  _wait_for_color(canvas, 1, timeout=30, name='small scrub (play buffer)')
 
   page.mouse.move(seek_x+1000, seek_y, steps=50)
-  _wait_for_color(canvas, 2, timeout=30)
+  _wait_for_color(canvas, 2, timeout=30, name='big scrub (scrub buffer)')
 
   # Release the scrub
   page.mouse.up()
-  _wait_for_color(canvas, 0, timeout=30)
+  _wait_for_color(canvas, 0, timeout=30, name='seek / pause')
   page.close()
 
 def test_buffer_usage_multi(page_factory, project, multi_rgb):
