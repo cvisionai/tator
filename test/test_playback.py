@@ -24,7 +24,8 @@ def _get_canvas_frame(canvas):
     img=cv2.imread(os.path.join(td, "canvas.png"))
     img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
     text = pytesseract.image_to_string(img)
-    _,val=text.strip().split('=').replace('/','')
+    _,val=text.strip().split('=')
+    val = val.replace('/','')
     return int(val)
 
 def _get_element_center(element):
