@@ -35,8 +35,7 @@ helm/tator/values.yaml
 token.txt
 
 # Dev files
-tags
-tags.lock
+tags*
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux/*
 google-chrome-stable_current_amd64.deb
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
