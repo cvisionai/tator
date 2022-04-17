@@ -14,6 +14,7 @@ from ..models import Media
 from ..schema import TranscodeSchema
 from ..notify import Notify
 
+from .media import _create_media
 from ._util import url_to_key
 from ._base_views import BaseListView
 from ._permissions import ProjectTransferPermission
@@ -86,6 +87,9 @@ class TranscodeAPI(BaseListView):
             media_obj = Media.objects.get(pk=media_id)
             if media_obj.project.pk != project:
                 raise Exception(f"Media not part of specified project!")
+        elif entity_type != -1:
+            media_obj, _ = _create_media(params, self.request.user)
+            media_id = media_obj.id
         if entity_type == -1:
             TatorTranscode().start_tar_import(
                 project,
@@ -120,7 +124,8 @@ class TranscodeAPI(BaseListView):
                f"{name} on project {type_objects[0].project.name}")
         response_data = {'message': msg,
                          'uid': uid,
-                         'gid': gid}
+                         'gid': gid,
+                         'media_id': media_id}
 
         # Send notification that transcode started.
         logger.info(msg)

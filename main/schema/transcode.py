@@ -20,12 +20,8 @@ class TranscodeSchema(AutoSchema):
         can be viewed or annotated. This endpoint launches a transcode on raw uploaded video by
         creating an Argo workflow. The workflow will download the uploaded raw video, transcode
         it to the proper format, upload the transcoded video, and save the video using the 
-        `SaveVideo` endpoint.
-
-        Note that the raw video must be uploaded first via tus, which is a separate mechanism 
-        from the REST API. This endpoint requires a group and run UUID associated with this 
-        upload. If no progress messages were generated during upload, then the group and run 
-        UUIDs can be newly generated.
+        `VideoFile`, `AudioFile`, and `ImageFile` endpoints. The transcode can be launched on an
+        existing media object, or a media object will be created.
 
         Transcodes may be cancelled via the `Job` or `JobGroup` endpoints.
         """)
