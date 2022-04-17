@@ -210,12 +210,7 @@ def image_set(request):
     # Download Labeled Faces in the Wild dataset.
     if not os.path.exists(out_path):
         url = 'http://vis-www.cs.umass.edu/lfw/lfw.tgz'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
 
     # Extract the images.
     if not os.path.exists(extract_path):
@@ -234,12 +229,7 @@ def video_file(request):
     out_path = '/tmp/AudioVideoSyncTest_BallastMedia.mp4'
     if not os.path.exists(out_path):
         url = 'http://www.ballastmedia.com/wp-content/uploads/AudioVideoSyncTest_BallastMedia.mp4'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
@@ -341,12 +331,7 @@ def image_file(request):
     out_path = '/tmp/test1.jpg'
     if not os.path.exists(out_path):
         url = 'https://www.gstatic.com/webp/gallery/1.jpg'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
