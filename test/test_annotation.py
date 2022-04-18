@@ -24,7 +24,7 @@ def common_annotation(page, canvas, bias=0):
         height = 100
         page.mouse.move(x, y)
         page.mouse.down()
-        page.mouse.move(x + width, y + height)
+        page.mouse.move(x + width, y + height, steps=50)
         page.mouse.up()
         page.wait_for_selector('save-dialog.is-open')
         save_dialog = page.query_selector('save-dialog.is-open')
@@ -76,6 +76,7 @@ def test_video_annotation(page_factory, project, video):
     page.on("pageerror", print_page_error)
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector('video-canvas')
+    page.wait_for_selector('play-button:not(.disabled)')
     common_annotation(page, canvas)
     page.close()
     
@@ -94,11 +95,12 @@ def test_multi_annotation(page_factory, project, multi):
     print("[Multi] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Multi requires a decent screen
-    page.goto(f"/{project}/annotation/{multi}")
     page.on("pageerror", print_page_error)
+    page.goto(f"/{project}/annotation/{multi}")
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector_all('video-canvas')
-    # TODO: Make this wait on the video being ready (console log? element selection? Probably play button...)
+    page.wait_for_selector('play-button:not(.disabled)')
+    time.sleep(2) # Not sure what else to wait for here but sometimes vids load after play button enabled
     assert(len(canvas) == 2)
     common_annotation(page, canvas[0])
     common_annotation(page, canvas[1], bias=3)

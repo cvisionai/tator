@@ -25,6 +25,7 @@ def _get_canvas_frame(canvas):
     img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
     text = pytesseract.image_to_string(img)
     _,val=text.strip().split('=')
+    val = val.replace('/','')
     return int(val)
 
 def _get_element_center(element):
@@ -269,6 +270,8 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 def test_playback_schedule(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+  console_msgs=[]
+  page.on("console", lambda msg: console_msgs.append(msg.text))
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
   page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720")
   page.on("pageerror", print_page_error)
@@ -277,13 +280,10 @@ def test_playback_schedule(page_factory, project, count_test):
   time.sleep(10)
   play_button = page.query_selector('play-button')
 
-  console_msgs=[]
-  page.on("console", lambda msg: console_msgs.append(msg.text))
-
   keep_running = True
   while keep_running:
       play_button.click()
-      time.sleep(10)
+      time.sleep(5)
       play_button.click()
 
       schedule_msg = None

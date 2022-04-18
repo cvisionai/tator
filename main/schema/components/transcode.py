@@ -76,5 +76,9 @@ transcode = {
             'type': 'string',
             'description': 'UUID identifying the job group.',
         },
+        'media_id': {
+            'type': 'integer',
+            'description': 'Media ID for this transcode. -1 for tar uploads.',
+        },
     },
 }
