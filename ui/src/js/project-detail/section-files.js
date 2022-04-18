@@ -207,8 +207,6 @@ export class SectionFiles extends TatorElement {
         //   this._bulkEdit._openEditMode(e);
         // });
 
-
-
         this._bulkEdit.addEventListener("multi-enabled", () => {
           // console.log("multi-enabled heard in section files");
           card.multiEnabled = true;
@@ -247,6 +245,14 @@ export class SectionFiles extends TatorElement {
           cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
           // enableMultiselect: this.multiEnabled
         });
+
+        // If we're still in multiselect.. check if this card should be toggled...
+        if (this.multiEnabled) {
+          const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
+          if (typeof selectedArray !== "undefined" && Array.isArray(selectedArray) && selectedArray.includes(cardObj.id)) {
+            this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
+          } 
+        }
 
         //
         // console.log("Is this.multiEnabled??? "+this.multiEnabled)

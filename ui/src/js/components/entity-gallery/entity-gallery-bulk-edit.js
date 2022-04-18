@@ -342,18 +342,24 @@ export class GalleryBulkEdit extends TatorElement {
       this._updatePanelCount(this._currentMultiSelection.size);
    }
 
-   _clearSelection() {
-      // console.log("CLEARING SELECTION!");
-      this._currentMultiSelection.clear();
-      this._currentSelectionObjects.clear();
-      // this._currentSelectionObjects.clear();
-      this.setOfSelectedMetaIds.clear();
-      this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
-
+   // Used on pagination, and in clear selection 
+   clearAllCheckboxes() {
       for (let el of this._elements) {
          el.card._li.classList.remove("is-selected");
          el.card._multiSelectionToggle = false;
       }
+   }
+
+   _clearSelection() {
+      console.log("CLEARING SELECTION! (in _clearSelection) ");
+      this._currentMultiSelection.clear();
+      this._currentSelectionObjects.clear();
+      this._currentMultiSelectionToId.clear();
+      // this._currentSelectionObjects.clear();
+      this.setOfSelectedMetaIds.clear();
+      this._editPanel.hideShowTypes(this.setOfSelectedMetaIds);
+
+      this.clearAllCheckboxes();
       this._updatePanelCount(0);
    }
 
@@ -538,13 +544,13 @@ export class GalleryBulkEdit extends TatorElement {
          // - currentMultiSelectionToId maps the selected IDs to the TypeId
          // - There may be no selected items with that type
          if (r.typeId !== "") {
-            let mediaTypeInSelection = typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
-            
-            if (inputValueArray.length > 1 && mediaTypeInSelection) {
-               text += `<p class="py-2 text-bold text-gray">Update summary for ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`
-            }
+            const mediaTypeInSelection = typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
+            const inputShownForSelectedType = r.values !== {};
 
-            if (r.values !== {}) {
+            if (inputShownForSelectedType) {
+               if (inputValueArray.length > 1 && mediaTypeInSelection) {
+                  text += `<p class="py-2 text-bold text-gray">Update summary for ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`
+               }
                
                for (let [name, value] of Object.entries(r.values)) {
                   if( mediaTypeInSelection) {

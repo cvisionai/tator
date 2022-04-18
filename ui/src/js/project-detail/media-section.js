@@ -752,8 +752,8 @@ export class MediaSection extends TatorElement {
     // clear any selected cards
     // @todo this isn't working?
     console.log(this._bulkEdit._currentMultiSelectionToId);
-    console.log("CLEAR SELECTION");
-    this._bulkEdit._clearSelection();
+    console.log("SET PAGE IN MEDIA ...... clearAllCheckboxes");
+    this._bulkEdit.clearAllCheckboxes();
     console.log(this._bulkEdit._currentMultiSelectionToId);
 
     otherPaginator.init(otherPaginator._numFiles, this._paginationState);        
