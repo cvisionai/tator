@@ -332,7 +332,7 @@ class TatorVideoBuffer {
 
     const timestampOffsetInCtx=Math.floor(timestampOffset*this._timescaleMap.get(timestampOffset));
     //console.info(`${this._name}: TIMESTAMP ${timestampOffset} is ${timestampOffsetInCtx}`);
-    //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} sample_start=${samples[0].cts} delta=${this._frame_delta} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
+    //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
     if (muted == false || this._playing == true)
     {
       this._seek_in_progress=true;
@@ -367,9 +367,9 @@ class TatorVideoBuffer {
         });
         try
         {
-          if (this._frameInfoMap.has(timestampOffsetInCtx+samples[idx].cts) == true)
+          if (this._frameInfoMap.has(Math.floor(timestampOffsetInCtx+samples[idx].cts)) == true)
           {
-            //Avoid overlapping frame
+            //console.warn("Avoid duped frame");
           }
           else
           {
@@ -485,6 +485,7 @@ class TatorVideoBuffer {
   pause()
   {
     this._playing = false;
+    this._frameInfoMap = new Map(); // clear on pause
     this.activeMp4File.stop();
   }
 
@@ -630,7 +631,7 @@ class TatorVideoBuffer {
       }
       else
       {
-        //console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/this._timescale}-${(frame.timestamp+this._frame_delta)/this._timescale}`);
+        console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/this._timescale}-${(frame.timestamp+this._frame_delta)/this._timescale}`);
         frame.close(); // don't care about the frame
       }
     }
