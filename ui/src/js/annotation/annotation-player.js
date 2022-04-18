@@ -2,6 +2,7 @@ import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
+import { handle_video_error } from "./annotation-common.js";
 
 export class AnnotationPlayer extends TatorElement {
   constructor() {
@@ -12,6 +13,14 @@ export class AnnotationPlayer extends TatorElement {
     this._shadow.appendChild(playerDiv);
 
     this._video = document.createElement("video-canvas");
+    let alert_sent = false;
+    this._video.addEventListener("videoError", (evt) => {
+      if (alert_sent == false)
+      {
+        handle_video_error(evt, this._shadow);
+        alert_sent = true;
+      }
+    });
     this._video.domParents.push({"object":this});
     playerDiv.appendChild(this._video);
 

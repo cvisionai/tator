@@ -2,6 +2,7 @@ import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
+import { handle_video_error } from "./annotation-common.js";
 
 export class AnnotationMulti extends TatorElement {
   constructor() {
@@ -766,6 +767,14 @@ export class AnnotationMulti extends TatorElement {
       {
         let prime = this._videos[idx];
         this.parent._browser.canvas = prime;
+        let alert_sent = false;
+        prime.addEventListener("videoError", (evt) => {
+          if (alert_sent == false)
+          {
+            handle_video_error(evt, this._shadow);
+            alert_sent = true;
+          }
+        });
         prime.addEventListener("frameChange", evt => {
              const frame = evt.detail.frame;
              this._slider.value = frame;

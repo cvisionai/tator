@@ -442,7 +442,18 @@ export class VideoCanvas extends AnnotationCanvas {
     console.info(`VideoDecoder: ${'VideoDecoder' in window}; Secure Context: ${window.isSecureContext}`);
     if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1 || use_hls == true)
     {
-      window.alert("Engineering Pop-Up: Your browser does not support WebCodecs API.");
+      // TODO: Can possibly make this a warning and fall back to compat mode.
+      // with some caveats on performance.
+      let decoder = 'VideoDecoder' in window;
+      if (Number(searchParams.get('force_mse'))==1)
+      {
+        decoder = false;
+      }
+      this.dispatchEvent(new CustomEvent("videoError",
+                         {composed: true,
+                          detail: {"videoDecoderPresent": decoder,
+                                   "secureContext": window.isSecureContext}}));
+      return new VideoBufferDemux(); // TODO, per above, Turn this into simple demuxer
     }
     else
     {
@@ -1963,7 +1974,7 @@ export class VideoCanvas extends AnnotationCanvas {
         setTimeout(() => {that.onDemandDownload(true)},0);
       };
 
-      video.recreateOnDemandBuffers(playCallback);
+      video.recreateOnDemandBuffers(setupCallback);
     }
 
     let timeToEnd = 0;
