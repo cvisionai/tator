@@ -149,6 +149,217 @@ def _save_image(url, media_obj, project_obj, role):
     Resource.add_resource(image_key, media_obj)
     return media_obj
 
+def _create_media(params, user):
+    """ Media POST method in its own function for reuse by Transcode endpoint.
+    """
+    # Get common parameters (between video/image).
+    entity_type = params['type']
+    section = params['section']
+    name = params['name']
+    md5 = params['md5']
+    project = params['project']
+    gid = params.get('gid', None)
+    uid = params.get('uid', None)
+    new_attributes = params.get('attributes', None)
+    url = params.get('url')
+    if gid is not None:
+        gid = str(gid)
+    project_obj = Project.objects.get(pk=project)
+
+    # If section does not exist and is not an empty string, create a section.
+    tator_user_sections = ""
+    if section:
+        section_obj = Section.objects.filter(project=project, name__iexact=section)
+        if section_obj.exists():
+            tator_user_sections = section_obj[0].tator_user_sections
+        else:
+            tator_user_sections = str(uuid1())
+            Section.objects.create(project=project_obj,
+                                   name=section,
+                                   tator_user_sections=tator_user_sections)
+
+    # Get the media type.
+    if int(entity_type) == -1:
+        media_types = MediaType.objects.filter(project=project)
+        if media_types.count() > 0:
+            mime, _ = mimetypes.guess_type(name)
+            if mime is None:
+                ext = os.path.splitext(name)[1].lower()
+                if ext in ['.mts', '.m2ts']:
+                    mime = 'video/MP2T'
+            if mime.startswith('image'):
+                for media_type in media_types:
+                    if media_type.dtype == 'image':
+                        break
+            else:
+                for media_type in media_types:
+                    if media_type.dtype == 'video':
+                        break
+            entity_type = media_type.pk
+        else:
+            raise Exception('No media types for project')
+    else:
+        media_type = MediaType.objects.get(pk=int(entity_type))
+        if media_type.project.pk != project:
+            raise Exception('Media type is not part of project')
+
+    # Compute the required fields for posting a media object
+    # of this type
+    required_fields = computeRequiredFields(media_type)
+
+    # Apply user-supplied attributes and finally fill in
+    # defaults and validate
+    attributes = check_required_fields([], # Ignore top-level object
+                                       required_fields[2],
+                                       new_attributes if new_attributes else {})
+
+    # Set the tator_user_section special attribute, will get
+    # dropped if done prior to check_required_fields.
+    attributes.update({'tator_user_sections': tator_user_sections})
+
+    if media_type.dtype == 'image':
+        # Get image only parameters.
+        thumbnail_url = params.get('thumbnail_url')
+
+        # Create the media object.
+        media_obj = Media.objects.create(
+            project=project_obj,
+            meta=MediaType.objects.get(pk=entity_type),
+            name=name,
+            md5=md5,
+            attributes=attributes,
+            created_by=user,
+            modified_by=user,
+            gid=gid,
+            uid=uid,
+            source_url=url,
+        )
+        media_obj.media_files = {}
+
+        if url:
+            # Download the image file and load it.
+            temp_image = tempfile.NamedTemporaryFile(delete=False)
+            download_file(url, temp_image.name)
+            image = Image.open(temp_image.name)
+            media_obj.width, media_obj.height = image.size
+            image_format = image.format
+
+            # Download or create the thumbnail.
+            if thumbnail_url is None:
+                temp_thumb = tempfile.NamedTemporaryFile(delete=False)
+                thumb_size = (256, 256)
+                image = image.convert('RGB') # Remove alpha channel for jpeg
+                image.thumbnail(thumb_size, Image.ANTIALIAS)
+                image.save(temp_thumb.name, format='jpeg')
+                thumb_name = 'thumb.jpg'
+                thumb_format = 'jpg'
+                thumb_width = image.width
+                thumb_height = image.height
+                image.close()
+
+        if thumbnail_url:
+            temp_thumb = tempfile.NamedTemporaryFile(delete=False)
+            download_file(thumbnail_url, temp_thumb.name)
+            thumb = Image.open(temp_thumb.name)
+            thumb_name = os.path.basename(urlparse(thumbnail_url).path)
+            thumb_format = thumb.format
+            thumb_width = thumb.width
+            thumb_height = thumb.height
+            thumb.close()
+
+        # Set up S3 client.
+        tator_store = get_tator_store(project_obj.bucket)
+
+        if url:
+            # Upload image.
+            image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
+            tator_store.put_object(image_key, temp_image)
+            media_obj.media_files['image'] = [{'path': image_key,
+                                               'size': os.stat(temp_image.name).st_size,
+                                               'resolution': [media_obj.height, media_obj.width],
+                                               'mime': f'image/{image_format.lower()}'}]
+            os.remove(temp_image.name)
+            Resource.add_resource(image_key, media_obj)
+
+        if url or thumbnail_url:
+            # Upload thumbnail.
+            thumb_format = image.format
+            thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
+            tator_store.put_object(thumb_key, temp_thumb)
+            media_obj.media_files['thumbnail'] = [{'path': thumb_key,
+                                                   'size': os.stat(temp_thumb.name).st_size,
+                                                   'resolution': [thumb_height, thumb_width],
+                                                   'mime': f'image/{thumb_format}'}]
+            os.remove(temp_thumb.name)
+            Resource.add_resource(thumb_key, media_obj)
+
+        media_obj.save()
+
+        response = {'message': "Image saved successfully!", 'id': media_obj.id}
+
+    else:
+        # Create the media object.
+        media_obj = Media.objects.create(
+            project=project_obj,
+            meta=MediaType.objects.get(pk=entity_type),
+            name=name,
+            md5=md5,
+            attributes=attributes,
+            created_by=user,
+            modified_by=user,
+            gid=gid,
+            uid=uid,
+            source_url=url,
+        )
+
+        # Add optional parameters.
+        if 'fps' in params:
+            media_obj.fps = params['fps']
+        if 'num_frames' in params:
+            media_obj.num_frames = params['num_frames']
+        if 'codec' in params:
+            media_obj.codec = params['codec']
+        if 'width' in params:
+            media_obj.width = params['width']
+        if 'height' in params:
+            media_obj.height = params['height']
+        if 'summaryLevel' in params:
+            media_obj.summaryLevel = params['summaryLevel']
+
+        # Use thumbnails if they are given.
+        thumbnail_url = params.get('thumbnail_url', None)
+        thumbnail_gif_url = params.get('thumbnail_gif_url', None)
+
+        if thumbnail_url is not None:
+            media_obj = _save_image(thumbnail_url, media_obj, project_obj, 'thumbnail')
+
+        if thumbnail_gif_url is not None:
+            media_obj = _save_image(thumbnail_gif_url, media_obj, project_obj, 'thumbnail_gif')
+        media_obj.save()
+
+        msg = (f"Media object {media_obj.id} created for video "
+               f"{name} on project {media_type.project.name}")
+        response = {'message': msg, 'id': media_obj.id}
+        logger.info(msg)
+
+    # If this is an upload to Tator, put media ID as object tag.
+    if url:
+        path, bucket, upload = url_to_key(url, project_obj)
+        if path is not None:
+            tator_store = get_tator_store(bucket, upload=upload)
+            tator_store.put_media_id_tag(path, media_obj.id)
+
+    cl = ChangeLog(
+        project=media_obj.project,
+        user=user,
+        description_of_change=media_obj.create_dict,
+    )
+    cl.save()
+    ref_table = ContentType.objects.get_for_model(media_obj)
+    ChangeToObject(ref_table=ref_table, ref_id=media_obj.id, change_id=cl).save()
+
+    return media_obj, response
+
 class MediaListAPI(BaseListView):
     """ Interact with list of media.
 
@@ -185,213 +396,7 @@ class MediaListAPI(BaseListView):
         return response_data
 
     def _post(self, params):
-
-        # Get common parameters (between video/image).
-        entity_type = params['type']
-        section = params['section']
-        name = params['name']
-        md5 = params['md5']
-        project = params['project']
-        gid = params.get('gid', None)
-        uid = params.get('uid', None)
-        new_attributes = params.get('attributes', None)
-        url = params.get('url')
-        if gid is not None:
-            gid = str(gid)
-        project_obj = Project.objects.get(pk=project)
-
-        # If section does not exist and is not an empty string, create a section.
-        tator_user_sections = ""
-        if section:
-            section_obj = Section.objects.filter(project=project, name__iexact=section)
-            if section_obj.exists():
-                tator_user_sections = section_obj[0].tator_user_sections
-            else:
-                tator_user_sections = str(uuid1())
-                Section.objects.create(project=project_obj,
-                                       name=section,
-                                       tator_user_sections=tator_user_sections)
-
-        # Get the media type.
-        if int(entity_type) == -1:
-            media_types = MediaType.objects.filter(project=project)
-            if media_types.count() > 0:
-                mime, _ = mimetypes.guess_type(name)
-                if mime is None:
-                    ext = os.path.splitext(name)[1].lower()
-                    if ext in ['.mts', '.m2ts']:
-                        mime = 'video/MP2T'
-                if mime.startswith('image'):
-                    for media_type in media_types:
-                        if media_type.dtype == 'image':
-                            break
-                else:
-                    for media_type in media_types:
-                        if media_type.dtype == 'video':
-                            break
-                entity_type = media_type.pk
-            else:
-                raise Exception('No media types for project')
-        else:
-            media_type = MediaType.objects.get(pk=int(entity_type))
-            if media_type.project.pk != project:
-                raise Exception('Media type is not part of project')
-
-        # Compute the required fields for posting a media object
-        # of this type
-        required_fields = computeRequiredFields(media_type)
-
-        # Apply user-supplied attributes and finally fill in
-        # defaults and validate
-        attributes = check_required_fields([], # Ignore top-level object
-                                           required_fields[2],
-                                           new_attributes if new_attributes else {})
-
-        # Set the tator_user_section special attribute, will get
-        # dropped if done prior to check_required_fields.
-        attributes.update({'tator_user_sections': tator_user_sections})
-
-        if media_type.dtype == 'image':
-            # Get image only parameters.
-            thumbnail_url = params.get('thumbnail_url')
-
-            # Create the media object.
-            media_obj = Media.objects.create(
-                project=project_obj,
-                meta=MediaType.objects.get(pk=entity_type),
-                name=name,
-                md5=md5,
-                attributes=attributes,
-                created_by=self.request.user,
-                modified_by=self.request.user,
-                gid=gid,
-                uid=uid,
-                source_url=url,
-            )
-            media_obj.media_files = {}
-
-            if url:
-                # Download the image file and load it.
-                temp_image = tempfile.NamedTemporaryFile(delete=False)
-                download_file(url, temp_image.name)
-                image = Image.open(temp_image.name)
-                media_obj.width, media_obj.height = image.size
-                image_format = image.format
-
-                # Download or create the thumbnail.
-                if thumbnail_url is None:
-                    temp_thumb = tempfile.NamedTemporaryFile(delete=False)
-                    thumb_size = (256, 256)
-                    image = image.convert('RGB') # Remove alpha channel for jpeg
-                    image.thumbnail(thumb_size, Image.ANTIALIAS)
-                    image.save(temp_thumb.name, format='jpeg')
-                    thumb_name = 'thumb.jpg'
-                    thumb_format = 'jpg'
-                    thumb_width = image.width
-                    thumb_height = image.height
-                    image.close()
-
-            if thumbnail_url:
-                temp_thumb = tempfile.NamedTemporaryFile(delete=False)
-                download_file(thumbnail_url, temp_thumb.name)
-                thumb = Image.open(temp_thumb.name)
-                thumb_name = os.path.basename(urlparse(thumbnail_url).path)
-                thumb_format = thumb.format
-                thumb_width = thumb.width
-                thumb_height = thumb.height
-                thumb.close()
-
-            # Set up S3 client.
-            tator_store = get_tator_store(project_obj.bucket)
-
-            if url:
-                # Upload image.
-                image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{name}"
-                tator_store.put_object(image_key, temp_image)
-                media_obj.media_files['image'] = [{'path': image_key,
-                                                   'size': os.stat(temp_image.name).st_size,
-                                                   'resolution': [media_obj.height, media_obj.width],
-                                                   'mime': f'image/{image_format.lower()}'}]
-                os.remove(temp_image.name)
-                Resource.add_resource(image_key, media_obj)
-
-            if url or thumbnail_url:
-                # Upload thumbnail.
-                thumb_format = image.format
-                thumb_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{thumb_name}"
-                tator_store.put_object(thumb_key, temp_thumb)
-                media_obj.media_files['thumbnail'] = [{'path': thumb_key,
-                                                       'size': os.stat(temp_thumb.name).st_size,
-                                                       'resolution': [thumb_height, thumb_width],
-                                                       'mime': f'image/{thumb_format}'}]
-                os.remove(temp_thumb.name)
-                Resource.add_resource(thumb_key, media_obj)
-
-            media_obj.save()
-
-            response = {'message': "Image saved successfully!", 'id': media_obj.id}
-
-        else:
-            # Create the media object.
-            media_obj = Media.objects.create(
-                project=project_obj,
-                meta=MediaType.objects.get(pk=entity_type),
-                name=name,
-                md5=md5,
-                attributes=attributes,
-                created_by=self.request.user,
-                modified_by=self.request.user,
-                gid=gid,
-                uid=uid,
-                source_url=url,
-            )
-
-            # Add optional parameters.
-            if 'fps' in params:
-                media_obj.fps = params['fps']
-            if 'num_frames' in params:
-                media_obj.num_frames = params['num_frames']
-            if 'codec' in params:
-                media_obj.codec = params['codec']
-            if 'width' in params:
-                media_obj.width = params['width']
-            if 'height' in params:
-                media_obj.height = params['height']
-            if 'summaryLevel' in params:
-                media_obj.summaryLevel = params['summaryLevel']
-
-            # Use thumbnails if they are given.
-            thumbnail_url = params.get('thumbnail_url', None)
-            thumbnail_gif_url = params.get('thumbnail_gif_url', None)
-
-            if thumbnail_url is not None:
-                media_obj = _save_image(thumbnail_url, media_obj, project_obj, 'thumbnail')
-
-            if thumbnail_gif_url is not None:
-                media_obj = _save_image(thumbnail_gif_url, media_obj, project_obj, 'thumbnail_gif')
-            media_obj.save()
-
-            msg = (f"Media object {media_obj.id} created for video "
-                   f"{name} on project {media_type.project.name}")
-            response = {'message': msg, 'id': media_obj.id}
-            logger.info(msg)
-
-        # If this is an upload to Tator, put media ID as object tag.
-        if url:
-            path, bucket, upload = url_to_key(url, project_obj)
-            if path is not None:
-                tator_store = get_tator_store(bucket, upload=upload)
-                tator_store.put_media_id_tag(path, media_obj.id)
-
-        cl = ChangeLog(
-            project=media_obj.project,
-            user=self.request.user,
-            description_of_change=media_obj.create_dict,
-        )
-        cl.save()
-        ref_table = ContentType.objects.get_for_model(media_obj)
-        ChangeToObject(ref_table=ref_table, ref_id=media_obj.id, change_id=cl).save()
-
+        _, response = _create_media(params, self.request.user)
         return response
 
     def _delete(self, params):

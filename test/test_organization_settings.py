@@ -35,7 +35,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     user_email = 'no-reply'+str(organization_id)+'@cvisionai.com'
     # user_email = 'no-reply2@cvisionai.com'
     page.fill(f'invitation-edit email-list-input input', user_email+';')
-    with page.expect_response(url) as response_info:
+    with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
         page.click('invitation-edit button[value="Save"]')
         page.wait_for_selector(f'text="Successfully created 1 invitation."')
         page.click('modal-dialog modal-close .modal__close')
@@ -86,7 +86,8 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('.heading-for-Affiliation .Nav-action')
     page.fill('affiliation-edit user-input input', user_email+';')
     page.select_option(f'affiliation-edit enum-input[name="Permission"] select', label="Member")
-    with page.expect_response(url) as response_info:
+    page.wait_for_selector('text="Name Last"')
+    with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
         page.click('affiliation-edit button[value="Save"]')
         page.wait_for_selector(f'text="Successfully created 1 affiliation."')
     response = response_info.value
