@@ -358,7 +358,7 @@ class TatorVideoBuffer {
           }
         }
 
-        //console.info(`SENDING ${timestampOffsetInCtx} + ${samples[idx].cts} ${this._timescaleMap.get(timestampOffset)}`);
+        //console.info(`${this._name}: SENDING ${timestampOffsetInCtx} + ${samples[idx].cts} ${this._timescaleMap.get(timestampOffset)}`);
         this._bufferedRegions.push(start_frame_time, timestampOffset+(samples[idx].cts+this._frameDeltaMap.get(timestampOffset))/this._timescaleMap.get(timestampOffset));
         const chunk = new EncodedVideoChunk({
           type: (samples[idx].is_sync ? 'key' : 'delta'),
@@ -367,16 +367,9 @@ class TatorVideoBuffer {
         });
         try
         {
-          if (this._frameInfoMap.has(Math.floor(timestampOffsetInCtx+samples[idx].cts)) == true)
-          {
-            //console.warn("Avoid duped frame");
-          }
-          else
-          {
             this._frameInfoMap.set(Math.floor(timestampOffsetInCtx+samples[idx].cts), 
                                   timestampOffset);
             this._videoDecoder.decode(chunk);
-          }
         }
         catch(e)
         {
@@ -613,7 +606,7 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = (this._current_cursor)*timeScale;
       const timestamp = frame.timestamp;
-      //console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
+      console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
       {
         // Make an ImageBitmap from the frame and release the memory
@@ -631,7 +624,7 @@ class TatorVideoBuffer {
       }
       else
       {
-        console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/this._timescale}-${(frame.timestamp+this._frame_delta)/this._timescale}`);
+        console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+this._frame_delta)/timeScale}`);
         frame.close(); // don't care about the frame
       }
     }

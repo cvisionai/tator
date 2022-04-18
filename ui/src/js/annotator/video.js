@@ -1238,8 +1238,9 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._videoElement[this._play_idx].playBuffer().use_codec_buffer && 
         video != this._videoElement[this._play_idx].playBuffer())
     {
-      console.info(`Given ${time} ${video.currentTime} to play buffer`);
-      this._videoElement[this._play_idx].playBuffer().currentTime = time;//video.currentTime;
+      //console.info(`Given ${time} ${video.currentTime} to play buffer`);
+      this._videoElement[this._play_idx].playBuffer().bias = time_comps.bias;
+      this._videoElement[this._play_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;   
     }
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
