@@ -151,6 +151,7 @@ export class GalleryBulkEdit extends TatorElement {
 
       if (type == "media") {
          this._selectionPanel.xClose.classList.remove("hidden");
+         this._editPanel._selectionCountText.textContent = "Media(s)";
       }
 
       this.boxHelper = new SettingsBox(this._page.modal);
@@ -528,21 +529,28 @@ export class GalleryBulkEdit extends TatorElement {
          console.log("test r.typeId +" + r.typeId);
          console.log(r);
          console.log(this._currentMultiSelectionToId.get(Number(r.typeId)));
-         if (r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0) {
+         if (r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined") {
+            let mediaTypeInSelection = this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
+
             if (inputValueArray.length > 1) {
-               text += `<p class="py-2 text-bold text-gray">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} Localizations with Type ID: ${r.typeId}</p>`
+               text += `<p class="py-2 text-bold ${!mediaTypeInSelection ? 'text-yellow' : 'text-gray'}">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`
             }
 
             if (r.values !== {}) {
+               
                for (let [name, value] of Object.entries(r.values)) {
                   text += `<p class="py-2 px-2 text-gray">- Updating attribute '${name}' to value: <span class="text-italics ">${value}</span></p>`
                }
-               let formDataForType = {
-                  attributes: r.values,
-                  ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
+
+               if (!mediaTypeInSelection) {
+                  let formDataForType = {
+                     attributes: r.values,
+                     ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
+                  }
+   
+                  formData.push(formDataForType)               
                }
 
-               formData.push(formDataForType)
             } else {
                return text += `<p class="text-red py-2 px-2">- No valid values to update</p>`
             }

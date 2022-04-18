@@ -201,10 +201,11 @@ export class SectionFiles extends TatorElement {
           // console.log("Opening edit mode");
           this._bulkEdit._openEditMode(e);
         });
-        card.addEventListener("shift-select", (e) => {
-          // console.log("Opening edit mode");
-          this._bulkEdit._openEditMode(e);
-        });
+
+        // card.addEventListener("shift-select", (e) => {
+        //   // console.log("Opening edit mode");
+        //   this._bulkEdit._openEditMode(e);
+        // });
 
 
 

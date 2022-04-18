@@ -11,7 +11,7 @@ export class MultiSelectionPanel extends TatorElement {
 
       this._shortCuts = document.createElement("div");
       this._shortCuts.setAttribute("class", "py-2 col-6")
-      this._shortCuts.innerHTML = `<span class="text-gray">Shortcuts: Use <kbd>Ctrl+A</kbd> to select all localizations on the page, and <kbd>Esc</kbd> to deselect all.</span>`;
+      this._shortCuts.innerHTML = `<span class="text-gray">Shortcuts: Use <kbd>Ctrl+A</kbd> to select all on the page, and <kbd>Esc</kbd> to deselect all.</span>`;
       this._bulkEditBar.appendChild(this._shortCuts)
 
       this._minimizeBar = document.createElement("div");
@@ -44,12 +44,12 @@ export class MultiSelectionPanel extends TatorElement {
 
       this._selectAllPage = document.createElement("a");
       this._selectAllPage.setAttribute("class", "text-purple py-2 clickable float-left text-left");
-      this._selectAllPage.innerHTML = "<span style='text-decoration:underline'>Select all on page</span>";
+      this._selectAllPage.innerHTML = "<span style='text-decoration:underline'>Select Page</span>";
       this._minimizeBar.appendChild(this._selectAllPage);
 
       this._clearSelection = document.createElement("a");
       this._clearSelection.setAttribute("class", "text-gray py-2 px-6 clickable float-right text-right");
-      this._clearSelection.innerHTML = "<span style='text-decoration:underline'>Clear all selected</span>";
+      this._clearSelection.innerHTML = "<span style='text-decoration:underline'>Deselect All</span>";
       this._minimizeBar.appendChild(this._clearSelection);
 
       // Escape Bulk Edit

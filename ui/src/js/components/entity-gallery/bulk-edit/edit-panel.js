@@ -129,7 +129,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       this._selectionSummary.appendChild(this._selectionCount);
 
       this._selectionCountText = document.createElement("span");
-      this._selectionCountText.textContent = "Localizations";
+      this._selectionCountText.textContent = "Localization(s)";
       this._selectionSummary.appendChild(this._selectionCountText);
 
       this._compareButton = document.createElement("button");

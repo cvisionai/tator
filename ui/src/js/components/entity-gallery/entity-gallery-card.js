@@ -62,6 +62,22 @@ export class EntityCard extends TatorElement {
     this.titleDiv.appendChild(this._more);
     this._more.hidden = true; // HIDDEN default
 
+
+    
+
+    // Lower div start
+    const lowerDiv = document.createElement("div");
+    lowerDiv.setAttribute("class", "");
+    this._styledDiv.appendChild(lowerDiv);
+
+    const durationDiv = document.createElement("div");
+    durationDiv.setAttribute("class", "d-flex flex-items-center");
+    lowerDiv.appendChild(durationDiv);
+
+    this._duration = document.createElement("span");
+    this._duration.setAttribute("class", "f3 text-gray");
+    durationDiv.appendChild(this._duration);
+
     // OPTIONAL bottom (contains pagination + id display)
     this._bottom = document.createElement("div");
     this._bottom.setAttribute("class", "f3 d-flex flex-justify-between");
@@ -77,12 +93,6 @@ export class EntityCard extends TatorElement {
     this._pos_text = document.createElement("span");
     this._pos_text.setAttribute("class", "f3 text-gray pr-2");
     this._bottom.appendChild(this._pos_text);
-    
-
-    // Lower div start
-    const lowerDiv = document.createElement("div");
-    lowerDiv.setAttribute("class", "");
-    this._styledDiv.appendChild(lowerDiv);
 
     // Emblem div
     this._emblemDiv = document.createElement("div");
@@ -578,23 +588,25 @@ export class EntityCard extends TatorElement {
         this._multiSelectionToggle = true;
         
         /* @ "card-click"*/
-        if (e.shiftKey) {
-          // console.log("Shift click!");
-          // this._multiSelectionToggle = true;
-          this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
-        } else if (e.code == "Enter") {
+        // if (e.shiftKey && !this._mediaInit) {
+        //   // console.log("Shift click!");
+        //   // this._multiSelectionToggle = true;
+        //   this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
+        // } else
+          
+        if (e.code == "Enter") {
           // console.log("Enter click!... " + this._li.hasFocus());
           if (this._li.hasFocus()) {
             //
           }
           // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
-        } else if (e.ctrlKey || e.code == "Control") {
+        } else if ((e.ctrlKey  && !this._mediaInit) || (e.code == "Control" && !this._mediaInit)) {
           // usually context menu is hit, and not this keeping in case....
           // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         } else if(this._mediaInit) {
-          // console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
+          console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         }
       }
@@ -649,7 +661,7 @@ export class EntityCard extends TatorElement {
   }
 
   contextMenuHandler(e) {
-    if (e.ctrlKey) {
+    if (e.ctrlKey && !this._mediaInit) {
       // console.log("Card was clicked with ctrl");
       this._multiSelectionToggle = true;
       e.preventDefault(); // stop contextmenu
