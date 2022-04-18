@@ -510,6 +510,9 @@ export class GalleryBulkEdit extends TatorElement {
    _saveBulkEdit() {
       this._saveConfirmation();
    }
+
+   // This feature was to compare the values of selected attributes and cards in a table
+   // This never went live // triggers were hidden or disconnected
    _showMiniComparison(val = true) {
       this._editPanel.showComparison(val);
    }
@@ -529,20 +532,31 @@ export class GalleryBulkEdit extends TatorElement {
          console.log("test r.typeId +" + r.typeId);
          console.log(r);
          console.log(this._currentMultiSelectionToId.get(Number(r.typeId)));
-         if (r.typeId !== "" && typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined") {
-            let mediaTypeInSelection = this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
 
-            if (inputValueArray.length > 1) {
-               text += `<p class="py-2 text-bold ${!mediaTypeInSelection ? 'text-yellow' : 'text-gray'}">Updates to ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`
+         // Inputs are associated to multiple types
+         // - If there are inputs for this types
+         // - currentMultiSelectionToId maps the selected IDs to the TypeId
+         // - There may be no selected items with that type
+         if (r.typeId !== "") {
+            let mediaTypeInSelection = typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
+            
+            if (inputValueArray.length > 1 && mediaTypeInSelection) {
+               text += `<p class="py-2 text-bold text-gray">Update summary for ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`
             }
 
             if (r.values !== {}) {
                
                for (let [name, value] of Object.entries(r.values)) {
-                  text += `<p class="py-2 px-2 text-gray">- Updating attribute '${name}' to value: <span class="text-italics ">${value}</span></p>`
+                  if( mediaTypeInSelection) {
+                     text += `<p class="py-2 px-2 ${mediaTypeInSelection ? 'text-gray' : 'text-red'}">- Change attribute '${name}' to value: <span class="text-italics ">${value}</span></p>`    
+                  } else {
+                     text += `<p class="py-2 text-bold text-red">No update for Type ID: ${r.typeId} `;
+                     text += `<p class="py-2 px-2 text-red text-italics"> - No items selected to change '${name}' to value: <span class="text-italics ">${value}</span></p></p>`;
+                  }
+                 
                }
 
-               if (!mediaTypeInSelection) {
+               if (mediaTypeInSelection) {
                   let formDataForType = {
                      attributes: r.values,
                      ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
@@ -563,8 +577,10 @@ export class GalleryBulkEdit extends TatorElement {
          }
       }
 
-      if (formData.length == 0) {
-         return this.boxHelper._modalError("Error with update.", "Error");
+      // console.log(`formData.length = ${formData.length}`)
+      // Save button is disabled if there are 0 total selected, so there should be formData - otherwise there was a bug
+      if (formData.length === 0) {
+         return this.boxHelper._modalError("Error with update: No selection found.", "Error");
       }
 
       let buttonContinue = document.createElement("button");
