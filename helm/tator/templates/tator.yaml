@@ -33,6 +33,9 @@
 {{- $archiveSettings := dict "Values" .Values "name" "archive-media-cron" "app" "archive-media" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"archivemedia\"]" "schedule" "40 0 * * *" }}
 {{include "tatorCron.template" $archiveSettings }}
 ---
+{{- $backupMediaSettings := dict "Values" .Values "name" "backup-media-cron" "app" "backup-media" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"backupresources\"]" "schedule" "0 1 * * *" }}
+{{include "tatorCron.template" $backupMediaSettings }}
+---
 {{- $requestSettings := dict "Values" .Values "name" "request-restore-cron" "app" "request-restore" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"requestrestoration\"]" "schedule" "40 1 * * *" }}
 {{include "tatorCron.template" $requestSettings }}
 ---

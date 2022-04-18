@@ -13,14 +13,18 @@ import re
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import Point
+from minio import Minio
+from minio.deleteobjects import DeleteObject
 from rest_framework import status
 from rest_framework.test import APITestCase
 from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
 
+from .backup import TatorBackupManager
 from .models import *
-from .store import get_tator_store
 from .search import TatorSearch, ALLOWED_MUTATIONS
+from .store import get_tator_store, PATH_KEYS
+from .util import update_queryset_archive_state
 
 logger = logging.getLogger(__name__)
 
@@ -60,12 +64,19 @@ def create_test_bucket(organization):
         region='us-east-2',
     )
 
-def create_test_project(user, organization=None):
-    return Project.objects.create(
-        name="asdf",
-        creator=user,
-        organization=organization,
-    )
+def create_test_project(user, organization=None, backup_bucket=None):
+    kwargs = {
+        "name": "asdf",
+        "creator": user,
+    }
+
+    if organization:
+        kwargs["organization"] = organization
+
+    if backup_bucket:
+        kwargs["backup_bucket"] = backup_bucket
+
+    return Project.objects.create(**kwargs)
 
 def create_test_membership(user, project):
     return Membership.objects.create(
@@ -2837,8 +2848,18 @@ class VideoFileTestCase(APITestCase, FileMixin):
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'VideoFiles'
         self.detail_uri = 'VideoFile'
-        self.create_json = {'path': self._generate_key(), 'resolution': [1, 1], 'codec': 'h264', 'segment_info': 'asdf'}
-        self.patch_json = {'path': self._generate_key(), 'resolution': [2, 2], 'codec': 'h264', 'segment_info': 'asdf'}
+        self.create_json = {
+            'path': self._generate_key(),
+            'resolution': [1, 1],
+            'codec': 'h264',
+            'segment_info': self._generate_key(),
+        }
+        self.patch_json = {
+            'path': self._generate_key(),
+            'resolution': [2, 2],
+            'codec': 'h264',
+            'segment_info': self._generate_key(),
+        }
 
     def test_streaming(self):
         self._test_methods('streaming')
@@ -2924,6 +2945,10 @@ class ResourceTestCase(APITestCase):
             attribute_types=create_test_attribute_types(),
         )
         self.store = get_tator_store()
+
+    def tearDown(self):
+        self.project.delete()
+        self.organization.delete()
 
     def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
@@ -3079,12 +3104,26 @@ class ResourceTestCase(APITestCase):
         clone_id = response.data['id'][0]
         TatorSearch().refresh(self.project.pk)
 
+        # Check the list of clones matches
+        response = self.client.get(f"/rest/GetClonedMedia/{media.id}")
+        clone_ids = response.data["ids"]
+        self.assertTrue(media.id in clone_ids)
+        self.assertTrue(clone_id in clone_ids)
+        self.assertEqual(len(clone_ids), 2)
+
         # Delete the clone.
         response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertTrue(self._store_obj_exists(keys[role]))
+
+        # Check the list of clones matches
+        response = self.client.get(f"/rest/GetClonedMedia/{media.id}")
+        clone_ids = response.data["ids"]
+        self.assertTrue(media.id in clone_ids)
+        self.assertFalse(clone_id in clone_ids)
+        self.assertEqual(len(clone_ids), 1)
 
         # Clone the media.
         body = {'dest_project': self.project.pk,
@@ -3233,6 +3272,168 @@ class ResourceTestCase(APITestCase):
             media_def = self._get_media_def(role, keys, segment_key)
             self.assertFalse(Resource.objects.get(path=media_def["path"]).backed_up)
 
+    def test_archive_state_lifecycle(self):
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        media_id = media.id
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys(media)
+        all_keys = list(keys.values()) + [segment_key]
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(
+                f"/rest/{endpoint}/{media_id}?role={role}", media_def, format='json'
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        if self.project.backup_bucket:
+            # Back up the resource
+            n_successful_backups = 0
+            resource_qs = Resource.objects.filter(path__in=all_keys)
+            for success, resource in TatorBackupManager().backup_resources(resource_qs):
+                if success:
+                    n_successful_backups += 1
+
+            self.assertEqual(n_successful_backups, len(all_keys))
+
+        # Check the value of the media's `archive_state` flag
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "live")
+
+        # Check that none of the objects are tagged for archive yet
+        for path in media.path_iterator(keys=PATH_KEYS):
+            self.assertFalse(self.store.object_tagged_for_archive(path))
+
+        # Patch the media object and put it in the `to_archive` state
+        response = self.client.patch(
+            f"/rest/Media/{media_id}", {"archive_state": "to_archive"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "to_archive")
+
+        # Archive the media object
+        target_state = {"archive_state": "archived", "restoration_requested": False}
+        media_qs = Media.objects.filter(pk=media_id)
+        update_queryset_archive_state(media_qs, target_state)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "archived")
+        for path in media.path_iterator(keys=PATH_KEYS):
+            self.assertTrue(self.store.object_tagged_for_archive(path))
+
+        # Patch the media object and put it in the `to_live` state
+        response = self.client.patch(
+            f"/rest/Media/{media_id}", {"archive_state": "to_live"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "to_live")
+
+        # Request restoration
+        target_state = {
+            "archive_state": "to_live",
+            "restoration_requested": True,
+            "min_exp_days": 7,
+        }
+        media_qs = Media.objects.filter(pk=media_id)
+        update_queryset_archive_state(media_qs, target_state)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "to_live")
+        self.assertTrue(media.restoration_requested)
+
+        # Finish restoration
+        target_state = {
+            "archive_state": "live",
+            "restoration_requested": False,
+        }
+        media_qs = Media.objects.filter(pk=media_id)
+        update_queryset_archive_state(media_qs, target_state)
+        media = Media.objects.get(pk=media_id)
+        self.assertEqual(media.archive_state, "live")
+        self.assertFalse(media.restoration_requested)
+        for path in media.path_iterator(keys=PATH_KEYS):
+            self.assertFalse(self.store.object_tagged_for_archive(path))
+
+    def test_backup_lifecycle(self):
+        media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
+        media_id = media.id
+
+        # Post one file of each role.
+        keys, segment_key = self._generate_keys(media)
+        all_keys = list(keys.values()) + [segment_key]
+        for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
+            media_def = self._get_media_def(role, keys, segment_key)
+            response = self.client.post(
+                f"/rest/{endpoint}/{media_id}?role={role}", media_def, format='json'
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check the value of each resource's `backed_up` flag is `False`
+        resource_qs = Resource.objects.filter(path__in=all_keys, backed_up=False)
+        self.assertEqual(
+            resource_qs.count(), len(all_keys)
+        )
+
+        # Back up the resource
+        n_successful_backups = 0
+        for success, resource in TatorBackupManager().backup_resources(resource_qs):
+            if success:
+                n_successful_backups += 1
+
+        self.assertEqual(n_successful_backups, len(all_keys))
+
+        # Check the value of each resource's `backed_up` flag is `True`
+        resource_qs = Resource.objects.filter(path__in=all_keys, backed_up=True)
+        self.assertEqual(resource_qs.count(), len(all_keys))
+
+        # Check that each resource was copied to the backup bucket
+        success, store_info = TatorBackupManager().get_store_info(self.project)
+        self.assertTrue(success)
+        success, store = TatorBackupManager.get_backup_store(store_info)
+        self.assertTrue(success)
+        for resource in resource_qs.iterator():
+            self.assertTrue(store.check_key(resource.path))
+
+
+class ResourceWithBackupTestCase(ResourceTestCase):
+    """ This runs the same tests as `ResourceTestCase` but adds a project-specific backup bucket """
+    def setUp(self):
+        super().setUp()
+        endpoint = os.getenv(f"OBJECT_STORAGE_HOST")
+        secure = "https" in endpoint
+        endpoint_stripped = re.sub("https?://", "", endpoint)
+        access_key = os.getenv(f"OBJECT_STORAGE_ACCESS_KEY")
+        secret_key = os.getenv(f"OBJECT_STORAGE_SECRET_KEY")
+        self.mc = Minio(
+            endpoint=endpoint_stripped, secure=secure, access_key=access_key, secret_key=secret_key
+        )
+        self.backup_bucket_name = f"tator-backup-{uuid1()}"
+        self.mc.make_bucket(self.backup_bucket_name)
+        self.backup_bucket = Bucket.objects.create(
+            name=self.backup_bucket_name,
+            organization=self.organization,
+            access_key=access_key,
+            secret_key=secret_key,
+            endpoint_url=endpoint,
+            region=os.getenv(f"OBJECT_STORAGE_REGION_NAME"),
+        )
+        self.project.backup_bucket = self.backup_bucket
+        self.project.save()
+
+    def tearDown(self):
+        # Delete objects from temporary backup bucket
+        objs_to_delete = [DeleteObject(x.object_name) for x in self.mc.list_objects(self.backup_bucket_name, "", recursive=True)]
+
+        # `remove_objects` returns a generator, iterate over it to evaluate
+        _ = list(self.mc.remove_objects(self.backup_bucket_name, objs_to_delete))
+
+        # Delete temporary backup bucket
+        self.mc.remove_bucket(self.backup_bucket_name)
+
+        # Clean up project
+        self.project.delete()
+        self.backup_bucket.delete()
+        self.organization.delete()
 
 class AttributeTestCase(APITestCase):
     def setUp(self):

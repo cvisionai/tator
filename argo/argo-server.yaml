@@ -23,7 +23,7 @@ spec:
           value: "false"
         - name: BASE_HREF
           value: /argo/
-        image: quay.io/argoproj/argocli:latest
+        image: quay.io/argoproj/argocli:v3.3.1
         name: argo-server
         ports:
         - containerPort: 2746

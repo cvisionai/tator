@@ -210,12 +210,7 @@ def image_set(request):
     # Download Labeled Faces in the Wild dataset.
     if not os.path.exists(out_path):
         url = 'http://vis-www.cs.umass.edu/lfw/lfw.tgz'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
 
     # Extract the images.
     if not os.path.exists(extract_path):
@@ -234,12 +229,7 @@ def video_file(request):
     out_path = '/tmp/AudioVideoSyncTest_BallastMedia.mp4'
     if not os.path.exists(out_path):
         url = 'http://www.ballastmedia.com/wp-content/uploads/AudioVideoSyncTest_BallastMedia.mp4'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
@@ -247,6 +237,7 @@ def video(request, page_factory, project, video_section, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section}")
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -274,6 +265,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={slow_video_section}")
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', slow_video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -293,6 +285,7 @@ def video2(request, page_factory, project, video_section2, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section2}")
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -312,6 +305,7 @@ def video3(request, page_factory, project, video_section3, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={video_section3}")
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -341,12 +335,7 @@ def image_file(request):
     out_path = '/tmp/test1.jpg'
     if not os.path.exists(out_path):
         url = 'https://www.gstatic.com/webp/gallery/1.jpg'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
@@ -354,6 +343,7 @@ def image(request, page_factory, project, image_section, image_file):
     print("Uploading an image...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={image_section}")
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', image_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:

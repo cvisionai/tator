@@ -1,8 +1,8 @@
 import os
 import time
 import inspect
-import requests
 import math
+import subprocess
 
 from ._common import print_page_error
 
@@ -30,38 +30,25 @@ def test_features(request, page_factory, project):
    nasa_space_photo_1 = '/tmp/hubble-sees-the-wings-of-a-butterfly.jpg'
    if not os.path.exists(nasa_space_photo_1):
       url = 'https://images-assets.nasa.gov/image/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o~small.jpg'
-      with requests.get(url, stream=True) as r:
-         r.raise_for_status()
-         with open(nasa_space_photo_1, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-               if chunk:
-                  f.write(chunk)
+      subprocess.run(['wget', '-O', nasa_space_photo_1, url])
 
    nasa_space_photo_2 = '/tmp/layers-in-galle-crater.jpg'
    if not os.path.exists(nasa_space_photo_2):
       url = 'https://images-assets.nasa.gov/image/PIA21575/PIA21575~medium.jpg'
-      with requests.get(url, stream=True) as r:
-         r.raise_for_status()
-         with open(nasa_space_photo_2, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-               if chunk:
-                  f.write(chunk)
+      subprocess.run(['wget', '-O', nasa_space_photo_2, url])
 
    nasa_space_photo_3 = '/tmp/behemoth-black-hole.jpg'
    if not os.path.exists(nasa_space_photo_3):
       url = 'https://images-assets.nasa.gov/image/behemoth-black-hole-found-in-an-unlikely-place_26209716511_o/behemoth-black-hole-found-in-an-unlikely-place_26209716511_o~medium.jpg'
-      with requests.get(url, stream=True) as r:
-         r.raise_for_status()
-         with open(nasa_space_photo_3, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-               if chunk:
-                  f.write(chunk)
+      subprocess.run(['wget', '-O', nasa_space_photo_3, url])
 
    page.set_input_files('section-upload input', [nasa_space_photo_1,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_2,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1])
    page.query_selector('upload-dialog').query_selector('text=Close').click()
 
    page.click('reload-button')
-   page.wait_for_selector('media-card')
+   page.wait_for_selector('text=hubble')
+   page.wait_for_selector('text=galle')
+   page.wait_for_selector('text=behemoth')
    time.sleep(5)
 
    cards = page.query_selector_all('media-card[style="display: block;"]')
@@ -134,7 +121,7 @@ def test_features(request, page_factory, project):
    page.select_option('enum-input[name="Field"] select', value="filename")
 
    page.wait_for_selector('text-input[name="Value"] input')
-   page.fill('text-input[name="Value"] input', "black\-hole")
+   page.fill('text-input[name="Value"] input', "black-hole")
 
    filterGroupButtons = page.query_selector_all('.modal__footer button')
    filterGroupButtons[0].click()

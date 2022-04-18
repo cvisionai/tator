@@ -1,4 +1,5 @@
 import { TypeForm } from "./type-form.js";
+import { TypeNew } from "./type-new.js";
 
 export class MembershipEdit extends TypeForm {
   constructor() {

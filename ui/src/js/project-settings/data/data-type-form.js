@@ -1,5 +1,6 @@
 import { TypeForm } from "../type-forms/type-form.js";
 import { getCookie } from "../../util/get-cookie.js";
+import { AttributesForm } from "../attributes/attributes-form.js";
 
 /* Class with methods return input types with preset values for editing.*/
 export class TypeFormData {

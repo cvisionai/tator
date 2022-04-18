@@ -70,3 +70,61 @@ class CloneMediaListSchema(AutoSchema):
             responses['201'] = message_with_id_list_schema('cloned media list')
         return responses
 
+
+class GetClonedMediaSchema(AutoSchema):
+    def get_operation(self, path, method):
+        operation = super().get_operation(path, method)
+        if method == "GET":
+            operation["operationId"] = "GetClonedMedia"
+        operation["tags"] = ["Tator"]
+        return operation
+
+    def get_description(self, path, method):
+        desc = ""
+        if method == "GET":
+            desc = dedent(
+                """
+                Get cloned media.
+
+                This method finds and returns the list of media ids that are clones of the
+                given id.
+                """
+            )
+        return desc
+
+    def get_path_parameters(self, path, method):
+        path_params = []
+        if method == "GET":
+            path_params = [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": True,
+                    "description": "A unique integer identifying a media object.",
+                    "schema": {"type": "integer"},
+                }
+            ]
+        return path_params
+
+    def get_filter_parameters(self, path, method):
+        params = []
+        return params
+
+    def get_request_body(self, path, method):
+        body = {}
+        return body
+
+    def get_responses(self, path, method):
+        responses = error_responses()
+        if method == "GET":
+            responses["200"] = {
+                "description": "List of clones' ids of given media id.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/GetClonedMediaResponse",
+                        }
+                    }
+                },
+            }
+        return responses
