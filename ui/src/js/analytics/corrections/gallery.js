@@ -312,6 +312,11 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
         cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
       });
 
+      const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
+      if (typeof selectedArray !== "undefined" && selectedArray.has(cardObj.id)) {
+        this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
+      }
+
       this._currentCardIndexes[cardObj.id] = index;
 
       card.style.display = "block";

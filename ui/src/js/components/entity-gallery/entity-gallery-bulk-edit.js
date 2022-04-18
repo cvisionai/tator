@@ -264,6 +264,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _addSelected({ element, id, isSelected }) {
+      // console.log("Add selected");
       if (!this._editMode) this.startEditMode();
 
       element._li.classList.add("is-selected");
@@ -351,7 +352,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _clearSelection() {
-      console.log("CLEARING SELECTION! (in _clearSelection) ");
+      // console.log("CLEARING SELECTION! (in _clearSelection) ");
       this._currentMultiSelection.clear();
       this._currentSelectionObjects.clear();
       this._currentMultiSelectionToId.clear();
@@ -386,7 +387,7 @@ export class GalleryBulkEdit extends TatorElement {
 
       if (this._editType != "media") {
          if (this._page.main.classList.contains("col-9")) {
-            console.log("_editPanelWasOpen is being set to true");
+            // console.log("_editPanelWasOpen is being set to true");
             this._editPanelWasOpen = true;
             this._page.main.classList.remove("col-9");
             this._page.main.classList.add("col-12");
@@ -513,6 +514,7 @@ export class GalleryBulkEdit extends TatorElement {
       }
       this._comparisonPanel.show(val);
    }
+
    _saveBulkEdit() {
       this._saveConfirmation();
    }
@@ -522,6 +524,7 @@ export class GalleryBulkEdit extends TatorElement {
    _showMiniComparison(val = true) {
       this._editPanel.showComparison(val);
    }
+
    _saveConfirmation() {
       let button = document.createElement("button");
       button.setAttribute("class", "btn f1 text-semibold");
@@ -535,45 +538,66 @@ export class GalleryBulkEdit extends TatorElement {
 
       let formData = [];
       for (let r of inputValueArray) {
-         console.log("test r.typeId +" + r.typeId);
-         console.log(r);
-         console.log(this._currentMultiSelectionToId.get(Number(r.typeId)));
-
          // Inputs are associated to multiple types
          // - If there are inputs for this types
          // - currentMultiSelectionToId maps the selected IDs to the TypeId
          // - There may be no selected items with that type
          if (r.typeId !== "") {
+            // Are there any selected cards this MediaType?
+            // - Note: To handle if we put info in an input, but no media selected to apply it to
             const mediaTypeInSelection = typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
-            const inputShownForSelectedType = r.values !== {};
+            console.log(mediaTypeInSelection);
 
+            // What are the inputes related to this type?
+            // - Note: To handle if we selected some media, but no input applies to it
+            const inputShownForSelectedType = Object.entries(r.values).length > 0;
+
+            console.log("Are there input values? ...... "+Object.entries(r.values).length)
+            console.log(Object.entries(r.values).length > 0);
+
+            // We have inputs
             if (inputShownForSelectedType) {
-               if (inputValueArray.length > 1 && mediaTypeInSelection) {
-                  text += `<p class="py-2 text-bold text-gray">Update summary for ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`
+               // and cards for this media
+
+               if (mediaTypeInSelection) {
+                  text += `<p class="py-2 text-bold text-gray">Update summary for ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`;
                }
-               
                for (let [name, value] of Object.entries(r.values)) {
-                  if( mediaTypeInSelection) {
+                  if(mediaTypeInSelection) {
                      text += `<p class="py-2 px-2 ${mediaTypeInSelection ? 'text-gray' : 'text-red'}">- Change attribute '${name}' to value: <span class="text-italics ">${value}</span></p>`    
                   } else {
+                     // inputs and no cards
                      text += `<p class="py-2 text-bold text-red">No update for Type ID: ${r.typeId} `;
                      text += `<p class="py-2 px-2 text-red text-italics"> - No items selected to change '${name}' to value: <span class="text-italics ">${value}</span></p></p>`;
                   }
-                 
+
+                  if (mediaTypeInSelection) {
+                     let formDataForType = {
+                        attributes: r.values,
+                        ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
+                     }
+      
+                     formData.push(formDataForType)               
+                  }
+                  
                }
 
-               if (mediaTypeInSelection) {
-                  let formDataForType = {
-                     attributes: r.values,
-                     ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
-                  }
-   
-                  formData.push(formDataForType)               
-               }
 
             } else {
-               return text += `<p class="text-red py-2 px-2">- No valid values to update</p>`
+               // no attribute, but cards are selected
+               if (mediaTypeInSelection) {
+                  text += `<p class="py-2 text-bold text-red">Update summary for ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`
+                  text += `<p class="py-2 px-2 text-red text-italics"> - Attribute does not exist on this type</p>`;
+               } else {
+                  // no attribute and no cards -- do nothing
+               }
             }
+               
+
+
+            // } else {
+            //    return text += `<p class="text-red py-2 px-2">- No valid values to update</p>`
+            // }
 
             if (r.rejected !== {}) {
                for (let rej of Object.entries(r.rejected)) {
@@ -585,7 +609,7 @@ export class GalleryBulkEdit extends TatorElement {
 
       // console.log(`formData.length = ${formData.length}`)
       // Save button is disabled if there are 0 total selected, so there should be formData - otherwise there was a bug
-      if (formData.length === 0) {
+      if (formData.length == 0) {
          return this.boxHelper._modalError("Error with update: No selection found.", "Error");
       }
 
@@ -669,8 +693,8 @@ export class GalleryBulkEdit extends TatorElement {
       let respCode = 0;
 
       for (let jsonData of formData) {
-         console.log("jsonData-----------------------------------------------------------");
-         console.log(jsonData);
+         // console.log("jsonData-----------------------------------------------------------");
+         // console.log(jsonData);
 
          if (jsonData.attributes !== {}) {
             promise = promise.then(() => this._patchMedia(jsonData)).then((resp) => {
@@ -704,7 +728,7 @@ export class GalleryBulkEdit extends TatorElement {
          } else if (errorText !== "" && text === "") {
             this.boxHelper._modalError(errorText, "Error");
          } else if (errorText !== "" && text !== "") {
-            this.boxHelper._modalWarn(text + errorText);
+            this.boxHelper._modalError(`<p>${text}</p><p class="text-red">${errorText}</p>`);
          }
 
          // });  
@@ -761,7 +785,7 @@ export class GalleryBulkEdit extends TatorElement {
          } else if (errorText !== "" && text === "") {
             this.boxHelper._modalError(errorText, "Error");
          } else if (errorText !== "" && text !== "") {
-            this.boxHelper._modalWarn(text + errorText);
+            this.boxHelper._modalError(`<p>${text}</p><p class="text-red">${errorText}</p>`);
          }
 
          // });  

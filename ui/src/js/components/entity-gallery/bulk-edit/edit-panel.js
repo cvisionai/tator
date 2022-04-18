@@ -245,7 +245,7 @@ export class MultiAttributeEditPanel extends TatorElement {
    }
 
    addLocType(typeData) {
-      console.log(typeData);
+      // console.log(typeData);
       let typeName = typeData.name ? typeData.name : "";
       if (this._shownTypes.has(typeData.id)) {
          // don't re-add this type...
@@ -470,7 +470,7 @@ export class MultiAttributeEditPanel extends TatorElement {
 
    // Loop through and add hidden inputs for each data type
    _addInputs(attributeTypes, dataTypeId) {
-      console.log("Creating div for inputs... type id "+dataTypeId)
+      // console.log("Creating div for inputs... type id "+dataTypeId)
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group_bulk-edit text-gray f2");
       div.setAttribute("id", dataTypeId);
@@ -522,7 +522,7 @@ export class MultiAttributeEditPanel extends TatorElement {
                widget = document.createElement("datetime-input");
                widget.setAttribute("name", attributeDef.name);
             } catch (e) {
-               console.log(e.description);
+               console.error("Error making datetime input",e);
             }
 
             if ((widget && widget._input && widget._input.type == "text") || !widget._input) {
@@ -579,6 +579,7 @@ export class MultiAttributeEditPanel extends TatorElement {
          if (typeof this._permission !== "undefined" && !ignorePermission) {
             widget.permission = this._permission;
          }
+
          widget.hidden = true;
          div.appendChild(widget);
 
@@ -607,7 +608,7 @@ export class MultiAttributeEditPanel extends TatorElement {
                   let name = widget.getAttribute("name");
                   let val = widget.getValue()
 
-                  console.log(`Evaluating value of widget named ${name}. Value = ${val}`);
+                  // console.log(`Evaluating value of widget named ${name}. Value = ${val}`);
 
                   if (val !== null) {
                      response.values[name] = val;
@@ -632,7 +633,7 @@ export class MultiAttributeEditPanel extends TatorElement {
             let typeId = group.id;
             for (const widget of group.children) {
                if (!widget.hidden && widget.tagName !== "LABEL") {
-                  console.log(widget.getAttribute("name"));
+                  // console.log(widget.getAttribute("name"));
                   //${e.detail.name} type_${e.detail.typeId}
                   values.set(`${widget.getAttribute("name")} type_${typeId}`, widget.getAttribute("name"));
                }

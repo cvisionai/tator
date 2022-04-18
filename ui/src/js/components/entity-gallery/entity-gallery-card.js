@@ -426,9 +426,9 @@ export class EntityCard extends TatorElement {
   * Custom label display update
   */
   _updateShownAttributes(evt) {
-    console.log("_updateShownAttributes, evt.detail.value=");
-    console.log(evt.detail);
-    console.log(this.cardObj);
+    // console.log("_updateShownAttributes, evt.detail.value=");
+    // console.log(evt.detail);
+    // console.log(this.cardObj);
     let labelValues = evt.detail.value;
 
     if (this.attributeDivs && evt.detail.typeId === this.cardObj.entityType.id) {
@@ -580,7 +580,7 @@ export class EntityCard extends TatorElement {
     if (this._link.getAttribute("href") !== "#" && !this._multiEnabled) {
       // follow the link...
       // otherwise do some panel, or multi stuff
-      console.log("clicked....");
+      // console.log("clicked....");
     } else {
       e.preventDefault();
 
@@ -606,7 +606,7 @@ export class EntityCard extends TatorElement {
           // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         } else if(this._mediaInit) {
-          console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
+          // console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         }
       }
