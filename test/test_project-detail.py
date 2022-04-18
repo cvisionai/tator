@@ -22,7 +22,7 @@ def test_features(request, page_factory, project):
    time.sleep(5)
 
    # Initial card length
-   cards = page.query_selector_all('media-card[style="display: block;"]')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    initialCardLength = len(cards)
    newCardsLength = 15
    totalCards = initialCardLength + newCardsLength
@@ -61,10 +61,10 @@ def test_features(request, page_factory, project):
    page.query_selector('upload-dialog').query_selector('text=Close').click()
 
    page.click('reload-button')
-   page.wait_for_selector('media-card')
+   page.wait_for_selector('section-files entity-card')
    time.sleep(5)
 
-   cards = page.query_selector_all('media-card[style="display: block;"]')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards) # existing + new cards
 
    print(f"Length of cards {cardLength}  == should match totalCards {totalCards}")
@@ -76,14 +76,14 @@ def test_features(request, page_factory, project):
    page.wait_for_selector(f'text="Page 1 of {str(pages)}"')
    time.sleep(5)
    
-   cardsHidden = page.query_selector_all('media-card[style="display: none;"]')
+   cardsHidden = page.query_selector_all('section-files entity-card[style="display: none;"]')
    cardsHiddenLength = len(cardsHidden)
 
    print(f"Length of cards hidden {cardsHiddenLength}  == totalCards - 10 {totalCards - 10}")
    totalMinus = totalCards - 10
    assert cardsHiddenLength == totalMinus
 
-   cards = page.query_selector_all('media-card[style="display: block;"]')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
 
    print(f"Visible card length {cardLength}  == 10")
@@ -95,7 +95,7 @@ def test_features(request, page_factory, project):
    page.wait_for_selector(f'text="Page 2 of {pages}"')
    time.sleep(5)
    
-   cards = page.query_selector_all('media-card[style="display: block;"]')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
    totalOnSecond = totalCards - 10
    if totalOnSecond > 10:
@@ -114,10 +114,10 @@ def test_features(request, page_factory, project):
       page.go_back()
       time.sleep(1)
 
-      page.wait_for_selector('media-card')
+      page.wait_for_selector('section-files entity-card')
       print(f"Is pagination preserved?")
 
-      cards = page.query_selector_all('media-card[style="display: block;"]')
+      cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
       cardLength = len(cards)
       totalOnSecond = totalCards - 10
       if totalOnSecond > 10:
@@ -142,7 +142,7 @@ def test_features(request, page_factory, project):
    page.wait_for_selector('text="Page 1 of 1"')
    time.sleep(5)
 
-   cards = page.query_selector_all('media-card[style="display: block;"]')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
    print(f"Cards length after search {cardLength} == 2")
    assert cardLength == 2
@@ -166,7 +166,7 @@ def test_features(request, page_factory, project):
    page.wait_for_selector(f'text="{totalCards} Files"')
    time.sleep(5)
 
-   cards = page.query_selector_all('media-card[style="display: block;"]')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
    print(f"After search cleared cardLength {cardLength} == 10")
    assert cardLength == 10
@@ -175,7 +175,7 @@ def test_features(request, page_factory, project):
    page.wait_for_selector('text="2 Files"')
    time.sleep(5)
    
-   cards = page.query_selector_all('media-card[style="display: block;"]')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
    print(f"Cards in saved section {cardLength} == 2")
    assert cardLength == 2
