@@ -275,7 +275,7 @@ export class DownloadManager
           this._parent._playGenericOnDemand(this._parent._direction)
         };
 
-        video.resetOnDemandBuffer().then(() => {(setupCallback);});
+        video.resetOnDemandBuffer().then(() => {(playCallback);});
       }
 
       // Function used to apply the frame data to the onDemand buffer

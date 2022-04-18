@@ -458,10 +458,10 @@ export class VideoCanvas extends AnnotationCanvas {
     else
     {
       let p = new TatorVideoDecoder(resolution);
+      // Hook up summary level indication
       if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
       {
-        // @TODO get this value from somewhere
-        p.playBuffer().summaryLevel = 15;
+        p.playBuffer().summaryLevel = this._mediaInfo.summaryLevel;
       }
       if (idx == this._play_idx)
       {
@@ -679,6 +679,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
                         var largest_height = 0;
                         var largest_width = 0;
+                        let dims = this.identify_qualities(this._children[0], quality, scrubQuality, seekQuality, offsite_config);
                         for (let idx = 0; idx < streaming_files[0].length; idx++)
                         {
                           if (streaming_files[0][idx].resolution[0] > largest_height)
@@ -696,7 +697,6 @@ export class VideoCanvas extends AnnotationCanvas {
                         this.dispatchEvent(new CustomEvent("discoveredQualities",
                        {composed: true, detail: {media: this._children[0]}}));
                         
-                        let dims = this.identify_qualities(this._children[0], quality, scrubQuality, seekQuality, offsite_config);
                         // Clear the buffer in case this is a hot-swap
                         this.startDownload(streaming_files, offsite_config);
                         this._draw.clear();
@@ -1974,7 +1974,7 @@ export class VideoCanvas extends AnnotationCanvas {
         setTimeout(() => {that.onDemandDownload(true)},0);
       };
 
-      video.recreateOnDemandBuffers(setupCallback);
+      video.recreateOnDemandBuffers(playCallback);
     }
 
     let timeToEnd = 0;
