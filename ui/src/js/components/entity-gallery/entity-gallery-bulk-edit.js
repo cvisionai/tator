@@ -345,10 +345,13 @@ export class GalleryBulkEdit extends TatorElement {
 
    // Used on pagination, and in clear selection 
    clearAllCheckboxes() {
-      for (let el of this._elements) {
-         el.card._li.classList.remove("is-selected");
-         el.card._multiSelectionToggle = false;
+      if (this._elements && this._elements.length > 0) {
+         for (let el of this._elements) {
+            el.card._li.classList.remove("is-selected");
+            el.card._multiSelectionToggle = false;
+         }        
       }
+
    }
 
    _clearSelection() {
