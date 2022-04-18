@@ -461,6 +461,31 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   page.close()
 
 
+def test_concat(page_factory, project, concat_test):
+  print("[Video] Going to annotation view...")
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+  page.set_viewport_size({"width": 3840, "height": 2160}) # Annotation decent screen
+  page.goto(f"/{project}/annotation/{concat_test}?scrubQuality=360&seekQuality=1080&playQuality=720")
+  page.on("pageerror", print_page_error)
+  page.wait_for_selector('video-canvas')
+  canvas = page.query_selector('video-canvas')
+
+  play_button = page.query_selector('play-button')
+  seek_handle = page.query_selector('seek-bar .range-handle')
+
+  # Wait for hq buffer and verify it is red
+  time.sleep(30)
+  _wait_for_color(canvas, 0, timeout=30, name='seek')
+
+  play_button.click()
+  _wait_for_color(canvas, 1, timeout=30, name='playing')
+
+  # Pause the video
+  play_button.click()
+  _wait_for_color(canvas, 0, timeout=30, name='seek (pause)')
+  
+  page.close()
+
 """
 This test would be good, but doesn't work because playback isn't performant enough in test runner
 
