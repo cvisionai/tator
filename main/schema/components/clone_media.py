@@ -29,7 +29,7 @@ get_cloned_media_response = {
             'type': 'string',
             'description': 'Message indicating return of cloned media list.',
         },
-        'id': {
+        'ids': {
             'type': 'array',
             'description': 'List of unique integers identifying cloned objects.',
             'items': {'type': 'integer'},
