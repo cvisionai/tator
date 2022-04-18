@@ -254,9 +254,9 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   page.mouse.move(seek_x, seek_y, steps=50)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
-  _wait_for_color(canvas[0], 1, timeout=30)
-  _wait_for_color(canvas[0], 1, timeout=30)
+  page.mouse.move(seek_x+5, seek_y, steps=50)
+  _wait_for_color(canvas[0], 1, timeout=30, name='small scrub')
+  _wait_for_color(canvas[0], 1, timeout=30, name='small scrub')
 
   page.mouse.move(seek_x+1900, seek_y, steps=50)
   _wait_for_color(canvas[0], 2, timeout=30)
