@@ -141,7 +141,7 @@ export class AnnotationMulti extends TatorElement {
     const fullscreen = document.createElement("video-fullscreen");
     settingsDiv.appendChild(fullscreen);
 
-    this._scrubInterval = 1000.0/Math.min(guiFPS,30);
+    this._scrubInterval = 100;
     this._lastScrub = Date.now();
     this._rate = 1;
     this._playbackDisabled = false;
@@ -489,7 +489,7 @@ export class AnnotationMulti extends TatorElement {
     const waitOk = now - this._lastScrub > this._scrubInterval;
     if (waitOk) {
 
-      this._videoStatus = "scrubbing";
+      this._videoStatus = "paused";
 
       this._play.setAttribute("is-paused","");
       let prime_fps = this._fps[this._longest_idx];
@@ -557,7 +557,6 @@ export class AnnotationMulti extends TatorElement {
       };
 
       this._videoStatus = "paused";
-      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     })
     .catch(() => {
@@ -929,7 +928,7 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[vidIdx]._onDemandPlaybackReady != true)
+          if (this._videos[vidIdx].onDemandBufferAvailable() != "yes")
           {
             allVideosReady = false;
           }
@@ -1403,7 +1402,7 @@ export class AnnotationMulti extends TatorElement {
     let notReady;
     for (let video of this._videos)
     {
-      notReady |= video.bufferDelayRequired() && !(video._onDemandPlaybackReady);
+      notReady |= video.bufferDelayRequired() && video.onDemandBufferAvailable() != "yes";
     }
     if (notReady)
     {
@@ -1463,7 +1462,7 @@ export class AnnotationMulti extends TatorElement {
   {
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx]._onDemandPlaybackReady != true)
+	    if (this._videos[idx].onDemandBufferAvailable() != "yes")
 	    {
         this.handleNotReadyEvent(idx);
         return;
@@ -1530,7 +1529,7 @@ export class AnnotationMulti extends TatorElement {
           check_ready(this._videos[videoIndex].currentFrame())}, clock_check);
         return;
       }
-      if (this._videos[videoIndex]._onDemandPlaybackReady != true)
+      if (this._videos[videoIndex].onDemandBufferAvailable() != "yes")
       {
         not_ready = true;
         if (timeoutCounter == timeouts[timeoutIndex]) {
@@ -1572,7 +1571,7 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[vidIdx]._onDemandPlaybackReady != true)
+          if (this._videos[vidIdx].onDemandBufferAvailable() != "yes")
           {
             allVideosReady = false;
           }
@@ -1653,7 +1652,7 @@ export class AnnotationMulti extends TatorElement {
 
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx]._onDemandPlaybackReady != true)
+	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx].onDemandBufferAvailable() != "yes")
 	    {
 	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
 	      this.handleNotReadyEvent(idx);
@@ -1721,7 +1720,7 @@ export class AnnotationMulti extends TatorElement {
 
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx]._onDemandPlaybackReady != true)
+	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx].onDemandBufferAvailable() != "yes")
 	    {
 	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
         this.handleNotReadyEvent(idx);
