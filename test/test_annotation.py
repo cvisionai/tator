@@ -22,7 +22,7 @@ def common_annotation(page, canvas, bias=0):
         print(f"Create Box {x},{y}")
         width = 100
         height = 100
-        page.mouse.move(x, y)
+        page.mouse.move(x, y, steps=50)
         page.mouse.down()
         page.mouse.move(x + width, y + height, steps=50)
         page.mouse.up()
@@ -40,10 +40,10 @@ def common_annotation(page, canvas, bias=0):
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
+        page.mouse.move(x+50, y+50, steps=50)
         page.mouse.click(x+50, y+50)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        page.mouse.move(x+50, y+50,steps=50)
         page.mouse.down()
         page.mouse.move(x, y, steps=50)
         page.mouse.up()
@@ -56,10 +56,10 @@ def common_annotation(page, canvas, bias=0):
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
+        page.mouse.move(x+45, y+45, steps=50)
         page.mouse.click(x+45, y+45)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        page.mouse.move(x+45, y+45, steps=50)
         page.mouse.down()
         page.mouse.move(x+95, y+95, steps=50)
         page.mouse.up()
