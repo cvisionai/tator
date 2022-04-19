@@ -14,7 +14,7 @@ def test_features(request, page_factory, project):
    print("Project Detail Page Feature tests...")
    page = page_factory(
        f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-   page.goto(f"/{project}/project-detail")
+   page.goto(f"/{project}/project-detail", wait_until='networkidle')
    page.on("pageerror", print_page_error)
 
    page.select_option('.pagination select.form-select', value="100")

@@ -72,7 +72,7 @@ def test_video_annotation(page_factory, project, video):
     print("[Video] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-    page.goto(f"/{project}/annotation/{video}")
+    page.goto(f"/{project}/annotation/{video}", wait_until='networkidle')
     page.on("pageerror", print_page_error)
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector('video-canvas')
@@ -84,7 +84,7 @@ def test_image_annotation(page_factory, project, image):
     print("[Image] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
-    page.goto(f"/{project}/annotation/{image}")
+    page.goto(f"/{project}/annotation/{image}", wait_until='networkidle')
     page.on("pageerror", print_page_error)
     page.wait_for_selector('image-canvas')
     canvas = page.query_selector('image-canvas')
@@ -96,7 +96,7 @@ def test_multi_annotation(page_factory, project, multi):
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Multi requires a decent screen
     page.on("pageerror", print_page_error)
-    page.goto(f"/{project}/annotation/{multi}")
+    page.goto(f"/{project}/annotation/{multi}", wait_until='networkidle')
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector_all('video-canvas')
     page.wait_for_selector('play-button:not(.disabled)')
