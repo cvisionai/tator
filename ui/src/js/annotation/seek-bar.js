@@ -17,8 +17,9 @@ export class SeekBar extends TatorElement {
     this._active = false;
 
     var that = this;
-    var clickHandler=function(evt)
+    var clickHandler=(evt)=>
     {
+      this._active = false;
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
       if (width == 0)
