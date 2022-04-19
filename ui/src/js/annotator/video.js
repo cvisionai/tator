@@ -677,9 +677,12 @@ export class VideoCanvas extends AnnotationCanvas {
                                           {composed: true, detail: {media: json[0]}}));
                                           this._videoElement = [];
 
+                        // Setup resize handler
+                        let dims = this.identify_qualities(this._children[0], quality, scrubQuality, seekQuality, offsite_config);
+                        this.setupResizeHandler(dims, numGridRows, heightPadObject);
+
                         var largest_height = 0;
                         var largest_width = 0;
-                        let dims = this.identify_qualities(this._children[0], quality, scrubQuality, seekQuality, offsite_config);
                         for (let idx = 0; idx < streaming_files[0].length; idx++)
                         {
                           if (streaming_files[0][idx].resolution[0] > largest_height)
