@@ -202,9 +202,22 @@ export class AnnotationPlayer extends TatorElement {
 
     // When a seek is complete check to make sure the display all set
     this._video.addEventListener("seekComplete", evt => {
-      clearTimeout(this._handleNotReadyTimeout);
-      this._handleNotReadyTimeout = null;
-      this.checkReady();
+      // Only run check ready on final seek
+      if (this._slider.active == false)
+      {
+        clearTimeout(this._handleNotReadyTimeout);
+        this._handleNotReadyTimeout = null;
+        this.checkReady();
+      }
+      else
+      {
+        // Disable buttons when actively seeking
+        this._play._button.setAttribute("disabled","");
+        // Use some spaces because the tooltip z-index is wrong
+        this._play.setAttribute("tooltip", "    Video is buffering");
+        this._rewind.setAttribute("disabled","")
+        this._fastForward.setAttribute("disabled","");
+      }
     });
 
     // When a playback is stalled, pause the video

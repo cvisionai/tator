@@ -14,6 +14,7 @@ export class SeekBar extends TatorElement {
     this.bar.appendChild(this.handle);
     this._loadedPercentage = 0;
     this._visualType = "";
+    this._active = false;
 
     var that = this;
     var clickHandler=function(evt)
@@ -62,6 +63,7 @@ export class SeekBar extends TatorElement {
     var releaseMouse=function(evt)
     {
       console.info("RELEASE MOUSE.");
+      this._active = false;
       clearInterval(that._periodicCheck);
       document.removeEventListener("mouseup",
                                    releaseMouse);
@@ -78,12 +80,11 @@ export class SeekBar extends TatorElement {
     }
     this.handle.addEventListener("mousedown", evt =>
                                  {
-                                  console.info("MOUSE DOWN.");
+                                   this._active = true;
                                    this._lastValue = this.value;
           
                                    this._periodicCheck = setInterval(() =>
                                      {
-                                       console.info("INTERVAL CHECK");
                                       if (this._value == this._lastValue)
                                       {
                                         return;
@@ -137,6 +138,11 @@ export class SeekBar extends TatorElement {
       this.handle.style.display = "block";
       this.handle.style.left = `${percentage}%`;
     }
+  }
+
+  get active()
+  {
+    return this._active;
   }
 
   attributeChangedCallback(name, oldValue, newValue)
