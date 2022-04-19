@@ -246,16 +246,16 @@ export class ProjectDetail extends TatorPage {
     /**
     * CARD Label display options link for menu, and checkbox div
     */
-    this._cardAtributeLabels = document.createElement("entity-gallery-labels");
-    this._cardAtributeLabels.titleEntityTypeName = "media";
-    this._cardAtributeLabels._titleText = document.createTextNode("Select media labels to display.");
-    this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Media Labels";
+    this._cardAttributeLabels = document.createElement("entity-gallery-labels");
+    this._cardAttributeLabels.titleEntityTypeName = "media";
+    this._cardAttributeLabels._titleText = document.createTextNode("Select media labels to display.");
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Media Labels";
 
-    this._mediaSection._hiddenMediaLabel.appendChild(this._cardAtributeLabels);
-    this._mediaSection._more._cardLink.appendChild(this._cardAtributeLabels.menuLink);
+    this._mediaSection._hiddenMediaLabel.appendChild(this._cardAttributeLabels);
+    this._mediaSection._more._cardLink.appendChild(this._cardAttributeLabels.menuLink);
     this._mediaSection._more.addEventListener("bulk-edit", this._openBulkEdit.bind(this));
 
-    this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+    this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
       // updates labels on cards
       this._mediaSection._files.dispatchEvent(new CustomEvent("labels-update", evt.detail));
       this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
@@ -746,7 +746,7 @@ export class ProjectDetail extends TatorPage {
             for (let mediaTypeData of mediaTypes) {
 
               //init card labels with localization entity type definitions
-              this._cardAtributeLabels.add({
+              this._cardAttributeLabels.add({
                 typeData: mediaTypeData,
                 checkedFirst: false
               });
@@ -760,7 +760,7 @@ export class ProjectDetail extends TatorPage {
             this._mediaSection.mediaTypesMap = this.mediaTypesMap;
 
             //
-            this._mediaSection._files._cardAtributeLabels = this._cardAtributeLabels;
+            this._mediaSection._files._cardAttributeLabels = this._cardAttributeLabels;
             this._mediaSection._bulkEdit = this._bulkEdit;
             this._bulkEdit.init(this, this._mediaSection._files, "media", projectId);
             // this._bulkEdit._showEditPanel();

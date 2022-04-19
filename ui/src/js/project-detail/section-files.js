@@ -32,7 +32,7 @@ export class SectionFiles extends TatorElement {
   }
 
   set cardAtributeLabels(val) {
-    this._cardAtributeLabels = val;
+    this._cardAttributeLabels = val;
   }
 
   set project(val) {
@@ -129,7 +129,7 @@ export class SectionFiles extends TatorElement {
         /**
         * Card labels / attributes of localization or media type
         */
-        this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
+        this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
         // this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId] });
 
 
@@ -219,7 +219,7 @@ export class SectionFiles extends TatorElement {
         });
 
         //
-        this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+        this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
           // console.log(evt);
 
           if (entityTypeId == evt.detail.typeId) {

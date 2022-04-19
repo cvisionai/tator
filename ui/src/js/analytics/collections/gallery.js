@@ -64,11 +64,11 @@ export class CollectionsGallery extends EntityCardSlideGallery {
       /**
        * CARD Label display options link for menu, and checkbox div
        */
-      this._cardAtributeLabels = document.createElement("entity-gallery-labels");
-      this._cardAtributeLabels.titleEntityTypeName = "entry";
-      this._mainTop.appendChild(this._cardAtributeLabels);
-      this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
-      this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
+      this._cardAttributeLabels = document.createElement("entity-gallery-labels");
+      this._cardAttributeLabels.titleEntityTypeName = "entry";
+      this._mainTop.appendChild(this._cardAttributeLabels);
+      this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Entry Labels";
+      this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
       /**
        * CARD Sort display options link for menu, and checkbox div
@@ -137,7 +137,7 @@ export class CollectionsGallery extends EntityCardSlideGallery {
          this._cardAtributeSort.add({
             typeData:locTypeData
          });
-         this._cardAtributeLabels.add({ 
+         this._cardAttributeLabels.add({ 
             typeData: locTypeData,
             checkedFirst: true
          });
@@ -147,7 +147,7 @@ export class CollectionsGallery extends EntityCardSlideGallery {
          this._cardAtributeSort.add({
             typeData: mediaTypeData
          });
-         this._cardAtributeLabels.add({ 
+         this._cardAttributeLabels.add({ 
             typeData: mediaTypeData,
             checkedFirst: true
          });
@@ -305,7 +305,7 @@ export class CollectionsGallery extends EntityCardSlideGallery {
             const slider = document.createElement("entity-gallery-slider");
             slider.setAttribute("id", state.id);
             slider.setAttribute("meta", state.meta);
-            slider._cardAtributeLabels = this._cardAtributeLabels;
+            slider._cardAttributeLabels = this._cardAttributeLabels;
             slider._cardAtributeSort = this._cardAtributeSort;
             slider._resizeCards = this._resizeCards;
             sliderList.appendChild(slider);
