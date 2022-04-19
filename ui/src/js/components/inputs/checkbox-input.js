@@ -87,7 +87,6 @@ export class CheckboxInput extends TatorElement {
   }
 
   set _checked(val) {
-    console.log(`SET CHECKED ${typeof val} = ${val}`);
     return this._input.checked = val;
   }
 

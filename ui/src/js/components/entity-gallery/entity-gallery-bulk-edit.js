@@ -549,14 +549,12 @@ export class GalleryBulkEdit extends TatorElement {
             // Are there any selected cards this MediaType?
             // - Note: To handle if we put info in an input, but no media selected to apply it to
             const mediaTypeInSelection = typeof this._currentMultiSelectionToId.get(Number(r.typeId)) !== "undefined" && this._currentMultiSelectionToId.get(Number(r.typeId)).size > 0;
-            console.log(mediaTypeInSelection);
+            console.log("Is this media type in the selection? ...... "+mediaTypeInSelection);
 
             // What are the inputes related to this type?
             // - Note: To handle if we selected some media, but no input applies to it
             const inputShownForSelectedType = Object.entries(r.values).length > 0;
-
-            // console.log("Are there input values? ...... "+Object.entries(r.values).length)
-            // console.log(Object.entries(r.values).length > 0);
+            // console.log("Are there input values? ...... "+inputShownForSelectedType);
 
             // We have inputs
             if (inputShownForSelectedType) {
@@ -565,6 +563,7 @@ export class GalleryBulkEdit extends TatorElement {
                if (mediaTypeInSelection) {
                   text += `<p class="py-2 text-bold text-gray">Update summary for ${this._currentMultiSelectionToId.get(Number(r.typeId)).size} ${typeText} with Type ID: ${r.typeId}</p>`;
                }
+
                for (let [name, value] of Object.entries(r.values)) {
                   if(mediaTypeInSelection) {
                      text += `<p class="py-2 px-2 ${mediaTypeInSelection ? 'text-gray' : 'text-red'}">- Change attribute '${name}' to value: <span class="text-italics ">${value}</span></p>`    
@@ -575,6 +574,7 @@ export class GalleryBulkEdit extends TatorElement {
                   }
 
                   if (mediaTypeInSelection) {
+                     // console.log("Making form data.......");
                      let formDataForType = {
                         attributes: r.values,
                         ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
@@ -803,7 +803,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _updateShownAttributes({ typeId, values }) {
-      console.log(values);
+      // console.log(values);
       this._editPanel.setSelectionBoxValue({ typeId, values });
       // this._comparisonPanel.newColumns({ typeId, values });
    }
