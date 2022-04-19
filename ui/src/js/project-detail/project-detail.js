@@ -256,11 +256,14 @@ export class ProjectDetail extends TatorPage {
     this._mediaSection._more.addEventListener("bulk-edit", this._openBulkEdit.bind(this));
 
     this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
-      this._mediaSection._files.dispatchEvent(new CustomEvent("labels-update", evt.detail))
+      // updates labels on cards
+      this._mediaSection._files.dispatchEvent(new CustomEvent("labels-update", evt.detail));
+      this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
+      this._mediaSection._files.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;
     });
 
+    // references inner for card setup and pagination checkbox clear
     this._mediaSection.bulkEdit = this._bulkEdit;
-
     this._mediaSection._files.bulkEdit = this._bulkEdit;
 
 
@@ -905,6 +908,7 @@ export class ProjectDetail extends TatorPage {
 
                 // Set UI and results to any url param conditions that exist (from URL)
                 this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
+                this._bulkEdit.checkForFilters(this._mediaSection._filterConditions);
                 if (this._mediaSection._filterConditions.length > 0) {
                   this._updateFilterResults({ detail: { conditions: this._mediaSection._filterConditions } });
                 }
@@ -1080,6 +1084,7 @@ export class ProjectDetail extends TatorPage {
   async _updateFilterResults(evt) {
     this._filterConditions = evt.detail.conditions;
     this._filterView.setFilterConditions(this._filterConditions);
+    this._bulkEdit.checkForFilters(this._filterConditions);
     this.showDimmer();
     this.loading.showSpinner();
 

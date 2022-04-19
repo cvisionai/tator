@@ -555,8 +555,8 @@ export class GalleryBulkEdit extends TatorElement {
             // - Note: To handle if we selected some media, but no input applies to it
             const inputShownForSelectedType = Object.entries(r.values).length > 0;
 
-            console.log("Are there input values? ...... "+Object.entries(r.values).length)
-            console.log(Object.entries(r.values).length > 0);
+            // console.log("Are there input values? ...... "+Object.entries(r.values).length)
+            // console.log(Object.entries(r.values).length > 0);
 
             // We have inputs
             if (inputShownForSelectedType) {
@@ -803,7 +803,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _updateShownAttributes({ typeId, values }) {
-      // console.log(values);
+      console.log(values);
       this._editPanel.setSelectionBoxValue({ typeId, values });
       // this._comparisonPanel.newColumns({ typeId, values });
    }

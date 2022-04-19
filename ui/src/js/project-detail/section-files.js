@@ -221,12 +221,16 @@ export class SectionFiles extends TatorElement {
         //
         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
           // console.log(evt);
-          card._updateShownAttributes(evt);
-          this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: evt.detail.value });
 
-          this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;     
-          let msg = `Entry labels updated`;
-          Utilities.showSuccessIcon(msg);
+          if (entityTypeId == evt.detail.typeId) {
+            card._updateShownAttributes(evt);
+            // this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
+  
+            // this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;     
+            // let msg = `Entry labels updated`;
+            // Utilities.showSuccessIcon(msg);            
+          }
+
         });
 
         const pos_text = `(${this._startMediaIndex + index + 1} of ${this._numMedia})`;

@@ -122,7 +122,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       this._selectionPreCountText = document.createElement("span");
       this._selectionPreCountText.textContent = "Bulk Edit ";
       this._selectionSummary.appendChild(this._selectionPreCountText);
-      
+
       this._selectionCount = document.createElement("span");
       this._selectionCount.setAttribute("class", "px-1 text-bold");
       this._selectionCount.textContent = "0";
@@ -245,7 +245,6 @@ export class MultiAttributeEditPanel extends TatorElement {
    }
 
    addLocType(typeData) {
-      // console.log(typeData);
       let typeName = typeData.name ? typeData.name : "";
       if (this._shownTypes.has(typeData.id)) {
          // don't re-add this type...
@@ -304,7 +303,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       this._prefetchBool.setValue(true);
       this._prefetchBool.hidden = true;
       // this._warningConfirmation.appendChild(this._prefetchBool);
-   
+
 
       /**
     * Label Choice
@@ -328,7 +327,7 @@ export class MultiAttributeEditPanel extends TatorElement {
          this._boxValueChanged(selectionBoxes, typeData.id);
       });
 
-      this.div.innerHTML = "";
+      // this.div.innerHTML = "";
       this.div.appendChild(styleDiv);
 
       // console.log(selectionBoxes);
@@ -346,20 +345,17 @@ export class MultiAttributeEditPanel extends TatorElement {
       // console.log("box value changed");
       // console.log(attributeNames);
 
-      if (this._bulkEditForm.children.length !== 0) {
-         for (let input of this._inputsOnly) {
-            let name = input.getAttribute("name");
-            
-
-            if (attributeNames.includes(name)) {
-               input.hidden = false;
-            } else {
-               input.hidden = true;
-            }
-
-            // //Update compare table via event
-            // this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
+      let inputDiv = this._inputGroup.get(typeId);
+      for (let input of inputDiv.children) {
+         let name = input.getAttribute("name");
+         if (attributeNames.includes(name)) {
+            input.hidden = false;
+         } else {
+            input.hidden = true;
          }
+
+         // //Update compare table via event
+         // this.dispatchEvent(new CustomEvent("attribute-changed", { detail: { name: name, added: !input.hidden, typeId } }));
       }
 
       let filterNames = [];
@@ -368,7 +364,7 @@ export class MultiAttributeEditPanel extends TatorElement {
             console.warn("Warning: filter contains attribute.")
             nameIsFilteredOn = true;
             filterNames.push(name);
-         } 
+         }
       }
 
 
@@ -393,10 +389,12 @@ export class MultiAttributeEditPanel extends TatorElement {
   */
    makeListFrom(typeData) {
       this.newList = [...this._attributeCheckBoxList];
+      const typeCheckboxList = []
 
       // Non-hidden attributes (ie order >= 0))
       let nonHiddenAttrs = [];
       for (let attr of typeData.attribute_types) {
+         // console.log(attr);
          if (attr.order >= 0) {
             if (!this._attribute_types.has(attr.name)) nonHiddenAttrs.push(attr);
          }
@@ -410,6 +408,7 @@ export class MultiAttributeEditPanel extends TatorElement {
 
          // Create an array for checkbox set el
          for (let attr of sorted) {
+            // console.log(attr);
             let checkboxData = {
                id: encodeURI(attr.name),
                name: attr.name,
@@ -417,14 +416,15 @@ export class MultiAttributeEditPanel extends TatorElement {
             };
             this._attribute_types.set(attr.name, attr);
             this.newList.push(checkboxData);
-
+            typeCheckboxList.push(checkboxData);
             // reset checked - only check the first one
             //   if(checked) checked = false;
          }
       }
       this._attributeCheckBoxList = this.newList;
 
-      return this.newList;
+      // return this.newList;
+      return typeCheckboxList;
    }
 
    hideShowTypes(setOfMetaIds) {
@@ -450,22 +450,22 @@ export class MultiAttributeEditPanel extends TatorElement {
 
    setSelectionBoxValue({ typeId, values }) {
       // sets checked  -- from listeners to attribute label change / default shown on card
-      //
-      for (let selectionBoxes of Array.from(this._selectionValues)) {
-         for (let box of selectionBoxes[1]._inputs) {
-            let boxName = box.getAttribute("name");
-            // console.log(`values.includes(boxName) ${values.includes(boxName)}  .....${boxName}....`);
+      let listForType = this._selectionValues.get(typeId);
 
-            if (values.includes(boxName)) {
-               box._checked = true;
-               // console.log(box);
-            } else {
-               box._checked = false;
-            }
+      // for (let selectionBoxes of Array.from(this._selectionValues)) {
+      for (let box of listForType._inputs) {
+         let boxName = box.getAttribute("name");
+
+         if (values.includes(boxName) == true) {
+            box._checked = true;
+            // console.log(box);
+         } else {
+            box._checked = false;
          }
-
-         this._boxValueChanged(selectionBoxes[1], typeId);
       }
+
+      this._boxValueChanged(listForType, typeId);
+      // }
    }
 
    // Loop through and add hidden inputs for each data type
@@ -482,7 +482,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       } else {
          return true;
       }
-      
+
       // div.hidden = true;
 
       // let label = document.createElement("label");
@@ -522,7 +522,7 @@ export class MultiAttributeEditPanel extends TatorElement {
                widget = document.createElement("datetime-input");
                widget.setAttribute("name", attributeDef.name);
             } catch (e) {
-               console.error("Error making datetime input",e);
+               console.error("Error making datetime input", e);
             }
 
             if ((widget && widget._input && widget._input.type == "text") || !widget._input) {

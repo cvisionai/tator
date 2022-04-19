@@ -272,7 +272,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
   // Reset the pagination back to page 0
   async _updateFilterResults(evt) {
     this._filterConditions = evt.detail.conditions;
-    console.log("UPDATE FILTER RESULTS");
+    // console.log("UPDATE FILTER RESULTS");
     this._bulkEdit.checkForFilters(this._filterConditions);
 
     var filterURIString = encodeURIComponent(JSON.stringify(this._filterConditions));

@@ -227,10 +227,10 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
 
         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
-          this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: evt.detail.value });
-          
+          this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
 
-          this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;     
+          this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;     
+ 
           let msg = `Entry labels updated`;
           Utilities.showSuccessIcon(msg);
         });
