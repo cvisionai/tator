@@ -61,18 +61,9 @@ def test_basic(request, page_factory, project): #video
    page.set_input_files('section-upload input', [nasa_space_photo_1,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_2,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1])
    page.query_selector('upload-dialog').query_selector('text=Close').click()
 
-   page.click('reload-button')
-<<<<<<< HEAD
+   page.locator('.project__header reload-button').click()
    page.wait_for_selector('section-files entity-card')
    page.wait_for_timeout(5000)
-=======
-
-   page.wait_for_selector('text=hubble')
-   page.wait_for_selector('text=galle')
-   page.wait_for_selector('text=behemoth')
-
-   time.sleep(5)
->>>>>>> c774cfd7c9639cc21f312c0d3bca46bbc6c1c308
 
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards) # existing + new cards
@@ -219,34 +210,47 @@ def test_basic(request, page_factory, project): #video
    page.query_selector('.enitity-gallery__labels-div nav-close').click()
 
    page.query_selector('#icon-more-horizontal').click()
-   time.sleep(5)
-   # page.wait_for_selector('id=bulkCorrectButtonDiv button')
-   # print('test')
-   # page.query_selector('#bulkCorrectButtonDiv button').click()
-
-   more = page.query_selector_all('.more div div')
-   print(f'more len {len(more)}')
-   more[1].click()
-
-   ## There should be two checked? 
-   selected = page.query_selector('.bulk-edit-attr-choices_bulk-edit input:checked')
-   # print(f'selected len {len(selected)}')
+   page.wait_for_selector('text="Edit media attributes"')
+   page.locator('text="Edit media attributes"').click()
+ 
+   # more = page.query_selector_all('.more div div')
+   # print(f'more len {len(more)}')
+   # more[1].click()
 
    time.sleep(2)
 
    ## 
-   cards = page.query_selector_all('section-files entity-card')
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    print(f"Selecting... {len(cards)} cards")
    
    page.keyboard.press("Control+A")
 
-   editButton = page.query_selector('.bulk-edit-bar--right_form button')
-   count = editButton.textContent
+   ## There should be two input checked 
+   selected = page.query_selector_all('.bulk-edit-attr-choices_bulk-edit input:checked')
+   print(f'Assert selected inputs {len(selected)} == Checked count 2')
+   assert len(selected) == 2
 
-   print(f'count is {count}')
-   assert count == f'{len(cards)}'
+   ## There should be two cards selected 
+   editbutton = page.locator('.bulk-edit-submit-button .text-bold')
+   count = editbutton.all_inner_texts()
+
+   print(f'Assert selected cards {str(count)} == shown count {str(len(cards))}')
+   assert str(count[0]) == str(len(cards))
+
+   ## Add some text
+   #
+   
+   editbutton.click()
+   print('Complete!')
+
+   page.locator('.save-confirmation').click()
+
+   response = page.locator('modal-dialog .modal__main').all_inner_texts()
+
+   assert response == "Successfully patched 2 medias!"
+
+   page.locator('text="OK"').click()
 
 
-   editButton.click()
-
+   
 
