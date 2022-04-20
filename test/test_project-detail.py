@@ -62,8 +62,17 @@ def test_basic(request, page_factory, project): #video
    page.query_selector('upload-dialog').query_selector('text=Close').click()
 
    page.click('reload-button')
+<<<<<<< HEAD
    page.wait_for_selector('section-files entity-card')
    page.wait_for_timeout(5000)
+=======
+
+   page.wait_for_selector('text=hubble')
+   page.wait_for_selector('text=galle')
+   page.wait_for_selector('text=behemoth')
+
+   time.sleep(5)
+>>>>>>> c774cfd7c9639cc21f312c0d3bca46bbc6c1c308
 
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards) # existing + new cards
