@@ -144,7 +144,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       // this._quickSelectAllDiv.appendChild(this._selectionSummary);
 
       this._selectionPreCountText = document.createElement("span");
-      this._selectionPreCountText.textContent = "Bulk Edit ";
+      this._selectionPreCountText.textContent = "Bulk Edit";
       this._selectionSummary.appendChild(this._selectionPreCountText);
 
       this._selectionCount = document.createElement("span");
@@ -162,7 +162,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       // barLeft.appendChild(this._compareButton);
 
       this._editButton = document.createElement("button");
-      this._editButton.setAttribute("class", "btn btn-clear py-2 px-2 disabled col-12");
+      this._editButton.setAttribute("class", "bulk-edit-submit-button btn btn-clear py-2 px-2 disabled col-12");
       // this._editButton.style.width = "250px";
       this._editButton.disabled = true;
       this._editButton.appendChild(this._selectionSummary);

@@ -90,7 +90,7 @@ export class EntityPanelContainer extends TatorElement {
       this.lside.style.marginRight = "0";
 
       if (this.position == "left") {
-         this.lside.style.paddingLeft = "25%";
+         this.lside.style.paddingLeft = "390px";
          this.gallery._main.classList.remove("ml-6");
          this.gallery._main.classList.add("ml-3");
       } else {

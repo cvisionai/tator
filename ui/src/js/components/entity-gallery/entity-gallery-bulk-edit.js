@@ -533,7 +533,7 @@ export class GalleryBulkEdit extends TatorElement {
 
    _saveConfirmation() {
       let button = document.createElement("button");
-      button.setAttribute("class", "btn f1 text-semibold");
+      button.setAttribute("class", "save-confirmation btn f1 text-semibold");
       let confirmText = document.createTextNode("Yes")
       button.appendChild(confirmText);
 
