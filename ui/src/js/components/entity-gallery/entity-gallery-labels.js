@@ -67,8 +67,8 @@ export class EntityGalleryLabels extends TatorElement {
   async add({ typeData, hideTypeName = false, checkedFirst = null }) {
     // console.log(typeData);
     let typeName = typeData.name ? typeData.name : "";
-    if(this._shownTypes[typeData.id]) {
-      // don't re-add this type...
+    if(this._shownTypes[typeData.id] || typeData.visible == false || typeData.attribute_types.length == 0) {
+      // don't re-add this type, or don't add if visible=false...
       return false;
     } else {
       this._shownTypes[typeData.id] = true;
@@ -138,8 +138,12 @@ export class EntityGalleryLabels extends TatorElement {
     return labelsMain;
   }
 
-  _getValue(typeId){
-    return this._selectionValues[typeId].getValue();
+  _getValue(typeId) {
+    if (this._selectionValues[typeId]) {
+      return this._selectionValues[typeId].getValue();
+    } else {
+      return [];
+    }
   }
 
   _setValue({ typeId, values }){
