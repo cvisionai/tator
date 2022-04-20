@@ -55,6 +55,7 @@ export class GalleryBulkEdit extends TatorElement {
       this._editPanel.addEventListener("select-click", this._showSelectionPanel.bind(this)); // Back
       this._editPanel.addEventListener("save-edit-click", this._saveBulkEdit.bind(this));
       this._editPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
+      this._selectionPanel.addEventListener("clear-selection", this._clearSelection.bind(this));
       this._editPanel.hidden = true;
       this._bulkEditBar.appendChild(this._editPanel);
 
@@ -108,6 +109,7 @@ export class GalleryBulkEdit extends TatorElement {
       // Listen to escape or Close
       document.addEventListener("keydown", this._keyDownHandler.bind(this));
       this._selectionPanel.xClose.addEventListener("click", this._escapeEditMode.bind(this));
+      this._editPanel.xClose.addEventListener("click", this._escapeEditMode.bind(this));
 
       this._editPanel._bulkEditModal.addEventListener("close", () => {
          if (this._page) {
@@ -150,6 +152,7 @@ export class GalleryBulkEdit extends TatorElement {
       this._editType = type;
 
       if (type == "media") {
+         this._editPanel.xClose.classList.remove("hidden");
          this._selectionPanel.xClose.classList.remove("hidden");
          this._editPanel._selectionCountText.textContent = "Media(s)";
       }
@@ -571,18 +574,17 @@ export class GalleryBulkEdit extends TatorElement {
                      // inputs and no cards
                      text += `<p class="py-2 text-bold text-red">No update for Type ID: ${r.typeId} `;
                      text += `<p class="py-2 px-2 text-red text-italics"> - No items selected to change '${name}' to value: <span class="text-italics ">${value}</span></p></p>`;
-                  }
+                  }  
+               }
 
-                  if (mediaTypeInSelection) {
-                     // console.log("Making form data.......");
-                     let formDataForType = {
-                        attributes: r.values,
-                        ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
-                     }
-      
-                     formData.push(formDataForType)               
+               if (mediaTypeInSelection) {
+                  // console.log("Making form data.......");
+                  let formDataForType = {
+                     attributes: r.values,
+                     ids: Array.from(this._currentMultiSelectionToId.get(Number(r.typeId))) //Array.from(this._currentMultiSelection)
                   }
-                  
+   
+                  formData.push(formDataForType)               
                }
 
 
@@ -623,6 +625,7 @@ export class GalleryBulkEdit extends TatorElement {
 
       let buttonExit = document.createElement("button");
       buttonExit.setAttribute("class", "btn  btn-charcoal btn-clear f1 text-semibold");
+      
       let confirmTextExit = document.createTextNode("Exit Select Mode")
       buttonExit.appendChild(confirmTextExit);
 

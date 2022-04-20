@@ -1010,6 +1010,8 @@ class Media(Model, ModelDiffMixin):
     )
     source_url = CharField(max_length=512, blank=True, null=True)
     """ URL where original media was hosted. """
+    summaryLevel = IntegerField(null=True, blank=True)
+    """ Level at which this media is best summarized, e.g. every N frames. """
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.

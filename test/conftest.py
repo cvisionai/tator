@@ -81,7 +81,7 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
         locale="en-US",
     )
     page = context.new_page()
-    page.goto('/')
+    page.goto('/', wait_until='networkidle')
     page.wait_for_url('/accounts/login/')
     page.fill('input[name="username"]', username)
     page.fill('input[name="password"]', password)
@@ -103,7 +103,7 @@ def token(request, page_factory):
     username = request.config.option.username
     password = request.config.option.password
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto('/token')
+    page.goto('/token', wait_until='networkidle')
     page.fill('input[type="text"]', username)
     page.fill('input[type="password"]', password)
     page.click('input[type="submit"]')
@@ -130,7 +130,7 @@ def project(request, page_factory, launch_time, base_url, token):
     subprocess.run(cmd, check=True)
 
     page = page_factory(f'{os.path.basename(__file__)}__token')
-    page.goto('/projects')
+    page.goto('/projects', wait_until='networkidle')
     page.wait_for_selector(f'text="{name}"')
     summaries = page.query_selector_all('project-summary')
     for summary in reversed(summaries):
@@ -145,7 +145,7 @@ def project(request, page_factory, launch_time, base_url, token):
 def video_section(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f'/{project}/project-detail')
+    page.goto(f'/{project}/project-detail', wait_until='networkidle')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Videos')
     page.click('text="Save"')
@@ -157,7 +157,7 @@ def video_section(request, page_factory, project):
 def slow_video_section(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f'/{project}/project-detail')
+    page.goto(f'/{project}/project-detail', wait_until='networkidle')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Slow Videos')
     page.click('text="Save"')
@@ -169,7 +169,7 @@ def slow_video_section(request, page_factory, project):
 def video_section2(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f'/{project}/project-detail')
+    page.goto(f'/{project}/project-detail', wait_until='networkidle')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Videos 2')
     page.click('text="Save"')
@@ -181,7 +181,7 @@ def video_section2(request, page_factory, project):
 def video_section3(request, page_factory, project):
     print("Creating video section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f'/{project}/project-detail')
+    page.goto(f'/{project}/project-detail', wait_until='networkidle')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Videos 3')
     page.click('text="Save"')
@@ -193,7 +193,7 @@ def video_section3(request, page_factory, project):
 def image_section(request, page_factory, project):
     print("Creating image section...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f'/{project}/project-detail')
+    page.goto(f'/{project}/project-detail', wait_until='networkidle')
     page.click('text="Add folder"')
     page.fill('name-dialog input', 'Images')
     page.click('text="Save"')
@@ -210,12 +210,7 @@ def image_set(request):
     # Download Labeled Faces in the Wild dataset.
     if not os.path.exists(out_path):
         url = 'http://vis-www.cs.umass.edu/lfw/lfw.tgz'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
 
     # Extract the images.
     if not os.path.exists(extract_path):
@@ -234,19 +229,15 @@ def video_file(request):
     out_path = '/tmp/AudioVideoSyncTest_BallastMedia.mp4'
     if not os.path.exists(out_path):
         url = 'http://www.ballastmedia.com/wp-content/uploads/AudioVideoSyncTest_BallastMedia.mp4'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
 def video(request, page_factory, project, video_section, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-detail?section={video_section}")
+    page.goto(f"/{project}/project-detail?section={video_section}", wait_until='networkidle')
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -273,7 +264,8 @@ def slow_video_file(request, video_file):
 def slow_video(request, page_factory, project, slow_video_section, slow_video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-detail?section={slow_video_section}")
+    page.goto(f"/{project}/project-detail?section={slow_video_section}", wait_until='networkidle')
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', slow_video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -292,7 +284,8 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
 def video2(request, page_factory, project, video_section2, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-detail?section={video_section2}")
+    page.goto(f"/{project}/project-detail?section={video_section2}", wait_until='networkidle')
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -311,7 +304,8 @@ def video2(request, page_factory, project, video_section2, video_file):
 def video3(request, page_factory, project, video_section3, video_file):
     print("Uploading a video...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-detail?section={video_section3}")
+    page.goto(f"/{project}/project-detail?section={video_section3}", wait_until='networkidle')
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
@@ -341,19 +335,15 @@ def image_file(request):
     out_path = '/tmp/test1.jpg'
     if not os.path.exists(out_path):
         url = 'https://www.gstatic.com/webp/gallery/1.jpg'
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        subprocess.run(['wget', '-O', out_path, url], check=True)
     yield out_path
 
 @pytest.fixture(scope='session')
 def image(request, page_factory, project, image_section, image_file):
     print("Uploading an image...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-detail?section={image_section}")
+    page.goto(f"/{project}/project-detail?section={image_section}", wait_until='networkidle')
+    page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', image_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:

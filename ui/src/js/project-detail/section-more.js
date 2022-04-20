@@ -34,9 +34,14 @@ export class SectionMore extends TatorElement {
     this._cardLink = document.createElement("div");
     this._otherButtons.appendChild(this._cardLink);
 
+    const bulkDiv = document.createElement("div");
+    bulkDiv.setAttribute("id", "bulkCorrectButtonDiv");
+    this._otherButtons.appendChild(bulkDiv);
+
     this._bulkEditMedia = document.createElement("bulk-correct-button");
+    // this._bulkEditMedia.setAttribute("id", "bulkCorrectButton");
     this._bulkEditMedia.setAttribute("text", "Edit media attributes");
-    this._otherButtons.appendChild(this._bulkEditMedia);
+    bulkDiv.appendChild(this._bulkEditMedia);
 
     this._download = document.createElement("download-button");
     this._download.setAttribute("text", "Download files");

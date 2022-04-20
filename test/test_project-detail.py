@@ -10,16 +10,17 @@ from ._common import print_page_error
    # Change pagination to 10
    # Search & create a saved search section
    # Optional- Go to media, bookmark it? or last visited?
-def test_features(request, page_factory, project):
-   print("Project Detail Page Feature tests...")
+def test_basic(request, page_factory, project): #video 
+   print("Project Detail Page tests...")
    page = page_factory(
        f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
    page.goto(f"/{project}/project-detail")
    page.on("pageerror", print_page_error)
 
+   print("Start: Test Pagination and image upload")  
    page.select_option('.pagination select.form-select', value="100")
    # page.wait_for_selector('text="Page 1 of 1"')
-   time.sleep(5)
+   page.wait_for_timeout(5000)
 
    # Initial card length
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
@@ -62,7 +63,7 @@ def test_features(request, page_factory, project):
 
    page.click('reload-button')
    page.wait_for_selector('section-files entity-card')
-   time.sleep(5)
+   page.wait_for_timeout(5000)
 
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards) # existing + new cards
@@ -74,7 +75,7 @@ def test_features(request, page_factory, project):
    page.select_option('.pagination select.form-select', value="10")
    pages = int(math.ceil(totalCards / 10))
    page.wait_for_selector(f'text="Page 1 of {str(pages)}"')
-   time.sleep(5)
+   page.wait_for_timeout(5000)
    
    cardsHidden = page.query_selector_all('section-files entity-card[style="display: none;"]')
    cardsHiddenLength = len(cardsHidden)
@@ -93,7 +94,7 @@ def test_features(request, page_factory, project):
    paginationLinks = page.query_selector_all('.pagination a')
    paginationLinks[2].click()
    page.wait_for_selector(f'text="Page 2 of {pages}"')
-   time.sleep(5)
+   page.wait_for_timeout(5000)
    
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
@@ -112,7 +113,7 @@ def test_features(request, page_factory, project):
       cards[0].query_selector('a').click()
       page.wait_for_selector('.annotation__panel h3')
       page.go_back()
-      time.sleep(1)
+      page.wait_for_timeout(5000)
 
       page.wait_for_selector('section-files entity-card')
       print(f"Is pagination preserved?")
@@ -124,8 +125,10 @@ def test_features(request, page_factory, project):
          totalOnSecond = 10
       print(f"(refreshed) Second page length of cards {cardLength}  == {totalOnSecond}")
       assert cardLength == totalOnSecond
+   print("Complete!") 
 
    # Test filtering
+   print("Start: Test Filtering") 
    page.click('text="Filter"')
    page.wait_for_selector('filter-condition-group button.btn.btn-outline.btn-small')
    page.click('filter-condition-group button.btn.btn-outline.btn-small')
@@ -140,13 +143,15 @@ def test_features(request, page_factory, project):
    filterGroupButtons[0].click()
 
    page.wait_for_selector('text="Page 1 of 1"')
-   time.sleep(5)
+   # time.sleep(5)
+   page.wait_for_timeout(5000)
 
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
    print(f"Cards length after search {cardLength} == 2")
    assert cardLength == 2
 
+   print("Start: Test save search as section") 
    saveSearch = page.query_selector('text="Add current search"')
    saveSearch.click()
 
@@ -155,8 +160,9 @@ def test_features(request, page_factory, project):
    page.fill('.modal__main input[placeholder="Give it a name..."]', newSectionFromSearch)
    saveButton = page.query_selector('text="Save"')
    saveButton.click()
+   
 
-
+   
    page.wait_for_selector(f'text="{newSectionFromSearch}"')
    print(f'New section created named: {newSectionFromSearch}')
 
@@ -164,7 +170,7 @@ def test_features(request, page_factory, project):
    clearSearch.click()
 
    page.wait_for_selector(f'text="{totalCards} Files"')
-   time.sleep(5)
+   page.wait_for_timeout(5000)
 
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
@@ -173,9 +179,65 @@ def test_features(request, page_factory, project):
 
    page.query_selector(f'text="{newSectionFromSearch}"').click()
    page.wait_for_selector('text="2 Files"')
-   time.sleep(5)
+   page.wait_for_timeout(5000)
    
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
    cardLength = len(cards)
    print(f"Cards in saved section {cardLength} == 2")
    assert cardLength == 2
+   print("Complete!") 
+
+# def test_bulk_edit(request, page_factory, project): #video
+   # print("Project Detail Page tests...")
+   # page = page_factory(
+   #     f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+   # page.goto(f"/{project}/project-detail")
+   # page.on("pageerror", print_page_error)
+
+   ## Test multiple edit.....
+   print("Start: Test media labels and mult edit") 
+   # Show labels, and multiselect, close more menu
+   page.query_selector('#icon-more-horizontal').click()
+   page.wait_for_selector('text="Media Labels"')
+   page.query_selector('text="Media Labels"').click()
+
+   # select image labels & video (some in the card list and some not) @todo add video to this project
+   test_string = page.query_selector_all('.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="Test String"]')
+   print(f'Label panel is open: found {len(test_string)} string labels....')
+   test_string[0].click()  # for images
+   test_string[2].click()  # for video
+   
+   page.query_selector('.enitity-gallery__labels-div nav-close').click()
+
+   page.query_selector('#icon-more-horizontal').click()
+   time.sleep(5)
+   # page.wait_for_selector('id=bulkCorrectButtonDiv button')
+   # print('test')
+   # page.query_selector('#bulkCorrectButtonDiv button').click()
+
+   more = page.query_selector_all('.more div div')
+   print(f'more len {len(more)}')
+   more[1].click()
+
+   ## There should be two checked? 
+   selected = page.query_selector('.bulk-edit-attr-choices_bulk-edit input:checked')
+   # print(f'selected len {len(selected)}')
+
+   time.sleep(2)
+
+   ## 
+   cards = page.query_selector_all('section-files entity-card')
+   print(f"Selecting... {len(cards)} cards")
+   
+   page.keyboard.press("Control+A")
+
+   editButton = page.query_selector('.bulk-edit-bar--right_form button')
+   count = editButton.textContent
+
+   print(f'count is {count}')
+   assert count == f'{len(cards)}'
+
+
+   editButton.click()
+
+

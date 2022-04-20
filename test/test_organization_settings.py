@@ -7,7 +7,7 @@ from ._common import print_page_error
 def test_organization_settings(page_factory, project, launch_time, image_file, base_url):
     print("Going to organizations...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/organizations")
+    page.goto(f"/organizations", wait_until='networkidle')
     page.on("pageerror", print_page_error)
     name = f"test_front_end_{launch_time}"
     page.wait_for_selector(f'text="{name}"')
@@ -35,7 +35,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     user_email = 'no-reply'+str(organization_id)+'@cvisionai.com'
     # user_email = 'no-reply2@cvisionai.com'
     page.fill(f'invitation-edit email-list-input input', user_email+';')
-    with page.expect_response(url) as response_info:
+    with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
         page.click('invitation-edit button[value="Save"]')
         page.wait_for_selector(f'text="Successfully created 1 invitation."')
         page.click('modal-dialog modal-close .modal__close')
@@ -54,11 +54,11 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     print(registration_link)
     if registration_link.find('accept') != -1:
         print(f"Accepting invitation at: {registration_link}")
-        page.goto(registration_link)
+        page.goto(registration_link, wait_until='networkidle')
         page.wait_for_url(f'{base_url}/organizations/')
     else:
         print(f"Register user and accept invitation at: {registration_link}")
-        page.goto(registration_link)
+        page.goto(registration_link, wait_until='networkidle')
         page.fill('text-input[name="First name"] input', 'First')
         page.fill('text-input[name="Last name"] input', 'Last')
         page.fill('text-input[name="Email address"] input', user_email)
@@ -69,7 +69,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
         page.click('input[type="submit"]')
         page.wait_for_selector(f'text="Continue"')
 
-    page.goto(f'/{organization_id}/organization-settings')
+    page.goto(f'/{organization_id}/organization-settings', wait_until='networkidle')
 
     print("Confirming invitation status")
     page.click('.heading-for-Invitation')
@@ -86,7 +86,8 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('.heading-for-Affiliation .Nav-action')
     page.fill('affiliation-edit user-input input', user_email+';')
     page.select_option(f'affiliation-edit enum-input[name="Permission"] select', label="Member")
-    with page.expect_response(url) as response_info:
+    page.wait_for_selector('text="Name Last"')
+    with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
         page.click('affiliation-edit button[value="Save"]')
         page.wait_for_selector(f'text="Successfully created 1 affiliation."')
     response = response_info.value

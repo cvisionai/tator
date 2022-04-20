@@ -76,6 +76,10 @@ media_get_properties = {
         'type': 'integer',
         'description': 'Vertical resolution in pixels.',
     },
+    'summaryLevel': {
+            'description': 'If supplied, this video is best summarized at this frame interval',
+            'type': 'integer',
+        },
     'gid': {
         'description': 'Group ID for the upload group of this media.',
         'type': 'string',
@@ -150,6 +154,10 @@ media_spec = {
             'description': 'Vertical resolution in pixels.',
             'nullable': True,
         },
+        'summaryLevel': {
+            'description': 'If supplied, this video is best summarized at this frame interval',
+            'type': 'integer',
+        },
         'attributes': {
             'nullable': True,
             'description': 'Attributes for the media',
@@ -181,6 +189,10 @@ media_update = {
         },
         'height': {
             'description': 'Pixel height of the video.',
+            'type': 'integer',
+        },
+        'summaryLevel': {
+            'description': 'If supplied, this video is best summarized at this frame interval',
             'type': 'integer',
         },
         'multi': {'$ref': '#/components/schemas/MultiDefinition'},

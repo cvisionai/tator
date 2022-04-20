@@ -530,7 +530,7 @@ export class TypeForm extends TatorElement {
       try {
         if (this.isChanged()) {
           // Main type form
-          await this._typeFormChanged();
+          return this._typeFormChanged();
         }
       } catch (err) {
         console.error("Error saving.", err);

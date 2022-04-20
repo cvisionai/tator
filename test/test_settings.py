@@ -18,7 +18,7 @@ from ._common import print_page_error
 def test_settings_projectEdit(page_factory, project, image_file):
     print("Project Settings Main Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     # Update All Project information
@@ -38,7 +38,7 @@ def test_settings_projectEdit(page_factory, project, image_file):
 def test_settings_mediaTypes(page_factory, project):
     print("Media Types Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     print("Start: Creating Media Types via Project Settings")
@@ -61,7 +61,7 @@ def test_settings_mediaTypes(page_factory, project):
 def test_settings_localizationTypes(page_factory, project):
     print("Localization Types Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     localization_dtypeSet = {"Box","Line","Dot","Poly"}
@@ -87,7 +87,7 @@ def test_settings_localizationTypes(page_factory, project):
 def test_settings_leafType(page_factory, project):
     print("Leaf Type Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     # Create Leaf type
@@ -102,7 +102,7 @@ def test_settings_leafType(page_factory, project):
 def test_settings_stateTypes(page_factory, project):
     print("State Type Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     # Create State types #todo hitting error with media values sent as "[None, None]"
@@ -156,7 +156,7 @@ def test_settings_stateTypes(page_factory, project):
 # def test_settings_projectMemberships(page_factory, project):
 #     print("Membership Tests...")
 #     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-#     page.goto(f"/{project}/project-settings")
+#     page.goto(f"/{project}/project-settings", wait_until='networkidle')
 #     page.on("pageerror", print_page_error)
 
 #     # Test memberships
@@ -188,7 +188,7 @@ def test_settings_stateTypes(page_factory, project):
 def test_settings_versionTests(page_factory, project):
     print("Version Settings Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     # Test Version type
@@ -211,13 +211,13 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     # - Find org ID first
     url = base_url + "/rest/Project/" + str(project)
     with page.expect_response(url) as response_info:
-        page.goto(f"/{project}/project-settings")
+        page.goto(f"/{project}/project-settings", wait_until='networkidle')
         page.on("pageerror", print_page_error)
     response = response_info.value
     respObject = response.json()
     organization_id = respObject["organization"]
     print(f"Found Organization id = {organization_id}")
-    page.goto(f"/{organization_id}/organization-settings")
+    page.goto(f"/{organization_id}/organization-settings", wait_until='networkidle')
 
     # Creating cluster
     print("Testing job cluster create...")
@@ -239,7 +239,7 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     print(f"Cluster id {newClusterId} created!")
 
     # Back to settings
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
 
     # Test Algorithm Type
     page.wait_for_selector('.heading-for-Algorithm .Nav-action')
@@ -265,7 +265,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     
     # Go to settings
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
 
     # Test Applet Type
     page.wait_for_selector('.heading-for-Applet .Nav-action')
@@ -287,7 +287,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     page.click('modal-dialog modal-close .modal__close')
 
     # Go to dashboards
-    page.goto(f"/{project}/dashboards")
+    page.goto(f"/{project}/dashboards", wait_until='networkidle')
     page.wait_for_selector('text="Test Applet"')
 
     print(f"Successfully registered Applet.")
@@ -296,7 +296,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
 def test_settings_attributeTests(page_factory, project):
     print("Attribute Settings...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     # All Attr types
@@ -353,7 +353,7 @@ def test_settings_attributeTests(page_factory, project):
 
 def test_settings_projectDelete(page_factory, project):
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/{project}/project-settings")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     # WORKING -- commenting out bc not sure if this affects the rest of tests?
