@@ -244,10 +244,11 @@ def test_basic(request, page_factory, project): #video
    print('Complete!')
 
    page.locator('.save-confirmation').click()
+   time.sleep(5)
 
-   response = page.locator('modal-dialog .modal__main').all_inner_texts()
-
-   assert response == "Successfully patched 2 medias!"
+   responseText = page.locator('modal-dialog .modal__main').all_inner_texts()
+   print(f'responseText {responseText[0]}')
+   assert responseText[0] == "Successfully patched 2 medias!\n\n"
 
    page.locator('text="OK"').click()
 
