@@ -61,7 +61,7 @@ export class MenuAppletDialog extends ModalDialog {
   /**
    * @param {string} title - Title to display in dialog
    */
-   _setModalTitle(title) {
+  _setModalTitle(title) {
     this._title.nodeValue = title;
   }
 
@@ -156,6 +156,11 @@ export class MenuAppletDialog extends ModalDialog {
       this.dispatchEvent(new Event("hideLoadingScreen"));
     });
 
+    this._appletElement.addEventListener("closeApplet", () => {
+      this.removeAttribute("is-open");
+      this.dispatchEvent(new Event("close"));
+    });
+
     this._appletElement.addEventListener("refreshDataType", (evt) => {
 
       // Get the key expected by the annotation data interface (e.g. box_1)
@@ -164,6 +169,22 @@ export class MenuAppletDialog extends ModalDialog {
       const dataTypeKey = `${dataType.dtype}_${dataType.id}`;
       const typeToUpdate = this._dataInterface._dataTypes[dataTypeKey];
       this._dataInterface.updateType(typeToUpdate);
+    });
+
+    this._appletElement.addEventListener("updateAcceptText", (evt) => {
+      this._setAcceptButtonText(evt.detail.text);
+    });
+
+    this._appletElement.addEventListener("displayAcceptButton", () => {
+      this._acceptBtn.style.display = "flex";
+    });
+
+    this._appletElement.addEventListener("hideAcceptButton", () => {
+      this._acceptBtn.style.display = "none";
+    });
+
+    this._appletElement.addEventListener("updateHeight", (evt) => {
+      this._appletView.style.height = evt.detail.height;
     });
 
     // Set the applet data
