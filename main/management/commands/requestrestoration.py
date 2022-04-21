@@ -22,11 +22,15 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         expiry_days = options["expiry_days"]
-        restoration_qs = Media.objects.filter(
+        base_qs = Media.objects.filter(
             deleted=False, archive_state="to_live", restoration_requested=False
-        ).exclude(meta__dtype="multi")
+        )
+        # Handle multiviews after all singles because their transition is dependent on the singles'
+        # states
+        restoration_qs = base_qs.exclude(meta__dtype="multi")
+        multi_qs = base_qs.filter(meta__dtype="multi")
 
-        if not restoration_qs.exists():
+        if not (restoration_qs.exists() or multi_qs.exists()):
             logger.info(f"No media requesting restoration!")
             return
 
@@ -36,7 +40,12 @@ class Command(BaseCommand):
             "restoration_requested": True,
             "min_exp_days": expiry_days,
         }
-        not_ready = update_queryset_archive_state(restoration_qs, target_state)
+        not_ready = {"cloned": {}, "original": {}}
+        if restoration_qs.exists():
+            not_ready = update_queryset_archive_state(restoration_qs, target_state)
+        if multi_qs.exists():
+            # Return will be empty when operating on all multiviews
+            update_queryset_archive_state(multi_qs, target_state)
 
         # Notify owners of blocked restore attempt
         ses = TatorSES() if settings.TATOR_EMAIL_ENABLED else None

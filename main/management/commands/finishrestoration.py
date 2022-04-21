@@ -14,11 +14,15 @@ class Command(BaseCommand):
     help = "Finalizes the restoration of any media files with restoration_requested == True."
 
     def handle(self, **options):
-        restoration_qs = Media.objects.filter(
+        base_qs = Media.objects.filter(
             deleted=False, archive_state="to_live", restoration_requested=True
-        ).exclude(meta__dtype="multi")
+        )
+        # Handle multiviews after all singles because their transition is dependent on the singles'
+        # states
+        restoration_qs = base_qs.exclude(meta__dtype="multi")
+        multi_qs = base_qs.filter(meta__dtype="multi")
 
-        if not restoration_qs.exists():
+        if not (restoration_qs.exists() or multi_qs.exists()):
             logger.info(f"No media requiring restoration finalization!")
             return
 
@@ -27,7 +31,12 @@ class Command(BaseCommand):
             "archive_state": "live",
             "restoration_requested": False,
         }
-        not_ready = update_queryset_archive_state(restoration_qs, target_state)
+        not_ready = {"cloned": {}, "original": {}}
+        if restoration_qs.exists():
+            not_ready = update_queryset_archive_state(restoration_qs, target_state)
+        if multi_qs.exists():
+            # Return will be empty when operating on all multiviews
+            update_queryset_archive_state(multi_qs, target_state)
 
         # Notify owners of blocked restore attempt
         ses = TatorSES() if settings.TATOR_EMAIL_ENABLED else None

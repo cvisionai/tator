@@ -323,6 +323,8 @@ def _create_media(params, user):
             media_obj.width = params['width']
         if 'height' in params:
             media_obj.height = params['height']
+        if 'summaryLevel' in params:
+            media_obj.summaryLevel = params['summaryLevel']
 
         # Use thumbnails if they are given.
         thumbnail_url = params.get('thumbnail_url', None)
@@ -662,6 +664,9 @@ class MediaDetailAPI(BaseDetailView):
 
             if 'height' in params:
                 qs.update(height=params['height'])
+
+            if 'summaryLevel' in params:
+                qs.update(summaryLevel=params['summaryLevel'])
 
             if 'multi' in params:
                 media_files = qs[0].media_files

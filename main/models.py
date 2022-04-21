@@ -1010,6 +1010,8 @@ class Media(Model, ModelDiffMixin):
     )
     source_url = CharField(max_length=512, blank=True, null=True)
     """ URL where original media was hosted. """
+    summaryLevel = IntegerField(null=True, blank=True)
+    """ Level at which this media is best summarized, e.g. every N frames. """
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.
@@ -1185,7 +1187,8 @@ class Resource(Model):
         logger.info(f"Deleting object {path}")
         obj.delete()
         tator_store = get_tator_store(obj.bucket)
-        tator_store.delete_object(path)
+        if tator_store.check_key(path):
+            tator_store.delete_object(path)
 
         # If the resource is not backed up or a `project_id` is not provided, don't try to delete
         # its backup
@@ -1198,7 +1201,9 @@ class Resource(Model):
 
         # Use the default backup bucket if the project specific backup bucket is not set
         use_default_backup_bucket = backup_bucket is None
-        get_tator_store(backup_bucket, backup=use_default_backup_bucket).delete_object(path)
+        backup_store = get_tator_store(backup_bucket, backup=use_default_backup_bucket)
+        if backup_store.check_key(path):
+            backup_store.delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):

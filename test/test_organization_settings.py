@@ -7,7 +7,7 @@ from ._common import print_page_error
 def test_organization_settings(page_factory, project, launch_time, image_file, base_url):
     print("Going to organizations...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-    page.goto(f"/organizations")
+    page.goto(f"/organizations", wait_until='networkidle')
     page.on("pageerror", print_page_error)
     name = f"test_front_end_{launch_time}"
     page.wait_for_selector(f'text="{name}"')
@@ -54,11 +54,11 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     print(registration_link)
     if registration_link.find('accept') != -1:
         print(f"Accepting invitation at: {registration_link}")
-        page.goto(registration_link)
+        page.goto(registration_link, wait_until='networkidle')
         page.wait_for_url(f'{base_url}/organizations/')
     else:
         print(f"Register user and accept invitation at: {registration_link}")
-        page.goto(registration_link)
+        page.goto(registration_link, wait_until='networkidle')
         page.fill('text-input[name="First name"] input', 'First')
         page.fill('text-input[name="Last name"] input', 'Last')
         page.fill('text-input[name="Email address"] input', user_email)
@@ -69,7 +69,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
         page.click('input[type="submit"]')
         page.wait_for_selector(f'text="Continue"')
 
-    page.goto(f'/{organization_id}/organization-settings')
+    page.goto(f'/{organization_id}/organization-settings', wait_until='networkidle')
 
     print("Confirming invitation status")
     page.click('.heading-for-Invitation')
