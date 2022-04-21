@@ -2945,6 +2945,7 @@ class ResourceTestCase(APITestCase):
             attribute_types=create_test_attribute_types(),
         )
         self.store = get_tator_store()
+        self.backup_bucket = None
 
     def tearDown(self):
         self.project.delete()
@@ -3380,19 +3381,20 @@ class ResourceTestCase(APITestCase):
             if success:
                 n_successful_backups += 1
 
-        self.assertEqual(n_successful_backups, len(all_keys))
+        self.assertEqual(n_successful_backups, len(all_keys) if self.backup_bucket else 0)
 
         # Check the value of each resource's `backed_up` flag is `True`
         resource_qs = Resource.objects.filter(path__in=all_keys, backed_up=True)
-        self.assertEqual(resource_qs.count(), len(all_keys))
+        self.assertEqual(resource_qs.count(), len(all_keys) if self.backup_bucket else 0)
 
         # Check that each resource was copied to the backup bucket
-        success, store_info = TatorBackupManager().get_store_info(self.project)
-        self.assertTrue(success)
-        success, store = TatorBackupManager.get_backup_store(store_info)
-        self.assertTrue(success)
-        for resource in resource_qs.iterator():
-            self.assertTrue(store.check_key(resource.path))
+        if self.backup_bucket:
+            success, store_info = TatorBackupManager().get_store_info(self.project)
+            self.assertTrue(success)
+            success, store = TatorBackupManager.get_backup_store(store_info)
+            self.assertTrue(success)
+            for resource in resource_qs.iterator():
+                self.assertTrue(store.check_key(resource.path))
 
 
 class ResourceWithBackupTestCase(ResourceTestCase):

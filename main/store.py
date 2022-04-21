@@ -579,8 +579,10 @@ def get_tator_store(
         gcs_key_info = json.loads(bucket.gcs_key_info)
         gcs_project = gcs_key_info["project_id"]
         client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
-        # TODO get rclone_config_create_params for GCP storage
-        rclone_config_create_params = {}
+        rclone_config_create_params = {
+            "project_number": gcs_key_info["project_id"],
+            "service_account_credentials": bucket.gcs_key_info,
+        }
         return TatorStorage.get_tator_store(
             ObjectStore.GCP, bucket, client, bucket.name, rclone_config_create_params
         )
