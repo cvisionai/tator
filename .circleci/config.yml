@@ -224,16 +224,16 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - front-end-tests:
+    - tator-py-tests:
         requires:
         - install-tator 
         context: cvisionai
         filters:
           tags:
             only: /.*/
-    - tator-py-tests:
+    - front-end-tests:
         requires:
-        - install-tator 
+        - tator-py-tests
         context: cvisionai
         filters:
           tags:
