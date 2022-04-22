@@ -196,7 +196,7 @@ export class DownloadManager
     {
       // Go to compatibility mode
       console.warn("In video compatibility mode");
-      this._parent._videoElement[0].compat(streaming_files[0].path);
+      this._parent._videoElement[0].compat(this._parent._videoObject.media_files.streaming[0].path);
       this._parent.seekFrame(0, this._parent.drawFrame);
       this._parent.dispatchEvent(new CustomEvent("bufferLoaded",
                                           {composed: true,

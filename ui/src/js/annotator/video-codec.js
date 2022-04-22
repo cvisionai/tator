@@ -495,6 +495,14 @@ export class TatorVideoDecoder {
     };
   }
 
+  compat(videoUrl) {
+    this._compatVideo = document.createElement("VIDEO");
+    this._compatVideo.setAttribute("crossorigin", "anonymous");
+    this._compatVideo.src = videoUrl;
+    this._compatVideo.load();
+    this._compat = true;
+  }
+
   getMediaElementCount() {
     // 1 for seek video, 1 for onDemand video, 1 for all of the scrub
     return 3;
@@ -552,6 +560,11 @@ export class TatorVideoDecoder {
    */
   forTime(time, buffer, direction, maxTime)
   {
+    if (this._compatVideo)
+    {
+      return this._compatVideo;
+    }
+
     const ranges = this._buffer.buffered;
     for (let idx = 0; idx < ranges.length; idx++)
     {
