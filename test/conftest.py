@@ -242,6 +242,7 @@ def video(request, page_factory, project, video_section, video_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.click('reload-button')
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('media-card')
         if len(cards) == 0:
             continue
@@ -270,6 +271,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.click('reload-button')
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('media-card')
         if len(cards) == 0:
             continue
@@ -290,6 +292,7 @@ def video2(request, page_factory, project, video_section2, video_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.click('reload-button')
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('media-card')
         if len(cards) == 0:
             continue
@@ -310,6 +313,7 @@ def video3(request, page_factory, project, video_section3, video_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.click('reload-button')
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('media-card')
         if len(cards) == 0:
             continue
@@ -348,6 +352,7 @@ def image(request, page_factory, project, image_section, image_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.click('reload-button')
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('media-card')
         if len(cards) == 0:
             continue
