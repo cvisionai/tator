@@ -75,7 +75,7 @@ export class EntityCard extends TatorElement {
     lowerDiv.appendChild(durationDiv);
 
     this._duration = document.createElement("span");
-    this._duration.setAttribute("class", "f3 text-gray");
+    this._duration.setAttribute("class", "f3 text-gray duration");
     durationDiv.appendChild(this._duration);
 
     // OPTIONAL bottom (contains pagination + id display)
@@ -325,7 +325,7 @@ export class EntityCard extends TatorElement {
         }
         break;
       case "duration":
-        if (newValue !== null) {
+        if (newValue !== null && newValue !== 'null') { //
           this._duration.textContent = newValue;
         } else {
           this._duration.textContent = "";
