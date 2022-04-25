@@ -212,46 +212,72 @@ def test_basic(request, page_factory, project): #video
    page.query_selector('#icon-more-horizontal').click()
    page.wait_for_selector('text="Edit media attributes"')
    page.locator('text="Edit media attributes"').click()
- 
-   # more = page.query_selector_all('.more div div')
-   # print(f'more len {len(more)}')
-   # more[1].click()
 
-   time.sleep(2)
-
-   ## 
-   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
-   print(f"Selecting... {len(cards)} cards")
-   
-   page.keyboard.press("Control+A")
-
+   # Did label selection also preselect attributes?
    ## There should be two input checked 
    selected = page.query_selector_all('.bulk-edit-attr-choices_bulk-edit input:checked')
    print(f'Assert selected inputs {len(selected)} == Checked count 2')
    assert len(selected) == 2
 
-   ## There should be two cards selected 
+   # Get a handle on shown cards
+   cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
+   print(f"Selecting... {len(cards)} cards")
+   
+   # Test select all
+   page.keyboard.press("Control+A")
+
+   ## There should be two cards selected (black hole filter still on)
    editbutton = page.locator('.bulk-edit-submit-button .text-bold')
    count = editbutton.all_inner_texts()
 
    print(f'Assert selected cards {str(count)} == shown count {str(len(cards))}')
    assert str(count[0]) == str(len(cards))
 
-   ## Add some text
-   #
-   
-   editbutton.click()
-   print('Complete!')
+   # Test escape
+   page.keyboard.press("Escape")
 
+   ## There should be 0 cards selected 
+   count = editbutton.all_inner_texts()
+
+   print(f'Assert selected cards {str(count)} == 0')
+   assert str(count[0]) == '0'
+
+   # Test click selection of 1 card
+   cards[1].click()
+
+
+   ## There should be 1 card selected 
+   count = editbutton.all_inner_texts()
+
+   print(f'Assert selected cards {str(count)} == 1')
+   assert str(count[0]) == '1'
+
+   ## Add some text
+   # TODO -- check the label says "not set", update it, check label is "updated"
+   # attributeShown = page.locator('section-files .entity-gallery-card__attribute span[display="block"]').innerHTML()
+   attributeShown = page.query_selector_all('.entity-gallery-card__attribute:not(.hidden)')
+   attributeShownText = attributeShown[1].text_content()
+   assert attributeShownText == '<not set>'
+
+   #
+   page.fill('.annotation__panel-group_bulk-edit text-input:not([hidden=""]) input', 'updated')
+
+   editbutton.click()
+   
    page.locator('.save-confirmation').click()
-   time.sleep(5)
+   time.sleep(2)
 
    responseText = page.locator('modal-dialog .modal__main').all_inner_texts()
    print(f'responseText {responseText[0]}')
-   assert responseText[0] == "Successfully patched 2 medias!\n\n"
+   assert responseText[0] == 'Successfully patched 1 medias!\n\n'
 
    page.locator('text="OK"').click()
 
+   attributeShown = page.query_selector_all('.entity-gallery-card__attribute:not(.hidden)')
+   attributeShownText = attributeShown[1].text_content()
+   assert attributeShownText == 'updated'
+
+   print('Complete!')
 
    
 
