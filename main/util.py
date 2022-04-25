@@ -710,11 +710,12 @@ def fix_bad_restores(
 
 def update_media_archive_state(
     media: Media,
+    dtype: str,
     archive_state: str,
     restoration_requested: bool,
     clone_ids: List[int],
     **op_kwargs: dict,
-) -> int:
+) -> List[int]:
     """
     Attempts to update the archive state of all media associated with a video or image, except for
     thumbnails. If successful, the archive state of the media and its clones is changed according to
@@ -722,6 +723,8 @@ def update_media_archive_state(
 
     :param media: The media to update
     :type media: Media
+    :param dtype: The dtype of the media object to update
+    :type dtype: str
     :param archive_state: The target for `media.archive_state`
     :type archive_state: str
     :param restoration_requested: The target for `media.restoration_requested`
@@ -730,86 +733,71 @@ def update_media_archive_state(
     :type clone_ids: List[int]
     :param op_kwargs: The keyword arguments to forward to the archive state change operation
     :type op_kwargs: dict
-    :rtype: int
+    :rtype: List[int]
     """
+
+    # Lookup table for operators based on the target `archive_state` and `restoration_requested`
+    # values. `update_operator` must accept one string argument and return a boolean; it performs
+    # the desired archive operation. `multi_state_comp_test` must accept an iterable and return a
+    # boolean; it combines the comparisons of a multi's single media against the target archive
+    # state with the desired boolean operation (AND or OR). `single_allowed_states` is the list of
+    # combinations of `archive_state` and `request_restoration` that a multi's constituent videos
+    # must be in for `_archive_state_comp` to return True.
+    if archive_state == "archived" and restoration_requested is False:
+        update_operator = Resource.archive_resource
+        multi_state_comp_test = any
+        single_allowed_states = [("archived", False)]
+    elif archive_state == "to_live" and restoration_requested is True:
+        update_operator = Resource.request_restoration
+        multi_state_comp_test = all
+        single_allowed_states = [("to_live", True), ("live", False)]
+    elif archive_state == "live" and restoration_requested is False:
+        update_operator = Resource.restore_resource
+        multi_state_comp_test = all
+        single_allowed_states = [("live", False)]
+    else:
+        update_operator = lambda _in: False
+        multi_state_comp_test = lambda _in: False
+        single_allowed_states = []
 
     def _archive_state_comp(_media):
         """
         Compares the `archive_state` and `restoration_requested` values of the given media object
         against the desired target values. Returns `True` if they both match, `False` otherwise.
         """
-        return (
-            _media.archive_state == archive_state
-            and _media.restoration_requested == restoration_requested
+        return any(
+            _media.archive_state == _archive_state
+            and _media.restoration_requested == _restoration_requested
+            for _archive_state, _restoration_requested in single_allowed_states
         )
-
-    # Lookup table for operators based on the target `archive_state` and `restoration_requested`
-    # values. `update_operator` must accept one string argument and return a boolean; it performs
-    # the desired archive operation. `multi_state_comp_test` must accept an iterable and return a
-    # boolean; it combines the comparisons of a multi's single media against the target archive
-    # state with the desired boolean operation (AND or OR).
-    operators_key = (archive_state, restoration_requested)
-    one_in_false_out = lambda _in: False
-    default = (one_in_false_out, one_in_false_out)
-    update_operator, multi_state_comp_test = {
-        ("archived", False): (Resource.archive_resource, any),
-        ("to_live", True): (Resource.request_restoration, all),
-        ("live", False): (Resource.restore_resource, all),
-    }.get(operators_key, default)
 
     # If there are no media files, consider the noop update attempt successful
-    n_successes = 0
     update_success = True
     if media.media_files:
-        for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
-            update_success = update_success and update_operator(path, **op_kwargs)
-
-    if update_success:
-        n_successes = 1
-        new_status_date = datetime.datetime.now(datetime.timezone.utc)
-        media.archive_status_date = new_status_date
-        media.archive_state = archive_state
-        media.restoration_requested = restoration_requested
-        media.save()
-
-        clone_qs = Media.objects.select_for_update().filter(pk__in=clone_ids)
-        clone_qs.update(
-            archive_status_date=new_status_date,
-            archive_state=archive_state,
-            restoration_requested=restoration_requested,
-        )
-        n_successes += clone_qs.count()
-
-        # Check for multiviews containing this single and put them in the same state if they need
-        # updating. Filter on clone and original ids, but combine results with an OR operation
-        multi_qs = Media.objects.filter(deleted=False, meta__dtype="multi")
-        clones_and_original = clone_ids + [media.id]
-        multi_qs = multi_qs.filter(
-            reduce(or_, (Q(media_files__ids__contains=uid) for uid in clones_and_original))
-        )
-        multi_ids_ready_for_update = []
-        for multi in multi_qs.iterator():
-            multi_in_correct_state = _archive_state_comp(multi)
-            if not multi_in_correct_state:
+        if dtype in ["image", "video"]:
+            for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
+                update_success = update_success and update_operator(path, **op_kwargs)
+        elif dtype == "multi":
+            if not _archive_state_comp(media):
                 single_states = (
                     _archive_state_comp(single)
-                    for single in Media.objects.filter(pk__in=multi.media_files["ids"])
+                    for single in Media.objects.filter(pk__in=media.media_files["ids"])
                 )
-                singles_in_correct_state = multi_state_comp_test(single_states)
-                if singles_in_correct_state:
-                    multi_ids_ready_for_update.append(multi.id)
+                # There is nothing to update in a multi, check that its constituent videos are in
+                # the correct state
+                update_success = multi_state_comp_test(single_states)
+        else:
+            update_success = False
+            logger.warning(
+                f"Unknown media dtype '{dtype}' for media '{media.id}', skipping operation"
+            )
 
-        multi_update_qs = Media.objects.select_for_update().filter(
-            pk__in=multi_ids_ready_for_update
-        )
-        multi_update_qs.update(
-            archive_status_date=new_status_date,
-            archive_state=archive_state,
-            restoration_requested=restoration_requested,
-        )
-        n_successes += multi_update_qs.count()
+    successful_ids = []
+    if update_success:
+        successful_ids.append(media.id)
+        successful_ids += clone_ids
 
-    return n_successes
+    return successful_ids
 
 
 def get_clone_info(media: Media) -> dict:
@@ -863,7 +851,7 @@ def update_queryset_archive_state(media_qs, target_state):
     Manages updating the media contained in the given queryset with the given target state.
     """
     qs_ids = set(media_qs.values_list("id", flat=True))
-    num_updated = 0
+    updated = []
     not_ready = {"cloned": defaultdict(list), "original": defaultdict(list)}
     for media in media_qs.iterator():
         if not media.media_files:
@@ -873,39 +861,54 @@ def update_queryset_archive_state(media_qs, target_state):
             media.save()
             continue
 
+        # Get clone info
         media_dtype = getattr(media.meta, "dtype", None)
         if media_dtype in ["image", "video"]:
             clone_info = get_clone_info(media)
+
+            if clone_info["original"]["media"] is None:
+                logger.error(
+                    f"Could not find original clone for media '{media.id}', skipping operation"
+                )
+                continue
+
+            if media.id in clone_info["clones"]:
+                if clone_info["original"]["media"] not in qs_ids:
+                    # Accumulate the lists of cloned media that aren't ready
+                    not_ready_entry = {
+                        "media_requesting_archive": media.id,
+                        "original_media": clone_info["original"]["media"],
+                        "original_project": clone_info["original"]["project"],
+                        "clone_project": media.project.id,
+                    }
+                    project_id = not_ready_entry["clone_project"]
+                    not_ready["cloned"][project_id].append(not_ready_entry)
+                    project_id = not_ready_entry["original_project"]
+                    not_ready["original"][project_id].append(not_ready_entry)
+                continue
+
+            clone_ids = list(clone_info["clones"])
+        elif media_dtype == "multi":
+            clone_ids = []
         else:
             logger.warning(
                 f"Unknown media dtype '{media_dtype}' for media '{media.id}', skipping operation"
             )
             continue
 
-        if clone_info["original"]["media"] is None:
-            logger.error(
-                f"Could not find original clone for media '{media.id}', skipping operation"
-            )
-            continue
-
-        if media.id in clone_info["clones"]:
-            if clone_info["original"]["media"] not in qs_ids:
-                # Accumulate the lists of cloned media that aren't ready for an archive operation
-                not_ready_entry = {
-                    "media_requesting_archive": media.id,
-                    "original_media": clone_info["original"]["media"],
-                    "original_project": clone_info["original"]["project"],
-                    "clone_project": media.project.id,
-                }
-                not_ready["cloned"][not_ready_entry["clone_project"]].append(not_ready_entry)
-                not_ready["original"][not_ready_entry["original_project"]].append(not_ready_entry)
-            continue
-
-        num_updated += update_media_archive_state(
-            media=media, clone_ids=list(clone_info["clones"]), **target_state
+        updated += update_media_archive_state(
+            media=media, dtype=media_dtype, clone_ids=clone_ids, **target_state
         )
 
-    logger.info(f"Updated a total of {num_updated} media!")
+    if updated:
+        updated_qs = Media.objects.select_for_update().filter(pk__in=updated)
+        updated_qs.update(
+            archive_status_date=datetime.datetime.now(datetime.timezone.utc),
+            archive_state=target_state["archive_state"],
+            restoration_requested=target_state["restoration_requested"],
+        )
+
+    logger.info(f"Updated a total of {len(updated)} media!")
 
     return not_ready
 

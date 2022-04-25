@@ -109,6 +109,7 @@ def token(request, page_factory):
     page.click('input[type="submit"]')
     page.wait_for_selector('text=Your API token is:')
     token = page.text_content('modal-notify .modal__main p')
+    page.close()
     assert(len(token) == 40)
     yield token
 
@@ -139,6 +140,7 @@ def project(request, page_factory, launch_time, base_url, token):
             href = link.get_attribute('href')
             project_id = int(href.split('/')[-2])
             break
+    page.close()
     yield project_id
 
 @pytest.fixture(scope='session')
@@ -151,6 +153,7 @@ def video_section(request, page_factory, project):
     page.click('text="Save"')
     page.click('text="Videos"')
     section = int(page.url.split('=')[-1])
+    page.close()
     yield section
 
 @pytest.fixture(scope='session')
@@ -163,6 +166,7 @@ def slow_video_section(request, page_factory, project):
     page.click('text="Save"')
     page.click('text="Slow Videos"')
     section = int(page.url.split('=')[-1])
+    page.close()
     yield section
 
 @pytest.fixture(scope='session')
@@ -175,6 +179,7 @@ def video_section2(request, page_factory, project):
     page.click('text="Save"')
     page.click('text="Videos 2"')
     section = int(page.url.split('=')[-1])
+    page.close()
     yield section
 
 @pytest.fixture(scope='session')
@@ -187,6 +192,7 @@ def video_section3(request, page_factory, project):
     page.click('text="Save"')
     page.click('text="Videos 3"')
     section = int(page.url.split('=')[-1])
+    page.close()
     yield section
 
 @pytest.fixture(scope='session')
@@ -199,6 +205,7 @@ def image_section(request, page_factory, project):
     page.click('text="Save"')
     page.click('text="Images"')
     section = int(page.url.split('=')[-1])
+    page.close()
     yield section
 
 @pytest.fixture(scope='session')
@@ -242,6 +249,7 @@ def video(request, page_factory, project, video_section, video_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.locator('.project__header reload-button').click()
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
@@ -250,6 +258,7 @@ def video(request, page_factory, project, video_section, video_file):
             print(f"Card href is {href}, media is ready...")
             break
     video = int(cards[0].get_attribute('media-id'))
+    page.close()
     yield video
 
 @pytest.fixture(scope='session')
@@ -270,6 +279,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.locator('.project__header reload-button').click()
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
@@ -278,6 +288,7 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
             print(f"Card href is {href}, media is ready...")
             break
     video = int(cards[0].get_attribute('media-id'))
+    page.close()
     yield video
 
 @pytest.fixture(scope='session')
@@ -290,6 +301,7 @@ def video2(request, page_factory, project, video_section2, video_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.locator('.project__header reload-button').click()
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
@@ -298,6 +310,7 @@ def video2(request, page_factory, project, video_section2, video_file):
             print(f"Card href is {href}, media is ready...")
             break
     video = int(cards[0].get_attribute('media-id'))
+    page.close()
     yield video
 
 @pytest.fixture(scope='session')
@@ -310,6 +323,7 @@ def video3(request, page_factory, project, video_section3, video_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.locator('.project__header reload-button').click()
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
@@ -318,6 +332,7 @@ def video3(request, page_factory, project, video_section3, video_file):
             print(f"Card href is {href}, media is ready...")
             break
     video = int(cards[0].get_attribute('media-id'))
+    page.close()
     yield video
 
 @pytest.fixture(scope='session')
@@ -348,6 +363,7 @@ def image(request, page_factory, project, image_section, image_file):
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
         page.locator('.project__header reload-button').click()
+        page.wait_for_load_state('networkidle')
         cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
@@ -356,6 +372,7 @@ def image(request, page_factory, project, image_section, image_file):
             print(f"Card href is {href}, media is ready...")
             break
     image = int(cards[0].get_attribute('media-id'))
+    page.close()
     yield image
 
 @pytest.fixture(scope='session')

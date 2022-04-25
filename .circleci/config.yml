@@ -84,7 +84,7 @@ jobs:
     - run:
         name: Clone source on lightsail
         command: |
-          ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; git clone -b $CIRCLE_BRANCH --recurse-submodules https://github.com/cvisionai/tator';
+          ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; git clone -b ${CIRCLE_BRANCH:-stable} --recurse-submodules https://github.com/cvisionai/tator';
     - persist_to_workspace:
         root: ~/
         paths:
@@ -127,7 +127,7 @@ jobs:
   front-end-tests:
     machine:
       image: ubuntu-2004:202010-01
-    resource_class: large
+    resource_class: xlarge
     steps:
     - attach_workspace:
         at: ~/
@@ -141,7 +141,7 @@ jobs:
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
           sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
           sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
-          pip3 install playwright==1.21.0 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python;
+          pip3 install playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python;
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
           playwright install;
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
@@ -217,23 +217,23 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - rest-tests:
+    - front-end-tests:
         requires:
-        - install-tator 
+        - install-tator
         context: cvisionai
         filters:
           tags:
             only: /.*/
-    - front-end-tests:
+    - rest-tests:
         requires:
-        - install-tator 
+        - front-end-tests
         context: cvisionai
         filters:
           tags:
             only: /.*/
     - tator-py-tests:
         requires:
-        - install-tator 
+        - front-end-tests
         context: cvisionai
         filters:
           tags:
