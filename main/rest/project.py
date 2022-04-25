@@ -149,7 +149,9 @@ class ProjectDetailAPI(BaseDetailView):
             fname = tokens[-1]
 
             # Set up S3 clients.
-            upload_store = get_tator_store(project.get_bucket(upload=True), upload=True)
+            project_upload_bucket = project.get_bucket(upload=True)
+            use_default_upload_bucket = project_upload_bucket is None
+            upload_store = get_tator_store(project_upload_bucket, upload=use_default_upload_bucket)
             generic_store = get_tator_store()
 
             # Check prefix.
