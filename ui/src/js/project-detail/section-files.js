@@ -76,6 +76,8 @@ export class SectionFiles extends TatorElement {
       let seconds = Number(media.num_frames) / Number(media.fps);
       let duration = new Date(seconds * 1000).toISOString().substr(11, 8);
       card.setAttribute("duration", duration);
+    } else {
+      card.setAttribute("duration", null);
     }
 
     card.setAttribute("thumb", Spinner);

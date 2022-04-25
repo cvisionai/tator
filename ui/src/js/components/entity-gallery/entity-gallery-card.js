@@ -37,7 +37,7 @@ export class EntityCard extends TatorElement {
     this.titleDiv.setAttribute("class", "entity-card__title py-1 d-flex flex-justify-between");
     this._styledDiv.appendChild(this.titleDiv);
     this.titleDiv.hidden = true;
-    
+
     // Section title - h2
     this._title = document.createElement("h2");
     this._title.setAttribute("class", "section__name text-hover-white text-gray py-1 px-1 css-truncate");
@@ -63,7 +63,7 @@ export class EntityCard extends TatorElement {
     this._more.hidden = true; // HIDDEN default
 
 
-    
+
 
     // Lower div start
     const lowerDiv = document.createElement("div");
@@ -325,8 +325,11 @@ export class EntityCard extends TatorElement {
         }
         break;
       case "duration":
-        // console.log(newValue);
-        this._duration.textContent = newValue;
+        if (newValue !== null) {
+          this._duration.textContent = newValue;
+        } else {
+          this._duration.textContent = "";
+        }
       case "pos-text":
         this._pos_text.textContent = newValue;
     }
@@ -349,7 +352,7 @@ export class EntityCard extends TatorElement {
 
     if (!mediaInit) {
       // ID is title
-      this._id_text.innerHTML = `ID: ${this.cardObj.id}`;      
+      this._id_text.innerHTML = `ID: ${this.cardObj.id}`;
     }
 
 
@@ -367,8 +370,8 @@ export class EntityCard extends TatorElement {
     }
 
     if (obj.posText) {
-     // Add position text related to pagination
-     this.setAttribute("pos-text", obj.posText);     
+      // Add position text related to pagination
+      this.setAttribute("pos-text", obj.posText);
     }
 
 
@@ -402,7 +405,7 @@ export class EntityCard extends TatorElement {
 
         if (cardLabelsChosen && Array.isArray(cardLabelsChosen) && cardLabelsChosen.length > 0) {
           // If we have any preferences saved check against it
-          if (cardLabelsChosen.indexOf(key) > -1 ) {
+          if (cardLabelsChosen.indexOf(key) > -1) {
             // console.log("FOUND "+key+" at index "+cardLabelsChosen.indexOf(key));   
           } else {
             attrStyleDiv.classList.add("hidden");
@@ -455,9 +458,9 @@ export class EntityCard extends TatorElement {
             this.attributeDivs[attr].value.innerHTML = value;
           } else {
             this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
-          }      
+          }
         }
-      }    
+      }
     }
   }
 
@@ -590,14 +593,14 @@ export class EntityCard extends TatorElement {
 
       if (this._multiEnabled) {
         this._multiSelectionToggle = true;
-        
+
         /* @ "card-click"*/
         // if (e.shiftKey && !this._mediaInit) {
         //   // console.log("Shift click!");
         //   // this._multiSelectionToggle = true;
         //   this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         // } else
-          
+
         if (e.code == "Enter") {
           // console.log("Enter click!... " + this._li.hasFocus());
           if (this._li.hasFocus()) {
@@ -605,11 +608,11 @@ export class EntityCard extends TatorElement {
           }
           // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("shift-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
-        } else if ((e.ctrlKey  && !this._mediaInit) || (e.code == "Control" && !this._mediaInit)) {
+        } else if ((e.ctrlKey && !this._mediaInit) || (e.code == "Control" && !this._mediaInit)) {
           // usually context menu is hit, and not this keeping in case....
           // this._multiSelectionToggle = true;
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
-        } else if(this._mediaInit) {
+        } else if (this._mediaInit) {
           // console.log("this._li.classList.contains(is-selected .................................... "+this._li.classList.contains("is-selected"))
           this.dispatchEvent(new CustomEvent("ctrl-select", { detail: { element: this, id: this.cardObj.id, isSelected: this._li.classList.contains("is-selected") } })); //user is clicking specific cards
         }
