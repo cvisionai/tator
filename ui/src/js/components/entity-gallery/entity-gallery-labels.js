@@ -67,8 +67,8 @@ export class EntityGalleryLabels extends TatorElement {
   async add({ typeData, hideTypeName = false, checkedFirst = null }) {
     // console.log(typeData);
     let typeName = typeData.name ? typeData.name : "";
-    if(this._shownTypes[typeData.id]) {
-      // don't re-add this type...
+    if(this._shownTypes[typeData.id] || typeData.visible == false || typeData.attribute_types.length == 0) {
+      // don't re-add this type, or don't add if visible=false...
       return false;
     } else {
       this._shownTypes[typeData.id] = true;
@@ -138,14 +138,20 @@ export class EntityGalleryLabels extends TatorElement {
     return labelsMain;
   }
 
-  _getValue(typeId){
-    return this._selectionValues[typeId].getValue();
+  _getValue(typeId) {
+    if (this._selectionValues[typeId]) {
+      return this._selectionValues[typeId].getValue();
+    } else {
+      return [];
+    }
   }
 
   _setValue({ typeId, values }){
     // # assumes values are in the accepted format for checkbox set
     //
     let valuesList = this._getValue(typeId);
+    console.log("valuesList");
+    console.log(valuesList);
     for(let box in valuesList){
       if(values.contains(box.name)){
         box.checked = true;
@@ -187,16 +193,17 @@ export class EntityGalleryLabels extends TatorElement {
     sorted.push(...hiddenAttrs);
 
     // Create an array for checkbox set el
-    let checked = checkedFirst == null ? false : checkedFirst;
+    // console.log("checkedFirst "+checkedFirst)
+    let checkedValue = checkedFirst == null ? false : checkedFirst;
     for (let attr of sorted) {
       this.newList.push({
         id: encodeURI(attr.name),
         name: attr.name,
-        checked
+        checked: checkedValue
       });
 
       // reset checked - only check the first one
-      if(checked) checked = false;
+      checkedValue = false;
     }
     return this.newList;
   }

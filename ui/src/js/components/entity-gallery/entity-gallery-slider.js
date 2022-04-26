@@ -336,12 +336,12 @@ export class EntityGallerySlider extends TatorElement {
       */
       this.entityType = (this.association == "Localization") ? cardObj.entityType : cardObj.mediaInfo.entityType;
       this.entityTypeId = this.entityType.id;
-      // this._cardAtributeLabels.add({
+      // this._cardAttributeLabels.add({
       //    typeData: this.entityType,
       //    checkedFirst: true
       // });
 
-      this.gallery.cardLabelsChosenByType[this.entityTypeId] = this._cardAtributeLabels._getValue(this.entityTypeId);
+      this.gallery.cardLabelsChosenByType[this.entityTypeId] = this._cardAttributeLabels._getValue(this.entityTypeId);
 
       this._cardLabelOptions = this.entityType.attribute_types;
       this._cardLabelOptions.sort((a, b) => {
@@ -367,7 +367,7 @@ export class EntityGallerySlider extends TatorElement {
             this._resizeCards._rangeHandler(resizeValue, this._ul);
          });
 
-         this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+         this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
             card._updateShownAttributes(evt);
             this.gallery.cardLabelsChosenByType[this.entityTypeId] =  evt.detail.value;
             let msg = `Entry labels updated`;

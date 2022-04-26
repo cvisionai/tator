@@ -68,12 +68,12 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     /**
       * CARD Label display options link for menu, and checkbox div
       */
-    this._cardAtributeLabels = document.createElement("entity-gallery-labels");
-    this._cardAtributeLabels.titleEntityTypeName = "localization";
-    this._cardAtributeLabels._titleText = document.createTextNode("Select localization labels to display.");
-    this._mainTop.appendChild(this._cardAtributeLabels);
-    this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
-    this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
+    this._cardAttributeLabels = document.createElement("entity-gallery-labels");
+    this._cardAttributeLabels.titleEntityTypeName = "localization";
+    this._cardAttributeLabels._titleText = document.createTextNode("Select localization labels to display.");
+    this._mainTop.appendChild(this._cardAttributeLabels);
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
+    this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
     // Init aspect toggle
     this._aspectToggle.init(this);
@@ -116,13 +116,12 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     for (let locTypeData of this.modelData._localizationTypes) {
 
       //init card labels with localization entity type definitions
-      this._cardAtributeLabels.add({ 
+      this._cardAttributeLabels.add({ 
          typeData: locTypeData,
          checkedFirst: true
       });
 
       //init panel with localization entity type definitions
-      console.log("ADDING LOC TYPE")
       this._bulkEdit._editPanel.addLocType(locTypeData);
     }
     
@@ -212,7 +211,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       /**
       * Card labels / attributes of localization or media type
       */
-      this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
+      this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
       this._bulkEdit._updateShownAttributes({typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId]} );
 
       if (newCard) {
@@ -226,12 +225,12 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
           return card._img.style.height = `${130 * resizeValuePerc}px`;
         });
 
-        this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+        this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
-          this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: evt.detail.value });
-          
+          this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
 
-          this.cardLabelsChosenByType[entityTypeId] = evt.detail.value;     
+          this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;     
+ 
           let msg = `Entry labels updated`;
           Utilities.showSuccessIcon(msg);
         });
@@ -249,24 +248,22 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
 
         // Notifiy bulk edit about multi-select controls
         card.addEventListener("ctrl-select", (e) => {
-          console.log("Opening edit mode");
+          // console.log("Opening edit mode");
           this._bulkEdit._openEditMode(e);
           // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
         });
         card.addEventListener("shift-select", (e) => {
           // this.dispatchEvent(new CustomEvent("multi-select", { detail: { clickDetail: e } }));
-          console.log("Opening edit mode");
+          // console.log("Opening edit mode");
           this._bulkEdit._openEditMode(e);
         });
 
         this._bulkEdit.addEventListener("multi-enabled", () => {
-          card._multiSelectionToggle = true;
-          card._li.classList.add("multi-select");
+          card.multiEnabled = true;
         });
 
         this._bulkEdit.addEventListener("multi-disabled", () => {
-          card._multiSelectionToggle = false;
-          card._li.classList.remove("multi-select");
+          card.multiEnabled = false;
         });
 
         // Update view
@@ -307,13 +304,18 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
-      console.log(cardObj);
+      // console.log(cardObj);
       card.init({
         idx: index,
         obj: cardObj,
         panelContainer : this.panelContainer,
         cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
       });
+
+      const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
+      if (typeof selectedArray !== "undefined" && selectedArray.has(cardObj.id)) {
+        this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
+      }
 
       this._currentCardIndexes[cardObj.id] = index;
 
@@ -330,7 +332,6 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     }
 
     // Replace card info so that shift select can get cards in between
-    console.log("New list of card elements......");
     this._bulkEdit.elementList = this._cardElements;
     this._bulkEdit.elementIndexes = this._currentCardIndexes;
     this._bulkEdit.startEditMode();
@@ -439,10 +440,6 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
   //     info.card._multiSelectionToggle = true;
   //   }
   // }
-
-  customContentHandler() {
-    console.log(this);
-  }
 
 }
 

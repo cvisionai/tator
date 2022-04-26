@@ -61,12 +61,12 @@ export class AnnotationsGallery extends EntityCardGallery {
     /**
       * CARD Label display options link for menu, and checkbox div
       */
-    this._cardAtributeLabels = document.createElement("entity-gallery-labels");
-    this._cardAtributeLabels.titleEntityTypeName = "localization";
-    this._cardAtributeLabels._titleText = document.createTextNode("Select localization labels to display.");
-    this._mainTop.appendChild(this._cardAtributeLabels);
-    this._cardAtributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
-    this._moreMenu._menu.appendChild(this._cardAtributeLabels.menuLink);
+    this._cardAttributeLabels = document.createElement("entity-gallery-labels");
+    this._cardAttributeLabels.titleEntityTypeName = "localization";
+    this._cardAttributeLabels._titleText = document.createTextNode("Select localization labels to display.");
+    this._mainTop.appendChild(this._cardAttributeLabels);
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Localization Labels";
+    this._moreMenu._menu.appendChild(this._cardAttributeLabels.menuLink);
 
     // Init aspect toggle
     this._aspectToggle.init(this);
@@ -102,7 +102,7 @@ export class AnnotationsGallery extends EntityCardGallery {
 
     // Initialize labels selection
     for (let locTypeData of this.modelData._localizationTypes){
-      this._cardAtributeLabels.add({ 
+      this._cardAttributeLabels.add({ 
          typeData: locTypeData,
          checkedFirst: true
       });
@@ -185,7 +185,7 @@ export class AnnotationsGallery extends EntityCardGallery {
       /**
       * Card labels / attributes of localization or media type
       */
-      this.cardLabelsChosenByType[entityTypeId] = this._cardAtributeLabels._getValue(entityTypeId);
+      this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
 
       if (newCard) {
         card = document.createElement("entity-card");
@@ -198,7 +198,7 @@ export class AnnotationsGallery extends EntityCardGallery {
           return card._img.style.height = `${130 * resizeValuePerc}px`;
         });
 
-        this._cardAtributeLabels.addEventListener("labels-update", (evt) => {
+        this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
           card._updateShownAttributes(evt);
           this.cardLabelsChosenByType[entityTypeId] =  evt.detail.value;
           let msg = `Entry labels updated`;

@@ -15,6 +15,25 @@
   }
 }
 
+.is-active {
+  .section__name {
+    color: $color-white;
+    font-weight: $weight-semibold;
+
+    &:before {
+      background-color: $color-purple;
+      border-bottom-right-radius: 6px;
+      border-top-right-radius: 6px;
+      content: "";
+      height: 22px;
+      left: 0;
+      position: absolute;
+      width: 4px;
+    }
+  }
+
+}
+
 .section {
   margin-left: -$spacing-2;
 

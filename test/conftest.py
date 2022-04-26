@@ -248,9 +248,9 @@ def video(request, page_factory, project, video_section, video_file):
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
-        page.click('reload-button')
+        page.locator('.project__header reload-button').click()
         page.wait_for_load_state('networkidle')
-        cards = page.query_selector_all('media-card')
+        cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
         href = cards[0].query_selector('a').get_attribute('href')
@@ -278,9 +278,9 @@ def slow_video(request, page_factory, project, slow_video_section, slow_video_fi
     page.set_input_files('section-upload input', slow_video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
-        page.click('reload-button')
+        page.locator('.project__header reload-button').click()
         page.wait_for_load_state('networkidle')
-        cards = page.query_selector_all('media-card')
+        cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
         href = cards[0].query_selector('a').get_attribute('href')
@@ -300,9 +300,9 @@ def video2(request, page_factory, project, video_section2, video_file):
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
-        page.click('reload-button')
+        page.locator('.project__header reload-button').click()
         page.wait_for_load_state('networkidle')
-        cards = page.query_selector_all('media-card')
+        cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
         href = cards[0].query_selector('a').get_attribute('href')
@@ -322,9 +322,9 @@ def video3(request, page_factory, project, video_section3, video_file):
     page.set_input_files('section-upload input', video_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
-        page.click('reload-button')
+        page.locator('.project__header reload-button').click()
         page.wait_for_load_state('networkidle')
-        cards = page.query_selector_all('media-card')
+        cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
         href = cards[0].query_selector('a').get_attribute('href')
@@ -362,9 +362,9 @@ def image(request, page_factory, project, image_section, image_file):
     page.set_input_files('section-upload input', image_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()
     while True:
-        page.click('reload-button')
+        page.locator('.project__header reload-button').click()
         page.wait_for_load_state('networkidle')
-        cards = page.query_selector_all('media-card')
+        cards = page.query_selector_all('entity-card')
         if len(cards) == 0:
             continue
         href = cards[0].query_selector('a').get_attribute('href')

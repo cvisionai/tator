@@ -27,29 +27,52 @@ export class SectionMore extends TatorElement {
     this._algorithmMenu = document.createElement("algorithm-menu");
     this._div.appendChild(this._algorithmMenu);
 
-    const otherButtons = document.createElement("div");
-    otherButtons.setAttribute("class", "d-flex flex-column px-4 py-3 lh-condensed");
-    this._div.appendChild(otherButtons);
+    this._otherButtons = document.createElement("div");
+    this._otherButtons.setAttribute("class", "d-flex flex-column px-4 py-3 lh-condensed");
+    this._div.appendChild(this._otherButtons);
+
+    this._cardLink = document.createElement("div");
+    this._otherButtons.appendChild(this._cardLink);
+
+    const bulkDiv = document.createElement("div");
+    bulkDiv.setAttribute("id", "bulkCorrectButtonDiv");
+    this._otherButtons.appendChild(bulkDiv);
+
+    this._bulkEditMedia = document.createElement("bulk-correct-button");
+    // this._bulkEditMedia.setAttribute("id", "bulkCorrectButton");
+    this._bulkEditMedia.setAttribute("text", "Edit media attributes");
+    bulkDiv.appendChild(this._bulkEditMedia);
 
     this._download = document.createElement("download-button");
     this._download.setAttribute("text", "Download files");
-    otherButtons.appendChild(this._download);
+    this._otherButtons.appendChild(this._download);
 
     this._annotations = document.createElement("download-button");
     this._annotations.setAttribute("text", "Download metadata");
-    otherButtons.appendChild(this._annotations);
+    this._otherButtons.appendChild(this._annotations);
 
     this._rename = document.createElement("rename-button");
     this._rename.setAttribute("text", "Rename section");
-    otherButtons.appendChild(this._rename);
+    this._otherButtons.appendChild(this._rename);
 
     this._deleteSection = document.createElement("delete-button");
     this._deleteSection.init("Delete section");
-    otherButtons.appendChild(this._deleteSection);
+    this._otherButtons.appendChild(this._deleteSection);
 
     this._deleteMedia = document.createElement("delete-button");
     this._deleteMedia.init("Delete media", "text-red");
-    otherButtons.appendChild(this._deleteMedia);
+    this._otherButtons.appendChild(this._deleteMedia);
+
+    this._bulkEditMedia.addEventListener("click", () => {
+      details.removeAttribute("open");
+      console.log("dispatch bulk edit!")
+      this.dispatchEvent(new Event("bulk-edit"));
+    });
+
+    this._cardLink.addEventListener("click", () => {
+      details.removeAttribute("open");
+      // this.dispatchEvent(new Event("bulk-edit"));
+    });
 
     this._algorithmMenu.addEventListener("click", () => {
       details.removeAttribute("open");
@@ -111,6 +134,7 @@ export class SectionMore extends TatorElement {
   set algorithms(val) {
     this._algorithmMenu.algorithms = val;
   }
+
 }
 
 customElements.define("section-more", SectionMore);
