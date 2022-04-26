@@ -16,8 +16,6 @@ from django.http import Http404
 from PIL import Image
 
 from ..models import (
-    ChangeLog,
-    ChangeToObject,
     Media,
     MediaType,
     Section,
@@ -39,10 +37,11 @@ from ..cache import TatorCache
 
 from ._util import url_to_key
 from ._util import (
-    bulk_create_from_generator,
     bulk_update_and_log_changes,
     bulk_delete_and_log_changes,
+    delete_and_log_changes,
     log_changes,
+    log_creation,
     computeRequiredFields,
     check_required_fields,
 )
@@ -357,14 +356,7 @@ def _create_media(params, user):
             tator_store = get_tator_store(bucket, upload=upload)
             tator_store.put_media_id_tag(path, media_obj.id)
 
-    cl = ChangeLog(
-        project=media_obj.project,
-        user=user,
-        description_of_change=media_obj.create_dict,
-    )
-    cl.save()
-    ref_table = ContentType.objects.get_for_model(media_obj)
-    ChangeToObject(ref_table=ref_table, ref_id=media_obj.id, change_id=cl).save()
+    log_creation(media_obj, media_obj.project, user)
 
     return media_obj, response
 
@@ -527,7 +519,6 @@ class MediaListAPI(BaseListView):
                     # Get the original dict for creating the change log
                     archive_objs = list(archive_qs)
                     obj = archive_objs[0]
-                    ref_table = ContentType.objects.get_for_model(obj)
                     model_dict = obj.model_dict
 
                     # Store the list of ids updated for this state and update them
@@ -714,12 +705,7 @@ class MediaDetailAPI(BaseDetailView):
         media = Media.objects.get(pk=params['id'], deleted=False)
         project = media.project
         modified_datetime = datetime.datetime.now(datetime.timezone.utc)
-        model_dict = media.model_dict
-        media.deleted = True
-        media.modified_datetime = modified_datetime
-        media.modified_by = self.request.user
-        media.save()
-        log_changes(media, model_dict, project, self.request.user)
+        delete_and_log_changes(media, project, self.request.user)
         TatorSearch().delete_document(media)
 
         # Any states that are only associated to deleted media should also be marked 

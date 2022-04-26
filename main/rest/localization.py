@@ -5,8 +5,6 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
 
-from ..models import ChangeLog
-from ..models import ChangeToObject
 from ..models import Localization
 from ..models import LocalizationType
 from ..models import Media
@@ -33,9 +31,13 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
 from ._util import (
     bulk_create_from_generator,
+    bulk_delete_and_log_changes,
+    bulk_log_creation,
     bulk_update_and_log_changes,
     computeRequiredFields,
     check_required_fields,
+    delete_and_log_changes,
+    log_changes,
 )
 from ._permissions import ProjectEditPermission
 
@@ -201,23 +203,7 @@ class LocalizationListAPI(BaseListView):
                 documents = []
         ts.bulk_add_documents(documents)
 
-        # Create ChangeLogs
-        objs = (
-            ChangeLog(
-                project=project, user=self.request.user, description_of_change=loc.create_dict
-            )
-            for loc in localizations
-        )
-        change_logs = bulk_create_from_generator(objs, ChangeLog)
-
-        # Associate ChangeLogs with created objects
-        ref_table = ContentType.objects.get_for_model(localizations[0])
-        ids = [loc.id for loc in localizations]
-        objs = (
-            ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
-            for ref_id, cl in zip(ids, change_logs)
-        )
-        bulk_create_from_generator(objs, ChangeToObject)
+        ids = bulk_log_creation(localizations, project, self.request.user)
 
         # Return created IDs.
         return {'message': f'Successfully created {len(ids)} localizations!', 'id': ids}
@@ -227,14 +213,7 @@ class LocalizationListAPI(BaseListView):
         count = qs.count()
         if count > 0:
             # Delete the localizations.
-            update_kwargs = {
-                "deleted": True,
-                "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
-                "modified_by": self.request.user,
-            }
-            bulk_update_and_log_changes(
-                qs, params["project"], self.request.user, update_kwargs=update_kwargs
-            )
+            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().delete(self.kwargs['project'], query)
 
@@ -293,7 +272,7 @@ class LocalizationDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         obj = Localization.objects.get(pk=params['id'], deleted=False)
-        original_dict = obj.model_dict
+        model_dict = obj.model_dict
 
         # Patch common attributes.
         frame = params.get("frame", None)
@@ -369,17 +348,7 @@ class LocalizationDetailAPI(BaseDetailView):
             obj.thumbnail_image.save()
 
         obj.save()
-        cl = ChangeLog(
-            project=obj.project,
-            user=self.request.user,
-            description_of_change=obj.change_dict(original_dict),
-        )
-        cl.save()
-        ChangeToObject(
-            ref_table=ContentType.objects.get_for_model(obj),
-            ref_id=obj.id,
-            change_id=cl,
-        ).save()
+        log_changes(obj, model_dict, obj.project, self.request.user)
 
         return {'message': f'Localization {params["id"]} successfully updated!'}
 
@@ -388,21 +357,8 @@ class LocalizationDetailAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
-        project = obj.project
-        model_dict = obj.model_dict
-        ref_table = ContentType.objects.get_for_model(obj)
-        ref_id = obj.id
+        delete_and_log_changes(obj, obj.project, self.request.user)
         TatorSearch().delete_document(obj)
-        qs.update(deleted=True,
-                  modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                  modified_by=self.request.user)
-        cl = ChangeLog(
-            project=project,
-            user=self.request.user,
-            description_of_change=obj.change_dict(model_dict),
-        )
-        cl.save()
-        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

@@ -6,8 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.http import Http404
 
-from ..models import ChangeLog
-from ..models import ChangeToObject
 from ..models import Leaf
 from ..models import LeafType
 from ..models import Project
@@ -28,9 +26,13 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
 from ._util import (
     bulk_create_from_generator,
+    bulk_delete_and_log_changes,
+    bulk_log_creation,
     bulk_update_and_log_changes,
     computeRequiredFields,
     check_required_fields,
+    delete_and_log_changes,
+    log_changes,
 )
 from ._permissions import ProjectViewOnlyPermission
 from ._permissions import ProjectFullControlPermission
@@ -172,23 +174,7 @@ class LeafListAPI(BaseListView):
                 documents = []
         ts.bulk_add_documents(documents)
 
-        # Create ChangeLogs
-        objs = (
-            ChangeLog(
-                project=project, user=self.request.user, description_of_change=leaf.create_dict
-            )
-            for leaf in leaves
-        )
-        change_logs = bulk_create_from_generator(objs, ChangeLog)
-
-        # Associate ChangeLogs with created objects
-        ref_table = ContentType.objects.get_for_model(leaves[0])
-        ids = [leaf.id for leaf in leaves]
-        objs = (
-            ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
-            for ref_id, cl in zip(ids, change_logs)
-        )
-        bulk_create_from_generator(objs, ChangeToObject)
+        ids = bulk_log_creation(leaves, project, self.request.user)
 
         # Return created IDs.
         return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
@@ -197,14 +183,7 @@ class LeafListAPI(BaseListView):
         qs = get_leaf_queryset(params['project'], params)
         count = qs.count()
         if count > 0:
-            update_kwargs = {
-                "deleted": True,
-                "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
-                "modified_by": self.request.user,
-            }
-            bulk_update_and_log_changes(
-                qs, params["project"], self.request.user, update_kwargs=update_kwargs
-            )
+            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             query = get_leaf_es_query(params)
             TatorSearch().delete(self.kwargs['project'], query)
 
@@ -249,7 +228,7 @@ class LeafDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         obj = Leaf.objects.get(pk=params['id'], deleted=False)
-        original_dict = obj.model_dict
+        model_dict = obj.model_dict
 
         # Patch common attributes.
         if 'name' in params:
@@ -257,42 +236,17 @@ class LeafDetailAPI(BaseDetailView):
             obj.save()
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
-
         obj.save()
-        cl = ChangeLog(
-            project=obj.project,
-            user=self.request.user,
-            description_of_change=obj.change_dict(original_dict),
-        )
-        cl.save()
-        ChangeToObject(
-            ref_table=ContentType.objects.get_for_model(obj),
-            ref_id=obj.id,
-            change_id=cl,
-        ).save()
-
+        log_changes(obj, model_dict, obj.project, self.request.user)
         return {'message': 'Leaf {params["id"]} successfully updated!'}
 
     def _delete(self, params):
         leaf = Leaf.objects.get(pk=params['id'], deleted=False)
         project = leaf.project
         model_dict = leaf.model_dict
-        ref_table = ContentType.objects.get_for_model(leaf)
-        ref_id = leaf.id
-        leaf.deleted = True
-        leaf.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
-        leaf.modified_by = self.request.user
-        leaf.save()
+        delete_and_log_changes(leaf, project, self.request.user)
         TatorSearch().delete_document(leaf)
-        cl = ChangeLog(
-            project=project,
-            user=self.request.user,
-            description_of_change=leaf.change_dict(model_dict),
-        )
-        cl.save()
-        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
         return {'message': 'Leaf {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return Leaf.objects.all()
-

@@ -8,8 +8,6 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.http import Http404
 import numpy as np
 
-from ..models import ChangeLog
-from ..models import ChangeToObject
 from ..models import State
 from ..models import StateType
 from ..models import Media
@@ -37,9 +35,13 @@ from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
 from ._util import (
     bulk_create_from_generator,
+    bulk_delete_and_log_changes,
+    bulk_log_creation,
     bulk_update_and_log_changes,
     computeRequiredFields,
     check_required_fields,
+    delete_and_log_changes,
+    log_changes,
 )
 from ._permissions import ProjectEditPermission
 
@@ -297,26 +299,8 @@ class StateListAPI(BaseListView):
                 documents = []
         ts.bulk_add_documents(documents)
 
-        # Create ChangeLogs
-        objs = (
-            ChangeLog(
-                project=project, user=self.request.user, description_of_change=state.create_dict
-            )
-            for state in states
-        )
-        change_logs = bulk_create_from_generator(objs, ChangeLog)
+        ids = bulk_log_creation(states, project, self.request.user)
 
-        # Associate ChangeLogs with created objects
-        ref_table = ContentType.objects.get_for_model(states[0])
-        ids = [state.id for state in states]
-        objs = (
-            ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
-            for ref_id, cl in zip(ids, change_logs)
-        )
-        bulk_create_from_generator(objs, ChangeToObject)
-
-        # Return created IDs.
-        ids = [state.id for state in states]
         return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
 
     def _delete(self, params):
@@ -324,14 +308,7 @@ class StateListAPI(BaseListView):
         count = qs.count()
         if count > 0:
             # Delete states.
-            update_kwargs = {
-                "deleted": True,
-                "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
-                "modified_by": self.request.user,
-            }
-            bulk_update_and_log_changes(
-                qs, params["project"], self.request.user, update_kwargs=update_kwargs
-            )
+            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().delete(self.kwargs['project'], query)
 
@@ -388,7 +365,7 @@ class StateDetailAPI(BaseDetailView):
     @transaction.atomic
     def _patch(self, params):
         obj = State.objects.get(pk=params['id'], deleted=False)
-        original_dict = obj.model_dict
+        model_dict = obj.model_dict
 
         if 'frame' in params:
             obj.frame = params['frame']
@@ -435,17 +412,7 @@ class StateDetailAPI(BaseDetailView):
         obj.modified_by = self.request.user
 
         obj.save()
-        cl = ChangeLog(
-            project=obj.project,
-            user=self.request.user,
-            description_of_change=obj.change_dict(original_dict),
-        )
-        cl.save()
-        ChangeToObject(
-            ref_table=ContentType.objects.get_for_model(obj),
-            ref_id=obj.id,
-            change_id=cl,
-        ).save()
+        log_changes(obj, model_dict, obj.project, self.request.user)
 
         return {'message': f'State {params["id"]} successfully updated!'}
 
@@ -453,8 +420,6 @@ class StateDetailAPI(BaseDetailView):
         state = State.objects.get(pk=params['id'], deleted=False)
         project = state.project
         model_dict = state.model_dict
-        ref_table = ContentType.objects.get_for_model(state)
-        ref_id = state.id
         delete_localizations = []
         if state.meta.delete_child_localizations:
 
@@ -466,26 +431,11 @@ class StateDetailAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        state.deleted=True
-        state.modified_datetime=datetime.datetime.now(datetime.timezone.utc)
-        state.modified_by=self.request.user
-        state.save()
+        delete_and_log_changes(state, project, self.request.user)
         TatorSearch().delete_document(state)
-        cl = ChangeLog(
-            project=project,
-            user=self.request.user,
-            description_of_change=state.change_dict(model_dict),
-        )
-        cl.save()
-        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
 
         qs = Localization.objects.filter(pk__in=delete_localizations)
-        update_kwargs = {
-            "deleted": True,
-            "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
-            "modified_by": self.request.user,
-        }
-        bulk_update_and_log_changes(qs, project, self.request.user, update_kwargs=update_kwargs)
+        bulk_delete_and_log_changes(qs, project, self.request.user)
         for loc in qs.iterator():
             TatorSearch().delete_document(loc)
 

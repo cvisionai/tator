@@ -247,7 +247,7 @@ def log_changes(obj, model_dict, project, user):
     Creates a changelog for a single updated object.
 
     :param obj: The object to compare and create a change log for.
-    :param model_dict: The state retrieved from `obj.model_dict` before updating.
+    :param model_dict: The state retrieved from `obj.model_dict` **before updating**.
     :param project: The project the request originates from
     :param user: The user making the requests
     """
@@ -258,3 +258,63 @@ def log_changes(obj, model_dict, project, user):
     cl = ChangeLog(project=project, user=user, description_of_change=obj.change_dict(model_dict))
     cl.save()
     ChangeToObject(ref_table=ref_table, ref_id=obj.id, change_id=cl).save()
+
+
+def delete_and_log_changes(obj, project, user):
+    """
+    Deletes a single object and creates a changelog for it.
+
+    :param obj: The object to delete and create a change log for.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    model_dict = obj.model_dict
+    obj.deleted = True
+    obj.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+    obj.modified_by = user
+    obj.save()
+
+    log_changes(obj, model_dict, project, user)
+
+
+def log_creation(obj, project, user):
+    """
+    Creates changelogs for a new object.
+
+    :param obj: The new object to create a change log for.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    if type(project) != Project:
+        project = Project.objects.get(pk=project)
+
+    ref_table = ContentType.objects.get_for_model(obj)
+    cl = ChangeLog(project=project, user=user, description_of_change=obj.create_dict)
+    cl.save()
+    ChangeToObject(ref_table=ref_table, ref_id=obj.id, change_id=cl).save()
+
+
+def bulk_log_creation(objects, project, user):
+    """
+    Creates changelogs for multiple new objects.
+
+    :param obj: The new object to create a change log for.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    # Create ChangeLogs
+    objs = (
+        ChangeLog(project=project, user=user, description_of_change=obj.create_dict)
+        for obj in objects
+    )
+    change_logs = bulk_create_from_generator(objs, ChangeLog)
+
+    # Associate ChangeLogs with created objects
+    ref_table = ContentType.objects.get_for_model(objects[0])
+    ids = [obj.id for obj in objects]
+    objs = (
+        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
+        for ref_id, cl in zip(ids, change_logs)
+    )
+    bulk_create_from_generator(objs, ChangeToObject)
+    return ids
