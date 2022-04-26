@@ -35,9 +35,12 @@ from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
-from ._util import bulk_create_from_generator
-from ._util import computeRequiredFields
-from ._util import check_required_fields
+from ._util import (
+    bulk_create_from_generator,
+    bulk_update_and_log_changes,
+    computeRequiredFields,
+    check_required_fields,
+)
 from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
@@ -320,33 +323,17 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            # Get info to populate ChangeLog entry
-            obj = qs.first()
-            project = obj.project
-            delete_dicts = [obj.delete_dict for obj in qs]
-            ref_table = ContentType.objects.get_for_model(obj)
-            ref_ids = [o.id for o in qs]
-
             # Delete states.
-            qs.update(deleted=True,
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                      modified_by=self.request.user)
+            update_kwargs = {
+                "deleted": True,
+                "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
+                "modified_by": self.request.user,
+            }
+            bulk_update_and_log_changes(
+                qs, params["project"], self.request.user, update_kwargs=update_kwargs
+            )
             query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().delete(self.kwargs['project'], query)
-
-            # Create ChangeLogs
-            objs = (
-                ChangeLog(project=project, user=self.request.user, description_of_change=dd)
-                for dd in delete_dicts
-            )
-            change_logs = bulk_create_from_generator(objs, ChangeLog)
-
-            # Associate ChangeLogs with deleted objects
-            objs = (
-                ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
-                for ref_id, cl in zip(ref_ids, change_logs)
-            )
-            bulk_create_from_generator(objs, ChangeToObject)
 
         return {'message': f'Successfully deleted {count} states!'}
 
@@ -354,27 +341,13 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            # Get the current representation of the object for comparison
-            original_dict = qs.first().model_dict
             new_attrs = validate_attributes(params, qs[0])
-            bulk_patch_attributes(new_attrs, qs)
-            qs.update(modified_by=self.request.user)
-
-            # Get one object from the queryset to create the change log
-            obj = qs.first()
-            change_dict = obj.change_dict(original_dict)
-            ref_table = ContentType.objects.get_for_model(obj)
+            bulk_update_and_log_changes(
+                qs, params["project"], self.request.user, new_attributes=new_attrs
+            )
 
             query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
-
-            # Create the ChangeLog entry and associate it with all objects in the queryset
-            cl = ChangeLog(
-                project=obj.project, user=self.request.user, description_of_change=change_dict
-            )
-            cl.save()
-            objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
-            bulk_create_from_generator(objs, ChangeToObject)
 
         return {'message': f'Successfully updated {count} states!'}
 
@@ -479,7 +452,7 @@ class StateDetailAPI(BaseDetailView):
     def _delete(self, params):
         state = State.objects.get(pk=params['id'], deleted=False)
         project = state.project
-        delete_dict = state.delete_dict
+        model_dict = state.model_dict
         ref_table = ContentType.objects.get_for_model(state)
         ref_id = state.id
         delete_localizations = []
@@ -498,14 +471,21 @@ class StateDetailAPI(BaseDetailView):
         state.modified_by=self.request.user
         state.save()
         TatorSearch().delete_document(state)
-        cl = ChangeLog(project=project, user=self.request.user, description_of_change=delete_dict)
+        cl = ChangeLog(
+            project=project,
+            user=self.request.user,
+            description_of_change=state.change_dict(model_dict),
+        )
         cl.save()
         ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
 
         qs = Localization.objects.filter(pk__in=delete_localizations)
-        qs.update(deleted=True,
-                  modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                  modified_by=self.request.user)
+        update_kwargs = {
+            "deleted": True,
+            "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
+            "modified_by": self.request.user,
+        }
+        bulk_update_and_log_changes(qs, project, self.request.user, update_kwargs=update_kwargs)
         for loc in qs.iterator():
             TatorSearch().delete_document(loc)
 

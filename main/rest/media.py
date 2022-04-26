@@ -41,6 +41,8 @@ from ._util import url_to_key
 from ._util import (
     bulk_create_from_generator,
     bulk_update_and_log_changes,
+    bulk_delete_and_log_changes,
+    log_changes,
     computeRequiredFields,
     check_required_fields,
 )
@@ -419,13 +421,7 @@ class MediaListAPI(BaseListView):
         media_ids = list(qs.values_list('pk', flat=True).distinct())
         count = qs.count()
         if count > 0:
-            # Get info to populate ChangeLog entry
-            update_kwargs = {
-                "deleted": True,
-                "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
-                "modified_by": self.request.user,
-            }
-            bulk_update_and_log_changes(qs, project, self.request.user, update_kwargs)
+            bulk_delete_and_log_changes(qs, project, self.request.user)
 
             # Any states that are only associated to deleted media should also be marked 
             # for deletion.
@@ -435,11 +431,11 @@ class MediaListAPI(BaseListView):
                                    .values_list('id', flat=True)
             all_deleted = set(deleted) - set(not_deleted)
             state_qs = State.objects.filter(pk__in=all_deleted)
-            bulk_update_and_log_changes(state_qs, project, self.request.user, update_kwargs)
+            bulk_delete_and_log_changes(state_qs, project, self.request.user)
 
             # Delete any localizations associated to this media
             loc_qs = Localization.objects.filter(project=project, media__in=media_ids)
-            bulk_update_and_log_changes(loc_qs, project, self.request.user, update_kwargs)
+            bulk_delete_and_log_changes(loc_qs, project, self.request.user)
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
@@ -706,18 +702,7 @@ class MediaDetailAPI(BaseDetailView):
                     localization = patch_attributes(new_attrs, localization)
                     localization.save()
 
-        cl = ChangeLog(
-            project=obj.project,
-            user=self.request.user,
-            description_of_change=obj.change_dict(model_dict),
-        )
-        cl.save()
-        ChangeToObject(
-            ref_table=ContentType.objects.get_for_model(obj),
-            ref_id=obj.id,
-            change_id=cl,
-        ).save()
-
+        log_changes(obj, model_dict, obj.project, self.request.user)
         return {'message': f'Media {params["id"]} successfully updated!'}
 
     def _delete(self, params):
@@ -730,16 +715,12 @@ class MediaDetailAPI(BaseDetailView):
         project = media.project
         modified_datetime = datetime.datetime.now(datetime.timezone.utc)
         model_dict = media.model_dict
-        ref_table = ContentType.objects.get_for_model(media)
-        ref_id = media.id
         media.deleted = True
         media.modified_datetime = modified_datetime
         media.modified_by = self.request.user
         media.save()
+        log_changes(media, model_dict, project, self.request.user)
         TatorSearch().delete_document(media)
-        cl = ChangeLog(project=project, user=self.request.user, description_of_change=media.change_dict(model_dict))
-        cl.save()
-        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
 
         # Any states that are only associated to deleted media should also be marked 
         # for deletion.
@@ -749,23 +730,20 @@ class MediaDetailAPI(BaseDetailView):
                                .values_list('id', flat=True)
         all_deleted = set(deleted) - set(not_deleted)
         state_qs = State.objects.filter(pk__in=all_deleted)
-        update_kwargs = {
-            "deleted": True,
-            "modified_datetime": modified_datetime,
-            "modified_by": self.request.user,
-        }
-        bulk_update_and_log_changes(state_qs, project, self.request.user, update_kwargs)
+        bulk_delete_and_log_changes(state_qs, project, self.request.user)
 
         # Delete any localizations associated to this media
         loc_qs = Localization.objects.filter(project=project, media__in=[media.id])
-        bulk_update_and_log_changes(loc_qs, project, self.request.user, update_kwargs)
+        bulk_delete_and_log_changes(loc_qs, project, self.request.user)
 
         # Clear elasticsearch entries for both media and its children.
         # Note that clearing children cannot be done using has_parent because it does
         # not accept queries with size, and has_parent also does not accept ids queries.
-        loc_ids = [f'box_{val.id}' for val in loc_qs.iterator()] \
-                + [f'line_{val.id}' for val in loc_qs.iterator()] \
-                + [f'dot_{val.id}' for val in loc_qs.iterator()]
+        loc_types = ["box", "line", "dot"]
+        loc_id_iterator = chain(
+            *([f"{loc_type}_{val.id}" for loc_type in loc_types] for val in loc_qs.iterator())
+        )
+        loc_ids = list(loc_id_iterator)
         TatorSearch().delete(project.id, {'query': {'ids': {'values': loc_ids}}})
         state_ids = [val.id for val in state_qs.iterator()]
         TatorSearch().delete(project.id, {

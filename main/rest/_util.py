@@ -185,6 +185,8 @@ def bulk_update_and_log_changes(queryset, project, user, update_kwargs=None, new
     :param user: The user making the requests
     :param update_kwargs: The dictionary of arguments for queryset.update(), will be used like this:
                           `queryset.update(**update_kwargs)`
+    :param new_attributes: The validated attributes returned by `validate_attributes`, if any, will
+                           be used like this: `bulk_patch_attributes(new_attributes, queryset)`
     """
     if not queryset.exists():
         logger.info("Queryset empty, not performing any updates")
@@ -222,3 +224,37 @@ def bulk_update_and_log_changes(queryset, project, user, update_kwargs=None, new
         ChangeToObject(ref_table=ref_table, ref_id=obj_id, change_id=cl) for obj_id in updated_ids
     )
     bulk_create_from_generator(objs, ChangeToObject)
+
+
+def bulk_delete_and_log_changes(queryset, project, user):
+    """
+    Performs a bulk delete and creates a changelog for it.
+
+    :param queryset: The queryset to mark for deletion
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    delete_kwargs = {
+        "deleted": True,
+        "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
+        "modified_by": user,
+    }
+    bulk_update_and_log_changes(queryset, project, user, update_kwargs=delete_kwargs)
+
+
+def log_changes(obj, model_dict, project, user):
+    """
+    Creates a changelog for a single updated object.
+
+    :param obj: The object to compare and create a change log for.
+    :param model_dict: The state retrieved from `obj.model_dict` before updating.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    if type(project) != Project:
+        project = Project.objects.get(pk=project)
+
+    ref_table = ContentType.objects.get_for_model(obj)
+    cl = ChangeLog(project=project, user=user, description_of_change=obj.change_dict(model_dict))
+    cl.save()
+    ChangeToObject(ref_table=ref_table, ref_id=obj.id, change_id=cl).save()
