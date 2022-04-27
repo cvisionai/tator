@@ -2,7 +2,7 @@ import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
-import { handle_video_error } from "./annotation-common.js";
+import { handle_video_error, PlayInteraction } from "./annotation-common.js";
 
 export class AnnotationMulti extends TatorElement {
   constructor() {
@@ -38,6 +38,8 @@ export class AnnotationMulti extends TatorElement {
     const fastForward = document.createElement("fast-forward-button");
     playButtons.appendChild(fastForward);
     this._fastForward = fastForward;
+
+    this._playInteraction = new PlayInteraction(this);
 
     const settingsDiv = document.createElement("div");
     settingsDiv.setAttribute("class", "d-flex flex-items-center");
@@ -260,11 +262,7 @@ export class AnnotationMulti extends TatorElement {
     this._videoStatus = "paused"; // Possible values: playing | paused | scrubbing
 
     // Start out with play button disabled.
-    this._play._button.setAttribute("disabled","");
-    // Use some spaces because the tooltip z-index is wrong
-    this._play.setAttribute("tooltip", "    Video is buffering");
-    this._rewind.setAttribute("disabled","")
-    this._fastForward.setAttribute("disabled","");
+    this._playInteraction.disable();
 
     this._timelineD3.addEventListener("zoomedTimeline", evt => {
       if (evt.detail.minFrame < 1 || evt.detail.maxFrame < 1) {
@@ -947,10 +945,7 @@ export class AnnotationMulti extends TatorElement {
         if (allVideosReady) {
           console.log("allVideosReady");
           if (this.is_paused()) {
-            this._play._button.removeAttribute("disabled");
-            this._rewind.removeAttribute("disabled")
-            this._fastForward.removeAttribute("disabled");
-            this._play.removeAttribute("tooltip");
+            this._playInteraction.enable();
             this._playbackDisabled = false;
           }
         }
@@ -981,11 +976,7 @@ export class AnnotationMulti extends TatorElement {
           else
           {
             // Disable buttons when actively seeking
-            this._play._button.setAttribute("disabled","");
-            // Use some spaces because the tooltip z-index is wrong
-            this._play.setAttribute("tooltip", "    Video is buffering");
-            this._rewind.setAttribute("disabled","")
-            this._fastForward.setAttribute("disabled","");
+            this._playInteraction.disable();
           }
         });
 
@@ -1437,10 +1428,7 @@ export class AnnotationMulti extends TatorElement {
     }
     else
     {
-      this._play._button.removeAttribute("disabled");
-      this._rewind.removeAttribute("disabled")
-      this._fastForward.removeAttribute("disabled");
-      this._play.removeAttribute("tooltip");
+      this._playInteraction.enable();
       this._playbackDisabled = false;
     }
   }
@@ -1523,7 +1511,8 @@ export class AnnotationMulti extends TatorElement {
       console.log("Already handling a not ready event");
       return;
     }
-    this.disablePlayUI();
+
+    this._playInteraction.disable();
 
     const timeouts = [4000, 8000, 16000];
     var timeoutIndex = 0;
@@ -1614,20 +1603,14 @@ export class AnnotationMulti extends TatorElement {
             seekPromiseList.push(seekPromise);
           }
           Promise.allSettled(seekPromiseList).then(() => {
-            this._play._button.removeAttribute("disabled");
-            this._rewind.removeAttribute("disabled")
-            this._fastForward.removeAttribute("disabled");
-            this._play.removeAttribute("tooltip");
+            this._playInteraction.enable();
             this._playbackDisabled = false;
           })
           .catch((exc) => {
             console.warn("allVideosReady() seekFrame promises error caught")
             console.warn(exc);
 
-            this._play._button.removeAttribute("disabled");
-            this._rewind.removeAttribute("disabled")
-            this._fastForward.removeAttribute("disabled");
-            this._play.removeAttribute("tooltip");
+            this._playInteraction.enable();
             this._playbackDisabled = false;
           })
         }
@@ -1820,15 +1803,6 @@ export class AnnotationMulti extends TatorElement {
     clearTimeout(this._syncThread);
     Promise.all(pausePromises).then(failSafeFunction);
 
-  }
-
-  disablePlayUI() {
-    this._play._button.setAttribute("disabled","");
-    // Use some spaces because the tooltip z-index is wrong
-    this._play.setAttribute("tooltip", "    Video is buffering");
-    this._rewind.setAttribute("disabled","")
-    this._fastForward.setAttribute("disabled","");
-    this._playbackDisabled = true;
   }
 
   refresh() {
