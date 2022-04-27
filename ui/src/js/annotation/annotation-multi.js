@@ -768,6 +768,8 @@ export class AnnotationMulti extends TatorElement {
         let prime = this._videos[idx];
         this.parent._browser.canvas = prime;
         let alert_sent = false;
+
+
         prime.addEventListener("videoError", (evt) => {
           if (alert_sent == false)
           {
@@ -815,7 +817,6 @@ export class AnnotationMulti extends TatorElement {
       this._videos[idx].addEventListener("bufferLoaded",
                              (evt) => {
                                handle_buffer_load(idx,evt);
-                               this.checkReady();
                              });
       this._videos[idx].addEventListener("onDemandDetail",
                              (evt) => {
@@ -963,7 +964,6 @@ export class AnnotationMulti extends TatorElement {
     }
 
 
-
     let video_info = [];
     Promise.all(video_resp).then((values) => {
       for (let resp of values)
@@ -971,6 +971,24 @@ export class AnnotationMulti extends TatorElement {
         video_info.push(resp.json());
       }
       Promise.all(video_info).then((info) => {
+        // When a seek is complete check to make sure the display all set
+        this._videos[0].addEventListener("seekComplete", evt => {
+          // Only run check ready on final seek
+          if (this._slider.active == false)
+          {
+            this.checkReady();
+          }
+          else
+          {
+            // Disable buttons when actively seeking
+            this._play._button.setAttribute("disabled","");
+            // Use some spaces because the tooltip z-index is wrong
+            this._play.setAttribute("tooltip", "    Video is buffering");
+            this._rewind.setAttribute("disabled","")
+            this._fastForward.setAttribute("disabled","");
+          }
+        });
+
         let max_frames = 0;
         let max_time = 0;
         let fps_of_max = 0;

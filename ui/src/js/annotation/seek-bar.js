@@ -61,7 +61,7 @@ export class SeekBar extends TatorElement {
       evt.cancelBubble=true;
       return false;
     }
-    var releaseMouse=function(evt)
+    var releaseMouse=(evt)=>
     {
       console.info("RELEASE MOUSE.");
       this._active = false;
