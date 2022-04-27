@@ -486,6 +486,7 @@ export class AnnotationMulti extends TatorElement {
     const now = Date.now();
     const frame = Number(evt.target.value);
     const waitOk = now - this._lastScrub > this._scrubInterval;
+    this._playInteraction.disable(); // disable play on scrub
     if (waitOk) {
 
       this._videoStatus = "paused";
