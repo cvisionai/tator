@@ -303,7 +303,7 @@ class TatorVideoBuffer {
         }
         else
         {
-          console.info(`Avoiding dupe ${samples[d_idx].cts}`);
+          //console.info(`Avoiding dupe ${samples[d_idx].cts}`);
         }
       }
     }
@@ -397,10 +397,10 @@ class TatorVideoBuffer {
       // In seek cases wait for the whole GOP to decode.
       if (this._playing == false)
       {
-        console.info("Forcing a flush to get all frames from this GOP");
+        //console.info("Forcing a flush to get all frames from this GOP");
         this._videoDecoder.flush()
         .then(()=>{
-          console.info("Completed GOP");
+          //console.info("Completed GOP");
         })
         .catch((e)=>{
           console.warn(e)
@@ -464,7 +464,7 @@ class TatorVideoBuffer {
     {
       for (let idx = 0; idx < this._bufferedRegions.length; idx++)
       {
-        console.info(`${this._name}: Pending Seek to ${this._pendingSeek} ${this._bufferedRegions.start(idx)} to ${this._bufferedRegions.end(idx)}`);
+        //console.info(`${this._name}: Pending Seek to ${this._pendingSeek} ${this._bufferedRegions.start(idx)} to ${this._bufferedRegions.end(idx)}`);
         if (this._pendingSeek > this._bufferedRegions.start(idx) && this._pendingSeek <= this._bufferedRegions.end(idx))
         {
           const seek_value = this._pendingSeek;
@@ -606,13 +606,13 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = (this._current_cursor)*timeScale;
       const timestamp = frame.timestamp;
-      console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
+      //console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
       if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
       {
         // Make an ImageBitmap from the frame and release the memory
         this._canvasCtx.drawImage(frame,0,0);
         let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
-        console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale}`);
+        //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale}`);
         frame.close();
         postMessage({"type": "image",
                     "data": image,
@@ -624,7 +624,7 @@ class TatorVideoBuffer {
       }
       else
       {
-        console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+this._frame_delta)/timeScale}`);
+        //console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+this._frame_delta)/timeScale}`);
         frame.close(); // don't care about the frame
       }
     }
@@ -645,7 +645,7 @@ class TatorVideoBuffer {
   _setCurrentTime(video_time, informational, raw_video_time)
   {
     this._current_cursor = video_time;
-    console.info(`${this._name} now @ ${this._current_cursor}: ${informational}`);
+    //console.info(`${this._name} now @ ${this._current_cursor}: ${informational}`);
     if (informational)
     {
       return;
@@ -688,7 +688,7 @@ class TatorVideoBuffer {
         this._videoDecoder.configure(this.activeCodecConfig);
         let nearest_keyframe = keyframe_info.thisSegment;
         mp4File.stop();
-        console.info(`${this._name}: COMMANDING MP4 SEEK ${search.key} ${video_time} ${nearest_keyframe/timescale}`);
+        //console.info(`${this._name}: COMMANDING MP4 SEEK ${search.key} ${video_time} ${nearest_keyframe/timescale}`);
         mp4File.seek(nearest_keyframe/timescale);
         mp4File.start();
         return;

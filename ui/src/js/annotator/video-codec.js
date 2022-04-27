@@ -225,7 +225,7 @@ class TatorVideoManager {
 
   _imageReady(image)
   {
-    console.info(`${performance.now()}: GOT ${image.timestamp}`);
+    //console.info(`${performance.now()}: GOT ${image.timestamp}`);
     image.data.timescale = image.timescale;
     image.data.frameDelta = image.frameDelta;
     this._hot_frames.set(image.timestamp, image.data);
@@ -357,7 +357,7 @@ class TatorVideoManager {
           break;
         }
       }
-      console.info(`${this._name}: SUMMARIZING ${video_time} to ${this._current_cursor} via ${this.summaryLevel}`);
+      //console.info(`${this._name}: SUMMARIZING ${video_time} to ${this._current_cursor} via ${this.summaryLevel}`);
     }
     else
     {
