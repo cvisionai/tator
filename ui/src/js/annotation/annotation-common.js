@@ -26,3 +26,28 @@ export function handle_video_error(evt, root)
   modalError.init("System Incompatibility Warning", msg_html, 'error', 'Exit', true);
   modalError.setAttribute("is-open", "");
 }
+
+// Class to handle the repetitive nature of graying out / disabling the play button
+export class PlayInteraction
+{
+  constructor(parent)
+  {
+    this._parent = parent;
+  }
+  enable()
+  {
+    this._parent._play._button.removeAttribute("disabled");
+    this._parent._rewind.removeAttribute("disabled")
+    this._parent._fastForward.removeAttribute("disabled");
+    this._parent._play.removeAttribute("tooltip");
+  }
+  disable()
+  {
+    // Disable buttons when actively seeking
+    this._parent._play._button.setAttribute("disabled","");
+    // Use some spaces because the tooltip z-index is wrong
+    this._parent._play.setAttribute("tooltip", "    Video is buffering");
+    this._parent._rewind.setAttribute("disabled","")
+    this._parent._fastForward.setAttribute("disabled","");
+  }
+}
