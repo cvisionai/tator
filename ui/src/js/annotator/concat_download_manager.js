@@ -301,7 +301,7 @@ export class ConcatDownloadManager
     {
       if (msg.data["buf_idx"] == this._parent._scrub_idx)
       {
-        const bias = msg.data["startBias"] + msg.data["firstFrame"] / this._parent._fps;
+        const bias = msg.data["startBias"];
         this._startBiasMap.set(timestampOffset,bias);
         this._parent._videoVersion = msg.data["version"];
         console.info(`Video has start bias of ${this._startBias} - buffer: ${this._scrub_idx}`);

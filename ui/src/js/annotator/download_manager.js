@@ -185,7 +185,6 @@ export class DownloadManager
       if (msg.data["buf_idx"] == this._parent._scrub_idx)
       {
         this._startBias = msg.data["startBias"];
-        this._startBias += msg.data["firstFrame"] / this._parent._fps;
         this._parent._videoVersion = msg.data["version"];
         console.info(`Video has start bias of ${this._startBias} - buffer: ${this._parent._scrub_idx}`);
         console.info("Setting hi performance mode");
