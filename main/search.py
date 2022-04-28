@@ -66,9 +66,10 @@ def _get_mapping_values(entity_type, attributes):
     value = attributes.get(name)
     if value is not None:
         mapping_values[name] = str(value).replace("\\", "\\\\")
+        mapping_types[name] = "text"
 
     if entity_type.attribute_types is None:
-        return mapping_values
+        return mapping_values, mapping_types
 
     for attribute_type in entity_type.attribute_types:
         name = attribute_type['name']
