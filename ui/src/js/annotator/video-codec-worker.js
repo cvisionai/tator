@@ -851,7 +851,7 @@ class TatorVideoBuffer {
         });
         try
         {
-          console.info(`SEEK SUPPLYING ${timestampOffsetCtx + samples[idx].cts}`)
+          //console.info(`SEEK SUPPLYING ${timestampOffsetCtx + samples[idx].cts}`)
           this._frameInfoMap.set(Math.floor(timestampOffsetCtx + samples[idx].cts), timestampOffset);
           seekDecoder.decode(chunk);
         }
@@ -917,7 +917,7 @@ class TatorVideoBuffer {
   {
     let search = this._barkerSearch(this._keyframeMap, seconds);
     let mp4File = this._barkerSearch(this._mp4FileMap, search.key).obj;
-    const keyframe_info = search.obj.closest_keyframe(seconds*this._timescale);
+    const keyframe_info = search.obj.closest_keyframe(seconds*this._timescaleMap.get(search.key));
     const delete_val = keyframe_info.thisSegment;
     let trak = mp4File.getTrackById(1);
     let idx = 0;
@@ -941,7 +941,7 @@ class TatorVideoBuffer {
     // above
     mp4File.releaseUsedSamples(1, idx-1);
     this.reset(search.key).then(() => {
-      this._bufferedRegions.remove(null, delete_val+(search.key));
+      this._bufferedRegions.remove(null, delete_val/this._timescaleMap.get(search.key));
       postMessage({'type': "buffered",
                   'ranges': this._bufferedRegions._buffer});
     });
