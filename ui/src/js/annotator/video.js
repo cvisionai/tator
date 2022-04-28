@@ -87,6 +87,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._decode_profiler = new PeriodicTaskProfiler("Video Decode");
     this._playerProfiler = new PeriodicTaskProfiler("Display Logic");
     this._glProfiler = new PeriodicTaskProfiler("GL Draw");
+    this._firstFrame = 0;
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))
@@ -1081,6 +1082,11 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   seekFrame(frame, callback, forceSeekBuffer, bufferType, forceSeekDownload)
   {
+    // If the goto frame precedes the 1st frame adjust it.
+    if (frame < this._firstFrame)
+    {
+      frame = this._firstFrame;
+    }
     var that = this;
     var time_comps = this.frameToComps(frame);
     var time = time_comps.time+time_comps.bias;

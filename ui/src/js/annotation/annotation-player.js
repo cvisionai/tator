@@ -202,6 +202,12 @@ export class AnnotationPlayer extends TatorElement {
       this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     });
 
+    // In the event the first frame of the video isn't frame 0.
+    this._video.addEventListener("firstFrame", evt =>
+    {
+      this._slider.setAttribute('min', evt.detail.value);
+    });
+
     // When a seek is complete check to make sure the display all set
     this._video.addEventListener("seekComplete", evt => {
       // Only run check ready on final seek
