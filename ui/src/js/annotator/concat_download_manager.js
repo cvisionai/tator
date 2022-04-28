@@ -271,11 +271,20 @@ export class ConcatDownloadManager
         {
           if (msg.data["buf_idx"] == this._parent._scrub_idx)
           {
-            this._parent.dispatchEvent(new CustomEvent("bufferLoaded",
+            // Report overall percentage given total video length of current selected region.
+            let ranges = video_buffer._buffer.buffered;
+            const video_time = video_buffer._buffer.currentTime;
+            for (let idx = 0; idx < ranges.length; idx++)
+            {
+              if (video_time <= ranges.end(idx))
+              {
+                const overall_percentage = ranges.end(idx)/this._parent._numSeconds;
+                this._parent.dispatchEvent(new CustomEvent("bufferLoaded",
                                               {composed: true,
-                                                detail: {"percent_complete":msg.data["percent_complete"]}
+                                                detail: {"percent_complete":overall_percentage}
                                               }));
-
+              }
+            }
             if (this._parent._disableAutoDownloads && this._parent._scrubDownloadCount >= 2) {
               return;
             }
