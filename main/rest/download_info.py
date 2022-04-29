@@ -44,7 +44,8 @@ class DownloadInfoAPI(BaseListView):
             if url is None:
                 upload = key.startswith('_uploads')
                 bucket = project_obj.get_bucket(upload=upload)
-                store_default = get_tator_store(bucket, upload=upload)
+                use_upload_bucket = upload and not bucket
+                store_default = get_tator_store(bucket, upload=use_upload_bucket)
 
                 tator_store = store_lookup.get(key, store_default)
                 # Make sure the key corresponds to the correct project.

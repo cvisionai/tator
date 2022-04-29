@@ -353,7 +353,8 @@ def _create_media(params, user):
     if url:
         path, bucket, upload = url_to_key(url, project_obj)
         if path is not None:
-            tator_store = get_tator_store(bucket, upload=upload)
+            use_upload_bucket = upload and not bucket
+            tator_store = get_tator_store(bucket, upload=use_upload_bucket)
             tator_store.put_media_id_tag(path, media_obj.id)
 
     log_creation(media_obj, media_obj.project, user)

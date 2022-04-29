@@ -56,7 +56,9 @@ class UploadInfoAPI(BaseDetailView):
             today = datetime.datetime.now().strftime('%Y-%m-%d')
             user = self.request.user.pk
             key = f"_uploads/{today}/{organization}/{project}/{user}/{name}"
-            tator_store = get_tator_store(project_obj.get_bucket(upload=True), upload=True)
+            upload_bucket = project_obj.get_bucket(upload=True)
+            use_upload = not upload_bucket
+            tator_store = get_tator_store(upload_bucket, upload=use_upload)
         elif media_id is not None and file_id is not None:
             raise ValueError(f"Both a file_id and media_id was provided!")
         elif media_id is not None:
