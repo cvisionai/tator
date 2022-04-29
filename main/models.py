@@ -1473,7 +1473,7 @@ class Leaf(Model, ModelDiffMixin):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='leaf_modified_by', db_column='modified_by')
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
-    path=PathField(unique=True)
+    path=PathField()
     name = CharField(max_length=255)
     deleted = BooleanField(default=False)
 
