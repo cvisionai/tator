@@ -530,6 +530,10 @@ export class TatorVideoDecoder {
 
   pause(time)
   {
+    if (this._compat)
+    {
+      return;
+    }
     this._buffer.pause();
     if (time)
     {
@@ -539,6 +543,10 @@ export class TatorVideoDecoder {
 
   play()
   {
+    if (this._compat)
+    {
+      return;
+    }
     let timestamps = this._hot_frames.keys();
     for (let idx = 0; idx < timestamps.length; idx++)
     {

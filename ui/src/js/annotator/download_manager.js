@@ -215,6 +215,9 @@ export class DownloadManager
                                           }));
       this._parent._onDemandPlaybackReady = true; // fake it
       this._parent.sendPlaybackReady();
+      this._parent.dispatchEvent(new Event("canvasReady", {
+        composed: true
+      }));
     }
     else if (type == "onDemandInit")
     {

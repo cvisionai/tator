@@ -1419,7 +1419,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._lastTime = performance.now();
     this._animationIdx = 0;
 
-    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
+    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true)
     {
       this.frameCallbackMethod();
     }
