@@ -248,8 +248,10 @@ class TatorVideoBuffer {
     }
     catch(e)
     {
-      // Only do this on a fail
-      this._videoDecoder.reset();
+      // Only do this on a fail (stale decoder)
+      this._videoDecoder = new VideoDecoder({
+            output: this._frameReady.bind(this),
+            error: this._frameError.bind(this)});
       this._videoDecoder.configure(this._encoderConfig.get(timestampOffset));
     }
     console.info(`${this._name} decoder reports ${this._videoDecoder.state}`);
