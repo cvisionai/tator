@@ -242,7 +242,16 @@ class TatorVideoBuffer {
     }
     console.info(JSON.stringify(info.tracks[0]));
     console.info(`${this._name} is configuring decoder = ${JSON.stringify(this._encoderConfig.get(timestampOffset))}`);
-    this._videoDecoder.configure(this._encoderConfig.get(timestampOffset));
+    try
+    {
+      this._videoDecoder.configure(this._encoderConfig.get(timestampOffset));
+    }
+    catch(e)
+    {
+      // Only do this on a fail
+      this._videoDecoder.reset();
+      this._videoDecoder.configure(this._encoderConfig.get(timestampOffset));
+    }
     console.info(`${this._name} decoder reports ${this._videoDecoder.state}`);
 
     console.info(JSON.stringify(info));
