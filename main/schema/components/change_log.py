@@ -16,6 +16,11 @@ change_log = {
             "type": "integer",
             "description": "Unique integer identifying project of this change log.",
         },
+        "modified_datetime": {
+            'type': 'string',
+            'format': 'date-time',
+            'description': 'Datetime this change occurred.',
+        },
         "description_of_change": {
             "type": "object",
             "description": "The old and new values for the changed object",

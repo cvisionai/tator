@@ -60,7 +60,8 @@ class TranscodeAPI(BaseListView):
         path, bucket, upload = url_to_key(url, project_obj)
         if path is not None:
             logger.info(f"Attempting to retrieve size for object key {path}...")
-            tator_store = get_tator_store(bucket, upload=upload)
+            use_upload_bucket = upload and not bucket
+            tator_store = get_tator_store(bucket, upload=use_upload_bucket)
             upload_size = tator_store.get_size(path)
             # If we have the media ID, tag the object with the media ID.
             if media_id:

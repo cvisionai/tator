@@ -26,9 +26,11 @@ class SectionListSchema(AutoSchema):
     def get_description(self, path, method):
         if method == 'GET':
             short_desc = "Get section list."
+            long_desc = ""
         elif method == 'POST':
             short_desc = "Create section."
-        return f"{short_desc}\n\n{boilerplate}"
+            long_desc = "Note: In order for a section to be interpreted properly, the tator_user_sections attribute of the SectionSpec cannot be None. The front end assigns a uuid1 string for this attribute, but it is not required to follow this pattern."
+        return f"{short_desc}\n\n{boilerplate}\n\n{long_desc}"
 
     def get_path_parameters(self, path, method):
         return [{
@@ -40,13 +42,16 @@ class SectionListSchema(AutoSchema):
         }]
 
     def get_filter_parameters(self, path, method):
-        return [{
-            'name': 'name',
-            'in': 'query',
-            'required': False,
-            'description': 'Name of the section.',
-            'schema': {'type': 'string'},
-        }]
+        params = []
+        if method == 'GET':
+            params = [{
+                'name': 'name',
+                'in': 'query',
+                'required': False,
+                'description': 'Name of the section.',
+                'schema': {'type': 'string'},
+            }]
+        return params
 
     def get_request_body(self, path, method):
         body = {}

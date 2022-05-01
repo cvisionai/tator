@@ -4,7 +4,7 @@ import logging
 import json
 import os
 from uuid import uuid4
-from typing import Dict, Tuple
+from typing import Generator
 
 from django.db import transaction
 
@@ -240,30 +240,32 @@ class TatorBackupManager:
 
         return success, store_info
 
-    def backup_resources(self, resource_qs) -> Tuple[int, Dict[int, set]]:
+    def backup_resources(self, resource_qs) -> Generator[tuple, None, None]:
         """
-        Copies the resources in the given queryset from the live store to the backup store for their
-        respective projects.  Returns a tuple where the first element is the number of resources
-        that were successfully backed up and the second is a dict that maps project ids to lists of
-        media ids with at least one resource that failed to back up properly.
+        Creates a generator that copies the resources in the given queryset from the live store to
+        the backup store for their respective projects. Yields a tuple with the first element being
+        the success of the backup operation for the current resource and the second element being
+        the resource in question, so the calling function can iterate over the queryset and keep
+        track of its progress.
 
         If there is no backup bucket for the given project (or a site-wide default), this will
-        return `False`.
+        yield `(False, resource)`.
 
         :param resource_qs: The resources to back up
         :type resource_qs: Queryset
-        :rtype: Tuple[int, Dict[int, set]]
+        :rtype: Generator[tuple, None, None]
         """
         successful_backups = set()
         for resource in resource_qs.iterator():
             project = self.project_from_resource(resource)
             path = resource.path
             success, store_info = self.get_store_info(project)
+            success = success and "backup" in store_info
 
-            if success and "backup" in store_info:
+            if success:
                 if store_info["backup"]["store"].check_key(path):
                     logger.info(f"Resource {path} already backed up")
-                    return True
+                    continue
 
                 # Get presigned url from the live bucket, set to expire in 1h
                 download_url = store_info["live"]["store"].get_download_url(path, 3600)

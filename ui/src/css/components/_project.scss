@@ -6,6 +6,10 @@
   margin-bottom: 10px;
 }
 
+.project__section {
+  padding-bottom: 350px;
+}
+
 .projects__link {
   width: 60%;
   &:hover,
@@ -275,3 +279,4 @@
   -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
 }
+

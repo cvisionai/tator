@@ -15,6 +15,17 @@ from ._float_array_query import get_float_array_query
 
 logger = logging.getLogger(__name__)
 
+
+def format_query_string(query_str: str) -> str:
+    """
+    Preformatting before passing the query to ElasticSearch.
+
+    :param query_str: The raw query string
+    :type query_str: str
+    """
+    return query_str.replace("/", "\\/")
+
+
 def get_attribute_es_query(query_params, query, bools, project,
                            is_media=True, annotation_bools=None, modified=None):
     """ TODO: add documentation for this """
@@ -93,10 +104,10 @@ def get_attribute_es_query(query_params, query, bools, project,
         if section_object.lucene_search:
             attr_query['media']['filter'].append({'bool': {
                 'should': [
-                    {'query_string': {'query': section_object.lucene_search}},
+                    {'query_string': {'query': format_query_string(section_object.lucene_search)}},
                     {'has_child': {
                         'type': 'annotation',
-                        'query': {'query_string': {'query': section_object.lucene_search}},
+                        'query': {'query_string': {'query': format_query_string(section_object.lucene_search)}},
                         },
                     },
                 ],
@@ -131,13 +142,13 @@ def get_attribute_es_query(query_params, query, bools, project,
 
         search = query_params.get('search')
         if search is not None:
-            search_query = {'query_string': {'query': search}}
+            search_query = {'query_string': {'query': format_query_string(search)}}
             query['query']['bool']['filter'].append(search_query)
 
         annotation_search = query_params.get('annotation_search')
         if annotation_search is not None:
             annotation_search_query = {'has_child': {'type': 'annotation',
-                                                     'query': {'query_string': {'query': annotation_search}}}}
+                                                     'query': {'query_string': {'query': format_query_string(annotation_search)}}}}
             query['query']['bool']['filter'].append(annotation_search_query)
 
     else:
@@ -172,13 +183,13 @@ def get_attribute_es_query(query_params, query, bools, project,
 
         search = query_params.get('search', None)
         if search is not None:
-            search_query = {'query_string': {'query': search}}
+            search_query = {'query_string': {'query': format_query_string(search)}}
             query['query']['bool']['filter'].append(search_query)
 
         media_search = query_params.get('media_search')
         if media_search is not None:
             media_search_query = {'has_parent': {'parent_type': 'media',
-                                                 'query': {'query_string': {'query': media_search}}}}
+                                                 'query': {'query_string': {'query': format_query_string(media_search)}}}}
             query['query']['bool']['filter'].append(media_search_query)
 
         if modified is not None:
