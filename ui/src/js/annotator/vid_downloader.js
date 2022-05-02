@@ -160,6 +160,12 @@ export class VideoDownloader
             "buf_idx": buf_idx
           });
 
+        if (this._pendingDownload && this._pendingDownload.buf_idx == buf_idx)
+        {
+          this.downloadForFrame(this._pendingDownload.buf_idx, this._pendingDownload.frame, this._pendingDownload.time);
+          this._pendingDownload = null;
+        }
+
         that._infoObjectsInitialized += 1;
         if (that._infoObjectsInitialized == that._num_res)
         {
@@ -557,7 +563,14 @@ export class VideoDownloader
     {
 
     }
-    if (version < 2 || version == undefined)
+    // Save download for when the file is initialized in case the cart leads the horse
+    if (version == undefined)
+    {
+      console.info("Keeping pending download in line for post-init");
+      this._pendingDownload = {'buf_idx': buf_idx, 'frame': frame, 'time': time};
+      return;
+    }
+    if (version < 2)
     {
       console.warn("Old version of segment file doesn't support seek operation");
       return;
