@@ -1209,11 +1209,14 @@ export class VideoCanvas extends AnnotationCanvas {
           that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
           video.oncanplay=null;
-          that.dispatchEvent(new CustomEvent("seekComplete",
-                                       {composed: true,
-                                        detail: {
-                                          forceSeekBuffer: forceSeekBuffer
-                                        }}));
+          if (that._direction == Direction.STOPPED)
+          {
+            that.dispatchEvent(new CustomEvent("seekComplete",
+                                        {composed: true,
+                                          detail: {
+                                            forceSeekBuffer: forceSeekBuffer
+                                          }}));
+          }
           if (forceSeekBuffer && that._audioPlayer)
           {
             if (that._audioPlayer.currentTime != audio_time)
@@ -1419,7 +1422,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._lastTime = performance.now();
     this._animationIdx = 0;
 
-    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true)
+    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
       this.frameCallbackMethod();
     }
@@ -2449,32 +2452,10 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
+      this._oldRate = this._playbackRate;
+      this._playbackRate = 0.25;
       this._playCb.forEach(cb => {cb();});
-      if (this._playbackRate > RATE_CUTOFF_FOR_ON_DEMAND)
-      {
-        this._playGenericScrub(Direction.BACKWARDS);
-      }
-      else
-      {
-        if (this._play_idx == this._scrub_idx && this.videoBuffer(this.currentFrame(), "scrub") != null)
-        {
-          this._playGenericScrub(Direction.BACKWARDS);
-        }
-        else
-        {
-          this._dlWorker.postMessage(
-            {
-              "type": "onDemandInit",
-              "frame": this._dispFrame,
-              "fps": this._fps,
-              "maxFrame": this._numFrames - 1,
-              "direction": "backward",
-              "mediaFileIndex": this._play_idx,
-              "id": this._onDemandId
-            });
-          this._playGenericOnDemand(Direction.BACKWARDS);
-        }
-      }
+      this._playGenericScrub(Direction.BACKWARDS);
       return true;
     }
   }
@@ -2542,6 +2523,12 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Stop the player thread first
     this.stopPlayerThread();
+
+    if (this._oldRate)
+    {
+      this._playbackRate = this._oldRate;
+      this._oldRate = null;
+    }
 
     // Let the downloader know the ondemand is paused.
     // Doesn't matter if the player was using the scrub buffer for playback
