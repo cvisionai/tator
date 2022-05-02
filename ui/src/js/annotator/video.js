@@ -467,6 +467,10 @@ export class VideoCanvas extends AnnotationCanvas {
       if (idx == this._play_idx)
       {
         p.onBuffered = () => {
+          if (idx == this._scrub_idx)
+          {
+            return;
+          }
           const ranges = p.playBuffer().buffered;
           let ranges_list = [];
           for (let idx = 0; idx < ranges.length; idx++)

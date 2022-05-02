@@ -414,7 +414,7 @@ class TatorVideoBuffer {
           //console.info("Completed GOP");
         })
         .catch((e)=>{
-          console.warn(e)
+          //console.warn(e)
         });
       }
 
@@ -572,7 +572,8 @@ class TatorVideoBuffer {
     //console.info(`${this._name}@${this._current_cursor}: Frame Ready = ${frame.timestamp/timescale}`);
     if (this._frameInfoMap.has(frame.timestamp) == false)
     {
-      console.warn(`IGNORING unknown frame ${frame.timestamp}`);
+      // Frames came in past the reset
+      //console.warn(`IGNORING unknown frame ${frame.timestamp}`);
       frame.close();
       return;
     }
@@ -867,7 +868,7 @@ class TatorVideoBuffer {
         }
         catch(e)
         {
-          console.warn(`${e}`);
+          //console.warn(`${e}`);
         }
       }
       seekDecoder.flush().then(
