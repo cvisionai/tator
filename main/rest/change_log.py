@@ -10,7 +10,7 @@ from ._permissions import ProjectFullControlPermission
 
 logger = logging.getLogger(__name__)
 
-CHANGE_LOG_PROPERTIES = ["id", "project", "user", "description_of_change"]
+CHANGE_LOG_PROPERTIES = ["id", "project", "user", "description_of_change", "modified_datetime"]
 
 
 class ChangeLogListAPI(BaseListView):

@@ -13,7 +13,7 @@ export class MediaCard extends TatorElement {
     this._li.setAttribute("class", "project__file rounded-2");
     this._shadow.appendChild(this._li);
 
-    this._link = document.createElement("a");
+    this._link = document.createElement("div");
     this._link.setAttribute("class", "file__link d-flex flex-items-center text-white");
     this._link.setAttribute("href", "#");
     this._li.appendChild(this._link);
@@ -244,97 +244,7 @@ export class MediaCard extends TatorElement {
       case "pos-text":
         this._pos_text.textContent = newValue;
     }
-  }
-
-  set project(val) {
-    if (!hasPermission(val.permission, "Can Edit")) {
-      this._more.style.display = "none";
-    }
-    this._more.project = val;
-  }
-
-  set algorithms(val) {
-    this._more.algorithms = val;
-  }
-
-  set mediaParams(val) {
-    this._mediaParams = val;
-  }
-
-  set media(val) {
-    this._media = val;
-    this._more.media = val;
-    let valid = false;
-    if (this._media.media_files)
-    {
-      if ('streaming' in this._media.media_files ||
-          'layout' in this._media.media_files ||
-          'image' in this._media.media_files ||
-          'concat' in this._media.media_files)
-      {
-        valid = true;
-      }
-      if (!('thumbnail' in this._media.media_files) && 'live' in this._media.media_files)
-      {
-        // Default to tator thumbnail
-        // TODO: Have some visual indication if stream is active.
-        this._img.setAttribute("src", LiveThumb);
-
-      }
-    }
-    if (valid == false)
-    {
-      this._name.style.opacity = 0.35;
-      this._link.style.opacity = 0.35;
-      this._name.style.cursor = "not-allowed";
-      this._link.style.cursor = "not-allowed";
-    }
-    else
-    {
-      let project = val.project;
-      if(typeof(val.project) == "undefined") {
-        project = val.project_id;
-      }
-      var uri = `/${project}/annotation/${val.id}?${this._mediaParams.toString()}`;
-      this._name.setAttribute("href", uri);
-      this._link.setAttribute("href", uri);
-      this._name.style.opacity = 1;
-      this._link.style.opacity = 1;
-      this._name.style.cursor = "pointer";
-      this._link.style.cursor = "pointer";
-    }
-
-    if (this._media.archive_state == "to_archive") {
-      this._archiveDownEmblem.style.display = "flex";
-      this._archiveDownEmblem.setAttribute("tooltip", "Pending Archival");
-    }
-    else if (this._media.archive_state == "archived") {
-      this._archiveEmblem.style.display = "flex";
-      this._archiveEmblem.setAttribute("tooltip", "Archived");
-    }
-    else if (this._media.archive_state == "to_live") {
-      this._archiveUpEmblem.style.display = "flex";
-      this._archiveUpEmblem.setAttribute("tooltip", "Pending Live");
-    }
-    else {
-      this._archiveDownEmblem.style.display = "none";
-      this._archiveUpEmblem.style.display = "none";
-      this._archiveEmblem.style.display = "none";
-    }
-  }
-
-  get media() {
-    return this._media;
-  }
-
-  set attachments(val) {
-    this._attachments = val;
-    if (val.length > 0) {
-      this._attachmentButton.style.display = "flex";
-    } else {
-      this._attachmentButton.style.display = "none";
-    }
-  }
+  }  
 }
 
 customElements.define("media-card", MediaCard);

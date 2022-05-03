@@ -313,7 +313,7 @@ export class EntityBrowser extends TatorElement {
 
   selectEntity(obj) {
     let group;
-    if (this._identifier && this._group.getValue()) {
+    if (this._identifier && (this._group.getValue() && this._group.getValue() !== "Off")) {
       group = obj.attributes[this._identifier.name];
     } else {
       group = "All " + this._title.textContent;

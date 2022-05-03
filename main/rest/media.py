@@ -1,5 +1,6 @@
 import logging
 import datetime
+from itertools import chain
 import os
 import shutil
 import mimetypes
@@ -15,8 +16,6 @@ from django.http import Http404
 from PIL import Image
 
 from ..models import (
-    ChangeLog,
-    ChangeToObject,
     Media,
     MediaType,
     Section,
@@ -37,7 +36,15 @@ from ..store import get_tator_store, get_storage_lookup
 from ..cache import TatorCache
 
 from ._util import url_to_key
-from ._util import bulk_create_from_generator, computeRequiredFields, check_required_fields
+from ._util import (
+    bulk_update_and_log_changes,
+    bulk_delete_and_log_changes,
+    delete_and_log_changes,
+    log_changes,
+    log_creation,
+    computeRequiredFields,
+    check_required_fields,
+)
 from ._base_views import BaseListView, BaseDetailView
 from ._media_query import get_media_queryset, get_media_es_query
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
@@ -346,17 +353,11 @@ def _create_media(params, user):
     if url:
         path, bucket, upload = url_to_key(url, project_obj)
         if path is not None:
-            tator_store = get_tator_store(bucket, upload=upload)
+            use_upload_bucket = upload and not bucket
+            tator_store = get_tator_store(bucket, upload=use_upload_bucket)
             tator_store.put_media_id_tag(path, media_obj.id)
 
-    cl = ChangeLog(
-        project=media_obj.project,
-        user=user,
-        description_of_change=media_obj.create_dict,
-    )
-    cl.save()
-    ref_table = ContentType.objects.get_for_model(media_obj)
-    ChangeToObject(ref_table=ref_table, ref_id=media_obj.id, change_id=cl).save()
+    log_creation(media_obj, media_obj.project, user)
 
     return media_obj, response
 
@@ -413,20 +414,7 @@ class MediaListAPI(BaseListView):
         media_ids = list(qs.values_list('pk', flat=True).distinct())
         count = qs.count()
         if count > 0:
-            # Get info to populate ChangeLog entry
-            first_obj = qs.first()
-            project = first_obj.project
-            ref_table = ContentType.objects.get_for_model(first_obj)
-            delete_dicts = []
-            ref_ids = []
-            for obj in qs:
-                delete_dicts.append(obj.delete_dict)
-                ref_ids.append(obj.id)
-
-            # Mark media for deletion.
-            qs.update(deleted=True,
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                      modified_by=self.request.user)
+            bulk_delete_and_log_changes(qs, project, self.request.user)
 
             # Any states that are only associated to deleted media should also be marked 
             # for deletion.
@@ -436,15 +424,11 @@ class MediaListAPI(BaseListView):
                                    .values_list('id', flat=True)
             all_deleted = set(deleted) - set(not_deleted)
             state_qs = State.objects.filter(pk__in=all_deleted)
-            state_qs.update(deleted=True,
-                            modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                            modified_by=self.request.user)
+            bulk_delete_and_log_changes(state_qs, project, self.request.user)
 
             # Delete any localizations associated to this media
             loc_qs = Localization.objects.filter(project=project, media__in=media_ids)
-            loc_qs.update(deleted=True,
-                          modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                          modified_by=self.request.user)
+            bulk_delete_and_log_changes(loc_qs, project, self.request.user)
 
             # Clear elasticsearch entries for both media and its children.
             # Note that clearing children cannot be done using has_parent because it does
@@ -467,19 +451,6 @@ class MediaListAPI(BaseListView):
                 },
             })
 
-            # Create ChangeLogs
-            objs = (
-                ChangeLog(project=project, user=self.request.user, description_of_change=dd)
-                for dd in delete_dicts
-            )
-            change_logs = bulk_create_from_generator(objs, ChangeLog)
-
-            # Associate ChangeLogs with deleted objects
-            objs = (
-                ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
-                for ref_id, cl in zip(ref_ids, change_logs)
-            )
-            bulk_create_from_generator(objs, ChangeToObject)
         return {'message': f'Successfully deleted {count} medias!'}
 
     def _patch(self, params):
@@ -506,21 +477,11 @@ class MediaListAPI(BaseListView):
             new_attrs = validate_attributes(params, obj)
             if new_attrs is not None:
                 attr_count = len(ids_to_update)
-                ref_table = ContentType.objects.get_for_model(obj)
-                original_dict = obj.model_dict
-                bulk_patch_attributes(new_attrs, qs)
+                bulk_update_and_log_changes(
+                    qs, params["project"], self.request.user, new_attributes=new_attrs
+                )
                 query = get_media_es_query(params["project"], params)
                 ts.update(self.kwargs["project"], obj.meta, query, new_attrs)
-                qs = Media.objects.filter(pk__in=ids_to_update)
-                obj = Media.objects.get(id=original_dict["id"])
-                change_dict = obj.change_dict(original_dict)
-                # Create the ChangeLog entry and associate it with all objects in the queryset
-                cl = ChangeLog(
-                    project=obj.project, user=self.request.user, description_of_change=change_dict
-                )
-                cl.save()
-                objs = (ChangeToObject(ref_table=ref_table, ref_id=o.id, change_id=cl) for o in qs)
-                bulk_create_from_generator(objs, ChangeToObject)
                 count = max(count, attr_count)
 
             if desired_archive_state is not None:
@@ -559,18 +520,23 @@ class MediaListAPI(BaseListView):
                     # Get the original dict for creating the change log
                     archive_objs = list(archive_qs)
                     obj = archive_objs[0]
-                    ref_table = ContentType.objects.get_for_model(obj)
-                    original_dict = obj.model_dict
+                    model_dict = obj.model_dict
 
                     # Store the list of ids updated for this state and update them
                     archive_ids_to_update = [o.id for o in archive_objs]
                     archive_count += len(archive_ids_to_update)
                     previously_updated += archive_ids_to_update
                     dt_now = datetime.datetime.now(datetime.timezone.utc)
-                    archive_qs.update(
-                        archive_status_date=dt_now,
-                        archive_state=next_archive_state,
-                        modified_datetime=dt_now,
+                    update_kwargs = {
+                        "archive_status_date": dt_now,
+                        "archive_state": next_archive_state,
+                        "modified_datetime": dt_now,
+                    }
+                    bulk_update_and_log_changes(
+                        archive_qs,
+                        params["project"],
+                        self.request.user,
+                        update_kwargs=update_kwargs,
                     )
                     archive_qs = Media.objects.filter(pk__in=archive_ids_to_update)
 
@@ -580,19 +546,6 @@ class MediaListAPI(BaseListView):
                         documents += ts.build_document(entity)
                     ts.bulk_add_documents(documents)
 
-                    # Create the ChangeLog entry and associate it with all updated objects
-                    obj = Media.objects.get(id=original_dict["id"])
-                    cl = ChangeLog(
-                        project=obj.project,
-                        user=self.request.user,
-                        description_of_change=obj.change_dict(original_dict),
-                    )
-                    cl.save()
-                    objs = (
-                        ChangeToObject(ref_table=ref_table, ref_id=obj_id, change_id=cl)
-                        for obj_id in archive_ids_to_update
-                    )
-                    bulk_create_from_generator(objs, ChangeToObject)
                 count = max(count, archive_count)
 
         return {"message": f"Successfully patched {count} medias!"}
@@ -636,9 +589,10 @@ class MediaDetailAPI(BaseDetailView):
         """
         with transaction.atomic():
             qs = Media.objects.select_for_update().filter(pk=params['id'], deleted=False)
-            original_dict = qs[0].model_dict
+            media = qs[0]
+            model_dict = media.model_dict
             if 'attributes' in params:
-                new_attrs = validate_attributes(params, qs[0])
+                new_attrs = validate_attributes(params, media)
                 bulk_patch_attributes(new_attrs, qs)
 
             if 'name' in params:
@@ -669,7 +623,7 @@ class MediaDetailAPI(BaseDetailView):
                 qs.update(summaryLevel=params['summaryLevel'])
 
             if 'multi' in params:
-                media_files = qs[0].media_files
+                media_files = media.media_files
                 # If this object already contains non-multi media definitions, raise an exception.
                 if media_files:
                     for role in ['streaming', 'archival', 'image', 'live', 'concat']:
@@ -678,10 +632,10 @@ class MediaDetailAPI(BaseDetailView):
                             raise ValueError(f"Cannot set a multi definition on a Media that contains "
                                               "individual or concatenated media!")
                 # Check values of IDs (that they exist and are part of the same project).
-                sub_media = Media.objects.filter(project=qs[0].project, pk__in=params['multi']['ids'])
+                sub_media = Media.objects.filter(project=media.project, pk__in=params['multi']['ids'])
                 if len(params['multi']['ids']) != sub_media.count():
                     raise ValueError(f"One or more media IDs in multi definition is not part of "
-                                      "project {qs[0].project.pk} or does not exist!")
+                                      "project {media.project.pk} or does not exist!")
                 if media_files is None:
                     media_files = {}
                 for key in ['ids', 'layout', 'quality']:
@@ -719,7 +673,7 @@ class MediaDetailAPI(BaseDetailView):
                 qs.update(media_files=media_files)
 
             if 'live' in params:
-                media_files = qs[0].media_files
+                media_files = media.media_files
                 # If this object already contains non-live media definitions, raise an exception.
                 if media_files:
                     for role in ['streaming', 'archival', 'image', 'ids']:
@@ -735,10 +689,14 @@ class MediaDetailAPI(BaseDetailView):
 
             if "archive_state" in params:
                 next_archive_state = _get_next_archive_state(
-                    params["archive_state"], qs[0].archive_state
+                    params["archive_state"], media.archive_state
                 )
 
                 if next_archive_state is not None:
+                    project = media.project
+                    user = self.request.user
+
+                    # Update the archive state of all videos if this is a multiview
                     multi_constituent_ids = _single_ids_from_multi_qs(
                         qs.filter(meta__dtype="multi")
                     )
@@ -747,10 +705,14 @@ class MediaDetailAPI(BaseDetailView):
                         pk__in=multi_constituent_ids
                     )
                     dt_now = datetime.datetime.now(datetime.timezone.utc)
-                    archive_state_qs.update(
-                        archive_status_date=dt_now,
-                        archive_state=next_archive_state,
-                        modified_datetime=dt_now,
+                    update_kwargs = {
+                        "archive_status_date": dt_now,
+                        "archive_state": next_archive_state,
+                        "modified_datetime": dt_now,
+                        "modified_by": user,
+                    }
+                    bulk_update_and_log_changes(
+                        archive_state_qs, project, user, update_kwargs=update_kwargs
                     )
 
         obj = Media.objects.get(pk=params['id'], deleted=False)
@@ -761,18 +723,7 @@ class MediaDetailAPI(BaseDetailView):
                     localization = patch_attributes(new_attrs, localization)
                     localization.save()
 
-        cl = ChangeLog(
-            project=obj.project,
-            user=self.request.user,
-            description_of_change=obj.change_dict(original_dict),
-        )
-        cl.save()
-        ChangeToObject(
-            ref_table=ContentType.objects.get_for_model(obj),
-            ref_id=obj.id,
-            change_id=cl,
-        ).save()
-
+        log_changes(obj, model_dict, obj.project, self.request.user)
         return {'message': f'Media {params["id"]} successfully updated!'}
 
     def _delete(self, params):
@@ -783,17 +734,9 @@ class MediaDetailAPI(BaseDetailView):
         """
         media = Media.objects.get(pk=params['id'], deleted=False)
         project = media.project
-        delete_dict = media.delete_dict
-        ref_table = ContentType.objects.get_for_model(media)
-        ref_id = media.id
-        media.deleted = True
-        media.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
-        media.modified_by = self.request.user
-        media.save()
+        modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+        delete_and_log_changes(media, project, self.request.user)
         TatorSearch().delete_document(media)
-        cl = ChangeLog(project=project, user=self.request.user, description_of_change=delete_dict)
-        cl.save()
-        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl).save()
 
         # Any states that are only associated to deleted media should also be marked 
         # for deletion.
@@ -803,22 +746,20 @@ class MediaDetailAPI(BaseDetailView):
                                .values_list('id', flat=True)
         all_deleted = set(deleted) - set(not_deleted)
         state_qs = State.objects.filter(pk__in=all_deleted)
-        state_qs.update(deleted=True,
-                        modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                        modified_by=self.request.user)
+        bulk_delete_and_log_changes(state_qs, project, self.request.user)
 
         # Delete any localizations associated to this media
         loc_qs = Localization.objects.filter(project=project, media__in=[media.id])
-        loc_qs.update(deleted=True,
-                      modified_datetime=datetime.datetime.now(datetime.timezone.utc),
-                      modified_by=self.request.user)
+        bulk_delete_and_log_changes(loc_qs, project, self.request.user)
 
         # Clear elasticsearch entries for both media and its children.
         # Note that clearing children cannot be done using has_parent because it does
         # not accept queries with size, and has_parent also does not accept ids queries.
-        loc_ids = [f'box_{val.id}' for val in loc_qs.iterator()] \
-                + [f'line_{val.id}' for val in loc_qs.iterator()] \
-                + [f'dot_{val.id}' for val in loc_qs.iterator()]
+        loc_types = ["box", "line", "dot"]
+        loc_id_iterator = chain(
+            *([f"{loc_type}_{val.id}" for loc_type in loc_types] for val in loc_qs.iterator())
+        )
+        loc_ids = list(loc_id_iterator)
         TatorSearch().delete(project.id, {'query': {'ids': {'values': loc_ids}}})
         state_ids = [val.id for val in state_qs.iterator()]
         TatorSearch().delete(project.id, {

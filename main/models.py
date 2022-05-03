@@ -1187,7 +1187,8 @@ class Resource(Model):
         logger.info(f"Deleting object {path}")
         obj.delete()
         tator_store = get_tator_store(obj.bucket)
-        tator_store.delete_object(path)
+        if tator_store.check_key(path):
+            tator_store.delete_object(path)
 
         # If the resource is not backed up or a `project_id` is not provided, don't try to delete
         # its backup
@@ -1200,7 +1201,9 @@ class Resource(Model):
 
         # Use the default backup bucket if the project specific backup bucket is not set
         use_default_backup_bucket = backup_bucket is None
-        get_tator_store(backup_bucket, backup=use_default_backup_bucket).delete_object(path)
+        backup_store = get_tator_store(backup_bucket, backup=use_default_backup_bucket)
+        if backup_store.check_key(path):
+            backup_store.delete_object(path)
 
     @transaction.atomic
     def archive_resource(path):
@@ -1470,7 +1473,7 @@ class Leaf(Model, ModelDiffMixin):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='leaf_modified_by', db_column='modified_by')
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
-    path=PathField(unique=True)
+    path=PathField()
     name = CharField(max_length=255)
     deleted = BooleanField(default=False)
 

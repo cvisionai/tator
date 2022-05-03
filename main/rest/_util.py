@@ -3,15 +3,16 @@ from itertools import islice
 import logging
 from urllib.parse import urlparse
 
+from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
 from rest_framework.exceptions import PermissionDenied
 
-from ..models import type_to_obj
+from ..models import type_to_obj, ChangeLog, ChangeToObject, Project
 
-from ._attributes import convert_attribute
+from ._attributes import bulk_patch_attributes, convert_attribute
 
 logger = logging.getLogger(__name__)
 
@@ -174,3 +175,146 @@ def url_to_key(url, project_obj):
         path = '/'.join(parsed.path.split('/')[-num_tokens:])
     return path, bucket, upload
 
+
+def bulk_update_and_log_changes(queryset, project, user, update_kwargs=None, new_attributes=None):
+    """
+    Performs a bulk update and creates a single changelog referenced by all changed objects
+
+    :param queryset: The queryset to update
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    :param update_kwargs: The dictionary of arguments for queryset.update(), will be used like this:
+                          `queryset.update(**update_kwargs)`
+    :param new_attributes: The validated attributes returned by `validate_attributes`, if any, will
+                           be used like this: `bulk_patch_attributes(new_attributes, queryset)`
+    """
+    if not queryset.exists():
+        logger.info("Queryset empty, not performing any updates")
+        return
+
+    if update_kwargs is None and new_attributes is None:
+        raise ValueError(
+            "Must specify at least one of the following arguments: update_kwargs, new_attributes"
+        )
+
+    if type(project) != Project:
+        project = Project.objects.get(pk=project)
+
+    # Get prior state data for ChangeLog creation
+    updated_ids = list(queryset.values_list("id", flat=True))
+    first_obj = queryset.first()
+    ref_table = ContentType.objects.get_for_model(first_obj)
+    model_dict = first_obj.model_dict
+
+    # Perform queryset update
+    if update_kwargs is not None:
+        queryset.update(**update_kwargs)
+    if new_attributes is not None:
+        bulk_patch_attributes(new_attributes, queryset)
+
+    # Create ChangeLog
+    first_obj = type(first_obj).objects.get(pk=first_obj.id)
+    cl = ChangeLog(
+        project=project,
+        user=user,
+        description_of_change=first_obj.change_dict(model_dict),
+    )
+    cl.save()
+    objs = (
+        ChangeToObject(ref_table=ref_table, ref_id=obj_id, change_id=cl) for obj_id in updated_ids
+    )
+    bulk_create_from_generator(objs, ChangeToObject)
+
+
+def bulk_delete_and_log_changes(queryset, project, user):
+    """
+    Performs a bulk delete and creates a changelog for it.
+
+    :param queryset: The queryset to mark for deletion
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    delete_kwargs = {
+        "deleted": True,
+        "modified_datetime": datetime.datetime.now(datetime.timezone.utc),
+        "modified_by": user,
+    }
+    bulk_update_and_log_changes(queryset, project, user, update_kwargs=delete_kwargs)
+
+
+def log_changes(obj, model_dict, project, user):
+    """
+    Creates a changelog for a single updated object.
+
+    :param obj: The object to compare and create a change log for.
+    :param model_dict: The state retrieved from `obj.model_dict` **before updating**.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    if type(project) != Project:
+        project = Project.objects.get(pk=project)
+
+    ref_table = ContentType.objects.get_for_model(obj)
+    cl = ChangeLog(project=project, user=user, description_of_change=obj.change_dict(model_dict))
+    cl.save()
+    ChangeToObject(ref_table=ref_table, ref_id=obj.id, change_id=cl).save()
+
+
+def delete_and_log_changes(obj, project, user):
+    """
+    Deletes a single object and creates a changelog for it.
+
+    :param obj: The object to delete and create a change log for.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    model_dict = obj.model_dict
+    obj.deleted = True
+    obj.modified_datetime = datetime.datetime.now(datetime.timezone.utc)
+    obj.modified_by = user
+    obj.save()
+
+    log_changes(obj, model_dict, project, user)
+
+
+def log_creation(obj, project, user):
+    """
+    Creates changelogs for a new object.
+
+    :param obj: The new object to create a change log for.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    if type(project) != Project:
+        project = Project.objects.get(pk=project)
+
+    ref_table = ContentType.objects.get_for_model(obj)
+    cl = ChangeLog(project=project, user=user, description_of_change=obj.create_dict)
+    cl.save()
+    ChangeToObject(ref_table=ref_table, ref_id=obj.id, change_id=cl).save()
+
+
+def bulk_log_creation(objects, project, user):
+    """
+    Creates changelogs for multiple new objects.
+
+    :param obj: The new object to create a change log for.
+    :param project: The project the request originates from
+    :param user: The user making the requests
+    """
+    # Create ChangeLogs
+    objs = (
+        ChangeLog(project=project, user=user, description_of_change=obj.create_dict)
+        for obj in objects
+    )
+    change_logs = bulk_create_from_generator(objs, ChangeLog)
+
+    # Associate ChangeLogs with created objects
+    ref_table = ContentType.objects.get_for_model(objects[0])
+    ids = [obj.id for obj in objects]
+    objs = (
+        ChangeToObject(ref_table=ref_table, ref_id=ref_id, change_id=cl)
+        for ref_id, cl in zip(ids, change_logs)
+    )
+    bulk_create_from_generator(objs, ChangeToObject)
+    return ids

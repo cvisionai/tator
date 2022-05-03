@@ -57,6 +57,7 @@ entity-gallery-aspect-ratio {
       linear-gradient(to bottom, $color-charcoal--light 1px, transparent 1px);
     background-size: 10px 10px;
     // transition: all 300ms linear;
+    object-fit: cover;
   }
 
   &.aspect-true {
@@ -115,17 +116,6 @@ entity-gallery-aspect-ratio {
   top: 62px;
   bottom: 0;
 
-  // &::-webkit-scrollbar-thumb {
-  //   background: $color-purple !important;
-  // }
-  // &.gray-panel {
-  //    border-left: 5px solid $color-charcoal--light;
-
-  //    .top-bar-arrow {
-  //      color: $color-charcoal--light;
-  //    }
-  // }
-
   &.slide-close {
     right: -23%;
 
@@ -136,12 +126,77 @@ entity-gallery-aspect-ratio {
 
     .top-bar-arrow {
       transform: scaleX(-1);
+
     }
 
     .entity-panel--container--top-bar {
       width: 300px;
       //overflow: hidden;
     }
+  }
+}
+
+.entity-panel--container-left {
+  transition: 500ms ease left;
+  background: $color-charcoal--dark;
+  width: 380px;
+  // border-right: 5px solid $color-purple;
+  -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
+  padding-bottom: 50px;
+  overflow-y: scroll;
+  position: fixed;
+  left: 0;
+  top: 62px;
+  bottom: 0;
+  overflow-x: hidden;
+
+  &.slide-close {
+    left: -330px;
+
+    .top-bar-arrow {
+      left: 340px;
+      svg {
+        transform: scaleX(1);
+      }
+    }
+
+    .entity-panel--container--top-bar {
+      width: 300px;
+      //overflow: hidden;
+    }
+    
+    @media (max-width: 330px){
+      .top-bar-arrow {
+        right: 0 !important;
+        left: unset !important;
+      }
+    }
+  }
+
+
+
+}
+
+@media (max-width: 330px){
+  .sections-wrap {
+    max-width: 100%;
+  }
+  .top-bar-arrow.left {
+      left: 0 !important;
+  }
+
+  .entity-panel--container-left {
+    max-width: 100%;
+  }
+
+  .entity-panel--container-left.slide-close {
+      left: -80%;
+  }
+  
+  .entity-panel--container-left.slide-close .top-bar-arrow.left {
+    right: 0 !important;
+    left: unset !important;     
   }
 }
 
@@ -157,9 +212,23 @@ entity-gallery-aspect-ratio {
   //height: 100px;
   cursor: pointer;
   padding: 60px 0;
+  position: relative;
+  z-index: 100;
 
   &:hover {
     color: $color-charcoal--light;
+  }
+
+  &.left {
+    svg {
+      transform: scaleX(-1);
+    }
+
+    float: right;
+    padding: 20px 0;
+    position: absolute;
+    left: 340px;
+    top: 0;
   }
 }
 

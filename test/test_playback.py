@@ -54,7 +54,7 @@ def test_playback_accuracy(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720")
+  page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720", wait_until='networkidle')
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
@@ -117,7 +117,7 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   print("[Multi] Going to annotation view...(Accuracy)")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{multi_count}?scrubQuality=360&seekQuality=720&playQuality=720")
+  page.goto(f"/{project}/annotation/{multi_count}?scrubQuality=360&seekQuality=720&playQuality=720", wait_until='networkidle')
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector_all('video-canvas')
@@ -168,7 +168,7 @@ def test_small_res_file(page_factory, project, small_video):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{small_video}")
+  page.goto(f"/{project}/annotation/{small_video}", wait_until='networkidle')
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
@@ -184,7 +184,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{rgb_test}?scrubQuality=360&seekQuality=1080&playQuality=720")
+  page.goto(f"/{project}/annotation/{rgb_test}?scrubQuality=360&seekQuality=1080&playQuality=720", wait_until='networkidle')
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
@@ -226,7 +226,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   print("[Multi] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{multi_rgb}?scrubQuality=360&seekQuality=1080&playQuality=720")
+  page.goto(f"/{project}/annotation/{multi_rgb}?scrubQuality=360&seekQuality=1080&playQuality=720", wait_until='networkidle')
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector_all('video-canvas')
@@ -276,7 +276,7 @@ def test_playback_schedule(page_factory, project, count_test):
   console_msgs=[]
   page.on("console", lambda msg: console_msgs.append(msg.text))
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720")
+  page.goto(f"/{project}/annotation/{count_test}?scrubQuality=360&seekQuality=720&playQuality=720", wait_until='networkidle')
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
@@ -358,7 +358,7 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-  page.goto(f"/{project}/annotation/{count_1fps_test}?playQuality=720")
+  page.goto(f"/{project}/annotation/{count_1fps_test}?playQuality=720", wait_until='networkidle')
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')

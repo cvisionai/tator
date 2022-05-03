@@ -80,8 +80,15 @@ export class EntityGalleryPanelTop extends TatorElement {
     }
   }
 
-  init({ pageModal, modelData, panelContainer, customContentHandler = false }) {
-    if (!customContentHandler) {
+  init({ pageModal, modelData, panelContainer, customContentHandler = false, isMediaSection = false, contents }) {
+    if (isMediaSection) {
+      // no heading and no data handling within panel top
+      this._headingText.innerHTML = "";
+      this._staticImage.innerHTML = "";
+      this._topBarArrow.classList.add("left");
+      this.openHandler = customContentHandler;
+      this._box.appendChild(contents);
+    } else if (!customContentHandler) {
       if (this._locImage == undefined) {
         this._locImage = document.createElement("entity-panel-localization");
         this._box.insertBefore(this._locImage, this._staticImage);

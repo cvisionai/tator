@@ -55,6 +55,10 @@ export class MediaSection extends TatorElement {
     this._more.setAttribute("class", "px-2");
     actions.appendChild(this._more);
 
+
+    this._hiddenMediaLabel = document.createElement("div");
+    section.appendChild(this._hiddenMediaLabel);
+
     this._defaultPageSize = 25;
     this._maxPageSizeDefault = 100;
 
@@ -71,6 +75,7 @@ export class MediaSection extends TatorElement {
     this._files = document.createElement("section-files");
     this._files.setAttribute("class", "col-12");
     this._files.mediaParams = this._sectionParams.bind(this);
+    
     div.appendChild(this._files);
 
     this._paginator_bottom = document.createElement("entity-gallery-paginator");
@@ -83,6 +88,10 @@ export class MediaSection extends TatorElement {
     this._numFilesCount = 0;
     this._searchString = "";
 
+    this._more.addEventListener("bulk-edit", () => {
+      this.dispatchEvent(new Event("bulk-edit"));
+    });
+    
     this._setCallbacks();
   }
 
@@ -98,6 +107,8 @@ export class MediaSection extends TatorElement {
     this._section = section;
     this._sectionName = this._sectionName;
     this._files.setAttribute("project-id", project);
+    
+    
     this._nameText.nodeValue = this._sectionName;
     this._upload.setAttribute("project-id", project);
     this._upload.setAttribute("username", username);
@@ -107,8 +118,14 @@ export class MediaSection extends TatorElement {
     this._start = 0;
     this._stop = this._paginator_top._pageSize;
     this._after = new Map();
+
     
     return this.reload();
+  }
+
+  set mediaTypesMap(val) {
+    this._mediaTypesMap = val;
+    this._files.mediaTypesMap = val;
   }
 
   set project(val) {
@@ -169,7 +186,7 @@ export class MediaSection extends TatorElement {
   }
 
   removeMedia(mediaId) {
-    for (const mediaCard of this._files._main.children) {
+    for (const mediaCard of this._ul._main.children) {
       if (mediaCard.getAttribute("media-id") == mediaId) {
         mediaCard.parentNode.removeChild(mediaCard);
         const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
@@ -289,7 +306,7 @@ export class MediaSection extends TatorElement {
   }
 
   reload() {
-    console.log("Reload media...");
+    console.log("Reload media section...");
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
@@ -731,6 +748,9 @@ export class MediaSection extends TatorElement {
     this._start = evt.detail.start;
     this._stop = evt.detail.stop;
     this._paginationState = evt.detail;
+
+    // clear any selected cards
+    this._bulkEdit.clearAllCheckboxes();
 
     otherPaginator.init(otherPaginator._numFiles, this._paginationState);        
     

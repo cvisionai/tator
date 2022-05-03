@@ -22,9 +22,12 @@ def common_annotation(page, canvas, bias=0):
         print(f"Create Box {x},{y}")
         width = 100
         height = 100
-        page.mouse.move(x, y)
+        page.mouse.move(x, y, steps=50)
+        time.sleep(1)
         page.mouse.down()
+        time.sleep(1)
         page.mouse.move(x + width, y + height, steps=50)
+        time.sleep(1)
         page.mouse.up()
         page.wait_for_selector('save-dialog.is-open')
         save_dialog = page.query_selector('save-dialog.is-open')
@@ -40,12 +43,16 @@ def common_annotation(page, canvas, bias=0):
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
+        page.mouse.move(x+50, y+50, steps=50)
+        time.sleep(1)
         page.mouse.click(x+50, y+50)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        page.mouse.move(x+50, y+50,steps=50)
+        time.sleep(1)
         page.mouse.down()
+        time.sleep(1)
         page.mouse.move(x, y, steps=50)
+        time.sleep(1)
         page.mouse.up()
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
@@ -56,12 +63,16 @@ def common_annotation(page, canvas, bias=0):
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
+        page.mouse.move(x+45, y+45, steps=50)
+        time.sleep(1)
         page.mouse.click(x+45, y+45)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        page.mouse.move(x+45, y+45, steps=50)
+        time.sleep(1)
         page.mouse.down()
+        time.sleep(1)
         page.mouse.move(x+95, y+95, steps=50)
+        time.sleep(1)
         page.mouse.up()
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
@@ -72,7 +83,7 @@ def test_video_annotation(page_factory, project, video):
     print("[Video] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-    page.goto(f"/{project}/annotation/{video}")
+    page.goto(f"/{project}/annotation/{video}", wait_until='networkidle')
     page.on("pageerror", print_page_error)
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector('video-canvas')
@@ -84,7 +95,7 @@ def test_image_annotation(page_factory, project, image):
     print("[Image] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
-    page.goto(f"/{project}/annotation/{image}")
+    page.goto(f"/{project}/annotation/{image}", wait_until='networkidle')
     page.on("pageerror", print_page_error)
     page.wait_for_selector('image-canvas')
     canvas = page.query_selector('image-canvas')
@@ -96,7 +107,7 @@ def test_multi_annotation(page_factory, project, multi):
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.set_viewport_size({"width": 2560, "height": 1440}) # Multi requires a decent screen
     page.on("pageerror", print_page_error)
-    page.goto(f"/{project}/annotation/{multi}")
+    page.goto(f"/{project}/annotation/{multi}", wait_until='networkidle')
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector_all('video-canvas')
     page.wait_for_selector('play-button:not(.disabled)')
