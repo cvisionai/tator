@@ -10,8 +10,14 @@ export class VideoDownloader
     for (let idx = 0; idx < media_files.length; idx++)
     {
       const bit_rate = (media_files[idx].bit_rate ? media_files[idx].bit_rate : 2000000);
-      const second_chunk = 16;
-      const second_buffer = bit_rate * second_chunk / 8;
+      let second_chunk = 16;
+      let second_buffer = bit_rate * second_chunk / 8;
+      if (second_buffer < 1*1024*1024)
+      {
+        console.info("VID_DOWNLOADER: Exteremely low bit rate video, minimum chunk set at 1mb");
+        second_buffer = 1*1024*1024;
+        second_chunk = (second_buffer*8) / bit_rate;
+      }
       this._blockSizes.push(second_buffer);
       console.info(`VID_DOWNLOADER: ${idx}: ${media_files[idx].resolution} ${second_chunk} seconds of data = ${second_buffer} bytes or ${second_buffer/1024/1024} megabytes`);
     }
