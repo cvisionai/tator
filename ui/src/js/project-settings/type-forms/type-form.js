@@ -421,7 +421,7 @@ export class TypeForm extends TatorElement {
   _deleteType() {
     this._modalCloseCallback();
     this.loading.showSpinner();
-    console.log("UI code is new!");
+
     let deleteType = new TypeDelete({
       "type": this.typeName,
       "typeId": this.typeId
@@ -515,6 +515,7 @@ export class TypeForm extends TatorElement {
 
   async _save({ id = -1 } = {}) {
     this.loading.showSpinner();
+
     //create form data & post promise array for the attribute forms, and submit
     this.successMessages = "";
     this.failedMessages = "";
@@ -587,6 +588,7 @@ export class TypeForm extends TatorElement {
     let promise = Promise.resolve();
 
     if (Object.entries(formData).length === 0) {
+      this.loading.hideSpinner();
       return console.error("No formData");
     } else {
       return promise.then(() => {
@@ -598,16 +600,13 @@ export class TypeForm extends TatorElement {
       })
         .then(response => response.json().then(data => ({ response: response, data: data })))
         .then(obj => {
+          this.loading.hideSpinner();
           let currentMessage = obj.data.message;
-          let succussIcon = document.createElement("modal-success");
-          let warningIcon = document.createElement("modal-warning");
-          let iconWrap = document.createElement("span");
+
           if (obj.response.ok) {
-            iconWrap.appendChild(succussIcon);
-            this.successMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
+            this._modalSuccess(currentMessage);
           } else {
-            iconWrap.appendChild(warningIcon);
-            this.failedMessages += `${iconWrap.innerHTML} ${currentMessage}<br/><br/>`;
+            this._modalError(currentMessage);
           }
         });
     }
