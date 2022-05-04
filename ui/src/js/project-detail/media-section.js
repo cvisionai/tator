@@ -186,7 +186,7 @@ export class MediaSection extends TatorElement {
   }
 
   removeMedia(mediaId) {
-    for (const mediaCard of this._ul._main.children) {
+    for (const mediaCard of this._files._ul.children) {
       if (mediaCard.getAttribute("media-id") == mediaId) {
         mediaCard.parentNode.removeChild(mediaCard);
         const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
