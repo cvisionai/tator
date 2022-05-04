@@ -84,7 +84,7 @@ export class DashboardPortal extends TatorPage {
       .then(response => response.json())
       .then(dashboards => {
         for (let dashboard of dashboards) {
-          if (dashboard.categories == null || !dashboard.categories.includes("annotator-menu")) {
+          if (dashboard.categories == null || !dashboard.categories.includes("annotator-menu") || !dashboard.categories.includes("annotator-tools")) {
             this._insertDashboardSummary(dashboard);
           }
         }

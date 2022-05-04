@@ -1,24 +1,21 @@
 import { ModalDialog } from "../components/modal-dialog.js";
 import { Utilities } from "../util/utilities.js";
+import { TatorElement } from "../components/tator-element.js";
 
-export class MenuAppletDialog extends ModalDialog {
+
+export class ToolsAppletDialog extends TatorElement {
   constructor() {
     super();
 
-    this._div.setAttribute("class", "modal-wrap modal-wide d-flex");
-    this._title.nodeValue = "Menu Applet";
+    this._main = document.createElement("div")
+    this._main.setAttribute("class", "tools-panel modal-wrap modal-wide d-flex");
+    this._shadow.appendChild(this._main);
+
 
     this._appletView = document.createElement("iframe");
-    this._appletView.setAttribute("class", "d-flex col-12")
+    this._appletView.setAttribute("class", "d-flex col-12");
+    this._appletView.hidden = true;
     this._main.appendChild(this._appletView);
-
-    this._main.classList.remove("px-6");
-    this._main.classList.add("px-2");
-
-    this._acceptBtn = document.createElement("button");
-    this._acceptBtn.setAttribute("class", "btn btn-clear");
-    this._acceptBtn.textContent = "Accept";
-    this._footer.appendChild(this._acceptBtn);
 
     // Stores the Tator Applet objects this dialog will utilize
     // Each object property/key will be the applet name
@@ -27,14 +24,6 @@ export class MenuAppletDialog extends ModalDialog {
     // Will point to the applet element to interface with inside the iframe
     this._appletElement = null;
     this._appletData = null;
-
-    // When the user clicks on the accept button,
-    // call the active applet's accept function and close the dialog
-    this._acceptBtn.addEventListener("click", () => {
-      this.removeAttribute("is-open");
-      this.dispatchEvent(new Event("close"));
-      this._appletElement.accept();
-    });
 
     this._appletView.addEventListener("load", this.initApplet.bind(this));
   }
@@ -113,6 +102,11 @@ export class MenuAppletDialog extends ModalDialog {
   setApplet(appletName, data) {
     this._appletView.src = this._applets[appletName].html_file;
     this._appletData = data;
+  }
+
+  openPanel(appletName) {
+    this._appletView.src = this._applets[appletName].html_file;
+    this._appletView.hidden = false;
   }
 
   initApplet() {
@@ -197,4 +191,4 @@ export class MenuAppletDialog extends ModalDialog {
 
 }
 
-customElements.define("menu-applet-dialog", MenuAppletDialog);
+customElements.define("tools-applet-dialog", ToolsAppletDialog);

@@ -3446,6 +3446,7 @@ export class AnnotationCanvas extends TatorElement
   // objId given if this is to redraw an existing annotation
   newMetadataItem(typeId, metaMode, obj)
   {
+    console.log("Type id "+typeId)
     if ("pause" in this) {
       this.dispatchEvent(new Event("pause"));
     }
@@ -3521,6 +3522,13 @@ export class AnnotationCanvas extends TatorElement
                           hideCb)
   {
     const requestObj={};
+    console.log("makeModalCreationPrompt objDescription & dragInfo");
+    console.log(this._data._localizationMediaIds);
+    console.log(dragInfo);
+
+    const img = document.createElement("image");
+    img.src = dragInfo.url;
+    this.appendChild(img);
 
     if (dragInfo)
     {
