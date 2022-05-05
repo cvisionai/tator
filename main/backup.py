@@ -220,7 +220,7 @@ class TatorBackupManager:
         success = bool(store_info)
 
         if success:
-            for st, bucket_info in store_info.items():
+            for bucket_info in store_info.values():
                 try:
                     self._create_rclone_remote(
                         bucket_info["remote_name"],
@@ -396,7 +396,7 @@ class TatorBackupManager:
                 success = False
 
         if success:
-            if live_store is backup_store:
+            if live_store.bucket.id == backup_store.bucket.id:
                 # Update the storage class and remove any object tags
                 try:
                     live_store._update_storage_class(path, live_storage_class)
