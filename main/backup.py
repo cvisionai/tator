@@ -364,50 +364,72 @@ class TatorBackupManager:
 
         if success:
             # If no backup store is defined, use the live bucket
-            success, store = self.get_backup_store(store_info)
+            success, backup_store = self.get_backup_store(store_info)
+            live_store = store_info["live"]["store"]
 
         if success:
-            live_storage_class = store_info["live"]["store"].get_live_sc() or LIVE_STORAGE_CLASS
-            response = store.head_object(path)
+            live_storage_class = live_store.get_live_sc() or LIVE_STORAGE_CLASS
+            response = backup_store.head_object(path)
             if not response:
                 logger.warning(f"Object {path} not found, skipping")
                 return success
 
             request_state = response.get("Restore", "")
-            if 'ongoing-request="true"' in request_state:
+            if 'true' in request_state:
                 # There is an ongoing request and the object is not ready to be permanently restored
                 logger.info(f"Object {path} not in standard access yet, skipping")
                 success = False
+            elif 'false' in request_state:
+                # The request has completed and the object is ready for restoration
+                logger.info(f"Object {path} restoration request is complete, restoring...")
             elif response.get("StorageClass", live_storage_class) != live_storage_class:
-                logger.info(f"Object {path} not in the expected storage class")
+                # There is no request, ongoing or completed, and the object is not in the live
+                # storage class
+                logger.warning(
+                    f"Object {path} in bad state; no restoration request found and not in the "
+                    f"{live_storage_class} storage class"
+                )
                 success = False
 
         if success:
-            # Get presigned url from the backup bucket
-            download_url = store.get_download_url(path, 3600)  # set to expire in 1h
+            if live_store is backup_store:
+                # Update the storage class and remove any object tags
+                try:
+                    live_store._update_storage_class(path, live_storage_class)
+                except:
+                    success = False
+                    logger.error(
+                        f"Restoring resource '{path}' in same bucket failed", exc_info=True
+                    )
+            else:
+                # Get presigned url from the backup bucket
+                download_url = backup_store.get_download_url(path, 3600)  # set to expire in 1h
 
-            # Perform the actual copy operation directly from the presigned url
-            try:
-                self._rpc(
-                    "operations/copyurl",
-                    fs=f"{store_info['live']['remote_name']}:",
-                    remote=f"{store_info['live']['bucket_name']}/{path}",
-                    url=download_url,
-                )
-            except:
-                success = False
-                logger.error(
-                    f"Restoring resource '{path}' with presigned url {download_url} failed",
-                    exc_info=True,
-                )
+                # Perform the actual copy operation directly from the presigned url
+                try:
+                    live_info = store_info["live"]
+                    self._rpc(
+                        "operations/copyurl",
+                        fs=f"{live_info['remote_name']}:",
+                        remote=f"{live_info['bucket_name']}/{path}",
+                        url=download_url,
+                    )
+                except:
+                    success = False
+                    logger.error(
+                        f"Restoring resource '{path}' with presigned url {download_url} failed",
+                        exc_info=True,
+                    )
 
         if success:
-            response = store_info["live"]["store"].head_object(path)
+            response = live_store.head_object(path)
             if not response:
                 logger.warning(f"Could not check the restoration state for {path}")
                 success = False
             elif response.get("StorageClass", live_storage_class) != live_storage_class:
-                logger.warning(f"Storage class not changed for object {path}")
+                logger.warning(
+                    f"Storage class not live for object {path}: '{response['StorageClass']}"
+                )
                 success = False
             else:
                 logger.info(f"Object {path} successfully restored: {response}")
