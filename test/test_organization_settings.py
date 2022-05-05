@@ -36,9 +36,9 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     # user_email = 'no-reply2@cvisionai.com'
     page.fill(f'invitation-edit email-list-input input', user_email+';')
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
-        page.click('invitation-edit button[value="Save"]')
+        page.locator('#itemDivId-Invitation-New >> text=Save').click()
         page.wait_for_selector(f'text="Successfully created 1 invitation."')
-        page.click('modal-dialog modal-close .modal__close')
+        page.locator('modal-dialog modal-close .modal__close').click()
     response = response_info.value
     respObject = response.json()
     registration_link = str(respObject["message"]).replace('User can register at ', '')

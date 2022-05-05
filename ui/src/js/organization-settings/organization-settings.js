@@ -117,7 +117,8 @@ export class OrganizationSettings extends TatorPage {
       formView._init({ 
         data: data, 
         modal : this.modal, 
-        sidenav : this.settingsNav
+        sidenav: this.settingsNav,
+        orgData: this.organizationData
       });
 
       // Add nav to that container
@@ -166,7 +167,8 @@ export class OrganizationSettings extends TatorPage {
         typeClassView._init({ 
           data : emptyData, 
           modal : this.modal, 
-          sidenav : this.settingsNav,
+          sidenav: this.settingsNav,
+          orgData: this.organizationData
         });
 
         headingEl.addEventListener("click", () => {
@@ -215,6 +217,7 @@ export class OrganizationSettings extends TatorPage {
           data : g, 
           modal : this.modal, 
           sidenav: this.settingsNav,
+          orgData: this.organizationData
         });
 
         if (viewClass == "invitation-edit") {
