@@ -396,7 +396,9 @@ class TatorBackupManager:
                 success = False
 
         if success:
-            if live_store.bucket.id == backup_store.bucket.id:
+            live_bucket_id = live_store.bucket.id if hasattr(live_store.bucket, "id") else -1
+            backup_bucket_id = backup_store.bucket.id if hasattr(backup_store.bucket, "id") else -1
+            if live_bucket_id == backup_bucket_id:
                 # Update the storage class and remove any object tags
                 try:
                     live_store._update_storage_class(path, live_storage_class)
