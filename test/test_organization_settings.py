@@ -165,6 +165,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.fill('div[id="itemDivId-JobCluster-New"] text-input[name="Name"] input', 'TokenTest')
     page.fill('div[id="itemDivId-JobCluster-New"] text-area[name="Cert"] textarea', 'testing')
     with page.expect_response(url) as response_info:
+        page.wait_for_selector('div[id="itemDivId-JobCluster-New"] button[value="Save"]')
         page.click('div[id="itemDivId-JobCluster-New"] button[value="Save"]')
         page.wait_for_selector(f'text="Successfully registered job cluster."')
         page.click('modal-dialog modal-close .modal__close')
