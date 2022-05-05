@@ -793,15 +793,6 @@ export class AnnotationMulti extends TatorElement {
             video._dispFrame = Math.min(frame, video._numFrames-1);
           }
         });
-        prime.addEventListener("rateChange", evt => {
-          if (this.is_paused())
-          {
-            for (let video of this._videos) {
-              video.onDemandDownloadPrefetch();
-            }
-            this.checkReady();
-          }
-        });
       }
 
       this._videos[idx].addEventListener("playbackEnded", () => {
@@ -948,6 +939,7 @@ export class AnnotationMulti extends TatorElement {
           if (this.is_paused()) {
             this._playInteraction.enable();
             this._playbackDisabled = false;
+            this._rateControl.setValue(this._rate);
           }
         }
       });
@@ -1590,6 +1582,7 @@ export class AnnotationMulti extends TatorElement {
         {
           if (this._videos[vidIdx].onDemandBufferAvailable() != "yes")
           {
+            console.log(`.... ${vidIdx} - ${this._videos[vidIdx].onDemandBufferAvailable()}`);
             allVideosReady = false;
           }
         }
@@ -1606,6 +1599,7 @@ export class AnnotationMulti extends TatorElement {
           Promise.allSettled(seekPromiseList).then(() => {
             this._playInteraction.enable();
             this._playbackDisabled = false;
+            this._rateControl.setValue(this._rate);
           })
           .catch((exc) => {
             console.warn("allVideosReady() seekFrame promises error caught")
@@ -1613,6 +1607,7 @@ export class AnnotationMulti extends TatorElement {
 
             this._playInteraction.enable();
             this._playbackDisabled = false;
+            this._rateControl.setValue(this._rate);
           })
         }
       }
@@ -1741,6 +1736,8 @@ export class AnnotationMulti extends TatorElement {
     this.dispatchEvent(new Event("playing", {composed: true}));
     this._fastForward.setAttribute("disabled", "");
     this._rewind.setAttribute("disabled", "");
+    this.disableRateChange();
+    this._rateControl.setValue(0.5, true);
 
     const paused = this.is_paused();
     if (paused) {
@@ -1782,6 +1779,8 @@ export class AnnotationMulti extends TatorElement {
   {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
+    this.enableRateChange();
+    this._rateControl.setValue(this._rate);
     this.checkReady(); // Verify ready state, this will gray out elements if buffering is required.
 
     const paused = this.is_paused();
@@ -1829,6 +1828,16 @@ export class AnnotationMulti extends TatorElement {
         let video = this._videos[idx];
         video.rateChange(this._rate*(prime_fps/video._videoObject.fps));
     }
+
+    if (this.is_paused())
+    {
+      let thisIdx = 0;
+      for (let video of this._videos) {
+        video.onDemandDownloadPrefetch();
+      }
+      this.checkReady();
+    }
+
   }
 
   setQuality(quality, buffer, isDefault) {
