@@ -47,7 +47,9 @@ export class ToolsAppletButton extends TatorElement {
   }
 
   setIcon(svgHTML) {
-    this._svg.innerHTMl = svgHTML;
+    console.log("setIcon");
+    console.log(svgHTML);
+    this._svg.innerHTML = svgHTML;
   }
 }
 

@@ -1146,12 +1146,6 @@ export class AnnotationPage extends TatorPage {
   }
 
   _setupAnnotatorApplets(canvas) {
-    // Setup the dive for a tools applet #todo
-    this._appletTriggers = new Map();
-    this._toolAppletsDialog = document.createElement("tools-applet-dialog");
-    this._toolAppletsDialog.setDataInterface(this._data);
-    this._sidebar.addAppletPanel(this._toolAppletsDialog);
-
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
@@ -1174,15 +1168,6 @@ export class AnnotationPage extends TatorPage {
       document.body.classList.remove("shortcuts-disabled");
     });
 
-    //
-    this._toolAppletsDialog.addEventListener("icon-ready", (evt) => {
-      if (this._appletTriggers.get(e.detail.name)) {
-        this._appletTriggers.get(e.detail.name).setIcon(e.detail.icon);
-      }
-    });
-
-    this._toolAppletsDialog._appletElement.init();
-
     const projectId = Number(this.getAttribute("project-id"));
     fetch("/rest/Applets/" + projectId, {
       method: "GET",
@@ -1196,24 +1181,18 @@ export class AnnotationPage extends TatorPage {
     .then(response => response.json())
     .then(applets => {
       for (let applet of applets) {
+        // Init for annotator menu applets
         if (applet.categories != null && applet.categories.includes("annotator-menu")) {
           // Add the applet to the dialog
           this._menuAppletDialog.saveApplet(applet);
           canvas.addAppletToMenu(applet.name);
         }
+         // Init for annotator tools applets
         if (applet.categories != null && applet.categories.includes("annotator-tools")) {
           // This puts the tools html into a panel next to the sidebar
-          this._toolAppletsDialog.saveApplet(applet);
-          console.log(applet);
+          const toolAppletPanel = document.createElement("tools-applet-panel");
+          toolAppletPanel.saveApplet(applet, this._data, this._sidebar, canvas);
           
-          const appletTrigger = document.createElement("tools-applet-button");
-          appletTrigger._title = applet.name;
-          this._appletTriggers.set(applet.name, appletTrigger)
-          this._sidebar._appletDiv.appendChild(appletTrigger);
-
-          appletTrigger.addEventListener("click", () => {
-            this._toolAppletsDialog.openPanel(applet.name);
-          });
         }
       }
     });

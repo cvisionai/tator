@@ -5,9 +5,17 @@ export class AnnotationSidebar extends TatorElement {
   constructor() {
     super();
 
+    this._main = document.createElement("div");
+    this._main.setAttribute("class", "d-flex flex-row");
+    this._shadow.appendChild(this._main);
+
     this._div = document.createElement("div");
     this._div.setAttribute("class", "annotation__sidebar d-flex flex-column flex-items-center py-3 px-3 position-relative");
-    this._shadow.appendChild(this._div);
+    this._main.appendChild(this._div);
+
+    this._hiddenDiv = document.createElement("div");
+    this._hiddenDiv.setAttribute("class", "");
+    this._main.appendChild(this._hiddenDiv);
 
     this._edit = document.createElement("edit-button");
     this._edit.classList.add("is-selected");
@@ -41,8 +49,8 @@ export class AnnotationSidebar extends TatorElement {
     this._indicator.setAttribute("class", "annotation__shape-indicator");
     this._div.appendChild(this._indicator);
 
-    this._appletDiv = document.createElement("div");
-    this._div.appendChild(this._appletDiv);
+    // this._appletDiv = document.createElement("div");
+    // this._div.appendChild(this._appletDiv);
 
     this._edit.addEventListener("click", () => {
       this._selectButton(this._edit);
@@ -247,8 +255,9 @@ export class AnnotationSidebar extends TatorElement {
     this._edit.click();
   }
 
-  addAppletPanel(panel) {
-    this._appletDiv.appendChild(panel);
+  addAppletPanel(panel, trigger) {
+    this._hiddenDiv.appendChild(panel);
+    this._div.appendChild(trigger);
   }
 }
 
