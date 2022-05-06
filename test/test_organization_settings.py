@@ -34,9 +34,11 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('.heading-for-Invitation .Nav-action')
     user_email = 'no-reply'+str(organization_id)+'@cvisionai.com'
     # user_email = 'no-reply2@cvisionai.com'
-    page.fill(f'invitation-edit email-list-input input', user_email+';')
+    page.fill(f'invitation-edit email-list-input input', user_email)
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
-        page.locator('#itemDivId-Invitation-New >> text=Save').click()
+        # first click adds user, second sends form
+        page.locator('#itemDivId-Invitation-New button[value="Save"]').click()
+        page.locator('#itemDivId-Invitation-New button[value="Save"]').click()
         page.wait_for_selector(f'text="Successfully created 1 invitation."')
         page.locator('modal-dialog modal-close .modal__close').click()
     response = response_info.value
@@ -165,7 +167,6 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.fill('div[id="itemDivId-JobCluster-New"] text-input[name="Name"] input', 'TokenTest')
     page.fill('div[id="itemDivId-JobCluster-New"] text-area[name="Cert"] textarea', 'testing')
     with page.expect_response(url) as response_info:
-        page.wait_for_selector('div[id="itemDivId-JobCluster-New"] button[value="Save"]')
         page.click('div[id="itemDivId-JobCluster-New"] button[value="Save"]')
         page.wait_for_selector(f'text="Successfully registered job cluster."')
         page.click('modal-dialog modal-close .modal__close')
