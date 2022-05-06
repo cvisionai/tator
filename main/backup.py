@@ -220,7 +220,7 @@ class TatorBackupManager:
         success = bool(store_info)
 
         if success:
-            for st, bucket_info in store_info.items():
+            for bucket_info in store_info.values():
                 try:
                     self._create_rclone_remote(
                         bucket_info["remote_name"],
@@ -364,50 +364,78 @@ class TatorBackupManager:
 
         if success:
             # If no backup store is defined, use the live bucket
-            success, store = self.get_backup_store(store_info)
+            success, backup_store = self.get_backup_store(store_info)
+            live_store = store_info["live"]["store"]
 
         if success:
-            live_storage_class = store_info["live"]["store"].get_live_sc() or LIVE_STORAGE_CLASS
-            response = store.head_object(path)
+            live_storage_class = live_store.get_live_sc() or LIVE_STORAGE_CLASS
+            response = backup_store.head_object(path)
             if not response:
                 logger.warning(f"Object {path} not found, skipping")
                 return success
 
             request_state = response.get("Restore", "")
-            if 'ongoing-request="true"' in request_state:
+            if 'true' in request_state:
                 # There is an ongoing request and the object is not ready to be permanently restored
                 logger.info(f"Object {path} not in standard access yet, skipping")
                 success = False
-            elif response.get("StorageClass", live_storage_class) != live_storage_class:
-                logger.info(f"Object {path} not in the expected storage class")
+            elif 'false' in request_state:
+                # The request has completed and the object is ready for restoration
+                logger.info(f"Object {path} restoration request is complete, restoring...")
+            elif "StorageClass" not in response or response["StorageClass"] == live_storage_class:
+                if backup_store is live_store:
+                    logger.info(f"Object {path} already restored, skipping")
+                    return success
+            else:
+                # There is no request, ongoing or completed, and the object is not in the live
+                # storage class
+                logger.warning(
+                    f"Object {path} in bad state; no restoration request found and in the "
+                    f"{response['StorageClass']} storage class"
+                )
                 success = False
 
         if success:
-            # Get presigned url from the backup bucket
-            download_url = store.get_download_url(path, 3600)  # set to expire in 1h
+            live_bucket_id = live_store.bucket.id if hasattr(live_store.bucket, "id") else -1
+            backup_bucket_id = backup_store.bucket.id if hasattr(backup_store.bucket, "id") else -1
+            if live_bucket_id == backup_bucket_id:
+                # Update the storage class and remove any object tags
+                try:
+                    live_store._update_storage_class(path, live_storage_class)
+                except:
+                    success = False
+                    logger.error(
+                        f"Restoring resource '{path}' in same bucket failed", exc_info=True
+                    )
+            else:
+                # Get presigned url from the backup bucket
+                download_url = backup_store.get_download_url(path, 3600)  # set to expire in 1h
 
-            # Perform the actual copy operation directly from the presigned url
-            try:
-                self._rpc(
-                    "operations/copyurl",
-                    fs=f"{store_info['live']['remote_name']}:",
-                    remote=f"{store_info['live']['bucket_name']}/{path}",
-                    url=download_url,
-                )
-            except:
-                success = False
-                logger.error(
-                    f"Restoring resource '{path}' with presigned url {download_url} failed",
-                    exc_info=True,
-                )
+                # Perform the actual copy operation directly from the presigned url
+                try:
+                    live_info = store_info["live"]
+                    self._rpc(
+                        "operations/copyurl",
+                        fs=f"{live_info['remote_name']}:",
+                        remote=f"{live_info['bucket_name']}/{path}",
+                        url=download_url,
+                    )
+                except:
+                    success = False
+                    logger.error(
+                        f"Restoring resource '{path}' with presigned url {download_url} failed",
+                        exc_info=True,
+                    )
 
         if success:
-            response = store_info["live"]["store"].head_object(path)
+            response = live_store.head_object(path)
             if not response:
                 logger.warning(f"Could not check the restoration state for {path}")
                 success = False
             elif response.get("StorageClass", live_storage_class) != live_storage_class:
-                logger.warning(f"Storage class not changed for object {path}")
+                logger.warning(
+                    f"Storage class not live for object {path}: '{response['StorageClass']}"
+                )
                 success = False
             else:
                 logger.info(f"Object {path} successfully restored: {response}")
