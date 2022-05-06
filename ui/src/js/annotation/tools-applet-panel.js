@@ -93,9 +93,10 @@ export class ToolsAppletPanel extends TatorElement {
    * Saves the applet object internally
    * @param {Tator.Applet} applet
    */
-  saveApplet(applet, data, sidebar, canvas) {
+  saveApplet(applet, data, sidebar, canvas, canvasElement) {
     this._canvas = canvas;
-
+    this._canvasElement = canvasElement;
+    
     // Setup
     this._applets[applet.name] = applet;
     this.setDataInterface(data);
@@ -146,7 +147,6 @@ export class ToolsAppletPanel extends TatorElement {
     this._appletElement = this._appletView.contentWindow.document.getElementById("mainApplet");
 
     if(this._appletElement == null) { return; }
-    
 
     this._appletElement.addEventListener("closeApplet", (e) => {
       e.preventDefault();
@@ -166,7 +166,7 @@ export class ToolsAppletPanel extends TatorElement {
     });
 
     // RUN THIS LAST! listeners need to be in place above first
-    this._appletElement.init();
+    this._appletElement.init({canvas: this._canvas, canvasElement: this._canvasElement});
 
     // this._appletElement.addEventListener("refreshDataType", (evt) => {
     //   // Get the key expected by the annotation data interface (e.g. box_1)
