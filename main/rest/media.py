@@ -252,6 +252,21 @@ def _create_media(params, user):
             media_obj.width, media_obj.height = image.size
             image_format = image.format
 
+            # Add a png for compatibility purposes
+            alt_image = None
+            if image_format == 'AVIF':
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+                image.save(alt_image, format='png')
+                alt_name = "image.png"
+                alt_format = 'png'
+            else:
+                # convert image upload to AVIF
+                alt_image = tempfile.NamedTemporaryFile(delete=False)
+                image.save(alt_image, format='avif', suffix='.avif')
+                alt_name = "image.avif"
+                alt_format = 'avif'
+
+
             # Download or create the thumbnail.
             if thumbnail_url is None:
                 temp_thumb = tempfile.NamedTemporaryFile(delete=False)
@@ -287,6 +302,17 @@ def _create_media(params, user):
                                                'resolution': [media_obj.height, media_obj.width],
                                                'mime': f'image/{image_format.lower()}'}]
             os.remove(temp_image.name)
+            Resource.add_resource(image_key, media_obj)
+
+        if alt_image:
+            # Upload image.
+            image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{alt_name}"
+            tator_store.put_object(image_key, alt_image)
+            media_obj.media_files['image'].extend([{'path': image_key,
+                                                    'size': os.stat(alt_image.name).st_size,
+                                                    'resolution': [media_obj.height, media_obj.width],
+                                                    'mime': f'image/{alt_format.lower()}'}])
+            os.remove(alt_image.name)
             Resource.add_resource(image_key, media_obj)
 
         if url or thumbnail_url:
