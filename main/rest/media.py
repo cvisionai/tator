@@ -261,8 +261,8 @@ def _create_media(params, user):
                 alt_format = 'png'
             else:
                 # convert image upload to AVIF
-                alt_image = tempfile.NamedTemporaryFile(delete=False)
-                image.save(alt_image, format='avif', suffix='.avif')
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.avif')
+                image.save(alt_image, format='avif')
                 alt_name = "image.avif"
                 alt_format = 'avif'
 
@@ -307,7 +307,9 @@ def _create_media(params, user):
         if alt_image:
             # Upload image.
             image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{alt_name}"
-            tator_store.put_object(image_key, alt_image)
+            # alt_image fp doesn't seem to work here (odd)
+            with open(alt_image.name, 'rb') as temp_fp:
+                tator_store.put_object(image_key, temp_fp)
             media_obj.media_files['image'].extend([{'path': image_key,
                                                     'size': os.stat(alt_image.name).st_size,
                                                     'resolution': [media_obj.height, media_obj.width],
