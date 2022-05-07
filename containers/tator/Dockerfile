@@ -25,6 +25,7 @@ RUN pip3 --no-cache-dir --timeout=1000 install pyyaml==5.3.1
 RUN pip3 --no-cache-dir --timeout=1000 install \
         django==3.2.11 django-enumfields==2.1.1 \
         psycopg2-binary==2.9.3 pillow==9.0.0 imageio==2.14.0 \
+        pillow-avif-plugin==1.2.2 \
         djangorestframework==3.13.1 pygments==2.11.2 \
         django-extensions==3.1.5 pygraphviz==1.8 \
         pyparsing==3.0.7 pydot==1.4.2 markdown==3.3.6 \
