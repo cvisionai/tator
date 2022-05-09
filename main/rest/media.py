@@ -244,6 +244,7 @@ def _create_media(params, user):
         )
         media_obj.media_files = {}
 
+        alt_image = None
         if url:
             # Download the image file and load it.
             temp_image = tempfile.NamedTemporaryFile(delete=False)
@@ -253,7 +254,6 @@ def _create_media(params, user):
             image_format = image.format
 
             # Add a png for compatibility purposes
-            alt_image = None
             if image_format == 'AVIF':
                 alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
                 image.save(alt_image, format='png')
