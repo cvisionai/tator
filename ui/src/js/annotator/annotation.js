@@ -3524,6 +3524,7 @@ export class AnnotationCanvas extends TatorElement
     const requestObj={};
     console.log("makeModalCreationPrompt objDescription & dragInfo");
     console.log(dragInfo);
+    console.log(this.activeLocalization);
 
     const img = document.createElement("image");
     img.src = dragInfo.url;
