@@ -50,8 +50,11 @@ def updateProjectTotals(force=False):
                 if "thumbnail" in media.media_files and media.media_files["thumbnail"]:
                     src_path = media.media_files['thumbnail'][0]['path']
                     dest_path = f"{project.organization.pk}/{project.pk}/{os.path.basename(src_path)}"
-                    tator_store.copy(src_path, dest_path)
-                    project.thumb = dest_path
+                    exists = tator_store.check_key(src_path)
+                    needs_copy = not tator_store.check_key(dest_path)
+                    if exists and needs_copy:
+                        tator_store.copy(src_path, dest_path)
+                        project.thumb = dest_path
         users = User.objects.filter(pk__in=Membership.objects.filter(project=project)\
                             .values_list('user')).order_by('last_name')
         usernames = [str(user) for user in users]
