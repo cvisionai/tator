@@ -498,6 +498,7 @@ export class EntityCard extends TatorElement {
     if (this._media.media_files) {
       if ('streaming' in this._media.media_files ||
         'layout' in this._media.media_files ||
+        'concat' in this._media.media_files ||
         'image' in this._media.media_files) {
         valid = true;
       }
