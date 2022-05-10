@@ -84,6 +84,13 @@ export class AttributesForm extends TatorElement {
     this._description.addEventListener("change", this._formChanged.bind(this));
     this.form.appendChild(this._description);
 
+    // autocomplete
+    this._autocomplete = document.createElement("text-input");
+    this._autocomplete.setAttribute("type", "string");
+    this._autocomplete.setAttribute("name", "Autocomplete");
+    this._autocomplete.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._autocomplete);
+
     // order
     this._order = document.createElement("text-input");
     this._order.setAttribute("name", "Order");
@@ -147,6 +154,23 @@ export class AttributesForm extends TatorElement {
     this.placeholderEnum.appendChild(this.placeholderChoices);
 
 
+    // style
+    // disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check
+    const styleOptions = [
+      { value: "disabled" },
+      { value: "long_string" },
+      { value: "start_frame" },
+      { value: "end_frame" },
+      { value: "start_frame_check" },
+      { value: "end_frame_check" } ]
+    this._style = document.createElement("enum-input");
+    this._style.multiple = true;
+    this._style.setAttribute("name", "Style");
+    this._style.choices = styleOptions;
+    this._style.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._style);
+
+
     this._shadow.appendChild(this.form);
 
     return this.form;
@@ -171,7 +195,9 @@ export class AttributesForm extends TatorElement {
     minimum = null,
     maximum = null,
     choices = [],
-    labels = []
+    labels = [],
+    autocomplete,
+    style
   } = {}) {
 
     // do we want to save all the data shown
@@ -217,6 +243,19 @@ export class AttributesForm extends TatorElement {
     // use current
     this._getUseCurrent({ value: use_current });
     this._showUseCurrent({ dtype });
+
+    // autocomplete
+    this._autocomplete.default = autocomplete;
+    this._autocomplete.setValue(autocomplete);
+
+    // style
+    // @todo are these always separate with white space?
+    const styleOptions = style.split(" ");
+    styleOptions.map(val => {
+      return { value: val, label: val };
+    });
+    this._autocomplete.default = styleOptions;
+    this._autocomplete.setValue(styleOptions);
 
     // minimum
     this._getMinInput({ value: minimum });
@@ -741,6 +780,24 @@ export class AttributesForm extends TatorElement {
     // Don't send if the value is null => invalid
     if ((this._order.changed() || this.isClone) && this._order.getValue() !== null) {
       formData.order = this._order.getValue();
+    }
+
+    // Autocomplete: Only when changed, or when it is a Clone pass the value along
+    // Don't send if the value is null => invalid
+    if ((this._autocomplete.changed() || this.isClone) && this._autocomplete.getValue() !== null) {
+      formData.autocomplete = this._autocomplete.getValue();
+    }
+
+    // Style: Only when changed, or when it is a Clone pass the value along
+    // Don't send if the value is null => invalid
+    if ((this._style.changed() || this.isClone) && this._style.getValue() !== null) {
+      const rawStyleValue = this._style.getValue();
+      if (Array.isArray(rawStyleValue)) {
+        formData.style = rawStyleValue.join(' '); // join string values with string if multiple chosen
+      } else if (rawStyleValue !== "") {
+        formData.style = rawStyleValue;
+      }
+      
     }
 
     // Required: Only when changed, or when it is a Clone pass the value along
