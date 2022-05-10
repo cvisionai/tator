@@ -164,6 +164,7 @@ export class AnnotationPage extends TatorPage {
                !('streaming' in data.media_files) &&
                !('layout' in data.media_files) &&
                !('image' in data.media_files) &&
+               !('concat' in data.media_files) &&
                !('live' in data.media_files)))
           {
             this._loading.style.display = "none";
@@ -205,7 +206,9 @@ export class AnnotationPage extends TatorPage {
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._video._canvas);
               this._browser.canvas = player._video;
-              this._videoSettingsDialog.mode("single", [data]);
+              player.addEventListener("discoveredQualities", (evt) => {
+                this._videoSettingsDialog.mode("single", [evt.detail.media]);
+              });
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
