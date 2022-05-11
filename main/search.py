@@ -395,7 +395,7 @@ class TatorSearch:
 
         return uuid, replace_idx, old_mapping_name
 
-    def mutate_alias(self, entity_type, name, new_attribute_type, new_style=None):
+    def mutate_alias(self, entity_type, name, new_attribute_type, mod_type, new_style=None):
         """
         Sets alias to new mapping type.
 
@@ -404,10 +404,18 @@ class TatorSearch:
                             type will not be saved.
         :param name: Name of attribute type being mutated.
         :param new_attribute_type: New attribute type for the attribute being mutated.
+        :param mod_type: The type of modification to perform on the attribute: `update` will add
+                         missing keys and update values of existing keys; `replace` will replace the
+                         definition with `new_attribute_type`, which will result in deletion of
+                         existing keys if they are not present in the new definition.
         :param new_style: [Optional] New display style of attribute type. Used to determine if
                           string attributes should be indexed as keyword or text.
         :returns: Entity type with updated attribute_types.
         """
+        valid_mod_types = ["update", "replace"]
+        if mod_type not in valid_mod_types:
+            raise ValueError(f"Expected `mod_type` in {valid_mod_types}, received '{mod_type}'")
+
         # Check mutation before applying atomically
         uuid, replace_idx, old_mapping_name = self.check_mutation(
             entity_type, name, new_attribute_type
@@ -454,7 +462,11 @@ class TatorSearch:
         )
 
         # Update entity type object with new values.
-        entity_type.attribute_types[replace_idx].update(new_attribute_type)
+        if mod_type == "update":
+            entity_type.attribute_types[replace_idx].update(new_attribute_type)
+        elif mod_type == "replace":
+            entity_type.attribute_types[replace_idx] = new_attribute_type
+
         return entity_type
 
     def check_deletion(self, entity_type, name):
