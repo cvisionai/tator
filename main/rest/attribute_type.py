@@ -1,3 +1,4 @@
+from pprint import pformat
 from typing import Dict
 from django.db import transaction
 import logging
@@ -43,7 +44,7 @@ class AttributeTypeListAPI(BaseListView):
 
     schema = AttributeTypeListSchema()
     permission_classes = [ProjectFullControlPermission]
-    http_method_names = ["patch", "post", "delete"]
+    http_method_names = ["patch", "post", "put", "delete"]
 
     @staticmethod
     def _check_attribute_type(attribute_type):
@@ -113,20 +114,13 @@ class AttributeTypeListAPI(BaseListView):
 
         return objects
 
-    def _delete(self, params: Dict) -> Dict:
-        """Delete an existing attribute on a type."""
-        attribute_to_delete = params["attribute_to_delete"]
-        with transaction.atomic():
-            entity_type, obj_qs = self._get_objects(params)
-            TatorSearch().delete_alias(entity_type, attribute_to_delete).save()
-
-        if obj_qs.exists():
-            bulk_delete_attributes([attribute_to_delete], obj_qs)
-
-        return {"message": f"Attribute '{attribute_to_delete}' deleted"}
-
-    def _patch(self, params: Dict) -> Dict:
+    @classmethod
+    def _modify_attribute_type(cls, params: Dict, mod_type: str) -> Dict:
         """Rename an attribute on a type."""
+        valid_mod_types = ["update", "replace"]
+        if mod_type not in valid_mod_types:
+            raise ValueError(f"Expected `mod_type` in {valid_mod_types}, received '{mod_type}'")
+
         ts = TatorSearch()
         global_operation = params.get("global", "false").lower()
         old_name = params["old_attribute_type_name"]
@@ -138,12 +132,12 @@ class AttributeTypeListAPI(BaseListView):
 
         # Get the old and new dtypes
         with transaction.atomic():
-            entity_type, obj_qs = self._get_objects(params)
-            related_objects = self._get_related_objects(entity_type, old_name)
+            entity_type, obj_qs = cls._get_objects(params)
+            related_objects = cls._get_related_objects(entity_type, old_name)
             if related_objects and global_operation == "false":
                 raise ValueError(
-                    f"Attempted to mutate attribute '{old_name}' without the global flag set to 'true',"
-                    " but it exists on other types."
+                    f"Attempted to mutate attribute '{old_name}' without the global flag set to "
+                    f"'true', but it exists on other types."
                 )
 
             for attribute_type in entity_type.attribute_types:
@@ -170,14 +164,14 @@ class AttributeTypeListAPI(BaseListView):
                     if key == "dtype":
                         dtype_mutated = True
 
-            # Atomic validation of all changes; TatorSearch.check_* methods raise if there is a problem
-            # that would cause either a rename or a mutation to fail.
+            # Atomic validation of all changes; TatorSearch.check_* methods raise if there is a
+            # problem that would cause either a rename or a mutation to fail.
             if attribute_renamed:
                 ts.check_rename(entity_type, old_name, new_name)
                 for instance, _ in related_objects:
                     ts.check_rename(instance, old_name, new_name)
             if attribute_mutated:
-                self._check_attribute_type(new_attribute_type)
+                cls._check_attribute_type(new_attribute_type)
                 ts.check_mutation(entity_type, old_name, new_attribute_type)
                 for instance, _ in related_objects:
                     ts.check_mutation(instance, old_name, new_attribute_type)
@@ -203,14 +197,14 @@ class AttributeTypeListAPI(BaseListView):
                 messages.append(f"Attribute '{old_name}' renamed to '{new_name}'.")
 
                 # refresh entity_type and queryset after a rename
-                entity_type, obj_qs = self._get_objects(params)
-                related_objects = self._get_related_objects(entity_type, new_name)
+                entity_type, obj_qs = cls._get_objects(params)
+                related_objects = cls._get_related_objects(entity_type, new_name)
 
             if attribute_mutated:
                 # Update entity type attribute type
-                ts.mutate_alias(entity_type, new_name, new_attribute_type).save()
+                ts.mutate_alias(entity_type, new_name, new_attribute_type, mod_type).save()
                 for instance, _ in related_objects:
-                    ts.mutate_alias(instance, new_name, new_attribute_type).save()
+                    ts.mutate_alias(instance, new_name, new_attribute_type, mod_type).save()
 
                 # Convert entity values
                 if dtype_mutated:
@@ -237,11 +231,35 @@ class AttributeTypeListAPI(BaseListView):
                             # Mutate the entity attribute values
                             bulk_mutate_attributes(new_attribute, qs)
 
-            messages.append(
-                f"Attribute '{new_name}' mutated from:\n{old_attribute_type}\nto:\n{new_attribute_type}"
-            )
+                if mod_type == "PATCH":
+                    new_attribute_type = old_attribute_type.update(new_attribute_type)
+
+                messages.append(
+                    f"Attribute '{new_name}' mutated from:\n{pformat(old_attribute_type)}\nto:\n"
+                    f"{pformat(new_attribute_type)}"
+                )
 
         return {"message": "\n".join(messages)}
+
+    def _delete(self, params: Dict) -> Dict:
+        """Delete an existing attribute on a type."""
+        attribute_to_delete = params["attribute_to_delete"]
+        with transaction.atomic():
+            entity_type, obj_qs = self._get_objects(params)
+            TatorSearch().delete_alias(entity_type, attribute_to_delete).save()
+
+        if obj_qs.exists():
+            bulk_delete_attributes([attribute_to_delete], obj_qs)
+
+        return {"message": f"Attribute '{attribute_to_delete}' deleted"}
+
+    def _patch(self, params: Dict) -> Dict:
+        """Updates an attribute on a type."""
+        return self._modify_attribute_type(params, "update")
+
+    def _put(self, params: Dict) -> Dict:
+        """Replaces an attribute on a type."""
+        return self._modify_attribute_type(params, "replace")
 
     def _post(self, params: Dict) -> Dict:
         """Adds an attribute to a type."""
