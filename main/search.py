@@ -454,7 +454,7 @@ class TatorSearch:
         )
 
         # Update entity type object with new values.
-        entity_type.attribute_types[replace_idx] = new_attribute_type
+        entity_type.attribute_types[replace_idx].update(new_attribute_type)
         return entity_type
 
     def check_deletion(self, entity_type, name):

@@ -237,9 +237,10 @@ class AttributeTypeListAPI(BaseListView):
                             # Mutate the entity attribute values
                             bulk_mutate_attributes(new_attribute, qs)
 
-            messages.append(
-                f"Attribute '{new_name}' mutated from:\n{old_attribute_type}\nto:\n{new_attribute_type}"
-            )
+                final_at = old_attribute_type.update(new_attribute_type)
+                messages.append(
+                    f"Attribute '{new_name}' mutated from:\n{old_attribute_type}\nto:\n{final_at}"
+                )
 
         return {"message": "\n".join(messages)}
 
