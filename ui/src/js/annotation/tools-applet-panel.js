@@ -194,7 +194,7 @@ export class ToolsAppletPanel extends TatorElement {
     // this._appletElement.updateUI();
 
     // RUN THIS LAST! listeners need to be in place above first
-    this._appletElement.init({ canvas: this._canvas, canvasElement: this._canvasElement });
+    this._appletElement.init({ canvas: this._canvas, canvasElement: this._canvasElement, data: this._page._data });
     
     //
     this.dispatchEvent(new Event("appletReady"));

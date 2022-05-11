@@ -286,6 +286,8 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("frameChange", evt => {
       const frame = evt.detail.frame;
+      console.log("Frame " + frame);
+      
       this._slider.value = frame;
       this._zoomSlider.value = frame;
       const time = this._frameToTime(frame);

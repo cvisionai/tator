@@ -129,7 +129,7 @@ export class PolyMaker
         this._ctrl._canvas.dispatchEvent(
           new CustomEvent("drawComplete",
                     {composed: true,
-                     detail: {metaMode: this._ctrl._metaMode}
+                     detail: {metaMode: this._ctrl._metaMode, dragEvent: fakeDrag, type}
                     }));
         return;
       }
@@ -2823,7 +2823,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode : this._metaMode}
+                       detail: {metaMode : this._metaMode, dragEvent, type}
                       }
                      ));
           this._dragHandler.onMouseUp(dragEvent);
@@ -4139,14 +4139,14 @@ export class AnnotationCanvas extends TatorElement
         this._canvas.dispatchEvent(
           new CustomEvent("drawComplete",
                     {composed: true,
-                     detail: {metaMode: this._metaMode}
+                     detail: {metaMode: this._metaMode, dragEvent}
                     }));
         if (this._overrideState == MouseMode.NEW_POLY)
         {
           this._canvas.dispatchEvent(
                         new CustomEvent("modeChange",
                                   {composed: true,
-                                  detail: {newMode: "new_poly", metaMode: this._metaMode}
+                                  detail: {newMode: "new_poly", metaMode: this._metaMode, type}
                                   }));
         }
       }
@@ -4182,7 +4182,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode: this._metaMode}
+                       detail: {metaMode: this._metaMode, dragEvent, type}
                       }));
         }
         else
@@ -4205,7 +4205,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode: this._metaMode}
+                       detail: {metaMode: this._metaMode, dragEvent, type}
                       }));
         }
         else
