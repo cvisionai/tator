@@ -194,7 +194,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
 
   # Wait for hq buffer and verify it is red
-  time.sleep(10)
+  time.sleep(120) # This takes forever with the weird color video
   _wait_for_color(canvas, 0, timeout=30, name='seek')
 
   play_button.click()
@@ -236,7 +236,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
   # Wait for hq buffer and verify it is red
-  time.sleep(10)
+  time.sleep(120) # this takes forever with the weird color video
   _wait_for_color(canvas[0], 0, timeout=30)
   _wait_for_color(canvas[1], 0, timeout=30)
 
@@ -432,8 +432,8 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   assert frame_increment == 1
   assert factor == 4
 
-  # Go up to 32x
-  for _ in range(4):
+  # Go up to 16x
+  for _ in range(3):
     page.keyboard.press("Control+ArrowUp")
     time.sleep(1)
 
@@ -455,8 +455,8 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   target_fps = int(float(schedule_lines[3].split('=')[1]))
   factor = int(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 15
-  assert frame_increment == 3
-  assert factor == 32
+  assert frame_increment == 2
+  assert factor == 16
 
   page.close()
 
