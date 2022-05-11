@@ -56,6 +56,7 @@ class CustomGenerator(SchemaGenerator):
                 'BucketSpec': bucket_spec,
                 'BucketUpdate': bucket_update,
                 'Bucket': bucket,
+                'ConcatDefinition': concat_definition,
                 'ChangeLog': change_log,
                 'CloneMediaSpec': clone_media_spec,
                 'GetClonedMediaResponse': get_cloned_media_response,

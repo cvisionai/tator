@@ -24,9 +24,16 @@ export class ModalNotify extends ModalDialog {
     });
   }
 
-  init(title, message, error_or_ok, buttonText) {
+  init(title, message, error_or_ok, buttonText, is_html) {
     this._title.nodeValue = title;
-    this._message.textContent = message;
+    if (is_html)
+    {
+      this._message.innerHTML = message;
+    }
+    else
+    {
+      this._message.textContent = message;
+    }
     if (error_or_ok == 'error') {
       this._warningIcon.style.display = "block";
       this._successIcon.style.display = "none";
