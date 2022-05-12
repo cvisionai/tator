@@ -35,11 +35,10 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     user_email = 'no-reply'+str(organization_id)+'@cvisionai.com'
     # user_email = 'no-reply2@cvisionai.com'
     page.wait_for_selector('#itemDivId-Invitation-New button[value="Save"]')
-    page.fill(f'#itemDivId-Invitation-New invitation-edit email-list-input input', user_email)
+    page.fill(f'#itemDivId-Invitation-New invitation-edit email-list-input input', user_email + ';')
+    page.wait_for_load_state("networkidle")
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
         # first click adds user, second sends form
-        page.locator('#itemDivId-Invitation-New button[value="Save"]').click()
-        time.sleep(5)
         page.locator('#itemDivId-Invitation-New button[value="Save"]').click()
     page.wait_for_selector(f'text="Successfully created 1 invitation."')
     page.locator('modal-dialog modal-close .modal__close').click()
