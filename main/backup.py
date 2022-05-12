@@ -383,9 +383,7 @@ class TatorBackupManager:
                 # The request has completed and the object is ready for restoration
                 logger.info(f"Object {path} restoration request is complete, restoring...")
             elif "StorageClass" not in response or response["StorageClass"] == live_storage_class:
-                if backup_store is live_store:
-                    logger.info(f"Object {path} already restored, skipping")
-                    return success
+                logger.info(f"Object {path} in live storage class, restoring to remove tagging")
             else:
                 # There is no request, ongoing or completed, and the object is not in the live
                 # storage class

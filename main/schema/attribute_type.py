@@ -20,6 +20,8 @@ class AttributeTypeListSchema(AutoSchema):
             operation["operationId"] = "AddAttribute"
         elif method == "PATCH":
             operation["operationId"] = "RenameAttribute"
+        elif method == "PUT":
+            operation["operationId"] = "ReplaceAttribute"
         elif method == "DELETE":
             operation["operationId"] = "DeleteAttribute"
 
@@ -29,11 +31,17 @@ class AttributeTypeListSchema(AutoSchema):
 
     def get_description(self, path, method):
         if method == "POST":
-            short_desc = "Add attribute to Type."
+            short_desc = "Adds an attribute to Type."
         elif method == "PATCH":
-            short_desc = "Rename and/or change the type of an existing attribute on Type."
+            short_desc = "Renames and/or changes the type of an existing attribute on Type."
+        elif method == "PUT":
+            short_desc = """
+Replaces the definition of an existing attribute on Type.\n\nWARNING This completely replaces the
+existing definition and will delete any existing fields that are not present in the
+`new_attribute_type` definition.
+            """
         elif method == "DELETE":
-            short_desc = "Delete an existing attribute on Type."
+            short_desc = "Deletes an existing attribute on Type."
 
         return f"{short_desc}\n\n{boilerplate}"
 
@@ -64,7 +72,7 @@ class AttributeTypeListSchema(AutoSchema):
                     }
                 },
             }
-        elif method == "PATCH":
+        elif method in ["PATCH", "PUT"]:
             body = {
                 "required": True,
                 "content": {
@@ -100,6 +108,8 @@ class AttributeTypeListSchema(AutoSchema):
             responses["200"] = message_schema("update", "attribute")
         elif method == "POST":
             responses["201"] = message_schema("creation", "attribute")
+        elif method == "PUT":
+            responses["200"] = message_schema("replacement", "attribute")
         elif method == "DELETE":
             responses["200"] = message_schema("deletion", "attribute")
         return responses

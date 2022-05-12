@@ -3611,7 +3611,7 @@ class MutateAliasTestCase(APITestCase):
         ids, _ = self.search.search(project.pk, {'query': {'query_string': {'query': query_string}}})
         assert(len(ids) == 1)
         entity_type = self.search.mutate_alias(
-            entity_type, attr_name, {"name": attr_name, "dtype": to_dtype}
+            entity_type, attr_name, {"name": attr_name, "dtype": to_dtype}, "update"
         )
         entity_type.save()
         time.sleep(1)
@@ -3656,6 +3656,54 @@ class MutateAliasTestCase(APITestCase):
             value = datetime.datetime.now()
             with self.subTest(i=index):
                 self._test_mutation('datetime', new_dtype, 'Datetime Test', 'Datetime\ Test', value)
+
+    def test_update_replace_behavior(self):
+        project, entity_type, entity = self._setup()
+        entity_type_id = entity_type.id
+
+        # Copy the attribute type definitions before modification
+        attribute_types = [(at["name"], at.copy()) for at in entity_type.attribute_types]
+
+        for attr_name, attr_type in attribute_types:
+            # Make a copy of the attribute type and remove a random field that isn't required
+            new_attribute_type = attr_type.copy()
+            fields = [
+                key for key in new_attribute_type.keys() if key not in ["name", "dtype", "choices"]
+            ]
+            key_to_remove = random.choice(fields)
+            new_attribute_type.pop(key_to_remove)
+
+            # Perform an update, check that no fields were removed
+            self.search.mutate_alias(
+                entity_type, attr_name, new_attribute_type, "update"
+            ).save()
+            entity_type = MediaType.objects.get(pk=entity_type_id)
+
+            key_found = False
+            def_found = None
+            for at in entity_type.attribute_types:
+                if at["name"] == attr_name:
+                    key_found = key_to_remove in at
+                    def_found = at
+                    break
+
+            self.assertTrue(key_found)
+            self.assertEqual(def_found, attr_type)
+
+            # Perform a replace, check that no fields were removed
+            self.search.mutate_alias(
+                entity_type, attr_name, new_attribute_type, "replace"
+            ).save()
+            entity_type = MediaType.objects.get(pk=entity_type_id)
+
+            key_found = True
+            def_found = None
+            for at in entity_type.attribute_types:
+                if at["name"] == attr_name:
+                    key_found = key_to_remove in at
+                    break
+
+            self.assertFalse(key_found)
 
     #TODO: write totally different test for geopos mutations (not supported in query string queries)
 
