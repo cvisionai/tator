@@ -1,6 +1,6 @@
 import { TatorElement } from "../../components/tator-element.js";
 
-export class AttributesForm extends TatorElement {
+export class LeafForm extends TatorElement {
   constructor() {
     super();
 
@@ -41,7 +41,7 @@ export class AttributesForm extends TatorElement {
 
     this.form.addEventListener("change", this._formChanged.bind(this));
     // this.form.addEventListener("change", (event) => {
-    //   console.log("Attribute form changed");
+    //   console.log("Leaf form changed");
     //   this.changed = true;
     //   return this.form.classList.add("changed");
     // });   
@@ -194,7 +194,7 @@ export class AttributesForm extends TatorElement {
   }
 
   _formChanged() {
-    console.log("Attribute form changed");
+    console.log("Leaf form changed");
     this.changed = true;
     return this.form.classList.add("changed");
   }
@@ -220,7 +220,7 @@ export class AttributesForm extends TatorElement {
     // do we want to save all the data shown
     this.isClone = clone;
 
-    // gets attribute object as param destructured over these values
+    // gets leaf object as param destructured over these values
     //sets value on THIS form
     this.form = this._initEmptyForm();
 
@@ -449,7 +449,7 @@ export class AttributesForm extends TatorElement {
       this.placeholderDefault.appendChild(this._default);
       this._default.setAttribute("name", "Default");
 
-      // attribute endpoint converts to correct type
+      // leaf endpoint converts to correct type
       this._default.setAttribute("type", "text");
       this._default.default = value;
       this._default.setValue(value);
@@ -697,8 +697,8 @@ export class AttributesForm extends TatorElement {
   }
 
   _setAttributeDTypes() {
-    this.attributeDTypes = ["bool", "int", "float", "enum", "string", "datetime", "geopos"];
-    return this.attributeDTypes;
+    this.leafDTypes = ["bool", "int", "float", "enum", "string", "datetime", "geopos"];
+    return this.leafDTypes;
   }
 
   _getDTypeRules() {
@@ -793,7 +793,7 @@ export class AttributesForm extends TatorElement {
   * POST - Only required and if changed; UNLESS it is a clone, then pass all values
   * PATCH - Only required and if changed
   * 
-  * Required: (See: _check_attribute_type in attribute_type.py)
+  * Required: (See: _check_leaf_type in leaf_type.py)
   * - Name
   * - Dtype
   * - Choices (if Dtype == Enum)
@@ -802,7 +802,7 @@ export class AttributesForm extends TatorElement {
   * 
   * @returns {formData} as JSON object
   */
-  _getAttributeFormData() {
+  _getLeafFormData() {
     const formData = {};
 
     // Name: Always sent
@@ -861,7 +861,7 @@ export class AttributesForm extends TatorElement {
     // Don't send if the value is null => invalid
     // Don't send "" because it will fail as valid type for the default in some cases
     // - String: can be ""
-    // - Int, or Float: Don't convert "" to Number or it will be 0; #TODO BUG backend will not allow "" -> Invalid attribute value for float attribute; Invalid attribute value for integer attribute
+    // - Int, or Float: Don't convert "" to Number or it will be 0; #TODO BUG backend will not allow "" -> Invalid leaf value for float leaf; Invalid leaf value for integer leaf
     // - 
     if (dtype !== "enum" && (this.isClone || this._dtype.changed() || this._default.changed())) {
       // check enum.default.changed value
@@ -984,14 +984,14 @@ export class AttributesForm extends TatorElement {
     });
   }
 
-  _attributeFormData({ form = this.form, id = -1, entityType = null } = {}) {
+  _leafFormData({ form = this.form, id = -1, entityType = null } = {}) {
     const data = {};
     const global = this.isGlobal() ? "true" : "false";
     const formData = {
       "entity_type": entityType,
       "global": global,
-      "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": this._getAttributeFormData(form)
+      "old_leaf_type_name": this.dataset.oldName,
+      "new_leaf_type": this._getLeafFormData(form)
     };
 
     data.newName = this._name.getValue();
@@ -1007,8 +1007,8 @@ export class AttributesForm extends TatorElement {
     const formData = {
       "entity_type": entityType,
       "global": global,
-      "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": {}
+      "old_leaf_type_name": this.dataset.oldName,
+      "new_leaf_type": {}
     };
 
     promiseInfo.newName = this._name.getValue();
@@ -1018,11 +1018,11 @@ export class AttributesForm extends TatorElement {
     // console.log(formData);
 
     // Hand of the data, and call this form unchanged
-    formData.new_attribute_type = this._getAttributeFormData(form);
+    formData.new_leaf_type = this._getLeafFormData(form);
     this.form.classList.remove("changed");
     this.changeReset();
 
-    promiseInfo.promise = await this._fetchAttributePatchPromise(id, formData);
+    promiseInfo.promise = await this._fetchLeafPatchPromise(id, formData);
 
     return promiseInfo;
   }
@@ -1030,4 +1030,4 @@ export class AttributesForm extends TatorElement {
 
 }
 
-customElements.define("attributes-form", AttributesForm);
+customElements.define("leaf-form", LeafForm);

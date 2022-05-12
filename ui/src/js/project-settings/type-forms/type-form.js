@@ -122,6 +122,15 @@ export class TypeForm extends TatorElement {
         this._attributeContainer.appendChild(this._getAttributeSection());
       }
 
+      // Leaf section
+      if (this.typeName = "LeafType") {
+        this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
+        this._attributeContainer.hidden = false;
+        if (isReset) this._attributeContainer.innerHTML = "";
+        this._attributeContainer.appendChild(this._getLeafSection());
+      }
+
+
       // append save button
       if (!isReset) {
         const submitNew = this._getSubmitDiv({ "id": this.data.id });
@@ -292,6 +301,17 @@ export class TypeForm extends TatorElement {
     this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
 
     return this.attributeSection;
+  }
+
+  _getLeafSection() {
+    this.leafSection = document.createElement("leaf-main");
+    this.leafSection.setAttribute("data-from-id", `${this.typeId}`)
+    this.leafSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.data.attribute_types, this.modal);
+
+    // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
+    this.leafSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
+
+    return this.leafSection;
   }
 
   _attRefreshListener(e) {
