@@ -35,11 +35,15 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     user_email = 'no-reply'+str(organization_id)+'@cvisionai.com'
     page.wait_for_selector('#itemDivId-Invitation-New button[value="Save"]')
     time.sleep(1)
-    page.fill(f'#itemDivId-Invitation-New invitation-edit email-list-input input', user_email + ';')
+    page.fill(f'#itemDivId-Invitation-New invitation-edit email-list-input input', user_email)
     page.wait_for_load_state("networkidle")
     time.sleep(1)
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
-        page.locator('#itemDivId-Invitation-New button[value="Save"]').click()
+        page.keyboard.press("Enter")
+        time.sleep(1)
+        for _ in range(3):
+            page.keyboard.press("Tab")
+        page.keyboard.press("Enter")
     page.wait_for_selector(f'text="Successfully created 1 invitation."')
     page.locator('modal-dialog modal-close .modal__close').click()
     response = response_info.value
@@ -91,8 +95,12 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.select_option(f'affiliation-edit enum-input[name="Permission"] select', label="Member")
     page.wait_for_selector('text="Name Last"')
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
-        page.click('affiliation-edit button[value="Save"]')
-        page.wait_for_selector(f'text="Successfully created 1 affiliation."')
+        page.keyboard.press("Enter")
+        time.sleep(1)
+        for _ in range(3):
+            page.keyboard.press("Tab")
+        page.keyboard.press("Enter")
+    page.wait_for_selector(f'text="Successfully created 1 affiliation."')
     response = response_info.value
     respObject = response.json()
     affiliationId = respObject["id"]
