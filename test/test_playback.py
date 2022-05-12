@@ -244,7 +244,6 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   _wait_for_color(canvas[0], 1, timeout=30)
   _wait_for_color(canvas[1], 1, timeout=30)
   # Pause the video
-  time.sleep(5)
   play_button.click()
   _wait_for_color(canvas[0], 0, timeout=30)
   _wait_for_color(canvas[1], 0, timeout=30)
