@@ -1,5 +1,4 @@
 import os
-import time
 import inspect
 import requests
 import math
@@ -144,7 +143,6 @@ def test_basic(request, page_factory, project): #video
    filterGroupButtons[0].click()
 
    page.wait_for_selector('text="Page 1 of 1"')
-   # time.sleep(5)
    page.wait_for_timeout(5000)
 
    cards = page.query_selector_all('section-files entity-card[style="display: block;"]')
@@ -266,7 +264,7 @@ def test_basic(request, page_factory, project): #video
    editbutton.click()
    
    page.locator('.save-confirmation').click()
-   time.sleep(2)
+   page.wait_for_timeout(2000)
 
    responseText = page.locator('modal-dialog .modal__main').all_inner_texts()
    print(f'responseText {responseText[0]}')

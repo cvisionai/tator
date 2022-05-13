@@ -1,5 +1,4 @@
 import os
-import time
 import inspect
 
 from ._common import print_page_error
@@ -34,13 +33,13 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('.heading-for-Invitation .Nav-action')
     user_email = 'no-reply'+str(organization_id)+'@cvisionai.com'
     page.wait_for_selector('#itemDivId-Invitation-New button[value="Save"]')
-    time.sleep(1)
+    page.wait_for_timeout(1000)
     page.fill(f'#itemDivId-Invitation-New invitation-edit email-list-input input', user_email)
     page.wait_for_load_state("networkidle")
-    time.sleep(1)
+    page.wait_for_timeout(1000)
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
         page.keyboard.press("Enter")
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         for _ in range(3):
             page.keyboard.press("Tab")
         page.keyboard.press("Enter")
@@ -96,7 +95,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.wait_for_selector('text="Name Last"')
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
         page.keyboard.press("Enter")
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         for _ in range(3):
             page.keyboard.press("Tab")
         page.keyboard.press("Enter")

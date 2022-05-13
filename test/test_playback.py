@@ -4,7 +4,6 @@ import os
 import cv2
 import tempfile
 import inspect
-import time
 import io
 import pytesseract
 import numpy as np
@@ -35,10 +34,10 @@ def _get_element_center(element):
   center_y = box['y'] + box['height'] / 2
   return center_x,center_y
 
-def _wait_for_color(canvas, color_idx, timeout=30, name='unknown'):
+def _wait_for_color(page, canvas, color_idx, timeout=30, name='unknown'):
   found = False
   for _ in range(timeout):
-    time.sleep(1)
+    page.wait_for_timeout(1000)
     canvas_color = _get_canvas_color(canvas)
     if np.argmax(canvas_color) == color_idx:
       found = True
@@ -52,7 +51,7 @@ def _wait_for_frame(canvas, frame, timeout=30):
     canvas_frame = _get_canvas_frame(canvas)
     if canvas_frame == frame:
       break
-    time.sleep(1)
+    page.wait_for_timeout(1000)
   assert canvas_frame == frame, f"canvas={canvas_frame}, expected={frame}"
 
 def test_playback_accuracy(page_factory, project, count_test):
@@ -63,7 +62,7 @@ def test_playback_accuracy(page_factory, project, count_test):
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
-  time.sleep(10)
+  page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
   seek_handle = page.query_selector('seek-bar .range-handle')
   display_div = page.query_selector('#frame_num_display')
@@ -76,7 +75,7 @@ def test_playback_accuracy(page_factory, project, count_test):
   #assert(int(display_div.inner_text())==0)
 
   play_button.click() # play the video
-  time.sleep(5) # This is simulating the user watching, not dependent on any events.
+  page.wait_for_timeout(5000) # This is simulating the user watching, not dependent on any events.
   play_button.click() # pause the video
   canvas_frame = _get_canvas_frame(canvas)
   assert(canvas_frame > 0)
@@ -93,7 +92,7 @@ def test_playback_accuracy(page_factory, project, count_test):
   page.mouse.up()
 
   # Complete scrub
-  time.sleep(5)
+  page.wait_for_timeout(5000)
   canvas_frame = _get_canvas_frame(canvas)
   assert(int(display_div.inner_text())==canvas_frame)
 
@@ -109,7 +108,7 @@ def test_playback_accuracy(page_factory, project, count_test):
   assert rate_ctrl.input_value() == "1"
 
   page.keyboard.press("Space")
-  time.sleep(5)
+  page.wait_for_timeout(5000)
   page.keyboard.press("Space")
   new_frame = _get_canvas_frame(canvas)
   assert(new_frame > canvas_frame)
@@ -126,7 +125,7 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector_all('video-canvas')
-  time.sleep(10)
+  page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
   seek_handle = page.query_selector('seek-bar .range-handle')
   display_div = page.query_selector('#frame_num_display')
@@ -141,9 +140,9 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   #assert(int(display_div.inner_text())==0)
 
   play_button.click() # play the video
-  time.sleep(5) # This is simulating the user watching, not dependent on any events.
+  page.wait_for_timeout(5000) # This is simulating the user watching, not dependent on any events.
   play_button.click() # pause the video
-  time.sleep(1)
+  page.wait_for_timeout(1000)
   current_frame = int(display_div.inner_text())
   assert(current_frame > 0)
   _wait_for_frame(canvas[0], current_frame)
@@ -155,14 +154,14 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   page.mouse.down()
 
   page.mouse.move(seek_x+500, seek_y, steps=50)
-  time.sleep(1)
+  page.wait_for_timeout(1000)
   current_frame = int(display_div.inner_text())
   _wait_for_frame(canvas[0], current_frame)
   _wait_for_frame(canvas[1], current_frame)
   page.mouse.up()
 
   # Complete scrub
-  time.sleep(5)
+  page.wait_for_timeout(5000)
   current_frame = int(display_div.inner_text())
   _wait_for_frame(canvas[0], current_frame)
   _wait_for_frame(canvas[1], current_frame)
@@ -181,7 +180,7 @@ def test_small_res_file(page_factory, project, small_video):
   seek_handle = page.query_selector('seek-bar .range-handle')
 
   # Wait for hq buffer and verify it is blue
-  _wait_for_color(canvas, 2, timeout=30, name='seek')
+  _wait_for_color(page, canvas, 2, timeout=30, name='seek')
   page.close()
 
 def test_buffer_usage_single(page_factory, project, rgb_test):
@@ -199,15 +198,15 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
 
   # Wait for hq buffer and verify it is red
-  time.sleep(120) # This takes forever with the weird color video
-  _wait_for_color(canvas, 0, timeout=30, name='seek')
+  page.wait_for_timeout(120000) # This takes forever with the weird color video
+  _wait_for_color(page, canvas, 0, timeout=30, name='seek')
 
   play_button.click()
-  _wait_for_color(canvas, 1, timeout=30, name='playing')
+  _wait_for_color(page, canvas, 1, timeout=30, name='playing')
 
   # Pause the video
   play_button.click()
-  _wait_for_color(canvas, 0, timeout=30, name='seek (pause)')
+  _wait_for_color(page, canvas, 0, timeout=30, name='seek (pause)')
 
 
   # Click the scrub handle
@@ -216,14 +215,14 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   page.mouse.down()
 
   page.mouse.move(seek_x+5, seek_y, steps=50)
-  _wait_for_color(canvas, 1, timeout=30, name='small scrub (play buffer)')
+  _wait_for_color(page, canvas, 1, timeout=30, name='small scrub (play buffer)')
 
   page.mouse.move(seek_x+1000, seek_y, steps=50)
-  _wait_for_color(canvas, 2, timeout=30, name='big scrub (scrub buffer)')
+  _wait_for_color(page, canvas, 2, timeout=30, name='big scrub (scrub buffer)')
 
   # Release the scrub
   page.mouse.up()
-  _wait_for_color(canvas, 0, timeout=30, name='seek / pause')
+  _wait_for_color(page, canvas, 0, timeout=30, name='seek / pause')
   page.close()
 
 def test_buffer_usage_multi(page_factory, project, multi_rgb):
@@ -241,17 +240,17 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
   # Wait for hq buffer and verify it is red
-  time.sleep(120) # this takes forever with the weird color video
-  _wait_for_color(canvas[0], 0, timeout=30)
-  _wait_for_color(canvas[1], 0, timeout=30)
+  page.wait_for_timeout(120000) # this takes forever with the weird color video
+  _wait_for_color(page, canvas[0], 0, timeout=30)
+  _wait_for_color(page, canvas[1], 0, timeout=30)
 
   play_button.click()
-  _wait_for_color(canvas[0], 1, timeout=30)
-  _wait_for_color(canvas[1], 1, timeout=30)
+  _wait_for_color(page, canvas[0], 1, timeout=30)
+  _wait_for_color(page, canvas[1], 1, timeout=30)
   # Pause the video
   play_button.click()
-  _wait_for_color(canvas[0], 0, timeout=30)
-  _wait_for_color(canvas[1], 0, timeout=30)
+  _wait_for_color(page, canvas[0], 0, timeout=30)
+  _wait_for_color(page, canvas[1], 0, timeout=30)
 
 
   # Click the scrub handle
@@ -260,17 +259,17 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   page.mouse.down()
 
   page.mouse.move(seek_x+5, seek_y, steps=50)
-  _wait_for_color(canvas[0], 1, timeout=30, name='small scrub')
-  _wait_for_color(canvas[0], 1, timeout=30, name='small scrub')
+  _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
+  _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
 
   page.mouse.move(seek_x+1900, seek_y, steps=50)
-  _wait_for_color(canvas[0], 2, timeout=30)
-  _wait_for_color(canvas[0], 2, timeout=30)
+  _wait_for_color(page, canvas[0], 2, timeout=30)
+  _wait_for_color(page, canvas[0], 2, timeout=30)
 
   # Release the scrub
   page.mouse.up()
-  _wait_for_color(canvas[0], 0, timeout=30)
-  _wait_for_color(canvas[1], 0, timeout=30)
+  _wait_for_color(page, canvas[0], 0, timeout=30)
+  _wait_for_color(page, canvas[1], 0, timeout=30)
   page.close()
 
 
@@ -285,13 +284,13 @@ def test_playback_schedule(page_factory, project, count_test):
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
-  time.sleep(10)
+  page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
 
   keep_running = True
   while keep_running:
       play_button.click()
-      time.sleep(5)
+      page.wait_for_timeout(5000)
       play_button.click()
 
       schedule_msg = None
@@ -311,7 +310,7 @@ def test_playback_schedule(page_factory, project, count_test):
       else:
           # Re-run because the monitor's FPS is lower than the video's FPS, which will
           # mess up the assert conditions. This test does not account for this scenario.
-          time.sleep(1)
+          page.wait_for_timeout(1000)
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
@@ -328,7 +327,7 @@ def test_playback_schedule(page_factory, project, count_test):
       console_msgs=[]
       page.keyboard.press("4")
       play_button.click()
-      time.sleep(10)
+      page.wait_for_timeout(10000)
       play_button.click()
 
       schedule_msg = None
@@ -347,7 +346,7 @@ def test_playback_schedule(page_factory, project, count_test):
       else:
           # Re-run because the monitor's FPS is lower than the video's FPS, which will
           # mess up the assert conditions. This test does not account for this scenario.
-          time.sleep(1)
+          page.wait_for_timeout(1000)
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
@@ -367,14 +366,14 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   page.on("pageerror", print_page_error)
   page.wait_for_selector('video-canvas')
   canvas = page.query_selector('video-canvas')
-  time.sleep(10)
+  page.wait_for_timeout(10000)
   play_button = page.query_selector('play-button')
 
   console_msgs=[]
   page.on("console", lambda msg: console_msgs.append(msg.text))
 
   play_button.click()
-  time.sleep(5)
+  page.wait_for_timeout(5000)
   play_button.click()
 
   schedule_msg = None
@@ -396,7 +395,7 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   console_msgs=[]
   page.keyboard.press("2")
   play_button.click()
-  time.sleep(5)
+  page.wait_for_timeout(5000)
   play_button.click()
 
   schedule_msg = None
@@ -418,7 +417,7 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   console_msgs=[]
   page.keyboard.press("4")
   play_button.click()
-  time.sleep(5)
+  page.wait_for_timeout(5000)
   play_button.click()
 
 
@@ -440,11 +439,11 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   # Go up to 16x
   for _ in range(3):
     page.keyboard.press("Control+ArrowUp")
-    time.sleep(1)
+    page.wait_for_timeout(1000)
 
   console_msgs=[]
   play_button.click()
-  time.sleep(5)
+  page.wait_for_timeout(5000)
   play_button.click()
 
 
@@ -479,15 +478,15 @@ def test_concat(page_factory, project, concat_test):
   seek_handle = page.query_selector('seek-bar .range-handle')
 
   # Wait for hq buffer and verify it is red
-  time.sleep(30)
-  _wait_for_color(canvas, 0, timeout=30, name='seek')
+  page.wait_for_timeout(30000)
+  _wait_for_color(page, canvas, 0, timeout=30, name='seek')
 
   play_button.click()
-  _wait_for_color(canvas, 1, timeout=30, name='playing')
+  _wait_for_color(page, canvas, 1, timeout=30, name='playing')
 
   # Pause the video
   play_button.click()
-  _wait_for_color(canvas, 0, timeout=30, name='seek (pause)')
+  _wait_for_color(page, canvas, 0, timeout=30, name='seek (pause)')
   
   page.close()
 
@@ -508,12 +507,12 @@ def test_audiosync(page_factory, project, slow_video):
   play_button = page.query_selector('play-button')
 
   # wait for video to be ready - TODO make this better?
-  time.sleep(10)
+  page.wait_for_timeout(10000)
 
   console_msgs=[]
   page.on("console", lambda msg: console_msgs.append(msg.text))
   play_button.click()
-  time.sleep(8)
+  page.wait_for_timeout(8000)
   play_button.click()
   audio_sync_msgs=[m for m in console_msgs if m.find("Audio drift") > 0]
   audio_sync_values=[]
@@ -527,17 +526,3 @@ def test_audiosync(page_factory, project, slow_video):
   drift_array=np.array(audio_sync_values[1:])
   assert drift_array.mean() < 50, "Average drift should be less than 50"
 """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
