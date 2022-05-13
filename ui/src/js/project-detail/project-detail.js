@@ -39,7 +39,7 @@ export class ProjectDetail extends TatorPage {
 
     // Original main element
     this.main = document.createElement("main");
-    this.main.setAttribute("class", "d-flex col-9");
+    this.main.setAttribute("class", "d-flex col-11");
     this.main.setAttribute("style", "padding-left: 390px;");
     this.mainWrapper.appendChild(this.main);
 

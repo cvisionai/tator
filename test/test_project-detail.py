@@ -18,6 +18,7 @@ def test_basic(request, page_factory, project): #video
    page.on("pageerror", print_page_error)
 
    print("Start: Test Pagination and image upload")  
+   page.wait_for_load_state("networkidle")
    page.select_option('.pagination select.form-select', value="100")
    # page.wait_for_selector('text="Page 1 of 1"')
    page.wait_for_timeout(5000)

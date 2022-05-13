@@ -155,7 +155,7 @@ export class InvitationEdit extends OrganizationTypeForm {
     const promises = [];
     for (const formData of formDataList) {
       const email = formData.email;
-      const promise = this._data.createInvitation(formData).then(data => {
+      const promise = this.orgData.createInvitation(formData).then(data => {
         // console.log(data.message);
         this.loading.hideSpinner();
 
@@ -209,9 +209,10 @@ export class InvitationEdit extends OrganizationTypeForm {
 
           // init form with the data
           form._init({
-            "data": this._data,
-            "modal": this.modal,
-            "sidenav": this.sideNav
+            data : this._data,
+            modal : this.modal,
+            sidenav : this.sideNav,
+            orgData: this.orgData
           });
 
           // Increment succeeded.

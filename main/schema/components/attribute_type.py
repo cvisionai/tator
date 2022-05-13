@@ -91,6 +91,7 @@ attribute_type_properties = {
 
 attribute_type = {
     'type': 'object',
+    "description": "The full definition of an attribute on an entity type.",
     'properties': attribute_type_properties,
 }
 

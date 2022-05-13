@@ -244,9 +244,7 @@ export class MediaCard extends TatorElement {
       case "pos-text":
         this._pos_text.textContent = newValue;
     }
-  }
-
-  
+  }  
 }
 
 customElements.define("media-card", MediaCard);

@@ -184,7 +184,7 @@ export class EntityCard extends TatorElement {
       const input = document.createElement("input");
       input.setAttribute("class", "form-control input-sm1 f1");
       input.setAttribute("value", this._name.textContent);
-      titleDiv.replaceChild(input, this._name);
+      this.titleDiv.replaceChild(input, this._name);
       input.addEventListener("focus", evt => {
         evt.target.select();
       });
@@ -213,7 +213,7 @@ export class EntityCard extends TatorElement {
           }),
         })
           .catch(err => console.error("Failed to change name: " + err));
-        titleDiv.replaceChild(this._name, evt.target);
+          this.titleDiv.replaceChild(this._name, evt.target);
       });
       input.focus();
     });
@@ -498,6 +498,7 @@ export class EntityCard extends TatorElement {
     if (this._media.media_files) {
       if ('streaming' in this._media.media_files ||
         'layout' in this._media.media_files ||
+        'concat' in this._media.media_files ||
         'image' in this._media.media_files) {
         valid = true;
       }

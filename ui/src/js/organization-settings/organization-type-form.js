@@ -1,6 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { TypeForm } from "../project-settings/type-forms/type-form.js";
 import { TypeNew } from "../project-settings/type-forms/type-new.js";
+import { TypeDelete } from "../project-settings/type-forms/type-delete.js";
 import { getCookie } from "../util/get-cookie.js";
 import { Utilities } from "../util/utilities.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
@@ -29,13 +30,14 @@ export class OrganizationTypeForm extends TatorElement {
     this.saveButton = document.createElement("input"); // init early so we can disable via forms
   }
 
-  _init({ data, modal, sidenav }) {
+  _init({ data, modal, sidenav, orgData }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
 
     // Initial values
     this.data = data;
+    this.orgData = orgData;
     this.modal = modal;
     this.organizationId = this.data.organization;
     this.typeId = this.data.id
@@ -169,8 +171,7 @@ export class OrganizationTypeForm extends TatorElement {
             data,
             modal: this.modal,
             sidenav: this.sideNav,
-            mediaListHandler: this.mediaListHandler,
-            versionListHandler: this.versionListHandler
+            orgData: this.orgData
           });
 
           // Add the item to navigation

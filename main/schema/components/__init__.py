@@ -127,6 +127,7 @@ from .video_clip import video_clip
 from ._archive_config import encode_config
 from ._archive_config import s3_storage_config
 from ._archive_config import archive_config
+from ._media_definitions import concat_definition
 from ._media_definitions import video_definition
 from ._media_definitions import audio_definition
 from ._media_definitions import image_definition

@@ -162,17 +162,12 @@ def url_to_key(url, project_obj):
     path = None
     bucket = None
     upload = False
-    if len(tokens) > 4:
-        # First assume this is a presigned url for S3. Parse
-        # out the object key and get object size via S3 api.
-        num_tokens = 4
-        bucket = project_obj.bucket
-        if len(tokens) > 6:
-            if tokens[-6] == '_uploads':
-                num_tokens = 6
-                bucket = project_obj.get_bucket(upload=True)
-                upload = True
-        path = '/'.join(parsed.path.split('/')[-num_tokens:])
+    num_tokens = 6
+    if len(tokens) >= num_tokens:
+        if tokens[-num_tokens] == '_uploads':
+            bucket = project_obj.get_bucket(upload=True)
+            upload = True
+            path = '/'.join(parsed.path.split('/')[-num_tokens:])
     return path, bucket, upload
 
 

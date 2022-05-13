@@ -157,9 +157,10 @@ export class AffiliationEdit extends OrganizationTypeForm {
           formData.id = data.id;
           formData.organization = this.organization;
           form._init({ 
-            "data": formData, 
-            "modal" : this.modal, 
-            "sidenav" : this.sideNav
+            data : formData, 
+            modal : this.modal, 
+            sidenav : this.sideNav,
+            orgData: this.orgData
           });
 
           // Add the item to navigation

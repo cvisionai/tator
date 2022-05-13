@@ -14,6 +14,7 @@ from django.db import transaction
 from django.db.models import Case, When
 from django.http import Http404
 from PIL import Image
+import pillow_avif # add AVIF support to pillow
 
 from ..models import (
     Media,
@@ -243,6 +244,7 @@ def _create_media(params, user):
         )
         media_obj.media_files = {}
 
+        alt_image = None
         if url:
             # Download the image file and load it.
             temp_image = tempfile.NamedTemporaryFile(delete=False)
@@ -250,6 +252,20 @@ def _create_media(params, user):
             image = Image.open(temp_image.name)
             media_obj.width, media_obj.height = image.size
             image_format = image.format
+
+            # Add a png for compatibility purposes
+            if image_format == 'AVIF':
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+                image.save(alt_image, format='png')
+                alt_name = "image.png"
+                alt_format = 'png'
+            else:
+                # convert image upload to AVIF
+                alt_image = tempfile.NamedTemporaryFile(delete=False, suffix='.avif')
+                image.save(alt_image, format='avif')
+                alt_name = "image.avif"
+                alt_format = 'avif'
+
 
             # Download or create the thumbnail.
             if thumbnail_url is None:
@@ -286,6 +302,19 @@ def _create_media(params, user):
                                                'resolution': [media_obj.height, media_obj.width],
                                                'mime': f'image/{image_format.lower()}'}]
             os.remove(temp_image.name)
+            Resource.add_resource(image_key, media_obj)
+
+        if alt_image:
+            # Upload image.
+            image_key = f"{project_obj.organization.pk}/{project_obj.pk}/{media_obj.pk}/{alt_name}"
+            # alt_image fp doesn't seem to work here (odd)
+            with open(alt_image.name, 'rb') as temp_fp:
+                tator_store.put_object(image_key, temp_fp)
+            media_obj.media_files['image'].extend([{'path': image_key,
+                                                    'size': os.stat(alt_image.name).st_size,
+                                                    'resolution': [media_obj.height, media_obj.width],
+                                                    'mime': f'image/{alt_format.lower()}'}])
+            os.remove(alt_image.name)
             Resource.add_resource(image_key, media_obj)
 
         if url or thumbnail_url:
@@ -626,11 +655,11 @@ class MediaDetailAPI(BaseDetailView):
                 media_files = media.media_files
                 # If this object already contains non-multi media definitions, raise an exception.
                 if media_files:
-                    for role in ['streaming', 'archival', 'image', 'live']:
+                    for role in ['streaming', 'archival', 'image', 'live', 'concat']:
                         items = media_files.get(role, [])
                         if len(items) > 0:
                             raise ValueError(f"Cannot set a multi definition on a Media that contains "
-                                              "individual media!")
+                                              "individual or concatenated media!")
                 # Check values of IDs (that they exist and are part of the same project).
                 sub_media = Media.objects.filter(project=media.project, pk__in=params['multi']['ids'])
                 if len(params['multi']['ids']) != sub_media.count():
@@ -641,6 +670,35 @@ class MediaDetailAPI(BaseDetailView):
                 for key in ['ids', 'layout', 'quality']:
                     if params['multi'].get(key):
                         media_files[key] = params['multi'][key]
+                qs.update(media_files=media_files)
+
+            if 'concat' in params:
+                media_files = qs[0].media_files
+                # If this object already contains non-multi media definitions, raise an exception.
+                if media_files:
+                    for role in ['streaming', 'archival', 'image', 'live', 'multi']:
+                        items = media_files.get(role, [])
+                        if len(items) > 0:
+                            raise ValueError(f"Cannot set a concat definition on a Media that contains "
+                                              "individual or multi media!")
+                # Check values of IDs (that they exist and are part of the same project).
+                concat_ids = [x['id'] for x in params['concat']]
+                sub_media = Media.objects.filter(project=qs[0].project, pk__in=concat_ids)
+                valid_ids = [x.id for x in sub_media]
+                valid_objs = [x for x in params['concat'] if x['id'] in valid_ids]
+                if len(valid_objs) != len(concat_ids):
+                    raise ValueError(f"One or more media IDs in concat definition is not part of "
+                                     f"project {qs[0].project.pk} or does not exist! "
+                                     f"req={concat_ids}, found={valid_ids}")
+
+                if media_files is None:
+                    media_files = {}
+
+                # Only add valid media to the concat structure
+                media_files['concat'] = []
+                for concat_obj in valid_objs:
+                    media_files['concat'].append(concat_obj)
+
                 qs.update(media_files=media_files)
 
             if 'live' in params:
