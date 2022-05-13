@@ -310,9 +310,9 @@ def test_playback_schedule(page_factory, project, count_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(float(schedule_lines[2].split('=')[1]))
-  target_fps = int(float(schedule_lines[3].split('=')[1]))
-  factor = int(float(schedule_lines[5].split('=')[1]))
+  frame_increment = round(float(schedule_lines[2].split('=')[1]))
+  target_fps = round(float(schedule_lines[3].split('=')[1]))
+  factor = round(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 30
   assert frame_increment == 1
   assert factor == 1
@@ -346,9 +346,9 @@ def test_playback_schedule(page_factory, project, count_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(float(schedule_lines[2].split('=')[1]))
-  target_fps = int(float(schedule_lines[3].split('=')[1]))
-  factor = int(float(schedule_lines[5].split('=')[1]))
+  frame_increment = round(float(schedule_lines[2].split('=')[1]))
+  target_fps = round(float(schedule_lines[3].split('=')[1]))
+  factor = round(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 30
   assert frame_increment == 4
   assert factor == 4
@@ -380,9 +380,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(float(schedule_lines[2].split('=')[1]))
-  target_fps = int(float(schedule_lines[3].split('=')[1]))
-  factor = int(float(schedule_lines[5].split('=')[1]))
+  frame_increment = round(float(schedule_lines[2].split('=')[1]))
+  target_fps = round(float(schedule_lines[3].split('=')[1]))
+  factor = round(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 1
   assert frame_increment == 1
   assert factor == 1
@@ -402,9 +402,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(float(schedule_lines[2].split('=')[1]))
-  target_fps = int(float(schedule_lines[3].split('=')[1]))
-  factor = int(float(schedule_lines[5].split('=')[1]))
+  frame_increment = round(float(schedule_lines[2].split('=')[1]))
+  target_fps = round(float(schedule_lines[3].split('=')[1]))
+  factor = round(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 2
   assert frame_increment == 1
   assert factor == 2
@@ -425,9 +425,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(float(schedule_lines[2].split('=')[1]))
-  target_fps = int(float(schedule_lines[3].split('=')[1]))
-  factor = int(float(schedule_lines[5].split('=')[1]))
+  frame_increment = round(float(schedule_lines[2].split('=')[1]))
+  target_fps = round(float(schedule_lines[3].split('=')[1]))
+  factor = round(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 4
   assert frame_increment == 1
   assert factor == 4
@@ -451,9 +451,9 @@ def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
 
   schedule_lines=schedule_msg.split('\n')
   print(schedule_lines)
-  frame_increment = int(float(schedule_lines[2].split('=')[1]))
-  target_fps = int(float(schedule_lines[3].split('=')[1]))
-  factor = int(float(schedule_lines[5].split('=')[1]))
+  frame_increment = round(float(schedule_lines[2].split('=')[1]))
+  target_fps = round(float(schedule_lines[3].split('=')[1]))
+  factor = round(float(schedule_lines[5].split('=')[1]))
   assert target_fps == 15
   assert frame_increment == 2
   assert factor == 16
