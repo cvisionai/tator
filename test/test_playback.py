@@ -36,12 +36,16 @@ def _get_element_center(element):
   return center_x,center_y
 
 def _wait_for_color(canvas, color_idx, timeout=30, name='unknown'):
+  found = False
   for _ in range(timeout):
+    time.sleep(1)
     canvas_color = _get_canvas_color(canvas)
     if np.argmax(canvas_color) == color_idx:
+      found = True
       break
-    time.sleep(1)
-  assert np.argmax(canvas_color) == color_idx, f"canvas_color={canvas_color}, looking for {color_idx} during {name}"
+  if not found:
+    raise ValueError(f"Did not capture desired color {color_idx} after {timeout} seconds. "
+                     f"Last color: {canvas_color}")
 
 def _wait_for_frame(canvas, frame, timeout=30):
   for _ in range(timeout):
