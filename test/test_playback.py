@@ -5,6 +5,8 @@ import cv2
 import tempfile
 import inspect
 import time
+import random
+import string
 import pytesseract
 import numpy as np
 from pprint import pprint
@@ -12,16 +14,20 @@ from pprint import pprint
 def _get_canvas_color(canvas):
   """ Returns the RGB value of the canvas (mean) """
   with tempfile.TemporaryDirectory() as td:
-    canvas.screenshot(path=os.path.join(td, "canvas.png"))
-    img=cv2.imread(os.path.join(td, "canvas.png"))
+    rand_str = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+    fname = os.path.join(td, f"canvas_{rand_str}.png")
+    canvas.screenshot(path=fname)
+    img=cv2.imread(fname)
     img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
     return img.mean(axis=(0,1))
 
 def _get_canvas_frame(canvas):
   """ Returns the frame number reported by the video """
   with tempfile.TemporaryDirectory() as td:
-    canvas.screenshot(path=os.path.join(td, "canvas.png"))
-    img=cv2.imread(os.path.join(td, "canvas.png"))
+    rand_str = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+    fname = os.path.join(td, f"canvas_{rand_str}.png")
+    canvas.screenshot(path=fname)
+    img=cv2.imread(fname)
     img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
     text = pytesseract.image_to_string(img)
     _,val=text.strip().split('=')
