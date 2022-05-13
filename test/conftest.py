@@ -26,7 +26,6 @@ class PageFactory:
         os.makedirs(artifact_path, exist_ok=True)
         page = self.browser.new_page(
             **self.browser_context_args,
-            base_url=self.base_url,
             record_video_dir=artifact_path,
             record_har_path=os.path.join(artifact_path, 'har.json'),
             locale='en-us',
@@ -75,7 +74,6 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     os.makedirs(videos, exist_ok=True)
     context = chrome.new_context(
         **browser_context_args,
-        base_url=base_url,
         record_video_dir=videos,
         locale="en-US",
     )
