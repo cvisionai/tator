@@ -13,8 +13,7 @@ import tator
 from ._common import get_video_path, download_file, create_media, upload_media_file
 
 class PageFactory:
-    def __init__(self, base_url, browser, browser_context_args, storage, base_path):
-        self.base_url = base_url
+    def __init__(self, browser, browser_context_args, storage, base_path):
         self.browser = browser
         self.browser_context_args = browser_context_args
         self.storage = storage
@@ -65,7 +64,7 @@ def chrome(browser_type, browser_type_launch_args):
     )
 
 @pytest.fixture(scope='session')
-def authenticated(request, launch_time, base_url, chrome, browser_context_args):
+def authenticated(request, launch_time, chrome, browser_context_args):
     """ Yields a persistent logged in context. """
     print("Logging in...")
     username = request.config.option.username
@@ -88,10 +87,10 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     context.close()
 
 @pytest.fixture(scope='session')
-def page_factory(request, launch_time, base_url, chrome, browser_context_args, authenticated):
+def page_factory(request, launch_time, chrome, browser_context_args, authenticated):
     base_path = os.path.join(request.config.option.videos, launch_time)
     storage = authenticated.storage_state(path="/tmp/state.json")
-    yield PageFactory(base_url, chrome, browser_context_args, storage, base_path)
+    yield PageFactory(chrome, browser_context_args, storage, base_path)
 
 @pytest.fixture(scope='session')
 def token(request, page_factory):
