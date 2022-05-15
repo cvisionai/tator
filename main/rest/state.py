@@ -256,9 +256,11 @@ class StateListAPI(BaseListView):
                 )
                 media_relations.append(media_states)
                 if len(media_relations) > 1000:
-                    State.media.through.objects.bulk_create(media_relations)
+                    State.media.through.objects.bulk_create(media_relations,
+                                                            ignore_conflicts=True)
                     media_relations = []
-        State.media.through.objects.bulk_create(media_relations)
+        State.media.through.objects.bulk_create(media_relations,
+                                                ignore_conflicts=True)
 
         # Create localization relations.
         loc_relations = []
@@ -271,9 +273,11 @@ class StateListAPI(BaseListView):
                     )
                     loc_relations.append(loc_states)
                     if len(loc_relations) > 1000:
-                        State.localizations.through.objects.bulk_create(loc_relations)
+                        State.localizations.through.objects.bulk_create(loc_relations,
+                                                                        ignore_conflicts=True)
                         loc_relations = []
-        State.localizations.through.objects.bulk_create(loc_relations)
+        State.localizations.through.objects.bulk_create(loc_relations,
+                                                        ignore_conflicts=True)
 
         # Calculate segments (this is not triggered for bulk created m2m).
         localization_ids = itertools.chain(*[state_spec.get('localization_ids', [])
