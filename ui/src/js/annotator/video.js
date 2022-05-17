@@ -1380,6 +1380,18 @@ export class VideoCanvas extends AnnotationCanvas {
     return finalPromise;
   }
 
+  advanceOneSecond(forceSeekBuffer)
+  {
+    let newFrame = this._dispFrame + this._fps;
+    return this.gotoFrame(newFrame, forceSeekBuffer);
+  }
+
+  backwardOneSecond(forceSeekBuffer)
+  {
+    let newFrame = this._dispFrame - this._fps;
+    return this.gotoFrame(newFrame, forceSeekBuffer);
+  }
+
   captureFrame(localizations,frame)
   {
     if (frame == undefined)

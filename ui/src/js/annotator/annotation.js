@@ -1820,14 +1820,28 @@ export class AnnotationCanvas extends TatorElement
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() + amount, true);
+        if (event.shiftKey == true)
+        {
+          this.advanceOneSecond();
+        }
+        else
+        {
+          this.gotoFrame(this.currentFrame() + amount, true);
+        }
         return false;
       }
       if (event.key == 'ArrowLeft')
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() - amount, true);
+        if (event.shiftKey == true)
+        {
+          this.backwardOneSecond();
+        }
+        else
+        {
+          this.gotoFrame(this.currentFrame() - amount, true);
+        }
         return false;
       }
     }
