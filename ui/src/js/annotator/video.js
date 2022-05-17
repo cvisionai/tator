@@ -72,7 +72,7 @@ var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
-export const RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
+export var RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 export class VideoCanvas extends AnnotationCanvas {
@@ -601,6 +601,11 @@ export class VideoCanvas extends AnnotationCanvas {
     if (mediaType)
       this.mediaType = mediaType;
     this._videoObject = videoObject;
+
+    if (numGridRows != undefined)
+    {
+      RATE_CUTOFF_FOR_ON_DEMAND = 4.0; // Cap multi at 4x on-demand playback
+    }
 
     if ('concat' in videoObject.media_files)
     {
@@ -1428,7 +1433,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
-      this.frameCallbackMethod();
+      this.frameCallbackMethod(this._scrub_idx);
     }
     else
     {
@@ -1697,11 +1702,14 @@ export class VideoCanvas extends AnnotationCanvas {
       this._pendingTimeout = setTimeout(push_pending, (1000/this._videoFps)/2);
     }
   }
-  frameCallbackMethod()
+  frameCallbackMethod(index)
   {
-    this._video
+    if (index == undefined)
+    {
+      index = this._play_idx;
+    }
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
-    let video = this._videoElement[this._play_idx].playBuffer();
+    let video = this._videoElement[index].playBuffer();
     let frameProfiler = new PeriodicTaskProfiler("Frame Fetch");
 
     // Clear any old frames
@@ -2548,6 +2556,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
       this._direction=Direction.STOPPED;
       this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame));
+      this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame));
 
       // force a redraw at the currently displayed frame
       var finalPromise = new Promise((resolve, reject) => {
