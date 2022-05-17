@@ -542,10 +542,14 @@ export class VideoDownloader
               response.arrayBuffer().then(
                 (buffer) =>
                 {
+                  var sb = new SharedArrayBuffer(buffer.byteLength);
+                  var sourceBytes = new Uint8Array(buffer);
+                  var destBytes = new Uint8Array(sb);
+                  destBytes.set(sourceBytes, 0);
                   var data={"type": "onDemand",
                            "buf_idx" : mediaFileIndex,
                            "offsets": offsets,
-                           "buffer": buffer,
+                           "buffer": sb,
                            "id": onDemandId,
                            "blockSize": iterBlockSize,
                            "startByte": startByte,
@@ -553,7 +557,7 @@ export class VideoDownloader
                            "startByte": startByte,
                            "frameStart": start_frame};
 
-                  postMessage(data, [data.buffer]);
+                  postMessage(data, []);
                 });
             });
   }
@@ -645,14 +649,18 @@ export class VideoDownloader
              response.arrayBuffer().then(
                function(buffer)
                {
+                 var sb = new SharedArrayBuffer(buffer.byteLength);
+                 var sourceBytes = new Uint8Array(buffer);
+                 var destBytes = new Uint8Array(sb);
+                 destBytes.set(sourceBytes, 0);
                  // Transfer the buffer to the
                  var data={"type": "seek_result",
                            "time": time,
-                           "buffer": buffer,
+                           "buffer": sb,
                            "frame": frame,
                            "startByte": startByte,
                            "frameStart": start_frame};
-                 postMessage(data, [data.buffer]);
+                 postMessage(data, []);
                });
            });
 
@@ -725,6 +733,10 @@ export class VideoDownloader
              response.arrayBuffer().then(
                (buffer) =>
                {
+                var sb = new SharedArrayBuffer(buffer.byteLength);
+                var sourceBytes = new Uint8Array(buffer);
+                var destBytes = new Uint8Array(sb);
+                destBytes.set(sourceBytes, 0);
                  // Transfer the buffer to the
                  var data={"type": "buffer",
                            "buf_idx" : buf_idx,
@@ -732,11 +744,11 @@ export class VideoDownloader
                            "pts_end": 0,
                            "percent_complete": percent_complete,
                            "offsets": offsets,
-                           "buffer": buffer,
+                           "buffer": sb,
                            "init": packet_limit == 2,
                            "frameStart": frameStart,
                            "startByte": startByte};
-                  postMessage(data, [data.buffer]);
+                  postMessage(data, []);
 
                  if (packet_limit == 2) {
                    that._fileInfoSent[buf_idx] = true;

@@ -1822,7 +1822,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
     // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
     const fps_swag = Math.max(1, 15 / this._fps);
-    return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
+    return 15 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
   }
 
   // Calculate if the on-demand buffer is present and has sufficient runway to play.
@@ -2333,13 +2333,13 @@ export class VideoCanvas extends AnnotationCanvas {
     // Sleep for a period before checking the onDemand buffer again
     if (!this._onDemandPlaybackReady)
     {
-      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 500);
+      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 100);
     }
     else
     {
       if (!this._onDemandFinished && !inhibited)
       {
-        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 500);
+        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 100);
       }
     }
   }
