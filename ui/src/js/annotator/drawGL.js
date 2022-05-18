@@ -329,7 +329,7 @@ export class DrawGL
 
     gl.activeTexture(gl.TEXTURE0);
     // Setup reusable texture for drawing video frames
-    var initTexture=function()
+    this._initTexture=function()
     {
       var texture=gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -346,7 +346,8 @@ export class DrawGL
 
     // Initialize the frame buffer in GPU memory
     // We should only need one GOP pre-catched at a time, give or take.
-    this.frameBuffer = new FrameBuffer(8, initTexture);
+    this.bufferDepth = 8;
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
 
     // Initialze the backbuffer to use for MSAA
     this.msaaBuffer = gl.createRenderbuffer();
@@ -358,6 +359,21 @@ export class DrawGL
   {
     return [this.clientWidth/this.viewport.clientWidth,
             this.clientHeight/this.viewport.clientHeight];
+  }
+
+  rateChange(rate, fps)
+  {
+    // Scale between 8 and 32 deep buffers
+    this.bufferDepth =  Math.floor(rate*fps*0.50); // Aim for half a second of playback
+    if (this.bufferDepth > 32)
+    {
+      this.bufferDepth = 32;
+    }
+    if (this.bufferDepth < 8)
+    {
+      this.bufferDepth = 8;
+    }
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
   }
 
   // This takes image width and image height.

@@ -604,7 +604,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (numGridRows != undefined)
     {
-      RATE_CUTOFF_FOR_ON_DEMAND = 4.0; // Cap multi at 4x on-demand playback
+      RATE_CUTOFF_FOR_ON_DEMAND = 4.0; // Cap multi at 8x on-demand playback
     }
 
     if ('concat' in videoObject.media_files)
@@ -1318,6 +1318,7 @@ export class VideoCanvas extends AnnotationCanvas {
   rateChange(newRate)
   {
     this._playbackRate=newRate;
+    this._draw.rateChange(newRate, this._fps);
     if (this._direction != Direction.STOPPED)
     {
       // If we are playing trim the frame buffer to a quarter second to make the rate change
@@ -1757,7 +1758,7 @@ export class VideoCanvas extends AnnotationCanvas {
       frameProfiler.push(performance.now()-start)
       
       // Kick off the player thread once we have 25 frames loaded
-      if (this._playerTimeout == null && this._draw.canPlay() > 4)
+      if (this._playerTimeout == null && this._draw.canPlay() > 16)
       {
         this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
       }
@@ -1829,8 +1830,8 @@ export class VideoCanvas extends AnnotationCanvas {
     // Seek to the current frame and call our atomic callback
     this.seekFrame(this._loadFrame, pushAndGoToNextFrame, false, bufferName);
 
-    // Kick off the player thread once we have 25 frames loaded
-    if (this._playerTimeout == null && this._draw.canPlay() > 4)
+
+    if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
     {
       this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
     }
@@ -1842,7 +1843,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
     // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
     const fps_swag = Math.max(1, 15 / this._fps);
-    return 15 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
+    return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
   }
 
   // Calculate if the on-demand buffer is present and has sufficient runway to play.

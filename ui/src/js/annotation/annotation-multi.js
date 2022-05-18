@@ -672,7 +672,8 @@ export class AnnotationMulti extends TatorElement {
     this._videos = [];
     this._multi_layout = val.media_files['layout'];
 
-    if (val.media_files.quality)
+    let searchParams = new URLSearchParams(window.location.search);
+    if (val.media_files.quality && searchParams.has("playQuality") == false)
     {
       this._quality = val.media_files.quality;
     }
