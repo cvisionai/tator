@@ -1758,7 +1758,7 @@ export class VideoCanvas extends AnnotationCanvas {
       frameProfiler.push(performance.now()-start)
       
       // Kick off the player thread once we have 25 frames loaded
-      if (this._playerTimeout == null && this._draw.canPlay() > 16)
+      if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
       {
         this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
       }
