@@ -928,7 +928,7 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[vidIdx].onDemandBufferAvailable() != "yes")
+          if (this._videos[vidIdx].bufferDelayRequired() && this._videos[vidIdx].onDemandBufferAvailable() != "yes")
           {
             allVideosReady = false;
           }
@@ -1139,7 +1139,7 @@ export class AnnotationMulti extends TatorElement {
       else
       {
         this.setMultiviewUrl("focus", Number(videoId));
-        this.assignToPrimary(Number(videoId), this._quality);
+        this.assignToPrimary(Number(videoId), this._quality*2);
       }
     }
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
@@ -1252,7 +1252,7 @@ export class AnnotationMulti extends TatorElement {
     // These go invisible on a move.
     this.makeAllVisible(div);
     let video = div.children[0];
-    //video.setQuality(quality);
+    video.setQuality(quality);
 
     for (let idx = 0; idx < this._videos.length; idx++) {
       if (vid_id == this._videos[idx].video_id()) {
@@ -1270,7 +1270,7 @@ export class AnnotationMulti extends TatorElement {
     // These go invisible on a move.
     this.makeAllVisible(div);
     let video = div.children[0];
-    //video.setQuality(quality);
+    video.setQuality(quality);
   }
 
   assignToGrid(setContextMenu=true)
@@ -1538,7 +1538,7 @@ export class AnnotationMulti extends TatorElement {
           check_ready(this._videos[videoIndex].currentFrame())}, clock_check);
         return;
       }
-      if (this._videos[videoIndex].onDemandBufferAvailable() != "yes")
+      if (this._videos[videoIndex].bufferDelayRequired() && this._videos[videoIndex].onDemandBufferAvailable() != "yes")
       {
         not_ready = true;
         if (timeoutCounter == timeouts[timeoutIndex]) {
@@ -1580,7 +1580,7 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[vidIdx].onDemandBufferAvailable() != "yes")
+          if (this._videos[videoIndex].bufferDelayRequired() && this._videos[vidIdx].onDemandBufferAvailable() != "yes")
           {
             console.log(`.... ${vidIdx} - ${this._videos[vidIdx].onDemandBufferAvailable()}`);
             allVideosReady = false;
@@ -1590,25 +1590,21 @@ export class AnnotationMulti extends TatorElement {
         if (allVideosReady) {
           console.log("allVideosReady");
 
-          var seekPromiseList = [];
-          for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++) {
-            let video = this._videos[vidIdx];
-            const seekPromise = video.seekFrame(video.currentFrame(), video.drawFrame, true, null, true);
-            seekPromiseList.push(seekPromise);
-          }
-          Promise.allSettled(seekPromiseList).then(() => {
+          try
+          {
             this._playInteraction.enable();
             this._playbackDisabled = false;
-            this._rateControl.setValue(this._rate);
-          })
-          .catch((exc) => {
+            return;
+          }
+          catch(exc) 
+          {
             console.warn("allVideosReady() seekFrame promises error caught")
             console.warn(exc);
 
             this._playInteraction.enable();
             this._playbackDisabled = false;
             this._rateControl.setValue(this._rate);
-          })
+          }
         }
       }
     };
