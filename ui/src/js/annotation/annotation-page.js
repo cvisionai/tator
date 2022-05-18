@@ -280,7 +280,6 @@ export class AnnotationPage extends TatorPage {
                   }
                   this._settings.quality = playbackQuality;
                   this._player.setAvailableQualities(primeMediaData);
-                  this._player.setQuality(playbackQuality, null, true);
                 }
               );
             } else if (type_data.dtype == "live") {
