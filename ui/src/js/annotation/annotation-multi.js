@@ -939,7 +939,7 @@ export class AnnotationMulti extends TatorElement {
           if (this.is_paused()) {
             this._playInteraction.enable();
             this._playbackDisabled = false;
-            this._rateControl.setValue(this._rate);
+            //this._rateControl.setValue(this._rate);
           }
         }
       });
@@ -1580,9 +1580,11 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[videoIndex].bufferDelayRequired() && this._videos[vidIdx].onDemandBufferAvailable() != "yes")
+          const buffer_required = this._videos[vidIdx].bufferDelayRequired();
+          const on_demand_available = this._videos[vidIdx].onDemandBufferAvailable();
+          console.info(`${vidIdx}: ${buffer_required} and ${on_demand_available}`);
+          if (buffer_required == true && on_demand_available != "yes")
           {
-            console.log(`.... ${vidIdx} - ${this._videos[vidIdx].onDemandBufferAvailable()}`);
             allVideosReady = false;
           }
         }
@@ -1603,7 +1605,7 @@ export class AnnotationMulti extends TatorElement {
 
             this._playInteraction.enable();
             this._playbackDisabled = false;
-            this._rateControl.setValue(this._rate);
+            //this._rateControl.setValue(this._rate);
           }
         }
       }
@@ -1776,7 +1778,7 @@ export class AnnotationMulti extends TatorElement {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
     this.enableRateChange();
-    this._rateControl.setValue(this._rate);
+    //this._rateControl.setValue(this._rate);
     this.checkReady(); // Verify ready state, this will gray out elements if buffering is required.
 
     const paused = this.is_paused();
@@ -1862,6 +1864,7 @@ export class AnnotationMulti extends TatorElement {
       }
     }
     this.forcePlaybackDownload();
+    this.checkReady();
   }
 
   /**

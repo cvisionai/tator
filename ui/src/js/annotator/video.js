@@ -1897,6 +1897,7 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       
       appendThreshold = Math.min(timeToAbsEnd, appendThreshold);
+      console.info(`${timeToEnd} >= ${appendThreshold}`);
       return (timeToEnd >= appendThreshold ? "yes" : "more");
     }
   }
