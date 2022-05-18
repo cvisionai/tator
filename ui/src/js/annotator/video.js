@@ -1865,34 +1865,34 @@ export class VideoCanvas extends AnnotationCanvas {
       var ranges = video.buffered;
       const absEnd = this.frameToTime(this._numFrames-1);
       const absStart = this.frameToTime(0);
-      let timeToAbsEnd = null;
       const currentTime = this.frameToTime(frame);
+      let timeToAbsEnd = absEnd - currentTime;
       for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
       {
         var end = ranges.end(rangeIdx);
         var start = ranges.start(rangeIdx);
+        if (currentTime < start || currentTime > end)
+        {
+          continue;
+        }
 
         if (this._direction == Direction.STOPPED) {
           if (this._lastDirection == Direction.FORWARD) {
             timeToEnd = end - currentTime;
-            timeToAbsEnd = absEnd - currentTime;
           }
           else {
             timeToEnd = currentTime - start;
-            timeToAbsEnd = currentTime - absStart;
           }
         }
         else if (this._direction == Direction.FORWARD)
         {
           this._lastDirection = this._direction;
           timeToEnd = end - currentTime;
-          timeToAbsEnd = absEnd - currentTime;
         }
         else
         {
           this._lastDirection = this._direction;
           timeToEnd = currentTime - start;
-          timeToAbsEnd = currentTime - absStart;
         }
       }
       
