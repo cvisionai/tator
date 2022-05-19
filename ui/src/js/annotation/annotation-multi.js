@@ -1542,7 +1542,7 @@ export class AnnotationMulti extends TatorElement {
       if (this._videos[videoIndex].bufferDelayRequired() && this._videos[videoIndex].onDemandBufferAvailable() != "yes")
       {
         not_ready = true;
-        if (timeoutCounter == timeouts[timeoutIndex]) {
+        if (timeoutCounter >= timeouts[timeoutIndex]) {
           timeoutCounter = 0;
           timeoutIndex += 1;
           console.log(`Video ${videoIndex} playback check - restart [Now: ${new Date().toISOString()}]`);
