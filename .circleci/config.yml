@@ -230,14 +230,14 @@ workflows:
             only: /.*/
     - rest-tests:
         requires:
-        - front-end-tests
+        - install-tator
         context: cvisionai
         filters:
           tags:
             only: /.*/
     - tator-py-tests:
         requires:
-        - front-end-tests
+        - install-tator
         context: cvisionai
         filters:
           tags:
