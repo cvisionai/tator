@@ -16,6 +16,7 @@ export class ProjectSummary extends TatorElement {
 
     this._img = document.createElement("img");
     this._img.setAttribute("class", "projects__image px-2 rounded-1");
+    this._img.setAttribute("crossorigin", "anonymous");
     this._link.appendChild(this._img);
 
     const text = document.createElement("div");

@@ -73,6 +73,8 @@ server {
     {{- else }}
     add_header Cache-Control "max-age=0, must-revalidate";
     {{- end }}
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy require-corp;
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
     add_header Access-Control-Allow-Origin *;
@@ -222,6 +224,8 @@ server {
     {{- if .Values.maintenance }}
     return 503;
     {{- end }}
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy require-corp;
     proxy_pass http://gunicorn-svc:8000;
 
     proxy_redirect off;

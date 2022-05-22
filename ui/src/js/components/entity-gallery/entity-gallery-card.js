@@ -25,6 +25,7 @@ export class EntityCard extends TatorElement {
     this._img = document.createElement("img");
     this._img.setAttribute("src", Spinner);
     this._img.setAttribute("class", "entity-card__image rounded-1");
+    this._img.setAttribute("crossorigin", "anonymous");
     this._link.appendChild(this._img);
 
     // containing div for li element (styling)

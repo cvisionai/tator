@@ -36,6 +36,8 @@ export class KeyboardShortcuts extends TatorElement {
       ["Toggle Text Overlay", "T", null],
       ["Skip Forward 1 Frame", "\u{2192}", null],
       ["Skip Backward 1 Frame", "\u{2190}", null],
+      ["Skip Forward 1 Second", "\u{2192}", "Shift", ],
+      ["Skip Backward 1 Second", "\u{2190}", "Shift", ],
       ["Play/Pause", "Space", null],
       ["Rewind", "R", null],
       ["1x Playback", "1", null],
