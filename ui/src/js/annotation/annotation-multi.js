@@ -720,7 +720,9 @@ export class AnnotationMulti extends TatorElement {
         {
           if (global_progress[vid_idx] == 0)
           {
-            this._videos[vid_idx].refresh(); //draw first frame
+            setTimeout(() => {
+              this._videos[vid_idx].refresh(); //draw first frame
+            }, 333);
           }
           global_progress[vid_idx] = evt.detail.percent_complete;
           let fakeEvt = {

@@ -1151,7 +1151,7 @@ export class VideoCanvas extends AnnotationCanvas {
       // seek operations
       this._seekFrame = frame;
 
-      if (this._lastDownloadSeekFrame != this._seekFrame || forceSeekDownload)
+      if ((forceSeekBuffer == true || bufferType == "seek") && this._lastDownloadSeekFrame != this._seekFrame)
       {
         downloadSeekFrame = true;
         this._lastDownloadSeekFrame = this._seekFrame;
