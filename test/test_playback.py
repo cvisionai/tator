@@ -11,7 +11,15 @@ from pprint import pprint
 
 def _get_canvas_color(canvas):
   """ Returns the RGB value of the canvas (mean) """
-  screen_bytes = canvas.screenshot()
+  screen_bytes = None
+  attempts = 0
+  while screen_bytes == None and attempts < 5:
+    try:
+      screen_bytes = canvas.screenshot()
+      attempts += 1
+    except Exception as e:
+      print(e)
+      pass
   screen = np.frombuffer(screen_bytes, dtype=np.uint8)
   img = cv2.imdecode(screen, cv2.IMREAD_COLOR)
   img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
@@ -19,7 +27,15 @@ def _get_canvas_color(canvas):
 
 def _get_canvas_frame(canvas):
   """ Returns the frame number reported by the video """
-  screen_bytes = canvas.screenshot()
+  screen_bytes = None
+  attempts = 0
+  while screen_bytes == None and attempts < 5:
+    try:
+      screen_bytes = canvas.screenshot()
+      attempts += 1
+    except Exception as e:
+      print(e)
+      pass
   screen = np.frombuffer(screen_bytes, dtype=np.uint8)
   img = cv2.imdecode(screen, cv2.IMREAD_COLOR)
   img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
@@ -167,6 +183,56 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   _wait_for_frame(canvas[1], current_frame)
   page.close()
 
+def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_count):
+  print("[Multi] Going to annotation view...(Accuracy)")
+  page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+  page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
+  page.goto(f"/{project}/annotation/{multi_offset_count}?scrubQuality=360&seekQuality=720&playQuality=720", wait_until='networkidle')
+  page.on("pageerror", print_page_error)
+  page.wait_for_selector('video-canvas')
+  canvas = page.query_selector_all('video-canvas')
+  page.wait_for_timeout(10000)
+  play_button = page.query_selector('play-button')
+  seek_handle = page.query_selector('seek-bar .range-handle')
+  display_div = page.query_selector('#frame_num_display')
+  display_ctrl = page.query_selector('#frame_num_ctrl')
+
+  # Something times out here in the unit test.
+  #_wait_for_frame(canvas[0], 0)
+  #canvas_frame = _get_canvas_frame(canvas[0])
+  #assert(canvas_frame == 0)
+  #canvas_frame = _get_canvas_frame(canvas[1])
+  #assert(canvas_frame == 0)
+  #assert(int(display_div.inner_text())==0)
+
+  play_button.click() # play the video
+  page.wait_for_timeout(5000) # This is simulating the user watching, not dependent on any events.
+  play_button.click() # pause the video
+  page.wait_for_timeout(1000)
+  current_frame = int(display_div.inner_text())
+  assert(current_frame > 0)
+  _wait_for_frame(canvas[0], current_frame)
+  _wait_for_frame(canvas[1], current_frame+100) # Offset is 100
+
+  # Click the scrub handle
+  seek_x,seek_y = _get_element_center(seek_handle)
+  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.down()
+
+  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.wait_for_timeout(1000)
+  current_frame = int(display_div.inner_text())
+  _wait_for_frame(canvas[0], current_frame)
+  _wait_for_frame(canvas[1], current_frame+100)
+  page.mouse.up()
+
+  # Complete scrub
+  page.wait_for_timeout(5000)
+  current_frame = int(display_div.inner_text())
+  _wait_for_frame(canvas[0], current_frame)
+  _wait_for_frame(canvas[1], current_frame+100)
+  page.close()
+
 def test_small_res_file(page_factory, project, small_video):
   # Tests play, scrub, and seek buffer usage
   print("[Video] Going to annotation view...")
@@ -240,7 +306,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
   # Wait for hq buffer and verify it is red
-  page.wait_for_timeout(120000) # this takes forever with the weird color video
+  page.wait_for_timeout(15000) # this takes forever with the weird color video
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
 

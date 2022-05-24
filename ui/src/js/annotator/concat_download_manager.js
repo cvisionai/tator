@@ -408,7 +408,11 @@ export class ConcatDownloadManager
           {
             // Rest of the video segment information (moof / mdat / mfra)
             var begin = offsets[idx][0];
-            var end = offsets[idx][0] + offsets[idx][1];
+            var end = offsets[idx][0];
+            for (let b_idx = idx; b_idx < offsets.length; b_idx++)
+            {
+              end += offsets[b_idx][1];
+            }
             var bufferToSend = data.slice(begin, end);
             bufferToSend.fileStart = data.fileStart + begin;
             if (sentOffset == false)
@@ -433,7 +437,7 @@ export class ConcatDownloadManager
                 restartOnDemand();
               },100);
             }
-            idx++;
+            idx = offsets.length;
           }
         }
       }

@@ -661,13 +661,14 @@ class MediaDetailAPI(BaseDetailView):
                             raise ValueError(f"Cannot set a multi definition on a Media that contains "
                                               "individual or concatenated media!")
                 # Check values of IDs (that they exist and are part of the same project).
-                sub_media = Media.objects.filter(project=media.project, pk__in=params['multi']['ids'])
-                if len(params['multi']['ids']) != sub_media.count():
-                    raise ValueError(f"One or more media IDs in multi definition is not part of "
-                                      "project {media.project.pk} or does not exist!")
+                if 'ids' in params['multi']:
+                    sub_media = Media.objects.filter(project=media.project, pk__in=params['multi']['ids'])
+                    if len(params['multi']['ids']) != sub_media.count():
+                        raise ValueError(f"One or more media IDs in multi definition is not part of "
+                                          "project {media.project.pk} or does not exist!")
                 if media_files is None:
                     media_files = {}
-                for key in ['ids', 'layout', 'quality']:
+                for key in ['ids', 'layout', 'quality', 'frameOffset']:
                     if params['multi'].get(key):
                         media_files[key] = params['multi'][key]
                 qs.update(media_files=media_files)
