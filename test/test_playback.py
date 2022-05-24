@@ -11,7 +11,15 @@ from pprint import pprint
 
 def _get_canvas_color(canvas):
   """ Returns the RGB value of the canvas (mean) """
-  screen_bytes = canvas.screenshot()
+  screen_bytes = None
+  attempts = 0
+  while screen_bytes == None and attempts < 5:
+    try:
+      screen_bytes = canvas.screenshot()
+      attempts += 1
+    except Exception as e:
+      print(e)
+      pass
   screen = np.frombuffer(screen_bytes, dtype=np.uint8)
   img = cv2.imdecode(screen, cv2.IMREAD_COLOR)
   img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
@@ -19,7 +27,15 @@ def _get_canvas_color(canvas):
 
 def _get_canvas_frame(canvas):
   """ Returns the frame number reported by the video """
-  screen_bytes = canvas.screenshot()
+  screen_bytes = None
+  attempts = 0
+  while screen_bytes == None and attempts < 5:
+    try:
+      screen_bytes = canvas.screenshot()
+      attempts += 1
+    except Exception as e:
+      print(e)
+      pass
   screen = np.frombuffer(screen_bytes, dtype=np.uint8)
   img = cv2.imdecode(screen, cv2.IMREAD_COLOR)
   img=cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
