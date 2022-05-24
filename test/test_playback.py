@@ -290,7 +290,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
   # Wait for hq buffer and verify it is red
-  page.wait_for_timeout(120000) # this takes forever with the weird color video
+  page.wait_for_timeout(15000) # this takes forever with the weird color video
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
 
