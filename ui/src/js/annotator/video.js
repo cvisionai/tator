@@ -719,7 +719,6 @@ export class VideoCanvas extends AnnotationCanvas {
                         this._numSeconds=new_length / this._fps;
                         this._dims=dims;
                         this.resetRoi();
-                        this.seekFrame(this._dispFrame, ()=>{}, true);
                         resolve();
                       }
                     });
