@@ -44,7 +44,7 @@ export class LeafForm extends TatorElement {
     //   console.log("Leaf form changed");
     //   this.changed = true;
     //   return this.form.classList.add("changed");
-    // });   
+    // });
 
 
     // Fields for this form
@@ -55,138 +55,17 @@ export class LeafForm extends TatorElement {
     this._name.addEventListener("change", this._formChanged.bind(this));
     this.form.appendChild(this._name);
 
-    // dtype
-    /* the selection will change based on current value */
-    this.dataTypeSelectDiv = document.createElement("div");
-    this.form.appendChild(this.dataTypeSelectDiv);
+    // READ ONLY : path
+    // this._path = document.createElement("text-input");
+    // this._path.setAttribute("name", "Path");
+    // this._path.setAttribute("permission", "View Only");
+    // this._path.setAttribute("type", "string");
+    // this._path.addEventListener("change", this._formChanged.bind(this));
+    // this.form.appendChild(this._path);
 
-    this._getDtypeSelectBox("");
-    this.dataTypeSelectDiv.appendChild(this._dtype);
-
-    this._dtype.addEventListener("change", this._formChanged.bind(this));
-
-    // default
-    /* input inside placeholder hidden until dtype selected */
-    this.placeholderDefault = document.createElement("div");
-    this.placeholderDefault.setAttribute("class", "hidden");
-    this.form.appendChild(this.placeholderDefault);
-
-    // use current
-    /* input inside placeholder hidden until dtype selected */
-    this.placeHolderUseCurrent = document.createElement("div");
-    this.placeHolderUseCurrent.setAttribute("class", "hidden");
-    this.form.appendChild(this.placeHolderUseCurrent);
-
-    // description
-    this._description = document.createElement("text-input");
-    this._description.setAttribute("type", "string");
-    this._description.setAttribute("name", "Description");
-    this._description.addEventListener("change", this._formChanged.bind(this));
-    this.form.appendChild(this._description);
-
-    // order
-    this._order = document.createElement("text-input");
-    this._order.setAttribute("name", "Order");
-    this._order.setAttribute("type", "int");
-    this._order.addEventListener("change", this._formChanged.bind(this));
-    this.form.appendChild(this._order);
-
-    // required
-    this._required = document.createElement("bool-input");
-    this._required.setAttribute("name", "Required");
-    this._required.setAttribute("on-text", "Yes");
-    this._required.setAttribute("off-text", "No");
-    this._required.setValue(false);
-    this._required.addEventListener("change", this._formChanged.bind(this));
-    this.form.appendChild(this._required);
-
-    // visible
-    this._visible = document.createElement("bool-input");
-    this._visible.setAttribute("name", "Visible");
-    this._visible.setAttribute("on-text", "Yes");
-    this._visible.setAttribute("off-text", "No");
-    this._visible.setValue(false);
-    this._visible.addEventListener("change", this._formChanged.bind(this));
-    this.form.appendChild(this._visible);
-
-    // minimum
-    /* input inside placeholder hidden until dtype selected */
-    this.placeholderMin = document.createElement("div");
-    this.placeholderMin.setAttribute("class", "hidden");
-    this.form.appendChild(this.placeholderMin);
-
-    // maximum
-    /* input inside placeholder hidden until dtype selected */
-    this.placeholderMax = document.createElement("div");
-    this.placeholderMax.setAttribute("class", "hidden");
-    this.form.appendChild(this.placeholderMax);
-
-    // enum inputs @todo this can replace separate labels & choices
-    this.placeholderEnum = document.createElement("div");
-    this.placeholderEnum.setAttribute("class", "hidden clear-fix");
-
-    const labelHolder = document.createElement("div");
-    labelHolder.setAttribute("class", "col-4 col-modal-12 float-left");
-    const enumLabel = document.createTextNode("Enum Choices");
-    labelHolder.appendChild(enumLabel);
-
-    this.placeholderEnum.appendChild(labelHolder);
-    this.form.appendChild(this.placeholderEnum);
-
-
-    // labels
-    /* input inside placeholder hidden until dtype selected */
-    this.placeholderLabels = document.createElement("div");
-    this.placeholderLabels.setAttribute("class", "col-3 col-modal-5 float-left");
-    this.placeholderEnum.appendChild(this.placeholderLabels);
-
-    // choices
-    /* input inside placeholder hidden until dtype selected */
-    this.placeholderChoices = document.createElement("div");
-    this.placeholderChoices.setAttribute("class", "col-3 col-modal-5 float-left");
-    this.placeholderEnum.appendChild(this.placeholderChoices);
-
-
-    // style
-    // disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check
-    const styleOptions = [
-      { value: "disabled" },
-      { value: "long_string" },
-      { value: "start_frame" },
-      { value: "end_frame" },
-      { value: "start_frame_check" },
-      { value: "end_frame_check" } ]
-    this._style = document.createElement("enum-input");
-    this._style.multiple = true;
-    this._style.setAttribute("name", "Style");
-    this._style.choices = styleOptions;
-    this._style.addEventListener("change", this._formChanged.bind(this));
-    this.form.appendChild(this._style);
-
-    // autocomplete
-    this._autocompleteSection = document.createElement("div");
-    this._autocompleteSection.setAttribute("class", "py-3")
-    this._autocompleteSection.hidden = true;
-    this.form.appendChild(this._autocompleteSection);
-
-    const headingAutocomplete = document.createElement("p");
-    headingAutocomplete.setAttribute("class", "text-white h3 py2");
-    headingAutocomplete.textContent = "Autocomplete";
-    this._autocompleteSection.appendChild(headingAutocomplete);
-
-    this._autocomplete = document.createElement("text-input");
-    this._autocomplete.setAttribute("type", "string");
-    this._autocomplete.setAttribute("name", "Service URL");
-    this._autocomplete.addEventListener("change", this._formChanged.bind(this));
-    this._autocompleteSection.appendChild(this._autocomplete);
-
-    this._match_any = document.createElement("bool-input");
-    this._match_any.setAttribute("name", "Match Any");
-    this._match_any.setAttribute("on-text", "Yes");
-    this._match_any.setAttribute("off-text", "No");
-    this._match_any.setValue(false);
-    this._match_any.addEventListener("change", this._formChanged.bind(this));
-    this._autocompleteSection.appendChild(this._match_any);
+    // Parent
+    this.parentSelectDiv = document.createElement("div");
+    this.form.appendChild(this.parentSelectDiv);
 
     this._shadow.appendChild(this.form);
 

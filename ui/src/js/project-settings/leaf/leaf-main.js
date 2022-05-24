@@ -2,9 +2,9 @@ import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
 import { ProjectTypesData } from "../data/data-project-types.js";
-import { LeafsClone } from "./leaf-clone.js";
-import { LeafsData } from "../data/data-leafs-clone.js";
-import { LeafsDelete } from "./leaf-delete.js";
+import { LeafClone } from "./leaf-clone.js";
+import { LeafData } from "../data/data-leafs-clone.js";
+import { LeafDelete } from "./leaf-delete.js";
 
 /**
  * Main Leaf section for type forms
@@ -29,8 +29,9 @@ export class LeafMain extends HTMLElement {
     this.hasChanges = false;
   }
 
-  _init(typeName, fromId, fromName, projectId, data, modal){
+  _init(typeName, fromId, fromName, projectId, data, modal, projectName){
     //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
+    console.log("projectName"+projectName);
 
     // Init object global vars
     this.fromId = fromId;
@@ -39,6 +40,7 @@ export class LeafMain extends HTMLElement {
     this.typeId = fromId;
     this.projectId = projectId;
     this.modal = modal;
+    this.projectNameClean = String(projectName).replace(/[^a-z0-9]/gi, '').replace(" ", "_");
 
     // add main div
     this.leafDiv = document.createElement("div");
@@ -173,12 +175,12 @@ export class LeafMain extends HTMLElement {
       afObj.submitLeaf.addEventListener("click", (e) => {
         e.preventDefault();
   
-        this._postLeaf( afObj.attrForm );
+        this._postLeaf( afObj.form );
       });
 
       this.boxHelper._modalConfirm({
         "titleText" : "New Leaf",
-        "mainText" : afObj.attrForm.form,
+        "mainText" : afObj.form.form,
         "buttonSave" : afObj.submitLeaf,
         "scroll" : true
       });
@@ -190,15 +192,15 @@ export class LeafMain extends HTMLElement {
   }
 
   _getAddForm(){
-    let attrForm = document.createElement("leafs-form");
-    attrForm._initEmptyForm();
+    let form = document.createElement("leaf-form");
+    form._initEmptyForm();
 
     let submitLeaf = document.createElement("input");
     submitLeaf.setAttribute("type", "submit");
     submitLeaf.setAttribute("value", "Save");
     submitLeaf.setAttribute("class", `btn btn-clear f1 text-semibold`);
 
-    return {attrForm, submitLeaf};
+    return {form, submitLeaf};
   }
 
   _postLeaf(formObj){
@@ -281,7 +283,7 @@ export class LeafMain extends HTMLElement {
       // console.log("did it come back from typesData ok? ");
       // console.log(leafDataByType);
       
-      const clone = new LeafsClone( leafDataByType );
+      const clone = new LeafClone( leafDataByType );
       const cloneForm = clone._init();
 
       const cloneSave = document.createElement("input");
@@ -294,7 +296,7 @@ export class LeafMain extends HTMLElement {
         const selectedData = clone.getInputData();
         //console.log(selectedData);
         
-        let cloneData = new LeafsData({
+        let cloneData = new LeafData({
           projectId: this.projectId,
           typeId: this.fromId,
           typeName: this.typeName,
@@ -528,7 +530,7 @@ export class LeafMain extends HTMLElement {
     this.modal._closeCallback();;
     this.loading.showSpinner();
 
-    let deleteLeaf = new LeafsDelete({
+    let deleteLeaf = new LeafDelete({
       "type" : this.typeName,
       "typeId" : this.fromId,
       "leafName" : name
@@ -555,7 +557,7 @@ export class LeafMain extends HTMLElement {
     console.log("Leaf Form Post Fetch");
 
     if(formData != null){
-      return fetch("/rest/LeafType/"+this.fromId, {
+      return fetch("/rest/Leaves/"+this.fromId, {
         method: "POST",
         mode: "cors",
         credentials: "include",
@@ -585,9 +587,12 @@ export class LeafMain extends HTMLElement {
     if (global === "true") {
       formData.global = "true";
     }
+    // TODO - need to get leaf ID
+    // This was carried over from attr which use the media type, not own ID
+    const leafId = parentTypeId;
 
     promise = promise.then(() => {
-      return fetch("/rest/LeafType/" + parentTypeId, {
+      return fetch("/rest/Leaves/" + this.projectId, {
         method: "PATCH",
         mode: "cors",
         credentials: "include",

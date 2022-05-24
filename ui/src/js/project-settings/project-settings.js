@@ -103,6 +103,7 @@ export class ProjectSettings extends TatorPage {
   _init() {
     // Project data
     this.projectId = this.getAttribute("project-id");
+    this.projectName = "";
     this.projectView = new ProjectMainEdit();
     this.typesData = new ProjectTypesData(this.projectId);
     const projectPromise = this.projectView._fetchGetPromise({ id: this.projectId });
@@ -118,7 +119,8 @@ export class ProjectSettings extends TatorPage {
       .then((data) => {
         return data.json();
       }).then((objData) => {
-        this._breadcrumbs.setAttribute("project-name", objData.name);
+        this.projectName = objData.name;
+        this._breadcrumbs.setAttribute("project-name", this.projectName);
         const formView = this.projectView;
 
         // Data Handler requires organization ID
@@ -228,7 +230,8 @@ export class ProjectSettings extends TatorPage {
             versionListHandler: this._dataVersionList,
             mediaListHandler: this._dataMediaList,
             clusterListHandler: this._dataJobClusterList,
-            isStaff: this._userIsStaff
+            isStaff: this._userIsStaff,
+            projectName: this.projectName
           });
 
           headingEl.addEventListener("click", () => {
@@ -323,7 +326,8 @@ export class ProjectSettings extends TatorPage {
             versionListHandler: this._dataVersionList,
             mediaListHandler: this._dataMediaList,
             clusterListHandler: this._dataJobClusterList,
-            isStaff: this._userIsStaff
+            isStaff: this._userIsStaff,
+            projectName: this.projectName
           });
         }
 

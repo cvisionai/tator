@@ -161,7 +161,8 @@ export class AttributesForm extends TatorElement {
     this._style.setAttribute("name", "Style");
     this._style.choices = styleOptions;
     this._style.addEventListener("change", this._formChanged.bind(this));
-    this.form.appendChild(this._style);
+    // #TODO
+    // this.form.appendChild(this._style);
 
     // autocomplete
     this._autocompleteSection = document.createElement("div");
@@ -174,19 +175,19 @@ export class AttributesForm extends TatorElement {
     headingAutocomplete.textContent = "Autocomplete";
     this._autocompleteSection.appendChild(headingAutocomplete);
 
-    this._autocomplete = document.createElement("text-input");
-    this._autocomplete.setAttribute("type", "string");
-    this._autocomplete.setAttribute("name", "Service URL");
-    this._autocomplete.addEventListener("change", this._formChanged.bind(this));
-    this._autocompleteSection.appendChild(this._autocomplete);
+    this._autocomplete_service_url = document.createElement("text-input");
+    this._autocomplete_service_url.setAttribute("type", "string");
+    this._autocomplete_service_url.setAttribute("name", "Service URL");
+    this._autocomplete_service_url.addEventListener("change", this._formChanged.bind(this));
+    this._autocompleteSection.appendChild(this._autocomplete_service_url);
 
-    this._match_any = document.createElement("bool-input");
-    this._match_any.setAttribute("name", "Match Any");
-    this._match_any.setAttribute("on-text", "Yes");
-    this._match_any.setAttribute("off-text", "No");
-    this._match_any.setValue(false);
-    this._match_any.addEventListener("change", this._formChanged.bind(this));
-    this._autocompleteSection.appendChild(this._match_any);
+    this._autocomplete_match_any = document.createElement("bool-input");
+    this._autocomplete_match_any.setAttribute("name", "Match Any");
+    this._autocomplete_match_any.setAttribute("on-text", "Yes");
+    this._autocomplete_match_any.setAttribute("off-text", "No");
+    this._autocomplete_match_any.setValue(false);
+    this._autocomplete_match_any.addEventListener("change", this._formChanged.bind(this));
+    this._autocompleteSection.appendChild(this._autocomplete_match_any);
 
     this._shadow.appendChild(this.form);
 
@@ -255,15 +256,23 @@ export class AttributesForm extends TatorElement {
       value: _default,  // create new el w/ this value 
       enumOptions: { choices, labels }
     });
-    this._showDefault({ dtype });
 
     // use current
     this._getUseCurrent({ value: use_current });
-    this._showUseCurrent({ dtype });
 
-    // autocomplete
-    this._autocomplete.default = autocomplete;
-    this._autocomplete.setValue(autocomplete);
+    // autocomplete - part 1
+    console.log(`autocomplete url value default is being set to ${autocomplete.serviceUrl}`);
+    console.log(autocomplete);
+    const serviceUrl = typeof autocomplete !== "undefined" && autocomplete && autocomplete.serviceUrl ? autocomplete.serviceUrl : null;
+    console.log(`typeof autocomplete !== "undefined" ${typeof autocomplete !== "undefined"}`)
+    console.log(serviceUrl);
+    this._autocomplete_service_url.default = serviceUrl;
+    this._autocomplete_service_url.setValue(serviceUrl);
+
+    // autocomplete - part 2
+    const matchAny = typeof autocomplete !== "undefined" && autocomplete && autocomplete.match_any ? autocomplete.match_any : null;
+    this._autocomplete_match_any.default = matchAny;
+    this._autocomplete_match_any.setValue(matchAny);
 
     // style
     // Note: Assumes if multiple they are  always separated with white space
@@ -280,16 +289,11 @@ export class AttributesForm extends TatorElement {
       this._style.setValue(null);
     }
 
-
-
     // minimum
     this._getMinInput({ value: minimum });
-    this._showMin({ dtype });
 
     // maximum
     this._getMaxInput({ value: maximum });
-    this._showMax({ dtype });
-
 
     if (dtype == 'enum') {
       this.choicesVal = (choices === null) ? [] : choices;
@@ -303,8 +307,8 @@ export class AttributesForm extends TatorElement {
       this._getEnumDefaultCol({ defaultVal: _default });
     }
 
-    // if it is not dtype==enum it hides
-    this._showEnumInputs({ dtype });
+    // show/hides min/max/enum/correctdefault etc.
+    this._showDynamicFields(dtype)
 
     return this.form;
   }
@@ -836,11 +840,16 @@ export class AttributesForm extends TatorElement {
 
     // Autocomplete: String type; Only when changed, or when it is a Clone pass the value along
     // Don't send if the value is null => invalid
-    if (dtype !== "string") {
-      if ((this._autocomplete.changed() || this.isClone) && this._autocomplete.getValue() !== null) {
-        console.log("this._match_any.getValue() " + this._match_any.getValue());
-        const autocompleteObj = { serviceUrl: this._autocomplete.getValue(), match_any: this._match_any.getValue()};
-        formData.autocomplete = autocompleteObj;
+    if (dtype == "string") {
+      // matchAny changed
+      const matchAnyValid = (this._autocomplete_match_any.changed() || this.isClone) && this._autocomplete_match_any.getValue() !== null;
+      const serviceUrlValid = (this._autocomplete_service_url.changed() || this.isClone) && this._autocomplete_service_url.getValue() !== null;
+
+      if (serviceUrlValid || matchAnyValid) {
+        formData.autocomplete = {
+          serviceUrl: this._autocomplete_service_url.getValue(),
+          match_any : this._autocomplete_match_any.getValue()
+        };
       }     
     }
 

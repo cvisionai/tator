@@ -17,7 +17,7 @@ export class LeafData {
         console.log("Leaf Clone Post Fetch");
     
         if(formData != null){
-          return fetch("/rest/AttributeType/"+this.typeId, {
+          return fetch("/rest/Leaves/"+this.projectId, {
             method: "POST",
             mode: "cors",
             credentials: "include",
@@ -29,7 +29,7 @@ export class LeafData {
             body: JSON.stringify(formData)
           });
         } else {
-          console.log("Problem with new attribute form data.");
+          console.log("Problem with new leaf form data.");
         }
       }
   
@@ -45,11 +45,11 @@ export class LeafData {
         // console.log("cloneValue");
         // console.log(cloneValue);
 
-        this.attributeForm = new AttributesForm();
-        this.attributeForm._getFormWithValues({clone : true, ...cloneValue});
+        this.leafForm = new LeafForm();
+        this.leafForm._getFormWithValues({clone : true, ...cloneValue});
         let formJSON = {
           "entity_type": this.typeName,
-          "addition": this.attributeForm._getAttributeFormData()
+          "addition": this.leafForm._getLeafFormData()
         };
 
         promise = promise.then(() => {return this._fetchPostPromise({
