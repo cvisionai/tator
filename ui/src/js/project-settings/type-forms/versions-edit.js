@@ -228,8 +228,8 @@ export class VersionsEdit extends TypeForm {
             })]
       );
 
-      const stateCountData = sc.json();
-      const LocalizationCountData = lc.json();
+      const stateCountData = await sc.json();
+      const LocalizationCountData = await lc.json();
 
       Promise.all([stateCountData, LocalizationCountData])
          .then(([stateCount, LocalizationCount]) => {
