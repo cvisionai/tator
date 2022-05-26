@@ -228,19 +228,16 @@ export class VersionsEdit extends TypeForm {
             })]
       );
 
-      const stateCountData = await sc.json();
-      const LocalizationCountData = await lc.json();
+      const stateCount = await sc.json();
+      const localizationCount = await lc.json();
 
-      Promise.all([stateCountData, LocalizationCountData])
-         .then(([stateCount, LocalizationCount]) => {
-            this.loading.hideSpinner();
-            this._modalConfirm({
-               "titleText": `Edit Confirmation`,
-               "mainText": `There are ${stateCount} states and ${LocalizationCount} localizations existing in this version. Any edits will be reflected on those existing states and localizations.<br/><br/>Do you want to continue?`,
-               "buttonSave": button,
-               "scroll": false
-            });
-         });
+      this.loading.hideSpinner();
+      this._modalConfirm({
+         "titleText": `Edit Confirmation`,
+         "mainText": `There are ${stateCount} states and ${localizationCount} localizations existing in this version. Any edits will be reflected on those existing states and localizations.<br/><br/>Do you want to continue?`,
+         "buttonSave": button,
+         "scroll": false
+      });
    }
 
 }

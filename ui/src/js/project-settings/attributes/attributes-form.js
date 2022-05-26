@@ -261,11 +261,7 @@ export class AttributesForm extends TatorElement {
     this._getUseCurrent({ value: use_current });
 
     // autocomplete - part 1
-    console.log(`autocomplete url value default is being set to ${autocomplete.serviceUrl}`);
-    console.log(autocomplete);
     const serviceUrl = typeof autocomplete !== "undefined" && autocomplete && autocomplete.serviceUrl ? autocomplete.serviceUrl : null;
-    console.log(`typeof autocomplete !== "undefined" ${typeof autocomplete !== "undefined"}`)
-    console.log(serviceUrl);
     this._autocomplete_service_url.default = serviceUrl;
     this._autocomplete_service_url.setValue(serviceUrl);
 

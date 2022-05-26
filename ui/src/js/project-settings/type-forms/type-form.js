@@ -566,7 +566,7 @@ export class TypeForm extends TatorElement {
       try {
         if (this.isChanged()) {
           // Main type form
-          return this._typeFormChanged();
+          this._typeFormChanged();
         }
       } catch (err) {
         console.error("Error saving.", err);
@@ -576,7 +576,7 @@ export class TypeForm extends TatorElement {
 
       try {
         // Compiled messages from above
-        await this._showSaveCompletModal();
+        await this._showSaveCompleteModal();
 
         // Clean up..................
         // Reset changed flags
@@ -597,7 +597,7 @@ export class TypeForm extends TatorElement {
     }
   }
 
-  async _showSaveCompletModal() {
+  async _showSaveCompleteModal() {
     this.saveModalMessage = "";
 
     if (this.successMessages) {
@@ -613,6 +613,7 @@ export class TypeForm extends TatorElement {
       mainText
     );
     
+    console.log("_showSaveCompleteModal");
     await this.resetHard();
 
     return this.loading.hideSpinner();
@@ -639,6 +640,7 @@ export class TypeForm extends TatorElement {
           let currentMessage = obj.data.message;
 
           if (obj.response.ok) {
+            console.log("SUCCESS MESSAGE currentMessage: "+currentMessage)
             this._modalSuccess(currentMessage);
           } else {
             this._modalError(currentMessage);
