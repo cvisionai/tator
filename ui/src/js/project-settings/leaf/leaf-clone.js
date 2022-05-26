@@ -9,10 +9,10 @@ export class LeafClone {
   }
 
   _init(){
-    return this._getDuplicateLeafsForm();
+    return this._getDuplicateLeavesForm();
   }
 
-  _getDuplicateLeafsForm(){
+  _getDuplicateLeavesForm(){
     this.form = document.createElement("form");
     //this.form.addEventListener("change", this._formChanged);
 
@@ -34,7 +34,7 @@ export class LeafClone {
       let type = this._typeSelect.getValue();
       let entitySelect = this._getEntitiesForType( type );
       this.placeholderEntities.innerHTML = ""; //empty any current value
-      this.placeholderLeafs.innerHTML = ""; //empty any current value
+      this.placeholderLeaves.innerHTML = ""; //empty any current value
       this.checkedRadio = []; //removed remembered check
       this.placeholderEntities.appendChild(entitySelect);
 
@@ -44,12 +44,12 @@ export class LeafClone {
   
       entitySelect.addEventListener("change", () => {
         const entity = this._entitySelect.getValue();
-        const leafs = this.entities[entity];
-        if (leafs && leafs.length > 0) {
-          const checkboxHTML = this._getLeafCheckboxes( leafs );
+        const leaves = this.entities[entity];
+        if (leaves && leaves.length > 0) {
+          const checkboxHTML = this._getLeafCheckboxes( leaves );
           
-          this.placeholderLeafs.innerHTML = ""; //empty any current value
-          this.placeholderLeafs.appendChild(checkboxHTML);
+          this.placeholderLeaves.innerHTML = ""; //empty any current value
+          this.placeholderLeaves.appendChild(checkboxHTML);
         } else {
           const label = document.createElement("label");
           label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1")
@@ -61,8 +61,8 @@ export class LeafClone {
           span.appendChild(message);
           label.appendChild(span);
 
-          this.placeholderLeafs.innerHTML = ""; //empty any current value
-          this.placeholderLeafs.appendChild(label);
+          this.placeholderLeaves.innerHTML = ""; //empty any current value
+          this.placeholderLeaves.appendChild(label);
         }
         
       });
@@ -72,9 +72,9 @@ export class LeafClone {
     this.placeholderEntities.setAttribute("class", "placeholderEntities");
     this.form.appendChild(this.placeholderEntities);
 
-    this.placeholderLeafs = document.createElement("div");
-    this.placeholderLeafs.setAttribute("class", "placeholderLeafs");
-    this.form.appendChild(this.placeholderLeafs);
+    this.placeholderLeaves = document.createElement("div");
+    this.placeholderLeaves.setAttribute("class", "placeholderLeaves");
+    this.form.appendChild(this.placeholderLeaves);
 
     return this.form;
   }
@@ -105,7 +105,7 @@ export class LeafClone {
     }
   }
 
-  // Choose a type and entity to see a list of leafs:
+  // Choose a type and entity to see a list of leaves:
   _getTypesList(){
       return [
         {"label": "Select type", "value":""},

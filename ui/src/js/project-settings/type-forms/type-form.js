@@ -31,10 +31,10 @@ export class TypeForm extends TatorElement {
     this._formContainer.appendChild(this._attributeContainer);
 
     // Leaf Container
-    // this._leafContainer = document.createElement("div");
-    // this._leafContainer.setAttribute("class", "col-4");
-    // this._leafContainer.hidden = true; // not alway in use
-    // this._formContainer.appendChild(this._leafContainer);
+    this._leafContainer = document.createElement("div");
+    this._leafContainer.setAttribute("class", "col-4");
+    this._leafContainer.hidden = true; // not alway in use
+    this._formContainer.appendChild(this._leafContainer);
 
     // Loading spinner
     this.loading = new LoadingSpinner();
@@ -134,16 +134,16 @@ export class TypeForm extends TatorElement {
       }
 
       // Leaf section
-      // if (this.typeName == "LeafType") {
-      //   this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
-      //   this._leafContainer.hidden = false;
-      //   // Clears
-      //   if (isReset) this.leafSection && this.leafSection.remove();
+      if (this.typeName == "LeafType") {
+        this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
+        this._leafContainer.hidden = false;
+        // Clears
+        if (isReset) this.leafSection && this.leafSection.remove();
 
-      //   // Creates/Re-creates this.leafSection & appends it
-      //   const section = this._getLeafSection();
-      //   this._attributeContainer.appendChild(section);
-      // }
+        // Creates/Re-creates this.leafSection & appends it
+        const section = this._getLeafSection();
+        this._attributeContainer.appendChild(section);
+      }
 
 
       // append save button
@@ -320,8 +320,9 @@ export class TypeForm extends TatorElement {
 
   _getLeafSection() {
     this.leafSection = document.createElement("leaf-main");
-    this.leafSection.setAttribute("data-from-id", `${this.typeId}`)
-    this.leafSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.data.attribute_types, this.modal, this.projectName);
+    this.leafSection.setAttribute("data-from-id", `${this.typeId}`);
+    this.leafSection.setAttribute("data-project-id", `${this.projectId}`)
+    this.leafSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.modal, this.projectName);
 
     // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
     this.leafSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
