@@ -326,9 +326,10 @@ def test_settings_attributeTests(page_factory, project):
         page.click('modal-dialog modal-close .modal__close')
         print(f"New {dtype} type attribute added to Image!")
 
+    page.wait_for_timeout(5000)
+
     # Edit Attribute Types
     print("Editing Attributes...")
-
     #open the attribute forms
     dtypeSet = {"Test Bool","Test Int","Test Float","Test String","Test Enum","Test Datetime","Test Geoposition"}
     for dtypeName in dtypeSet:
