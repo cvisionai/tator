@@ -1597,6 +1597,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
+      console.warn("Player Stalled.");
       // Done playing, clear playback.
       if (this._audioEligible && this._audioPlayer.paused)
       {
