@@ -1460,7 +1460,10 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
-      if (this._playbackRate >= 16)
+      // Cap effective decode rate around 240 fps 
+      // This was emperically gathered as a good cut off for 5 15fps playing back at 16x
+      // Can fine tune this more if required
+      if (this._fps * this._playbackRate >= 16*15)
       {
         this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
       }
@@ -1743,7 +1746,7 @@ export class VideoCanvas extends AnnotationCanvas {
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
 
     // We are actually in keyframe playback mode here
-    if (this._playbackRate >= 16)
+    if (this._fps * this._playbackRate >= 16 * 15)
     {
       frameIncrement = this._playbackRate / 16;
     }
