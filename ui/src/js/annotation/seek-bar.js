@@ -96,7 +96,7 @@ export class SeekBar extends TatorElement {
                                                         {composed: true,
                                                         detail: {frame: this.value}}));
                                      }
-                                    , 30);
+                                    , 3);
                                    that.bar.removeEventListener("click", clickHandler);
                                    document.addEventListener("mouseup",
                                                              releaseMouse);

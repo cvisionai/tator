@@ -162,8 +162,19 @@ export class VideoCanvas extends AnnotationCanvas {
 
 
     this.initialized = false;
+    this._fastMode = false;
   }
 
+  set keyframeOnly(val)
+  {
+    this._fastMode = val;
+    this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = val;
+  }
+
+  get keyframeOnly()
+  {
+    return this._fastMode;
+  }
   /**
    * Permanently disable downloading the scrub buffer.
    * #TODO Allow some ability to re-enable downloading the scrub buffer.
@@ -1206,6 +1217,10 @@ export class VideoCanvas extends AnnotationCanvas {
           if (video.use_codec_buffer)
           {
             image_buffer = video.codec_image_buffer;
+            if (image_buffer)
+            {
+              frame = that.timeToFrame(image_buffer.time);
+            }
           }
           if (image_buffer == null)
           {

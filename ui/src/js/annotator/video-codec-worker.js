@@ -344,7 +344,7 @@ class TatorVideoBuffer {
     const timestampOffsetInCtx=Math.floor(timestampOffset*this._timescaleMap.get(timestampOffset));
     //console.info(`${this._name}: TIMESTAMP ${timestampOffset} is ${timestampOffsetInCtx}`);
     //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
-    if (muted == false || this._playing == true)
+    if (muted == false || this._playing == true || this._keyframeOnly == true)
     {
       this._seek_in_progress=true;
       let finished=false;      
@@ -623,8 +623,8 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = (this._current_cursor)*timeScale;
       const timestamp = frame.timestamp;
-      //console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
-      if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
+      //console.info(`FRAME ${cursor_in_ctx} vs. ${this.keyframeOnly} ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
+      if (this.keyframeOnly == true || cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
       {
         // Make an ImageBitmap from the frame and release the memory
         this._canvasCtx.drawImage(frame,0,0);
