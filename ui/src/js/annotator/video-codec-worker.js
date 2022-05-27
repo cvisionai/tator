@@ -369,6 +369,11 @@ class TatorVideoBuffer {
           }
         }
 
+        if (this.keyframeOnly == true && samples[idx].is_sync == false)
+        {
+          continue; // skip over non keyframes
+        }
+
         //console.info(`${this._name}: SENDING ${timestampOffsetInCtx} + ${samples[idx].cts} ${this._timescaleMap.get(timestampOffset)}`);
         this._bufferedRegions.push(start_frame_time, timestampOffset+(samples[idx].cts+this._frameDeltaMap.get(timestampOffset))/this._timescaleMap.get(timestampOffset));
         const chunk = new EncodedVideoChunk({
@@ -1014,5 +1019,9 @@ onmessage = function(e)
   else if (msg.type == "deleteUpTo")
   {
     ref.deleteUpTo(msg.seconds);
+  }
+  else if (msg.type == "keyframeOnly")
+  {
+    ref.keyframeOnly = msg.value;
   }
 }

@@ -134,6 +134,18 @@ class TatorVideoManager {
     this._timescaleMap = new Map();
     this._frameDeltaMap = new Map();
     this._bias = 0;
+    this._keyframeOnly = false;
+  }
+
+  set keyframeOnly(val)
+  {
+    this._keyframeOnly = val;
+    this._codec_worker.postMessage({"type": "keyframeOnly", "value": val});
+  }
+
+  get keyframeOnly()
+  {
+    this.keyframeOnly();
   }
 
   _on_message(msg)

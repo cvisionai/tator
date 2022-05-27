@@ -1445,6 +1445,10 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
+      if (this._playbackRate >= 16)
+      {
+        this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
+      }
       this.frameCallbackMethod(this._scrub_idx);
     }
     else
@@ -1722,6 +1726,13 @@ export class VideoCanvas extends AnnotationCanvas {
       index = this._play_idx;
     }
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
+
+    // We are actually in keyframe playback mode here
+    if (this._playbackRate >= 16)
+    {
+      frameIncrement = this._playbackRate / 16;
+    }
+
     let video = this._videoElement[index].playBuffer();
     let frameProfiler = new PeriodicTaskProfiler("Frame Fetch");
 
@@ -2542,6 +2553,7 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   pause()
   {
+    this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = false;
     // Stoping the player thread sets the direction to stop
     const currentDirection = this._direction;
 
