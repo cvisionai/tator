@@ -411,7 +411,7 @@ class TatorVideoBuffer {
       }
 
       // In seek cases wait for the whole GOP to decode.
-      if (this._playing == false)
+      if (this._playing == false && this._keyframeOnly == false)
       {
         //console.info("Forcing a flush to get all frames from this GOP");
         this._videoDecoder.flush()
@@ -596,7 +596,7 @@ class TatorVideoBuffer {
         return;
       }
       this._current_cursor = (frame.timestamp / timeScale);
-      //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
+      //console.info(`${performance.now()}: Sending ${timeScale}`);
       postMessage({"type": "frame",  
                   "data": frame,
                   "cursor": this._current_cursor,
