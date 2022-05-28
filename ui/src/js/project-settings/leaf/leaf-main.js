@@ -31,7 +31,7 @@ export class LeafMain extends HTMLElement {
 
   _init(typeName, fromId, fromName, projectId, data, modal, projectName){
     //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
-    console.log("projectName"+projectName);
+    console.log("projectName "+projectName);
 
     // Init object global vars
     this.fromId = fromId;
@@ -193,7 +193,8 @@ export class LeafMain extends HTMLElement {
 
   _getAddForm(){
     let form = document.createElement("leaf-form");
-    form._initEmptyForm();
+    form._initEmptyForm(this._leaves, this.projectNameClean);
+    form.fromType = this.typeId;
 
     let submitLeaf = document.createElement("input");
     submitLeaf.setAttribute("type", "submit");

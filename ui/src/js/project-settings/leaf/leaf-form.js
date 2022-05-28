@@ -7,7 +7,11 @@ export class LeafForm extends TatorElement {
     // Flag values
     this._changed = false;
     this._global = false;
+    this._fromType = null;
+  }
 
+  set fromType(val) {
+    this._fromType = val;
   }
 
   set changed(val) {
@@ -35,9 +39,10 @@ export class LeafForm extends TatorElement {
     return this._global = false;
   }
 
-  _initEmptyForm() {
+  _initEmptyForm(leaves, name) {
     const form = document.createElement("form");
     this.form = form;
+    this.projectName = name;
 
     this.form.addEventListener("change", this._formChanged.bind(this));
     // this.form.addEventListener("change", (event) => {
@@ -56,17 +61,36 @@ export class LeafForm extends TatorElement {
     this.form.appendChild(this._name);
 
     // READ ONLY : path
-    // this._path = document.createElement("text-input");
-    // this._path.setAttribute("name", "Path");
-    // this._path.setAttribute("permission", "View Only");
-    // this._path.setAttribute("type", "string");
-    // this._path.addEventListener("change", this._formChanged.bind(this));
-    // this.form.appendChild(this._path);
+    this._path = document.createElement("text-input");
+    this._path.setAttribute("name", "Path");
+    this._path.permission = "View Only";
+    this._path.default = "";
+    this._path.setAttribute("type", "string");
+    this._path.addEventListener("change", this._formChanged.bind(this));
+    this.form.appendChild(this._path);
 
-    // Parent
-    this.parentSelectDiv = document.createElement("div");
-    this.form.appendChild(this.parentSelectDiv);
+    // Choices for Parent
+    let choices = [];
+    choices.push({ value: null, label: "None" });
 
+    if (typeof leaves == "string" && leaves !== "") {
+      leaves = [leaves];
+    } else if (Array.isArray(leaves)){
+      choices = [...choices, ...leaves.map(leaf => {
+        return {
+          value: leaf.id,
+          label: leaf.name
+        }
+      })];
+    }
+
+    this._parentLeaf = document.createElement("enum-input");
+    this._parentLeaf.setAttribute("name", "Parent");
+    this._parentLeaf.choices = choices;
+    this.form.appendChild(this._parentLeaf);
+
+    console.log(this._parentLeaf);
+    
     this._shadow.appendChild(this.form);
 
     return this.form;
@@ -78,30 +102,23 @@ export class LeafForm extends TatorElement {
     return this.form.classList.add("changed");
   }
 
-  _getFormWithValues({
-    clone = false,
-    name = null,
-    description = null,
-    required = false,
-    visible = false,
-    dtype = null,
-    order = null,
-    _default = "", // keep this
-    use_current = null,
-    minimum = null,
-    maximum = null,
-    choices = [],
-    labels = [],
-    autocomplete,
-    style
-  } = {}) {
+  _getFormWithValues(leaves) {
+    const {
+      clone = false,
+      name = null,
+      path = null,
+      parent = null,
+      projectName = ""
+    } = leaves;
 
     // do we want to save all the data shown
     this.isClone = clone;
 
     // gets leaf object as param destructured over these values
     //sets value on THIS form
-    this.form = this._initEmptyForm();
+    this.form = this._initEmptyForm(leaves, projectName);
+
+    console.log(this.form);
 
     /* fields that are always available */
     // Set Name
@@ -112,13 +129,13 @@ export class LeafForm extends TatorElement {
     this._description.default = description;
     this._description.setValue(description);
 
-    // Set order
-    this._order.default = order;
-    this._order.setValue(order);
+    console.log(this._path);
 
-    // required
-    this._required.default = required;
-    this._required.setValue(required);
+    // Set parent
+    console.log("// Set parent " + parent);
+    console.log(this._parentLeaf);
+    this._parentLeaf.default = parent;
+    this._parentLeaf.setValue(parent);
 
     // visible
     this._visible.default = visible;
@@ -774,36 +791,13 @@ export class LeafForm extends TatorElement {
     // Min and Max:
     // Only dtype in numeric & (changed, or when it is a Clone pass the value along)
     // Don't send if the value is null => invalid
-    // #TODO does this have the same issue with ""?
-    if (dtype === "int" || dtype === "float") {
-      // getValue for text-input int comes back as null when default is undefined bc it is NaN
-      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
-        formData.minimum = Number(this._minimum.getValue());
-      }
-      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() !== null) {
-        formData.maximum = Number(this._maximum.getValue());
-      }
+    if ((this._parentLeaf.changed() || this.isClone) && this._parentLeaf.getValue() !== null) {
+      formData.parent = Number(this._parentLeaf.getValue());
     }
 
-    // ENUM Choices & Labels: (For now always sending both)
-    // - Always send CHOICES with dtype enum #todo why? (this was in place before I saw labels getting erased #todo)
-    // - If you don't send LABELS and you save a default it gets wiped out #todo why?
-    // There is also an issue losing the default value if the choices, or labels are updated (moving enum default here
-    // 
-    if (dtype === "enum") {
+    // Always send the type
+    formData.type = this._fromType;
 
-      if ((this.isClone || this._dtype.changed() || this._enumDefault.changed || this._choices.changed() || this._labels.changed()) && this._enumDefault.value !== null) { //&& this._enumDefault.value !== ""
-        formData["default"] = this._enumDefault.value;
-      }
-
-      // if ((this._choices.changed() || )) {
-      formData.choices = this._choices.getValue();
-      // }
-
-      // if ((this._labels.changed() || this.isClone)) {
-      formData.labels = this._labels.getValue();
-      // }
-    }
     // console.log(formData);
     return formData;
   }
@@ -905,7 +899,6 @@ export class LeafForm extends TatorElement {
 
     return promiseInfo;
   }
-
 
 }
 
