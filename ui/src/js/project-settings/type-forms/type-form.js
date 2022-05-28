@@ -30,11 +30,11 @@ export class TypeForm extends TatorElement {
     this._attributeContainer.hidden = true; // not alway in use
     this._formContainer.appendChild(this._attributeContainer);
 
-    // Leaf Container
-    this._leafContainer = document.createElement("div");
-    this._leafContainer.setAttribute("class", "col-4");
-    this._leafContainer.hidden = true; // not alway in use
-    this._formContainer.appendChild(this._leafContainer);
+    // // Leaf Container
+    // this._leafContainer = document.createElement("div");
+    // this._leafContainer.setAttribute("class", "col-4");
+    // this._leafContainer.hidden = true; // not alway in use
+    // this._formContainer.appendChild(this._leafContainer);
 
     // Loading spinner
     this.loading = new LoadingSpinner();
@@ -136,7 +136,7 @@ export class TypeForm extends TatorElement {
       // Leaf section
       if (this.typeName == "LeafType") {
         this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
-        this._leafContainer.hidden = false;
+        // this._leafContainer.hidden = false;
         // Clears
         if (isReset) this.leafSection && this.leafSection.remove();
 

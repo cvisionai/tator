@@ -42,7 +42,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
         page.wait_for_timeout(1000)
         for _ in range(3):
             page.keyboard.press("Tab")
-        page.keyboard.press("Enter")()
+        page.keyboard.press("Enter")
     page.wait_for_selector(f'text="Successfully created 1 invitation."')
     page.locator('modal-dialog modal-close .modal__close').click()
     response = response_info.value
