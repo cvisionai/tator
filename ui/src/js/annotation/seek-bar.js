@@ -86,6 +86,12 @@ export class SeekBar extends TatorElement {
           
                                    this._periodicCheck = setInterval(() =>
                                      {
+                                      if (that._active == false)
+                                      {
+                                        clearInterval(this._periodicCheck);
+                                        return;
+                                      }
+                                      console.info("Checking scrub bar!");
                                       if (this._value == this._lastValue)
                                       {
                                         return;
