@@ -1187,8 +1187,16 @@ export class VideoCanvas extends AnnotationCanvas {
         // Because we are using off-screen rendering we need to defer
         // updating the canvas until the video/frame is actually ready, we do this
         // by waiting for a signal off the video + then scheduling an animation frame.
+        let seekUniqueId = `${frame}_${video._name}`;
+        that._seekUniqueId = seekUniqueId;
         video.oncanplay=function()
         {
+          video.oncanplay=null;
+          // only honor latest seek
+          if (seekUniqueId != that._seekUniqueId)
+          {
+            return;
+          }
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime);
@@ -1231,7 +1239,6 @@ export class VideoCanvas extends AnnotationCanvas {
           callback(frame, image_buffer, that._dims[0], that._dims[1]);
           that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
-          video.oncanplay=null;
           if (that._direction == Direction.STOPPED)
           {
             that.dispatchEvent(new CustomEvent("seekComplete",
