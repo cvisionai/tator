@@ -246,6 +246,11 @@ remoteTranscodes:
     -----BEGIN CERTIFICATE-----
     <Insert certificate here>
     -----END CERTIFICATE-----
+okta:
+  enabled: false
+  oauth2_key: "fill me in"
+  oauth2_secret: "fill me in"
+  oauth2_api_url: "fill me in"
 email:
   enabled: false
   sender: "<fill in>"

@@ -58,7 +58,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_extensions',
     'django_admin_json_editor',
-    'django_ltree'
+    'django_ltree',
+    'oauth2_provider',
+    'social_django',
+    'drf_social_oauth2',
 ]
 
 GRAPH_MODELS = {
@@ -104,6 +107,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "social_django.context_processors.backends",
+                "social_django.context_processors.login_redirect",
             ],
         },
     },
@@ -230,8 +235,10 @@ LOGGING = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':
     (
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication'
+        'rest_framework.authentication.TokenAuthentication',
+        "drf_social_oauth2.authentication.SocialAuthentication",
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'main.renderers.TatorRenderer',
@@ -252,7 +259,12 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTHENTICATION_BACKENDS = ['main.auth.TatorAuth']
+AUTHENTICATION_BACKENDS = [
+    "social_core.backends.okta.OktaOAuth2",
+    "drf_social_oauth2.backends.DjangoOAuth2",
+    "main.auth.TatorAuth",
+]
+
 if os.getenv('REQUIRE_HTTPS') == 'TRUE':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -294,3 +306,10 @@ else:
     COGNITO_ENABLED=False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+if os.getenv("OKTA_ENABLED").lower() == "true":
+    SOCIAL_AUTH_JSONFIELD_ENABLED = True
+    DRFSO2_PROPRIETARY_BACKEND_NAME = "okta-oauth2"
+    SOCIAL_AUTH_OKTA_OAUTH2_KEY = os.getenv("OKTA_OAUTH2_KEY")
+    SOCIAL_AUTH_OKTA_OAUTH2_SECRET = os.getenv("OKTA_OAUTH2_SECRET")
+    SOCIAL_AUTH_OKTA_OAUTH2_API_URL = os.getenv("OKTA_OAUTH2_API_URL")
