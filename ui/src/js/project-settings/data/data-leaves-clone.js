@@ -17,7 +17,7 @@ export class LeafData {
         console.log("Leaf Clone Post Fetch");
     
         if(formData != null){
-          return fetch("/rest/Leaves/"+this.projectId, {
+          return fetch(`/rest/Leaves/${this.projectId}?type=${this.typeId}`, {
             method: "POST",
             mode: "cors",
             credentials: "include",
@@ -47,10 +47,7 @@ export class LeafData {
 
         this.leafForm = new LeafForm();
         this.leafForm._getFormWithValues({clone : true, ...cloneValue});
-        let formJSON = {
-          "entity_type": this.typeName,
-          "addition": this.leafForm._getLeafFormData()
-        };
+        let formJSON = this.leafForm._getLeafFormData();
 
         promise = promise.then(() => {return this._fetchPostPromise({
           "formData" : formJSON

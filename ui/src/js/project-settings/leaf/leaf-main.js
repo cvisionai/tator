@@ -3,7 +3,7 @@ import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
 import { ProjectTypesData } from "../data/data-project-types.js";
 import { LeafClone } from "./leaf-clone.js";
-import { LeafData } from "../data/data-leafs-clone.js";
+import { LeafData } from "../data/data-leaves-clone.js";
 import { LeafDelete } from "./leaf-delete.js";
 
 /**
@@ -21,7 +21,9 @@ export class LeafMain extends HTMLElement {
     this.loading = new LoadingSpinner();
     this.loadingImg = this.loading.getImg();
 
-    this.attrForms = [];
+    this._leaves = [];
+
+    this.leafForms = [];
     this.hasChanges = false;
   }
 
@@ -29,7 +31,7 @@ export class LeafMain extends HTMLElement {
     this.hasChanges = false;
   }
 
-  _init(typeName, fromId, fromName, projectId, data, modal, projectName){
+  async _init(typeName, fromId, fromName, projectId, modal, projectName){
     //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
     console.log("projectName "+projectName);
 
@@ -54,7 +56,7 @@ export class LeafMain extends HTMLElement {
     // Section h1.
     this._h2 = document.createElement("h2");
     this._h2.setAttribute("class", "h3 pb-3 edit-project__h1 text-normal text-gray");
-    const t = document.createTextNode(`Leafs`); 
+    const t = document.createTextNode(`Leaves`); 
     this._h2.appendChild(t);
     this.leafDiv.appendChild(this._h2);
 
@@ -62,54 +64,22 @@ export class LeafMain extends HTMLElement {
     this.leafBox = this.boxHelper.boxWrapDefault( {"children" : ""} );
     this.leafDiv.appendChild(this.leafBox);
 
- 
-
-    // this.separate_span = document.createElement("span");
-    // this.separate_span.setAttribute("class", "px-2");
-    // h2.appendChild(this.separate_span);
-    // const h2_separate_span = document.createTextNode(`|`);
-    // this.separate_span.appendChild(h2_separate_span);
-
-    // const span = document.createElement("span");
-    // span.setAttribute("class", "text-gray text-normal")
-    // span.appendChild( document.createTextNode(`${this.fromName}`) );
-    // h2.appendChild(span);
-
-    // this.separate_span2 = document.createElement("span");
-    // this.separate_span2.setAttribute("class", "px-2 text-gray text-normal");
-    // h2.appendChild(this.separate_span2);
-    // const h2_separate_span2 = document.createTextNode(`|`);
-    // this.separate_span2.appendChild(h2_separate_span2);
-
-    // const span2 = document.createElement("span");
-    // span2.setAttribute("class", "text-gray text-normal")
-    // span2.appendChild( document.createTextNode(`${this.typeName} (ID ${this.fromId})`) );
-    // h2.appendChild(span2);
-
-    
-
+    const leaves = await fetch(`/rest/Leaves/${this.projectId}?type=${this.fromId}`)
+    const data = await leaves.json();
 
     // Add the form and +Add links
-    this.leafBox.appendChild( this._getLeafsSection(data) );
-    this.leafBox.appendChild( this._getNewLeafsTrigger() );
-    this.leafBox.appendChild( this._getCopyLeafsTrigger() );    
+    this._leaves = data;
+    this.leafBox.appendChild( this._getLeavesSection(data) );
+    this.leafBox.appendChild( this._getNewLeavesTrigger() );
+    // this.leafBox.appendChild( this._getCopyLeavesTrigger() );    
 
     return this.leafDiv;
   }
 
-  _getLeafsSection(leafTypes = []){
-    let leafsSection = document.createElement("div");
+  _getLeavesSection(leafTypes = []){
+    let leavesSection = document.createElement("div");
 
     if(leafTypes && leafTypes.length > 0){
-      // Leafs list main heading and trigger
-      // let heading = this.boxHelper.headingWrap({
-      //     "headingText" : `Edit Leafs (${leafTypes.length})`,
-      //     "descriptionText" : "Edit media type.",
-      //     "level": 2,
-      //     "collapsed": true
-      //   });
-      // heading.setAttribute("class", `py-4 toggle-leaf text-semibold`);
-
       const heading = document.createElement("h3");
       heading.setAttribute("class", "f1 text-gray pb-3");
   
@@ -120,33 +90,33 @@ export class LeafMain extends HTMLElement {
   
       const addText = document.createElement("span");
       addText.setAttribute("class", "");
-      addText.appendChild(document.createTextNode(` Edit Leafs (${leafTypes.length})`));
+      addText.appendChild(document.createTextNode(` Edit Leaves (${leafTypes.length})`));
   
       // heading.appendChild(addPlus);
       heading.appendChild(addText);
 
-      leafsSection.appendChild(heading);
+      leavesSection.appendChild(heading);
 
       let leafList = document.createElement("div");
-      leafList.setAttribute("class", `leafs-edit--list`);
-      leafsSection.appendChild(leafList);
+      leafList.setAttribute("class", `leaves-edit--list`);
+      leavesSection.appendChild(leafList);
 
       // Loop through and output leaf forms
       for(let a in leafTypes){
-        let leafContent = this.leafsOutput( {
-          "leafs": leafTypes[a],
+        let leafContent = this.leavesOutput( {
+          "leaves": leafTypes[a],
           "leafId": a
         });
         leafList.appendChild( leafContent );
       }
     }
 
-    return leafsSection;
+    return leavesSection;
   }
 
 
   // Add Leaf
-  _getNewLeafsTrigger(){
+  _getNewLeavesTrigger(){
     // New leaf link
     // let newLeafTrigger = this.boxHelper.headingWrap({
     //     "headingText" : `+ New Leaf`,
@@ -207,10 +177,7 @@ export class LeafMain extends HTMLElement {
   _postLeaf(formObj){
     this.modal._closeCallback();
     this.loading.showSpinner();
-    let formJSON = {
-      "entity_type": this.typeName,
-      "addition": formObj._getLeafFormData()
-    };
+    let formJSON = formObj._getLeafFormData();
 
     let status = 0;
     this._fetchPostPromise({"formData" : formJSON})
@@ -246,7 +213,7 @@ export class LeafMain extends HTMLElement {
   }
 
   // Clone Leaf
-  _getCopyLeafsTrigger(){
+  _getCopyLeavesTrigger(){
     // New leaf link
     // let newCopyTrigger = this.boxHelper.headingWrap({
     //     "headingText" : `+ Clone Leaf(s)`,
@@ -324,7 +291,7 @@ export class LeafMain extends HTMLElement {
     
   }
 
-  _toggleLeafs(el){
+  _toggleLeaves(el){
     let hidden = el.hidden
 
     return el.hidden = !hidden;
@@ -335,22 +302,22 @@ export class LeafMain extends HTMLElement {
     return el.classList.toggle('chevron-trigger-90');
   }
 
-  leafsOutput({
-    leafs = [],
+  leavesOutput({
+    leaves = [],
     leafId = undefined
   } = {}){
     // let leafCurrent = this.boxHelper.headingWrap({
-    //   "headingText" : `${leafs.name}`,
+    //   "headingText" : `${leaves.name}`,
     //   "descriptionText" : "Edit leaf.",
     //   "level":3,
     //   "collapsed":true
     // });
     let innerLeafBox = document.createElement("div");
-    innerLeafBox.setAttribute("class", "leafs-edit flex-items-center rounded-2 d-flex flex-row");
+    innerLeafBox.setAttribute("class", "leaves-edit flex-items-center rounded-2 d-flex flex-row");
     this.leafBox.appendChild(innerLeafBox);
 
     let leafCurrent = document.createElement("div");
-    leafCurrent.textContent = leafs.name;
+    leafCurrent.textContent = leaves.name;
     leafCurrent.setAttribute("class", "css-truncate col-10 px-3 clickable");
     innerLeafBox.appendChild(leafCurrent);
 
@@ -385,16 +352,16 @@ export class LeafMain extends HTMLElement {
     // });
 
     leafCurrent.addEventListener("click", () => {
-      this._launchEdit(leafs);
+      this._launchEdit(leaves);
     });
 
     editIcon.addEventListener("click", () => {
-      this._launchEdit(leafs);
+      this._launchEdit(leaves);
     });
 
 
     deleteIcon.addEventListener("click", () => {
-      this._deleteAttrConfirm(leafs.name);
+      this._deleteLeafConfirm(leaves.name);
     });
 
 
@@ -405,15 +372,15 @@ export class LeafMain extends HTMLElement {
     // } );
 
     // let hiddenInnerBox = document.createElement("div");
-    // hiddenInnerBox.appendChild(attrForm);
-    // hiddenInnerBox.appendChild(this.deleteAttr(leafs.name));
+    // hiddenInnerBox.appendChild(leafForm);
+    // hiddenInnerBox.appendChild(this.deleteLeaf(leaves.name));
     // hiddenInnerBox.hidden = true;
     // boxOnPage.appendChild(hiddenInnerBox);
 
     // // add listener
     // leafCurrent.addEventListener("click", (e) => {
     //   e.preventDefault();
-    //   this._toggleLeafs(hiddenInnerBox);
+    //   this._toggleLeaves(hiddenInnerBox);
     //   this._toggleChevron(e);
     // });
 
@@ -421,45 +388,45 @@ export class LeafMain extends HTMLElement {
     return innerLeafBox;
   }
 
-  _launchEdit(leafs) {
+  _launchEdit(leaves) {
     // Avoid special name default in var later on
-    leafs._default = leafs.default;
-    let formId = leafs.name.replace(/[^\w]|_/g, "").toLowerCase();
+    leaves._default = leaves.default;
+    let formId = leaves.name.replace(/[^\w]|_/g, "").toLowerCase();
 
     // Fields for this form
-    let attrForm = document.createElement("leafs-form");
+    let leafForm = document.createElement("leaf-form");
 
     // create form and attach to the el
-    attrForm._getFormWithValues(leafs);
-    attrForm.form.setAttribute("class", "leaf-form px-4");
-    attrForm.setAttribute("data-old-name", leafs.name);
-    attrForm.id = `${formId}_${this.fromId}`;
-    attrForm.form.data = leafs; // @TODO how is this used?
-    // attrForm.hidden = true;
+    leafForm._getFormWithValues(leaves);
+    leafForm.form.setAttribute("class", "leaf-form px-4");
+    leafForm.setAttribute("data-old-name", leaves.name);
+    leafForm.id = `${formId}_${this.fromId}`;
+    leafForm.form.data = leaves; // @TODO how is this used?
+    // leafForm.hidden = true;
 
-    let attrSave = document.createElement("input");
-    attrSave.setAttribute("type", "submit");
-    attrSave.setAttribute("value", "Save");
-    attrSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
+    let leafSave = document.createElement("input");
+    leafSave.setAttribute("type", "submit");
+    leafSave.setAttribute("value", "Save");
+    leafSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
     
-    attrSave.addEventListener("click", (e) => {
+    leafSave.addEventListener("click", (e) => {
       e.preventDefault();
-      const leafFormData = attrForm._leafFormData({ entityType: this.typeName, id: this.fromId });
+      const leafFormData = leafForm._leafFormData({ entityType: this.typeName, id: this.fromId });
 
       
       return this._fetchLeafPatchPromise(this.fromId, leafFormData);               
     });
 
     // form export class listener
-    // attrForm.addEventListener("change", () => {
+    // leafForm.addEventListener("change", () => {
     //   this.hasChanges = true;
     // });
 
-    // this.attrForms.push(attrForm);
+    // this.leafForms.push(leafForm);
     this.boxHelper._modalConfirm({
       "titleText" : "Edit Leaf",
-      "mainText" : attrForm,
-      "buttonSave" : attrSave,
+      "mainText" : leafForm,
+      "buttonSave" : leafSave,
       "scroll" : true
     });
     this.modal._div.classList.add("modal-wide");
@@ -468,7 +435,7 @@ export class LeafMain extends HTMLElement {
   /**
    * Deprecated..... 
    */
-  deleteAttr(name){
+  deleteLeaf(name){
     let button = document.createElement("button");
     button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
     button.style.marginRight = "10px";
@@ -502,13 +469,13 @@ export class LeafMain extends HTMLElement {
 
     button.addEventListener("click", (e) => {
       e.preventDefault();
-      this._deleteAttrConfirm(name);
+      this._deleteLeafConfirm(name);
     });
 
     return this.deleteBox;
   }
 
-  _deleteAttrConfirm(name){
+  _deleteLeafConfirm(name){
     let button = document.createElement("button");
     let confirmText = document.createTextNode("Confirm")
     button.appendChild(confirmText);
@@ -516,7 +483,7 @@ export class LeafMain extends HTMLElement {
 
     button.addEventListener("click", (e) => {
       e.preventDefault();
-      this._deleteAttrType(name);
+      this._deleteLeafType(name);
     });
 
     this.boxHelper._modalConfirm({
@@ -527,7 +494,7 @@ export class LeafMain extends HTMLElement {
     });
   }
 
-  _deleteAttrType(name){
+  _deleteLeafType(name){
     this.modal._closeCallback();;
     this.loading.showSpinner();
 
@@ -558,7 +525,7 @@ export class LeafMain extends HTMLElement {
     console.log("Leaf Form Post Fetch");
 
     if(formData != null){
-      return fetch("/rest/Leaves/"+this.fromId, {
+      return fetch(`/rest/Leaves/${this.projectId}`, {
         method: "POST",
         mode: "cors",
         credentials: "include",
@@ -567,7 +534,7 @@ export class LeafMain extends HTMLElement {
           "Accept": "application/json",
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(formData)
+        body: [JSON.stringify(formData)]
       });
     } else {
       console.log("Problem with new leaf form data.");
@@ -589,7 +556,7 @@ export class LeafMain extends HTMLElement {
       formData.global = "true";
     }
     // TODO - need to get leaf ID
-    // This was carried over from attr which use the media type, not own ID
+    // This was carried over from leaf which use the media type, not own ID
     const leafId = parentTypeId;
 
     promise = promise.then(() => {
@@ -622,7 +589,7 @@ export class LeafMain extends HTMLElement {
         this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
       } else if (response.status != 200) {
         if (currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-          //console.log("Return Message - It's a 400 response for attr form.");
+          //console.log("Return Message - It's a 400 response for leaf form.");
           let input = `<input type="checkbox" checked name="global" data-old-name="${leafOldName}" class="checkbox"/>`;
           let newNameText = (leafOldName == leafNewName) ? "" : ` new name "${leafNewName}"`
           this.confirmMessages += `<div class="py-2">${input} Leaf "${leafOldName}" ${newNameText}</div>`
@@ -668,7 +635,7 @@ export class LeafMain extends HTMLElement {
     }).then(() => {
       this.loading.hideSpinner();
     }).catch(err => {
-      return console.error("Problem patching attr...", err);
+      return console.error("Problem patching leaf...", err);
     });
       
     return promise;
