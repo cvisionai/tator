@@ -7,9 +7,13 @@ state_properties = {
         'description': 'If a clone, the pk of the parent.',
         'type': 'number',
         'nullable': True,
-    }
+    },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
-
 version_properties = {
     'version': {
         'description': 'Unique integer identifying the version.',

@@ -69,6 +69,11 @@ localization_properties = {
         'type': 'number',
         'nullable': True,
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 post_properties = {
