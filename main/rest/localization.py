@@ -167,7 +167,6 @@ class LocalizationListAPI(BaseListView):
                                             loc)
                       for loc in loc_specs]
 
-        logger.info(f"Parent = {loc_specs[0].get('parent')}")
         # Create the localization objects.
         objs = (
             Localization(
