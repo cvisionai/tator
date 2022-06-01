@@ -1421,6 +1421,8 @@ class State(Model, ModelDiffMixin):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='state_modified_by', db_column='modified_by')
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
+    parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
+    """ Pointer to localization in which this one was generated from """
     modified = BooleanField(default=True, null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
