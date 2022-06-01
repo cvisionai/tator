@@ -76,21 +76,16 @@ export class LeafMain extends HTMLElement {
     return this.leafDiv;
   }
 
-  _getLeavesSection(leafTypes = []){
+  _getLeavesSection(leaves = []){
     let leavesSection = document.createElement("div");
 
-    if(leafTypes && leafTypes.length > 0){
+    if(leaves && leaves.length > 0){
       const heading = document.createElement("h3");
       heading.setAttribute("class", "f1 text-gray pb-3");
   
-      // const addPlus = document.createElement("span");
-      // addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
-      // const editSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>`;
-      // addPlus.innerHTML = editSvg;
-  
       const addText = document.createElement("span");
       addText.setAttribute("class", "");
-      addText.appendChild(document.createTextNode(` Edit Leaves (${leafTypes.length})`));
+      addText.appendChild(document.createTextNode(` Edit Leaves (${leaves.length})`));
   
       // heading.appendChild(addPlus);
       heading.appendChild(addText);
@@ -101,11 +96,49 @@ export class LeafMain extends HTMLElement {
       leafList.setAttribute("class", `leaves-edit--list`);
       leavesSection.appendChild(leafList);
 
+      // re-arrange order and set indent depth
+      console.log(leaves);
+      this._parents = new Map();
+      this._levels = new Map();
+      this._outputOrder = [];
+      for (let i in leaves) {       
+        const indent = leaves[i]["path"].split(".").length - 2;
+        leaves[i].indent = indent;
+
+        // Group parent + child relationships
+        if (leaves[i].parent) {
+          if (this._parents.has(leaves[i].parent)) {
+            const array = this._parents.get(leaves[i].parent);
+            array.push(leaves[i]);
+            this._parents.set(leaves[i].parent, array);
+          } else {
+            this._parents.set(leaves[i].parent, [leaves[i]]);
+          }
+        }
+
+        // Group level relationships (set up highest levels first)
+        if (this._levels.get(indent)) {
+          const array = this._levels.get(indent);
+          array.push(leaves[i]);
+          this._levels.set(indent, array);
+        } else {
+          this._levels.set(indent, [leaves[i]]);
+        }
+      }
+
+      for (const item of this._levels.get(0)) {
+        this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
+      }
+
+      
+      console.log(this._outputOrder);
+
       // Loop through and output leaf forms
-      for(let a in leafTypes){
-        let leafContent = this.leavesOutput( {
-          "leaves": leafTypes[a],
-          "leafId": a
+      for (let a in this._outputOrder) {
+        let leafContent = this.leavesOutput({
+          leaves : leaves,
+          leaf : this._outputOrder[a],
+          leafId : a
         });
         leafList.appendChild( leafContent );
       }
@@ -114,16 +147,25 @@ export class LeafMain extends HTMLElement {
     return leavesSection;
   }
 
+  _recursiveChildren(item, carryOver = []) {
+    console.log(`Item ${item.id}`);
+    // get the children
+    let newArray = [...carryOver];
+    newArray.push(item);
+
+    if (this._parents.has(item.id)) {
+      let childrenList = this._parents.get(item.id);
+      for (let innerChild of childrenList) {
+        newArray = this._recursiveChildren(innerChild, newArray);
+      }    
+    }
+    
+    return newArray;
+  }
 
   // Add Leaf
   _getNewLeavesTrigger(){
     // New leaf link
-    // let newLeafTrigger = this.boxHelper.headingWrap({
-    //     "headingText" : `+ New Leaf`,
-    //     "descriptionText" : "",
-    //     "level": 3,
-    //     "collapsed": false
-    // });
     const newLeafTrigger = document.createElement("a");
     newLeafTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
 
@@ -180,7 +222,7 @@ export class LeafMain extends HTMLElement {
     let formJSON = formObj._getLeafFormData();
 
     let status = 0;
-    this._fetchPostPromise({"formData" : formJSON})
+    this._fetchPostPromise({"formData" : [formJSON]})
     .then(response => {
       status = response.status;
       return response.json()
@@ -215,12 +257,6 @@ export class LeafMain extends HTMLElement {
   // Clone Leaf
   _getCopyLeavesTrigger(){
     // New leaf link
-    // let newCopyTrigger = this.boxHelper.headingWrap({
-    //     "headingText" : `+ Clone Leaf(s)`,
-    //     "descriptionText" : "",
-    //     "level": 3,
-    //     "collapsed": false
-    //   });
     const newCopyTrigger = document.createElement("a");
     newCopyTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
 
@@ -304,104 +340,67 @@ export class LeafMain extends HTMLElement {
 
   leavesOutput({
     leaves = [],
+      leaf = {},
     leafId = undefined
   } = {}){
-    // let leafCurrent = this.boxHelper.headingWrap({
-    //   "headingText" : `${leaves.name}`,
-    //   "descriptionText" : "Edit leaf.",
-    //   "level":3,
-    //   "collapsed":true
-    // });
-    let innerLeafBox = document.createElement("div");
+    const innerLeafBox = document.createElement("div");
     innerLeafBox.setAttribute("class", "leaves-edit flex-items-center rounded-2 d-flex flex-row");
     this.leafBox.appendChild(innerLeafBox);
 
-    let leafCurrent = document.createElement("div");
-    leafCurrent.textContent = leaves.name;
-    leafCurrent.setAttribute("class", "css-truncate col-10 px-3 clickable");
+    const leafIndent = document.createElement("span");
+    if (leaf.indent > 0) {
+      leafIndent.setAttribute("style", `padding-left: ${(leaf.indent-1) * 10}px;`);
+      leafIndent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill text-gray"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>`;
+    }
+    leafIndent.innerHTML += ` ${leaf.name}`;
+
+    const leafCurrent = document.createElement("div");
+    leafCurrent.appendChild(leafIndent);
+    leafCurrent.setAttribute("class", "col-10 px-3 clickable");
     innerLeafBox.appendChild(leafCurrent);
 
-    let editIcon = document.createElement("div");
+    const editIcon = document.createElement("div");
     editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
     editIcon.setAttribute("class", "clickable text-gray hover-text-white py-2 px-2");
     innerLeafBox.appendChild(editIcon);
 
-    let deleteIcon = document.createElement("delete-button");
+    const deleteIcon = document.createElement("delete-button");
     // deleteIcon.textContent = "[D]";
     deleteIcon.setAttribute("class", "clickable");
     innerLeafBox.appendChild(deleteIcon);
 
-    // editIcon.addEventListener("mouseover", ()=>{
-    //   editIcon.classList.remove("hidden");
-    //   deleteIcon.classList.remove("hidden");
-    // });
-
-    // deleteIcon.addEventListener("mouseover", ()=>{
-    //   editIcon.classList.remove("hidden");
-    //   deleteIcon.classList.remove("hidden");
-    // });
-
-    // leafCurrent.addEventListener("mouseover", ()=>{
-    //   editIcon.classList.remove("hidden");
-    //   deleteIcon.classList.remove("hidden");
-    // });
-
-    // leafCurrent.addEventListener("mouseleave", ()=>{
-    //   editIcon.classList.add("hidden");
-    //   deleteIcon.classList.add("hidden");
-    // });
-
     leafCurrent.addEventListener("click", () => {
-      this._launchEdit(leaves);
+      this._launchEdit(leaves, leaf);
     });
 
     editIcon.addEventListener("click", () => {
-      this._launchEdit(leaves);
+      this._launchEdit(leaves, leaf);
     });
 
 
     deleteIcon.addEventListener("click", () => {
-      this._deleteLeafConfirm(leaves.name);
+      this._deleteLeafConfirm(leaf.name);
     });
 
-
-    // create box with heading for this form
-    // let boxOnPage = this.boxHelper.boxWrapDefault( {
-    //   "children" : leafCurrent,
-    //   "level":2
-    // } );
-
-    // let hiddenInnerBox = document.createElement("div");
-    // hiddenInnerBox.appendChild(leafForm);
-    // hiddenInnerBox.appendChild(this.deleteLeaf(leaves.name));
-    // hiddenInnerBox.hidden = true;
-    // boxOnPage.appendChild(hiddenInnerBox);
-
-    // // add listener
-    // leafCurrent.addEventListener("click", (e) => {
-    //   e.preventDefault();
-    //   this._toggleLeaves(hiddenInnerBox);
-    //   this._toggleChevron(e);
-    // });
-
-    // return boxOnPage;
     return innerLeafBox;
   }
 
-  _launchEdit(leaves) {
+  _launchEdit(leaves, leaf) {
     // Avoid special name default in var later on
-    leaves._default = leaves.default;
-    let formId = leaves.name.replace(/[^\w]|_/g, "").toLowerCase();
+    leaf._default = leaf.default;
+    let formId = leaf.name.replace(/[^\w]|_/g, "").toLowerCase();
 
     // Fields for this form
     let leafForm = document.createElement("leaf-form");
+    leafForm.fromType = this.typeId;
 
     // create form and attach to the el
-    leafForm._getFormWithValues(leaves);
+    leafForm._getFormWithValues(leaves, leaf);
     leafForm.form.setAttribute("class", "leaf-form px-4");
-    leafForm.setAttribute("data-old-name", leaves.name);
+    leafForm.setAttribute("data-old-name", leaf.name);
+    leafForm.setAttribute("leafid", leaf.id);
     leafForm.id = `${formId}_${this.fromId}`;
-    leafForm.form.data = leaves; // @TODO how is this used?
+    leafForm.form.data = leaf; // @TODO how is this used?
     // leafForm.hidden = true;
 
     let leafSave = document.createElement("input");
@@ -411,8 +410,8 @@ export class LeafMain extends HTMLElement {
     
     leafSave.addEventListener("click", (e) => {
       e.preventDefault();
+      console.log(e.target.getAttribute("leafid"));
       const leafFormData = leafForm._leafFormData({ entityType: this.typeName, id: this.fromId });
-
       
       return this._fetchLeafPatchPromise(this.fromId, leafFormData);               
     });
@@ -424,7 +423,7 @@ export class LeafMain extends HTMLElement {
 
     // this.leafForms.push(leafForm);
     this.boxHelper._modalConfirm({
-      "titleText" : "Edit Leaf",
+      "titleText" : `Edit Leaf (ID ${leaf.id})`,
       "mainText" : leafForm,
       "buttonSave" : leafSave,
       "scroll" : true
@@ -560,7 +559,7 @@ export class LeafMain extends HTMLElement {
     const leafId = parentTypeId;
 
     promise = promise.then(() => {
-      return fetch("/rest/Leaves/" + this.projectId, {
+      return fetch("/rest/Leaf/" + dataObject.id, {
         method: "PATCH",
         mode: "cors",
         credentials: "include",

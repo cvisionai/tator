@@ -8,6 +8,9 @@ export class LeafForm extends TatorElement {
     this._changed = false;
     this._global = false;
     this._fromType = null;
+
+    //
+    this._data = {};
   }
 
   set fromType(val) {
@@ -45,12 +48,6 @@ export class LeafForm extends TatorElement {
     this.projectName = name;
 
     this.form.addEventListener("change", this._formChanged.bind(this));
-    // this.form.addEventListener("change", (event) => {
-    //   console.log("Leaf form changed");
-    //   this.changed = true;
-    //   return this.form.classList.add("changed");
-    // });
-
 
     // Fields for this form
     // name
@@ -74,22 +71,21 @@ export class LeafForm extends TatorElement {
     choices.push({ value: null, label: "None" });
 
     if (typeof leaves == "string" && leaves !== "") {
-      leaves = [leaves];
+      leaves = [];
     } else if (Array.isArray(leaves)){
-      choices = [...choices, ...leaves.map(leaf => {
+      const leafChoices = leaves.map(leaf => {
         return {
           value: leaf.id,
           label: leaf.name
         }
-      })];
+      });
+      choices = [...choices, ...leafChoices];
     }
 
     this._parentLeaf = document.createElement("enum-input");
     this._parentLeaf.setAttribute("name", "Parent");
     this._parentLeaf.choices = choices;
     this.form.appendChild(this._parentLeaf);
-
-    console.log(this._parentLeaf);
     
     this._shadow.appendChild(this.form);
 
@@ -102,14 +98,16 @@ export class LeafForm extends TatorElement {
     return this.form.classList.add("changed");
   }
 
-  _getFormWithValues(leaves) {
+  _getFormWithValues(leaves, leaf) {
     const {
       clone = false,
       name = null,
       path = null,
       parent = null,
       projectName = ""
-    } = leaves;
+    } = leaf;
+
+    this._data = leaf;
 
     // do we want to save all the data shown
     this.isClone = clone;
@@ -117,8 +115,6 @@ export class LeafForm extends TatorElement {
     // gets leaf object as param destructured over these values
     //sets value on THIS form
     this.form = this._initEmptyForm(leaves, projectName);
-
-    console.log(this.form);
 
     /* fields that are always available */
     // Set Name
@@ -129,13 +125,9 @@ export class LeafForm extends TatorElement {
     this._path.default = path;
     this._path.setValue(path);
 
-    console.log(this._path);
-
     // Set parent
-    console.log("// Set parent " + parent);
-    console.log(this._parentLeaf);
-    this._parentLeaf.default = parent;
-    this._parentLeaf.setValue(parent);
+    this._parentLeaf.default = Number(parent);
+    this._parentLeaf.setValue(Number(parent));
 
     return this.form;
   }
@@ -168,15 +160,15 @@ export class LeafForm extends TatorElement {
 
     // Parent: Only when changed, or when it is a Clone pass the value along
     // Don't send if the value is null => invalid
-    if ((this._parentLeaf.changed() || this.isClone) && this._parentLeaf.getValue() !== null) {
+    // if ((this._parentLeaf.changed() || this.isClone) && this._parentLeaf.getValue() !== null) {
       formData.parent = Number(this._parentLeaf.getValue());
-    }
+    // }
 
     // Always send the type
     formData.type = this._fromType;
 
     // console.log(formData);
-    return [formData];
+    return formData;
   }
 
   _leafFormData({ form = this.form, id = -1, entityType = null } = {}) {
@@ -187,6 +179,7 @@ export class LeafForm extends TatorElement {
     data.newName = this._name.getValue();
     data.oldName = this.dataset.oldName;
     data.formData = formData;
+    data.id = this._data.id;
 
     return data;
   }
