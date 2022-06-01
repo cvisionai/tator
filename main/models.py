@@ -1386,6 +1386,7 @@ class Localization(Model, ModelDiffMixin):
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
@@ -1441,6 +1442,7 @@ class State(Model, ModelDiffMixin):
                            related_name='extracted',
                            db_column='extracted')
     deleted = BooleanField(default=False)
+    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
