@@ -38,6 +38,7 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
+    construct_elemental_id_from_parent
 )
 from ._permissions import ProjectEditPermission
 
@@ -166,6 +167,7 @@ class LocalizationListAPI(BaseListView):
                                             loc)
                       for loc in loc_specs]
 
+        logger.info(f"Parent = {loc_specs[0].get('parent')}")
         # Create the localization objects.
         objs = (
             Localization(
@@ -177,9 +179,7 @@ class LocalizationListAPI(BaseListView):
                 created_by=self.request.user,
                 modified_by=self.request.user,
                 version=versions[loc_spec.get("version", None)],
-                parent=Localization.objects.get(pk=loc_spec.get("parent"))
-                if loc_spec.get("parent")
-                else None,
+                parent=Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None,
                 x=loc_spec.get("x", None),
                 y=loc_spec.get("y", None),
                 u=loc_spec.get("u", None),
@@ -188,6 +188,7 @@ class LocalizationListAPI(BaseListView):
                 height=loc_spec.get("height", None),
                 points=loc_spec.get("points", None),
                 frame=loc_spec.get("frame", None),
+                elemental_id=construct_elemental_id_from_parent(Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None)
             )
             for loc_spec, attrs in zip(loc_specs, attr_specs)
         )
@@ -338,6 +339,9 @@ class LocalizationDetailAPI(BaseDetailView):
 
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
+
+        if params.get("elemental_id", None):
+            obj.elemental_id = params.get("elemental_id", None)
 
         # Update modified_by to be the last user
         obj.modified_by = self.request.user

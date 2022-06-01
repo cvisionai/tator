@@ -2,6 +2,7 @@ import datetime
 from itertools import islice
 import logging
 from urllib.parse import urlparse
+import uuid
 
 from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
@@ -313,3 +314,12 @@ def bulk_log_creation(objects, project, user):
     )
     bulk_create_from_generator(objs, ChangeToObject)
     return ids
+
+def construct_elemental_id_from_parent(parent):
+    """ Return the parent's elemental id or make a new one """
+    if parent is None:
+        return uuid.uuid4()
+    elif parent.elemental_id:
+        return parent.elemental_id
+    else:
+        return None
