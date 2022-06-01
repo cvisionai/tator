@@ -15,6 +15,8 @@ from progressbar import progressbar,ProgressBar
 from dateutil.parser import parse
 from boto3.s3.transfer import S3Transfer
 from PIL import Image
+import progressbar
+import uuid
 
 from main.models import *
 from main.search import TatorSearch
@@ -969,3 +971,25 @@ def notify_admins(not_ready, ses=None):
                 title=f"Nightly archive for {project.name} ({project.id}) failed",
                 text="\n\n".join(email_text_list),
             )
+
+def add_elemental_id(project, metadata_type):
+    assert metadata_type in ['localization', 'state']
+    if metadata_type == 'localization':
+        type_obj = LocalizationType
+        obj_obj = Localization
+    elif metadata_type == 'state':
+        type_obj = StateType
+        obj_obj = State
+
+    types = type_obj.objects.filter(project=project)
+    parents_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=True, elemental_id__isnull=True)
+    print(f"Updating {parents_to_change.count()} parents ")
+    for parent in progressbar.progressbar(parents_to_change):
+        parent.elemental_id = uuid.uuid4()
+        parent.save()
+
+    children_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=False, elemental_id__isnull=True)
+    for child in progressbar.progressbar(children_to_change):
+        child.elemental_id = child.parent.elemental_id
+        child.save()
+
