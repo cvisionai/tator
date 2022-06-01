@@ -8,6 +8,9 @@ export class AttributesForm extends TatorElement {
     this._changed = false;
     this._global = false;
 
+    // 
+    this._data = null;
+
   }
 
   set changed(val) {
@@ -178,6 +181,8 @@ export class AttributesForm extends TatorElement {
     this._autocomplete_service_url = document.createElement("text-input");
     this._autocomplete_service_url.setAttribute("type", "string");
     this._autocomplete_service_url.setAttribute("name", "Service URL");
+    this._autocomplete_service_url.setValue(null);
+    this._autocomplete_service_url.default = null;
     this._autocomplete_service_url.addEventListener("change", this._formChanged.bind(this));
     this._autocompleteSection.appendChild(this._autocomplete_service_url);
 
@@ -185,7 +190,8 @@ export class AttributesForm extends TatorElement {
     this._autocomplete_match_any.setAttribute("name", "Match Any");
     this._autocomplete_match_any.setAttribute("on-text", "Yes");
     this._autocomplete_match_any.setAttribute("off-text", "No");
-    this._autocomplete_match_any.setValue(false);
+    this._autocomplete_match_any.setValue(null);
+    this._autocomplete_match_any.default = null;
     this._autocomplete_match_any.addEventListener("change", this._formChanged.bind(this));
     this._autocompleteSection.appendChild(this._autocomplete_match_any);
 
@@ -200,23 +206,30 @@ export class AttributesForm extends TatorElement {
     return this.form.classList.add("changed");
   }
 
-  _getFormWithValues({
-    clone = false,
-    name = null,
-    description = null,
-    required = false,
-    visible = false,
-    dtype = null,
-    order = null,
-    _default = "", // keep this
-    use_current = null,
-    minimum = null,
-    maximum = null,
-    choices = [],
-    labels = [],
-    autocomplete,
-    style
-  } = {}) {
+  _getFormWithValues(data = {}) {
+    this._data = data;
+    this._data.default = data._default; //
+    delete this._data["clone"];
+
+    const {
+      clone = false,
+      name = null,
+      description = null,
+      required = false,
+      visible = false,
+      dtype = null,
+      order = null,
+      _default = "", // keep this
+      use_current = null,
+      minimum = null,
+      maximum = null,
+      choices = [],
+      labels = [],
+      autocomplete = null,
+      style = null
+    } = data;
+
+
 
     // do we want to save all the data shown
     this.isClone = clone;
@@ -802,10 +815,13 @@ export class AttributesForm extends TatorElement {
   * 
   * @returns {formData} as JSON object
   */
-  _getAttributeFormData() {
+  _getAttributeFormData(putData = false) {
     const formData = {};
 
     try {
+      if (putData) {
+        this.isClone
+      }
 
       // Name: Always sent
       formData.name = this._name.getValue();
@@ -840,15 +856,21 @@ export class AttributesForm extends TatorElement {
       // Don't send if the value is null => invalid
       if (dtype == "string") {
         // matchAny changed
-        const matchAnyValid = (this._autocomplete_match_any.changed() || this.isClone) && this._autocomplete_match_any.getValue() !== null;
+        const matchAnyValid = (this._autocomplete_match_any.changed() || this.isClone) && this._autocomplete_match_any.getValue() !== null && this._autocomplete_match_any.getValue() !== "";
         const serviceUrlValid = (this._autocomplete_service_url.changed() || this.isClone) && this._autocomplete_service_url.getValue() !== null;
 
+        // If it changed or we're copying value over for a clone add the attribute
         if (serviceUrlValid || matchAnyValid) {
           formData.autocomplete = {
             serviceUrl: this._autocomplete_service_url.getValue(),
             match_any : this._autocomplete_match_any.getValue()
           };
-        }     
+        }
+
+        //If the value has changed to empty string "" we want to remove it
+        if(this._autocomplete_service_url.changed() && this._autocomplete_service_url.getValue() == "") {
+          // TODO
+        }
       }
 
       // Style: Only when changed, or when it is a Clone pass the value along
@@ -860,6 +882,11 @@ export class AttributesForm extends TatorElement {
         } else if (rawStyleValue !== "") {
           formData.style = rawStyleValue;
         }
+
+        // //If the value has changed to empty string "" we want to remove it
+        // if(this._style.changed() && this._style.getValue() == "") {
+        // TODO
+        // }
         
       }
 
@@ -936,7 +963,13 @@ export class AttributesForm extends TatorElement {
     }
 
     // console.log(formData);
-    return formData;
+    return {formData, putData};
+  }
+
+  _removeAttributeKey(key) {
+    delete this._data[key];
+
+    return this._data;
   }
 
   addWarningWrap(labelWrap, labelDiv, inputNode, checkErrors = true) {
@@ -997,11 +1030,12 @@ export class AttributesForm extends TatorElement {
   _attributeFormData({ form = this.form, id = -1, entityType = null } = {}) {
     const data = {};
     const global = this.isGlobal() ? "true" : "false";
+    const attrFormObj = this._getAttributeFormData(form);
     const formData = {
       "entity_type": entityType,
       "global": global,
       "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": this._getAttributeFormData(form)
+      "new_attribute_type": attrFormObj.formData
     };
 
     data.newName = this._name.getValue();

@@ -577,9 +577,9 @@ export class AttributesMain extends HTMLElement {
     this.confirmMessages = "";
     this.saveModalMessage = "";
     this.requiresConfirmation = false;
-    let formData = dataObject.formData;
-    let attributeNewName = dataObject.newName;
-    let attributeOldName = dataObject.oldName;
+    const formData = dataObject.formData;
+    const attributeNewName = dataObject.newName;
+    const attributeOldName = dataObject.oldName;
 
     if (global === "true") {
       formData.global = "true";
@@ -587,7 +587,7 @@ export class AttributesMain extends HTMLElement {
 
     promise = promise.then(() => {
       return fetch("/rest/AttributeType/" + parentTypeId, {
-        method: "PATCH",
+        method: "PUT",
         mode: "cors",
         credentials: "include",
         headers: {
