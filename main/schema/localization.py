@@ -17,6 +17,13 @@ localization_filter_schema = [
                    'minimum': 0},
         'required': False,
     },
+    {
+        'name': 'elementalId',
+        'in': 'query',
+        'description': 'Elemental ID to search for',
+        'schema': {'type': 'string'},
+        'required': False,
+    },
 ]
 
 boilerplate = dedent("""\
