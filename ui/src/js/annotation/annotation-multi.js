@@ -144,7 +144,7 @@ export class AnnotationMulti extends TatorElement {
     const fullscreen = document.createElement("video-fullscreen");
     settingsDiv.appendChild(fullscreen);
 
-    this._scrubInterval = 100;
+    this._scrubInterval = 16;
     this._lastScrub = Date.now();
     this._rate = 1;
     this._playbackDisabled = false;
@@ -488,7 +488,6 @@ export class AnnotationMulti extends TatorElement {
     const waitOk = now - this._lastScrub > this._scrubInterval;
     this._playInteraction.disable(); // disable play on scrub
     if (waitOk) {
-
       this._videoStatus = "paused";
 
       this._play.setAttribute("is-paused","");
@@ -496,6 +495,10 @@ export class AnnotationMulti extends TatorElement {
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
+        if (video.keyframeOnly == false)
+        {
+          video.keyframeOnly = true;
+        }
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         this_frame += this._frameOffsets[idx];
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
@@ -529,6 +532,7 @@ export class AnnotationMulti extends TatorElement {
     for (let idx = 0; idx < this._videos.length; idx++)
     {
       let video = this._videos[idx];
+      video.keyframeOnly = false;
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
       this_frame += this._frameOffsets[idx];
       video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves

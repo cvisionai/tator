@@ -162,8 +162,19 @@ export class VideoCanvas extends AnnotationCanvas {
 
 
     this.initialized = false;
+    this._fastMode = false;
   }
 
+  set keyframeOnly(val)
+  {
+    this._fastMode = val;
+    this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = val;
+  }
+
+  get keyframeOnly()
+  {
+    return this._fastMode;
+  }
   /**
    * Permanently disable downloading the scrub buffer.
    * #TODO Allow some ability to re-enable downloading the scrub buffer.
@@ -1176,8 +1187,16 @@ export class VideoCanvas extends AnnotationCanvas {
         // Because we are using off-screen rendering we need to defer
         // updating the canvas until the video/frame is actually ready, we do this
         // by waiting for a signal off the video + then scheduling an animation frame.
+        let seekUniqueId = `${frame}_${video._name}`;
+        that._seekUniqueId = seekUniqueId;
         video.oncanplay=function()
         {
+          video.oncanplay=null;
+          // only honor latest seek
+          if (seekUniqueId != that._seekUniqueId)
+          {
+            return;
+          }
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime);
@@ -1206,6 +1225,10 @@ export class VideoCanvas extends AnnotationCanvas {
           if (video.use_codec_buffer)
           {
             image_buffer = video.codec_image_buffer;
+            if (image_buffer)
+            {
+              frame = that.timeToFrame(image_buffer.time);
+            }
           }
           if (image_buffer == null)
           {
@@ -1216,7 +1239,6 @@ export class VideoCanvas extends AnnotationCanvas {
           callback(frame, image_buffer, that._dims[0], that._dims[1]);
           that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
-          video.oncanplay=null;
           if (that._direction == Direction.STOPPED)
           {
             that.dispatchEvent(new CustomEvent("seekComplete",
@@ -1273,6 +1295,16 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement[this._play_idx].playBuffer().bias = time_comps.bias;
       this._videoElement[this._play_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;   
     }
+
+    // Always update the scrub buffer
+    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer &&
+        video != this._videoElement[this._scrub_idx].playBuffer())
+    {
+      //console.info(`Given ${time} ${video.currentTime} to play buffer`);
+      this._videoElement[this._scrub_idx].playBuffer().bias = time_comps.bias;
+      this._videoElement[this._scrub_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;
+    }
+
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
     {
@@ -1445,6 +1477,13 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
+      // Cap effective decode rate around 240 fps 
+      // This was emperically gathered as a good cut off for 5 15fps playing back at 16x
+      // Can fine tune this more if required
+      if (this._fps * this._playbackRate >= 16*15)
+      {
+        this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
+      }
       this.frameCallbackMethod(this._scrub_idx);
     }
     else
@@ -1597,6 +1636,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
+      console.warn("Player Stalled.");
       // Done playing, clear playback.
       if (this._audioEligible && this._audioPlayer.paused)
       {
@@ -1721,6 +1761,13 @@ export class VideoCanvas extends AnnotationCanvas {
       index = this._play_idx;
     }
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
+
+    // We are actually in keyframe playback mode here
+    if (this._fps * this._playbackRate >= 16 * 15)
+    {
+      frameIncrement = this._playbackRate / 16;
+    }
+
     let video = this._videoElement[index].playBuffer();
     let frameProfiler = new PeriodicTaskProfiler("Frame Fetch");
 
@@ -2541,6 +2588,7 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   pause()
   {
+    this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = false;
     // Stoping the player thread sets the direction to stop
     const currentDirection = this._direction;
 
