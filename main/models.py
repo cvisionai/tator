@@ -1387,6 +1387,8 @@ class Localization(Model, ModelDiffMixin):
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False)
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    variant_deleted = BooleanField(default=False)
+    """ Indicates this is a variant that is deleted """
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
@@ -1443,6 +1445,8 @@ class State(Model, ModelDiffMixin):
                            db_column='extracted')
     deleted = BooleanField(default=False)
     elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
+    variant_deleted = BooleanField(default=False)
+    """ Indicates this is a variant that is deleted """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 
