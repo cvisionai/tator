@@ -120,19 +120,19 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None, max_ag
     if section == 'mappings':
         # Create mappings
         logger.info("Building mappings for media types...")
-        for type_ in progressbar(list(MediaType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(MediaType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for localization types...")
-        for type_ in progressbar(list(LocalizationType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(LocalizationType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for state types...")
-        for type_ in progressbar(list(StateType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(StateType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for leaf types...")
-        for type_ in progressbar(list(LeafType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(LeafType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for file types...")
-        for type_ in progressbar(list(FileType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(FileType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Build mappings complete!")
         return
