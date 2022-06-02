@@ -187,7 +187,6 @@ export class ProjectMainEdit extends TypeForm {
   }
 
   _save({ id = -1 } = {}) {
-    console.log(`Project _save method for id: ${id}`);
     const formData = this._getFormData();
     if (Object.entries(formData).length === 0) {
       return console.error("No formData");
@@ -207,7 +206,7 @@ export class ProjectMainEdit extends TypeForm {
         }
         )
           .catch(error => {
-            console.log('Error:', error.message);
+            console.error('Error:', error.message);
             this._modalError("Internal error: " + error.message);
           });
       }

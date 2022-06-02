@@ -237,7 +237,7 @@ export class AlgorithmEdit extends TypeForm {
          formData.manifest = null;         
       }
 
-      console.log(`UserCantSaveCluster ${this.userCantSaveCluster} and userCantSeeCluster ${this.userCantSeeCluster}`)
+      // console.log(`UserCantSaveCluster ${this.userCantSaveCluster} and userCantSeeCluster ${this.userCantSeeCluster}`)
       if (!(this.userCantSaveCluster || this.userCantSeeCluster)) {
          if (this._clusterEnumInput.changed() || isNew) {
             let clusterValue = this._clusterEnumInput.getValue();

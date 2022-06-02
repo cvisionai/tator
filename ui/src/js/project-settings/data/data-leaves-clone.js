@@ -13,9 +13,7 @@ export class LeafData {
       this.responseMessage = "";
     }
 
-    _fetchPostPromise({formData = null } = {}){
-        console.log("Leaf Clone Post Fetch");
-    
+    _fetchPostPromise({formData = null } = {}){    
         if(formData != null){
           return fetch(`/rest/Leaves/${this.projectId}?type=${this.typeId}`, {
             method: "POST",
@@ -29,7 +27,7 @@ export class LeafData {
             body: JSON.stringify(formData)
           });
         } else {
-          console.log("Problem with new leaf form data.");
+          console.error("Problem with new leaf form data.");
         }
       }
   

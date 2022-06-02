@@ -32,9 +32,6 @@ export class LeafMain extends HTMLElement {
   }
 
   async _init(typeName, fromId, fromName, projectId, modal, projectName){
-    //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
-    console.log("projectName "+projectName);
-
     // Init object global vars
     this.fromId = fromId;
     this.fromName = fromName;
@@ -97,7 +94,6 @@ export class LeafMain extends HTMLElement {
       leavesSection.appendChild(leafList);
 
       // re-arrange order and set indent depth
-      console.log(leaves);
       this._parents = new Map();
       this._levels = new Map();
       this._outputOrder = [];
@@ -130,9 +126,6 @@ export class LeafMain extends HTMLElement {
         this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
       }
 
-      
-      console.log(this._outputOrder);
-
       // Loop through and output leaf forms
       for (let a in this._outputOrder) {
         let leafContent = this.leavesOutput({
@@ -148,7 +141,6 @@ export class LeafMain extends HTMLElement {
   }
 
   _recursiveChildren(item, carryOver = []) {
-    console.log(`Item ${item.id}`);
     // get the children
     let newArray = [...carryOver];
     newArray.push(item);
@@ -410,7 +402,6 @@ export class LeafMain extends HTMLElement {
     
     leafSave.addEventListener("click", (e) => {
       e.preventDefault();
-      console.log(e.target.getAttribute("leafid"));
       const leafFormData = leafForm._leafFormData({ entityType: this.typeName, id: this.fromId });
       
       return this._fetchLeafPatchPromise(this.fromId, leafFormData);               
@@ -521,8 +512,6 @@ export class LeafMain extends HTMLElement {
   }
 
   _fetchPostPromise({formData = null } = {}){
-    console.log("Leaf Form Post Fetch");
-
     if(formData != null){
       return fetch(`/rest/Leaves/${this.projectId}`, {
         method: "POST",
@@ -536,7 +525,7 @@ export class LeafMain extends HTMLElement {
         body: [JSON.stringify(formData)]
       });
     } else {
-      console.log("Problem with new leaf form data.");
+      console.error("Problem with new leaf form data.");
     }
   }
 

@@ -161,8 +161,6 @@ export class MembershipEdit extends TypeForm {
     });
 
     let formDataList = this._getFormData("New", true);
-    console.log("New form Data....");
-    console.log(formDataList);
 
     let numSucceeded = 0;
     let numFailed = 0;
@@ -172,7 +170,6 @@ export class MembershipEdit extends TypeForm {
       const username = formData.username;
       //delete formData.username;
       const promise = addNew.saveFetch(formData).then(([data, status]) => {
-        console.log(data.message);
         this.loading.hideSpinner();
 
         if(status != 400){

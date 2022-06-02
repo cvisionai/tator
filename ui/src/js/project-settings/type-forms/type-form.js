@@ -614,7 +614,6 @@ export class TypeForm extends TatorElement {
       mainText
     );
     
-    console.log("_showSaveCompleteModal");
     await this.resetHard();
 
     return this.loading.hideSpinner();
@@ -641,7 +640,6 @@ export class TypeForm extends TatorElement {
           let currentMessage = obj.data.message;
 
           if (obj.response.ok) {
-            console.log("SUCCESS MESSAGE currentMessage: "+currentMessage)
             this._modalSuccess(currentMessage);
           } else {
             this._modalError(currentMessage);

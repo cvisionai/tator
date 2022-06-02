@@ -201,7 +201,6 @@ export class AttributesMain extends HTMLElement {
   }
 
   _postAttribute(formObj){
-    console.log("TEST");
     this.modal._closeCallback();
     this.loading.showSpinner();
 
@@ -553,8 +552,6 @@ export class AttributesMain extends HTMLElement {
   }
 
   _fetchPostPromise({formData = null } = {}){
-    console.log("Attribute Form Post Fetch");
-
     if(formData != null){
       return fetch("/rest/AttributeType/"+this.fromId, {
         method: "POST",
@@ -568,7 +565,7 @@ export class AttributesMain extends HTMLElement {
         body: JSON.stringify(formData)
       });
     } else {
-      console.log("Problem with new attribute form data.");
+      console.error("Problem with new attribute form data.");
     }
   }
 
