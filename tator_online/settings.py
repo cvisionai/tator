@@ -235,9 +235,9 @@ LOGGING = {
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':
     (
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         "drf_social_oauth2.authentication.SocialAuthentication",
     ),
     'DEFAULT_RENDERER_CLASSES': (
@@ -260,9 +260,9 @@ REST_FRAMEWORK = {
 }
 
 AUTHENTICATION_BACKENDS = [
+    "main.auth.TatorAuth",
     "social_core.backends.okta.OktaOAuth2",
     "drf_social_oauth2.backends.DjangoOAuth2",
-    "main.auth.TatorAuth",
 ]
 
 if os.getenv('REQUIRE_HTTPS') == 'TRUE':
@@ -307,7 +307,9 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-if os.getenv("OKTA_ENABLED").lower() == "true":
+OKTA_ENABLED = os.getenv("OKTA_ENABLED")
+if OKTA_ENABLED and OKTA_ENABLED.lower() == "true":
+    # do i set DRFSO2_URL_NAMESPACE
     SOCIAL_AUTH_JSONFIELD_ENABLED = True
     DRFSO2_PROPRIETARY_BACKEND_NAME = "okta-oauth2"
     SOCIAL_AUTH_OKTA_OAUTH2_KEY = os.getenv("OKTA_OAUTH2_KEY")

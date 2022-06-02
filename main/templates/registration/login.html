@@ -8,46 +8,13 @@
 {% endblock head %}
 
 {% block body %}
-<main class="layout-max py-4">
-  <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-6">
-    <img class="py-4" src="{% static 'images/tator-logo.png' %}" width=400>
-    <h1 class="h1">Log in to continue to Tator</h1>
-  </div>
-  <form class="new-project__form rounded-2" style="width:400px" method="post">
-    <div class="py-3 px-6">
-      {% csrf_token %}
-      <label class="d-flex flex-column py-2 text-semibold">
-        <input class="form-control" name="username" id="id_username" placeholder="Username" autofocus required>
-      </label>
-      <label class="d-flex flex-column py-2 text-semibold">
-        <input class="form-control" name="password" id="id_password" placeholder="Password" type="password" required>
-      </label>
-    </div>
-    <div class="modal__footer d-flex">
-      <input class="btn btn-clear" type="submit" value="Continue">
-    </div>
+{% if user.is_authenticated %}
+  <p>Current user: {{ user.email }}</p>
+  <form action="{% url 'oidc_logout' %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="logout">
   </form>
-  <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-1">
-   {% if email_enabled %}
-    <div class="d-flex flex-row flex-items-center flex-justify-between"
-         style="width:400px">
-      <a href="/anonymous-gateway" class="text-white">Continue as guest</a>
-      <a href="/password-reset-request" class="text-white">Reset password</a>
-    </div>
-    {% else %}
-    <a href="/anonymous-gateway" class="text-white">Continue as guest</a>
-    {% endif %}
-  </div>
-  <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-6">
-    {% if form.non_field_errors %}
-    <ul class="form-errors">
-      {% for error in form.non_field_errors %}
-      <li>
-        <h3 class="h3 text-red" style="text-align:center;width:400px">{{ error }}</h3>
-      </li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-  </div>
-</main>
+{% else %}
+  <a href="{% url 'okta-oauth2' %}">Okta</a>
+{% endif %}
 {% endblock body %}

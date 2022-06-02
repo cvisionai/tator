@@ -19,7 +19,7 @@ from django.urls import include, path, re_path
 urlpatterns = [
     path('', include('main.urls')),
     path('admin/', admin.site.urls),
-    re_path(r'^auth/', include('drf_social_oauth2.urls')),
+    re_path(r"^auth/", include("drf_social_oauth2.urls")),
 ]
 
 handler404 = 'main.views.NotFoundView'

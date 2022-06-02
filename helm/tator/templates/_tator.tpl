@@ -216,17 +216,16 @@ spec:
             {{- else }}
               value: "FALSE"
             {{- end }}
-            {{- if .Values.okta.enabled }}
             - name: OKTA_ENABLED
+            {{- if .Values.okta.enabled }}
               value: "TRUE"
             - name: OKTA_OAUTH2_KEY
               value: {{ .Values.okta.oauth2_key }}
             - name: OKTA_OAUTH2_SECRET
               value: {{ .Values.okta.oauth2_secret }}
-            - name: OKTA_OAUTH2_KEY
+            - name: OKTA_OAUTH2_API_URL
               value: {{ .Values.okta.oauth2_api_url }}
             {{- else }}
-            - name: OKTA_ENABLED
               value: "FALSE"
             {{- end }}
             - name: ANONYMOUS_REGISTRATION_ENABLED
