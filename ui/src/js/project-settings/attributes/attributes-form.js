@@ -228,8 +228,7 @@ export class AttributesForm extends TatorElement {
       autocomplete = null,
       style = null
     } = data;
-
-
+    delete this._data["_default"];
 
     // do we want to save all the data shown
     this.isClone = clone;
