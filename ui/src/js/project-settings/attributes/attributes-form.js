@@ -815,14 +815,10 @@ export class AttributesForm extends TatorElement {
   * 
   * @returns {formData} as JSON object
   */
-  _getAttributeFormData(putData = false) {
-    const formData = {};
+  _getAttributeFormData() {
+    const formData = {...this._data};
 
     try {
-      if (putData) {
-        this.isClone
-      }
-
       // Name: Always sent
       formData.name = this._name.getValue();
 
@@ -869,7 +865,7 @@ export class AttributesForm extends TatorElement {
 
         //If the value has changed to empty string "" we want to remove it
         if(this._autocomplete_service_url.changed() && this._autocomplete_service_url.getValue() == "") {
-          // TODO
+          delete formData["autocomplete"];
         }
       }
 
@@ -884,10 +880,9 @@ export class AttributesForm extends TatorElement {
         }
 
         // //If the value has changed to empty string "" we want to remove it
-        // if(this._style.changed() && this._style.getValue() == "") {
-        // TODO
-        // }
-        
+        if(this._style.changed() && this._style.getValue() == "") {
+            delete formData["style"];
+        }
       }
 
       // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
@@ -963,7 +958,7 @@ export class AttributesForm extends TatorElement {
     }
 
     // console.log(formData);
-    return {formData, putData};
+    return {formData};
   }
 
   _removeAttributeKey(key) {
@@ -1030,13 +1025,14 @@ export class AttributesForm extends TatorElement {
   _attributeFormData({ form = this.form, id = -1, entityType = null } = {}) {
     const data = {};
     const global = this.isGlobal() ? "true" : "false";
-    const attrFormObj = this._getAttributeFormData(form);
+    const attrFormObj = this._getAttributeFormData();
     const formData = {
       "entity_type": entityType,
       "global": global,
       "old_attribute_type_name": this.dataset.oldName,
       "new_attribute_type": attrFormObj.formData
     };
+    console.log(attrFormObj.formData);
 
     data.newName = this._name.getValue();
     data.oldName = this.dataset.oldName;
@@ -1062,11 +1058,12 @@ export class AttributesForm extends TatorElement {
     // console.log(formData);
 
     // Hand of the data, and call this form unchanged
-    formData.new_attribute_type = this._getAttributeFormData(form);
+    console.log(this._getAttributeFormData());
+    formData.new_attribute_type = this._getAttributeFormData();
     this.form.classList.remove("changed");
     this.changeReset();
 
-    promiseInfo.promise = await this._fetchAttributePatchPromise(id, formData);
+    promiseInfo.promise = await this._fetchAttributePutPromise(id, formData);
 
     return promiseInfo;
   }

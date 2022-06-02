@@ -201,11 +201,13 @@ export class AttributesMain extends HTMLElement {
   }
 
   _postAttribute(formObj){
+    console.log("TEST");
     this.modal._closeCallback();
     this.loading.showSpinner();
+
     let formJSON = {
       "entity_type": this.typeName,
-      "addition": formObj._getAttributeFormData()
+      "addition": formObj._getAttributeFormData().formData
     };
 
     let status = 0;
@@ -443,7 +445,7 @@ export class AttributesMain extends HTMLElement {
       const attributeFormData = attrForm._attributeFormData({ entityType: this.typeName, id: this.fromId });
 
       
-      return this._fetchAttributePatchPromise(this.fromId, attributeFormData);               
+      return this._fetchAttributePutPromise(this.fromId, attributeFormData);               
     });
 
     // form export class listener
@@ -570,7 +572,7 @@ export class AttributesMain extends HTMLElement {
     }
   }
 
-  _fetchAttributePatchPromise(parentTypeId, dataObject, global = false) {
+  _fetchAttributePutPromise(parentTypeId, dataObject, global = false) {
     let promise = Promise.resolve();
     this.successMessages = "";
     this.failedMessages = "";
@@ -673,7 +675,7 @@ export class AttributesMain extends HTMLElement {
     buttonSave.innerHTML = "Confirm";
 
     buttonSave.addEventListener("click", (e) => {
-      return this._fetchAttributePatchPromise(this.typeId, formData, "true");
+      return this._fetchAttributePutPromise(this.typeId, formData, "true");
     });
 
     return buttonSave;
