@@ -39,6 +39,7 @@ def get_annotation_es_query(project, params, annotation_type):
     start = params.get('start')
     stop = params.get('stop')
     after = params.get('after')
+    elemental_id = params.get('elementalId')
 
     if exclude_parents and (start or stop):
         raise Exception("Elasticsearch based queries with pagination are incompatible with "
@@ -116,6 +117,9 @@ def get_annotation_es_query(project, params, annotation_type):
     if after is not None:
         annotation_bools.append({'range': {'_postgres_id': {'gt': after}}})
 
+    if elemental_id is not None:
+        annotation_bools.append({'match': {'_elemental_id': elemental_id}})
+
     # TODO: Remove modified parameter.
     query = get_attribute_es_query(params, query, media_bools, project, False,
                                    annotation_bools, True)
@@ -141,6 +145,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     exclude_parents = params.get('excludeParents')
     start = params.get('start')
     stop = params.get('stop')
+    elemental_id = params.get('elementalId')
 
     qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project, deleted=False)
     media_ids = []
@@ -176,6 +181,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         
     if version is not None:
         qs = qs.filter(version__in=version)
+
+    if elemental_id is not None:
+        qs = qs.filter(elemental_id=elemental_id)
 
     if frame is not None:
         qs = qs.filter(frame=frame)
