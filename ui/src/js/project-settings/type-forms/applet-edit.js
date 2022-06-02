@@ -59,7 +59,6 @@ export class AppletEdit extends TypeForm {
       this._htmlFilePath.default = this.data.html_file;
 
       this._htmlFilePath._fetchCall = (bodyData) => {
-         console.log(bodyData)
          fetch(`/rest/SaveGenericFile/${this.projectId}`,
             {
                method: "POST",
@@ -73,7 +72,6 @@ export class AppletEdit extends TypeForm {
             }
          ).then(resp => resp.json()).then(
             htmlData => {
-               console.log(htmlData);
                this._htmlFilePath.setValue(htmlData.url);
                Utilities.showSuccessIcon(`HTML file uploaded to: ${htmlData.url}`);
                return htmlData;

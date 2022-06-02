@@ -72,7 +72,7 @@ export class LeafTypeEdit extends TypeForm {
   _getFormData(){
     const formData = {};
 
-    console.log(`Data ID: ${this.data.id}`);
+    // console.log(`Data ID: ${this.data.id}`);
     const isNew = this.data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {
