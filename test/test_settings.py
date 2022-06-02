@@ -292,7 +292,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     print(f"Successfully registered Applet.")
 
 
-def test_settings_attributeTests(page_factory, project):
+def test_settings_attributeTests(page_factory, project, base_url):
     print("Attribute Settings...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings", wait_until='networkidle')
@@ -303,9 +303,10 @@ def test_settings_attributeTests(page_factory, project):
 
     # Add Attribute Types
     page.click('.heading-for-MediaType')
-    page.wait_for_selector('text="Test Images"')
-    page.click('text="Test Images"')
-    imageTypeLink = page.query_selector('text="Test Images"')
+    media_type_in_view = "Test Images"
+    page.wait_for_selector(f'text="{media_type_in_view}"')
+    page.click(f'text="{media_type_in_view}"')
+    imageTypeLink = page.query_selector(f'text="{media_type_in_view}"')
     formSelector = imageTypeLink.get_attribute("href")
 
     for dtype in dtypeSet:      
@@ -321,32 +322,136 @@ def test_settings_attributeTests(page_factory, project):
             page.fill('modal-dialog array-input[name="Label"] text-input input', "One")
             page.fill('modal-dialog array-input[name="Value"] text-input input', "1")
             page.check('modal-dialog input[name="enum-default"]')
-        page.click('modal-dialog input[type="submit"]')
-        page.wait_for_selector(f'text="New attribute type \'{dtype} Type\' added"')
-        page.click('modal-dialog modal-close .modal__close')
-        print(f"New {dtype} type attribute added to Image!")
+        
+        if dtype == 'string':
+            page.fill('modal-dialog text-input[name="Service URL"] input', "testautocomplete")
+            
+        url = base_url + "/rest/MediaTypes/" + str(project)
+        with page.expect_response(url) as response_info:
+            page.click('modal-dialog input[type="submit"]')
+            page.wait_for_selector(f'text="New attribute type \'{dtype} Type\' added"')
+            page.click('modal-dialog modal-close .modal__close')
+
+        # Get data for Assert statements
+        media_types = response_info.value.json()
+        media_type_obj = None
+        attr_type_obj = None
+        for mt in media_types:
+            if mt and mt["name"] == media_type_in_view:
+                media_type_obj = mt
+                break
+        mt_attributes = media_type_obj["attribute_types"]
+
+        for at in mt_attributes:
+            newName = dtype+' Type'
+            if at["name"] == newName:
+                attr_type_obj = at
+                break
+
+        # Assert
+        if dtype == 'string':
+            assert "autocomplete" in attr_type_obj
+            assert attr_type_obj["autocomplete"]["serviceUrl"] == "testautocomplete"
+
+        print(f"> New {dtype} type attribute added to Image!")
 
     page.wait_for_timeout(5000)
 
-    # Edit Attribute Types
-    print("Editing Attributes...")
+    # Edit Attribute Types (NOT GLOBAL)
+    print("Editing new Attributes...")
+    #open the attribute forms
+    dtypeSet = {"bool Type","int Type","float Type","string Type","datetime Type","geopos Type"} #,"enum Type",
+    for dtypeName in dtypeSet:
+        page.click(f'text="{dtypeName}"')
+        page.wait_for_selector(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input')
+        page.fill(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input', dtypeName + ' updated')
+        
+        if "string" in dtypeName:
+            #remove autocomplete
+            page.fill('modal-dialog text-input[name="Service URL"] input', "")
+        
+        # page.click(f'.modal__footer input[type="submit"]')
+        # page.wait_for_selector('modal-dialog div input[type="checkbox"]')
+        # successMessages = page.query_selector_all('modal-dialog div input[type="checkbox"]')
+        # assert len(successMessages) == 1
+        
+        url = base_url + "/rest/MediaTypes/" + str(project)
+        with page.expect_response(url) as response_info:
+            # page.click('text="Confirm"')
+            page.click(f'.modal__footer input[type="submit"]')
+            page.wait_for_selector('modal-dialog modal-success')
+            successMessages = page.query_selector_all('modal-dialog modal-success')
+            assert len(successMessages) == 1
+            page.click('modal-dialog modal-close .modal__close')
+
+        # Get data for Assert statements
+        media_types = response_info.value.json()
+        media_type_obj = None
+        attr_type_obj = None
+        for mt in media_types:
+            if mt["name"] == media_type_in_view:
+                media_type_obj = mt
+                break
+
+        mt_attributes = media_type_obj["attribute_types"]
+
+        for at in mt_attributes:
+            newName = dtypeName + ' updated'
+            if at["name"] == newName:
+                attr_type_obj = at
+                break
+
+        # Assert
+        # if "string" in dtypeName:
+        #     assert not "autocomplete" in attr_type_obj
+
+        print(f'> Successfully edited {len(successMessages)} new attribute named {dtypeName}!')
+    
+
+    # Edit Attribute Types (GLOBAL)
+    print("Editing GLOBAL Attributes...")
     #open the attribute forms
     dtypeSet = {"Test Bool","Test Int","Test Float","Test String","Test Enum","Test Datetime","Test Geoposition"}
     for dtypeName in dtypeSet:
         page.click(f'text="{dtypeName}"')
         page.wait_for_selector(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input')
         page.fill(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input', dtypeName + ' updated')
+        
         page.click(f'.modal__footer input[type="submit"]')
         page.wait_for_selector('modal-dialog div input[type="checkbox"]')
         successMessages = page.query_selector_all('modal-dialog div input[type="checkbox"]')
         assert len(successMessages) == 1
-        page.click('text="Confirm"')
+        
+        url = base_url + "/rest/MediaTypes/" + str(project)
+        with page.expect_response(url) as response_info:
+            page.click('text="Confirm"')
+            page.wait_for_selector('modal-dialog modal-success')
+            successMessages = page.query_selector_all('modal-dialog modal-success')
+            assert len(successMessages) == 1
+            page.click('modal-dialog modal-close .modal__close')
 
-        page.wait_for_selector('modal-dialog modal-success')
-        successMessages = page.query_selector_all('modal-dialog modal-success')
-        assert len(successMessages) == 1
-        page.click('modal-dialog modal-close .modal__close')
-        print(f'Successfully edited {len(successMessages)} global attribute named {dtypeName}!')
+        # Get data for Assert statements
+        media_types = response_info.value.json()
+        media_type_obj = None
+        attr_type_obj = None
+        for mt in media_types:
+            if mt["name"] == media_type_in_view:
+                media_type_obj = mt
+                break
+
+        mt_attributes = media_type_obj["attribute_types"]
+
+        for at in mt_attributes:
+            newName = dtypeName + ' updated'
+            if at["name"] == newName:
+                attr_type_obj = at
+                break
+
+        # Assert
+        if "string" in dtypeName:
+            assert not "autocomplete" in attr_type_obj
+            print(attr_type_obj)     
+        print(f'> Successfully edited {len(successMessages)} global attribute named {dtypeName}!')
     page.close()
 
 
