@@ -188,7 +188,8 @@ class TatorSearch:
                 '_rows': {'type': 'integer'},
                 '_columns': {'type': 'integer'},
                 'filename': {'type': 'keyword', 'normalizer': 'lower_normalizer'},
-                '_elemental_id': {'type': 'keyword'}
+                '_elemental_id': {'type': 'keyword'},
+                '_variant_deleted': {'type': 'boolean'},
             }},
         )
 
@@ -591,6 +592,7 @@ class TatorSearch:
             aux['_x'] = entity.x
             aux['_y'] = entity.y
             aux['_elemental_id'] = entity.elemental_id
+            aux['_variant_deleted'] = entity.variant_deleted
             if entity.thumbnail_image:
                 aux['_thumbnail_image'] = entity.thumbnail_image.pk
             else:
@@ -636,6 +638,7 @@ class TatorSearch:
                 aux['_annotation_version'] = entity.version.pk
             aux['_modified'] = entity.modified
             aux['_elemental_id'] = entity.elemental_id
+            aux['_variant_deleted'] = entity.variant_deleted
         elif entity.meta.dtype in ['leaf']:
             aux['_exact_treeleaf_name'] = entity.name
             aux['tator_treeleaf_name'] = entity.name
