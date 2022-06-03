@@ -138,6 +138,10 @@ localization_get_properties = {
     'user': {
         'type': 'integer',
         'description': 'Unique integer identifying the user who created this localization.'
+    },
+    'variant_deleted': {
+        'type' : 'boolean',
+        'description': 'Unique integer identifying the user who created this localization.'
     }
 }
 

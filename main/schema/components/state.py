@@ -72,6 +72,10 @@ state_get_properties = {
     'created_by': {
         'type': 'integer',
         'description': 'Unique integer identifying the user who created this state.'
+    },
+    'variant_deleted': {
+        'type' : 'boolean',
+        'description': 'Unique integer identifying the user who created this localization.'
     }
 }
 
