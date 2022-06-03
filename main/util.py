@@ -96,6 +96,13 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
         count = math.ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
+def rebuildAllSearchIndices(project_number):
+    try:
+        TatorSearch().es.indices.delete(f"project_{project_number}")
+    except:
+        pass
+    for section in ['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves', 'files']:
+        buildSearchIndices(project_number, section)
 def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
     """ Builds search index for a project.
         section must be one of:

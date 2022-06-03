@@ -35,15 +35,15 @@ def get_annotation_es_query(project, params, annotation_type):
     filter_type = params.get('type')
     version = params.get('version')
     frame = params.get('frame')
-    exclude_parents = params.get('excludeParents')
+    apply_merge = params.get('merge')
     start = params.get('start')
     stop = params.get('stop')
     after = params.get('after')
     elemental_id = params.get('elementalId')
 
-    if exclude_parents and (start or stop):
+    if apply_merge and (start or stop):
         raise Exception("Elasticsearch based queries with pagination are incompatible with "
-                        "'excludeParents'!")
+                        "'merge'!")
 
     if state_ids and (annotation_type == 'localization'):
         raise Exception("Elasticsearch based localization queries do not support 'state_ids'!")
@@ -142,7 +142,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     version = params.get('version')
     frame = params.get('frame')
     after = params.get('after')
-    exclude_parents = params.get('excludeParents')
+    apply_merge = params.get('merge')
     start = params.get('start')
     stop = params.get('stop')
     elemental_id = params.get('elementalId')
@@ -196,13 +196,13 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
-    if exclude_parents:
-        parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
+    if apply_merge:
+        parent_set = ANNOTATION_LOOKUP[annotation_type].filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)
         
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).
-    if exclude_parents or (stop is None):
+    if apply_merge or (stop is None):
         qs = qs.order_by('id')
     else:
         qs = qs.order_by(Coalesce('id', 'id'))
@@ -240,9 +240,9 @@ def get_annotation_queryset(project, params, annotation_type):
         annotation_ids, _  = TatorSearch().search(project, query)
         qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
 
-        # Apply excludeParents if no pagination.
-        exclude_parents = params.get('excludeParents')
-        if exclude_parents:
+        # Apply merge if no pagination.
+        apply_merge = params.get('merge')
+        if apply_merge:
             parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
             qs = qs.difference(parent_set)
 
@@ -261,9 +261,9 @@ def get_annotation_count(project, params, annotation_type):
         query = get_annotation_es_query(project, params, annotation_type)
         annotation_ids, _  = TatorSearch().search(project, query)
 
-        # Apply excludeParents if no pagination.
-        exclude_parents = params.get('excludeParents')
-        if exclude_parents:
+        # Apply merge if no pagination.
+        apply_merge = params.get('merge')
+        if apply_merge:
             qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
             parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
             qs = qs.difference(parent_set)
