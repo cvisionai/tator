@@ -238,7 +238,7 @@ class LeafDetailAPI(BaseDetailView):
         obj = patch_attributes(new_attrs, obj)
         obj.save()
         log_changes(obj, model_dict, obj.project, self.request.user)
-        return {'message': 'Leaf {params["id"]} successfully updated!'}
+        return {'message': f'Leaf {params["id"]} successfully updated!'}
 
     def _delete(self, params):
         leaf = Leaf.objects.get(pk=params['id'], deleted=False)
@@ -246,7 +246,7 @@ class LeafDetailAPI(BaseDetailView):
         model_dict = leaf.model_dict
         delete_and_log_changes(leaf, project, self.request.user)
         TatorSearch().delete_document(leaf)
-        return {'message': 'Leaf {params["id"]} successfully deleted!'}
+        return {'message': f'Leaf {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
         return Leaf.objects.all()
