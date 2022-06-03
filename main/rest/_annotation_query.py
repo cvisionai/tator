@@ -197,7 +197,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     qs = get_attribute_psql_queryset(qs, params, filter_ops)
 
     if apply_merge:
-        parent_set = ANNOTATION_LOOKUP[annotation_type].filter(pk__in=Subquery(qs.values('parent')))
+        parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)
         
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
