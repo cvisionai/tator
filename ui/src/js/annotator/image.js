@@ -142,7 +142,7 @@ export class ImageCanvas extends AnnotationCanvas
         best_idx = idx;
         break;
       }
-      else
+      else if (this._mediaFiles.image[idx].mime != "image/avif")
       {
         best_idx = idx;
       }
