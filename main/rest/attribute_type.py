@@ -154,12 +154,19 @@ class AttributeTypeListAPI(BaseListView):
             # Determine if the attribute is being mutated
             attribute_mutated = False
             dtype_mutated = False
-            for key, new_value in new_attribute_type.items():
+
+            # Check all keys present in `new_attribute_type`
+            keys = set(new_attribute_type.keys())
+            if mod_type == "replace":
+                # Also check all keys present in `old_attribute_type` if this is a replacement
+                keys.update(old_attribute_type.keys())
+
+            for key in keys:
                 # Ignore differences in `name` values, those are handled by a rename
                 if key == "name":
                     continue
-                old_value = old_attribute_type.get(key)
-                if old_value is None or old_value != new_value:
+
+                if new_attribute_type.get(key) != old_attribute_type.get(key):
                     attribute_mutated = True
                     if key == "dtype":
                         dtype_mutated = True
@@ -231,7 +238,8 @@ class AttributeTypeListAPI(BaseListView):
                             # Mutate the entity attribute values
                             bulk_mutate_attributes(new_attribute, qs)
 
-                if mod_type == "PATCH":
+                if mod_type == "update":
+                    # An update is a combination of the new and old states
                     new_attribute_type = old_attribute_type.update(new_attribute_type)
 
                 messages.append(
