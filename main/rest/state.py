@@ -321,12 +321,19 @@ class StateListAPI(BaseListView):
 
     def _patch(self, params):
         qs = get_annotation_queryset(params['project'], params, 'state')
+        patched_version = params.pop("version", None)
         count = qs.count()
         if count > 0:
             new_attrs = validate_attributes(params, qs[0])
+            update_kwargs = {"modified_by": self.request.user}
+            if patched_version is not None:
+                update_kwargs["version"] = patched_version
             bulk_update_and_log_changes(
-                qs, params["project"], self.request.user, new_attributes=new_attrs
+                qs, params["project"], self.request.user, update_kwargs=update_kwargs, new_attributes=new_attrs
             )
+
+            if patched_version is not None:
+                new_attrs['_annotation_version'] = patched_version
 
             query = get_annotation_es_query(params['project'], params, 'state')
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)

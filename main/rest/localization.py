@@ -241,6 +241,9 @@ class LocalizationListAPI(BaseListView):
                 new_attributes=new_attrs,
             )
 
+            if patched_version is not None:
+                new_attrs['_annotation_version'] = patched_version
+
             query = get_annotation_es_query(params['project'], params, 'localization')
             TatorSearch().update(self.kwargs['project'], entity_type, query, new_attrs)
 
