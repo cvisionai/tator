@@ -144,7 +144,7 @@ class StateListSchema(AutoSchema):
                 'required': False,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/StateIdQuery',
+                    '$ref': '#/components/schemas/StateBulkDelete',
                 },
             }}}
         return body
@@ -211,6 +211,14 @@ class StateDetailSchema(AutoSchema):
                     'frame': 1001,
                 }
             }}}
+        elif method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/StateDelete',
+                }}}
+            }
         return body
 
     def get_responses(self, path, method):

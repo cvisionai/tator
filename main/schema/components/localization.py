@@ -209,6 +209,28 @@ localization_id_query = {
     }
 }
 
+localization_delete_schema = {
+    'type': 'object',
+    'properties': {
+        'purge': {
+            'type': 'integer',
+            'description': 'If set to 1 will purge the object from the database entirely. This removes any record, change-log, that this metadatum ever existed.',
+            'minimum': 0,
+            'maximum': 1,
+            'default': 0,
+        }
+    },
+}
+localization_bulk_delete_schema = {
+    'type': 'object',
+    'properties': {
+        **localization_delete_schema['properties'],
+        **localization_id_query['properties'],
+    },
+}
+
+
+
 localization_bulk_update = {
     'type': 'object',
     'properties': {

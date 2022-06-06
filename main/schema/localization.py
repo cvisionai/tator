@@ -277,7 +277,7 @@ class LocalizationListSchema(AutoSchema):
                 'required': False,
                 'content': {'application/json': {
                 'schema': {
-                    '$ref': '#/components/schemas/LocalizationIdQuery',
+                    '$ref': '#/components/schemas/LocalizationBulkDelete',
                 },
             }}}
         return body
@@ -349,6 +349,14 @@ class LocalizationDetailSchema(AutoSchema):
                     'height': 0.25,
                 }
             }}}
+        elif method == 'DELETE':
+            body = {
+                'required': False,
+                'content': {'application/json': {
+                'schema': {
+                    '$ref': '#/components/schemas/LocalizationDelete',
+                }}}
+            }
         return body
 
     def get_responses(self, path, method):

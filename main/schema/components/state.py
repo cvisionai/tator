@@ -178,6 +178,27 @@ state_bulk_update = {
     },
 }
 
+state_delete_schema = {
+    'type': 'object',
+    'properties': {
+        'purge': {
+            'type': 'integer',
+            'description': 'If set to 1 will purge the object from the database entirely. This removes any record, change-log, that this metadatum ever existed.',
+            'minimum': 0,
+            'maximum': 1,
+            'default': 0,
+        }
+    }
+}
+
+state_bulk_delete_schema = {
+    'type': 'object',
+    'properties': {
+        **state_delete_schema['properties'],
+        **state_id_query['properties'],
+    },
+}
+
 state = {
     'type': 'object',
     'properties': {
