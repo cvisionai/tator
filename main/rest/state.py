@@ -312,10 +312,22 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            # Delete states.
-            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_annotation_es_query(params['project'], params, 'state')
-            TatorSearch().delete(self.kwargs['project'], query)
+            if params['purge'] == 1:
+                # Delete states.
+                bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+                query = get_annotation_es_query(params['project'], params, 'state')
+                TatorSearch().delete(self.kwargs['project'], query)
+            else:
+                obj = qs.first()
+                entity_type = obj.meta
+                bulk_update_and_log_changes(
+                qs,
+                params["project"],
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
+                query = get_annotation_es_query(params['project'], params, 'state')
+                TatorSearch().update(self.kwargs['project'], entity_type, query, {'_variant_deleted': True})
 
         return {'message': f'Successfully deleted {count} states!'}
 
@@ -443,13 +455,24 @@ class StateDetailAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        delete_and_log_changes(state, project, self.request.user)
-        TatorSearch().delete_document(state)
+        if params['purge'] == 1:
+            delete_and_log_changes(state, project, self.request.user)
+            TatorSearch().delete_document(state)
 
-        qs = Localization.objects.filter(pk__in=delete_localizations)
-        bulk_delete_and_log_changes(qs, project, self.request.user)
-        for loc in qs.iterator():
-            TatorSearch().delete_document(loc)
+            qs = Localization.objects.filter(pk__in=delete_localizations)
+            bulk_delete_and_log_changes(qs, project, self.request.user)
+            for loc in qs.iterator():
+                TatorSearch().delete_document(loc)
+        else:
+            state.variant_deleted = True
+            state.save()
+            qs = Localization.objects.filter(pk__in=delete_localizations)
+            bulk_update_and_log_changes(
+                qs,
+                params["project"],
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
 
         return {'message': f'State {params["id"]} successfully deleted!'}
 

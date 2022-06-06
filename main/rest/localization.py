@@ -212,10 +212,22 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
-            # Delete the localizations.
-            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_annotation_es_query(params['project'], params, 'localization')
-            TatorSearch().delete(self.kwargs['project'], query)
+            if params['purge'] == 1:
+                # Delete the localizations.
+                bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+                query = get_annotation_es_query(params['project'], params, 'localization')
+                TatorSearch().delete(self.kwargs['project'], query)
+            else:
+                obj = qs.first()
+                entity_type = obj.meta
+                bulk_update_and_log_changes(
+                qs,
+                params["project"],
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
+                query = get_annotation_es_query(params['project'], params, 'localization')
+                TatorSearch().update(self.kwargs['project'], entity_type, query, {'_variant_deleted': True})
 
         return {'message': f'Successfully deleted {count} localizations!'}
 
@@ -363,8 +375,16 @@ class LocalizationDetailAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
-        delete_and_log_changes(obj, obj.project, self.request.user)
-        TatorSearch().delete_document(obj)
+        if params['purge'] == 1:
+            logger.info("PURGING RECORD")
+            delete_and_log_changes(obj, obj.project, self.request.user)
+            TatorSearch().delete_document(obj)
+        else:
+            logger.info("PRESERVING RECORD")
+            b = qs[0]
+            b.variant_deleted = True
+            b.save()
+            logger.info(f"STATUS = {qs[0].pk}: {qs[0].variant_deleted}")
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
