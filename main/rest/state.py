@@ -312,7 +312,7 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            if params['purge'] == 1:
+            if params['prune'] == 1:
                 # Delete states.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
                 query = get_annotation_es_query(params['project'], params, 'state')
@@ -455,7 +455,7 @@ class StateDetailAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        if params['purge'] == 1:
+        if params['prune'] == 1:
             delete_and_log_changes(state, project, self.request.user)
             TatorSearch().delete_document(state)
 

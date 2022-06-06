@@ -212,7 +212,7 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
-            if params['purge'] == 1:
+            if params['prune'] == 1:
                 # Delete the localizations.
                 bulk_delete_and_log_changes(qs, params["project"], self.request.user)
                 query = get_annotation_es_query(params['project'], params, 'localization')
@@ -375,7 +375,7 @@ class LocalizationDetailAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
-        if params['purge'] == 1:
+        if params['prune'] == 1:
             logger.info("PURGING RECORD")
             delete_and_log_changes(obj, obj.project, self.request.user)
             TatorSearch().delete_document(obj)

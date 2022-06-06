@@ -212,7 +212,7 @@ localization_id_query = {
 localization_delete_schema = {
     'type': 'object',
     'properties': {
-        'purge': {
+        'prune': {
             'type': 'integer',
             'description': 'If set to 1 will purge the object from the database entirely. This removes any record, change-log, that this metadatum ever existed.',
             'minimum': 0,
