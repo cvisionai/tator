@@ -76,6 +76,12 @@ export class SettingsNav extends TatorElement {
     //let parentNode = addNewNode.parentNode;
     addNewNode.before(subNavLink);
 
+    if (e.detail.typeName == "LeafType") {
+      const subNavInnerLinkSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`;
+      let subNavInnerLink = this.getSubItem(obj, e.detail.typeName, subNavInnerLinkSelector, " > Add/Edit Leaves");
+      addNewNode.before(subNavInnerLink);    
+    }
+
     return subNavLink.click();
   }
 
@@ -97,6 +103,16 @@ export class SettingsNav extends TatorElement {
     // remove the container and side nav link
     container.remove();
     navItem.remove()
+
+    if (e.detail.typeName == "LeafType") {
+      // Delete the CHILD side nav item, and container
+      let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner']`);
+      let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`);
+
+      // remove the container and side nav link
+      container.remove();
+      navItem.remove()      
+    }
   }
 
   _getItemDivId(typeName, typeId) {
@@ -104,12 +120,12 @@ export class SettingsNav extends TatorElement {
   }
 
 
-  _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true}){
-
+  _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true, innerLinkText = ""}){
     if(subItemsOnly){
       return this._subItemsOnly({
         type,
-        subItems
+        subItems,
+        innerLinkText
       })
     } else {
       return this._addHeadingWithSubItems({
@@ -232,7 +248,7 @@ export class SettingsNav extends TatorElement {
 
   // This adds subitems to an existing heading
   // @TODO no "New item" trigger can be added in this fn (requires more el access)
-  _subItemsOnly({ subItems = [], type = "" }) {
+  _subItemsOnly({ subItems = [], type = "", innerLinkText = ""}) {
     let section = this._shadow.querySelector(`.subitems-${type}`);
     section.querySelector(`img`).hidden = true;
 
@@ -241,15 +257,25 @@ export class SettingsNav extends TatorElement {
       for(let obj of subItems){
         let itemSelector = `#itemDivId-${type}-${obj.id}`
         let subNavLink = this.getSubItem(obj, type, itemSelector);
+
         let newSelector = `#itemDivId-${type}-New`;
         let addNewNode = this._shadow.querySelector(`a[href='${newSelector}']`);
 
         // Find the end of the type's section.
-        if(addNewNode){
+        if (addNewNode) {         
           addNewNode.before(subNavLink);
         } else {
           section.appendChild(subNavLink);
         }
+
+        //
+        console.log(innerLinkText);
+        if (innerLinkText !== "") {
+          let innerSelector = `#itemDivId-${type}-${obj.id}_inner`
+          let innerSubNavLink = this.getSubItem(obj, type, innerSelector, innerLinkText);
+          subNavLink.after(innerSubNavLink);
+        }
+
       }
     } else {
       // console.log("No subitems for heading "+name);
@@ -281,7 +307,7 @@ export class SettingsNav extends TatorElement {
     });
   }
 
-  getSubItem(obj, type, itemIdSelector){
+  getSubItem(obj, type, itemIdSelector, innerLinkText = ""){
     /* obj requires ---> id, name */
     //
     let itemId = obj.id; // ie. video type with ID of 62
@@ -291,7 +317,11 @@ export class SettingsNav extends TatorElement {
     subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
     subNavLink.style.paddingLeft = "44px";
     subNavLink.href = itemIdSelector;
-    subNavLink.innerHTML = subItemText;
+    subNavLink.innerHTML = innerLinkText !== "" ? innerLinkText : subItemText;
+
+    if (innerLinkText !== "") {
+      subNavLink.style.padding = "5px 0px 15px 54px";
+    }
 
     // Sub Nav Links
     subNavLink.addEventListener("click", (e) => {
@@ -342,20 +372,27 @@ export class SettingsNav extends TatorElement {
     }
   };
 
-  addItemContainer({ id = -1, itemContents = "", type = "", hidden = true}){
+  addItemContainer({ id = -1, itemContents = "", type = "", hidden = true, innerLinkText = ""}){
     let itemDiv = document.createElement("div");
     itemDiv.id = `itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
     itemDiv.setAttribute("class", `item-box item-group-${id}`);
     itemDiv.hidden = hidden;
 
-    if(itemContents != "") itemDiv.appendChild(itemContents);
+    if (itemContents != "") itemDiv.appendChild(itemContents);
+    this.itemsContainer.appendChild(itemDiv);
 
-    return this.itemsContainer.appendChild(itemDiv);
+    if (innerLinkText !== "") {
+      let itemInnerDiv = document.createElement("div");
+      itemInnerDiv.id = `itemDivId-${type}-${id}_inner`; //ie. #itemDivId-MediaType-72_inner
+      itemInnerDiv.setAttribute("class", `item-box item-group-${id}_inner`);
+      itemInnerDiv.hidden = hidden;
+      this.itemsContainer.appendChild(itemInnerDiv);
+    }
   }
 
-  fillContainer({ id = -1, itemContents = document.createTextNode(""), type = ""}){
+  fillContainer({ id = -1, itemContents = document.createTextNode(""), type = "", innerNav = false}){
     //console.log(`Filling ${type} container with id ${id}`);
-    let itemDivId = `#itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
+    let itemDivId = `#itemDivId-${type}-${id}${innerNav ? "_inner" : ""}`; //ie. #itemDivId-MediaType-72
     let itemDiv = this._shadow.querySelector(itemDivId);
 
     return itemDiv.appendChild(itemContents);

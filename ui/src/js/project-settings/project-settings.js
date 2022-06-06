@@ -242,10 +242,10 @@ export class ProjectSettings extends TatorPage {
       });
   }
 
-  /* Run when project-id is set to run fetch the page content. */
-  _sectionInit({ viewClass }) {
+  /* Gets the section list when it is expanded. */
+  async _sectionInit({ viewClass }) {
     const formView = document.createElement(viewClass);
-    // console.log(viewClass);
+    console.log(viewClass);
 
     formView._fetchGetPromise({ "id": this.projectId })
       .then((data) => {
@@ -280,24 +280,30 @@ export class ProjectSettings extends TatorPage {
         }
 
         // Add item containers for Types
+        const innerLinkText = formView.typeName == "LeafType" ? " > Add/Edit Leaves" : "";
         this.makeContainers({
           objData,
-          classBase: formView
+          classBase: formView,
+          innerLinkText // Makes 2 containers for each object data, and as defined by "innerLinkText"
         });
 
         // Add navs
         this.settingsNav._addNav({
           type: formView.typeName,
           subItems: objData,
-          subItemsOnly: true
+          subItemsOnly: true,
+          innerLinkText
         });
 
         // Add contents for each Entity
         for (let g of objData) {
           let form = document.createElement(viewClass);
+          let subItem = null;
+
           if (form.typeName == "Membership") {
             form.init(this.membershipData);
           }
+
           this.settingsNav.fillContainer({
             type: form.typeName,
             id: g.id,
@@ -329,23 +335,34 @@ export class ProjectSettings extends TatorPage {
             isStaff: this._userIsStaff,
             projectName: this.projectName
           });
+
+          // after the form is init
+          if (form.typeName == "LeafType") {
+            this.settingsNav.fillContainer({
+              type: form.typeName,
+              id: g.id,
+              itemContents: form._getLeafSection(),
+              innerNav: true
+            });
+          }
         }
 
       });
   }
 
-  makeContainer({ objData = {}, classBase, hidden = true }) {
+  makeContainer({ objData = {}, classBase, hidden = true, innerLinkText = "" }) {
     // Adds item panels for each view
     this.settingsNav.addItemContainer({
       type: classBase.typeName,
       id: objData.id,
+      innerLinkText,
       hidden
     });
   }
 
-  makeContainers({ objData = {}, classBase, hidden = true }) {
+  makeContainers({ objData = {}, classBase, hidden = true, innerLinkText = "" }) {
     for (let data of objData) {
-      this.makeContainer({ objData: data, classBase, hidden });
+      this.makeContainer({ objData: data, classBase, hidden, innerLinkText });
     }
   }
 

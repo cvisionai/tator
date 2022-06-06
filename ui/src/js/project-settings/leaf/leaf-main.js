@@ -22,6 +22,7 @@ export class LeafMain extends HTMLElement {
     this.loadingImg = this.loading.getImg();
 
     this._leaves = [];
+    this._leafBoxes = new Map();
 
     this.leafForms = [];
     this.hasChanges = false;
@@ -42,7 +43,9 @@ export class LeafMain extends HTMLElement {
     this.projectNameClean = String(projectName).replace(/[^a-z0-9]/gi, '').replace(" ", "_");
 
     // add main div
+    if (this.leafDiv) this.leafDiv.remove();
     this.leafDiv = document.createElement("div");
+    this.leafDiv.setAttribute("class", "px-6")
     this.appendChild(this.leafDiv);
     this.appendChild(this.loadingImg);
 
@@ -126,13 +129,20 @@ export class LeafMain extends HTMLElement {
         this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
       }
 
+      //
+      const highestLevel = this._levels.size - 1;
+
       // Loop through and output leaf forms
       for (let a in this._outputOrder) {
+        console.log(`${this._outputOrder[a].name} ${this._outputOrder[a].indent} !== ${highestLevel} || ${this._parents.has(this._outputOrder[a].id)}`);
+        this._outputOrder[a].expands = (this._outputOrder[a].indent == highestLevel || !this._parents.has(this._outputOrder[a].id)) ? false : true;
+
         let leafContent = this.leavesOutput({
           leaves : leaves,
           leaf : this._outputOrder[a],
           leafId : a
         });
+
         leafList.appendChild( leafContent );
       }
     }
@@ -159,7 +169,7 @@ export class LeafMain extends HTMLElement {
   _getNewLeavesTrigger(){
     // New leaf link
     const newLeafTrigger = document.createElement("a");
-    newLeafTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
+    newLeafTrigger.setAttribute("class", "py-2 mt-6 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
 
     const addPlus = document.createElement("span");
     addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
@@ -339,31 +349,64 @@ export class LeafMain extends HTMLElement {
     innerLeafBox.setAttribute("class", "leaves-edit flex-items-center rounded-2 d-flex flex-row");
     this.leafBox.appendChild(innerLeafBox);
 
+    const editIcon = document.createElement("div");
+    editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    editIcon.setAttribute("title", `Edit ${leaf.name}`);
+    editIcon.setAttribute("class", "clickable text-gray hover-text-white py-2 px-2");
+    innerLeafBox.appendChild(editIcon);
+
     const leafIndent = document.createElement("span");
     if (leaf.indent > 0) {
-      leafIndent.setAttribute("style", `padding-left: ${(leaf.indent-1) * 10}px;`);
+      leafIndent.setAttribute("style", `padding-left: ${(leaf.indent-1) * 25}px;`);
       leafIndent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill text-gray"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>`;
     }
-    leafIndent.innerHTML += ` ${leaf.name}`;
+
+    const minusIcon = document.createElement("span");
+    minusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class=""><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    
+
+    const addIcon = document.createElement("span");
+    addIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class=""><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    addIcon.hidden = true;
+
+    const leafNameText = document.createTextNode(leaf.name);
+
+    // const expander = leaf.expands ? `${addIcon.outerHTML}${minusIcon.outerHTML}` : "";
+    // leafIndent.innerHTML += ` ${leaf.name} ${expander}`;
+
+    leafIndent.appendChild(leafNameText);
+
+
 
     const leafCurrent = document.createElement("div");
     leafCurrent.appendChild(leafIndent);
-    leafCurrent.setAttribute("class", "col-10 px-3 clickable");
+    leafCurrent.setAttribute("class", "col-12 px-3 clickable");
     innerLeafBox.appendChild(leafCurrent);
-
-    const editIcon = document.createElement("div");
-    editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-    editIcon.setAttribute("class", "clickable text-gray hover-text-white py-2 px-2");
-    innerLeafBox.appendChild(editIcon);
 
     const deleteIcon = document.createElement("delete-button");
     // deleteIcon.textContent = "[D]";
     deleteIcon.setAttribute("class", "clickable");
+    deleteIcon.setAttribute("title", `Delete ${leaf.name}`);
     innerLeafBox.appendChild(deleteIcon);
 
-    leafCurrent.addEventListener("click", () => {
-      this._launchEdit(leaves, leaf);
-    });
+    if (leaf.expands) {
+      console.log("TEST leaf expands")
+      leafIndent.appendChild(minusIcon);
+      leafIndent.appendChild(addIcon);
+      leafCurrent.addEventListener("click", () => {
+        minusIcon.hidden = !minusIcon.hidden;
+        addIcon.hidden = !addIcon.hidden;
+        const children = this._parents.get(leaf.id);
+
+        for (let c of children) {
+          if (addIcon.hidden) {
+            this._recursiveUnhide(c.id);
+          } else {
+            this._recursiveHide(c.id);
+          }
+        }
+      }); 
+    }
 
     editIcon.addEventListener("click", () => {
       this._launchEdit(leaves, leaf);
@@ -374,7 +417,37 @@ export class LeafMain extends HTMLElement {
       this._deleteLeafConfirm(leaf.name);
     });
 
+    this._leafBoxes.set(leaf.id, innerLeafBox);
+
     return innerLeafBox;
+  }
+
+  _expandChildren() {
+    console.log("_expandChildren");
+  }
+
+  _recursiveHide(id) {
+    const item = this._leafBoxes.get(id);
+    item.classList.add("hidden");
+    
+    if (this._parents.has(id)) {
+      let childrenList = this._parents.get(id);
+      for (let innerChild of childrenList) {
+        this._recursiveHide(innerChild.id)
+      }    
+    } 
+  }
+
+  _recursiveUnhide(id) {
+    const item = this._leafBoxes.get(id);
+    item.classList.remove("hidden");
+    
+    if (this._parents.has(id)) {
+      let childrenList = this._parents.get(id);
+      for (let innerChild of childrenList) {
+        this._recursiveUnhide(innerChild.id)
+      }    
+    }
   }
 
   _launchEdit(leaves, leaf) {

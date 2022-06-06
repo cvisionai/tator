@@ -30,12 +30,6 @@ export class TypeForm extends TatorElement {
     this._attributeContainer.hidden = true; // not alway in use
     this._formContainer.appendChild(this._attributeContainer);
 
-    // // Leaf Container
-    // this._leafContainer = document.createElement("div");
-    // this._leafContainer.setAttribute("class", "col-4");
-    // this._leafContainer.hidden = true; // not alway in use
-    // this._formContainer.appendChild(this._leafContainer);
-
     // Loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
@@ -125,6 +119,7 @@ export class TypeForm extends TatorElement {
       if (typeof this._hideAttributes !== "undefined" && this._hideAttributes == false) {
         this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
         this._attributeContainer.hidden = false;
+
         // Clears
         if (isReset) this.attributeSection && this.attributeSection.remove();
 
@@ -135,14 +130,11 @@ export class TypeForm extends TatorElement {
 
       // Leaf section
       if (this.typeName == "LeafType") {
-        this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
-        // this._leafContainer.hidden = false;
         // Clears
-        if (isReset) this.leafSection && this.leafSection.remove();
-
-        // Creates/Re-creates this.leafSection & appends it
-        const section = this._getLeafSection();
-        this._attributeContainer.appendChild(section);
+        if (isReset) {
+          this.leafSection._data = "";
+          this.leafSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.modal, this.projectName);
+        }
       }
 
 
@@ -220,10 +212,12 @@ export class TypeForm extends TatorElement {
         this.reset();
 
         // Create and show the container with new type
+        const innerLinkText = this.typeName == "LeafType" ? " > Add/Edit Leaves" : "";
         this.sideNav.addItemContainer({
           "type": this.typeName,
           "id": data.id,
-          "hidden": false
+          "hidden": false,
+          innerLinkText
         });
 
         let form = document.createElement(this._getTypeClass());
@@ -231,7 +225,8 @@ export class TypeForm extends TatorElement {
         this.sideNav.fillContainer({
           "type": this.typeName,
           "id": data.id,
-          "itemContents": form
+          "itemContents": form,
+          innerLinkText
         });
 
         const saveMessage = data.message;
@@ -250,6 +245,16 @@ export class TypeForm extends TatorElement {
             clusterListHandler: this.clusterListHandler,
             isStaff: this.isStaff
           });
+
+          // after the form is init
+          if (this.typeName == "LeafType") {
+            this.sideNav.fillContainer({
+              type: this.typeName,
+              id: saveReturnId,
+              itemContents: form._getLeafSection(),
+              innerNav: true
+            });
+          }
 
           // Add the item to navigation
           this._updateNavEvent("new", data.name, saveReturnId);
@@ -844,7 +849,8 @@ export class TypeForm extends TatorElement {
       } else if (this.typeName == "Version") {
         const evt = new CustomEvent("change", { detail: { changed: "new", typeId: updateTypeId, newName } });
         this.versionListHandler.el.dispatchEvent(evt);
-      }
+      } 
+    
     } else {
       // console.log("Need more information to update the sidenav.");
     }
