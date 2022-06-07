@@ -9,11 +9,11 @@ sources:
   - https://github.com/cvisionai/tator
 dependencies:
   - name: metallb
-    version: 0.1.21
+    version: 3.0.7
     repository: https://charts.bitnami.com/bitnami
     condition: metallb.enabled
   - name: redis
-    version: 12.2.3
+    version: 16.11.3
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
   - name: elasticsearch
