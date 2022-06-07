@@ -136,7 +136,7 @@ redis:
   master:
     persistence:
       enabled: false
-  slave:
+  replica:
     persistence:
       enabled: false
   nodeSelector:
