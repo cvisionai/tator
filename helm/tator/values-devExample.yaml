@@ -122,6 +122,8 @@ redis:
   nodeSelector:
     dbServer: "yes"
   usePassword: false
+  auth:
+    enabled: false
 metrics-server:
   enabled: true
   args:
