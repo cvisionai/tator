@@ -32,7 +32,7 @@ export class LeafMain extends HTMLElement {
     this.hasChanges = false;
   }
 
-  async _init(typeName, fromId, fromName, projectId, modal, projectName){
+  async _init({typeName, fromId, fromName, projectId, attributeTypes, modal, projectName, type}){
     // Init object global vars
     this.fromId = fromId;
     this.fromName = fromName;
@@ -41,6 +41,7 @@ export class LeafMain extends HTMLElement {
     this.projectId = projectId;
     this.modal = modal;
     this.projectNameClean = String(projectName).replace(/[^a-z0-9]/gi, '').replace(" ", "_");
+    this.attributeTypes = attributeTypes;
 
     // add main div
     if (this.leafDiv) this.leafDiv.remove();
@@ -50,13 +51,13 @@ export class LeafMain extends HTMLElement {
     this.appendChild(this.loadingImg);
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( this.modal );
+    this.boxHelper = new SettingsBox( modal );
     this.refreshTypeEvent = new Event('settings-refresh');
 
     // Section h1.
     this._h2 = document.createElement("h2");
     this._h2.setAttribute("class", "h3 pb-3 edit-project__h1 text-normal text-gray");
-    const t = document.createTextNode(`Leaves`); 
+    const t = document.createTextNode(`Leaves (TypeId: ${this.fromId})`); 
     this._h2.appendChild(t);
     this.leafDiv.appendChild(this._h2);
 
@@ -78,6 +79,7 @@ export class LeafMain extends HTMLElement {
 
   _getLeavesSection(leaves = []){
     let leavesSection = document.createElement("div");
+    // leavesSection.setAttribute("class", "d-flex");
 
     if(leaves && leaves.length > 0){
       const heading = document.createElement("h3");
@@ -85,11 +87,8 @@ export class LeafMain extends HTMLElement {
   
       const addText = document.createElement("span");
       addText.setAttribute("class", "");
-      addText.appendChild(document.createTextNode(` Edit Leaves (${leaves.length})`));
-  
-      // heading.appendChild(addPlus);
+      addText.appendChild(document.createTextNode(`${leaves.length} Leaves`));
       heading.appendChild(addText);
-
       leavesSection.appendChild(heading);
 
       let leafList = document.createElement("div");
@@ -128,13 +127,13 @@ export class LeafMain extends HTMLElement {
       for (const item of this._levels.get(0)) {
         this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
       }
+      this._leaves = this._outputOrder;
 
       //
       const highestLevel = this._levels.size - 1;
 
       // Loop through and output leaf forms
       for (let a in this._outputOrder) {
-        console.log(`${this._outputOrder[a].name} ${this._outputOrder[a].indent} !== ${highestLevel} || ${this._parents.has(this._outputOrder[a].id)}`);
         this._outputOrder[a].expands = (this._outputOrder[a].indent == highestLevel || !this._parents.has(this._outputOrder[a].id)) ? false : true;
 
         let leafContent = this.leavesOutput({
@@ -192,6 +191,9 @@ export class LeafMain extends HTMLElement {
         this._postLeaf( afObj.form );
       });
 
+      console.log(this.modal);
+      afObj.form._parentLeaf.permission = "Can Edit";
+
       this.boxHelper._modalConfirm({
         "titleText" : "New Leaf",
         "mainText" : afObj.form.form,
@@ -207,7 +209,7 @@ export class LeafMain extends HTMLElement {
 
   _getAddForm(){
     let form = document.createElement("leaf-form");
-    form._initEmptyForm(this._leaves, this.projectNameClean);
+    form._initEmptyForm(this._leaves, this.projectNameClean, this.attributeTypes);
     form.fromType = this.typeId;
 
     let submitLeaf = document.createElement("input");
@@ -222,6 +224,15 @@ export class LeafMain extends HTMLElement {
     this.modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = formObj._getLeafFormData();
+    console.log(formJSON);
+    let attr = { ...formJSON.attributes };
+    
+    for (let key in formJSON) {
+      console.log(key);
+      formJSON[key] = formJSON[key];
+    }
+
+    delete formJSON["attributes"];
 
     let status = 0;
     this._fetchPostPromise({"formData" : [formJSON]})
@@ -345,54 +356,67 @@ export class LeafMain extends HTMLElement {
       leaf = {},
     leafId = undefined
   } = {}){
+   
+
+    const minusIcon = document.createElement("span");
+    minusIcon.setAttribute("class", "text-gray leaves-minus py-1");
+    minusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class=""><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    minusIcon.hidden = true;
+
+    const addIcon = document.createElement("span");
+    addIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class=""><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    addIcon.setAttribute("class", "text-gray leaves-plus py-1");
+    addIcon.hidden = true;
+
     const innerLeafBox = document.createElement("div");
-    innerLeafBox.setAttribute("class", "leaves-edit flex-items-center rounded-2 d-flex flex-row");
+    innerLeafBox.setAttribute("class", "leaves-edit py-3 d-flex flex-row f1 flex-items-center");
+    innerLeafBox.style.borderBottom = "1px solid rgba(255,255,255,.4)";
     this.leafBox.appendChild(innerLeafBox);
 
+    const leafIndent = document.createElement("span");
+    leafIndent.setAttribute("class","d-flex flex-align-center");
+    if (leaf.indent > 0) {
+      leafIndent.setAttribute("style", `padding-left: ${(leaf.indent) * 30}px;`);
+      // leafIndent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill text-gray"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>`;
+      leafIndent.innerHTML = `&nbsp;`;
+      minusIcon.hidden = true;
+      innerLeafBox.classList.add("hidden");
+    } else {
+      addIcon.hidden = false;
+    }
+
+    const leafName = document.createElement("span");
+    leafName.setAttribute("class", "py-2 px-2");
+    const leafNameText = document.createTextNode(leaf.name);
+    leafName.appendChild(leafNameText);
+    // const expander = leaf.expands ? `${addIcon.outerHTML}${minusIcon.outerHTML}` : "";
+    // leafIndent.innerHTML += ` ${leaf.name} ${expander}`;
+
+    if (leaf.expands) {
+      leafIndent.appendChild(minusIcon);
+      leafIndent.appendChild(addIcon);
+    }
+    leafIndent.appendChild(leafName);
+
+    const leafCurrent = document.createElement("div");
+    leafCurrent.appendChild(leafIndent);
+    leafCurrent.setAttribute("class", "col-12 px-3");
+    if (leaf.expands) leafCurrent.classList.add("clickable");
+    innerLeafBox.appendChild(leafCurrent);
+
     const editIcon = document.createElement("div");
-    editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
     editIcon.setAttribute("title", `Edit ${leaf.name}`);
     editIcon.setAttribute("class", "clickable text-gray hover-text-white py-2 px-2");
     innerLeafBox.appendChild(editIcon);
 
-    const leafIndent = document.createElement("span");
-    if (leaf.indent > 0) {
-      leafIndent.setAttribute("style", `padding-left: ${(leaf.indent-1) * 25}px;`);
-      leafIndent.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill text-gray"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>`;
-    }
-
-    const minusIcon = document.createElement("span");
-    minusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class=""><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-    
-
-    const addIcon = document.createElement("span");
-    addIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class=""><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-    addIcon.hidden = true;
-
-    const leafNameText = document.createTextNode(leaf.name);
-
-    // const expander = leaf.expands ? `${addIcon.outerHTML}${minusIcon.outerHTML}` : "";
-    // leafIndent.innerHTML += ` ${leaf.name} ${expander}`;
-
-    leafIndent.appendChild(leafNameText);
-
-
-
-    const leafCurrent = document.createElement("div");
-    leafCurrent.appendChild(leafIndent);
-    leafCurrent.setAttribute("class", "col-12 px-3 clickable");
-    innerLeafBox.appendChild(leafCurrent);
-
     const deleteIcon = document.createElement("delete-button");
-    // deleteIcon.textContent = "[D]";
-    deleteIcon.setAttribute("class", "clickable");
+    deleteIcon.innerHTML = `<svg id="icon-trash" viewBox="0 0 24 24" height="24" width="24" stroke-width="1"><path d="M18 7v13c0 0.137-0.027 0.266-0.075 0.382-0.050 0.122-0.125 0.232-0.218 0.325s-0.203 0.167-0.325 0.218c-0.116 0.048-0.245 0.075-0.382 0.075h-10c-0.137 0-0.266-0.027-0.382-0.075-0.122-0.050-0.232-0.125-0.325-0.218s-0.167-0.203-0.218-0.325c-0.048-0.116-0.075-0.245-0.075-0.382v-13zM17 5v-1c0-0.405-0.081-0.793-0.228-1.148-0.152-0.368-0.375-0.698-0.651-0.974s-0.606-0.499-0.974-0.651c-0.354-0.146-0.742-0.227-1.147-0.227h-4c-0.405 0-0.793 0.081-1.148 0.228-0.367 0.152-0.697 0.375-0.973 0.651s-0.499 0.606-0.651 0.973c-0.147 0.355-0.228 0.743-0.228 1.148v1h-4c-0.552 0-1 0.448-1 1s0.448 1 1 1h1v13c0 0.405 0.081 0.793 0.228 1.148 0.152 0.368 0.375 0.698 0.651 0.974s0.606 0.499 0.974 0.651c0.354 0.146 0.742 0.227 1.147 0.227h10c0.405 0 0.793-0.081 1.148-0.228 0.368-0.152 0.698-0.375 0.974-0.651s0.499-0.606 0.651-0.974c0.146-0.354 0.227-0.742 0.227-1.147v-13h1c0.552 0 1-0.448 1-1s-0.448-1-1-1zM9 5v-1c0-0.137 0.027-0.266 0.075-0.382 0.050-0.122 0.125-0.232 0.218-0.325s0.203-0.167 0.325-0.218c0.116-0.048 0.245-0.075 0.382-0.075h4c0.137 0 0.266 0.027 0.382 0.075 0.122 0.050 0.232 0.125 0.325 0.218s0.167 0.203 0.218 0.325c0.048 0.116 0.075 0.245 0.075 0.382v1z"></path></svg>`;
     deleteIcon.setAttribute("title", `Delete ${leaf.name}`);
+    deleteIcon.setAttribute("class", "clickable text-gray hover-text-white py-2 px-2");
     innerLeafBox.appendChild(deleteIcon);
 
     if (leaf.expands) {
-      console.log("TEST leaf expands")
-      leafIndent.appendChild(minusIcon);
-      leafIndent.appendChild(addIcon);
       leafCurrent.addEventListener("click", () => {
         minusIcon.hidden = !minusIcon.hidden;
         addIcon.hidden = !addIcon.hidden;
@@ -414,7 +438,7 @@ export class LeafMain extends HTMLElement {
 
 
     deleteIcon.addEventListener("click", () => {
-      this._deleteLeafConfirm(leaf.name);
+      this._deleteLeafConfirm(leaf.id, leaf.name);
     });
 
     this._leafBoxes.set(leaf.id, innerLeafBox);
@@ -433,7 +457,7 @@ export class LeafMain extends HTMLElement {
     if (this._parents.has(id)) {
       let childrenList = this._parents.get(id);
       for (let innerChild of childrenList) {
-        this._recursiveHide(innerChild.id)
+        this._recursiveHide(innerChild.id);
       }    
     } 
   }
@@ -441,11 +465,18 @@ export class LeafMain extends HTMLElement {
   _recursiveUnhide(id) {
     const item = this._leafBoxes.get(id);
     item.classList.remove("hidden");
+    if (item.querySelector(".leaves-plus")) {
+      const plus = item.querySelector(".leaves-plus");
+      plus.hidden = true;
+      
+      const minus = item.querySelector(".leaves-minus");
+      minus.hidden = false;
+    }
     
     if (this._parents.has(id)) {
       let childrenList = this._parents.get(id);
       for (let innerChild of childrenList) {
-        this._recursiveUnhide(innerChild.id)
+        this._recursiveUnhide(innerChild.id);
       }    
     }
   }
@@ -460,7 +491,7 @@ export class LeafMain extends HTMLElement {
     leafForm.fromType = this.typeId;
 
     // create form and attach to the el
-    leafForm._getFormWithValues(leaves, leaf);
+    leafForm._getFormWithValues(leaves, leaf, this.attributeTypes);
     leafForm.form.setAttribute("class", "leaf-form px-4");
     leafForm.setAttribute("data-old-name", leaf.name);
     leafForm.setAttribute("leafid", leaf.id);
@@ -498,7 +529,7 @@ export class LeafMain extends HTMLElement {
   /**
    * Deprecated..... 
    */
-  deleteLeaf(name){
+  deleteLeaf(id, name){
     let button = document.createElement("button");
     button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
     button.style.marginRight = "10px";
@@ -532,13 +563,13 @@ export class LeafMain extends HTMLElement {
 
     button.addEventListener("click", (e) => {
       e.preventDefault();
-      this._deleteLeafConfirm(name);
+      this._deleteLeafConfirm(id, name);
     });
 
     return this.deleteBox;
   }
 
-  _deleteLeafConfirm(name){
+  _deleteLeafConfirm(id, name){
     let button = document.createElement("button");
     let confirmText = document.createTextNode("Confirm")
     button.appendChild(confirmText);
@@ -546,7 +577,7 @@ export class LeafMain extends HTMLElement {
 
     button.addEventListener("click", (e) => {
       e.preventDefault();
-      this._deleteLeafType(name);
+      this._deleteLeaf(id);
     });
 
     this.boxHelper._modalConfirm({
@@ -557,14 +588,12 @@ export class LeafMain extends HTMLElement {
     });
   }
 
-  _deleteLeafType(name){
+  _deleteLeaf(id){
     this.modal._closeCallback();;
     this.loading.showSpinner();
 
     let deleteLeaf = new LeafDelete({
-      "type" : this.typeName,
-      "typeId" : this.fromId,
-      "leafName" : name
+      "leafId" : id
     });
   
     if(name != "undefined"){

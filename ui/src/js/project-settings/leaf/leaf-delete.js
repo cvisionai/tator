@@ -2,11 +2,9 @@ import { getCookie } from "../../util/get-cookie.js";
 
 export class LeafDelete {
     constructor({
-        type, typeId, leafName
+        leafId
     }){
-        this.type = type;
-        this.typeId = typeId;
-        this.leafName = leafName;
+        this.leafId = leafId;
     }
 
     async deleteFetch(){     
@@ -16,23 +14,17 @@ export class LeafDelete {
     }
 
     _fetchPromise(){
-        console.log(`Deleting ${this.type} id ${this.typeId} leaf with name ${this.leafName}`);
-
-        let formData = {
-            "entity_type": this.type,
-            "leaf_to_delete": this.leafName
-        };
+        console.log(`Deleting Leaf ${this.leafId}.`);
     
-        return fetch(`/rest/LeafType/${this.typeId}`, {
-        method: "DELETE",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-            "X-CSRFToken": getCookie("csrftoken"),
-            "Accept": "application/json",
-            "Content-Type": "application/json"
-        },
-        body : JSON.stringify(formData)
+        return fetch(`/rest/Leaf/${this.leafId}`, {
+            method: "DELETE",
+            mode: "cors",
+            credentials: "include",
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
         })
     }
 }

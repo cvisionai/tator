@@ -200,7 +200,7 @@ export class SettingsBox {
     buttonSave = document.createElement("button"),
     scroll = true
   } = {}){
-    
+    console.log(this.modal._titleDiv);
     this._modalClear();
     this.modal._titleDiv.innerHTML = titleText;
 
@@ -243,10 +243,10 @@ export class SettingsBox {
   }
 
   _modalClear(){
-    this.modal._titleDiv.innerHTML = "";
-    this.modal._main.innerHTML = "";
-    this.modal._footer.innerHTML = "";
-    this.modal._main.classList.remove("fixed-height-scroll");
+    if(this.modal._titleDiv) this.modal._titleDiv.innerHTML = "";
+    if(this.modal._main) this.modal._main.innerHTML = "";
+    if(this.modal._footer) this.modal._footer.innerHTML = "";
+    if(this.modal._main) this.modal._main.classList.remove("fixed-height-scroll");
     
     return this.modal;
   }

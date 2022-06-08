@@ -1,4 +1,5 @@
 import { TatorElement } from "../../components/tator-element.js";
+import { LeafData } from "../data/data-leaves-clone.js";
 
 export class LeafForm extends TatorElement {
   constructor() {
@@ -11,6 +12,7 @@ export class LeafForm extends TatorElement {
 
     //
     this._data = {};
+    this.widgets = [];
   }
 
   set fromType(val) {
@@ -42,7 +44,7 @@ export class LeafForm extends TatorElement {
     return this._global = false;
   }
 
-  _initEmptyForm(leaves, name) {
+  _initEmptyForm(leaves, name, attributeTypes, deleteIcon) {
     const form = document.createElement("form");
     this.form = form;
     this.projectName = name;
@@ -72,11 +74,15 @@ export class LeafForm extends TatorElement {
 
     if (typeof leaves == "string" && leaves !== "") {
       leaves = [];
-    } else if (Array.isArray(leaves)){
+    } else if (Array.isArray(leaves)) {
       const leafChoices = leaves.map(leaf => {
+        let space = "";
+        for (let i = 0; i < leaf.indent; i++){
+          space += "-"
+        }
         return {
           value: leaf.id,
-          label: leaf.name
+          label: space+leaf.name
         }
       });
       choices = [...choices, ...leafChoices];
@@ -84,8 +90,21 @@ export class LeafForm extends TatorElement {
 
     this._parentLeaf = document.createElement("enum-input");
     this._parentLeaf.setAttribute("name", "Parent");
+    this._parentLeaf.permission = "View Only";
     this._parentLeaf.choices = choices;
     this.form.appendChild(this._parentLeaf);
+
+    // Custom attribute panel
+    this._attributePanel = document.createElement("attribute-panel");
+    const sorted = attributeTypes.sort((a, b) => {
+      return a.order - b.order || a.name - b.name;
+    });
+
+    for (let column of sorted) {
+      let widget = this._attributePanel._getUserDefinedWidget(column);
+      this.widgets.push(widget);
+      this.form.appendChild(widget);
+    }
     
     this._shadow.appendChild(this.form);
 
@@ -98,12 +117,13 @@ export class LeafForm extends TatorElement {
     return this.form.classList.add("changed");
   }
 
-  _getFormWithValues(leaves, leaf) {
+  _getFormWithValues(leaves, leaf, attributeTypes, deleteIcon) {
     const {
       clone = false,
       name = null,
       path = null,
       parent = null,
+      attributes = {},
       projectName = ""
     } = leaf;
 
@@ -114,7 +134,7 @@ export class LeafForm extends TatorElement {
 
     // gets leaf object as param destructured over these values
     //sets value on THIS form
-    this.form = this._initEmptyForm(leaves, projectName);
+    this.form = this._initEmptyForm(leaves, projectName, attributeTypes, deleteIcon);
 
     /* fields that are always available */
     // Set Name
@@ -126,17 +146,25 @@ export class LeafForm extends TatorElement {
     this._path.setValue(path);
 
     // Set parent
-    this._parentLeaf.default = Number(parent);
-    this._parentLeaf.setValue(Number(parent));
+    if (parent == "null") {
+      this._parentLeaf.default = Number(parent);
+      this._parentLeaf.setValue(Number(parent));      
+    } else {
+      this._parentLeaf.default = "null";
+      this._parentLeaf.setValue("null");     
+    }
+
+    //
+    for (const widget of this.widgets) {
+      const name = widget.getAttribute("name");
+      const value = attributes[name];
+      // Only set the name if it is defined
+      if (value != undefined) {
+        widget.setValue(attributes[name]);
+      }
+    }
 
     return this.form;
-  }
-
-  
-
-  //
-  _showDynamicFields(dtype) {
-    
   }
 
   
@@ -164,11 +192,32 @@ export class LeafForm extends TatorElement {
       formData.parent = Number(this._parentLeaf.getValue());
     // }
 
+    // Custom attributes
+    const attrVals = this._getWidgetValues();
+    if (attrVals !== {}) {
+      formData.attributes = attrVals;
+    }
+
     // Always send the type
     formData.type = this._fromType;
 
-    // console.log(formData);
+    console.log(formData);
     return formData;
+  }
+
+  _getWidgetValues() {
+    let values = {};
+    for (const widget of this.widgets) {
+      const val = widget.getValue();
+      if ((val === null) && (widget.required)) {
+        // values = null;
+        // break;
+        console.warn("User left a required field null.");
+      } else if (val !== null) {
+        values[widget.getAttribute("name")] = val;
+      }
+    }
+    return values;
   }
 
   _leafFormData({ form = this.form, id = -1, entityType = null } = {}) {

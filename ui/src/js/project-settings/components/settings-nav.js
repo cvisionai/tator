@@ -287,7 +287,7 @@ export class SettingsNav extends TatorElement {
   // This is the the "+" next to item heading
   addSpan(headingBox, itemHeading, itemIdSelector){
     let addSpan = document.createElement("span");
-    addSpan.setAttribute("class", "float-right Nav-action col-2 f1 text-bold clickable");
+    addSpan.setAttribute("class", "float-right Nav-action col-2 f1 text-bold clickable "); //add-new__icon circle
     let t = document.createTextNode(`+`); 
     addSpan.appendChild(t);
     headingBox.appendChild(addSpan);
@@ -385,7 +385,7 @@ export class SettingsNav extends TatorElement {
       let itemInnerDiv = document.createElement("div");
       itemInnerDiv.id = `itemDivId-${type}-${id}_inner`; //ie. #itemDivId-MediaType-72_inner
       itemInnerDiv.setAttribute("class", `item-box item-group-${id}_inner`);
-      itemInnerDiv.hidden = hidden;
+      itemInnerDiv.hidden = true; //always hide on creation
       this.itemsContainer.appendChild(itemInnerDiv);
     }
   }

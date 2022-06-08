@@ -133,7 +133,15 @@ export class TypeForm extends TatorElement {
         // Clears
         if (isReset) {
           this.leafSection._data = "";
-          this.leafSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.modal, this.projectName);
+          this.leafSection._init({
+            typeName: this.typeName,
+            fromId: this.typeId,
+            fromName: this.data.name, 
+            projectId: this.projectId,
+            attributeTypes: this.data.attribute_types,
+            modal: this.modal,
+            projectName: this.projectName
+          });
         }
       }
 
@@ -327,7 +335,15 @@ export class TypeForm extends TatorElement {
     this.leafSection = document.createElement("leaf-main");
     this.leafSection.setAttribute("data-from-id", `${this.typeId}`);
     this.leafSection.setAttribute("data-project-id", `${this.projectId}`)
-    this.leafSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this.modal, this.projectName);
+    this.leafSection._init({
+      typeName: this.typeName,
+      fromId: this.typeId,
+      fromName: this.data.name, 
+      projectId: this.projectId,
+      attributeTypes: this.data.attribute_types,
+      modal: this.modal,
+      projectName: this.projectName
+    });
 
     // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
     this.leafSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
