@@ -133,15 +133,15 @@ postgis:
 redis:
   # Enable this to install the redis helm chart.
   enabled: true
+  architecture: standalone
   master:
-    persistence:
-      enabled: false
-  slave:
     persistence:
       enabled: false
   nodeSelector:
     dbServer: "yes"
   usePassword: false
+  auth:
+    enabled: false
 metrics-server:
   enabled: false
 elasticsearch:

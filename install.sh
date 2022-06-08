@@ -6,13 +6,13 @@ set -e
 # Define environment variables.
 BENTO4_URL="http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip"
 GIT_REVISION=$(git rev-parse HEAD)
-KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/v1.19.13/bin/linux/amd64/kubectl"
+KUBECTL_URL="https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl"
 ARGO_CLIENT_URL="https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/argo-linux-amd64.gz"
 ARGO_MANIFEST_URL="https://github.com/argoproj/argo-workflows/releases/download/v3.3.1/install.yaml"
 
 # Install snaps.
 sudo snap install helm --classic
-sudo snap install microk8s --classic --channel=1.19/stable
+sudo snap install microk8s --classic --channel=1.24/stable
 
 # Install apt packages.
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
