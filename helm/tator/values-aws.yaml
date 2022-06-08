@@ -250,7 +250,11 @@ okta:
   enabled: false
   oauth2_key: "fill me in"
   oauth2_secret: "fill me in"
-  oauth2_api_url: "fill me in"
+  oauth2_token_uri: "fill me in"
+  oauth2_userinfo_uri: "fill me in"
+  oauth2_issuer: "fill me in"
+  oauth2_redirect_uri: "fill me in"
+  oauth2_auth_uri: "fill me in"
 email:
   enabled: false
   sender: "<fill in>"

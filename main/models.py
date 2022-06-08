@@ -245,32 +245,43 @@ class Organization(Model):
         return self.name
 
 class TatorUserManager(UserManager):
-    def get_or_create_for_cognito(self, payload):
-        cognito_id = payload['sub']
+    valid_providers = ["cognito", "okta"]
+
+    def get_or_create_for_oauth2(self, payload, provider):
+        if provider not in self.valid_providers:
+            raise ValueError(
+                f"Expected oauth2 provider in {self.valid_providers}, got '{provider}'"
+            )
+
+        # The field to query in the user model is the provider name with `_id` appended
+        provider_id = {f"{provider}_id": payload["sub"]}
 
         try:
-            return self.get(cognito_id=cognito_id)
+            return self.get(**provider_id)
         except self.model.DoesNotExist:
             pass
 
-        first_name = payload['given_name']
-        last_name = payload['family_name']
+        first_name = payload["given_name"]
+        last_name = payload["family_name"]
         initials = f"{first_name[0]}{last_name[0]}"
-        user = User(
-            username=payload['email'],
-            cognito_id=cognito_id,
-            first_name=first_name,
-            last_name=last_name,
-            initials=initials,
-            email=payload['email'],
-            is_active=True)
+        user_definition = {
+            "username": payload["email"],
+            "first_name": first_name,
+            "last_name": last_name,
+            "initials": initials,
+            "email": payload["email"],
+            "is_active": True,
+        }
+        user_definition.update(provider_id)
+        user = User(**user_definition)
         user.save()
 
         return user
 
 class User(AbstractUser):
     objects=TatorUserManager()
-    cognito_id = UUIDField(primary_key=False,db_index=True,null=True,blank=True, editable=False)
+    cognito_id = UUIDField(primary_key=False, db_index=True, null=True, blank=True, editable=False)
+    okta_id = UUIDField(primary_key=False, db_index=True, null=True, blank=True, editable=False)
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
     last_login = DateTimeField(null=True, blank=True)

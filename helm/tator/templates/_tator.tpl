@@ -223,8 +223,16 @@ spec:
               value: {{ .Values.okta.oauth2_key }}
             - name: OKTA_OAUTH2_SECRET
               value: {{ .Values.okta.oauth2_secret }}
-            - name: OKTA_OAUTH2_API_URL
-              value: {{ .Values.okta.oauth2_api_url }}
+            - name: OKTA_OAUTH2_TOKEN_URI
+              value: {{ .Values.okta.oauth2_token_uri }}
+            - name: OKTA_OAUTH2_USERINFO_URI
+              value: {{ .Values.okta.oauth2_userinfo_uri }}
+            - name: OKTA_OAUTH2_ISSUER
+              value: {{ .Values.okta.oauth2_issuer }}
+            - name: OKTA_OAUTH2_REDIRECT_URI
+              value: {{ .Values.okta.oauth2_redirect_uri }}
+            - name: OKTA_OAUTH2_AUTH_URI
+              value: {{ .Values.okta.oauth2_auth_uri }}
             {{- else }}
               value: "FALSE"
             {{- end }}

@@ -88,7 +88,7 @@ urlpatterns = [
     path('accounts/login/', LoginView.as_view(extra_context={'email_enabled': settings.TATOR_EMAIL_ENABLED}), name='login'),
 ]
 
-if settings.COGNITO_ENABLED:
+if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
     urlpatterns += [
         path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
 
