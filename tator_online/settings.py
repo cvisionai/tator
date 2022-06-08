@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     'django_ltree',
     'oauth2_provider',
     'social_django',
-    'drf_social_oauth2',
 ]
 
 GRAPH_MODELS = {
@@ -238,7 +237,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
-        "drf_social_oauth2.authentication.SocialAuthentication",
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'main.renderers.TatorRenderer',
@@ -262,7 +260,6 @@ REST_FRAMEWORK = {
 AUTHENTICATION_BACKENDS = [
     "main.auth.TatorAuth",
     "social_core.backends.okta.OktaOAuth2",
-    "drf_social_oauth2.backends.DjangoOAuth2",
 ]
 
 if os.getenv('REQUIRE_HTTPS') == 'TRUE':
