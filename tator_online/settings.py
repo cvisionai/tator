@@ -58,9 +58,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_extensions',
     'django_admin_json_editor',
-    'django_ltree',
-    'oauth2_provider',
-    'social_django',
+    'django_ltree'
 ]
 
 GRAPH_MODELS = {
@@ -106,8 +104,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                "social_django.context_processors.backends",
-                "social_django.context_processors.login_redirect",
             ],
         },
     },
@@ -235,8 +231,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES':
     (
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+        'rest_framework.authentication.TokenAuthentication'
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'main.renderers.TatorRenderer',
@@ -257,11 +252,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-AUTHENTICATION_BACKENDS = [
-    "main.auth.TatorAuth",
-    "social_core.backends.okta.OktaOAuth2",
-]
-
+AUTHENTICATION_BACKENDS = ['main.auth.TatorAuth']
 if os.getenv('REQUIRE_HTTPS') == 'TRUE':
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
