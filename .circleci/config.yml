@@ -147,10 +147,14 @@ jobs:
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
           pip3 install /tmp/tator*.whl;
     - run:
+        name: SSH forward
+        command: ssh -N -L 8080:$(cat ~/public_ip_address.txt):80 lightsail
+        background: true
+    - run:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          pytest test --base-url=http://$(cat ~/public_ip_address.txt) --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -226,14 +230,14 @@ workflows:
             only: /.*/
     - rest-tests:
         requires:
-        - front-end-tests
+        - install-tator
         context: cvisionai
         filters:
           tags:
             only: /.*/
     - tator-py-tests:
         requires:
-        - front-end-tests
+        - install-tator
         context: cvisionai
         filters:
           tags:

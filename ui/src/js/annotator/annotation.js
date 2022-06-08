@@ -1637,7 +1637,9 @@ export class AnnotationCanvas extends TatorElement
           //this._draw.resizeViewport(dims[0], dims[1]);
           if (this.isPaused() == true)
           {
+            this._hqFallbackTimer = setTimeout(() => {this.refresh(true)}, 3000);
             this.refresh(false).then(() => {
+              clearTimeout(this._hqFallbackTimer);
               this.refresh(true);
             });
           }
@@ -1820,14 +1822,28 @@ export class AnnotationCanvas extends TatorElement
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() + amount, true);
+        if (event.shiftKey == true)
+        {
+          this.advanceOneSecond();
+        }
+        else
+        {
+          this.gotoFrame(this.currentFrame() + amount, true);
+        }
         return false;
       }
       if (event.key == 'ArrowLeft')
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() - amount, true);
+        if (event.shiftKey == true)
+        {
+          this.backwardOneSecond();
+        }
+        else
+        {
+          this.gotoFrame(this.currentFrame() - amount, true);
+        }
         return false;
       }
     }
@@ -2591,6 +2607,10 @@ export class AnnotationCanvas extends TatorElement
 
   mouseOverHandler(mouseEvent)
   {
+    if (this._playing)
+    {
+      return;
+    }
     var that = this;
     var location = this.scaleToViewport([mouseEvent.offsetX, mouseEvent.offsetY]);
     var relativeVPLocation = [location[0]/this._dims[0], location[1]/this._dims[1]];
@@ -4402,11 +4422,15 @@ export class AnnotationCanvas extends TatorElement
     // #TODO Consider moving this outside of this function into its own
     //       routine that is called when a frame change occurs.
     if (this.currentFrame() != this._contextMenuFrame)
-    {
-      this._contextMenuFrame = frameIdx;
-      this._contextMenuTrack.hideMenu();
-      this._contextMenuLoc.hideMenu();
-      this._contextMenuNone.hideMenu();
+    {    
+      // Dont' call this stuff in playing mode.
+      if (this._playing != true)
+      {
+        this._contextMenuFrame = frameIdx;
+        this._contextMenuTrack.hideMenu();
+        this._contextMenuLoc.hideMenu();
+        this._contextMenuNone.hideMenu();
+      }
     }
 
     if (this._clipboard.cutObject() && this._clipboard.cutObject().frame != frameIdx)

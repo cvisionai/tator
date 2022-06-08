@@ -18,7 +18,7 @@ export class RateControl extends TatorElement {
     div.appendChild(select);
     this._select = select;
 
-    this._rates = [0.125, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 6, 8, 16, 32, 64, 128, 256];
+    this._rates = [0.125, 0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3, 3.5, 4, 6, 8, 16, 32, 64];
     for (const rate of this._rates)
     {
       let option = document.createElement("option");
@@ -56,13 +56,14 @@ export class RateControl extends TatorElement {
   /**
    * Programmatically sets the selected rate and emits rateChange event
    * @param {Number} rate
+   * @param {bool} noEvent - If true, then don't emit the ratechange event
    */
-  setValue(rate) {
+  setValue(rate, noEvent) {
     this._value = rate;
-    this.setIdx(this._rates.findIndex(el => el == rate));
+    this.setIdx(this._rates.findIndex(el => el == rate), noEvent);
   }
 
-  setIdx(idx)
+  setIdx(idx, noEvent)
   {
     if (idx < 0 || idx >= this._rates.length)
     {
@@ -72,6 +73,7 @@ export class RateControl extends TatorElement {
     this._select.selectedIndex = idx;
 
     // Send out the rate change event
+    if (noEvent) { return; }
     this.dispatchEvent(new CustomEvent("rateChange", {
       detail: {rate: this._rates[idx]},
       composed: true

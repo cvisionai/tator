@@ -14,10 +14,12 @@ export class SeekBar extends TatorElement {
     this.bar.appendChild(this.handle);
     this._loadedPercentage = 0;
     this._visualType = "";
+    this._active = false;
 
     var that = this;
-    var clickHandler=function(evt)
+    var clickHandler=(evt)=>
     {
+      this._active = false;
       var width = that.offsetWidth;
       var startX = that.offsetLeft;
       if (width == 0)
@@ -38,9 +40,9 @@ export class SeekBar extends TatorElement {
     }
     this.bar.addEventListener("click", clickHandler);
 
-    var sendUpdate = (evt, evt_type) => {
-      // Only recalculate if it is an input, not a change
-      if (evt_type == "input")
+    var dragHandler=function(evt)
+    {
+      if (evt.button == 0)
       {
         var width = that.offsetWidth;
         if (width == 0)
@@ -53,30 +55,23 @@ export class SeekBar extends TatorElement {
         const percentage = Math.min(relativeX/width,
                                     that._loadedPercentage);
         that.value = Math.round((percentage * (that._max - that._min) + that._min));
-      }
-      that.dispatchEvent(
-        new CustomEvent(evt_type,
-                        {composed: true}));
-      evt.stopPropagation();
-      return false;
-    };
-    var dragHandler=function(evt)
-    {
-      if (evt.button == 0)
-      {
-        return sendUpdate(evt, "input");
+        evt.stopPropagation();
+        return false;
       }
       evt.cancelBubble=true;
       return false;
     }
-    var releaseMouse=function(evt)
+    var releaseMouse=(evt)=>
     {
-
+      console.info("RELEASE MOUSE.");
+      this._active = false;
+      clearInterval(that._periodicCheck);
       document.removeEventListener("mouseup",
                                    releaseMouse);
       document.removeEventListener("mousemove",
                                    dragHandler);
-      sendUpdate(evt, "change");
+      that.dispatchEvent(new CustomEvent("change",
+                                         {composed: true}));
       that.handle.classList.remove("range-handle-selected");
       // Add back in event handler next iteration (time=0)
       setTimeout(() =>
@@ -86,6 +81,28 @@ export class SeekBar extends TatorElement {
     }
     this.handle.addEventListener("mousedown", evt =>
                                  {
+                                   this._active = true;
+                                   this._lastValue = this.value;
+          
+                                   this._periodicCheck = setInterval(() =>
+                                     {
+                                      if (that._active == false)
+                                      {
+                                        clearInterval(this._periodicCheck);
+                                        return;
+                                      }
+                                      console.info("Checking scrub bar!");
+                                      if (this._value == this._lastValue)
+                                      {
+                                        return;
+                                      }
+                                      this._lastValue = this.value;
+                                      this.dispatchEvent(
+                                        new CustomEvent("input",
+                                                        {composed: true,
+                                                        detail: {frame: this.value}}));
+                                     }
+                                    , 3);
                                    that.bar.removeEventListener("click", clickHandler);
                                    document.addEventListener("mouseup",
                                                              releaseMouse);
@@ -130,6 +147,11 @@ export class SeekBar extends TatorElement {
     }
   }
 
+  get active()
+  {
+    return this._active;
+  }
+
   attributeChangedCallback(name, oldValue, newValue)
   {
     switch(name)
@@ -164,8 +186,11 @@ export class SeekBar extends TatorElement {
 
   onDemandLoaded(evt)
   {
+    // If it is 0, that means we reset.
     if (evt.detail.ranges.length == 0)
     {
+      this.onDemandProgress.style.marginLeft = `0px`;
+      this.onDemandProgress.style.width = `0px`;
       return;
     }
     let range = evt.detail.ranges[0]

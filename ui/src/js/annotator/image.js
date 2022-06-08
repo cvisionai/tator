@@ -11,6 +11,38 @@ export class ImageCanvas extends AnnotationCanvas
     this._imageElement=document.createElement("img");
     this._imageElement.crossOrigin = "anonymous";
     this._good=false;
+    this._supportsAvif=false;
+
+    // There is no browser API call for 'is format supported' for images like for video content
+    /// This attempts to load a small AVIF file as a test
+    this._avifCheckDone=false; //Sequence variable to allow for out of order execution.
+    var avif_test = new Image();
+    avif_test.src = "data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=";
+    try
+    {
+      avif_test.decode().then(() =>
+      {
+        this._supportsAvif = true;
+        this._avifCheckDone = true;
+        if (this._mediaFiles)
+        {
+          this._loadFromMediaFiles();
+        }
+      }).catch(()=>
+      {
+        this._supportsAvif = false;
+        this._avifCheckDone = true;
+        if (this._mediaFiles)
+        {
+          this._loadFromMediaFiles();
+        }
+      }
+      );
+    }
+    catch(e)
+    {
+      // Console doesn't supporot AVIF
+    }
   }
 
   /**
@@ -87,13 +119,36 @@ export class ImageCanvas extends AnnotationCanvas
       }
       else {
         // Normal image media file. Load the image from the given URL
-        let url = null;
-        if (val.media_files) {
-          if (val.media_files.image) {
-            url = val.media_files.image[0].path;
+        if (val.media_files && val.media_files.image) {
+          this._mediaFiles = val.media_files;
+          if (this._avifCheckDone == true)
+          {
+            this._loadFromMediaFiles();
           }
         }
-        this.loadFromURL(url, this._dims)
+      }
+    });
+  }
+
+  _loadFromMediaFiles()
+  {
+    let url = null;
+    // Discover all image files that we support
+    let best_idx = 0;
+    for (let idx = 0; idx < this._mediaFiles.image.length; idx++)
+    {
+      if (this._mediaFiles.image[idx].mime == "image/avif" && this._supportsAvif == true)
+      {
+        best_idx = idx;
+        break;
+      }
+      else if (this._mediaFiles.image[idx].mime != "image/avif")
+      {
+        best_idx = idx;
+      }
+    }
+    url = this._mediaFiles.image[best_idx].path;
+    this.loadFromURL(url, this._dims)
         .then(() => {
           this._good = true;
           this.refresh()
@@ -103,8 +158,6 @@ export class ImageCanvas extends AnnotationCanvas
             composed: true
           }));
         });
-      }
-    });
   }
 
   // Images are neither playing or paused

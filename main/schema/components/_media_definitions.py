@@ -145,11 +145,25 @@ multi_definition = {
         'ids': {'type': 'array',
                 'description': 'If multi-stream list of ids of sub-videos',
                 'items': {'type': 'integer'}},
+        'frameOffset': {'type': 'array',
+                'description': 'Frame of sub-video, offset from media in slot 0.',
+                'items': {'type': 'integer'}},
         'layout': {'type': 'array',
                    'description': '2-element array to define rxc layout',
                    'items': {'type': 'integer'}},
         'quality': {'type': 'integer',
                     'description': 'Resolution to fetch on each sub-video'},
+    },
+}
+
+concat_definition = {
+    'description': 'Object containing information needed for a concating videos together',
+    'type': 'object',
+    'properties': {
+        'id': {'type': 'integer',
+                    'description': 'Primary key of video in append series'},
+        'timestampOffset': {'type': 'number',
+                    'description': 'Insertion point for this video'},
     },
 }
 
@@ -239,6 +253,7 @@ media_files = {
     'properties': {
         'archival': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
         'streaming': {'type': 'array', 'items': {'$ref': '#/components/schemas/VideoDefinition'}},
+        'concat': {'type': 'array', 'items': {'$ref': '#/components/schemas/ConcatDefinition'}},
         'audio': {'type': 'array', 'items': {'$ref': '#/components/schemas/AudioDefinition'}},
         'image': {'type': 'array', 'items': {'$ref': '#/components/schemas/ImageDefinition'}},
         'attachment': {'type': 'array', 'items': {'$ref': '#/components/schemas/AuxiliaryFileDefinition'}},

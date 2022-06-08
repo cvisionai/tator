@@ -1,5 +1,4 @@
 import os
-import time
 import inspect
 
 from ._common import print_page_error
@@ -33,12 +32,19 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.click('.heading-for-Invitation')
     page.click('.heading-for-Invitation .Nav-action')
     user_email = 'no-reply'+str(organization_id)+'@cvisionai.com'
-    # user_email = 'no-reply2@cvisionai.com'
-    page.fill(f'invitation-edit email-list-input input', user_email+';')
+    page.wait_for_selector('#itemDivId-Invitation-New button[value="Save"]')
+    page.wait_for_timeout(1000)
+    page.fill(f'#itemDivId-Invitation-New invitation-edit email-list-input input', user_email)
+    page.wait_for_load_state("networkidle")
+    page.wait_for_timeout(1000)
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
-        page.locator('#itemDivId-Invitation-New >> text=Save').click()
-        page.wait_for_selector(f'text="Successfully created 1 invitation."')
-        page.locator('modal-dialog modal-close .modal__close').click()
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(1000)
+        for _ in range(3):
+            page.keyboard.press("Tab")
+        page.keyboard.press("Enter")
+    page.wait_for_selector(f'text="Successfully created 1 invitation."')
+    page.locator('modal-dialog modal-close .modal__close').click()
     response = response_info.value
     respObject = response.json()
     registration_link = str(respObject["message"]).replace('User can register at ', '')
@@ -88,8 +94,12 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.select_option(f'affiliation-edit enum-input[name="Permission"] select', label="Member")
     page.wait_for_selector('text="Name Last"')
     with page.expect_response(lambda response: response.url==url and response.status==201) as response_info:
-        page.click('affiliation-edit button[value="Save"]')
-        page.wait_for_selector(f'text="Successfully created 1 affiliation."')
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(1000)
+        for _ in range(3):
+            page.keyboard.press("Tab")
+        page.keyboard.press("Enter")
+    page.wait_for_selector(f'text="Successfully created 1 affiliation."')
     response = response_info.value
     respObject = response.json()
     affiliationId = respObject["id"]

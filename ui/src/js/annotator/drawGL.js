@@ -329,7 +329,7 @@ export class DrawGL
 
     gl.activeTexture(gl.TEXTURE0);
     // Setup reusable texture for drawing video frames
-    var initTexture=function()
+    this._initTexture=function()
     {
       var texture=gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -345,9 +345,9 @@ export class DrawGL
     }
 
     // Initialize the frame buffer in GPU memory
-    // @todo parametrize this buffer size.
-    // 30 fps x 4 (wait time) x 2 = 240
-    this.frameBuffer = new FrameBuffer(240, initTexture);
+    // We should only need one GOP pre-catched at a time, give or take.
+    this.bufferDepth = 8;
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
 
     // Initialze the backbuffer to use for MSAA
     this.msaaBuffer = gl.createRenderbuffer();
@@ -359,6 +359,21 @@ export class DrawGL
   {
     return [this.clientWidth/this.viewport.clientWidth,
             this.clientHeight/this.viewport.clientHeight];
+  }
+
+  rateChange(rate, fps)
+  {
+    // Scale between 8 and 32 deep buffers
+    this.bufferDepth =  Math.floor(rate*fps*0.50); // Aim for half a second of playback
+    if (this.bufferDepth > 32)
+    {
+      this.bufferDepth = 32;
+    }
+    if (this.bufferDepth < 8)
+    {
+      this.bufferDepth = 8;
+    }
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
   }
 
   // This takes image width and image height.
@@ -534,6 +549,7 @@ export class DrawGL
   // sx, sy, sWidth, sHeight are in relative coordinates (0.0-1.0)
   pushImage(frameIdx, frameData, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight, dirty)
   {
+
     // local namespacing
     var gl = this.gl;
 
@@ -725,13 +741,13 @@ export class DrawGL
       gl.bindFramebuffer(gl.FRAMEBUFFER,null);
       // Draw the full quad
       gl.drawElements(this.gl.TRIANGLES, quadIndices.length, this.gl.UNSIGNED_BYTE, 0)
+      
     }
 
     if (hold == false)
     {
       this.frameBuffer.doneDisplay();
     }
-
     return frameInfo.frame;
   }
 
@@ -757,13 +773,13 @@ export class DrawGL
   // Returns true if there is room for loading frames
   canLoad()
   {
-    return this.frameBuffer.availableLoad() > 0;
+    return this.frameBuffer.availableLoad();
   }
 
   // Returns true if there is room for playing frames
   canPlay()
   {
-    return this.frameBuffer.availableDisplay() > 0;
+    return this.frameBuffer.availableDisplay();
   }
 
   // Begin drawing sequence. As draw actions are performed new vertex
