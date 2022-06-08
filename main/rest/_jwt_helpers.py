@@ -4,7 +4,8 @@ import json
 from okta_jwt_verifier import AccessTokenVerifier, IDTokenVerifier
 
 
-loop = asyncio.get_event_loop()
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
 
 def is_access_token_valid(token, issuer):
