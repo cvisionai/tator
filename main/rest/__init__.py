@@ -62,6 +62,7 @@ from .media_type import MediaTypeDetailAPI
 from .membership import MembershipListAPI
 from .membership import MembershipDetailAPI
 from .notify import NotifyAPI
+from .oauth2 import Oauth2LoginAPI
 from .organization import OrganizationListAPI
 from .organization import OrganizationDetailAPI
 from .organization_upload_info import OrganizationUploadInfoAPI

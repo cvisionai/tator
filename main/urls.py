@@ -89,8 +89,9 @@ urlpatterns = [
 ]
 
 if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
-    urlpatterns += [
-        path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
+    urlpatterns.append(path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'))
+    if settings.OKTA_ENABLED:
+        urlpatterns.append(path('oauth2/login/', Oauth2LoginAPI.as_view(), name='oauth2'))
 
 if settings.TATOR_EMAIL_ENABLED:
     urlpatterns += [

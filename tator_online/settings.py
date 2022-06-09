@@ -279,28 +279,39 @@ if ANONYMOUS_REGISTRATION_ENABLED:
         
 SILENCED_SYSTEM_CHECKS = ['fields.W342']
 
-# Cognito configuration
-if os.path.exists("/cognito/cognito.yaml"):
-    with open("/cognito/cognito.yaml", "r") as cfile:
-        data = yaml.safe_load(cfile)
-        REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (*REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'], 'django_cognito_jwt.JSONWebTokenAuthentication')
-        COGNITO_AWS_REGION=data['aws-region']
-        COGNITO_USER_POOL=data['pool-id']
-        COGNITO_AUDIENCE=data['client-id']
-        COGNITO_DOMAIN=f"{data['domain-prefix']}.auth.{data['aws-region']}.amazoncognito.com"
-        COGNITO_USER_MODEL = 'main.User'
-        COGNITO_ENABLED=True
-else:
-    COGNITO_ENABLED=False
-
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# Cognito configuration
+COGNITO_ENABLED = os.getenv("COGNITO_ENABLED")
+COGNITO_ENABLED = (
+    COGNITO_ENABLED
+    and COGNITO_ENABLED.lower() == "true"
+    and os.path.exists("/cognito/cognito.yaml")
+)
+
+if COGNITO_ENABLED:
+    with open("/cognito/cognito.yaml", "r") as cfile:
+        data = yaml.safe_load(cfile)
+
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = (
+        *REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'],
+        'django_cognito_jwt.JSONWebTokenAuthentication',
+    )
+
+    COGNITO_AWS_REGION = data['aws-region']
+    COGNITO_USER_POOL = data['pool-id']
+    COGNITO_AUDIENCE = data['client-id']
+    COGNITO_DOMAIN = f"{data['domain-prefix']}.auth.{data['aws-region']}.amazoncognito.com"
+    COGNITO_USER_MODEL = 'main.User'
+
+# Okta configuration
 OKTA_ENABLED = os.getenv("OKTA_ENABLED")
-if OKTA_ENABLED and OKTA_ENABLED.lower() == "true":
+OKTA_ENABLED = OKTA_ENABLED and OKTA_ENABLED.lower() == "true"
+
+if OKTA_ENABLED:
     OKTA_OAUTH2_KEY = os.getenv("OKTA_OAUTH2_KEY")
     OKTA_OAUTH2_SECRET = os.getenv("OKTA_OAUTH2_SECRET")
     OKTA_OAUTH2_TOKEN_URI = os.getenv("OKTA_OAUTH2_TOKEN_URI")
     OKTA_OAUTH2_USERINFO_URI = os.getenv("OKTA_OAUTH2_USERINFO_URI")
     OKTA_OAUTH2_ISSUER = os.getenv("OKTA_OAUTH2_ISSUER")
-    OKTA_OAUTH2_REDIRECT_URI = os.getenv("OKTA_OAUTH2_REDIRECT_URI")
     OKTA_OAUTH2_AUTH_URI = os.getenv("OKTA_OAUTH2_AUTH_URI")

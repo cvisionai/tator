@@ -229,8 +229,6 @@ spec:
               value: {{ .Values.okta.oauth2_userinfo_uri }}
             - name: OKTA_OAUTH2_ISSUER
               value: {{ .Values.okta.oauth2_issuer }}
-            - name: OKTA_OAUTH2_REDIRECT_URI
-              value: {{ .Values.okta.oauth2_redirect_uri }}
             - name: OKTA_OAUTH2_AUTH_URI
               value: {{ .Values.okta.oauth2_auth_uri }}
             {{- else }}
