@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+import os
 import requests
 import logging
 
@@ -25,7 +26,7 @@ class Oauth2LoginAPI(APIView):
                 PROTO = "http"
             query_params_dict = {
                 "client_id": settings.OKTA_OAUTH2_KEY,
-                "redirect_uri": f"{PROTO}://{os.getenv('MAIN_HOST')}/jwt-gateway/",
+                "redirect_uri": f"{PROTO}://{os.getenv('MAIN_HOST')}/jwt-gateway",
                 "scope": "openid",
                 "state": "ApplicationState",
                 "nonce": "SampleNonce",
