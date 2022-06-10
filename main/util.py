@@ -995,7 +995,7 @@ def add_elemental_id(project, metadata_type):
         parent.elemental_id = uuid.uuid4()
         parent.save()
 
-    children_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=False, elemental_id__isnull=True)
+    children_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=False)
     for child in progressbar.progressbar(children_to_change):
         child.elemental_id = child.parent.elemental_id
         child.save()
