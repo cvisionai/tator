@@ -33,8 +33,6 @@ export class AnnotationImage extends TatorElement {
   }
 
   set mediaInfo(val) {
-    console.log("MEDIA INFO");
-    console.log(val);
     this._image.mediaInfo = val;
   }
 

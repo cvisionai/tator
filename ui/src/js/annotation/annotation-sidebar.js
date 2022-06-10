@@ -49,9 +49,6 @@ export class AnnotationSidebar extends TatorElement {
     this._indicator.setAttribute("class", "annotation__shape-indicator");
     this._div.appendChild(this._indicator);
 
-    // this._appletDiv = document.createElement("div");
-    // this._div.appendChild(this._appletDiv);
-
     this._edit.addEventListener("click", () => {
       this._selectButton(this._edit);
       this.dispatchEvent(new Event("default"));
@@ -109,9 +106,6 @@ export class AnnotationSidebar extends TatorElement {
   set localizationTypes(val) {
     if (typeof val.box !== "undefined") {
       this._box.addEventListener("click", (evt) => {
-        console.log("BOX CLICKED");
-        console.log(evt);
-
         this._selectButton(this._box, evt.shiftKey);
         this.dispatchEvent(new CustomEvent("newMeta", {
           detail: {typeId: val.box[0].id,

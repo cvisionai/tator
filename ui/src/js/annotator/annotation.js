@@ -129,7 +129,7 @@ export class PolyMaker
         this._ctrl._canvas.dispatchEvent(
           new CustomEvent("drawComplete",
                     {composed: true,
-                     detail: {metaMode: this._ctrl._metaMode, dragEvent: fakeDrag, type}
+                      detail: {metaMode: this._ctrl._metaMode}
                     }));
         return;
       }
@@ -2843,7 +2843,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode : this._metaMode, dragEvent, type}
+                        detail: {metaMode : this._metaMode}
                       }
                      ));
           this._dragHandler.onMouseUp(dragEvent);
@@ -3466,7 +3466,6 @@ export class AnnotationCanvas extends TatorElement
   // objId given if this is to redraw an existing annotation
   newMetadataItem(typeId, metaMode, obj)
   {
-    console.log("Type id "+typeId)
     if ("pause" in this) {
       this.dispatchEvent(new Event("pause"));
     }
@@ -3542,13 +3541,6 @@ export class AnnotationCanvas extends TatorElement
                           hideCb)
   {
     const requestObj={};
-    console.log("makeModalCreationPrompt objDescription & dragInfo");
-    console.log(dragInfo);
-    console.log(this.activeLocalization);
-
-    const img = document.createElement("image");
-    img.src = dragInfo.url;
-    this.appendChild(img);
 
     if (dragInfo)
     {
@@ -3597,6 +3589,7 @@ export class AnnotationCanvas extends TatorElement
 
       requestObj.frame = this.currentFrame();
     }
+
 
     if (this._redrawObj !== null && typeof this._redrawObj !== "undefined") {
       // Only do cloning if the object selected is in a parent layer to the selected version.
@@ -4159,14 +4152,14 @@ export class AnnotationCanvas extends TatorElement
         this._canvas.dispatchEvent(
           new CustomEvent("drawComplete",
                     {composed: true,
-                     detail: {metaMode: this._metaMode, dragEvent}
+                      detail: {metaMode: this._metaMode}
                     }));
         if (this._overrideState == MouseMode.NEW_POLY)
         {
           this._canvas.dispatchEvent(
                         new CustomEvent("modeChange",
                                   {composed: true,
-                                  detail: {newMode: "new_poly", metaMode: this._metaMode, type}
+                                    detail: {newMode: "new_poly", metaMode: this._metaMode}
                                   }));
         }
       }
@@ -4202,7 +4195,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode: this._metaMode, dragEvent, type}
+                       detail: {metaMode: this._metaMode}
                       }));
         }
         else
@@ -4225,7 +4218,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode: this._metaMode, dragEvent, type}
+                        detail: {metaMode: this._metaMode}
                       }));
         }
         else
@@ -4832,21 +4825,24 @@ export class AnnotationCanvas extends TatorElement
   }
 
   makeOffscreenDownloadable(localizations, filename)
-  {
-    const width = this._offscreen.width;
-    const height = this._offscreen.height;
-
-    this._offscreenDraw.clearRect(0,0,width,height);
-    this._offscreenDraw.dispImage(true, !localizations);
-
-    this._offscreen.convertToBlob().then(
-      (png_data) =>
+  {   
+    this.getPNGdata(localizations).then((png_data) =>
         {
           var png_file = URL.createObjectURL(png_data);
           var anchor = document.createElement('a');
           anchor.href=png_file;
           anchor.download=`${filename}.png`;
           anchor.click();
-        });
+      });
+  }
+
+  getPNGdata(localizations) {
+    const width = this._offscreen.width;
+    const height = this._offscreen.height;
+
+    this._offscreenDraw.clearRect(0,0,width,height);
+    this._offscreenDraw.dispImage(true, !localizations);
+
+    return this._offscreen.convertToBlob();
   }
 }

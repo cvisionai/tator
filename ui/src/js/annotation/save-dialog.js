@@ -121,9 +121,6 @@ export class SaveDialog extends TatorElement {
   // Save the underlying object to the database
   saveObject(requestObj, values)
   {
-    console.log("SAVE OBJECT!");
-    console.log(requestObj);
-    
     // Defensively program against null attribute values
     if (values == undefined || values == null)
     {
