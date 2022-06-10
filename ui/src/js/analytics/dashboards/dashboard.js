@@ -53,8 +53,6 @@ export class RegisteredDashboard extends TatorPage {
       window.history.pushState(e.detail.state, '', `${window.location.origin}${window.location.pathname}?${params}`);
     }
 
-
-
     window.addEventListener('hashchange', this.hashHandler.bind(this), false);
   }
 

@@ -102,6 +102,8 @@ server {
     autoindex off;
     add_header Cache-Control "max-age=3600, must-revalidate";
     add_header 'Access-Control-Allow-Headers' 'Authorization' always;
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy require-corp;
     
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}

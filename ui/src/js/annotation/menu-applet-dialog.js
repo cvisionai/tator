@@ -162,7 +162,6 @@ export class MenuAppletDialog extends ModalDialog {
     });
 
     this._appletElement.addEventListener("refreshDataType", (evt) => {
-
       // Get the key expected by the annotation data interface (e.g. box_1)
       // and use that to get the data type object
       const dataType = evt.detail.dataType;
