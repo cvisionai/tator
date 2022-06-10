@@ -61,12 +61,17 @@ def _get_mapping_values(entity_type, attributes):
     mapping_values = {}
     mapping_types = {}
 
-    # Handle tator_user_sections
-    name = "tator_user_sections"
-    value = attributes.get(name)
-    if value is not None:
-        mapping_values[name] = str(value).replace("\\", "\\\\")
-        mapping_types[name] = "text"
+    # Handle all internal fields
+    internal_fields = ["tator_user_sections", "_annotation_version", "_variant_deleted"]
+    internal_types = ["text", "long", "boolean"]
+    for name, field_type in zip(internal_fields, internal_types):
+        value = attributes.get(name)
+        if value is not None:
+            if field_type == "text":
+                mapping_values[name] = str(value).replace("\\", "\\\\")
+            else:
+                mapping_values[name] = value
+            mapping_types[name] = field_type
 
     if entity_type.attribute_types is None:
         return mapping_values, mapping_types
