@@ -281,7 +281,7 @@ class TatorUserManager(UserManager):
 class User(AbstractUser):
     objects=TatorUserManager()
     cognito_id = UUIDField(primary_key=False, db_index=True, null=True, blank=True, editable=False)
-    okta_id = UUIDField(primary_key=False, db_index=True, null=True, blank=True, editable=False)
+    okta_id = CharField(max_length=32, primary_key=False, db_index=True, null=True, blank=True, editable=False)
     middle_initial = CharField(max_length=1)
     initials = CharField(max_length=3)
     last_login = DateTimeField(null=True, blank=True)
