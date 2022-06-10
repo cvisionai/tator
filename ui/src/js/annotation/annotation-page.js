@@ -430,6 +430,7 @@ export class AnnotationPage extends TatorPage {
 
   _setupInitHandlers(canvas) {
     this._canvas = canvas;
+
     const _handleQueryParams = () => {
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
@@ -936,7 +937,6 @@ export class AnnotationPage extends TatorPage {
           this._settings.setAttribute("type-id", evt.detail.meta);
         });
         this._undo.addEventListener("update", evt => {
-
           // Force selecting this new entity in the browser if a new object was created
           // when the data is retrieved (ie freshData event)
           if (evt.detail.method == "POST") {
@@ -1147,8 +1147,7 @@ export class AnnotationPage extends TatorPage {
    });
   }
 
-  _setupAnnotatorMenuApplets(canvas) {
-
+  _setupAnnotatorApplets(canvas, canvasElement) {
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
@@ -1184,10 +1183,17 @@ export class AnnotationPage extends TatorPage {
     .then(response => response.json())
     .then(applets => {
       for (let applet of applets) {
+        // Init for annotator menu applets
         if (applet.categories != null && applet.categories.includes("annotator-menu")) {
           // Add the applet to the dialog
           this._menuAppletDialog.saveApplet(applet);
           canvas.addAppletToMenu(applet.name);
+        }
+         // Init for annotator tools applets
+        if (applet.categories != null && applet.categories.includes("annotator-tools")) {
+          // This puts the tools html into a panel next to the sidebar
+          const toolAppletPanel = document.createElement("tools-applet-panel");
+          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);        
         }
       }
     });
@@ -1195,7 +1201,7 @@ export class AnnotationPage extends TatorPage {
 
   _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
 
-    this._setupAnnotatorMenuApplets(canvas);
+    this._setupAnnotatorApplets(canvas, canvasElement);
 
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
