@@ -199,6 +199,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if apply_merge:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)
+
+    show_deleted = params.get('showDeleted')
+    if not show_deleted:
         qs = ANNOTATION_LOOKUP[annotation_type].objects\
                          .filter(pk__in=qs.values_list('pk', flat=True))\
                          .filter(variant_deleted=False)
@@ -248,10 +251,12 @@ def get_annotation_queryset(project, params, annotation_type):
         if apply_merge:
             parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
             qs = qs.difference(parent_set)
+
+        show_deleted = params.get('showDeleted')
+        if not show_deleted:
             qs = ANNOTATION_LOOKUP[annotation_type].objects\
                          .filter(pk__in=qs.values_list('pk', flat=True))\
                          .filter(variant_deleted=False)
-
         qs = qs.order_by('id')
     else:
         # If using PSQL, construct the queryset.
@@ -269,10 +274,16 @@ def get_annotation_count(project, params, annotation_type):
 
         # Apply merge if no pagination.
         apply_merge = params.get('merge')
-        if apply_merge:
+        show_deleted = params.get('showDeleted')
+        if apply_merge or not show_deleted:
             qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
-            parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
-            qs = qs.difference(parent_set)
+            if apply_merge:
+                parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
+                qs = qs.difference(parent_set)
+            if not show_deleted:
+                qs = ANNOTATION_LOOKUP[annotation_type].objects\
+                            .filter(pk__in=qs.values_list('pk', flat=True))\
+                            .filter(variant_deleted=False)
             count = qs.count()
         else:
             count = len(annotation_ids)
