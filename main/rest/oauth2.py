@@ -27,7 +27,7 @@ class Oauth2LoginAPI(APIView):
             query_params_dict = {
                 "client_id": settings.OKTA_OAUTH2_KEY,
                 "redirect_uri": f"{PROTO}://{os.getenv('MAIN_HOST')}/jwt-gateway",
-                "scope": "openid",
+                "scope": "openid profile email",
                 "state": "ApplicationState",
                 "nonce": "SampleNonce",
                 "response_type": "code",

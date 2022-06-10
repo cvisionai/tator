@@ -251,7 +251,6 @@ okta:
   oauth2_key: "fill me in"
   oauth2_secret: "fill me in"
   oauth2_token_uri: "fill me in"
-  oauth2_userinfo_uri: "fill me in"
   oauth2_issuer: "fill me in"
   oauth2_auth_uri: "fill me in"
 email:

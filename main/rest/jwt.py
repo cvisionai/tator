@@ -12,7 +12,6 @@ from ._jwt_helpers import is_access_token_valid, is_id_token_valid
 from ..models import User
 from ..schema import JwtGatewaySchema
 
-from pprint import pformat
 import requests
 import logging
 
@@ -110,11 +109,6 @@ class JwtGatewayAPI(APIView):
 
                 # Authorization flow successful, get userinfo
                 jwt_payload = JWTUtils.parse_token(id_token)[1]
-                logger.info(pformat(jwt_payload))
-                # jwt_payload = requests.get(
-                #     settings.OKTA_OAUTH2_USERINFO_URI,
-                #     headers={"Authorization": f"Bearer {access_token}"},
-                # ).json()
             except Exception as e:
                 return Response({"message": "invalid token"}, status=status.HTTP_404_NOT_FOUND)
         else:

@@ -225,8 +225,6 @@ spec:
               value: {{ .Values.okta.oauth2_secret }}
             - name: OKTA_OAUTH2_TOKEN_URI
               value: {{ .Values.okta.oauth2_token_uri }}
-            - name: OKTA_OAUTH2_USERINFO_URI
-              value: {{ .Values.okta.oauth2_userinfo_uri }}
             - name: OKTA_OAUTH2_ISSUER
               value: {{ .Values.okta.oauth2_issuer }}
             - name: OKTA_OAUTH2_AUTH_URI
