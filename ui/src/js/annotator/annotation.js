@@ -1824,7 +1824,7 @@ export class AnnotationCanvas extends TatorElement
         event.stopPropagation();
         if (event.shiftKey == true)
         {
-          this.advanceOneSecond();
+          this.advanceOneSecond(true);
         }
         else
         {
@@ -1838,7 +1838,7 @@ export class AnnotationCanvas extends TatorElement
         event.stopPropagation();
         if (event.shiftKey == true)
         {
-          this.backwardOneSecond();
+          this.backwardOneSecond(true);
         }
         else
         {
