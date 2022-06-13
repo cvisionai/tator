@@ -145,7 +145,7 @@ class TatorVideoManager {
 
   get keyframeOnly()
   {
-    this.keyframeOnly();
+    return this._keyframeOnly;
   }
 
   _on_message(msg)

@@ -1763,7 +1763,7 @@ export class VideoCanvas extends AnnotationCanvas {
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
 
     // We are actually in keyframe playback mode here
-    if (this._fps * this._playbackRate >= 16 * 15)
+    if (this._videoElement[index].playBuffer().keyframeOnly == true)
     {
       frameIncrement = this._playbackRate / 16;
     }
