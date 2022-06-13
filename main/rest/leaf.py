@@ -233,9 +233,15 @@ class LeafDetailAPI(BaseDetailView):
         # Patch common attributes.
         if 'name' in params:
             obj.name = params['name']
-            obj.save()
+        
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
+
+        # Change the parent of a leaf
+        if 'parent' in params:
+            obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
+            obj.path = obj.computePath()
+
         obj.save()
         log_changes(obj, model_dict, obj.project, self.request.user)
         return {'message': f'Leaf {params["id"]} successfully updated!'}
