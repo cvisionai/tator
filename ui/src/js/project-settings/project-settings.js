@@ -62,6 +62,18 @@ export class ProjectSettings extends TatorPage {
       "applet-edit",
     ];
 
+    // Web Components for this page by name
+    this.viewClassesByName = new Map();
+    this.viewClassesByName.set("MediaType", "media-type-main-edit")
+      .set("LocalizationType", "localization-edit")
+      .set("LeafType", "leaf-type-edit")
+      .set("StateType", "state-type-edit")
+      .set("Membership", "membership-edit")
+      .set("Version", "versions-edit")
+      .set("Algorithm", "algorithm-edit")
+      .set("Applet", "applet-edit");
+
+
     this._userIsStaff = false;
 
     // Modal parent - to pass to page components
@@ -148,12 +160,13 @@ export class ProjectSettings extends TatorPage {
           sidenav: this.settingsNav
         });
 
+
         // Add nav to that container
         this.settingsNav._addSimpleNav({
           name: formView._getHeading(),
           type: formView.typeName,
           id: objData.id,
-          selected: true
+          // selected: true
         });
 
         for (let i in this.settingsViewClasses) {
@@ -220,7 +233,7 @@ export class ProjectSettings extends TatorPage {
           // Make Algorithm job cluster new list before we add an empty row
           if (typeClassView.typeName == "Algorithm") {
             this._dataJobClusterList._setList("", true);
-          } 
+          }
 
           // init the form with the data
           typeClassView._init({
@@ -236,18 +249,66 @@ export class ProjectSettings extends TatorPage {
 
           headingEl.addEventListener("click", () => {
             // provide the class
-            this._sectionInit({ viewClass: tc })
+            this._sectionInit({ viewClass: tc }).then(() => {
+              headingEl.setAttribute("initialized", "true");
+              headingEl.dispatchEvent(new Event("initialized"));
+            });
           }, { once: true }); // just run this once
         }
+
+        
+        if (window.location.hash) {
+          this.moveToCurrentHash();
+        }
+        window.addEventListener("hashchange", this.moveToCurrentHash.bind(this));
+      
       });
   }
 
-  /* Gets the section list when it is expanded. */
-  async _sectionInit({ viewClass }) {
-    const formView = document.createElement(viewClass);
-    console.log(viewClass);
+  //
+  async moveToCurrentHash() {
+    let target = this.settingsNav._shadow.querySelector(`a[href="${window.location.hash}"]`);
 
-    formView._fetchGetPromise({ "id": this.projectId })
+    if (target && target.getAttribute("selected") == true) {
+      return false;
+    } else {
+      const hash = window.location.hash;
+      const toType = hash.split("-")[1];
+      console.log(`Hash to ${toType}: ${hash}`);
+  
+      if (toType != "Project") {
+        const headingEl = this.settingsNav._shadow.querySelector(`.toggle-subitems-${toType}`);
+
+        if (headingEl && headingEl.hasAttribute("initialized") && headingEl.getAttribute("initialized") == "true") {
+          headingEl.click();
+          target = this.settingsNav._shadow.querySelector(`a[href="${window.location.hash}"]`);
+          return target && target.click();
+        } else if(headingEl){
+          headingEl.click();
+  
+          headingEl.addEventListener("initialized", () => {
+            target = this.settingsNav._shadow.querySelector(`a[href="${window.location.hash}"]`);
+            return target && target.click();
+          }) 
+        } else {
+          //this hash isn't useful get away from that
+          window.history.pushState({}, '', window.location.pathname);
+          target = this.settingsNav._shadow.querySelector(`a[title="Project"]`);
+          return target && target.click();
+        }       
+      } else {
+        target = this.settingsNav._shadow.querySelector(`a[href="${window.location.hash}"]`);
+        return target && target.click();
+      }
+    }
+
+  }
+
+  /* Gets the section list when it is expanded. */
+  _sectionInit({ viewClass }) {
+    const formView = document.createElement(viewClass);
+
+    return formView._fetchGetPromise({ "id": this.projectId })
       .then((data) => {
         return data.json();
       }).then((objData) => {
@@ -280,7 +341,8 @@ export class ProjectSettings extends TatorPage {
         }
 
         // Add item containers for Types
-        const innerLinkText = formView.typeName == "LeafType" ? " > Add/Edit Leaves" : "";
+        const leafIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"/></g></svg>`;
+        const innerLinkText = formView.typeName == "LeafType" ? leafIcon+" Add/Edit Leaves" : "";
         this.makeContainers({
           objData,
           classBase: formView,

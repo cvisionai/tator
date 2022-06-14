@@ -90,7 +90,7 @@ export class LeafForm extends TatorElement {
 
     this._parentLeaf = document.createElement("enum-input");
     this._parentLeaf.setAttribute("name", "Parent");
-    this._parentLeaf.permission = "View Only";
+    // this._parentLeaf.permission = "View Only";
     this._parentLeaf.choices = choices;
     this.form.appendChild(this._parentLeaf);
 
@@ -146,13 +146,9 @@ export class LeafForm extends TatorElement {
     this._path.setValue(path);
 
     // Set parent
-    if (parent == "null") {
-      this._parentLeaf.default = Number(parent);
-      this._parentLeaf.setValue(Number(parent));      
-    } else {
-      this._parentLeaf.default = "null";
-      this._parentLeaf.setValue("null");     
-    }
+    const parentValue = parent == "null" ? "null" : Number(parent);
+    this._parentLeaf.default = parentValue
+    this._parentLeaf.setValue(parentValue);  
 
     //
     for (const widget of this.widgets) {

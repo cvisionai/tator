@@ -78,7 +78,8 @@ export class SettingsNav extends TatorElement {
 
     if (e.detail.typeName == "LeafType") {
       const subNavInnerLinkSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`;
-      let subNavInnerLink = this.getSubItem(obj, e.detail.typeName, subNavInnerLinkSelector, " > Add/Edit Leaves");
+      const leafIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"/></g></svg>`;
+      let subNavInnerLink = this.getSubItem(obj, e.detail.typeName, subNavInnerLinkSelector, leafIcon+" Manage");
       addNewNode.before(subNavInnerLink);    
     }
 
@@ -269,7 +270,6 @@ export class SettingsNav extends TatorElement {
         }
 
         //
-        console.log(innerLinkText);
         if (innerLinkText !== "") {
           let innerSelector = `#itemDivId-${type}-${obj.id}_inner`
           let innerSubNavLink = this.getSubItem(obj, type, innerSelector, innerLinkText);
@@ -315,12 +315,15 @@ export class SettingsNav extends TatorElement {
     let subItemText = obj.name ? obj.name : (obj.username ? obj.username : obj.email);
 
     subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
-    subNavLink.style.paddingLeft = "44px";
+    
     subNavLink.href = itemIdSelector;
     subNavLink.innerHTML = innerLinkText !== "" ? innerLinkText : subItemText;
 
     if (innerLinkText !== "") {
-      subNavLink.style.padding = "5px 0px 15px 54px";
+      subNavLink.style.paddingTop = "0px";
+      subNavLink.style.margin = "0 0 5px 44px";
+    } else {
+      subNavLink.style.paddingLeft = "44px";
     }
 
     // Sub Nav Links
@@ -344,11 +347,13 @@ export class SettingsNav extends TatorElement {
   }
 
   toggleItemContainer({ itemIdSelector = ``} = {}){
-    let targetEl = this._shadow.querySelector( itemIdSelector );
+    let targetEl = this._shadow.querySelector(itemIdSelector);
+    
     if(targetEl){
       // Hide all other item containers
       let currentSelected = this._shadow.querySelector('.item-box:not([hidden])');
       this.hide(currentSelected);
+      window.history.pushState({}, '', itemIdSelector);
       return this.show( targetEl );
     } else {
       Utilities.warningAlert("Could not find selected nav item", "#ff3e1d", false);
