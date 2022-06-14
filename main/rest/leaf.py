@@ -229,6 +229,7 @@ class LeafDetailAPI(BaseDetailView):
     def _patch(self, params):
         obj = Leaf.objects.get(pk=params['id'], deleted=False)
         model_dict = obj.model_dict
+        grandparent = obj.parent
 
         # Patch common attributes.
         if 'name' in params:
@@ -238,9 +239,19 @@ class LeafDetailAPI(BaseDetailView):
         obj = patch_attributes(new_attrs, obj)
 
         # Change the parent of a leaf
-        if 'parent' in params:
-            obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
+        if 'parent' in params and params['parent'] != params['id']:
+            children = Leaf.objects.filter(parent=obj.id, deleted=False)
+            if params['parent'] == None or params['parent'] == -1:
+                obj.parent = None
+            else:
+                obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
             obj.path = obj.computePath()
+            obj.save()
+
+            #Update child path, or parent
+            newparent = params['parent']
+            self._update_children_newparent(self, children, grandparent, newparent)
+            
 
         obj.save()
         log_changes(obj, model_dict, obj.project, self.request.user)
@@ -249,6 +260,12 @@ class LeafDetailAPI(BaseDetailView):
     def _delete(self, params):
         leaf = Leaf.objects.get(pk=params['id'], deleted=False)
         project = leaf.project
+
+        parent = leaf.id
+        grandparent = leaf.parent
+        children = Leaf.objects.filter(parent=parent, deleted=False)
+        self._update_children_delparent(self, children, grandparent, leaf.id)
+
         model_dict = leaf.model_dict
         delete_and_log_changes(leaf, project, self.request.user)
         TatorSearch().delete_document(leaf)
@@ -256,3 +273,41 @@ class LeafDetailAPI(BaseDetailView):
 
     def get_queryset(self):
         return Leaf.objects.all()
+
+    @staticmethod
+    def _update_children_newparent(self, children, grandparent, newparent):
+        for child in children:
+            child_model_dict = child.model_dict
+
+            # if a child is the newParent
+            if child.id == newparent:
+                if grandparent == None:
+                    child.parent = None 
+                else:
+                    child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
+            
+            child.path = child.computePath()
+            child.save()
+            log_changes(child, child_model_dict, child.project, self.request.user)
+
+            inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
+            if inner_children and len(inner_children) > 0:
+                self._update_children_newparent(self, inner_children, newparent, child.parent)
+
+    @staticmethod
+    def _update_children_delparent(self, children, grandparent, parent):
+        for child in children:
+            child_model_dict = child.model_dict
+
+            if grandparent == None:
+                child.parent = None
+            else:
+                child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
+            
+            child.path = child.computePath()
+            child.save()
+            log_changes(child, child_model_dict, child.project, self.request.user)
+
+            inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
+            if inner_children and len(inner_children) > 0:
+                self._update_children_newparent(self, inner_children, parent, child.parent)
