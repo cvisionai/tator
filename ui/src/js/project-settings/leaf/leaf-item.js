@@ -32,7 +32,7 @@ export class LeafItem extends TatorElement {
       this.innerLeafBox.appendChild(this.leafCurrent);
 
       this.editIcon = document.createElement("div");
-      this.editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+      this.editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
       
       this.editIcon.setAttribute("class", "clickable text-gray hover-text-white py-2 px-2");
       this.innerLeafBox.appendChild(this.editIcon);
@@ -46,9 +46,10 @@ export class LeafItem extends TatorElement {
 
    }
 
-   _init(leaf) {
+   _init(leaf, leafMain) {
       this.leaf = leaf;
       this.innerLeafBox.setAttribute("leafid", leaf.id)
+      this.leafMain = leafMain;
 
       if (leaf.expands) {
          this.leafIndent.appendChild(this.minusIcon);
@@ -88,21 +89,30 @@ export class LeafItem extends TatorElement {
       this.innerLeafBox.style.opacity = '0.4';
 
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData("text/plain", this.leaf.id);
+      
+      const forLeaf = this.leaf.id;
+      const newParent = null;
+      const data = {forLeaf,newParent};
+
+      console.log(`handleDragStart:Move ${forLeaf} to a no parent yet, newparent: ${newParent}`);
+      this.leafMain.movingEl = forLeaf;
+      e.dataTransfer.setData("text/plain", JSON.stringify(data));
    }
  
    handleDragEnd(e) {
       this.innerLeafBox.style.opacity = '1';
       this.leafName.style.border = "none";
-      // this.dispatchEvent("drag-end");
+      this.leafMain.leafBox.style.border = "none";
    }
    
    handleDragEnter(e) {
       this.leafName.style.border = "3px dotted #333";
+      this.leafMain.leafBox.style.border = "none";
    }
    
    handleDragOver(e) {
       e.preventDefault();
+      this.leafMain.leafBox.style.border = "none";
       return false;
     }
   
@@ -115,11 +125,15 @@ export class LeafItem extends TatorElement {
       e.stopPropagation(); // stops the browser from redirecting.
       console.log("Leaf Item handle drop");
       this.leafName.style.border = "none";
-      const newParent = this.leaf.id;
-      const forLeaf = e.dataTransfer.getData("text/plain");
+      
+      const textData = e.dataTransfer.getData("text/plain");
+      console.log(textData);
 
-      console.log(`Move ${forLeaf} to a new parent ${newParent}?`);
-      this.dispatchEvent(new CustomEvent("new-parent", { detail: {newParent, forLeaf} }));
+      const data = JSON.parse(textData);
+      data.newParent = this.leaf.id;
+
+      console.log(`Move ${data.forLeaf} to a new parent ${data.newParent}?`);
+      this.dispatchEvent(new CustomEvent("new-parent", { detail: data }));
 
       return false;
    }

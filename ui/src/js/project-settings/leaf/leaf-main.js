@@ -26,6 +26,8 @@ export class LeafMain extends HTMLElement {
 
     this.leafForms = [];
     this.hasChanges = false;
+
+    this.movingEl = null;
   }
 
   resetChanges(){
@@ -116,7 +118,6 @@ export class LeafMain extends HTMLElement {
 
   _getLeavesSection(leaves = []){
     let leavesSection = document.createElement("div");
-    // leavesSection.setAttribute("class", "d-flex");
 
     if(leaves && leaves.length > 0){
       const heading = document.createElement("h3");
@@ -132,42 +133,8 @@ export class LeafMain extends HTMLElement {
       leafList.setAttribute("class", `leaves-edit--list`);
       leavesSection.appendChild(leafList);
 
-      // re-arrange order and set indent depth
-      this._parents = new Map();
-      this._levels = new Map();
-      this._outputOrder = [];
-      for (let i in leaves) {       
-        const indent = leaves[i]["path"].split(".").length - 2;
-        leaves[i].indent = indent;
-
-        // Group parent + child relationships
-        if (leaves[i].parent) {
-          if (this._parents.has(leaves[i].parent)) {
-            const array = this._parents.get(leaves[i].parent);
-            array.push(leaves[i]);
-            this._parents.set(leaves[i].parent, array);
-          } else {
-            this._parents.set(leaves[i].parent, [leaves[i]]);
-          }
-        }
-
-        // Group level relationships (set up highest levels first)
-        if (this._levels.get(indent)) {
-          const array = this._levels.get(indent);
-          array.push(leaves[i]);
-          this._levels.set(indent, array);
-        } else {
-          this._levels.set(indent, [leaves[i]]);
-        }
-      }
-
-
-      for (const item of this._levels.get(0)) {
-        this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
-      }
-      this._leaves = this._outputOrder;
-
-      //
+      // Sets variable for output order, and levels
+      this._getOrganizedLeaves(leaves);
       const highestLevel = this._levels.size - 1;
 
       // Loop through and output leaf forms
@@ -182,9 +149,90 @@ export class LeafMain extends HTMLElement {
 
         leafList.appendChild( leafContent );
       }
+
+
+      // Add drop listener on outer box once
+      this.leafBox.addEventListener('dragleave', this.leafBoxStart.bind(this));
+      this.leafBox.addEventListener('dragleave', this.leafBoxLeave.bind(this));
+      this.leafBox.addEventListener("dragover", this.leafBoxEnter.bind(this));
+      this.leafBox.addEventListener("dragenter", this.leafBoxEnter.bind(this));
+      this.leafBox.addEventListener("drop", this.leafBoxDrop.bind(this));
     }
 
     return leavesSection;
+  }
+
+  _getOrganizedLeaves(leaves) {
+    // Reset variables for leaf main
+    this._parents = new Map();
+    this._levels = new Map();
+    this._outputOrder = [];
+    
+    // Alphabetize first
+    leaves = leaves.sort((a, b) => {
+      if(a.name < b.name) { return -1; }
+      if(a.name > b.name) { return 1; }
+      return 0;
+    });
+
+    // Arrange order and set indent depth
+    for (let i in leaves) {       
+      const indent = leaves[i]["path"].split(".").length - 2;
+      leaves[i].indent = indent;
+
+      // Group parent + child relationships
+      if (leaves[i].parent) {
+        if (this._parents.has(leaves[i].parent)) {
+          const array = this._parents.get(leaves[i].parent);
+          array.push(leaves[i]);
+          this._parents.set(leaves[i].parent, array);
+        } else {
+          this._parents.set(leaves[i].parent, [leaves[i]]);
+        }
+      }
+
+      // Group level relationships (set up highest levels first)
+      if (this._levels.get(indent)) {
+        const array = this._levels.get(indent);
+        array.push(leaves[i]);
+        this._levels.set(indent, array);
+      } else {
+        this._levels.set(indent, [leaves[i]]);
+      }
+    }
+
+    // Return the level 1 items
+    for (const item of this._levels.get(0)) {
+      this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
+    }
+
+    return this._outputOrder;
+  }
+
+  leafBoxStart(e) {
+    const textData = e.dataTransfer.getData("text/plain");
+    console.log(textData);
+ }
+
+  leafBoxDrop(e) {
+    console.log("this.leafBox handle drop");
+    e.preventDefault();
+    e.stopPropagation(); // stops the browser from redirecting.
+    this.leafBox.style.border = "none";
+    
+    console.log(`leafBoxDrop: Move ${this.movingEl} to no parent?`);
+    // console.log(e.dataTransfer);
+    this.moveLeaf({ detail: {newParent: -1, forLeaf: this.movingEl} });
+  }
+
+  leafBoxLeave(e) {
+    e.preventDefault();
+    this.leafBox.style.border = "none";
+  }
+
+  leafBoxEnter(e) {
+    e.preventDefault();
+    this.leafBox.style.border = "3px dotted #333";
   }
 
   _recursiveChildren(item, carryOver = []) {
@@ -246,7 +294,8 @@ export class LeafMain extends HTMLElement {
 
   _getAddForm(){
     let form = document.createElement("leaf-form");
-    form._initEmptyForm(this._leaves, this.projectNameClean, this.attributeTypes);
+    const leaves = this._getOrganizedLeaves(this._leaves);
+    form._initEmptyForm(leaves, this.projectNameClean, this.attributeTypes);
     form.fromType = this.typeId;
 
     let submitLeaf = document.createElement("input");
@@ -390,11 +439,11 @@ export class LeafMain extends HTMLElement {
 
   leavesOutput({
     leaves = [],
-      leaf = {},
+    leaf = {},
     leafId = undefined
   } = {}){
     const leafItem = document.createElement("leaf-item");
-    leafItem._init(leaf);
+    leafItem._init(leaf, this);
     this.leafBox.setAttribute("draggable", true);
     this.leafBox.appendChild(leafItem);
 
@@ -429,34 +478,10 @@ export class LeafMain extends HTMLElement {
 
     leafItem.addEventListener("new-parent", this.moveLeaf.bind(this));
 
-    this.leafBox.addEventListener('dragleave', (e) => {
-      e.target.style.border = "none";
-    });
-
-    this.leafBox.addEventListener("dragenter", (e) => {
-      e.target.style.border = "3px dotted #333";
-    });
-
-    this.leafBox.addEventListener("dragend", (e) => {
-      this.innerLeafBox.style.opacity = '1';
-      this.leafName.style.border = "none";
-      // this.dispatchEvent("drag-end");
-    // });
-
-  //   this.leafBox.addEventListener("drop", (e) => {
-      e.stopPropagation(); // stops the browser from redirecting.
-      console.log("this.leafBox handle drop");
-      this.innerLeafBox.style.border = "none";
-      this.leafBox.style.border = "3px dotted #333";
-      const newParent = null;
-      const forLeaf = e.dataTransfer.getData("text/plain");
-
-      console.log(`Move ${forLeaf} to a new parent ${newParent}?`);
-      this.moveLeaf({ detail: {newParent: null, forLeaf} });
-    });
-
     return leafItem;
   }
+
+
 
   moveLeaf(e) {
     const forLeaf = e.detail.forLeaf;
@@ -464,7 +489,7 @@ export class LeafMain extends HTMLElement {
 
     if (forLeaf == newParent) {
       return false;
-    } else {
+    } else if (Number.isInteger(forLeaf)) {
       let leafSave = document.createElement("input");
       leafSave.setAttribute("type", "submit");
       leafSave.setAttribute("value", "Yes");
@@ -481,13 +506,21 @@ export class LeafMain extends HTMLElement {
         return this._fetchLeafPatchPromise(this.fromId, data);
       }, { once: true });
 
+      let message = ""
+      if (newParent == -1) {
+        message = `Move leaf ${forLeaf} to the top level? All children will also move and have updated paths.`;
+      } else {
+        message = `Make leaf ${newParent} the new parent for ${forLeaf}? All children will also move and have updated paths.`;
+      }
 
       this.boxHelper._modalConfirm({
         "titleText": `Confirm move`,
-        "mainText": `Make leaf ${newParent} the new parent for ${forLeaf}? All children will also move and have updated paths.`,
+        "mainText": message,
         "buttonSave": leafSave,
         "scroll": true
       });
+    } else {
+      console.error("The ids given for the move were not valid integers.")
     }
   }
 

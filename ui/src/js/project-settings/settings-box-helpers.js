@@ -200,7 +200,6 @@ export class SettingsBox {
     buttonSave = document.createElement("button"),
     scroll = true
   } = {}){
-    console.log(this.modal._titleDiv);
     this._modalClear();
     this.modal._titleDiv.innerHTML = titleText;
 
