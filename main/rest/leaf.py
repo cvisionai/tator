@@ -237,20 +237,22 @@ class LeafDetailAPI(BaseDetailView):
         
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
+        obj.save()
 
         # Change the parent of a leaf
-        if 'parent' in params and params['parent'] != params['id']:
-            children = Leaf.objects.filter(parent=obj.id, deleted=False)
-            if params['parent'] == None or params['parent'] == -1:
-                obj.parent = None
-            else:
-                obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
-            obj.path = obj.computePath()
-            obj.save()
+        if 'parent' in params:
+            if params['parent'] != params['id']:
+                children = Leaf.objects.filter(parent=obj.id, deleted=False)
+                if params['parent'] == None or params['parent'] == -1:
+                    obj.parent = None
+                else:
+                    obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
+                obj.path = obj.computePath()
+                obj.save()
 
-            #Update child path, or parent
-            newparent = params['parent']
-            self._update_children_newparent(self, children, grandparent, newparent)
+                #Update child path, or parent
+                newparent = params['parent']
+                self._update_children_newparent(self, children, grandparent, newparent)
             
 
         obj.save()

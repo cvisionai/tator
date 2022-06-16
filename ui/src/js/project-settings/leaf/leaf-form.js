@@ -146,8 +146,8 @@ export class LeafForm extends TatorElement {
     this._path.setValue(path);
 
     // Set parent
-    const parentValue = parent == "null" ? "null" : Number(parent);
-    this._parentLeaf.default = parentValue
+    const parentValue = parent == null ? "null" : Number(parent);
+    this._parentLeaf.default = parentValue;
     this._parentLeaf.setValue(parentValue);  
 
     //

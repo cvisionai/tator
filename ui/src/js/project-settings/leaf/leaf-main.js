@@ -133,7 +133,7 @@ export class LeafMain extends HTMLElement {
       leavesSection.appendChild(this._helperText);
 
       this._helperLinks = document.createElement("p");
-      this._helperLinks.setAttribute("class", "f2 text-gray pb-3 edit-project__h1 text-normal text-gray py-2");
+      this._helperLinks.setAttribute("class", "f2 text-gray pb-3 text-normal text-gray py-3");
       leavesSection.appendChild(this._helperLinks);
 
       const expandAll = document.createElement("a");
@@ -301,7 +301,12 @@ export class LeafMain extends HTMLElement {
     console.log(`If this isn't over me, don't be dotty... `);
     console.log(e.target);
     console.log(this.leafBox);
-    this.leafBox.style.border = "3px dotted #333";
+    if (!e.target.classList.has("edit-project__config")) {
+      this.leafBox.style.border = "3px dotted #333";    
+    } else {
+      this.leafBox.style.border = "none";    
+    }
+
   }
 
   _recursiveChildren(item, carryOver = []) {
@@ -371,7 +376,7 @@ export class LeafMain extends HTMLElement {
 
     if (parentLeafId !== null) {
       // Set parent
-      const parentValue = parentLeafId == "null" ? "null" : Number(parentLeafId);
+      const parentValue = parentLeafId == null ? "null" : Number(parentLeafId);
       form._parentLeaf.default = parentValue;
       form._parentLeaf.setValue(parentValue);
     }
