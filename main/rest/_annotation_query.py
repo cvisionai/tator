@@ -42,8 +42,8 @@ def get_annotation_es_query(project, params, annotation_type):
     elemental_id = params.get('elementalId')
 
     if apply_merge and (start or stop):
-        raise Exception("Elasticsearch based queries with pagination are incompatible with "
-                        "'merge'!")
+        raise Exception(f"Elasticsearch based queries with pagination are incompatible with "
+                        f"'merge'! PARAMS={params}")
 
     if state_ids and (annotation_type == 'localization'):
         raise Exception("Elasticsearch based localization queries do not support 'state_ids'!")
