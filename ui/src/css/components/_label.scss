@@ -115,3 +115,15 @@
   // stylelint-disable-next-line primer/borders
   border-color: $pink-400;
 }*/
+
+.leaf-edit-icon:after{
+  content: "Edit";
+  display: block;
+  font-size: 10px;
+}
+
+.leaf-delete-icon:after{
+  content: "Delete";
+  display: block;
+  font-size: 10px;
+}

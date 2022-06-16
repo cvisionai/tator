@@ -103,6 +103,21 @@ export class TypeForm extends TatorElement {
       const h1_id = document.createTextNode(` (ID ${this.data.id})`);
       this.id_span.appendChild(h1_id);
 
+      if (this.typeName == "LeafType") {
+        const sepLink = document.createElement("span");
+        sepLink.setAttribute("class", "px-2");
+        this.h1.appendChild(sepLink);
+        const h1_sepLink = document.createTextNode(`|`);
+        sepLink.appendChild(h1_sepLink);
+
+        this.edit_leaves = document.createElement("a");
+        this.edit_leaves.setAttribute("href", `#itemDivId-LeafType-${this.data.id}_inner`);
+        this.edit_leaves.setAttribute("class", "text-normal text-underlin text-purple");
+        this.h1.appendChild(this.edit_leaves);
+        const addOrEditLeaves = document.createTextNode(` Add/Edit Leaves`);
+        this.edit_leaves.appendChild(addOrEditLeaves);
+      }
+
 
       // Add form element to page
       if (!isReset) {

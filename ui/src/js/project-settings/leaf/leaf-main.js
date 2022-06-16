@@ -23,6 +23,7 @@ export class LeafMain extends HTMLElement {
 
     this._leaves = [];
     this._leafBoxes = new Map();
+    this._leavesMap = new Map();
 
     this.leafForms = [];
     this.hasChanges = false;
@@ -30,11 +31,11 @@ export class LeafMain extends HTMLElement {
     this.movingEl = null;
   }
 
-  resetChanges(){
+  resetChanges() {
     this.hasChanges = false;
   }
 
-  async _init({typeName, fromId, fromName, projectId, attributeTypes, modal, projectName, type}){
+  async _init({ typeName, fromId, fromName, projectId, attributeTypes, modal, projectName, type }) {
     // Init object global vars
     this.fromId = fromId;
     this.fromName = fromName;
@@ -53,11 +54,12 @@ export class LeafMain extends HTMLElement {
     this.appendChild(this.loadingImg);
 
     // Required helpers.
-    this.boxHelper = new SettingsBox( modal );
+    this.boxHelper = new SettingsBox(modal);
     this.refreshTypeEvent = new Event('settings-refresh');
 
-    this.h1 = document.createElement("h1");
-    this.h1.setAttribute("class", "h3 pb-3 edit-project__h1");
+    this.h1 = document.createElement("a");
+    this.h1.setAttribute("href", `#itemDivId-LeafType-${this.fromId}`);
+    this.h1.setAttribute("class", "h3 pb-3 edit-project__h1 clickable text-white");
     this.h1_name = document.createTextNode(`${this.fromName} `);
     this.h1.appendChild(this.h1_name);
     this.leafDiv.appendChild(this.h1);
@@ -89,45 +91,67 @@ export class LeafMain extends HTMLElement {
     // Section h2.
     this._h2 = document.createElement("span");
     this._h2.setAttribute("class", "h3 pb-3 edit-project__h1 text-normal text-gray");
-    const t = document.createTextNode(`Leaves`); 
+    const t = document.createTextNode(`Leaves`);
     this._h2.appendChild(t);
     this.h1.appendChild(this._h2);
 
     // Create a styled box & Add box to page
-    this.leafBox = this.boxHelper.boxWrapDefault( {"children" : ""} );
+    this.leafBox = this.boxHelper.boxWrapDefault({ "children": "" });
     this.leafDiv.appendChild(this.leafBox);
-
-    // Click on the  icon on any node in the label tree to move or edit it. When you hit save, it will update all annotations across every project that uses that label.
-    this._helperText = document.createElement("h2");
-    this._helperText.setAttribute("class", "h3 pb-3 edit-project__h1 text-normal text-gray");
-    const helptext = document.createTextNode(`Click on the edit icon on any node in the leaf to edit it.`); 
-    this._helperText.appendChild(helptext);
-    this.leafDiv.appendChild(this._helperText);
 
     const leaves = await fetch(`/rest/Leaves/${this.projectId}?type=${this.fromId}`)
     const data = await leaves.json();
 
     // Add the form and +Add links
     this._leaves = data;
-    this.leafBox.appendChild( this._getLeavesSection(data) );
-    this.leafBox.appendChild( this._getNewLeavesTrigger() );
-    // this.leafBox.appendChild( this._getCopyLeavesTrigger() );    
+    this.leafBox.appendChild(this._getNewLeavesTrigger());
+    this.leafBox.appendChild(this._getLeavesSection(data));
+
 
     return this.leafDiv;
   }
 
-  _getLeavesSection(leaves = []){
+  _getLeavesSection(leaves = []) {
     let leavesSection = document.createElement("div");
 
-    if(leaves && leaves.length > 0){
+    if (leaves && leaves.length > 0) {
       const heading = document.createElement("h3");
       heading.setAttribute("class", "f1 text-gray pb-3");
-  
+
       const addText = document.createElement("span");
-      addText.setAttribute("class", "");
+      addText.setAttribute("class", "text-white f1");
       addText.appendChild(document.createTextNode(`${leaves.length} Leaves`));
       heading.appendChild(addText);
       leavesSection.appendChild(heading);
+
+      // #todo add link to the docs here?
+      // Click on the  icon on any node in the label tree to move or edit it. When you hit save, it will update all annotations across every project that uses that label.
+      this._helperText = document.createElement("p");
+      this._helperText.setAttribute("class", "f2 text-gray pb-3 edit-project__h1 text-normal text-gray");
+      const helptext = document.createTextNode(`Click on the edit icon on any node in the leaf to edit it.`);
+      this._helperText.appendChild(helptext);
+      leavesSection.appendChild(this._helperText);
+
+      this._helperLinks = document.createElement("p");
+      this._helperLinks.setAttribute("class", "f2 text-gray pb-3 edit-project__h1 text-normal text-gray py-2");
+      leavesSection.appendChild(this._helperLinks);
+
+      const expandAll = document.createElement("a");
+      expandAll.setAttribute("class", "text-purple text-underline");
+      expandAll.setAttribute("href", "#");
+      expandAll.textContent = "Expand all";
+      this._helperLinks.appendChild(expandAll);
+
+      const seperator = document.createElement("span");
+      seperator.setAttribute("class", "px-3");
+      seperator.textContent = "|";
+      this._helperLinks.appendChild(seperator);
+
+      const minAll = document.createElement("a");
+      minAll.setAttribute("class", "text-purple text-underline");
+      minAll.setAttribute("href", "#");
+      minAll.textContent = "Minimize all";
+      this._helperLinks.appendChild(minAll);
 
       let leafList = document.createElement("div");
       leafList.setAttribute("class", `leaves-edit--list`);
@@ -142,14 +166,17 @@ export class LeafMain extends HTMLElement {
         this._outputOrder[a].expands = (this._outputOrder[a].indent == highestLevel || !this._parents.has(this._outputOrder[a].id)) ? false : true;
 
         let leafContent = this.leavesOutput({
-          leaves : leaves,
-          leaf : this._outputOrder[a],
-          leafId : a
+          leaves: leaves,
+          leaf: this._outputOrder[a],
+          leafId: a
         });
 
-        leafList.appendChild( leafContent );
+        leafList.appendChild(leafContent);
       }
 
+      // Listener to helper links
+      minAll.addEventListener('click', this.minimizeAll.bind(this));
+      expandAll.addEventListener('click', this.maximizeAll.bind(this));
 
       // Add drop listener on outer box once
       this.leafBox.addEventListener('dragleave', this.leafBoxStart.bind(this));
@@ -162,21 +189,60 @@ export class LeafMain extends HTMLElement {
     return leavesSection;
   }
 
+  minimizeAll(e) {
+    e.preventDefault();
+    // Start with level one and HIDE
+    // Return the level 1 items
+    try {
+      for (const data of this._levels.get(0)) {
+        const item = this._leafBoxes.get(data.id);
+        // item.classList.add("hidden");
+
+        if (this._parents.has(data.id)) { 
+          item.minimizeIcon.hidden = true;
+          item.maximizeIcon.hidden = false;
+          let childrenList = this._parents.get(data.id);
+          if (childrenList && childrenList.length > 0) {
+            for (let innerChild of childrenList) {
+              this._recursiveHide(innerChild.id);
+            }
+          }
+        }
+        
+      }
+    } catch (err) {
+      console.error("Issue with minimize all.", err);
+    }
+  }
+
+  maximizeAll(e) {
+    e.preventDefault();
+    // Start with level one and UNHIDE
+    // Return the level 1 items
+    try {
+      for (const data of this._levels.get(0)) {
+        this._recursiveUnhide(data.id);
+      }
+    } catch (err) {
+      console.error("Issue with maximize all.", err);
+    }
+  }
+
   _getOrganizedLeaves(leaves) {
     // Reset variables for leaf main
     this._parents = new Map();
     this._levels = new Map();
     this._outputOrder = [];
-    
+
     // Alphabetize first
     leaves = leaves.sort((a, b) => {
-      if(a.name < b.name) { return -1; }
-      if(a.name > b.name) { return 1; }
+      if (a.name < b.name) { return -1; }
+      if (a.name > b.name) { return 1; }
       return 0;
     });
 
     // Arrange order and set indent depth
-    for (let i in leaves) {       
+    for (let i in leaves) {
       const indent = leaves[i]["path"].split(".").length - 2;
       leaves[i].indent = indent;
 
@@ -212,17 +278,17 @@ export class LeafMain extends HTMLElement {
   leafBoxStart(e) {
     const textData = e.dataTransfer.getData("text/plain");
     console.log(textData);
- }
+  }
 
   leafBoxDrop(e) {
     console.log("this.leafBox handle drop");
     e.preventDefault();
     e.stopPropagation(); // stops the browser from redirecting.
     this.leafBox.style.border = "none";
-    
+
     console.log(`leafBoxDrop: Move ${this.movingEl} to no parent?`);
     // console.log(e.dataTransfer);
-    this.moveLeaf({ detail: {newParent: -1, forLeaf: this.movingEl} });
+    this.moveLeaf({ detail: { newParent: -1, forLeaf: this.movingEl } });
   }
 
   leafBoxLeave(e) {
@@ -232,6 +298,9 @@ export class LeafMain extends HTMLElement {
 
   leafBoxEnter(e) {
     e.preventDefault();
+    console.log(`If this isn't over me, don't be dotty... `);
+    console.log(e.target);
+    console.log(this.leafBox);
     this.leafBox.style.border = "3px dotted #333";
   }
 
@@ -244,20 +313,20 @@ export class LeafMain extends HTMLElement {
       let childrenList = this._parents.get(item.id);
       for (let innerChild of childrenList) {
         newArray = this._recursiveChildren(innerChild, newArray);
-      }    
+      }
     }
-    
+
     return newArray;
   }
 
   // Add Leaf
-  _getNewLeavesTrigger(){
+  _getNewLeavesTrigger() {
     // New leaf link
     const newLeafTrigger = document.createElement("a");
-    newLeafTrigger.setAttribute("class", "py-2 mt-6 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
+    newLeafTrigger.setAttribute("class", "btn btn-default float-right clickable  d-flex flex-items-center px-3 rounded-2"); //
 
     const addPlus = document.createElement("span");
-    addPlus.setAttribute("class", "add-new__icon d-flex flex-items-center flex-justify-center text-white circle");
+    addPlus.setAttribute("class", "d-flex flex-items-center flex-justify-center"); //add-new__icon circle
     addPlus.appendChild(document.createTextNode("+"));
 
     const addText = document.createElement("span");
@@ -267,52 +336,61 @@ export class LeafMain extends HTMLElement {
     newLeafTrigger.appendChild(addPlus);
     newLeafTrigger.appendChild(addText);
 
-    newLeafTrigger.addEventListener("click", (event) => {
-      event.preventDefault();
-      let afObj = this._getAddForm();
-
-      afObj.submitLeaf.addEventListener("click", (e) => {
-        e.preventDefault();
-  
-        this._postLeaf( afObj.form );
-      });
-
-      afObj.form._parentLeaf.permission = "Can Edit";
-
-      this.boxHelper._modalConfirm({
-        "titleText" : "New Leaf",
-        "mainText" : afObj.form.form,
-        "buttonSave" : afObj.submitLeaf,
-        "scroll" : true
-      });
-      this.modal._div.classList.add("modal-wide");
-      this.setAttribute("has-open-modal", "");
-    });
+    newLeafTrigger.addEventListener("click", this._newLeafEvent.bind(this));
 
     return newLeafTrigger;
   }
 
-  _getAddForm(){
+  _newLeafEvent(e, leafId = null) {
+    e.preventDefault();
+    let afObj = this._getAddForm(leafId);
+
+    afObj.submitLeaf.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      this._postLeaf(afObj.form);
+    });
+
+    afObj.form._parentLeaf.permission = "Can Edit";
+
+    this.boxHelper._modalConfirm({
+      "titleText": "New Leaf",
+      "mainText": afObj.form.form,
+      "buttonSave": afObj.submitLeaf,
+      "scroll": true
+    });
+    this.modal._div.classList.add("modal-wide");
+    this.setAttribute("has-open-modal", "");
+  }
+
+  _getAddForm(parentLeafId) {
     let form = document.createElement("leaf-form");
     const leaves = this._getOrganizedLeaves(this._leaves);
     form._initEmptyForm(leaves, this.projectNameClean, this.attributeTypes);
     form.fromType = this.typeId;
+
+    if (parentLeafId !== null) {
+      // Set parent
+      const parentValue = parentLeafId == "null" ? "null" : Number(parentLeafId);
+      form._parentLeaf.default = parentValue;
+      form._parentLeaf.setValue(parentValue);
+    }
 
     let submitLeaf = document.createElement("input");
     submitLeaf.setAttribute("type", "submit");
     submitLeaf.setAttribute("value", "Save");
     submitLeaf.setAttribute("class", `btn btn-clear f1 text-semibold`);
 
-    return {form, submitLeaf};
+    return { form, submitLeaf };
   }
 
-  _postLeaf(formObj){
+  _postLeaf(formObj) {
     this.modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = formObj._getLeafFormData();
     console.log(formJSON);
     let attr = { ...formJSON.attributes };
-    
+
     for (let key in formJSON) {
       console.log(key);
       formJSON[key] = formJSON[key];
@@ -321,40 +399,40 @@ export class LeafMain extends HTMLElement {
     delete formJSON["attributes"];
 
     let status = 0;
-    this._fetchPostPromise({"formData" : [formJSON]})
-    .then(response => {
-      status = response.status;
-      return response.json()
-    })
-    .then(data => {
-      let currentMessage = data.message;
-      let succussIcon = document.createElement("modal-success");
-      let warningIcon = document.createElement("modal-warning");
-      let iconWrap = document.createElement("span");
+    this._fetchPostPromise({ "formData": [formJSON] })
+      .then(response => {
+        status = response.status;
+        return response.json()
+      })
+      .then(data => {
+        let currentMessage = data.message;
+        let succussIcon = document.createElement("modal-success");
+        let warningIcon = document.createElement("modal-warning");
+        let iconWrap = document.createElement("span");
 
-      if(status == 201) iconWrap.appendChild(succussIcon);
-      if(status == 400) iconWrap.appendChild(warningIcon);
-      
-      this.loading.hideSpinner();
-      this.completed = this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
-    
-      this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
-        once : true
+        if (status == 201) iconWrap.appendChild(succussIcon);
+        if (status == 400) iconWrap.appendChild(warningIcon);
+
+        this.loading.hideSpinner();
+        this.completed = this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+
+        this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
+          once: true
+        });
+
+      }).catch((error) => {
+        this.loading.hideSpinner();
+        this.boxHelper._modalError(`Error: ${error}`);
       });
-    
-    }).catch((error) => {
-      this.loading.hideSpinner();
-      this.boxHelper._modalError(`Error: ${error}`);
-    });
   }
 
-  _dispatchRefresh(e){
+  _dispatchRefresh(e) {
     //console.log("modal complete closed");
-    this.dispatchEvent(this.refreshTypeEvent);   
+    this.dispatchEvent(this.refreshTypeEvent);
   }
 
   // Clone Leaf
-  _getCopyLeavesTrigger(){
+  _getCopyLeavesTrigger() {
     // New leaf link
     const newCopyTrigger = document.createElement("a");
     newCopyTrigger.setAttribute("class", "py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2");
@@ -369,36 +447,36 @@ export class LeafMain extends HTMLElement {
 
     newCopyTrigger.appendChild(addPlus);
     newCopyTrigger.appendChild(addText);
-    
+
     newCopyTrigger.addEventListener("click", (event) => {
       event.preventDefault();
-      this._getCloneModal();    
+      this._getCloneModal();
     });
 
     return newCopyTrigger;
   }
 
-  _getCloneModal(){
+  _getCloneModal() {
     this.loading.showSpinner();
     let typesData = new ProjectTypesData(this.projectId);
 
     typesData._getLeafDataByType().then((leafDataByType) => {
       // console.log("did it come back from typesData ok? ");
       // console.log(leafDataByType);
-      
-      const clone = new LeafClone( leafDataByType );
+
+      const clone = new LeafClone(leafDataByType);
       const cloneForm = clone._init();
 
       const cloneSave = document.createElement("input");
       cloneSave.setAttribute("type", "submit");
       cloneSave.setAttribute("value", "Save");
       cloneSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
-      
+
       cloneSave.addEventListener("click", (e) => {
         e.preventDefault();
         const selectedData = clone.getInputData();
         //console.log(selectedData);
-        
+
         let cloneData = new LeafData({
           projectId: this.projectId,
           typeId: this.fromId,
@@ -408,31 +486,31 @@ export class LeafMain extends HTMLElement {
         return cloneData.createClones().then((r) => {
           this.dispatchEvent(this.refreshTypeEvent);
           this.boxHelper._modalComplete(r);
-        });               
+        });
       });
 
       this.loading.hideSpinner();
       this.boxHelper.modal._div.classList.add("modal-wide");
       return this.boxHelper._modalConfirm({
-        "titleText" : "Clone Leaf(s)",
-        "mainText" : cloneForm,
-        "buttonSave" : cloneSave,
-        "scroll" : true
+        "titleText": "Clone Leaf(s)",
+        "mainText": cloneForm,
+        "buttonSave": cloneSave,
+        "scroll": true
       });
     }).catch((error) => {
       this.loading.hideSpinner();
       this.boxHelper._modalError(`Error: ${error}`);
     });
-    
+
   }
 
-  _toggleLeaves(el){
+  _toggleLeaves(el) {
     let hidden = el.hidden
 
     return el.hidden = !hidden;
   };
 
-  _toggleChevron(e){
+  _toggleChevron(e) {
     var el = e.target;
     return el.classList.toggle('chevron-trigger-90');
   }
@@ -441,31 +519,32 @@ export class LeafMain extends HTMLElement {
     leaves = [],
     leaf = {},
     leafId = undefined
-  } = {}){
+  } = {}) {
     const leafItem = document.createElement("leaf-item");
     leafItem._init(leaf, this);
-    this.leafBox.setAttribute("draggable", true);
     this.leafBox.appendChild(leafItem);
 
     // Map of all inner boxes
     this._leafBoxes.set(leaf.id, leafItem);
+    this._leavesMap.set(leaf.id, leaf);
 
     if (leaf.expands) {
       leafItem.leafCurrent.addEventListener("click", () => {
-      leafItem.minusIcon.hidden = !leafItem.minusIcon.hidden;
-      leafItem.addIcon.hidden = !leafItem.addIcon.hidden;
-      const children = this._parents.get(leaf.id);
+        leafItem.minimizeIcon.hidden = !leafItem.minimizeIcon.hidden;
+        leafItem.maximizeIcon.hidden = !leafItem.maximizeIcon.hidden;
+        const children = this._parents.get(leaf.id);
 
-      for (let c of children) {
-         if (leafItem.addIcon.hidden) {
-            this._recursiveUnhide(c.id);
-         } else {
-            this._recursiveHide(c.id);
-         }
-      }
-      }); 
+        for (let c of children) {
+          const item = this._leafBoxes.get(c.id);
+          if (!leafItem.minimizeIcon.hidden) {
+            item.classList.remove("hidden");
+          } else {
+            item.classList.add("hidden");
+          }
+        }
+      });
     }
-    
+
     this.dragSrcEl = null;
 
     leafItem.editIcon.addEventListener("click", () => {
@@ -494,7 +573,7 @@ export class LeafMain extends HTMLElement {
       leafSave.setAttribute("type", "submit");
       leafSave.setAttribute("value", "Yes");
       leafSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
-      
+
       leafSave.addEventListener("click", (e) => {
         e.preventDefault();
         const data = {};
@@ -502,15 +581,18 @@ export class LeafMain extends HTMLElement {
         data.oldName = "";
         data.formData = { id: forLeaf, parent: newParent, type: this.fromId };
         data.id = forLeaf;
-        
+
         return this._fetchLeafPatchPromise(this.fromId, data);
       }, { once: true });
 
-      let message = ""
+      let message = "";
       if (newParent == -1) {
-        message = `Move leaf ${forLeaf} to the top level? All children will also move and have updated paths.`;
+        const forData = this._leavesMap.get(forLeaf);
+        message = `Move leaf ${forData.name} (${forData.id}) to the top level? All children will also move and have updated paths.`;
       } else {
-        message = `Make leaf ${newParent} the new parent for ${forLeaf}? All children will also move and have updated paths.`;
+        const forData = this._leavesMap.get(forLeaf);
+        const newData = this._leavesMap.get(newParent);
+        message = `Make leaf '${newData.name}' (${newData.id}) the new parent for '${forData.name}' (${forData.id})? All children will also move and have updated paths.`;
       }
 
       this.boxHelper._modalConfirm({
@@ -531,31 +613,34 @@ export class LeafMain extends HTMLElement {
   _recursiveHide(id) {
     const item = this._leafBoxes.get(id);
     item.classList.add("hidden");
-    
+
     if (this._parents.has(id)) {
+      item.minimizeIcon.hidden = true;
+      item.maximizeIcon.hidden = false;
       let childrenList = this._parents.get(id);
-      for (let innerChild of childrenList) {
-        this._recursiveHide(innerChild.id);
-      }    
-    } 
+      if (childrenList && childrenList.length > 0) {
+        for (let innerChild of childrenList) {
+          this._recursiveHide(innerChild.id);
+        }
+      }
+    }
   }
 
   _recursiveUnhide(id) {
     const item = this._leafBoxes.get(id);
     item.classList.remove("hidden");
-    if (item.querySelector(".leaves-plus")) {
-      const plus = item.querySelector(".leaves-plus");
-      plus.hidden = true;
-      
-      const minus = item.querySelector(".leaves-minus");
-      minus.hidden = false;
-    }
-    
+
     if (this._parents.has(id)) {
+      item.minimizeIcon.hidden = false;
+      item.maximizeIcon.hidden = true;
       let childrenList = this._parents.get(id);
-      for (let innerChild of childrenList) {
-        this._recursiveUnhide(innerChild.id);
-      }    
+
+      if (childrenList && childrenList.length > 0) {
+        for (let innerChild of childrenList) {
+          this._recursiveUnhide(innerChild.id);
+        }  
+      }
+
     }
   }
 
@@ -581,13 +666,13 @@ export class LeafMain extends HTMLElement {
     leafSave.setAttribute("type", "submit");
     leafSave.setAttribute("value", "Save");
     leafSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
-    
+
     leafSave.addEventListener("click", (e) => {
       e.preventDefault();
       const data = {};
       const leafFormData = leafForm._leafFormData({ entityType: this.typeName, id: this.fromId });
 
-      return this._fetchLeafPatchPromise(this.fromId, leafFormData);               
+      return this._fetchLeafPatchPromise(this.fromId, leafFormData);
     });
 
     // form export class listener
@@ -597,10 +682,10 @@ export class LeafMain extends HTMLElement {
 
     // this.leafForms.push(leafForm);
     this.boxHelper._modalConfirm({
-      "titleText" : `Edit Leaf (ID ${leaf.id})`,
-      "mainText" : leafForm,
-      "buttonSave" : leafSave,
-      "scroll" : true
+      "titleText": `Edit Leaf (ID ${leaf.id})`,
+      "mainText": leafForm,
+      "buttonSave": leafSave,
+      "scroll": true
     });
     this.modal._div.classList.add("modal-wide");
   }
@@ -608,13 +693,13 @@ export class LeafMain extends HTMLElement {
   /**
    * Deprecated..... 
    */
-  deleteLeaf(id, name){
+  deleteLeaf(id, name) {
     let button = document.createElement("button");
     button.setAttribute("class", "btn btn-small btn-charcoal float-right btn-outline text-gray");
     button.style.marginRight = "10px";
 
     let deleteText = document.createTextNode(`Delete`);
-    button.appendChild( deleteText );
+    button.appendChild(deleteText);
 
     let descriptionText = `Delete ${name} from this ${this.typeName} and all its data?`;
     let headingDiv = document.createElement("div");
@@ -622,21 +707,21 @@ export class LeafMain extends HTMLElement {
 
     let heading = document.createElement("div");
     heading.setAttribute("class", "py-md-5 float-left col-md-5 col-sm-5 text-right");
-    
-    heading.appendChild( button );
-        
+
+    heading.appendChild(button);
+
     let description = document.createElement("div");
     let _descriptionText = document.createTextNode("");
     _descriptionText.nodeValue = descriptionText;
     description.setAttribute("class", "py-md-6 f1 text-gray float-left col-md-7 col-sm-7");
-    description.appendChild( _descriptionText );
-    
+    description.appendChild(_descriptionText);
+
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
-    this.deleteBox = this.boxHelper.boxWrapDelete( {
-      "children" : headingDiv
-    } );
+    this.deleteBox = this.boxHelper.boxWrapDelete({
+      "children": headingDiv
+    });
 
     this.deleteBox.style.backgroundColor = "transparent";
 
@@ -648,7 +733,7 @@ export class LeafMain extends HTMLElement {
     return this.deleteBox;
   }
 
-  _deleteLeafConfirm(id, name){
+  _deleteLeafConfirm(id, name) {
     let button = document.createElement("button");
     let confirmText = document.createTextNode("Confirm")
     button.appendChild(confirmText);
@@ -660,22 +745,22 @@ export class LeafMain extends HTMLElement {
     });
 
     this.boxHelper._modalConfirm({
-      "titleText" : `Delete Confirmation`,
-      "mainText" : `Pressing confirm will delete leaf "${name}". Do you want to continue?`,
-      "buttonSave" : button,
-      "scroll" : false    
+      "titleText": `Delete Confirmation`,
+      "mainText": `Pressing confirm will delete leaf "${name}". Do you want to continue?`,
+      "buttonSave": button,
+      "scroll": false
     });
   }
 
-  _deleteLeaf(id){
+  _deleteLeaf(id) {
     this.modal._closeCallback();;
     this.loading.showSpinner();
 
     let deleteLeaf = new LeafDelete({
-      "leafId" : id
+      "leafId": id
     });
-  
-    if(name != "undefined"){
+
+    if (name != "undefined") {
       deleteLeaf.deleteFetch().then((data) => {
         this.loading.hideSpinner();
         this.dispatchEvent(this.refreshTypeEvent);
@@ -692,8 +777,8 @@ export class LeafMain extends HTMLElement {
 
   }
 
-  _fetchPostPromise({formData = null } = {}){
-    if(formData != null){
+  _fetchPostPromise({ formData = null } = {}) {
+    if (formData != null) {
       return fetch(`/rest/Leaves/${this.projectId}`, {
         method: "POST",
         mode: "cors",
@@ -743,70 +828,70 @@ export class LeafMain extends HTMLElement {
     }).then(response => {
       return response.json().then(data => ({ response: response, data: data }));
     })
-    .then(obj => {
-      let currentMessage = obj.data.message;
-      let response = obj.response;
-      let succussIcon = document.createElement("modal-success");
-      let iconWrap = document.createElement("span");
-      let warningIcon = document.createElement("modal-warning");
+      .then(obj => {
+        let currentMessage = obj.data.message;
+        let response = obj.response;
+        let succussIcon = document.createElement("modal-success");
+        let iconWrap = document.createElement("span");
+        let warningIcon = document.createElement("modal-warning");
 
-      // console.log(`currentMessage::::: ${currentMessage}`);
+        // console.log(`currentMessage::::: ${currentMessage}`);
 
-      if (response.status == 200) {
-        //console.log("Return Message - It's a 200 response.");
-        iconWrap.appendChild(succussIcon);
-        this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-      } else if (response.status != 200) {
-        if (currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-          //console.log("Return Message - It's a 400 response for leaf form.");
-          let input = `<input type="checkbox" checked name="global" data-old-name="${leafOldName}" class="checkbox"/>`;
-          let newNameText = (leafOldName == leafNewName) ? "" : ` new name "${leafNewName}"`
-          this.confirmMessages += `<div class="py-2">${input} Leaf "${leafOldName}" ${newNameText}</div>`
-          this.requiresConfirmation = true;
-        } else {
-          iconWrap.appendChild(warningIcon);
-          //console.log("Return Message - It's a 400 response for main form.");
-          // this.failedMessages += `<div class="py-2"><span class="v-align-top">${currentMessage}</span></div>`;
-          this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${leafOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
+        if (response.status == 200) {
+          //console.log("Return Message - It's a 200 response.");
+          iconWrap.appendChild(succussIcon);
+          this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
+        } else if (response.status != 200) {
+          if (currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
+            //console.log("Return Message - It's a 400 response for leaf form.");
+            let input = `<input type="checkbox" checked name="global" data-old-name="${leafOldName}" class="checkbox"/>`;
+            let newNameText = (leafOldName == leafNewName) ? "" : ` new name "${leafNewName}"`
+            this.confirmMessages += `<div class="py-2">${input} Leaf "${leafOldName}" ${newNameText}</div>`
+            this.requiresConfirmation = true;
+          } else {
+            iconWrap.appendChild(warningIcon);
+            //console.log("Return Message - It's a 400 response for main form.");
+            // this.failedMessages += `<div class="py-2"><span class="v-align-top">${currentMessage}</span></div>`;
+            this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${leafOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
+          }
         }
-      }
-    }).then(() => {
-      if (this.successMessages) {
-        let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-        this.saveModalMessage += heading + this.successMessages;
-      }
-      if (this.failedMessages) {
-        let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-        this.saveModalMessage += heading + this.failedMessages;
-      }
+      }).then(() => {
+        if (this.successMessages) {
+          let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
+          this.saveModalMessage += heading + this.successMessages;
+        }
+        if (this.failedMessages) {
+          let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
+          this.saveModalMessage += heading + this.failedMessages;
+        }
 
-      if (this.requiresConfirmation) {
-        let buttonSave = this._getAttrGlobalTrigger(dataObject);
-        let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-        let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
+        if (this.requiresConfirmation) {
+          let buttonSave = this._getAttrGlobalTrigger(dataObject);
+          let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
+          let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
 
-        let mainText = `${this.saveModalMessage}${confirmHeading}${subText}${this.confirmMessages}`;
+          let mainText = `${this.saveModalMessage}${confirmHeading}${subText}${this.confirmMessages}`;
+          this.loading.hideSpinner();
+          this.boxHelper._modalConfirm({
+            "titleText": "Confirm Edit",
+            mainText,
+            buttonSave
+          });
+        } else {
+          let mainText = `${this.saveModalMessage}`;
+
+          this.boxHelper._modalComplete(
+            mainText
+          );
+          // Reset forms to the saved data from model
+          return this.dispatchEvent(this.refreshTypeEvent);
+        }
+      }).then(() => {
         this.loading.hideSpinner();
-        this.boxHelper._modalConfirm({
-          "titleText": "Confirm Edit",
-          mainText,
-          buttonSave
-        });
-      } else {
-        let mainText = `${this.saveModalMessage}`;
-        
-        this.boxHelper._modalComplete(
-          mainText
-        );
-        // Reset forms to the saved data from model
-        return this.dispatchEvent(this.refreshTypeEvent);
-      }
-    }).then(() => {
-      this.loading.hideSpinner();
-    }).catch(err => {
-      return console.error("Problem patching leaf...", err);
-    });
-      
+      }).catch(err => {
+        return console.error("Problem patching leaf...", err);
+      });
+
     return promise;
   }
 
