@@ -262,9 +262,9 @@ class LeafDetailAPI(BaseDetailView):
         project = leaf.project
 
         parent = leaf.id
-        grandparent = leaf.parent
+        grandparent = None if leaf.parent == None else leaf.parent
         children = Leaf.objects.filter(parent=parent, deleted=False)
-        self._update_children_delparent(self, children, grandparent, leaf.id)
+        self._update_children_delparent(self, children, grandparent)
 
         model_dict = leaf.model_dict
         delete_and_log_changes(leaf, project, self.request.user)
@@ -276,38 +276,53 @@ class LeafDetailAPI(BaseDetailView):
 
     @staticmethod
     def _update_children_newparent(self, children, grandparent, newparent):
-        for child in children:
-            child_model_dict = child.model_dict
+        if children and len(children) > 0:
+            for child in children:
+                child_model_dict = child.model_dict
 
-            # if a child is the newParent
-            if child.id == newparent:
-                if grandparent == None:
-                    child.parent = None 
-                else:
-                    child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
-            
-            child.path = child.computePath()
-            child.save()
-            log_changes(child, child_model_dict, child.project, self.request.user)
+                # if a child is the newParent
+                if child.id == newparent:
+                    if grandparent == None:
+                        child.parent = None 
+                    else:
+                        child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
+                
+                child.path = child.computePath()
+                child.save()
+                log_changes(child, child_model_dict, child.project, self.request.user)
 
-            inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
-            if inner_children and len(inner_children) > 0:
-                self._update_children_newparent(self, inner_children, newparent, child.parent)
+                inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
+                if inner_children and len(inner_children) > 0:
+                    self._update_path(self, inner_children)
 
     @staticmethod
-    def _update_children_delparent(self, children, grandparent, parent):
+    def _update_children_delparent(self, children, grandparent):
+        if children and len(children) > 0:
+            for child in children:
+                child_model_dict = child.model_dict
+
+                if grandparent == None:
+                    child.parent = None
+                else:
+                    child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
+                
+                child.path = child.computePath()
+                child.save()
+                log_changes(child, child_model_dict, child.project, self.request.user)
+
+                inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
+                if inner_children and len(inner_children) > 0:
+                    self._update_path(self, inner_children)
+
+    @staticmethod
+    def _update_path(self, children):
         for child in children:
             child_model_dict = child.model_dict
-
-            if grandparent == None:
-                child.parent = None
-            else:
-                child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
             
             child.path = child.computePath()
             child.save()
             log_changes(child, child_model_dict, child.project, self.request.user)
 
-            inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
+            inner_children = Leaf.objects.filter(parent=child.pk, deleted=False)
             if inner_children and len(inner_children) > 0:
-                self._update_children_newparent(self, inner_children, parent, child.parent)
+                self._update_path(self, inner_children)
