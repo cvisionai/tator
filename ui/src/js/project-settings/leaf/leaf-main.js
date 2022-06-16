@@ -298,12 +298,11 @@ export class LeafMain extends HTMLElement {
 
   leafBoxEnter(e) {
     e.preventDefault();
-    console.log(`If this isn't over me, don't be dotty... `);
-    console.log(e.target);
-    console.log(this.leafBox);
-    if (!e.target.classList.has("edit-project__config")) {
+
+    if (e.target.classList.contains("edit-project__config")) {
       this.leafBox.style.border = "3px dotted #333";    
     } else {
+      // console.log(`If this isn't over me, don't be dotty... `);
       this.leafBox.style.border = "none";    
     }
 
