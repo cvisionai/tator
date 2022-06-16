@@ -382,6 +382,7 @@ class LocalizationDetailAPI(BaseDetailView):
             b = qs[0]
             b.variant_deleted = True
             b.save()
+            log_changes(b, b.model_dict, b.project, self.request.user)
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

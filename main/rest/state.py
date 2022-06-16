@@ -466,6 +466,7 @@ class StateDetailAPI(BaseDetailView):
         else:
             state.variant_deleted = True
             state.save()
+            log_changes(state, state.model_dict, state.project, self.request.user)
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_update_and_log_changes(
                 qs,
