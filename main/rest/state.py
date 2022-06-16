@@ -469,7 +469,7 @@ class StateDetailAPI(BaseDetailView):
             qs = Localization.objects.filter(pk__in=delete_localizations)
             bulk_update_and_log_changes(
                 qs,
-                params["project"],
+                project,
                 self.request.user,
                 update_kwargs={"variant_deleted": True},
                 new_attributes=None)

@@ -376,15 +376,12 @@ class LocalizationDetailAPI(BaseDetailView):
             raise Http404
         obj = qs[0]
         if params['prune'] == 1:
-            logger.info("PURGING RECORD")
             delete_and_log_changes(obj, obj.project, self.request.user)
             TatorSearch().delete_document(obj)
         else:
-            logger.info("PRESERVING RECORD")
             b = qs[0]
             b.variant_deleted = True
             b.save()
-            logger.info(f"STATUS = {qs[0].pk}: {qs[0].variant_deleted}")
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):
