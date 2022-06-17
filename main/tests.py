@@ -700,7 +700,7 @@ class AttributeTestMixin:
         response = self.client.delete(
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}'
-            f'&attribute=String Test::DELETE ME!!!')
+            f'&attribute=String Test::DELETE ME!!!', {'prune': 1}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for obj_id in obj_ids:
             response = self.client.get(f'/rest/{self.detail_uri}/{obj_id}')
