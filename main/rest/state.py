@@ -333,7 +333,7 @@ class StateListAPI(BaseListView):
 
     def _patch(self, params):
         qs = get_annotation_queryset(params['project'], params, 'state')
-        patched_version = params.pop("version", None)
+        patched_version = params.pop("new_version", None)
         count = qs.count()
         if count > 0:
             new_attrs = validate_attributes(params, qs[0])

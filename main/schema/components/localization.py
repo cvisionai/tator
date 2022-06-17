@@ -239,9 +239,9 @@ localization_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
-        'version': {
+        'new_version': {
             'type': 'integer',
-            'description': 'Unique integer identifying a version.',
+            'description': 'Unique integer identifying a new version for these objects',
         },
         **localization_id_query['properties'],
     },

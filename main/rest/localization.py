@@ -232,7 +232,7 @@ class LocalizationListAPI(BaseListView):
         return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
-        patched_version = params.pop("version", None)
+        patched_version = params.pop("new_version", None)
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
