@@ -85,12 +85,22 @@ urlpatterns = [
     path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
          name='password_change_done'),
     path('accounts/logout/', LogoutView.as_view()),
-    path('accounts/login/', LoginView.as_view(extra_context={'email_enabled': settings.TATOR_EMAIL_ENABLED}), name='login'),
+    path(
+        "accounts/login/",
+        LoginView.as_view(
+            extra_context={
+                "email_enabled": settings.TATOR_EMAIL_ENABLED,
+                "okta_enabled": settings.OKTA_ENABLED,
+            }
+        ),
+        name="login",
+    ),
 ]
 
-if settings.COGNITO_ENABLED:
-    urlpatterns += [
-        path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway')]
+if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
+    urlpatterns.append(path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'))
+    if settings.OKTA_ENABLED:
+        urlpatterns.append(path('oauth2/login/', Oauth2LoginAPI.as_view(), name='oauth2'))
 
 if settings.TATOR_EMAIL_ENABLED:
     urlpatterns += [
