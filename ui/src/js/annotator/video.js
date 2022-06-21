@@ -1353,6 +1353,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._draw.rateChange(newRate, this._fps);
     if (this._direction != Direction.STOPPED)
     {
+      this._calculateAudioEligibility();
       // If we are playing trim the frame buffer to a quarter second to make the rate change
       // feel responsive.
       this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
@@ -1439,6 +1440,20 @@ export class VideoCanvas extends AnnotationCanvas {
     this.makeOffscreenDownloadable(localizations, filename);
   }
 
+  _calculateAudioEligibility()
+  {
+    this._audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
+        this._audioPlayer &&
+        this._direction == Direction.FORWARD && 
+        this._children == undefined) // TODO: Support audio in concat mode
+    {
+      this._audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+  }
+
 
   _playGenericScrub(direction)
   {
@@ -1453,18 +1468,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     this._playing = false;
 
-    // We are eligible for audio if we are at a supported playback rate
-    // have audio, and are going forward.
-    this._audioEligible=false;
-    if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
-        this._audioPlayer &&
-        direction == Direction.FORWARD && 
-        this._children == undefined) // TODO: Support audio in concat mode
-    {
-      this._audioEligible = true;
-      this._audioPlayer.playbackRate = this._playbackRate;
-    }
+    this._calculateAudioEligibility();
 
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
@@ -1545,18 +1549,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     this._playing = false;
 
-    // We are eligible for audio if we are at a supported playback rate
-    // have audio, and are going forward.
-    this._audioEligible=false;
-    if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
-        this._audioPlayer &&
-        direction == Direction.FORWARD &&
-        this._children == undefined)
-    {
-      this._audioEligible = true;
-      this._audioPlayer.playbackRate = this._playbackRate;
-    }
+    this._calculateAudioEligibility();
 
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
@@ -1783,6 +1776,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // on frame processing logic
 
     let increment_clk = 0;
+    let lastRate = this._playbackRate;
     video.onFrame = (frame, timescale, timestampOffset) => {
       this._playing = true;
       let start = performance.now();
@@ -1804,11 +1798,15 @@ export class VideoCanvas extends AnnotationCanvas {
         this.pendingFramesMethod();
       }
 
-      frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
-      // We are actually in keyframe playback mode here
-      if (this._videoElement[index].playBuffer().keyframeOnly == true)
+      if (lastRate != this._playbackRate)
       {
-        frameIncrement = this._playbackRate / 16;
+        frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
+        // We are actually in keyframe playback mode here
+        if (this._videoElement[index].playBuffer().keyframeOnly == true)
+        {
+          frameIncrement = this._playbackRate / 16;
+        }
+        lastRate = this._playbackRate;
       }
 
       // Don't let increment clock blow up
