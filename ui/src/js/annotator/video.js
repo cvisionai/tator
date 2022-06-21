@@ -1359,8 +1359,11 @@ export class VideoCanvas extends AnnotationCanvas {
       const oldLoad = this._loadFrame;
       this._loadFrame = this._draw.trimBuffer(Math.round(this._fps*0.5));
       console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
-      clearTimeout(this._loaderTimeout);
-      this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
+      if (this._frameCallbackActive == false)
+      {
+        clearTimeout(this._loaderTimeout);
+        this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
+      }
     }
     this._onDemandPlaybackReady = (this.onDemandBufferAvailable(this._dispFrame) == "yes" ? true : false);
     this.dispatchEvent(new CustomEvent("rateChange", {
@@ -1784,6 +1787,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._playing = true;
       let start = performance.now();
       frame.frameNumber = this.timeToFrame((frame.timestamp/timescale));
+      this._loadFrame = frame.frameNumber;
       this._fpsLoadDiag++;
       if (increment_clk % frameIncrement != 0)
       {
@@ -1798,6 +1802,13 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         this._pendingFrames.push(frame);
         this.pendingFramesMethod();
+      }
+
+      frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
+      // We are actually in keyframe playback mode here
+      if (this._videoElement[index].playBuffer().keyframeOnly == true)
+      {
+        frameIncrement = this._playbackRate / 16;
       }
 
       // Don't let increment clock blow up
@@ -2389,11 +2400,13 @@ export class VideoCanvas extends AnnotationCanvas {
         if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._direction == Direction.FORWARD)
         {
           this._loaderStarted = true;
+          this._frameCallbackActive = true;
           this.frameCallbackMethod();
         }
         else
         {
           this._loaderStarted = true;
+          this._frameCallbackActive = false;
           this._loaderTimeout = setTimeout(() => {this.loaderThread(true, "play")}, 0);
         }
       }
