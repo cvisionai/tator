@@ -549,6 +549,7 @@ export class VideoCanvas extends AnnotationCanvas {
         this._audioPlayer = document.createElement("AUDIO");
         console.log("MediaSource element created: AUDIO");
         this._audioPlayer.setAttribute('src', audio_def.path);
+        this._audioPlayer.crossOrigin = "anonymous";
         this._audioPlayer.volume = 0.5; // Default volume
         this.audio = true;
         this.addPauseListener(() => {
