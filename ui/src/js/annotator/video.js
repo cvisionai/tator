@@ -549,6 +549,7 @@ export class VideoCanvas extends AnnotationCanvas {
         this._audioPlayer = document.createElement("AUDIO");
         console.log("MediaSource element created: AUDIO");
         this._audioPlayer.setAttribute('src', audio_def.path);
+        this._audioPlayer.crossOrigin = "anonymous";
         this._audioPlayer.volume = 0.5; // Default volume
         this.audio = true;
         this.addPauseListener(() => {
@@ -1352,14 +1353,18 @@ export class VideoCanvas extends AnnotationCanvas {
     this._draw.rateChange(newRate, this._fps);
     if (this._direction != Direction.STOPPED)
     {
+      this._calculateAudioEligibility();
       // If we are playing trim the frame buffer to a quarter second to make the rate change
       // feel responsive.
       this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
       const oldLoad = this._loadFrame;
       this._loadFrame = this._draw.trimBuffer(Math.round(this._fps*0.5));
       console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
-      clearTimeout(this._loaderTimeout);
-      this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
+      if (this._frameCallbackActive == false)
+      {
+        clearTimeout(this._loaderTimeout);
+        this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
+      }
     }
     this._onDemandPlaybackReady = (this.onDemandBufferAvailable(this._dispFrame) == "yes" ? true : false);
     this.dispatchEvent(new CustomEvent("rateChange", {
@@ -1435,6 +1440,20 @@ export class VideoCanvas extends AnnotationCanvas {
     this.makeOffscreenDownloadable(localizations, filename);
   }
 
+  _calculateAudioEligibility()
+  {
+    this._audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
+        this._audioPlayer &&
+        this._direction == Direction.FORWARD && 
+        this._children == undefined) // TODO: Support audio in concat mode
+    {
+      this._audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
+  }
+
 
   _playGenericScrub(direction)
   {
@@ -1449,18 +1468,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     this._playing = false;
 
-    // We are eligible for audio if we are at a supported playback rate
-    // have audio, and are going forward.
-    this._audioEligible=false;
-    if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
-        this._audioPlayer &&
-        direction == Direction.FORWARD && 
-        this._children == undefined) // TODO: Support audio in concat mode
-    {
-      this._audioEligible = true;
-      this._audioPlayer.playbackRate = this._playbackRate;
-    }
+    this._calculateAudioEligibility();
 
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
@@ -1541,18 +1549,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     this._playing = false;
 
-    // We are eligible for audio if we are at a supported playback rate
-    // have audio, and are going forward.
-    this._audioEligible=false;
-    if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
-        this._audioPlayer &&
-        direction == Direction.FORWARD &&
-        this._children == undefined)
-    {
-      this._audioEligible = true;
-      this._audioPlayer.playbackRate = this._playbackRate;
-    }
+    this._calculateAudioEligibility();
 
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
@@ -1779,10 +1776,12 @@ export class VideoCanvas extends AnnotationCanvas {
     // on frame processing logic
 
     let increment_clk = 0;
+    let lastRate = this._playbackRate;
     video.onFrame = (frame, timescale, timestampOffset) => {
       this._playing = true;
       let start = performance.now();
       frame.frameNumber = this.timeToFrame((frame.timestamp/timescale));
+      this._loadFrame = frame.frameNumber;
       this._fpsLoadDiag++;
       if (increment_clk % frameIncrement != 0)
       {
@@ -1797,6 +1796,17 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         this._pendingFrames.push(frame);
         this.pendingFramesMethod();
+      }
+
+      if (lastRate != this._playbackRate)
+      {
+        frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
+        // We are actually in keyframe playback mode here
+        if (this._videoElement[index].playBuffer().keyframeOnly == true)
+        {
+          frameIncrement = this._playbackRate / 16;
+        }
+        lastRate = this._playbackRate;
       }
 
       // Don't let increment clock blow up
@@ -2388,11 +2398,13 @@ export class VideoCanvas extends AnnotationCanvas {
         if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._direction == Direction.FORWARD)
         {
           this._loaderStarted = true;
+          this._frameCallbackActive = true;
           this.frameCallbackMethod();
         }
         else
         {
           this._loaderStarted = true;
+          this._frameCallbackActive = false;
           this._loaderTimeout = setTimeout(() => {this.loaderThread(true, "play")}, 0);
         }
       }

@@ -82,7 +82,7 @@ export class FrameBuffer
     // Force the load to be at most count ahead of disp idx
     trim(count)
     {
-        this._loadIdx = this._dispIdx + (count-1);
+        this._loadIdx = Math.max(0,this._dispIdx + (count-1));
         return this._buffer[this._loadIdx % this._buffer.length].frame;
     }
 };
