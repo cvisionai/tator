@@ -113,10 +113,11 @@ export class LeafMain extends HTMLElement {
 
   _getLeavesSection(leaves = []) {
     let leavesSection = document.createElement("div");
+    leavesSection.style.minHeight = "150px";
 
     if (leaves && leaves.length > 0) {
       const heading = document.createElement("h3");
-      heading.setAttribute("class", "f1 text-gray pb-3");
+      heading.setAttribute("class", "f2 text-gray pb-3");
 
       const addText = document.createElement("span");
       addText.setAttribute("class", "text-white f1");
@@ -128,8 +129,8 @@ export class LeafMain extends HTMLElement {
       // Click on the  icon on any node in the label tree to move or edit it. When you hit save, it will update all annotations across every project that uses that label.
       this._helperText = document.createElement("p");
       this._helperText.setAttribute("class", "f2 text-gray pb-3 edit-project__h1 text-normal text-gray");
-      const helptext = document.createTextNode(`Click on the edit icon on any node in the leaf to edit it.`);
-      this._helperText.appendChild(helptext);
+      const helptext = `<div class="py-1">Quick tips: Drag and drop to organize leaves into a heirarchy.</div><div class="py-1">To make a leaf top level, drag to container's edge.</div><div class="py-1">Edit details using the edit icon.</div>`;
+      this._helperText.innerHTML = helptext;
       leavesSection.appendChild(this._helperText);
 
       this._helperLinks = document.createElement("p");
@@ -268,8 +269,11 @@ export class LeafMain extends HTMLElement {
     }
 
     // Return the level 1 items
-    for (const item of this._levels.get(0)) {
-      this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
+    if (this._levels.get(0)) {
+      const main = 0;
+      for (const item of this._levels.get(main)) {
+        this._outputOrder = [...this._outputOrder, ...this._recursiveChildren(item)];
+      }  
     }
 
     return this._outputOrder;
@@ -369,7 +373,8 @@ export class LeafMain extends HTMLElement {
 
   _getAddForm(parentLeafId) {
     let form = document.createElement("leaf-form");
-    const leaves = this._getOrganizedLeaves(this._leaves);
+    const leaves = this._leaves && this._leaves.length > 1 ? this._getOrganizedLeaves(this._leaves) : this._leaves;
+    
     form._initEmptyForm(leaves, this.projectNameClean, this.attributeTypes);
     form.fromType = this.typeId;
 

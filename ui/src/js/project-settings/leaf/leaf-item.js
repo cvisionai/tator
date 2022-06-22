@@ -20,20 +20,20 @@ export class LeafItem extends TatorElement {
 
 
       this.addChildLeaf = document.createElement("div");
-      this.addChildLeaf.setAttribute("class", "btn btn-small btn-outline f3 mr-3 py-1");
+      this.addChildLeaf.setAttribute("class", "btn btn-small btn-outline f3 mr-3 py-1 px-1");
       this.addChildLeaf.setAttribute("style", "width: fit-content; height: fit-content; margin-left: 25px;");
       this.addChildLeaf.textContent = "Add Child"
       this.addChildLeafIndent.appendChild(this.addChildLeaf);
 
-      // this.editIcon = document.createElement("div");
-      // this.editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
-      // this.editIcon.setAttribute("class", "clickable text-gray hover-text-white py-1 leaf-edit-icon"); // X-Padding removed bc it was addititive set in element defination
-      // this.addChildLeafIndent.appendChild(this.editIcon);
+      this.editIcon = document.createElement("div");
+      this.editIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+      this.editIcon.setAttribute("class", "clickable text-gray hover-text-white py-1 leaf-edit-icon"); // X-Padding removed bc it was addititive set in element defination
+      this.addChildLeafIndent.appendChild(this.editIcon);
 
-      this.leafPathName = document.createElement("span");
-      this.leafPathName.setAttribute("class", "px-3 text-gray css-truncate f3 py-1");
-      // this.leafPathName.setAttribute("style", "padding: 5px;");
-      this.addChildLeafIndent.appendChild(this.leafPathName);
+      // this.leafPathName = document.createElement("span");
+      // this.leafPathName.setAttribute("class", "text-gray css-truncate f3 py-1");
+      // // this.leafPathName.setAttribute("style", "padding: 5px;");
+      // this.addChildLeafIndent.appendChild(this.leafPathName);
 
       // Current leaf: LEFT content
       this.innerLeafBox = document.createElement("div");
@@ -58,8 +58,14 @@ export class LeafItem extends TatorElement {
 
       this.leafName = document.createElement("span");
       this.leafName.setAttribute("draggable", "true");
+      this.leafName.style.cursor = "move";
       this.leafName.setAttribute("class", "py-2 px-2");
       this.innerLeafBox.appendChild(this.leafName);
+
+      this.leafPathName = document.createElement("div");
+      this.leafPathName.setAttribute("class", "text-gray css-truncate f3 py-1");
+      // this.leafPathName.setAttribute("style", "padding: 5px;");
+      this.innerLeafBox.appendChild(this.leafPathName);
 
 
 

@@ -182,7 +182,7 @@ export class AttributesForm extends TatorElement {
     // /rest/Leaves/Suggestion/nomral_leaf_work.test/128
     const helperText = document.createElement("p");
     helperText.setAttribute("class", "text-white h3 py2");
-    helperText.textContent = `Format for service URL: '/rest/Leaves/Suggestion/{leaf_path}/{project_id}' where {leaf_path} is the 'Path' listed for the leaf, and it will be used as the top of the heirarchy.`;
+    helperText.innerHTML = `<p class="text-gray f3 py-2 d-block">Service URL example: <span class="text-gray text-italic text-bold">/rest/Leaves/Suggestion/{LEAF-PATH}/{PROJECT-ID}</span></p>`;
     this._autocompleteSection.appendChild(helperText);
 
     this._autocomplete_service_url = document.createElement("text-input");
