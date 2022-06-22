@@ -197,7 +197,6 @@ export class LeafMain extends HTMLElement {
     try {
       for (const data of this._levels.get(0)) {
         const item = this._leafBoxes.get(data.id);
-        // item.classList.add("hidden");
 
         if (this._parents.has(data.id)) { 
           item.minimizeIcon.hidden = true;
@@ -205,7 +204,7 @@ export class LeafMain extends HTMLElement {
           let childrenList = this._parents.get(data.id);
           if (childrenList && childrenList.length > 0) {
             for (let innerChild of childrenList) {
-              this._recursiveHide(innerChild.id);
+              this._recursiveCollapse(innerChild.id);
             }
           }
         }
@@ -222,7 +221,7 @@ export class LeafMain extends HTMLElement {
     // Return the level 1 items
     try {
       for (const data of this._levels.get(0)) {
-        this._recursiveUnhide(data.id);
+        this._recursiveExpand(data.id);
       }
     } catch (err) {
       console.error("Issue with maximize all.", err);
@@ -539,17 +538,26 @@ export class LeafMain extends HTMLElement {
 
     if (leaf.expands) {
       leafItem.leafCurrent.addEventListener("click", () => {
-        leafItem.minimizeIcon.hidden = !leafItem.minimizeIcon.hidden;
-        leafItem.maximizeIcon.hidden = !leafItem.maximizeIcon.hidden;
-        const children = this._parents.get(leaf.id);
+        try {
+          const id = leaf.id;
 
-        for (let c of children) {
-          const item = this._leafBoxes.get(c.id);
-          if (!leafItem.minimizeIcon.hidden) {
-            item.classList.remove("hidden");
-          } else {
-            item.classList.add("hidden");
+          leafItem.minimizeIcon.hidden = !leafItem.minimizeIcon.hidden;
+          leafItem.maximizeIcon.hidden = !leafItem.maximizeIcon.hidden;
+    
+          const areExpanding = !leafItem.minimizeIcon.hidden;
+          const children = this._parents.get(id);
+          if (children && children.length > 0) {
+            for (let c of children) {
+              if (areExpanding) {
+                this._recursiveUnhide(c.id);
+              } else {
+                this._recursiveHide(c.id);
+              }
+            }
           }
+
+        } catch (err) {
+          console.error("Problem toggling leaf node.", err);
         }
       });
     }
@@ -568,8 +576,6 @@ export class LeafMain extends HTMLElement {
 
     return leafItem;
   }
-
-
 
   moveLeaf(e) {
     const forLeaf = e.detail.forLeaf;
@@ -615,17 +621,12 @@ export class LeafMain extends HTMLElement {
     }
   }
 
-  _expandChildren() {
-    console.log("_expandChildren");
-  }
-
   _recursiveHide(id) {
     const item = this._leafBoxes.get(id);
     item.classList.add("hidden");
 
+    // Don't change the min/max icons, keep that
     if (this._parents.has(id)) {
-      item.minimizeIcon.hidden = true;
-      item.maximizeIcon.hidden = false;
       let childrenList = this._parents.get(id);
       if (childrenList && childrenList.length > 0) {
         for (let innerChild of childrenList) {
@@ -639,6 +640,41 @@ export class LeafMain extends HTMLElement {
     const item = this._leafBoxes.get(id);
     item.classList.remove("hidden");
 
+    const itemIsExpanded = !item.minimizeIcon.hidden;
+    if (itemIsExpanded) {
+      // Unhide the children (if any)
+      if (this._parents.has(id)) {
+        let childrenList = this._parents.get(id);
+        if (childrenList && childrenList.length > 0) {
+          for (let innerChild of childrenList) {
+            this._recursiveUnhide(innerChild.id);
+          }
+        }
+
+      }
+    }
+  }
+
+  _recursiveCollapse(id) {
+    const item = this._leafBoxes.get(id);
+    item.classList.add("hidden");
+
+    if (this._parents.has(id)) {
+      item.minimizeIcon.hidden = true;
+      item.maximizeIcon.hidden = false;
+      let childrenList = this._parents.get(id);
+      if (childrenList && childrenList.length > 0) {
+        for (let innerChild of childrenList) {
+          this._recursiveCollapse(innerChild.id);
+        }
+      }
+    }
+  }
+
+  _recursiveExpand(id) {
+    const item = this._leafBoxes.get(id);
+    item.classList.remove("hidden");
+
     if (this._parents.has(id)) {
       item.minimizeIcon.hidden = false;
       item.maximizeIcon.hidden = true;
@@ -646,7 +682,7 @@ export class LeafMain extends HTMLElement {
 
       if (childrenList && childrenList.length > 0) {
         for (let innerChild of childrenList) {
-          this._recursiveUnhide(innerChild.id);
+          this._recursiveExpand(innerChild.id);
         }  
       }
 
