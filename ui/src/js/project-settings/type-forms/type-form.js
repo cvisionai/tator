@@ -40,6 +40,9 @@ export class TypeForm extends TatorElement {
     // Init button early
     this.saveButton = document.createElement("input");
     this.savePost = document.createElement("button");
+
+    //
+    this.leafSection = null;
   }
 
   _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler, isStaff, projectName }) {
@@ -271,7 +274,7 @@ export class TypeForm extends TatorElement {
           });
 
           // after the form is init
-          if (this.typeName == "LeafType") {
+          if (this.typeName == "LeafType" && this.leafSection == null) {
             this.sideNav.fillContainer({
               type: this.typeName,
               id: saveReturnId,

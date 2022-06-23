@@ -19,6 +19,7 @@ export class LeafItem extends TatorElement {
 
       this.leafPathName = document.createElement("span");
       this.leafPathName.setAttribute("class", "text-gray css-truncate f3 pb-3");
+      this.leafPathName.setAttribute("style", "margin-left: 25px;");
       this.addChildLeafIndent.appendChild(this.leafPathName);
 
       // this.addChildLeaf = document.createElement("div");
@@ -89,20 +90,18 @@ export class LeafItem extends TatorElement {
 
       if (leaf.expands) {
          this.classList.add("clickable");
-         this.addChildLeafIndent.setAttribute("style", `margin-left: ${number}px;`);
       }
 
       // If or not top level
       if (leaf.indent > 0) {
-         const number = leaf.expands ? Number((leaf.indent * 30) + 20) : Number((leaf.indent * 30));   
+         const number = Number((leaf.indent * 30) + 20);
+         this.addChildLeafIndent.setAttribute("style", `margin-left: ${number}px;`);
          this.leafIndent.setAttribute("style", `padding-left: ${(leaf.indent) * 30}px;`);
          this.classList.add("hidden");
       }
 
       if (leaf.expands) {
          this.maximizeIcon.hidden = false;
-      } else {
-         this.leafPathName.setAttribute("style", "margin-left: 25px;");
       }
 
       // Set the name and path for viewing

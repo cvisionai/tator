@@ -399,6 +399,9 @@ export class SettingsNav extends TatorElement {
     //console.log(`Filling ${type} container with id ${id}`);
     let itemDivId = `#itemDivId-${type}-${id}${innerNav ? "_inner" : ""}`; //ie. #itemDivId-MediaType-72
     let itemDiv = this._shadow.querySelector(itemDivId);
+    
+    // clear just in case
+    itemDiv.innerHTML = "";
 
     return itemDiv.appendChild(itemContents);
   }

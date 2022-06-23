@@ -399,7 +399,7 @@ export class ProjectSettings extends TatorPage {
           });
 
           // after the form is init
-          if (form.typeName == "LeafType") {
+          if (form.typeName == "LeafType" && form.leafSection == null) {
             this.settingsNav.fillContainer({
               type: form.typeName,
               id: g.id,

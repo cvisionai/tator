@@ -578,6 +578,7 @@ export class LeafMain extends HTMLElement {
   }
 
   moveLeaf(e) {
+    console.log("move leaf");
     const forLeaf = e.detail.forLeaf;
     const newParent = e.detail.newParent;
 
@@ -791,7 +792,7 @@ export class LeafMain extends HTMLElement {
 
     this.boxHelper._modalConfirm({
       "titleText": `Delete Confirmation`,
-      "mainText": `Pressing confirm will delete leaf "${name}". Do you want to continue?`,
+      "mainText": `Pressing confirm will delete leaf "${name}" and its children. Do you want to continue?`,
       "buttonSave": button,
       "scroll": false
     });

@@ -177,7 +177,10 @@ class LeafListAPI(BaseListView):
         ids = bulk_log_creation(leaves, project, self.request.user)
 
         # Return created IDs.
-        return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
+        if len(ids) == 1:
+            return {'message': f'Successfully created {len(ids)} leaf!', 'id': ids}
+        else:
+            return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
 
     def _delete(self, params):
         qs = get_leaf_queryset(params['project'], params)
@@ -186,8 +189,11 @@ class LeafListAPI(BaseListView):
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             query = get_leaf_es_query(params)
             TatorSearch().delete(self.kwargs['project'], query)
-
-        return {'message': f'Successfully deleted {count} leaves!'}
+            
+        if count == 1:
+            return {'message': f'Successfully deleted {count} leaf!'}
+        else:
+            return {'message': f'Successfully deleted {count} leaves!'}
 
     def _patch(self, params):
         qs = get_leaf_queryset(params['project'], params)
@@ -202,7 +208,10 @@ class LeafListAPI(BaseListView):
             query = get_leaf_es_query(params)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
 
-        return {'message': f'Successfully updated {count} leaves!'}
+        if count == 1:
+            return {'message': f'Successfully updated {count} leaf!'}
+        else:
+            return {'message': f'Successfully updated {count} leaves!'}
 
     def _put(self, params):
         """ Retrieve list of leaves by ID.
@@ -263,15 +272,43 @@ class LeafDetailAPI(BaseDetailView):
         leaf = Leaf.objects.get(pk=params['id'], deleted=False)
         project = leaf.project
 
-        parent = leaf.id
-        grandparent = None if leaf.parent == None else leaf.parent
-        children = Leaf.objects.filter(parent=parent, deleted=False)
-        self._update_children_delparent(self, children, grandparent)
+        ids = self._get_children_id_set(self, params['id'])
 
-        model_dict = leaf.model_dict
-        delete_and_log_changes(leaf, project, self.request.user)
-        TatorSearch().delete_document(leaf)
-        return {'message': f'Leaf {params["id"]} successfully deleted!'}
+        queryset = Leaf.objects.filter(pk__in=ids)
+        for i in ids:
+            inner_leaf = Leaf.objects.get(pk=i, deleted=False)
+            TatorSearch().delete_document(inner_leaf)
+                
+        bulk_delete_and_log_changes(queryset, project, self.request.user)
+
+        # todo figure out syntax for this query
+        # query = get_leaf_es_query(params)
+        # TatorSearch().delete(project, query)
+
+       
+        if len(ids) == 2 :
+            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} child successfully deleted! '}
+        elif len(ids) > 2 :
+            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} child successfully deleted! '}
+        else:
+             return {'message': f'Leaf {params["id"]} successfully deleted! '}
+
+    @staticmethod
+    def _get_children_id_set(self, leaf_id):
+        ch_list = self._recursive_inner_child(self, leaf_id, [])
+        return ch_list
+
+    @staticmethod
+    def _recursive_inner_child(self, leaf_id, carryOver):
+        new_array = carryOver
+        new_array.append(leaf_id)
+
+        query = Leaf.objects.filter(parent=leaf_id, deleted=False)
+        if query and len(query) > 0:
+            for inner_child in query:
+                new_array = self._recursive_inner_child(self, inner_child.id, new_array);
+
+        return new_array
 
     def get_queryset(self):
         return Leaf.objects.all()
@@ -288,25 +325,6 @@ class LeafDetailAPI(BaseDetailView):
                         child.parent = None 
                     else:
                         child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
-                
-                child.path = child.computePath()
-                child.save()
-                log_changes(child, child_model_dict, child.project, self.request.user)
-
-                inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
-                if inner_children and len(inner_children) > 0:
-                    self._update_path(self, inner_children)
-
-    @staticmethod
-    def _update_children_delparent(self, children, grandparent):
-        if children and len(children) > 0:
-            for child in children:
-                child_model_dict = child.model_dict
-
-                if grandparent == None:
-                    child.parent = None
-                else:
-                    child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
                 
                 child.path = child.computePath()
                 child.save()
