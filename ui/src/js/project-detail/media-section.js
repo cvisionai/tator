@@ -4,7 +4,7 @@ import { getCookie } from "../util/get-cookie.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
-import streamSaver from "streamsaver";
+import streamSaver from "../util/StreamSaver.js";
 
 export class MediaSection extends TatorElement {
   constructor() {
