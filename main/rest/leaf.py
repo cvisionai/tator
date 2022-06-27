@@ -252,7 +252,7 @@ class LeafDetailAPI(BaseDetailView):
         if 'parent' in params:
             if params['parent'] != params['id']:
                 children = Leaf.objects.filter(parent=obj.id, deleted=False)
-                if params['parent'] == None or params['parent'] == -1:
+                if params['parent'] is None or params['parent'] == -1:
                     obj.parent = None
                 else:
                     obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
