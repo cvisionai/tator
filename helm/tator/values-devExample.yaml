@@ -183,6 +183,9 @@ minio:
     name: tator
 kube-prometheus-stack:
   enabled: true
+  prometheusOperator:
+    admissionWebhooks:
+      enabled: false
   prometheus:
     server:
       extraArgs:

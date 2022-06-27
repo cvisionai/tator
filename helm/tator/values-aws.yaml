@@ -1,4 +1,4 @@
-domain: www.yourdomain.com
+domain: &domain www.yourdomain.com
 # These domains will work the same way as the primary domain.
 #aliases:
 #  - domain: alias.duckdns.org
@@ -144,6 +144,8 @@ minio:
 kube-prometheus-stack:
   enabled: true
   prometheusOperator:
+    admissionWebhooks:
+      enabled: false
     resources:
       requests:
         cpu: 250m
