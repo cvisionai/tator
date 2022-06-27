@@ -261,7 +261,7 @@ class LeafDetailAPI(BaseDetailView):
 
                 #Update child path, or parent
                 newparent = params['parent']
-                self._update_children_newparent(self, children, grandparent, newparent)
+                self._update_children_newparent(children, grandparent, newparent)
             
 
         obj.save()
@@ -272,9 +272,10 @@ class LeafDetailAPI(BaseDetailView):
         leaf = Leaf.objects.get(pk=params['id'], deleted=False)
         project = leaf.project
 
-        ids = self._get_children_id_set(self, params['id'])
+        ids = self._get_children_id_set(params['id'])
 
         queryset = Leaf.objects.filter(pk__in=ids)
+
         for i in ids:
             inner_leaf = Leaf.objects.get(pk=i, deleted=False)
             TatorSearch().delete_document(inner_leaf)
