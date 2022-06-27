@@ -289,7 +289,7 @@ class LeafDetailAPI(BaseDetailView):
         if len(ids) == 2 :
             return {'message': f'Leaf {params["id"]} and {len(ids) - 1} child successfully deleted! '}
         elif len(ids) > 2 :
-            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} child successfully deleted! '}
+            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} children successfully deleted! '}
         else:
              return {'message': f'Leaf {params["id"]} successfully deleted! '}
 
