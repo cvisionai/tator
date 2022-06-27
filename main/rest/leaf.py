@@ -293,12 +293,10 @@ class LeafDetailAPI(BaseDetailView):
         else:
              return {'message': f'Leaf {params["id"]} successfully deleted! '}
 
-    @staticmethod
     def _get_children_id_set(self, leaf_id):
         ch_list = self._recursive_inner_child(self, leaf_id, [])
         return ch_list
 
-    @staticmethod
     def _recursive_inner_child(self, leaf_id, carryOver):
         new_array = carryOver
         new_array.append(leaf_id)
@@ -313,7 +311,6 @@ class LeafDetailAPI(BaseDetailView):
     def get_queryset(self):
         return Leaf.objects.all()
 
-    @staticmethod
     def _update_children_newparent(self, children, grandparent, newparent):
         if children and len(children) > 0:
             for child in children:
@@ -334,7 +331,6 @@ class LeafDetailAPI(BaseDetailView):
                 if inner_children and len(inner_children) > 0:
                     self._update_path(self, inner_children)
 
-    @staticmethod
     def _update_path(self, children):
         for child in children:
             child_model_dict = child.model_dict
