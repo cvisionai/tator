@@ -144,8 +144,6 @@ minio:
 kube-prometheus-stack:
   enabled: true
   prometheusOperator:
-    admissionWebhooks:
-      enabled: false
     resources:
       requests:
         cpu: 250m
