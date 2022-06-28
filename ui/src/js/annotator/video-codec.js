@@ -240,11 +240,11 @@ class TatorVideoManager {
     //console.info(`${performance.now()}: GOT ${image.timestamp}`);
     image.data.timescale = image.timescale;
     image.data.frameDelta = image.frameDelta;
+    image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
     if (this._cursor_is_hot() || this._keyframeOnly == true)
     {
-      image.data.time = image.timestamp / image.data.timescale;
       this._safeCall(this.oncanplay);
     }
   }

@@ -169,6 +169,7 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     this._fastMode = val;
     this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = val;
+    this._videoElement[this._play_idx].playBuffer().keyframeOnly = val;
   }
 
   get keyframeOnly()
