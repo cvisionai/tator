@@ -162,11 +162,14 @@ postgis-image:
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
 client-image:
-	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
+	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 	docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
+	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 
 .PHONY: client-latest
 client-latest: client-image
