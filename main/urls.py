@@ -22,6 +22,8 @@ from .views import ProjectsView
 from .views import AccountProfileView
 from .views import TokenView
 from .views import ProjectDetailView
+from .views import StreamSaverSWLocal
+from .views import StreamSaverMITMLocal
 from .views import ProjectSettingsView
 from .views import OrganizationSettingsView
 from .views import AnnotationView
@@ -72,6 +74,8 @@ urlpatterns = [
          name='organization-settings'),
     path('projects/', ProjectsView.as_view(), name='projects'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
+    path('stream-saver/sw.js', StreamSaverSWLocal.as_view(), name='sw'),
+    path('stream-saver/mitm.html', StreamSaverMITMLocal.as_view(), name='mitm'),
     path('<int:project_id>/project-settings', ProjectSettingsView.as_view(), name='project-settings'),
     path('<int:project_id>/annotation/<int:id>', AnnotationView.as_view(), name='annotation'),
     path('auth-project', AuthProjectView.as_view()),

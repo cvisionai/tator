@@ -4,7 +4,7 @@ import { getCookie } from "../util/get-cookie.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { joinParams } from "../util/join-params.js";
 import { Utilities } from "../util/utilities.js";
-import streamSaver from "streamsaver";
+import streamSaver from "../util/StreamSaver.js";
 
 export class MediaSection extends TatorElement {
   constructor() {
@@ -435,12 +435,13 @@ export class MediaSection extends TatorElement {
           }
         });
         if (window.WritableStream && readableZipStream.pipeTo) {
-          readableZipStream.pipeTo(fileStream);
+          readableZipStream.pipeTo(fileStream).then(() => console.log('done writing'));
         } else {
           const writer = fileStream.getWriter();
           const reader = readableZipStream.getReader();
           const pump = () => reader.read()
-            .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+            .then(res => res.done ? writer.close() : writer.write(res.value).then(pump))
+            .then(() => console.log('done writing'));
           pump();
         }
       });
