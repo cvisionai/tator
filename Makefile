@@ -159,9 +159,25 @@ postgis-image:
 	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
 
+EXPERIMENTAL_DOCKER=$(shell docker version --format '{{json .Client.Experimental}}')
+ifeq ($(EXPERIMENTAL_DOCKER), true)
+# exists if experimental docker is not found
+.PHONY: experimental_docker
+experimental_docker:
+	@echo "NOTICE:\tDetected experimental docker"
+else
+.PHONY: experimental_docker
+experimental_docker:
+	@echo  "ERROR:\tImage build requires '--platform' argument which requires docker client experimental features"
+	@echo "\tUpgrade to docker client version >= 20.10.17 or turn on the experimental flag manually in config.json"
+	@echo "\tFor more info, see 'man docker-config-json'"
+	exit 255
+endif
+
+
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image:
+client-image: experimental_docker
 	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 	docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
