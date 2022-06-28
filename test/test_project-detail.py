@@ -28,6 +28,8 @@ def test_basic(request, page_factory, project): #video
    newCardsLength = 15
    totalCards = initialCardLength + newCardsLength
 
+
+
    nasa_space_photo_1 = '/tmp/hubble-sees-the-wings-of-a-butterfly.jpg'
    if not os.path.exists(nasa_space_photo_1):
       url = 'https://images-assets.nasa.gov/image/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o/hubble-sees-the-wings-of-a-butterfly-the-twin-jet-nebula_20283986193_o~small.jpg'
@@ -126,6 +128,9 @@ def test_basic(request, page_factory, project): #video
       print(f"(refreshed) Second page length of cards {cardLength}  == {totalOnSecond}")
       assert cardLength == totalOnSecond
    print("Complete!") 
+
+
+
 
    # Test filtering
    print("Start: Test Filtering") 
@@ -275,8 +280,29 @@ def test_basic(request, page_factory, project): #video
    attributeShown = page.query_selector_all('.entity-gallery-card__attribute:not(.hidden)')
    attributeShownText = attributeShown[1].text_content()
    assert attributeShownText == 'updated'
+   print('Complete!')
+
+   # test download file is working
+
+
+   print('Testing section download from section-more...')
+   page.on("console", lambda msg: print(f'>> {msg.text}'))
+   section_more = page.locator("section-more")
+   # with page.expect_download() as download_info: ## this was not being triggered
+   section_more.dispatch_event("download")
+   page.wait_for_timeout(5000)
+
+   print('Testing file download from media-more...')
+   
+   page.locator("media-more >> nth=0").hover()
+   page.wait_for_timeout(5000)
+   # with page.expect_download() as download_info:  ## this was not being triggered
+   page.locator('media-more download-button button  >> nth=0').dispatch_event("click")
+   page.wait_for_timeout(5000)
 
    print('Complete!')
+
+   page.close()
 
    
 
