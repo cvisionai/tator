@@ -492,12 +492,17 @@ export class AnnotationMulti extends TatorElement {
 
       this._play.setAttribute("is-paused","");
       let prime_fps = this._fps[this._longest_idx];
+      let prime_frame = this._videos[this._longest_idx].currentFrame();
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
-        if (video.keyframeOnly == false)
+        if (video.keyframeOnly == false && Math.abs(frame-prime_frame) > 25)
         {
           video.keyframeOnly = true;
+        }
+        else
+        {
+          video.keyframeOnly = false;
         }
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         this_frame += this._frameOffsets[idx];

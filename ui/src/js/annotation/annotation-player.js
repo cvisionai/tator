@@ -593,9 +593,14 @@ export class AnnotationPlayer extends TatorElement {
     const now = Date.now();
     const frame = Number(evt.target.value);
     const waitOk = now - this._lastScrub > this._scrubInterval;
-    if (this._video.keyframeOnly == false)
+    if (this._video.keyframeOnly == false && Math.abs(frame-this._video.currentFrame()) > 25)
     {
       this._video.keyframeOnly = true;
+    }
+    else
+    {
+      // Let the user slow down and get frame by frame scrubing
+      this._video.keyframeOnly = false;
     }
     if (waitOk) {
 

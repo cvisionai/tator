@@ -28,7 +28,10 @@
     </div>
   </form>
   <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-1">
-   {% if email_enabled %}
+    {% if okta_enabled %}
+    <a href="/oauth2/login" class="text-white">Log in with Okta</a>
+    {% endif %}
+    {% if email_enabled %}
     <div class="d-flex flex-row flex-items-center flex-justify-between"
          style="width:400px">
       <a href="/anonymous-gateway" class="text-white">Continue as guest</a>

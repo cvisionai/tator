@@ -346,7 +346,7 @@ export class DrawGL
 
     // Initialize the frame buffer in GPU memory
     // We should only need one GOP pre-catched at a time, give or take.
-    this.bufferDepth = 8;
+    this.bufferDepth = 16;
     this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
 
     // Initialze the backbuffer to use for MSAA
@@ -363,17 +363,7 @@ export class DrawGL
 
   rateChange(rate, fps)
   {
-    // Scale between 8 and 32 deep buffers
-    this.bufferDepth =  Math.floor(rate*fps*0.50); // Aim for half a second of playback
-    if (this.bufferDepth > 32)
-    {
-      this.bufferDepth = 32;
-    }
-    if (this.bufferDepth < 8)
-    {
-      this.bufferDepth = 8;
-    }
-    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
+    // No-Op
   }
 
   // This takes image width and image height.

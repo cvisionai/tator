@@ -10,7 +10,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 
-
+from django.template.response import TemplateResponse
 from rest_framework.authentication import TokenAuthentication
 import yaml
 
@@ -35,10 +35,10 @@ import traceback
 logger = logging.getLogger(__name__)
 
 
+
 class APIBrowserView(LoginRequiredMixin, TemplateView):
     template_name = 'browser.html'
     extra_context = {'schema_url': 'schema'}
-
 
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
@@ -123,6 +123,28 @@ class ProjectDetailView(ProjectBase, TemplateView):
         context['token'] = token
         return context
 
+class StreamSaverSWLocal(ProjectBase, TemplateView):
+    def get(self, *args, **kwargs):
+        # response = HttpResponse()
+        response = TemplateResponse(self.request, 'stream-saver/sw.js', {}, 'application/javascript')
+        del response.headers["X-Frame-Options"]
+        del response.headers["Cross-Origin-Embedder-Policy"]
+        response.headers["Content-Type"] = 'application/javascript'
+        response.headers["Cross-Origin-Resource-Policy"] = "same-site"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+        return response
+
+class StreamSaverMITMLocal(ProjectBase, TemplateView):
+    def get(self, *args, **kwargs):
+        # response = HttpResponse()
+        response = TemplateResponse(self.request, 'stream-saver/mitm.html', {})
+        del response.headers["X-Frame-Options"]
+        del response.headers["Cross-Origin-Embedder-Policy"]
+        response.headers["Cross-Origin-Resource-Policy"] = "same-site"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+        return response
 
 class ProjectSettingsView(ProjectBase, TemplateView):
     template_name = 'project-settings.html'
