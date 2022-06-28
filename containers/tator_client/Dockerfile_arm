@@ -3,8 +3,8 @@ MAINTAINER CVision AI <info@cvisionai.com>
 # Install apt packages
 # Install apt packages
 RUN yum install -y \
-        python3 python3-pip \
-        python3-setuptools python3-devel gcc gcc-c++ git vim curl unzip wget \
+        python39 python39-pip \
+        python39-setuptools python39-devel gcc gcc-c++ git vim curl unzip wget \
         freetype cmake zlib-devel libjpeg libtiff-devel libwebp-devel libjpeg-turbo-devel
 
 ENV PATH="/opt/cvision/bin/:$PATH"
