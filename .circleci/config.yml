@@ -5,7 +5,7 @@ orbs:
 jobs:
   build-docker-images:
     machine:
-      image: ubuntu-2004:202010-01
+      image: ubuntu-2004:2022.04.2
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
