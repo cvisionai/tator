@@ -435,12 +435,13 @@ export class MediaSection extends TatorElement {
           }
         });
         if (window.WritableStream && readableZipStream.pipeTo) {
-          readableZipStream.pipeTo(fileStream);
+          readableZipStream.pipeTo(fileStream).then(() => console.log('done writing'));
         } else {
           const writer = fileStream.getWriter();
           const reader = readableZipStream.getReader();
           const pump = () => reader.read()
-            .then(res => res.done ? writer.close() : writer.write(res.value).then(pump));
+            .then(res => res.done ? writer.close() : writer.write(res.value).then(pump))
+            .then(() => console.log('done writing'));
           pump();
         }
       });
