@@ -4,6 +4,7 @@ import { fetchRetry } from "../util/fetch-retry.js";
 import { DrawGL } from "./drawGL.js";
 import { color } from "./drawGL_colors.js";
 import { Utilities } from "../util/utilities.js";
+import { handle_video_error } from "../annotation/annotation-common.js";
 
 
 var statusAnimator=null;
@@ -1027,6 +1028,8 @@ export class AnnotationCanvas extends TatorElement
     }
     catch
     {
+      let evt = { detail : {hasOffScreenCanvas : false}}
+      handle_video_error(evt, this._shadow);
       console.warn("No offscreen canvas capability.");
     }
   }

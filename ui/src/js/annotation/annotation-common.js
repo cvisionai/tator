@@ -20,6 +20,14 @@ export function handle_video_error(evt, root)
     msg_html += `Your browser does not support WebCodecs API.`
     msg_html += `<br>Please utilize the latest versions of ${chrome_link} or ${edge_link}.`;
     msg_html += "</div>";
+  } else if (evt.detail.hasOffScreenCanvas == false) {
+    errorType = "hasOffScreenCanvas";
+    const edge_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.microsoft.com/en-us/edge'>Microsoft Edge</a></span>`;
+    const chrome_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.google.com/chrome/'>Google Chrome</a></span>`;
+    msg_html += "<div class='nav__secondary'>";
+    msg_html += `Your browser does not support OffScreenCanvas.`
+    msg_html += `<br>Please utilize the latest versions of ${chrome_link} or ${edge_link}.`;
+    msg_html += "</div>";
   }
 
   const sessionValue = sessionStorage.getItem(`handle_error__${errorType}`);
