@@ -649,9 +649,16 @@ class TatorVideoBuffer {
 
   _frameError(error)
   {
-    console.warn(`${this._name} DECODE ERROR ${error}`);
+    console.warn(`${this._name} DECODER ERROR ${error}`);
     postMessage({"type": "error",
                  "message": error});
+    if (error.message.indexOf("Codec reclaimed due to inactivity.") > 0)
+    {
+      console.info(`${this._name} Resetting decoder`);
+      this._videoDecoder = new VideoDecoder({
+        output: this._frameReady.bind(this),
+        error: this._frameError.bind(this)});
+    }
   }
 
   // Set the current video time
