@@ -283,26 +283,16 @@ def test_basic(request, page_factory, project): #video
    print('Complete!')
 
    # test download file is working
-
-
    print('Testing section download from section-more...')
    page.on("console", lambda msg: print(f'>> {msg.text}'))
    section_more = page.locator("section-more")
    # with page.expect_download() as download_info: ## this was not being triggered
    section_more.dispatch_event("download")
-   page.wait_for_timeout(5000)
 
    print('Testing file download from media-more...')
-   
    page.locator("media-more >> nth=0").hover()
-   page.wait_for_timeout(5000)
    # with page.expect_download() as download_info:  ## this was not being triggered
    page.locator('media-more download-button button  >> nth=0').dispatch_event("click")
-   page.wait_for_timeout(5000)
-
    print('Complete!')
 
    page.close()
-
-   
-
