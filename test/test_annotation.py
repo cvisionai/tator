@@ -67,7 +67,7 @@ def common_annotation(page, canvas, bias=0):
         page.mouse.click(x+45, y+45)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        page.wait_for_timeout(1000)
+        # page.wait_for_timeout(1000)
         page.mouse.down()
         page.wait_for_timeout(1000)
         page.mouse.move(x+95, y+95, steps=50)
