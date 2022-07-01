@@ -334,6 +334,9 @@ export class AnnotationPage extends TatorPage {
             const searchParams = this._settings._queryParams();
             const media_id = parseInt(newValue);
 
+            this.nextData = nextData;
+            this.prevData = prevData;
+
             // Turn disable selected_type.
             searchParams.delete("selected_type");
 
@@ -356,6 +359,8 @@ export class AnnotationPage extends TatorPage {
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
+              this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
+              this._prev.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
             }
 
             if (nextData.next == -1) {
@@ -376,6 +381,8 @@ export class AnnotationPage extends TatorPage {
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
+              this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
+              this._next.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
             }
           })
           .catch(err => console.log("Failed to fetch adjacent media! " + err));
@@ -426,6 +433,21 @@ export class AnnotationPage extends TatorPage {
         })
         break;
     }
+  }
+
+  showPrevPreview(e) {
+    if (this.prevData.prev == -1) return;
+    this._prev.preview.info = this.prevData.prev;
+  }
+
+  showNextPreview(e) {
+    if (this.nextData.next == -1) return;
+    this._next.preview.info = this.nextData.next;
+  }
+
+  removeNextPrevPreview(e) {
+    this._next.preview.hide();
+    this._prev.preview.hide();
   }
 
   _setupInitHandlers(canvas) {
