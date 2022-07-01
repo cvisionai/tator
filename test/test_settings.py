@@ -234,7 +234,7 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
         page.click('modal-dialog modal-close .modal__close')
     response = response_info.value
     respObject = response.json()
-    newClusterId = respObject["id"]
+    newClusterId = respObject.id
     print(f"Cluster id {newClusterId} created!")
 
     # Back to settings
@@ -280,7 +280,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
         page.click('#itemDivId-Applet-New button[value="Save"]')
     response = response_info.value
     respObject = response.json()
-    applet_id = respObject["id"]
+    applet_id = respObject.id
     
     page.wait_for_selector(f'text="Successfully created applet {applet_id}!"')
     page.click('modal-dialog modal-close .modal__close')
