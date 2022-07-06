@@ -102,7 +102,8 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.wait_for_selector(f'text="Successfully created 1 affiliation."')
     response = response_info.value
     respObject = response.json()
-    affiliationId = respObject.id
+    print(respObject)
+    affiliationId = respObject["id"]
     page.click('modal-dialog modal-close .modal__close')
     print(f"Affiliation id {affiliationId} created!")
 
@@ -132,7 +133,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     response = response_info.value
     respObject = response.json()
     print(respObject)
-    bucketId = respObject.id
+    bucketId = respObject["id"]
     print(f"Created bucket id {bucketId}")
     page.click('modal-dialog modal-close .modal__close')
 
@@ -158,7 +159,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     response = response_info.value
     # respObject = response.json()
     # print(respObject)
-    # bucketId = respObject.id
+    # bucketId = respObject["id"]
     # page.wait_for_selector('text="Password was not given but private key is encrypted"')
     # print(f"Created bucket id {bucketId}")
     page.wait_for_selector('text=" Error"')
