@@ -157,6 +157,13 @@ export class FilterData {
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
+          var modifiedByAttribute = {
+            choices: userFirstLastNames,
+            name: "_modified_by",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(modifiedByAttribute);
+
           var modifiedDatetimeAttribute = {
             name: "_modified_datetime",
             dtype: "datetime"
@@ -207,6 +214,13 @@ export class FilterData {
             dtype: "datetime"
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
+
+          var modifiedByAttribute = {
+            choices: userFirstLastNames,
+            name: "_modified_by",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
             name: "_modified_datetime",
