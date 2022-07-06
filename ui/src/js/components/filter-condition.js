@@ -150,9 +150,21 @@ export class FilterCondition extends TatorElement {
           dtype = attribute.dtype;
           if (dtype == "enum") {
             let enumChoices = [];
-            for (let choice of attribute.choices) {
+            for (let i in attribute.choices) {
+              const choiceValue = attribute.choices[i];
+              let choice;
+              let label;
+              
+              if (typeof choiceValue == 'object' && typeof choiceValue.value !== "undefined") {
+                choice = choiceValue.value;
+                label = typeof choiceValue.label !== "undefined"? choiceValue.label : choice;
+              } else {
+                choice = choiceValue;
+                label = choice;
+              }
+
               if (uniqueFieldChoices.indexOf(choice) < 0) {
-                enumChoices.push({"value": choice});
+                enumChoices.push({ "value": choice, "label": label});
                 uniqueFieldChoices.push(choice);
               }
             }
