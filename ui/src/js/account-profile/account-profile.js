@@ -31,20 +31,20 @@ export class AccountProfile extends TatorPage {
     userName.permission = false;
     form.appendChild(userName);
 
-    const firstName = document.createElement("text-input");
-    firstName.setAttribute("name", "First Name");
-    firstName.setAttribute("type", "string");
-    form.appendChild(firstName);
+    this.firstName = document.createElement("text-input");
+    this.firstName.setAttribute("name", "First Name");
+    this.firstName.setAttribute("type", "string");
+    form.appendChild(this.firstName);
 
-    const lastName = document.createElement("text-input");
-    lastName.setAttribute("name", "Last Name");
-    lastName.setAttribute("type", "string");
-    form.appendChild(lastName);
+    this.lastName = document.createElement("text-input");
+    this.lastName.setAttribute("name", "Last Name");
+    this.lastName.setAttribute("type", "string");
+    form.appendChild(this.lastName);
 
-    const email = document.createElement("text-input");
-    email.setAttribute("name", "Email Address");
-    email.setAttribute("type", "string");
-    form.appendChild(email);
+    this.email = document.createElement("text-input");
+    this.email.setAttribute("name", "Email Address");
+    this.email.setAttribute("type", "string");
+    form.appendChild(this.email);
 
     const footer = document.createElement("div");
     footer.setAttribute("class", "modal__footer d-flex py-3");
@@ -57,7 +57,7 @@ export class AccountProfile extends TatorPage {
     submit.setAttribute("value", "Update");
     footer.appendChild(submit);
 
-    firstName.addEventListener("input", evt => {
+    this.firstName.addEventListener("input", evt => {
       const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
       if (re.test(evt.target.value)) {
         submit.removeAttribute("disabled");
@@ -66,7 +66,7 @@ export class AccountProfile extends TatorPage {
       }
     });
 
-    lastName.addEventListener("input", evt => {
+    this.lastName.addEventListener("input", evt => {
       const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
       if (re.test(evt.target.value)) {
         submit.removeAttribute("disabled");
@@ -75,7 +75,7 @@ export class AccountProfile extends TatorPage {
       }
     });
 
-    email.addEventListener("input", evt => {
+    this.email.addEventListener("input", evt => {
       const re = RegExp("^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$");
       if (re.test(evt.target.value)) {
         submit.removeAttribute("disabled");
@@ -101,44 +101,53 @@ export class AccountProfile extends TatorPage {
           "Content-Type": "application/json"
         }
       })
-      .then(response => { return response.json(); })
-      .then(result => {
-        this.userId = result.id;
-        userName.setValue(result.username);
-        firstName.setValue(result.first_name);
-        lastName.setValue(result.last_name);
-        email.setValue(result.email);
-      });
+        .then(response => { return response.json(); })
+        .then(result => {
+          this.userId = result.id;
+          userName.setValue(result.username);
+          this.firstName.setValue(result.first_name);
+          this.lastName.setValue(result.last_name);
+          this.email.setValue(result.email);
+        });
     });
 
-    form.addEventListener("submit", evt => {
-      evt.preventDefault();
-      const url = "/rest/User/" + this.userId;
-      fetch(url, {
-        method: "PATCH",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          "first_name": firstName.getValue(),
-          "last_name": lastName.getValue(),
-          "email": email.getValue(),
-        }),
-      })
-      .then( () => {
-        this._modalNotify.init("Account Update", "Your account has been successfully updated!", "Ok");
-        this._modalNotify.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-      })
-      .catch(err => {
-        console.log(err);
-        Utilities.warningAlert("Account profile did not update", "#ff3e1d", false);
-      });
-    });
+    form.addEventListener("submit", this._updateUserProfile.bind(this));
   }
+
+  async _updateUserProfile(evt) {
+    evt.preventDefault();
+
+    const url = "/rest/User/" + this.userId;
+    const response = await fetch(url, {
+      method: "PATCH",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "first_name": this.firstName.getValue(),
+        "last_name": this.lastName.getValue(),
+        "email": this.email.getValue(),
+      }),
+    })
+    if (response.status == '200') {
+      const data = await response.json();
+      this._modalNotify.init("Account Update", "Your account has been successfully updated!", "Ok");
+      this._modalNotify.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    } else {
+      // Utilities.warningAlert("Account profile did not update", "#ff3e1d", false);
+      const data = await response.json();
+      //init(title, message, error_or_ok, buttonText, is_html)
+      this._modalNotify.init("Account Not Updated", `${data.message}`, "error");
+      this._modalNotify.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    }
+  }
+
+
 }
 
 customElements.define("account-profile", AccountProfile);
