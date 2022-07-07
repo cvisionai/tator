@@ -1,30 +1,53 @@
 export function handle_video_error(evt, root)
 {
   let msg_html = "";
-  if (evt.detail.secureContext == false)
-  {
+  let errorType = "";
+
+  if (evt.detail.secureContext == false) {
+    errorType = "secureContext";
     const tator_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.tator.io/docs/administrator-guide/configuration/enable-https'>enable a secure context using TLS</a></span>`;
     const tutorial_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.tator.io/blog/secure-context-for-local-deployments'>secure origin</a></span>`;
-    msg_html += "<div class='nav__secondary'>";
-    msg_html += `Your connection to <span class='text-purple'>${window.location.host}</span> is not secure context.<br>In this state, components required by Tator are disabled by your browser security settings.`
-    msg_html += `<br><br>To proceed, add <span class='text-purple'>${window.location.host}</span> as a ${tutorial_link}`; 
+    msg_html += "<span class='text-normal' style='line-height:1.7rem'>";
+    msg_html += `<span class='text-semibold'>Your connection to <span class='text-purple'>${window.location.host}</span> is not secure context.</span><br>In this state, components required by Tator are disabled by your browser security settings.`
+    msg_html += `<br><br/>To proceed, add <span class='text-purple'>${window.location.host}</span> as a ${tutorial_link}`; 
     msg_html += ` or contact your system administrator to ${tator_link} to your Tator deployment.`;
-    msg_html += "</div>"
-  }
-  else if (evt.detail.videoDecoderPresent == false)
-  {
+    msg_html += "</span>"
+  } else if (evt.detail.videoDecoderPresent == false) {
+    errorType = "videoDecoderPresent";
     const edge_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.microsoft.com/en-us/edge'>Microsoft Edge</a></span>`;
     const chrome_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.google.com/chrome/'>Google Chrome</a></span>`;
-    msg_html += "<div class='nav__secondary'>";
+    msg_html += "<span class='text-normal' style='line-height:1.7rem'>";
     msg_html += `Your browser does not support WebCodecs API.`
-    msg_html += `<br>Please utilize the latest versions of ${chrome_link} or ${edge_link}.`;
-    msg_html += "</div>";
+    msg_html += `<br>For full feature support, please utilize the latest versions of<br/>${chrome_link} or ${edge_link}.`;
+    msg_html += "</span>";
+  } else if (evt.detail.hasOffScreenCanvas == false) {
+    errorType = "hasOffScreenCanvas";
+    const edge_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.microsoft.com/en-us/edge'>Microsoft Edge</a></span>`;
+    const chrome_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.google.com/chrome/'>Google Chrome</a></span>`;
+    msg_html += "<span class='text-normal' style='line-height:1.7rem'>";
+    msg_html += `You are using an unsupported browser.`
+    msg_html += `<br>For full feature support, please utilize the latest versions of<br/>${chrome_link} or ${edge_link}.`;
+    msg_html += "</span>";
+    sessionStorage.setItem(`handle_error__browser-support`, 'true');
   }
+
+
+  const secureContextShown = sessionStorage.getItem(`handle_error__secureContext_${document.location.pathname}`);
+  const videoDecoderPresentShown = sessionStorage.getItem(`handle_error__videoDecoderPresent_${document.location.pathname}`);
+  const hasOffScreenCanvasShown = sessionStorage.getItem(`handle_error__hasOffScreenCanvas_${document.location.pathname}`);
+  const browserSupportShownThisPage = sessionStorage.getItem(`handle_error__browser-support_${document.location.pathname}`);
+
+  // Don't show offscreen if we have secure context or decoder errors on this page
+  if (errorType == "hasOffScreenCanvas" && (secureContextShown != null || videoDecoderPresentShown != null || browserSupportShownThisPage != null) ) return;
+
+  // Don't show decoder error if we have secure context error being shown on this page, or if we already told them on this page to get chrome/edge
+  if (errorType == "videoDecoderPresent" && (secureContextShown != null || browserSupportShownThisPage != null)) return;
 
   let modalError = document.createElement("modal-notify");
   root.appendChild(modalError);
   modalError.init("System Incompatibility Warning", msg_html, 'error', 'Exit', true);
   modalError.setAttribute("is-open", "");
+  sessionStorage.setItem(`handle_error__${errorType}_${document.location.pathname}`, 'true');
 }
 
 // Class to handle the repetitive nature of graying out / disabling the play button

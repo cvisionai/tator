@@ -502,6 +502,12 @@ class TatorVideoBuffer {
   {
     this._pendingSeek = null;
     //console.info(`PLAYING VIDEO ${this._current_cursor}`);
+    if (this._videoDecoder.state == 'closed')
+    {
+      this._videoDecoder = new VideoDecoder({
+        output: this._frameReady.bind(this),
+        error: this._frameError.bind(this)});
+    }
     this._videoDecoder.reset();
     this._videoDecoder.configure(this.activeCodecConfig);
     const timestampOffset = this.currentTimestampOffset;
