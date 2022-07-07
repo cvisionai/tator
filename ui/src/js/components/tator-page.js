@@ -37,12 +37,16 @@ export class TatorPage extends TatorElement {
     this._announcements = document.createElement("announcement-dialog");
     this._shadow.appendChild(this._announcements);
 
+    this._browserCheck = document.createElement("browser-recommendation");
+   
+
     this._announcements.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal");
     });
   }
 
   connectedCallback() {
+    this._browserCheck.init(this._shadow);
     fetch("/rest/Announcements", {
       method: "GET",
       ...sameOriginCredentials(),
@@ -53,6 +57,7 @@ export class TatorPage extends TatorElement {
         this._announcements.init(announcements);
         this._announcements.setAttribute("is-open", "");
         this.setAttribute("has-open-modal", "");
+        
       }
     });
   }

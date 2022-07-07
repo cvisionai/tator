@@ -59,23 +59,34 @@ def common_annotation(page, canvas, bias=0):
     # Resize boxes
     print("Resizing boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
+        print(f'Looping box info, at index: {idx}')
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
+        
         page.mouse.move(x+45, y+45, steps=50)
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(5000)
+        
         page.mouse.click(x+45, y+45)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(5000)
+        
         page.mouse.down()
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(5000)
+        
         page.mouse.move(x+95, y+95, steps=50)
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(5000)
+        
         page.mouse.up()
+        
+        print(f'Wait for success light....')
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
         light.wait_for_element_state('hidden')
+
+        print(f'Success!')
+        page.wait_for_timeout(5000)
 
 
 def test_video_annotation(page_factory, project, video):

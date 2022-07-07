@@ -10,6 +10,8 @@
   width: 148px;
   transition-duration: 0.25s;
   transition-property: background-color, color;
+  text-align: center;
+
   &:focus {
     outline: none;
   }
