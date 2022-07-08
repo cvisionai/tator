@@ -31,6 +31,9 @@ def test_settings_projectEdit(page_factory, project, image_file):
     page.wait_for_selector(f'text="Project {project} updated successfully!"')
     print(f"Project {project} updated successfully!")
     page.click('modal-dialog modal-close .modal__close')
+
+    #todo - Assert information saved, edit and re-assert
+
     page.close()
 
 
@@ -55,6 +58,9 @@ def test_settings_mediaTypes(page_factory, project):
         page.wait_for_selector(f'text="Media type created successfully!"')
         page.click('modal-dialog modal-close .modal__close')
         print(f"{dtypeName} Media type created successfully!")
+
+        # todo - Assert information saved, edit and re-assert
+        # Note/todo: when run sequentionally they are clicked in "States"...
     page.close()
     
 def test_settings_localizationTypes(page_factory, project):
@@ -83,20 +89,146 @@ def test_settings_localizationTypes(page_factory, project):
         print(f"{dtypeName} - Localization type created successfully!!")
     page.close()
 
-def test_settings_leafType(page_factory, project):
+def test_settings_leafType(page_factory, project, base_url):
     print("Leaf Type Tests...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
     # Create Leaf type
+    leaf_type_in_view = 'Testing Leaf'
     page.click('.heading-for-LeafType .Nav-action')
-    page.fill('#itemDivId-LeafType-New text-input[name="Name"] input', 'Testing Leaf')
-    page.fill('#itemDivId-LeafType-New text-input[name="Description"] input', 'Leaf Type description for automated test.')
+    page.fill('#itemDivId-LeafType-New text-input[name="Name"] input', leaf_type_in_view)
+    leafTypeDescription = 'Leaf Type description for automated test.'
+    page.fill('#itemDivId-LeafType-New text-input[name="Description"] input', leafTypeDescription)
     page.click('#itemDivId-LeafType-New button[value="Save"]')
     page.wait_for_selector(f'text="Leaf type created successfully!"')
     page.click('modal-dialog modal-close .modal__close')
     print(f"Leaf type created successfully!!")
+    page.wait_for_timeout(5000)
+
+    # Add attributes to Leaf type
+    leafTypeLink = page.query_selector(f'text="{leaf_type_in_view}"')
+    formSelector = leafTypeLink.get_attribute("href")
+    page.click(f'{formSelector} .add-new-in-form')
+    page.wait_for_selector('modal-dialog form')
+    page.fill('modal-dialog text-input[name="Name"] input', 'String Type')
+    page.select_option(f'modal-dialog enum-input[name="Data Type"] select', "string")
+    attr_description = 'Attr description for automated test.'
+    page.fill('modal-dialog text-input[name="Description"] input', attr_description)
+
+
+    leafTypeId = formSelector.replace("#itemDivId-LeafType-", "")
+    url = base_url + "/rest/LeafType/" + str(leafTypeId)
+    with page.expect_response(url) as response_info:
+        page.click('modal-dialog input[type="submit"]')
+        page.wait_for_selector(f'text="New attribute type \'String Type\' added"')
+        page.click('modal-dialog modal-close .modal__close')
+
+    # Get data for Assert statements
+    leaf_types_obj = response_info.value.json()
+    attr_type_obj = None
+
+    # Assert leaf type information
+    assert leaf_types_obj["name"] == leaf_type_in_view
+    assert leaf_types_obj["description"] == leafTypeDescription
+
+    # Assert Leaf type attribute
+    attr_type_obj = leaf_types_obj["attribute_types"]
+    for at in attr_type_obj:
+        newName = "String Type"
+        if at["name"] == newName:
+            attr_type_obj = at
+            assert attr_type_obj["description"] == attr_description
+            break
+
+    print("Confirmed leaf type attribute was added!")
+
+    
+    # Add leafs with attr value
+    page.click('.edit-project__h1 a')
+    page.wait_for_timeout(5000)
+    page.click('text=" New Leaf"')
+    page.wait_for_selector('modal-dialog form')
+    page.fill('modal-dialog text-input[name="Name"] input', 'A')
+    page.click('modal-dialog input[value="Save"]')
+    # page.wait_for_selector('text="Complete')
+    page.wait_for_timeout(5000)
+    page.click('modal-dialog modal-close .modal__close')
+
+    page.wait_for_timeout(5000)
+    page.click('text=" New Leaf"')
+    page.wait_for_selector('modal-dialog form')
+    page.fill('modal-dialog text-input[name="Name"] input', 'B')
+    page.click('modal-dialog input[value="Save"]')
+    # page.wait_for_selector('text="Complete')
+    page.wait_for_timeout(5000)
+    page.click('modal-dialog modal-close .modal__close')
+
+    # this should be top level and visible to click into
+    # asserts its level, and successful add
+
+
+    # Change heirachy with modal & assert attr value saved
+    # Change heirarchy with drag and drop
+    # This element should have the draggable attribute value as true
+    page.wait_for_timeout(5000)
+    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
+    print(leaf_elems)
+    src_elem = leaf_elems[1]
+    dest_elem = leaf_elems[0]
+
+    # Create a data transfer JSHandle instance
+    data_transfer = page.evaluate_handle('() => new DataTransfer()')
+
+    # move it
+    src_elem.dispatch_event('dragstart', { 'dataTransfer': data_transfer })
+    dest_elem.dispatch_event('drop', { 'dataTransfer': data_transfer })
+    
+    # Now check whether the dropped effect is achieved
+    # todo ... a modal should pop up, press OK, wait for reload and now it should be the child element
+    # Child element B won't be seen, need to click into, and if you edit it the paren = A
+    page.wait_for_selector('text="Confirm move"')
+    page.click('modal-dialog input[type="submit"]')
+    page.wait_for_timeout(5000)
+    page.click('modal-dialog modal-close .modal__close')
+
+    page.wait_for_timeout(5000)
+    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
+    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
+
+    
+    assert len(leaf_elems) == 2
+    assert len(hidden_els) == 1
+    
+    a = leaf_elems[0]
+    a.click()
+    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
+    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
+    assert len(leaf_elems) == 2
+    assert len(hidden_els) == 0
+
+    print(f'Successfully dragged leaf to change parent.')
+
+    # Test Delete
+    page.wait_for_timeout(5000)
+    trash_icons = page.query_selector_all('.leaf-delete-icon')
+    trash_icons[0].click()
+
+    page.wait_for_selector('text="Delete Confirmation"')
+    page.click('text="Confirm"')
+
+    page.wait_for_selector('text="Complete"')
+    page.click('modal-dialog modal-close .modal__close')
+    page.wait_for_timeout(5000)
+    
+    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
+    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
+    assert len(leaf_elems) == 0
+    assert len(hidden_els) == 0
+    print(f'Successfully deleted leaf and child leaf.')
+
+    page.close()
 
 def test_settings_stateTypes(page_factory, project):
     print("State Type Tests...")
@@ -104,12 +236,16 @@ def test_settings_stateTypes(page_factory, project):
     page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
-    # Create State types #todo hitting error with media values sent as "[None, None]"
+    # Create State types 
+    # todo loop array like other types, and add assert statements
+    # Note/todo: when run sequentionally these are created in "MediaType" tests...
+    # re: #todo hitting error with media values sent as "[None, None]"
     page.click('.heading-for-StateType .Nav-action')
     page.fill('#itemDivId-StateType-New text-input[name="Name"] input', 'Alabama')
     page.fill('#itemDivId-StateType-New text-input[name="Description"] input', 'State Type description for automated test.')
     page.click('#itemDivId-StateType-New bool-input[name="Visible"] label[for="on"]')
     page.click('#itemDivId-StateType-New bool-input[name="Grouping Default"] label[for="on"]')
+    
     page.click('#itemDivId-StateType-New span:text("My Video Type")')
     page.click('#itemDivId-StateType-New span:text("My Image Type")')
     page.select_option('#itemDivId-StateType-New enum-input[name="Association"] select', label='Localization')
@@ -152,37 +288,46 @@ def test_settings_stateTypes(page_factory, project):
     page.close()
 
 
-# def test_settings_projectMemberships(page_factory, project):
-#     print("Membership Tests...")
-#     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-#     page.goto(f"/{project}/project-settings", wait_until='networkidle')
-#     page.on("pageerror", print_page_error)
+def test_settings_projectMemberships(page_factory, project):
+    print("Membership Tests...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.goto(f"/{project}/project-settings", wait_until='networkidle')
+    page.on("pageerror", print_page_error)
 
-#     # Test memberships
-#     page.click('.heading-for-Membership')
-#     page.wait_for_selector('.subitems-Membership .SideNav-subItem >> nth=1')
-#     subItem = page.query_selector('.subitems-Membership >> nth=1')
-#     username = subItem.inner_text()
-#     page.click('.heading-for-Membership .Nav-action')
+    # Test memberships
+    page.click('.heading-for-Membership')
+    page.wait_for_selector('.subitems-Membership .SideNav-subItem >> nth=1')
+    page.wait_for_timeout(5000)
+    subItems = page.query_selector_all('.subitems-Membership .SideNav-subItem')
+    username = subItems[0].inner_text()
+    subItem = subItems[0]
 
-#     page.fill('#itemDivId-Membership-New input[placeholder="Enter semicolon delimited usernames or email addresses..."]', username+';')
-#     page.select_option('#itemDivId-Membership-New enum-input[name="Default version"] select', label='Test Version')
-#     page.click('#itemDivId-Membership-New button[value="Save"]')
-#     # page.wait_for_selector('text="Failed to create 0 memberships."')
-#     page.wait_for_selector('text="Failed to create 1 memberships. Membership already exists for project."')
-#     page.click('modal-dialog modal-close .modal__close')
-#     print(f"Membership endpoint hit successfully!")
+    subItem.click()
+    print("Testing membership edit.")
+    formSelector = subItem.get_attribute("href")
+    print(formSelector)
+    memberId = formSelector.replace("#itemDivId-Membership-", "")
+    print(memberId)
+    subItem.click()
+    page.wait_for_selector(f'{formSelector} enum-input[name="Version"]')
+    page.select_option(f'{formSelector} enum-input[name="Version"] select', label='Baseline')
+    page.click(f'{formSelector} input[type="Submit"]')
+    page.wait_for_selector(f'text="Membership {memberId} successfully updated!"')
+    page.click('modal-dialog modal-close .modal__close')
+    print(f"Membershipship id {memberId} updated successfully!")
+   
+    #todo... reference org settings, use a membership from those tests to actually add new
+    page.click('.heading-for-Membership .Nav-action')
+    print("Testing re-adding current membership...")
+    page.fill('#itemDivId-Membership-New input[placeholder="Enter semicolon delimited usernames or email addresses..."]', username+';')
+    page.select_option('#itemDivId-Membership-New enum-input[name="Default version"] select', label='Test Version')
+    page.click('#itemDivId-Membership-New button[value="Save"]')
+    # page.wait_for_selector('text="Failed to create 0 memberships."')
+    page.wait_for_selector(f'text=" Error"')
+    page.click('modal-dialog modal-close .modal__close')
+    print(f"Membership endpoint hit (error) re-adding current user successfully!")
 
-#     subItem.click()
-#     formSelector = subItem.get_attribute("href")
-#     memberId = formSelector.replace("#itemDivId-Membership-", "")
-#     page.wait_for_selector(f'{formSelector} enum-input name="Version"')
-#     page.select_option(f'{formSelector} enum-input[name="Version"] select', label='Baseline')
-#     page.click(f'{formSelector} button[value="Save"]')
-#     page.wait_for_selector(f'text="Membership {memberId} successfully updated!"')
-#     page.click('modal-dialog modal-close .modal__close')
-#     print(f"Membershipship id {memberId} updated successfully!")
-#     page.close()
+    page.close()
 
 def test_settings_versionTests(page_factory, project):
     print("Version Settings Tests...")
@@ -294,7 +439,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     print(f"Successfully registered Applet.")
 
 
-def test_settings_attributeTests(page_factory, project):
+def test_settings_attributeTests(page_factory, project, base_url):
     print("Attribute Settings...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-settings", wait_until='networkidle')
@@ -305,9 +450,10 @@ def test_settings_attributeTests(page_factory, project):
 
     # Add Attribute Types
     page.click('.heading-for-MediaType')
-    page.wait_for_selector('text="Test Images"')
-    page.click('text="Test Images"')
-    imageTypeLink = page.query_selector('text="Test Images"')
+    media_type_in_view = "Test Images"
+    page.wait_for_selector(f'text="{media_type_in_view}"')
+    page.click(f'text="{media_type_in_view}"')
+    imageTypeLink = page.query_selector(f'text="{media_type_in_view}"')
     formSelector = imageTypeLink.get_attribute("href")
 
     for dtype in dtypeSet:      
@@ -323,31 +469,141 @@ def test_settings_attributeTests(page_factory, project):
             page.fill('modal-dialog array-input[name="Label"] text-input input', "One")
             page.fill('modal-dialog array-input[name="Value"] text-input input', "1")
             page.check('modal-dialog input[name="enum-default"]')
-        page.click('modal-dialog input[type="submit"]')
-        page.wait_for_selector(f'text="New attribute type \'{dtype} Type\' added"')
-        page.click('modal-dialog modal-close .modal__close')
-        print(f"New {dtype} type attribute added to Image!")
+        
+        if dtype == 'string':
+            page.fill('modal-dialog text-input[name="Service URL"] input', "testautocomplete")
+            
+        url = base_url + "/rest/MediaTypes/" + str(project)
+        with page.expect_response(url) as response_info:
+            page.click('modal-dialog input[type="submit"]')
+            page.wait_for_selector(f'text="New attribute type \'{dtype} Type\' added"')
+            page.click('modal-dialog modal-close .modal__close')
 
-    # Edit Attribute Types
-    print("Editing Attributes...")
+        # Get data for Assert statements
+        media_types = response_info.value.json()
+        media_type_obj = None
+        attr_type_obj = None
+        for mt in media_types:
+            if mt and mt["name"] == media_type_in_view:
+                media_type_obj = mt
+                break
+        mt_attributes = media_type_obj["attribute_types"]
 
+        for at in mt_attributes:
+            newName = dtype+' Type'
+            if at["name"] == newName:
+                attr_type_obj = at
+                break
+
+        # Assert
+        if dtype == 'string':
+            assert "autocomplete" in attr_type_obj
+            assert attr_type_obj["autocomplete"]["serviceUrl"] == "testautocomplete"
+
+        print(f"> New {dtype} type attribute added to Image!")
+
+    page.wait_for_timeout(5000)
+
+    # Edit Attribute Types (NOT GLOBAL)
+    print("Editing new Attributes...")
+    #open the attribute forms
+    dtypeSet = {"bool Type","int Type","float Type","string Type","datetime Type","geopos Type"} #,"enum Type",
+    for dtypeName in dtypeSet:
+        page.click(f'text="{dtypeName}"')
+        page.wait_for_selector(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input')
+        page.fill(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input', dtypeName + ' updated')
+        
+        if "string" in dtypeName:
+            #remove autocomplete
+            page.fill('modal-dialog text-input[name="Service URL"] input', "")
+        
+        # page.click(f'.modal__footer input[type="submit"]')
+        # page.wait_for_selector('modal-dialog div input[type="checkbox"]')
+        # successMessages = page.query_selector_all('modal-dialog div input[type="checkbox"]')
+        # assert len(successMessages) == 1
+        
+        url = base_url + "/rest/MediaTypes/" + str(project)
+        with page.expect_response(url) as response_info:
+            # page.click('text="Confirm"')
+            page.click(f'.modal__footer input[type="submit"]')
+            page.wait_for_selector('modal-dialog modal-success')
+            successMessages = page.query_selector_all('modal-dialog modal-success')
+            assert len(successMessages) == 1
+            page.click('modal-dialog modal-close .modal__close')
+
+        # Get data for Assert statements
+        media_types = response_info.value.json()
+        media_type_obj = None
+        attr_type_obj = None
+        for mt in media_types:
+            if mt["name"] == media_type_in_view:
+                media_type_obj = mt
+                break
+
+        mt_attributes = media_type_obj["attribute_types"]
+
+        for at in mt_attributes:
+            newName = dtypeName + ' updated'
+            if at["name"] == newName:
+                attr_type_obj = at
+                break
+
+        # Assert
+        # if "string" in dtypeName:
+        #     assert not "autocomplete" in attr_type_obj
+
+        print(f'> Successfully edited {len(successMessages)} new attribute named {dtypeName}!')
+    
+
+    # Edit Attribute Types (GLOBAL)
+    print("Editing GLOBAL Attributes...")
     #open the attribute forms
     dtypeSet = {"Test Bool","Test Int","Test Float","Test String","Test Enum","Test Datetime","Test Geoposition"}
     for dtypeName in dtypeSet:
         page.click(f'text="{dtypeName}"')
         page.wait_for_selector(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input')
         page.fill(f'attributes-form[data-old-name="{dtypeName}"] text-input[name="Name"] input', dtypeName + ' updated')
+        
         page.click(f'.modal__footer input[type="submit"]')
         page.wait_for_selector('modal-dialog div input[type="checkbox"]')
         successMessages = page.query_selector_all('modal-dialog div input[type="checkbox"]')
         assert len(successMessages) == 1
-        page.click('text="Confirm"')
+        
+        url = base_url + "/rest/MediaTypes/" + str(project)
+        with page.expect_response(url) as response_info:
+            page.click('text="Confirm"')
+            page.wait_for_selector('modal-dialog modal-success')
+            successMessages = page.query_selector_all('modal-dialog modal-success')
+            assert len(successMessages) == 1
+            page.click('modal-dialog modal-close .modal__close')
 
-        page.wait_for_selector('modal-dialog modal-success')
-        successMessages = page.query_selector_all('modal-dialog modal-success')
-        assert len(successMessages) == 1
-        page.click('modal-dialog modal-close .modal__close')
-        print(f'Successfully edited {len(successMessages)} global attribute named {dtypeName}!')
+        # Get data for Assert statements
+        media_types = response_info.value.json()
+        media_type_obj = None
+        attr_type_obj = None
+        for mt in media_types:
+            if mt["name"] == media_type_in_view:
+                media_type_obj = mt
+                break
+
+        mt_attributes = media_type_obj["attribute_types"]
+
+        for at in mt_attributes:
+            newName = dtypeName + ' updated'
+            if at["name"] == newName:
+                attr_type_obj = at
+                break
+
+        # Assert
+        if "string" in dtypeName:
+            assert not "autocomplete" in attr_type_obj
+            print(attr_type_obj)     
+        print(f'> Successfully edited {len(successMessages)} global attribute named {dtypeName}!')
+    
+    
+    # todo test clone
+    
+    
     page.close()
 
 
@@ -357,7 +613,8 @@ def test_settings_projectDelete(page_factory, project):
     page.goto(f"/{project}/project-settings", wait_until='networkidle')
     page.on("pageerror", print_page_error)
 
-    # WORKING -- commenting out bc not sure if this affects the rest of tests?
+    # TODO delete a bunch of other stuff succesffully first, then project
+
     print(f"Deleting project {project} via settings page...")
     page.click(f'a[href="#itemDivId-Project-{project}"]')
     page.click('project-main-edit .text-red button')

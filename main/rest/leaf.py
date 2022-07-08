@@ -177,7 +177,10 @@ class LeafListAPI(BaseListView):
         ids = bulk_log_creation(leaves, project, self.request.user)
 
         # Return created IDs.
-        return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
+        if len(ids) == 1:
+            return {'message': f'Successfully created {len(ids)} leaf!', 'id': ids}
+        else:
+            return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
 
     def _delete(self, params):
         qs = get_leaf_queryset(params['project'], params)
@@ -186,8 +189,11 @@ class LeafListAPI(BaseListView):
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
             query = get_leaf_es_query(params)
             TatorSearch().delete(self.kwargs['project'], query)
-
-        return {'message': f'Successfully deleted {count} leaves!'}
+            
+        if count == 1:
+            return {'message': f'Successfully deleted {count} leaf!'}
+        else:
+            return {'message': f'Successfully deleted {count} leaves!'}
 
     def _patch(self, params):
         qs = get_leaf_queryset(params['project'], params)
@@ -202,7 +208,10 @@ class LeafListAPI(BaseListView):
             query = get_leaf_es_query(params)
             TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
 
-        return {'message': f'Successfully updated {count} leaves!'}
+        if count == 1:
+            return {'message': f'Successfully updated {count} leaf!'}
+        else:
+            return {'message': f'Successfully updated {count} leaves!'}
 
     def _put(self, params):
         """ Retrieve list of leaves by ID.
@@ -229,24 +238,108 @@ class LeafDetailAPI(BaseDetailView):
     def _patch(self, params):
         obj = Leaf.objects.get(pk=params['id'], deleted=False)
         model_dict = obj.model_dict
+        grandparent = obj.parent
 
         # Patch common attributes.
         if 'name' in params:
             obj.name = params['name']
-            obj.save()
+        
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
         obj.save()
+
+        # Change the parent of a leaf
+        if 'parent' in params:
+            if params['parent'] != params['id']:
+                children = Leaf.objects.filter(parent=obj.id, deleted=False)
+                if params['parent'] is None or params['parent'] == -1:
+                    obj.parent = None
+                else:
+                    obj.parent = Leaf.objects.get(pk=params['parent'], deleted=False)
+                obj.path = obj.computePath()
+                obj.save()
+
+                #Update child path, or parent
+                newparent = params['parent']
+                self._update_children_newparent(children, grandparent, newparent)
+            
+
+        obj.save()
         log_changes(obj, model_dict, obj.project, self.request.user)
-        return {'message': 'Leaf {params["id"]} successfully updated!'}
+        return {'message': f'Leaf {params["id"]} successfully updated!'}
 
     def _delete(self, params):
         leaf = Leaf.objects.get(pk=params['id'], deleted=False)
         project = leaf.project
-        model_dict = leaf.model_dict
-        delete_and_log_changes(leaf, project, self.request.user)
-        TatorSearch().delete_document(leaf)
-        return {'message': 'Leaf {params["id"]} successfully deleted!'}
+
+        ids = self._get_children_id_set(params['id'])
+
+        queryset = Leaf.objects.filter(pk__in=ids)
+
+        for i in ids:
+            inner_leaf = Leaf.objects.get(pk=i, deleted=False)
+            TatorSearch().delete_document(inner_leaf)
+                
+        bulk_delete_and_log_changes(queryset, project, self.request.user)
+
+        # todo figure out syntax for this query
+        # query = get_leaf_es_query(params)
+        # TatorSearch().delete(project, query)
+
+       
+        if len(ids) == 2 :
+            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} child successfully deleted! '}
+        elif len(ids) > 2 :
+            return {'message': f'Leaf {params["id"]} and {len(ids) - 1} children successfully deleted! '}
+        else:
+             return {'message': f'Leaf {params["id"]} successfully deleted! '}
+
+    def _get_children_id_set(self, leaf_id):
+        ch_list = self._recursive_inner_child(leaf_id, [])
+        return ch_list
+
+    def _recursive_inner_child(self, leaf_id, carryOver):
+        new_array = carryOver
+        new_array.append(leaf_id)
+
+        query = Leaf.objects.filter(parent=leaf_id, deleted=False)
+        if query and len(query) > 0:
+            for inner_child in query:
+                new_array = self._recursive_inner_child(inner_child.id, new_array)
+
+        return new_array
 
     def get_queryset(self):
         return Leaf.objects.all()
+
+    def _update_children_newparent(self, children, grandparent, newparent):
+        if children and len(children) > 0:
+            for child in children:
+                child_model_dict = child.model_dict
+
+                # if a child is the newParent
+                if child.id == newparent:
+                    if grandparent == None:
+                        child.parent = None 
+                    else:
+                        child.parent = Leaf.objects.get(pk=grandparent, deleted=False)
+                
+                child.path = child.computePath()
+                child.save()
+                log_changes(child, child_model_dict, child.project, self.request.user)
+
+                inner_children = Leaf.objects.filter(parent=child.id, deleted=False)
+                if inner_children and len(inner_children) > 0:
+                    self._update_path(inner_children)
+
+    def _update_path(self, children):
+        for child in children:
+            child_model_dict = child.model_dict
+            
+            child.path = child.computePath()
+            child.save()
+            log_changes(child, child_model_dict, child.project, self.request.user)
+
+            inner_children = Leaf.objects.filter(parent=child.pk, deleted=False)
+            if inner_children and len(inner_children) > 0:
+                self._update_path(inner_children)

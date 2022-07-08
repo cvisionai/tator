@@ -203,9 +203,10 @@ export class AttributesMain extends HTMLElement {
   _postAttribute(formObj){
     this.modal._closeCallback();
     this.loading.showSpinner();
+
     let formJSON = {
       "entity_type": this.typeName,
-      "addition": formObj._getAttributeFormData()
+      "addition": formObj._getAttributeFormData().formData
     };
 
     let status = 0;
@@ -443,7 +444,7 @@ export class AttributesMain extends HTMLElement {
       const attributeFormData = attrForm._attributeFormData({ entityType: this.typeName, id: this.fromId });
 
       
-      return this._fetchAttributePatchPromise(this.fromId, attributeFormData);               
+      return this._fetchAttributePutPromise(this.fromId, attributeFormData);               
     });
 
     // form export class listener
@@ -551,8 +552,6 @@ export class AttributesMain extends HTMLElement {
   }
 
   _fetchPostPromise({formData = null } = {}){
-    console.log("Attribute Form Post Fetch");
-
     if(formData != null){
       return fetch("/rest/AttributeType/"+this.fromId, {
         method: "POST",
@@ -566,20 +565,20 @@ export class AttributesMain extends HTMLElement {
         body: JSON.stringify(formData)
       });
     } else {
-      console.log("Problem with new attribute form data.");
+      console.error("Problem with new attribute form data.");
     }
   }
 
-  _fetchAttributePatchPromise(parentTypeId, dataObject, global = false) {
+  _fetchAttributePutPromise(parentTypeId, dataObject, global = false) {
     let promise = Promise.resolve();
     this.successMessages = "";
     this.failedMessages = "";
     this.confirmMessages = "";
     this.saveModalMessage = "";
     this.requiresConfirmation = false;
-    let formData = dataObject.formData;
-    let attributeNewName = dataObject.newName;
-    let attributeOldName = dataObject.oldName;
+    const formData = dataObject.formData;
+    const attributeNewName = dataObject.newName;
+    const attributeOldName = dataObject.oldName;
 
     if (global === "true") {
       formData.global = "true";
@@ -587,7 +586,7 @@ export class AttributesMain extends HTMLElement {
 
     promise = promise.then(() => {
       return fetch("/rest/AttributeType/" + parentTypeId, {
-        method: "PATCH",
+        method: "PUT",
         mode: "cors",
         credentials: "include",
         headers: {
@@ -673,7 +672,7 @@ export class AttributesMain extends HTMLElement {
     buttonSave.innerHTML = "Confirm";
 
     buttonSave.addEventListener("click", (e) => {
-      return this._fetchAttributePatchPromise(this.typeId, formData, "true");
+      return this._fetchAttributePutPromise(this.typeId, formData, "true");
     });
 
     return buttonSave;

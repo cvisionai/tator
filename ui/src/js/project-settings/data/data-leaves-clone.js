@@ -1,8 +1,8 @@
 import { getCookie } from "../../util/get-cookie.js";
-import { AttributesForm } from "../attributes/attributes-form.js";
+import { LeafForm } from "../leaf/leaf-form.js";
 
 /* Class with methods return input types with preset values for editing.*/
-export class AttributesData {
+export class LeafData {
     constructor({projectId, typeName, typeId, selectedData}) {
       // Feature-related class(es) to customize form element. Applies to all elements.
       this.projectId = projectId;
@@ -15,7 +15,7 @@ export class AttributesData {
 
     _fetchPostPromise({formData = null } = {}){    
         if(formData != null){
-          return fetch("/rest/AttributeType/"+this.typeId, {
+          return fetch(`/rest/Leaves/${this.projectId}?type=${this.typeId}`, {
             method: "POST",
             mode: "cors",
             credentials: "include",
@@ -27,7 +27,7 @@ export class AttributesData {
             body: JSON.stringify(formData)
           });
         } else {
-          console.error("Problem with new attribute form data.");
+          console.error("Problem with new leaf form data.");
         }
       }
   
@@ -43,12 +43,9 @@ export class AttributesData {
         // console.log("cloneValue");
         // console.log(cloneValue);
 
-        this.attributeForm = new AttributesForm();
-        this.attributeForm._getFormWithValues({clone : true, ...cloneValue});
-        let formJSON = {
-          "entity_type": this.typeName,
-          "addition": this.attributeForm._getAttributeFormData()
-        };
+        this.leafForm = new LeafForm();
+        this.leafForm._getFormWithValues({clone : true, ...cloneValue});
+        let formJSON = this.leafForm._getLeafFormData();
 
         promise = promise.then(() => {return this._fetchPostPromise({
           "formData" : formJSON
