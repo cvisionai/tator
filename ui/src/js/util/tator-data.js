@@ -898,6 +898,10 @@ export class TatorData {
           else if (filter.field == "_id") {
             mediaIds.push(Number(filter.value))
           }
+          else if (filter.field == "Modified By") {
+            filter.field = "_modified_by";
+            mediaFilters.push(filter);            
+          }
           else {
             mediaFilters.push(filter);
           }
@@ -914,6 +918,10 @@ export class TatorData {
             newFilter.field = "_user";
             newFilter.value = filter.value.split('(ID:')[1].replace(")","");
             localizationFilters.push(newFilter);
+          }
+          else if (filter.field == "Modified By") {
+            filter.field = "_modified_by";
+            mediaFilters.push(filter);            
           }
           else {
             localizationFilters.push(filter);
@@ -1026,6 +1034,10 @@ export class TatorData {
             newFilter.field = "_meta";
             newFilter.value = filter.value.split('(ID:')[1].replace(")","");
             mediaFilters.push(newFilter);
+          }
+          else if (filter.field == "Modified By") {
+            filter.field = "_modified_by";
+            mediaFilters.push(filter);            
           }
           else {
             mediaFilters.push(filter);
@@ -1152,6 +1164,10 @@ export class TatorData {
           }
           else if (filter.field == "_id") {
             mediaIds.push(Number(filter.value))
+          }
+          else if (filter.field == "Modified By") {
+            filter.field = "_modified_by";
+            mediaFilters.push(filter);            
           }
           else {
             mediaFilters.push(filter);

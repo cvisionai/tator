@@ -98,7 +98,10 @@ export class FilterData {
     for (let idx = 0; idx < this.users.length; idx++) {
       let user = this.users[idx];
       userNames.push(`${user.username} (ID:${user.user})`);
-      userFirstLastNames.push(`${user.first_name} ${user.last_name}`);
+      userFirstLastNames.push({
+        label: `${user.username}(ID: ${user.user})`,
+        value: `${user.first_name} ${user.last_name}`
+      });
     }
     userNames.sort();
     userFirstLastNames.sort();
@@ -157,6 +160,13 @@ export class FilterData {
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
+          var modifiedByAttribute = {
+            choices: userFirstLastNames,
+            name: "Modified By",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(modifiedByAttribute);
+
           var modifiedDatetimeAttribute = {
             name: "_modified_datetime",
             dtype: "datetime"
@@ -207,6 +217,13 @@ export class FilterData {
             dtype: "datetime"
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
+
+          var modifiedByAttribute = {
+            choices: userFirstLastNames,
+            name: "Modified By",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
             name: "_modified_datetime",
@@ -266,7 +283,7 @@ export class FilterData {
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "_modified_by",
+            name: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
