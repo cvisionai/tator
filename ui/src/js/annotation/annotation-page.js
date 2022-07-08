@@ -1219,7 +1219,7 @@ export class AnnotationPage extends TatorPage {
         if (applet.categories != null && applet.categories.includes("annotator-tools")) {
           // This puts the tools html into a panel next to the sidebar
           const toolAppletPanel = document.createElement("tools-applet-panel");
-          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);        
+          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
         }
       }
     });
@@ -1568,6 +1568,13 @@ export class AnnotationPage extends TatorPage {
         media: evt.detail.media,
         projectId: evt.detail.projectId
       };
+
+      if (this._player.mediaType.dtype == "multi") {
+        data.multiState = canvas._multiLayoutState;
+        data.primaryMedia = canvas._videos[canvas._primaryMediaIndex].mediaInfo;
+        data.multiMedia = canvas._mediaInfo;
+      }
+
       this._menuAppletDialog.setApplet(evt.detail.appletName, data);
     });
 

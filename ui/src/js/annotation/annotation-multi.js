@@ -1158,6 +1158,7 @@ export class AnnotationMulti extends TatorElement {
 
   setFocus(vid_id)
   {
+    this._multiLayoutState = "focus";
     for (let videoId in this._videoDivs)
     {
       let video = this._videoDivs[videoId].children[0];
@@ -1183,6 +1184,7 @@ export class AnnotationMulti extends TatorElement {
 
   setHorizontal()
   {
+    this._multiLayoutState = "horizontal";
     this._selectedDock = this._focusBottomDockDiv;
     this.setMultiviewUrl("horizontal");
     for (let videoId in this._videoDivs)
@@ -1305,6 +1307,8 @@ export class AnnotationMulti extends TatorElement {
 
   assignToGrid(setContextMenu=true)
   {
+    this._multiLayoutState = "grid";
+
     for (let idx = 0; idx < this._mediaInfo.media_files['ids'].length; idx++)
     {
       let videoId = this._mediaInfo.media_files['ids'][idx];
@@ -1557,7 +1561,7 @@ export class AnnotationMulti extends TatorElement {
 
       timeoutCounter += performance.now() - lastTime;
       lastTime = performance.now();
-      
+
       let not_ready = false;
       if (checkFrame != this._videos[videoIndex].currentFrame()) {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._videos[videoIndex].currentFrame()} do not match. restarting check_ready`)
@@ -1627,7 +1631,7 @@ export class AnnotationMulti extends TatorElement {
             this._playbackDisabled = false;
             return;
           }
-          catch(exc) 
+          catch(exc)
           {
             console.warn("allVideosReady() seekFrame promises error caught")
             console.warn(exc);
