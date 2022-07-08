@@ -8,6 +8,9 @@ export class AttributesForm extends TatorElement {
     this._changed = false;
     this._global = false;
 
+    // 
+    this._data = null;
+
   }
 
   set changed(val) {
@@ -147,6 +150,58 @@ export class AttributesForm extends TatorElement {
     this.placeholderEnum.appendChild(this.placeholderChoices);
 
 
+    // style
+    // disabled|long_string|start_frame|end_frame|start_frame_check|end_frame_check
+    const styleOptions = [
+      { value: "disabled" },
+      { value: "long_string" },
+      { value: "start_frame" },
+      { value: "end_frame" },
+      { value: "start_frame_check" },
+      { value: "end_frame_check" } ]
+    this._style = document.createElement("enum-input");
+    this._style.multiple = true;
+    this._style.setAttribute("name", "Style");
+    this._style.choices = styleOptions;
+    this._style.addEventListener("change", this._formChanged.bind(this));
+    // #TODO
+    // this.form.appendChild(this._style);
+
+    // autocomplete
+    this._autocompleteSection = document.createElement("div");
+    this._autocompleteSection.setAttribute("class", "py-3")
+    this._autocompleteSection.hidden = true;
+    this.form.appendChild(this._autocompleteSection);
+
+    const headingAutocomplete = document.createElement("p");
+    headingAutocomplete.setAttribute("class", "text-white h3 py2");
+    headingAutocomplete.textContent = "Autocomplete";
+    this._autocompleteSection.appendChild(headingAutocomplete);
+
+    // help text
+    // /rest/Leaves/Suggestion/nomral_leaf_work.test/128
+    const helperText = document.createElement("p");
+    helperText.setAttribute("class", "text-white h3 py2");
+    helperText.innerHTML = `<p class="text-gray f3 py-2 d-block">Service URL example: <span class="text-gray text-italic text-bold">/rest/Leaves/Suggestion/{LEAF-PATH}/{PROJECT-ID}</span></p>`;
+    this._autocompleteSection.appendChild(helperText);
+
+    this._autocomplete_service_url = document.createElement("text-input");
+    this._autocomplete_service_url.setAttribute("type", "string");
+    this._autocomplete_service_url.setAttribute("name", "Service URL");
+    this._autocomplete_service_url.setValue(null);
+    this._autocomplete_service_url.default = null;
+    this._autocomplete_service_url.addEventListener("change", this._formChanged.bind(this));
+    this._autocompleteSection.appendChild(this._autocomplete_service_url);
+
+    this._autocomplete_match_any = document.createElement("bool-input");
+    this._autocomplete_match_any.setAttribute("name", "Match Any");
+    this._autocomplete_match_any.setAttribute("on-text", "Yes");
+    this._autocomplete_match_any.setAttribute("off-text", "No");
+    this._autocomplete_match_any.setValue(null);
+    this._autocomplete_match_any.default = null;
+    this._autocomplete_match_any.addEventListener("change", this._formChanged.bind(this));
+    this._autocompleteSection.appendChild(this._autocomplete_match_any);
+
     this._shadow.appendChild(this.form);
 
     return this.form;
@@ -158,21 +213,29 @@ export class AttributesForm extends TatorElement {
     return this.form.classList.add("changed");
   }
 
-  _getFormWithValues({
-    clone = false,
-    name = null,
-    description = null,
-    required = false,
-    visible = false,
-    dtype = null,
-    order = null,
-    _default = "", // keep this
-    use_current = null,
-    minimum = null,
-    maximum = null,
-    choices = [],
-    labels = []
-  } = {}) {
+  _getFormWithValues(data = {}) {
+    this._data = data;
+    this._data.default = data._default; //
+    delete this._data["clone"];
+
+    const {
+      clone = false,
+      name = null,
+      description = null,
+      required = false,
+      visible = false,
+      dtype = null,
+      order = null,
+      _default = "", // keep this
+      use_current = null,
+      minimum = null,
+      maximum = null,
+      choices = [],
+      labels = [],
+      autocomplete = null,
+      style = null
+    } = data;
+    delete this._data["_default"];
 
     // do we want to save all the data shown
     this.isClone = clone;
@@ -212,20 +275,40 @@ export class AttributesForm extends TatorElement {
       value: _default,  // create new el w/ this value 
       enumOptions: { choices, labels }
     });
-    this._showDefault({ dtype });
 
     // use current
     this._getUseCurrent({ value: use_current });
-    this._showUseCurrent({ dtype });
+
+    // autocomplete - part 1
+    const serviceUrl = typeof autocomplete !== "undefined" && autocomplete && autocomplete.serviceUrl ? autocomplete.serviceUrl : null;
+    this._autocomplete_service_url.default = serviceUrl;
+    this._autocomplete_service_url.setValue(serviceUrl);
+
+    // autocomplete - part 2
+    const matchAny = typeof autocomplete !== "undefined" && autocomplete && autocomplete.match_any ? autocomplete.match_any : null;
+    this._autocomplete_match_any.default = matchAny;
+    this._autocomplete_match_any.setValue(matchAny);
+
+    // style
+    // Note: Assumes if multiple they are  always separated with white space
+    if (style) {
+      const styleOptions = style.indexOf(" ") > -1 ? style.split(" ") : [style];
+      // Changes to an array of objects usable by enum-input
+      styleOptions.map(val => {
+        return { value: val, label: val };
+      });
+      this._style.default = styleOptions;
+      this._style.setValue(styleOptions);
+    } else {
+      this._style.default = null;
+      this._style.setValue(null);
+    }
 
     // minimum
     this._getMinInput({ value: minimum });
-    this._showMin({ dtype });
 
     // maximum
     this._getMaxInput({ value: maximum });
-    this._showMax({ dtype });
-
 
     if (dtype == 'enum') {
       this.choicesVal = (choices === null) ? [] : choices;
@@ -239,8 +322,8 @@ export class AttributesForm extends TatorElement {
       this._getEnumDefaultCol({ defaultVal: _default });
     }
 
-    // if it is not dtype==enum it hides
-    this._showEnumInputs({ dtype });
+    // show/hides min/max/enum/correctdefault etc.
+    this._showDynamicFields(dtype)
 
     return this.form;
   }
@@ -334,6 +417,18 @@ export class AttributesForm extends TatorElement {
       this.placeholderEnum.classList.add("hidden");
     }
   }
+
+    /* 
+   * These control the hide/show of the inputs
+   *  {@param} dtype required 
+   */
+    _showAutocomplete({ dtype } = {}) {
+      if (dtype == 'string') {
+        this._autocompleteSection.hidden = false;
+      } else {
+        this._autocompleteSection.hidden = true;
+      }
+    }
 
   /* 
    * These control the hide/show of the inputs
@@ -540,6 +635,7 @@ export class AttributesForm extends TatorElement {
     this._showEnumInputs({ dtype });
     // this._showChoices({ dtype });
     // this._showLabels({ dtype });
+    this._showAutocomplete({ dtype });
   }
 
   _getDtypeSelectBox(dtype) {
@@ -726,107 +822,155 @@ export class AttributesForm extends TatorElement {
   * @returns {formData} as JSON object
   */
   _getAttributeFormData() {
-    const formData = {};
+    const formData = {...this._data};
 
-    // Name: Always sent
-    formData.name = this._name.getValue();
+    try {
+      // Name: Always sent
+      formData.name = this._name.getValue();
 
-    // Description: Only when changed, or when it is a Clone pass the value along
-    // Don't send if the value is null => invalid
-    if ((this._description.changed() || this.isClone) && this._description.getValue() !== null) {
-      formData.description = this._description.getValue();
-    }
+      // Description: Only when changed, or when it is a Clone pass the value along
+      // Don't send if the value is null => invalid
+      if ((this._description.changed() || this.isClone) && this._description.getValue() !== null) {
+        formData.description = this._description.getValue();
+      }
 
-    // Order: Only when changed, or when it is a Clone pass the value along
-    // Don't send if the value is null => invalid
-    if ((this._order.changed() || this.isClone) && this._order.getValue() !== null) {
-      formData.order = this._order.getValue();
-    }
+      // Order: Only when changed, or when it is a Clone pass the value along
+      // Don't send if the value is null => invalid
+      if ((this._order.changed() || this.isClone) && this._order.getValue() !== null) {
+        formData.order = this._order.getValue();
+      }
 
-    // Required: Only when changed, or when it is a Clone pass the value along
-    if ((this._required.changed() || this.isClone)) {
-      formData.required = this._required.getValue();
-    }
+      // Required: Only when changed, or when it is a Clone pass the value along
+      if ((this._required.changed() || this.isClone)) {
+        formData.required = this._required.getValue();
+      }
 
-    // Visible: Only when changed, or when it is a Clone pass the value along
-    if ((this._visible.changed() || this.isClone)) {
-      formData.visible = this._visible.getValue();
-    }
+      // Visible: Only when changed, or when it is a Clone pass the value along
+      if ((this._visible.changed() || this.isClone)) {
+        formData.visible = this._visible.getValue();
+      }
 
-    // Dtype: Always sent
-    formData.dtype = this._dtype.getValue();
-    const dtype = this._dtype.getValue();
+      // Dtype: Always sent
+      formData.dtype = this._dtype.getValue();
+      const dtype = this._dtype.getValue();
 
-    // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
-    // Don't send if the value is null => invalid
-    // Don't send "" because it will fail as valid type for the default in some cases
-    // - String: can be ""
-    // - Int, or Float: Don't convert "" to Number or it will be 0; #TODO BUG backend will not allow "" -> Invalid attribute value for float attribute; Invalid attribute value for integer attribute
-    // - 
-    if (dtype !== "enum" && (this.isClone || this._dtype.changed() || this._default.changed())) {
-      // check enum.default.changed value
-      if (this._default.getValue() !== null) { //&& this._default.getValue() !== ""
-        let defaultVal = this._default.getValue();
+      // Autocomplete: String type; Only when changed, or when it is a Clone pass the value along
+      // Don't send if the value is null => invalid
+      if (dtype == "string") {
+        // matchAny changed
+        const matchAnyValid = (this._autocomplete_match_any.changed() || this.isClone) && this._autocomplete_match_any.getValue() !== null && this._autocomplete_match_any.getValue() !== "";
+        const serviceUrlValid = (this._autocomplete_service_url.changed() || this.isClone) && this._autocomplete_service_url.getValue() !== null;
 
-        // backend does this but not when value is ""
-        if ((dtype == "int" || dtype == "float")) { // #TODO see above error on backend, etc... && defaultVal !== ""
-          defaultVal = Number(defaultVal);
-          formData["default"] = defaultVal;
-        } else if (dtype == "datetime" && defaultVal != "" && this._useCurrent.getValue() != true) {
-          formData["default"] = defaultVal;
-        } else if (dtype == "geopos" && defaultVal != "") {
-          formData["default"] = defaultVal;
-        } else if (dtype == "bool" && (defaultVal.toLowerCase().trim() == "false" || defaultVal.toLowerCase().trim() == "true")) {
-          defaultVal = defaultVal.toLowerCase().trim();
-          formData["default"] = defaultVal;
-        } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must me the cases above
-          formData["default"] = defaultVal;
+        // If it changed or we're copying value over for a clone add the attribute
+        if (serviceUrlValid || matchAnyValid) {
+          formData.autocomplete = {
+            serviceUrl: this._autocomplete_service_url.getValue(),
+            match_any : this._autocomplete_match_any.getValue()
+          };
+        }
+
+        //If the value has changed to empty string "" we want to remove it
+        if(this._autocomplete_service_url.changed() && this._autocomplete_service_url.getValue() == "") {
+          delete formData["autocomplete"];
         }
       }
-    }
 
-    // Datetime: Only when changed, or when it is a Clone pass the value along
-    if (dtype === "datetime") {
-      if (this._useCurrent.changed() || this.isClone) {
-        formData.use_current = this._useCurrent.getValue();
-      }
-    }
+      // Style: Only when changed, or when it is a Clone pass the value along
+      // Don't send if the value is null => invalid
+      if ((this._style.changed() || this.isClone) && this._style.getValue() !== null) {
+        const rawStyleValue = this._style.getValue();
+        if (Array.isArray(rawStyleValue)) {
+          formData.style = rawStyleValue.join(' '); // join string values with string if multiple chosen
+        } else if (rawStyleValue !== "") {
+          formData.style = rawStyleValue;
+        }
 
-    // Min and Max:
-    // Only dtype in numeric & (changed, or when it is a Clone pass the value along)
-    // Don't send if the value is null => invalid
-    // #TODO does this have the same issue with ""?
-    if (dtype === "int" || dtype === "float") {
-      // getValue for text-input int comes back as null when default is undefined bc it is NaN
-      if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
-        formData.minimum = Number(this._minimum.getValue());
-      }
-      if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() !== null) {
-        formData.maximum = Number(this._maximum.getValue());
-      }
-    }
-
-    // ENUM Choices & Labels: (For now always sending both)
-    // - Always send CHOICES with dtype enum #todo why? (this was in place before I saw labels getting erased #todo)
-    // - If you don't send LABELS and you save a default it gets wiped out #todo why?
-    // There is also an issue losing the default value if the choices, or labels are updated (moving enum default here
-    // 
-    if (dtype === "enum") {
-
-      if ((this.isClone || this._dtype.changed() || this._enumDefault.changed || this._choices.changed() || this._labels.changed()) && this._enumDefault.value !== null) { //&& this._enumDefault.value !== ""
-        formData["default"] = this._enumDefault.value;
+        // //If the value has changed to empty string "" we want to remove it
+        if(this._style.changed() && this._style.getValue() == "") {
+            delete formData["style"];
+        }
       }
 
-      // if ((this._choices.changed() || )) {
-      formData.choices = this._choices.getValue();
-      // }
+      // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
+      // Don't send if the value is null => invalid
+      // Don't send "" because it will fail as valid type for the default in some cases
+      // - String: can be ""
+      // - Int, or Float: Don't convert "" to Number or it will be 0; #TODO BUG backend will not allow "" -> Invalid attribute value for float attribute; Invalid attribute value for integer attribute
+      // - 
+      if (dtype !== "enum" && (this.isClone || this._dtype.changed() || this._default.changed())) {
+        // check enum.default.changed value
+        if (this._default.getValue() !== null) { //&& this._default.getValue() !== ""
+          let defaultVal = this._default.getValue();
 
-      // if ((this._labels.changed() || this.isClone)) {
-      formData.labels = this._labels.getValue();
-      // }
+          // backend does this but not when value is ""
+          if ((dtype == "int" || dtype == "float")) { // #TODO see above error on backend, etc... && defaultVal !== ""
+            defaultVal = Number(defaultVal);
+            formData["default"] = defaultVal;
+          } else if (dtype == "datetime" && defaultVal != "" && this._useCurrent.getValue() != true) {
+            formData["default"] = defaultVal;
+          } else if (dtype == "geopos" && defaultVal != "") {
+            formData["default"] = defaultVal;
+          } else if (dtype == "bool" && (defaultVal.toLowerCase().trim() == "false" || defaultVal.toLowerCase().trim() == "true")) {
+            defaultVal = defaultVal.toLowerCase().trim();
+            formData["default"] = defaultVal;
+          } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must me the cases above
+            formData["default"] = defaultVal;
+          }
+        }
+      }
+
+      // Datetime: Only when changed, or when it is a Clone pass the value along
+      if (dtype === "datetime") {
+        if (this._useCurrent.changed() || this.isClone) {
+          formData.use_current = this._useCurrent.getValue();
+        }
+      }
+
+      // Min and Max:
+      // Only dtype in numeric & (changed, or when it is a Clone pass the value along)
+      // Don't send if the value is null => invalid
+      // #TODO does this have the same issue with ""?
+      if (dtype === "int" || dtype === "float") {
+        // getValue for text-input int comes back as null when default is undefined bc it is NaN
+        if ((this._minimum.changed() || this.isClone) && this._minimum.getValue() !== null) {
+          formData.minimum = Number(this._minimum.getValue());
+        }
+        if ((this._maximum.changed() || this.isClone) && this._maximum.getValue() !== null) {
+          formData.maximum = Number(this._maximum.getValue());
+        }
+      }
+
+      // ENUM Choices & Labels: (For now always sending both)
+      // - Always send CHOICES with dtype enum #todo why? (this was in place before I saw labels getting erased #todo)
+      // - If you don't send LABELS and you save a default it gets wiped out #todo why?
+      // There is also an issue losing the default value if the choices, or labels are updated (moving enum default here
+      // 
+      if (dtype === "enum") {
+
+        if ((this.isClone || this._dtype.changed() || this._enumDefault.changed || this._choices.changed() || this._labels.changed()) && this._enumDefault.value !== null) { //&& this._enumDefault.value !== ""
+          formData["default"] = this._enumDefault.value;
+        }
+
+        // if ((this._choices.changed() || )) {
+        formData.choices = this._choices.getValue();
+        // }
+
+        // if ((this._labels.changed() || this.isClone)) {
+        formData.labels = this._labels.getValue();
+        // }
+      }
+    } catch (err) {
+      console.error("Formdata for attributes error.", err);
     }
+
     // console.log(formData);
-    return formData;
+    return {formData};
+  }
+
+  _removeAttributeKey(key) {
+    delete this._data[key];
+
+    return this._data;
   }
 
   addWarningWrap(labelWrap, labelDiv, inputNode, checkErrors = true) {
@@ -887,12 +1031,14 @@ export class AttributesForm extends TatorElement {
   _attributeFormData({ form = this.form, id = -1, entityType = null } = {}) {
     const data = {};
     const global = this.isGlobal() ? "true" : "false";
+    const attrFormObj = this._getAttributeFormData();
     const formData = {
       "entity_type": entityType,
       "global": global,
       "old_attribute_type_name": this.dataset.oldName,
-      "new_attribute_type": this._getAttributeFormData(form)
+      "new_attribute_type": attrFormObj.formData
     };
+    console.log(attrFormObj.formData);
 
     data.newName = this._name.getValue();
     data.oldName = this.dataset.oldName;
@@ -918,11 +1064,12 @@ export class AttributesForm extends TatorElement {
     // console.log(formData);
 
     // Hand of the data, and call this form unchanged
-    formData.new_attribute_type = this._getAttributeFormData(form);
+    console.log(this._getAttributeFormData());
+    formData.new_attribute_type = this._getAttributeFormData();
     this.form.classList.remove("changed");
     this.changeReset();
 
-    promiseInfo.promise = await this._fetchAttributePatchPromise(id, formData);
+    promiseInfo.promise = await this._fetchAttributePutPromise(id, formData);
 
     return promiseInfo;
   }

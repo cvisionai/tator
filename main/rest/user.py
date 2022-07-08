@@ -145,10 +145,12 @@ class UserDetailAPI(BaseDetailView):
         if 'last_name' in params:
             user.last_name = params['last_name']
         if 'email' in params:
-            existing = User.objects.filter(email=params['email'])
-            if existing.count() > 0:
-                raise RuntimeError(f"User with email {params['email']} already exists!")
-            user.email = params['email']
+            #if there was an update, check it isn't another user first
+            if params['email'] != user.email:
+                existing = User.objects.filter(email=params['email'])
+                if existing.count() > 0:
+                    raise RuntimeError(f"User with email {params['email']} already exists!")
+                user.email = params['email']
         if 'password' in params:
             if 'reset_token' not in params:
                 raise RuntimeError(f"Password cannot be changed without reset token!")

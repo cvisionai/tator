@@ -76,6 +76,13 @@ export class SettingsNav extends TatorElement {
     //let parentNode = addNewNode.parentNode;
     addNewNode.before(subNavLink);
 
+    if (e.detail.typeName == "LeafType") {
+      const subNavInnerLinkSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`;
+      const leafIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"/></g></svg>`;
+      let subNavInnerLink = this.getSubItem(obj, e.detail.typeName, subNavInnerLinkSelector, leafIcon+" Add/Edit Leaves");
+      addNewNode.before(subNavInnerLink);    
+    }
+
     return subNavLink.click();
   }
 
@@ -97,6 +104,16 @@ export class SettingsNav extends TatorElement {
     // remove the container and side nav link
     container.remove();
     navItem.remove()
+
+    if (e.detail.typeName == "LeafType") {
+      // Delete the CHILD side nav item, and container
+      let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner']`);
+      let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`);
+
+      // remove the container and side nav link
+      container.remove();
+      navItem.remove()      
+    }
   }
 
   _getItemDivId(typeName, typeId) {
@@ -104,12 +121,12 @@ export class SettingsNav extends TatorElement {
   }
 
 
-  _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true}){
-
+  _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true, innerLinkText = ""}){
     if(subItemsOnly){
       return this._subItemsOnly({
         type,
-        subItems
+        subItems,
+        innerLinkText
       })
     } else {
       return this._addHeadingWithSubItems({
@@ -232,7 +249,7 @@ export class SettingsNav extends TatorElement {
 
   // This adds subitems to an existing heading
   // @TODO no "New item" trigger can be added in this fn (requires more el access)
-  _subItemsOnly({ subItems = [], type = "" }) {
+  _subItemsOnly({ subItems = [], type = "", innerLinkText = ""}) {
     let section = this._shadow.querySelector(`.subitems-${type}`);
     section.querySelector(`img`).hidden = true;
 
@@ -241,15 +258,24 @@ export class SettingsNav extends TatorElement {
       for(let obj of subItems){
         let itemSelector = `#itemDivId-${type}-${obj.id}`
         let subNavLink = this.getSubItem(obj, type, itemSelector);
+
         let newSelector = `#itemDivId-${type}-New`;
         let addNewNode = this._shadow.querySelector(`a[href='${newSelector}']`);
 
         // Find the end of the type's section.
-        if(addNewNode){
+        if (addNewNode) {         
           addNewNode.before(subNavLink);
         } else {
           section.appendChild(subNavLink);
         }
+
+        //
+        if (innerLinkText !== "") {
+          let innerSelector = `#itemDivId-${type}-${obj.id}_inner`
+          let innerSubNavLink = this.getSubItem(obj, type, innerSelector, innerLinkText);
+          subNavLink.after(innerSubNavLink);
+        }
+
       }
     } else {
       // console.log("No subitems for heading "+name);
@@ -261,7 +287,7 @@ export class SettingsNav extends TatorElement {
   // This is the the "+" next to item heading
   addSpan(headingBox, itemHeading, itemIdSelector){
     let addSpan = document.createElement("span");
-    addSpan.setAttribute("class", "float-right Nav-action col-2 f1 text-bold clickable");
+    addSpan.setAttribute("class", "float-right Nav-action col-2 f1 text-bold clickable "); //add-new__icon circle
     let t = document.createTextNode(`+`); 
     addSpan.appendChild(t);
     headingBox.appendChild(addSpan);
@@ -281,7 +307,7 @@ export class SettingsNav extends TatorElement {
     });
   }
 
-  getSubItem(obj, type, itemIdSelector){
+  getSubItem(obj, type, itemIdSelector, innerLinkText = ""){
     /* obj requires ---> id, name */
     //
     let itemId = obj.id; // ie. video type with ID of 62
@@ -289,9 +315,16 @@ export class SettingsNav extends TatorElement {
     let subItemText = obj.name ? obj.name : (obj.username ? obj.username : obj.email);
 
     subNavLink.setAttribute("class", `SideNav-subItem ${(itemId == "New") ? "text-italic" : "" }`);
-    subNavLink.style.paddingLeft = "44px";
+    
     subNavLink.href = itemIdSelector;
-    subNavLink.innerHTML = subItemText;
+    subNavLink.innerHTML = innerLinkText !== "" ? innerLinkText : subItemText;
+
+    if (innerLinkText !== "") {
+      subNavLink.style.paddingTop = "0px";
+      subNavLink.style.margin = "0 0 5px 44px";
+    } else {
+      subNavLink.style.paddingLeft = "44px";
+    }
 
     // Sub Nav Links
     subNavLink.addEventListener("click", (e) => {
@@ -314,11 +347,13 @@ export class SettingsNav extends TatorElement {
   }
 
   toggleItemContainer({ itemIdSelector = ``} = {}){
-    let targetEl = this._shadow.querySelector( itemIdSelector );
+    let targetEl = this._shadow.querySelector(itemIdSelector);
+    
     if(targetEl){
       // Hide all other item containers
       let currentSelected = this._shadow.querySelector('.item-box:not([hidden])');
       this.hide(currentSelected);
+      window.history.pushState({}, '', itemIdSelector);
       return this.show( targetEl );
     } else {
       Utilities.warningAlert("Could not find selected nav item", "#ff3e1d", false);
@@ -342,21 +377,31 @@ export class SettingsNav extends TatorElement {
     }
   };
 
-  addItemContainer({ id = -1, itemContents = "", type = "", hidden = true}){
+  addItemContainer({ id = -1, itemContents = "", type = "", hidden = true, innerLinkText = ""}){
     let itemDiv = document.createElement("div");
     itemDiv.id = `itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
     itemDiv.setAttribute("class", `item-box item-group-${id}`);
     itemDiv.hidden = hidden;
 
-    if(itemContents != "") itemDiv.appendChild(itemContents);
+    if (itemContents != "") itemDiv.appendChild(itemContents);
+    this.itemsContainer.appendChild(itemDiv);
 
-    return this.itemsContainer.appendChild(itemDiv);
+    if (innerLinkText !== "") {
+      let itemInnerDiv = document.createElement("div");
+      itemInnerDiv.id = `itemDivId-${type}-${id}_inner`; //ie. #itemDivId-MediaType-72_inner
+      itemInnerDiv.setAttribute("class", `item-box item-group-${id}_inner`);
+      itemInnerDiv.hidden = true; //always hide on creation
+      this.itemsContainer.appendChild(itemInnerDiv);
+    }
   }
 
-  fillContainer({ id = -1, itemContents = document.createTextNode(""), type = ""}){
+  fillContainer({ id = -1, itemContents = document.createTextNode(""), type = "", innerNav = false}){
     //console.log(`Filling ${type} container with id ${id}`);
-    let itemDivId = `#itemDivId-${type}-${id}`; //ie. #itemDivId-MediaType-72
+    let itemDivId = `#itemDivId-${type}-${id}${innerNav ? "_inner" : ""}`; //ie. #itemDivId-MediaType-72
     let itemDiv = this._shadow.querySelector(itemDivId);
+    
+    // clear just in case
+    itemDiv.innerHTML = "";
 
     return itemDiv.appendChild(itemContents);
   }

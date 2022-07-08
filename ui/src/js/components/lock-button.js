@@ -42,12 +42,15 @@ export class LockButton extends TatorElement {
     this._pathLocked.style.display = "none";
     svg.appendChild(this._pathLocked);
 
+    this._viewOnly = false;
+
     button.addEventListener("click", () => {
-      let enabled;
-      if (this._pathLocked.style.display == "none") {
-        this.lock();
-      } else {
-        this.unlock();
+      if (!this._viewOnly) {
+        if (this._pathLocked.style.display == "none") {
+          this.lock();
+        } else {
+          this.unlock();
+        }      
       }
     });
   }
@@ -62,6 +65,13 @@ export class LockButton extends TatorElement {
     this._pathLocked.style.display = "none";
     this._pathUnlocked.style.display = "block";
     this._title.textContent = "Disable editing";
+  }
+
+  viewOnly() {
+    this._viewOnly = true;
+    this._pathLocked.style.display = "block";
+    this._pathUnlocked.style.display = "none";
+    this._title.textContent = "Insufficient Permission to Edit";
   }
 }
 

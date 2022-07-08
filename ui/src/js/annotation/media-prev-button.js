@@ -22,24 +22,24 @@ export class MediaPrevButton extends TatorElement {
     const path = document.createElementNS(svgNamespace, "path");
     path.setAttribute("d", "M18.375 20.781c0.17 0.136 0.388 0.219 0.625 0.219 0.552 0 1-0.448 1-1v-16c0.001-0.218-0.071-0.439-0.219-0.625-0.345-0.431-0.974-0.501-1.406-0.156l-10 8c-0.053 0.042-0.108 0.095-0.156 0.156-0.345 0.431-0.275 1.061 0.156 1.406zM18 17.919l-7.399-5.919 7.399-5.919zM6 19v-14c0-0.552-0.448-1-1-1s-1 0.448-1 1v14c0 0.552 0.448 1 1 1s1-0.448 1-1z");
     svg.appendChild(path);
+
+    // hidden preview box
+    this.preview = document.createElement('media-nav-preview');
+    this._shadow.appendChild(this.preview);
   }
 
-  set disabled(val)
-  {
-    if (val)
-    {
+  set disabled(val) {
+    if (val) {
       this._button.setAttribute("disabled", "");
       this.setAttribute("disabled", "");
     }
-    else
-    {
+    else {
       this._button.removeAttribute("disabled");
       this.removeAttribute("disabled");
     }
   }
 
-  get disabled()
-  {
+  get disabled() {
     return this._button.getAttribute("disabled");
   }
 }

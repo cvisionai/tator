@@ -334,6 +334,9 @@ export class AnnotationPage extends TatorPage {
             const searchParams = this._settings._queryParams();
             const media_id = parseInt(newValue);
 
+            this.nextData = nextData;
+            this.prevData = prevData;
+
             // Turn disable selected_type.
             searchParams.delete("selected_type");
 
@@ -356,6 +359,8 @@ export class AnnotationPage extends TatorPage {
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
+              this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
+              this._prev.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
             }
 
             if (nextData.next == -1) {
@@ -376,6 +381,8 @@ export class AnnotationPage extends TatorPage {
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
+              this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
+              this._next.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
             }
           })
           .catch(err => console.log("Failed to fetch adjacent media! " + err));
@@ -391,7 +398,9 @@ export class AnnotationPage extends TatorPage {
           .then(response => response.json())
           .then(data => {
             this._permission = data.permission;
+            if(this._permission === "View Only") this._settings._lock.viewOnly();
             this.enableEditing(true);
+            
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after_id", data.id);
@@ -426,6 +435,21 @@ export class AnnotationPage extends TatorPage {
         })
         break;
     }
+  }
+
+  showPrevPreview(e) {
+    if (this.prevData.prev == -1) return;
+    this._prev.preview.info = this.prevData.prev;
+  }
+
+  showNextPreview(e) {
+    if (this.nextData.next == -1) return;
+    this._next.preview.info = this.nextData.next;
+  }
+
+  removeNextPrevPreview(e) {
+    this._next.preview.hide();
+    this._prev.preview.hide();
   }
 
   _setupInitHandlers(canvas) {
@@ -558,8 +582,10 @@ export class AnnotationPage extends TatorPage {
       this._videoSettingsDialog.defaultSources = evt.detail;
     });
 
-    this._settings._lock.addEventListener("click", evt=> {
-      this.enableEditing(true);
+    this._settings._lock.addEventListener("click", evt => {
+      evt.preventDefault()
+      // Do nothing if user has insufficient permission
+      if(!this._settings._lock._viewOnly) this.enableEditing(true);
     });
 
     this._settings._fill_boxes.addEventListener("click", evt => {
@@ -1681,8 +1707,15 @@ export class AnnotationPage extends TatorPage {
 
   /// Turn on or off ability to edit annotations
   async enableEditing(mask) {
-    // Check state of lock button.
-    let enable = this._settings._lock._pathLocked.style.display == "none";
+    let enable;
+
+     // Check if user has permission before state of button
+    if (this._permission == "View Only") {
+      enable = false;
+      this._settings._lock.viewOnly();
+    } else {
+      enable = this._settings._lock._pathLocked.style.display == "none"
+    }
 
     // Check input.
     if (typeof mask !== "undefined") {

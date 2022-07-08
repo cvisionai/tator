@@ -40,9 +40,12 @@ export class TypeForm extends TatorElement {
     // Init button early
     this.saveButton = document.createElement("input");
     this.savePost = document.createElement("button");
+
+    //
+    this.leafSection = null;
   }
 
-  _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler, isStaff }) {
+  _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler, isStaff, projectName }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
@@ -57,6 +60,7 @@ export class TypeForm extends TatorElement {
     this.mediaListHandler = mediaListHandler;
     this.clusterListHandler = clusterListHandler;
     this.isStaff = isStaff;
+    this.projectName = projectName;
 
     // Pass modal to helper
     this.boxHelper = new SettingsBox(this.modal);
@@ -102,6 +106,21 @@ export class TypeForm extends TatorElement {
       const h1_id = document.createTextNode(` (ID ${this.data.id})`);
       this.id_span.appendChild(h1_id);
 
+      if (this.typeName == "LeafType") {
+        const sepLink = document.createElement("span");
+        sepLink.setAttribute("class", "px-2");
+        this.h1.appendChild(sepLink);
+        const h1_sepLink = document.createTextNode(`|`);
+        sepLink.appendChild(h1_sepLink);
+
+        this.edit_leaves = document.createElement("a");
+        this.edit_leaves.setAttribute("href", `#itemDivId-LeafType-${this.data.id}_inner`);
+        this.edit_leaves.setAttribute("class", "text-normal text-underlin text-purple");
+        this.h1.appendChild(this.edit_leaves);
+        const addOrEditLeaves = document.createTextNode(` Add/Edit Leaves`);
+        this.edit_leaves.appendChild(addOrEditLeaves);
+      }
+
 
       // Add form element to page
       if (!isReset) {
@@ -118,9 +137,32 @@ export class TypeForm extends TatorElement {
       if (typeof this._hideAttributes !== "undefined" && this._hideAttributes == false) {
         this.typeFormDiv.setAttribute("class", "pl-md-6 col-8 px-6")
         this._attributeContainer.hidden = false;
-        if (isReset) this._attributeContainer.innerHTML = "";
-        this._attributeContainer.appendChild(this._getAttributeSection());
+
+        // Clears
+        if (isReset) this.attributeSection && this.attributeSection.remove();
+
+        // Creates/Re-creates this.attributeSection & appends it
+        const section = this._getAttributeSection();
+        this._attributeContainer.appendChild(section);
       }
+
+      // Leaf section
+      if (this.typeName == "LeafType") {
+        // Clears
+        if (isReset) {
+          this.leafSection._data = "";
+          this.leafSection._init({
+            typeName: this.typeName,
+            fromId: this.typeId,
+            fromName: this.data.name, 
+            projectId: this.projectId,
+            attributeTypes: this.data.attribute_types,
+            modal: this.modal,
+            projectName: this.projectName
+          });
+        }
+      }
+
 
       // append save button
       if (!isReset) {
@@ -196,10 +238,13 @@ export class TypeForm extends TatorElement {
         this.reset();
 
         // Create and show the container with new type
+        const leafIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"/></g></svg>`;
+        const innerLinkText = this.typeName == "LeafType" ? ` ${leafIcon} Add/Edit Leaves` : "";
         this.sideNav.addItemContainer({
           "type": this.typeName,
           "id": data.id,
-          "hidden": false
+          "hidden": false,
+          innerLinkText
         });
 
         let form = document.createElement(this._getTypeClass());
@@ -207,7 +252,8 @@ export class TypeForm extends TatorElement {
         this.sideNav.fillContainer({
           "type": this.typeName,
           "id": data.id,
-          "itemContents": form
+          "itemContents": form,
+          innerLinkText
         });
 
         const saveMessage = data.message;
@@ -226,6 +272,16 @@ export class TypeForm extends TatorElement {
             clusterListHandler: this.clusterListHandler,
             isStaff: this.isStaff
           });
+
+          // after the form is init
+          if (this.typeName == "LeafType" && this.leafSection == null) {
+            this.sideNav.fillContainer({
+              type: this.typeName,
+              id: saveReturnId,
+              itemContents: form._getLeafSection(),
+              innerNav: true
+            });
+          }
 
           // Add the item to navigation
           this._updateNavEvent("new", data.name, saveReturnId);
@@ -292,6 +348,26 @@ export class TypeForm extends TatorElement {
     this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
 
     return this.attributeSection;
+  }
+
+  _getLeafSection() {
+    this.leafSection = document.createElement("leaf-main");
+    this.leafSection.setAttribute("data-from-id", `${this.typeId}`);
+    this.leafSection.setAttribute("data-project-id", `${this.projectId}`)
+    this.leafSection._init({
+      typeName: this.typeName,
+      fromId: this.typeId,
+      fromName: this.data.name, 
+      projectId: this.projectId,
+      attributeTypes: this.data.attribute_types,
+      modal: this.modal,
+      projectName: this.projectName
+    });
+
+    // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
+    this.leafSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
+
+    return this.leafSection;
   }
 
   _attRefreshListener(e) {
@@ -531,7 +607,7 @@ export class TypeForm extends TatorElement {
       try {
         if (this.isChanged()) {
           // Main type form
-          return this._typeFormChanged();
+          this._typeFormChanged();
         }
       } catch (err) {
         console.error("Error saving.", err);
@@ -541,7 +617,7 @@ export class TypeForm extends TatorElement {
 
       try {
         // Compiled messages from above
-        await this._showSaveCompletModal();
+        await this._showSaveCompleteModal();
 
         // Clean up..................
         // Reset changed flags
@@ -562,7 +638,7 @@ export class TypeForm extends TatorElement {
     }
   }
 
-  async _showSaveCompletModal() {
+  async _showSaveCompleteModal() {
     this.saveModalMessage = "";
 
     if (this.successMessages) {
@@ -808,7 +884,8 @@ export class TypeForm extends TatorElement {
       } else if (this.typeName == "Version") {
         const evt = new CustomEvent("change", { detail: { changed: "new", typeId: updateTypeId, newName } });
         this.versionListHandler.el.dispatchEvent(evt);
-      }
+      } 
+    
     } else {
       // console.log("Need more information to update the sidenav.");
     }
