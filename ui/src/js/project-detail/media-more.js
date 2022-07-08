@@ -45,6 +45,10 @@ export class MediaMore extends TatorElement {
     this._rename.setAttribute("text", "Rename file");
     otherButtons.appendChild(this._rename);
 
+    this._mediaMoveButton = document.createElement("media-move-button");
+    this._mediaMoveButton.setAttribute("text", "Move media");
+    otherButtons.appendChild(this._mediaMoveButton);
+
     this._del = document.createElement("delete-button");
     this._del.init("Delete file");
     otherButtons.appendChild(this._del);
@@ -65,6 +69,12 @@ export class MediaMore extends TatorElement {
     this._rename.addEventListener("click", () => {
       details.removeAttribute("open");
       this.dispatchEvent(new Event("rename"));
+    });
+
+    this._mediaMoveButton.addEventListener("click", () => {
+      console.log("Want to move the media!?")
+      details.removeAttribute("open");
+      this.dispatchEvent(new Event("move"));
     });
 
     this._del.addEventListener("click", () => {

@@ -21,6 +21,12 @@ export class EntityCard extends TatorElement {
     this._link.setAttribute("href", "#");
     this._li.appendChild(this._link);
 
+    // Override default link drag behavior
+    this._link.addEventListener("dragstart", (evt) => {
+      evt.preventDefault();
+      console.log("Override default link drag behavior");
+    });
+
     // Image, spinner until SRC set
     this._img = document.createElement("img");
     this._img.setAttribute("src", Spinner);
@@ -62,9 +68,6 @@ export class EntityCard extends TatorElement {
     this._more.style.opacity = 0;
     this.titleDiv.appendChild(this._more);
     this._more.hidden = true; // HIDDEN default
-
-
-
 
     // Lower div start
     const lowerDiv = document.createElement("div");
@@ -156,8 +159,6 @@ export class EntityCard extends TatorElement {
       this._more.style.opacity = 0;
     });
 
-
-
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(
         new CustomEvent("runAlgorithm",
@@ -220,6 +221,7 @@ export class EntityCard extends TatorElement {
     });
 
     this._more.addEventListener("delete", evt => {
+      console.log(this);
       this.dispatchEvent(new CustomEvent("deleteFile", {
         detail: {
           mediaId: this.getAttribute("media-id"),
@@ -228,6 +230,8 @@ export class EntityCard extends TatorElement {
         composed: true
       }));
     });
+
+    this._more.addEventListener("move", this._moveMediaFile.bind(this));
 
 
     // Attachment button listener
@@ -355,6 +359,13 @@ export class EntityCard extends TatorElement {
       // ID is title
       this._id_text.innerHTML = `ID: ${this.cardObj.id}`;
     }
+
+    this.setAttribute("draggable", true);
+    this.addEventListener("dragstart", (evt) => {
+      evt.preventDefault();
+      console.log("Trying to drag this file?");
+      // this._more.dispatchEvent("move");
+    });
 
 
     // Graphic
@@ -873,6 +884,18 @@ export class EntityCard extends TatorElement {
         context.style.display = "none";
       });
     }
+  }
+
+  _moveMediaFile(evt) {
+    console.log("Entity card _moveMediaFile");
+    evt.preventDefault();
+    this.dispatchEvent(new CustomEvent("moveFile", {
+      detail: {
+        mediaId: this.getAttribute("media-id"),
+        mediaName: this._name.textContent
+      },
+      composed: true
+    }));
   }
 
 }

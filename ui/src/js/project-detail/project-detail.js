@@ -287,6 +287,9 @@ export class ProjectDetail extends TatorPage {
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
+    const moveFile = document.createElement("media-move-dialog");
+    this._shadow.appendChild(moveFile);
+
     const newSectionDialog = document.createElement("name-dialog");
     this._projects.appendChild(newSectionDialog);
 
@@ -312,6 +315,8 @@ export class ProjectDetail extends TatorPage {
         window.alert("Uploads are in progress. Still leave?");
       }
     });
+
+    moveFile.addEventListener("reload", this._mediaSection.reload.bind(this._mediaSection));
 
     addFolderButton.addEventListener("click", evt => {
       newSectionDialog.init("Add Folder", "folder");
@@ -508,6 +513,11 @@ export class ProjectDetail extends TatorPage {
       cancelJob.setAttribute("is-open", "");
     });
 
+    this._moveFileCallback = evt => {
+      console.log(evt);
+      moveFile.open(evt.detail.mediaId, evt.detail.mediaName, this.getAttribute("project-id"));
+    };
+
     this._removeCallback = evt => {
       deleteSection.init(evt.detail.projectId, evt.detail.section, evt.detail.sectionParams,
         evt.detail.deleteMedia);
@@ -533,6 +543,7 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._deleteFileCallback = evt => {
+      console.log("Test");
       deleteFile.setAttribute("media-id", evt.detail.mediaId);
       deleteFile.setAttribute("media-name", evt.detail.mediaName);
       deleteFile.setAttribute("is-open", "");
@@ -819,7 +830,7 @@ export class ProjectDetail extends TatorPage {
                   this._archivedFolders.appendChild(card);
                 }
                 card.addEventListener("visibilityChange", evt => {
-                  sectionVisibilityEL(evt)
+                  this._sectionVisibilityEL(evt)
                 });
               } else {
                 this._savedSearches.appendChild(card);
@@ -963,6 +974,7 @@ export class ProjectDetail extends TatorPage {
     }
 
     this._mediaSection.addEventListener("remove", this._removeCallback);
+    this._mediaSection.addEventListener("moveFile", this._moveFileCallback);
     this._mediaSection.addEventListener("deleteFile", this._deleteFileCallback);
     this._mediaSection.addEventListener("newAlgorithm", this._newAlgorithmCallback);
 

@@ -55,8 +55,9 @@ export class MediaMove extends TatorElement {
           detail: {to: evt.target.value},
           composed: true
         }));
+        this._select.value = "Select a section";
       }
-      this._select.value = "Select a section";
+      
     });
   }
 
@@ -66,7 +67,8 @@ export class MediaMove extends TatorElement {
     for (const section of val) {
       if (!names.includes(section)) {
         const option = document.createElement("option");
-        option.textContent = section;
+        option.textContent = section.name;
+        option.value = JSON.stringify(section);
         this._select.insertBefore(option, this._new);
       }
     }

@@ -183,6 +183,7 @@ export class MediaSection extends TatorElement {
       sections.splice(index, 1);
     }
     this._files.sections = sections;
+    this._mediaMove.sections = sections;
   }
 
   removeMedia(mediaId) {
