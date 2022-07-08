@@ -2,6 +2,7 @@ import { TatorPage } from "../../components/tator-page.js";
 import { TatorData } from "../../util/tator-data.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { FilterData } from "../../components/filter-data.js";
+import { getCookie } from "../../util/get-cookie.js";
 
 /**
  * Page that displays a grid view of selected annotations
@@ -87,44 +88,69 @@ export class AnalyticsLocalizations extends TatorPage {
 
   async _init() {
 
-    // Initialize the settings with the URL. The settings will be used later on.
-    this._settings.processURL();
-
-    // Set lock value
-    if (this._settings.hasAttribute("lock")) {
-      let settingsLock = this._settings.getAttribute("lock");
-
-      if (settingsLock === "1") {
-        this._settings._lock.unlock();
-        this._panelContainer.setAttribute("permissionValue", "Can Edit");
-      }
-    }
-
-    // Settings lock value
-    this._settings._lock.addEventListener("click", evt => {
-      const locked = this._settings._lock._pathLocked.style.display != "none";
-      const permissionValue = locked ? "View Only" : "Can Edit";
-      const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-      this._panelContainer.dispatchEvent(panelPermissionEvt);
-
-      if (locked) {
-        this._settings.setAttribute("lock", 0);
-      } else {
-        this._settings.setAttribute("lock", 1);
-      }
-      //window.history.pushState({}, "", this._settings.getURL());
-    });
-
-    this._settings._bulkCorrect.hidden = false; // #TODO
-
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = Number(this.getAttribute("project-id"));
     this._modelData = new TatorData(this.projectId);
 
     this.loading.showSpinner();
     this.showDimmer();
-    this._modelData.init().then(() => {
 
+    // Initialize the settings with the URL. The settings will be used later on.
+    this._settings.processURL();
+
+    const response = await fetch("/rest/Project/" + this.projectId, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    });
+
+    const data = await response.json();
+    this._permission = data.permission;
+
+    if (this._permission === "View Only") {
+      // hide the ability to change editing
+      this._settings._lock.viewOnly();
+      if (this._settings.hasAttribute("lock")) this._settings.removeAttribute("lock");
+      this._settings._bulkCorrect.hidden = true; // #TODO need permission within this as well
+      this._panelContainer.setAttribute("permissionValue", "View Only");
+      this._settings.setAttribute("lock", 0);
+    } else {
+      // Show the bulk edit button
+      this._settings._bulkCorrect.hidden = false; // #TODO  need permission within this as well
+
+      // Set lock value from the settings value // in URL
+      if (this._settings.hasAttribute("lock") && this._settings.getAttribute("lock") === "0") {
+        this._settings._lock.lock();
+        this._panelContainer.setAttribute("permissionValue", "View Only");
+        this._settings.setAttribute("lock", 0);
+      } else {
+        // User can edit, default is unlocked
+        this._settings._lock.unlock();
+        this._panelContainer.setAttribute("permissionValue", "Can Edit");
+        this._settings.setAttribute("lock", 1);
+      }
+
+      // Settings lock listener enabled
+      this._settings._lock.addEventListener("click", evt => {
+        const locked = this._settings._lock._pathLocked.style.display != "none";
+        const permissionValue = locked ? "View Only" : "Can Edit";
+        const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+        this._panelContainer.dispatchEvent(panelPermissionEvt);
+
+        if (locked) {
+          this._settings.setAttribute("lock", 0);
+        } else {
+          this._settings.setAttribute("lock", 1);
+        }
+        window.history.pushState({}, "", this._settings.getURL());
+      }); 
+    }
+
+    this._modelData.init().then(() => {
       // Init vars for pagination state
       let pageSize = this._settings.getPageSize();
       if (Number.isNaN(pageSize)) {

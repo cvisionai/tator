@@ -17,7 +17,7 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes = document.createElement("attribute-panel");
     this._attributes.enableBuiltInAttributes = true;
     this._attributes.enableHiddenAttributes = true;
-    this._attributes.permission = "View Only"; // start as view only - controlled by lock
+    this._attributes.permission = "View Only"; // start as view only - set to user permission on page
     this._div.appendChild(this._attributes);
 
     this._attributes.addEventListener("change", this._emitChangedData.bind(this));
@@ -31,7 +31,7 @@ export class EntityGalleryPanelForm extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "permission":
-        this._attributes.permission = newValue; // start as view only - controlled by lock
+        this._attributes.permission = newValue;
         break;
     }
   }
