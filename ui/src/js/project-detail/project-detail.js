@@ -294,6 +294,7 @@ export class ProjectDetail extends TatorPage {
     this._projects.appendChild(uploadDialog);
 
     const attachmentDialog = document.createElement("attachment-dialog");
+    attachmentDialog._header.classList.add("fixed-height-scroll");
     this._projects.appendChild(attachmentDialog);
 
     this._activityNav = document.createElement("activity-nav");
