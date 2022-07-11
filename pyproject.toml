@@ -19,10 +19,17 @@ pandas = "^1.4.3"
 opencv-python = "^4.6.0"
 PyYAML = "^6.0"
 yq = "^3.0.2"
+wheel = "^0.37.1"
+sphinx-markdown-builder = "^0.5.5"
+progressbar2 = "^4.0.0"
 
 [tool.poetry.dev-dependencies]
 setuptools = "^63.1.0"
 pytest = "^7.1.2"
+playwright = "^1.23.0"
+pytest-playwright = "^0.3.0"
+pytesseract = "^0.3.9"
+opencv-python = "^4.6.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
