@@ -2,3 +2,28 @@
 line-length = 100
 include = '\.pyi?$'
 exclude = '^/scripts/packages'
+
+[tool.poetry]
+name = "tator"
+version = "0.2.19"
+description = ""
+authors = ["CVision AI, Inc. <info@cvisionai.com>"]
+packages = [
+  { include = "main"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Pillow = "^9.2.0"
+pandas = "^1.4.3"
+opencv-python = "^4.6.0"
+PyYAML = "^6.0"
+yq = "^3.0.2"
+
+[tool.poetry.dev-dependencies]
+setuptools = "^63.1.0"
+pytest = "^7.1.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

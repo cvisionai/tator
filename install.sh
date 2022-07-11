@@ -21,6 +21,15 @@ sudo apt-get update \
     iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip \
     build-essential nodejs
 
+# Install python environment manager Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+if ! command -v poetry &> /dev/null
+then
+    locbin=$HOME/.local/bin
+    echo "Temporarily adding $locbin to PATH for poetry, consider adding it permanently in ~/.bashrc"
+    PATH=$locbin:$PATH
+fi
+
 # Install node packages.
 cd ui && npm install && cd ..
 
@@ -122,11 +131,9 @@ kubectl cp sleepy:/tmp /tmp/tator_py_whl
 kubectl delete pod sleepy
 
 # Install pip packages.
-echo "Installing pip packages."
-pip3 install --upgrade pip
-pip3 install setuptools
-pip3 install pillow
-pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pyyaml yq
+echo "Installing poetry packages."
+poetry install --no-root
+poetry run pip3 install /tmp/tator_py_whl/*.whl
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 
 # Install tator.
