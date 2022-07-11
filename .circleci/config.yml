@@ -54,7 +54,7 @@ jobs:
         command: make python-bindings-only
     - run:
         name: Install python client
-        command: pip3 install scripts/packages/tator-py/dist/*.whl
+        command: poetry run pip3 install scripts/packages/tator-py/dist/*.whl
     - run:
         name: Generate Markdown Docs
         command: make markdown-docs && tar cf doc/_build/tator-py.tar doc/_build/tator-py

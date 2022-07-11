@@ -378,7 +378,7 @@ selfsigned:
 
 .PHONY: markdown-docs
 markdown-docs:
-	sphinx-build -M markdown ./doc ./doc/_build
+	$(HOME)/.local/bin/poetry run sphinx-build -M markdown ./doc ./doc/_build
 	mkdir -p ./doc/_build/tator-py
 	$(HOME)/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/utilities.md ./doc/_build/tator-py/utilities.md
 	$(HOME)/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py/api.md
