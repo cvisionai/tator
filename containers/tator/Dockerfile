@@ -1,5 +1,5 @@
 # Build librclone shared object
-FROM golang:latest
+FROM golang:latest as rclone_build
 WORKDIR /go
 RUN git clone https://github.com/rclone/rclone.git
 
@@ -10,13 +10,15 @@ FROM ubuntu:20.04
 MAINTAINER CVision AI <info@cvisionai.com>
 
 # Copy librclone shared object to this container
-COPY --from=0 /go/rclone/librclone/librclone.so /usr/local/lib/
+COPY --from=rclone_build /go/rclone/librclone/librclone.so /usr/local/lib/
+RUN mkdir -p /root/.config/rclone
+RUN touch /root/.config/rclone/rclone.conf
 
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \
         python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
-        ffmpeg wget && rm -rf /var/lib/apt/lists
+        ffmpeg wget xmlsec1 && rm -rf /var/lib/apt/lists
 
 # Install pip packages
 RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
@@ -36,7 +38,8 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         gevent==1.4.0 uritemplate==4.1.1 pylint pylint-django \
         django-cognito-jwt==0.0.4 boto3==1.20.41 \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
-        kubernetes==21.7.0 minio==7.1.5 okta-jwt-verifier==0.2.3
+        kubernetes==21.7.0 minio==7.1.5 okta-jwt-verifier==0.2.3 \
+        django-saml2-auth==2.2.1
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /

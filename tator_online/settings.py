@@ -37,11 +37,11 @@ if os.getenv("TATOR_USE_MIN_JS").lower() == "true":
 else:
     USE_MIN_JS = False
 
-ALLOWED_HOSTS = [
-    os.getenv('MAIN_HOST'),
-]
-if os.getenv('ALIAS_HOSTS'):
-    ALLOWED_HOSTS += os.getenv('ALIAS_HOSTS').split(',')
+MAIN_HOST = os.getenv('MAIN_HOST')
+ALLOWED_HOSTS = [MAIN_HOST]
+ALIAS_HOSTS = os.getenv('ALIAS_HOSTS')
+if ALIAS_HOSTS:
+    ALLOWED_HOSTS += ALIAS_HOSTS.split(',')
 
 # Application definition
 
@@ -58,7 +58,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_extensions',
     'django_admin_json_editor',
-    'django_ltree'
+    'django_ltree',
+    'django_saml2_auth',
 ]
 
 GRAPH_MODELS = {
@@ -253,7 +254,8 @@ REST_FRAMEWORK = {
 }
 
 AUTHENTICATION_BACKENDS = ['main.auth.TatorAuth']
-if os.getenv('REQUIRE_HTTPS') == 'TRUE':
+REQUIRE_HTTPS = os.getenv('REQUIRE_HTTPS') == 'TRUE'
+if REQUIRE_HTTPS:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 TATOR_SLACK_TOKEN = os.getenv('TATOR_SLACK_TOKEN')
@@ -315,3 +317,35 @@ if OKTA_ENABLED:
     OKTA_OAUTH2_USERINFO_URI = os.getenv("OKTA_OAUTH2_USERINFO_URI")
     OKTA_OAUTH2_ISSUER = os.getenv("OKTA_OAUTH2_ISSUER")
     OKTA_OAUTH2_AUTH_URI = os.getenv("OKTA_OAUTH2_AUTH_URI")
+
+PROTO = "https" if REQUIRE_HTTPS else "http"
+SAML2_AUTH = {
+    # Metadata is required, choose either remote url or local file path
+    'METADATA_AUTO_CONF_URL': 'https://dev-25967869.okta.com/app/exk5psxl4bcRDi1WF5d7/sso/saml/metadata',
+    # 'METADATA_LOCAL_FILE_PATH': '[The metadata configuration file path]',
+
+    # Optional settings below
+    'DEFAULT_NEXT_URL': '/projects',  # Custom target redirect URL after the user get logged in. Default to /admin if not set. This setting will be overwritten if you have parameter ?next= specificed in the login URL.
+    'CREATE_USER': 'TRUE', # Create a new Django user when a new user logs in. Defaults to True.
+    # 'NEW_USER_PROFILE': {
+    #     'USER_GROUPS': [],  # The default group name when a new user logs in
+    #     'ACTIVE_STATUS': True,  # The default active status for new users
+    #     'STAFF_STATUS': True,  # The staff status for new users
+    #     'SUPERUSER_STATUS': False,  # The superuser status for new users
+    # },
+    'ATTRIBUTES_MAP': {  # Change Email/UserName/FirstName/LastName to corresponding SAML2 userprofile attributes.
+        'email': 'email',
+        'username': 'email',
+        'first_name': 'given_name',
+        'last_name': 'family_name',
+    },
+    # 'TRIGGER': {
+    #     'CREATE_USER': 'path.to.your.new.user.hook.method',
+    #     'BEFORE_LOGIN': 'path.to.your.login.hook.method',
+    # },
+    # 'ASSERTION_URL': f"{PROTO}{MAIN_HOST}", # Custom URL to validate incoming SAML requests against
+    'ENTITY_ID': f"{PROTO}{MAIN_HOST}/saml2_auth/acs/", # Populates the Issuer element in authn request
+    # 'NAME_ID_FORMAT': FormatString, # Sets the Format property of authn NameIDPolicy element
+    # 'USE_JWT': False, # Set this to True if you are running a Single Page Application (SPA) with Django Rest Framework (DRF), and are using JWT authentication to authorize client users
+    # 'FRONTEND_URL': 'https://myfrontendclient.com', # Redirect URL for the client if you are using JWT auth with DRF. See explanation below
+}

@@ -9,6 +9,8 @@ from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.views import LoginView
 
+import django_saml2_auth.views
+
 from rest_framework.schemas import get_schema_view
 
 from .views import APIBrowserView
@@ -52,6 +54,8 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    path('saml2_auth/', include('django_saml2_auth.urls')),
+    path('saml2_auth/signin', django_saml2_auth.views.signin),
     path('', MainRedirect.as_view(), name='home'),
     path('accounts/account-profile/',
          AccountProfileView.as_view(), name='account-profile'),
