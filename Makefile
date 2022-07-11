@@ -267,7 +267,8 @@ python-bindings-only:
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	$(HOME)/.local/bin/poetry run python setup.py sdist bdist_wheel
+	$(HOME)/.local/bin/poetry run python setup.py
+	$(HOME)/.local/bin/poetry build
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -281,7 +282,8 @@ python-bindings: tator-image
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	$(HOME)/.local/bin/poetry run python setup.py sdist bdist_wheel
+	$(HOME)/.local/bin/poetry run python setup.py
+	$(HOME)/.local/bin/poetry build
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
