@@ -9,31 +9,31 @@ IMAGES=python-bindings postgis-image client-image
 GIT_VERSION=$(shell git rev-parse HEAD)
 
 # Get python version and set yaml arguments correctly
-PYTHON3_REVISION=$(shell $HOME/.local/bin/poetry run python --version | grep ^Python | sed 's/^.* //g' | awk -F. '{print $$2}')
+PYTHON3_REVISION=$(shell $(HOME)/.local/bin/poetry run python --version | grep ^Python | sed 's/^.* //g' | awk -F. '{print $$2}')
 ifeq ($(shell if [ $(PYTHON3_REVISION) -ge 7 ]; then echo "7"; fi),7)
 YAML_ARGS=Loader=yaml.FullLoader
 else
 YAML_ARGS=
 endif
 
-DOCKERHUB_USER=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["dockerRegistry"])')
+DOCKERHUB_USER=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["dockerRegistry"])')
 
-SYSTEM_IMAGE_REGISTRY=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("systemImageRepo"))')
+SYSTEM_IMAGE_REGISTRY=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("systemImageRepo"))')
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
 SYSTEM_IMAGE_REGISTRY=cvisionai
 endif
 
-POSTGRES_HOST=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresHost"])')
-POSTGRES_USERNAME=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresUsername"])')
-POSTGRES_PASSWORD=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresPassword"])')
+POSTGRES_HOST=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresHost"])')
+POSTGRES_USERNAME=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresUsername"])')
+POSTGRES_PASSWORD=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresPassword"])')
 
-OBJECT_STORAGE_HOST=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("http://tator-minio:9000" if a["minio"]["enabled"] else a["objectStorageHost"])')
-OBJECT_STORAGE_REGION_NAME=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("us-east-2" if a["minio"]["enabled"] else a["objectStorageRegionName"])')
-OBJECT_STORAGE_BUCKET_NAME=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["defaultBucket"]["name"] if a["minio"]["enabled"] else a["objectStorageBucketName"])')
-OBJECT_STORAGE_ACCESS_KEY=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["accessKey"] if a["minio"]["enabled"] else a["objectStorageAccessKey"])')
-OBJECT_STORAGE_SECRET_KEY=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["secretKey"] if a["minio"]["enabled"] else a["objectStorageSecretKey"])')
+OBJECT_STORAGE_HOST=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("http://tator-minio:9000" if a["minio"]["enabled"] else a["objectStorageHost"])')
+OBJECT_STORAGE_REGION_NAME=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("us-east-2" if a["minio"]["enabled"] else a["objectStorageRegionName"])')
+OBJECT_STORAGE_BUCKET_NAME=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["defaultBucket"]["name"] if a["minio"]["enabled"] else a["objectStorageBucketName"])')
+OBJECT_STORAGE_ACCESS_KEY=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["accessKey"] if a["minio"]["enabled"] else a["objectStorageAccessKey"])')
+OBJECT_STORAGE_SECRET_KEY=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["minio"]["secretKey"] if a["minio"]["enabled"] else a["objectStorageSecretKey"])')
 
 #############################
 ## Help Rule + Generic targets
@@ -65,9 +65,9 @@ backup:
 
 ecr_update:
 	$(eval LOGIN := $(shell aws ecr get-login --no-include-email))
-	$(eval KEY := $(shell echo $(LOGIN) | $HOME/.local/bin/poetry run python -c 'import sys; print(sys.stdin.read().split()[5])'))
+	$(eval KEY := $(shell echo $(LOGIN) | $(HOME)/.local/bin/poetry run python -c 'import sys; print(sys.stdin.read().split()[5])'))
 	$(LOGIN)
-	echo $(KEY) | $HOME/.local/bin/poetry run python -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
+	echo $(KEY) | $(HOME)/.local/bin/poetry run python -c 'import yaml; import sys; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); a["dockerPassword"] = sys.stdin.read(); yaml.dump(a, open("helm/tator/values.yaml", "w"), default_flow_style=False, default_style="|", sort_keys=False)'
 
 # Restore database from specified backup (base filename only)
 # Example:
@@ -212,15 +212,15 @@ collect-static: webpack
 dev-push:
 	@scripts/dev-push.sh
 
-USE_MIN_JS=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
+USE_MIN_JS=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
 ifeq ($(USE_MIN_JS),True)
 webpack:
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
-	cd ui && $HOME/.local/bin/poetry run python make_index_files.py && npm run build
+	cd ui && $(HOME)/.local/bin/poetry run python make_index_files.py && npm run build
 else
 webpack:
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
-	cd ui && $HOME/.local/bin/poetry run python make_index_files.py && npm run buildDev
+	cd ui && $(HOME)/.local/bin/poetry run python make_index_files.py && npm run buildDev
 endif
 
 .PHONY: migrate
@@ -267,7 +267,7 @@ python-bindings-only:
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	$HOME/.local/bin/poetry run python setup.py sdist bdist_wheel
+	$(HOME)/.local/bin/poetry run python setup.py sdist bdist_wheel
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -281,7 +281,7 @@ python-bindings: tator-image
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
-	$HOME/.local/bin/poetry run python setup.py sdist bdist_wheel
+	$(HOME)/.local/bin/poetry run python setup.py sdist bdist_wheel
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -361,7 +361,7 @@ r-docs:
 	cd ../../..
 
 TOKEN=$(shell cat token.txt)
-HOST=$(shell $HOME/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')
+HOST=$(shell $(HOME)/.local/bin/poetry run python -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print("https://" + a["domain"])')
 .PHONY: pytest
 pytest:
 	cd scripts/packages/tator-py && pip3 install . --upgrade && pytest --full-trace --host $(HOST) --token $(TOKEN)
@@ -378,20 +378,20 @@ selfsigned:
 markdown-docs:
 	sphinx-build -M markdown ./doc ./doc/_build
 	mkdir -p ./doc/_build/tator-py
-	$HOME/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/utilities.md ./doc/_build/tator-py/utilities.md
-	$HOME/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py/api.md
-	$HOME/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/models.md ./doc/_build/tator-py/models.md
-	$HOME/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/exceptions.md ./doc/_build/tator-py/exceptions.md
+	$(HOME)/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/utilities.md ./doc/_build/tator-py/utilities.md
+	$(HOME)/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/api.md ./doc/_build/tator-py/api.md
+	$(HOME)/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/models.md ./doc/_build/tator-py/models.md
+	$(HOME)/.local/bin/poetry run python scripts/format_markdown.py ./doc/_build/markdown/tator-py/exceptions.md ./doc/_build/tator-py/exceptions.md
 
 .PHONY: schema
 schema:
 	mkdir -p doc/_build
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) $HOME/.local/bin/poetry run python manage.py getschema > doc/_build/schema.yaml
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) $(HOME)/.local/bin/poetry run python manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 .PHONY: check_schema
 check_schema:
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) $HOME/.local/bin/poetry run python manage.py getschema
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) $(HOME)/.local/bin/poetry run python manage.py getschema
 
 ifdef PROJECT_ID
 ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --project $(PROJECT_ID)
