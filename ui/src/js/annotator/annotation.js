@@ -4,6 +4,7 @@ import { fetchRetry } from "../util/fetch-retry.js";
 import { DrawGL } from "./drawGL.js";
 import { color } from "./drawGL_colors.js";
 import { Utilities } from "../util/utilities.js";
+import { handle_video_error } from "../annotation/annotation-common.js";
 
 
 var statusAnimator=null;
@@ -129,7 +130,7 @@ export class PolyMaker
         this._ctrl._canvas.dispatchEvent(
           new CustomEvent("drawComplete",
                     {composed: true,
-                     detail: {metaMode: this._ctrl._metaMode}
+                      detail: {metaMode: this._ctrl._metaMode}
                     }));
         return;
       }
@@ -1020,13 +1021,12 @@ export class AnnotationCanvas extends TatorElement
       this._mouseMode == MouseMode.QUERY;
     });
 
-    try
-    {
+    try {
       this._offscreen = new OffscreenCanvas(100, 100);
       this._offscreenDraw = new DrawGL(this._offscreen);
-    }
-    catch
-    {
+    } catch {
+      let evt = { detail : {hasOffScreenCanvas : false}}
+      handle_video_error(evt, this._shadow);
       console.warn("No offscreen canvas capability.");
     }
   }
@@ -1637,7 +1637,9 @@ export class AnnotationCanvas extends TatorElement
           //this._draw.resizeViewport(dims[0], dims[1]);
           if (this.isPaused() == true)
           {
+            this._hqFallbackTimer = setTimeout(() => {this.refresh(true)}, 3000);
             this.refresh(false).then(() => {
+              clearTimeout(this._hqFallbackTimer);
               this.refresh(true);
             });
           }
@@ -1820,14 +1822,28 @@ export class AnnotationCanvas extends TatorElement
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() + amount, true);
+        if (event.shiftKey == true)
+        {
+          this.advanceOneSecond(true);
+        }
+        else
+        {
+          this.gotoFrame(this.currentFrame() + amount, true);
+        }
         return false;
       }
       if (event.key == 'ArrowLeft')
       {
         event.preventDefault();
         event.stopPropagation();
-        this.gotoFrame(this.currentFrame() - amount, true);
+        if (event.shiftKey == true)
+        {
+          this.backwardOneSecond(true);
+        }
+        else
+        {
+          this.gotoFrame(this.currentFrame() - amount, true);
+        }
         return false;
       }
     }
@@ -2827,7 +2843,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode : this._metaMode}
+                        detail: {metaMode : this._metaMode}
                       }
                      ));
           this._dragHandler.onMouseUp(dragEvent);
@@ -3574,6 +3590,7 @@ export class AnnotationCanvas extends TatorElement
       requestObj.frame = this.currentFrame();
     }
 
+
     if (this._redrawObj !== null && typeof this._redrawObj !== "undefined") {
       // Only do cloning if the object selected is in a parent layer to the selected version.
       if (this._data.getVersion().bases.indexOf(this._redrawObj.version) >= 0)
@@ -4135,14 +4152,14 @@ export class AnnotationCanvas extends TatorElement
         this._canvas.dispatchEvent(
           new CustomEvent("drawComplete",
                     {composed: true,
-                     detail: {metaMode: this._metaMode}
+                      detail: {metaMode: this._metaMode}
                     }));
         if (this._overrideState == MouseMode.NEW_POLY)
         {
           this._canvas.dispatchEvent(
                         new CustomEvent("modeChange",
                                   {composed: true,
-                                  detail: {newMode: "new_poly", metaMode: this._metaMode}
+                                    detail: {newMode: "new_poly", metaMode: this._metaMode}
                                   }));
         }
       }
@@ -4201,7 +4218,7 @@ export class AnnotationCanvas extends TatorElement
           this._canvas.dispatchEvent(
             new CustomEvent("drawComplete",
                       {composed: true,
-                       detail: {metaMode: this._metaMode}
+                        detail: {metaMode: this._metaMode}
                       }));
         }
         else
@@ -4808,21 +4825,24 @@ export class AnnotationCanvas extends TatorElement
   }
 
   makeOffscreenDownloadable(localizations, filename)
-  {
-    const width = this._offscreen.width;
-    const height = this._offscreen.height;
-
-    this._offscreenDraw.clearRect(0,0,width,height);
-    this._offscreenDraw.dispImage(true, !localizations);
-
-    this._offscreen.convertToBlob().then(
-      (png_data) =>
+  {   
+    this.getPNGdata(localizations).then((png_data) =>
         {
           var png_file = URL.createObjectURL(png_data);
           var anchor = document.createElement('a');
           anchor.href=png_file;
           anchor.download=`${filename}.png`;
           anchor.click();
-        });
+      });
+  }
+
+  getPNGdata(localizations) {
+    const width = this._offscreen.width;
+    const height = this._offscreen.height;
+
+    this._offscreenDraw.clearRect(0,0,width,height);
+    this._offscreenDraw.dispImage(true, !localizations);
+
+    return this._offscreen.convertToBlob();
   }
 }

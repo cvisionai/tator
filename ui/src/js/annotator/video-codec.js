@@ -134,6 +134,18 @@ class TatorVideoManager {
     this._timescaleMap = new Map();
     this._frameDeltaMap = new Map();
     this._bias = 0;
+    this._keyframeOnly = false;
+  }
+
+  set keyframeOnly(val)
+  {
+    this._keyframeOnly = val;
+    this._codec_worker.postMessage({"type": "keyframeOnly", "value": val});
+  }
+
+  get keyframeOnly()
+  {
+    return this._keyframeOnly;
   }
 
   _on_message(msg)
@@ -228,9 +240,10 @@ class TatorVideoManager {
     //console.info(`${performance.now()}: GOT ${image.timestamp}`);
     image.data.timescale = image.timescale;
     image.data.frameDelta = image.frameDelta;
+    image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
-    if (this._cursor_is_hot())
+    if (this._cursor_is_hot() || this._keyframeOnly == true)
     {
       this._safeCall(this.oncanplay);
     }
@@ -407,7 +420,7 @@ class TatorVideoManager {
   //        - Currently we use an 'ImageData' reference from the internal OffscreenCanvas data
   get codec_image_buffer()
   {
-    if (this._cursor_is_hot())
+    if (this._cursor_is_hot() || this._keyframeOnly == true)
     {
       return this._closest_frame_to_cursor();
     }

@@ -149,7 +149,7 @@ export class AnnotationPlayer extends TatorElement {
 
     this._shortcutsDisabled = false;
 
-    this._scrubInterval = 100;
+    this._scrubInterval = 16;
     this._lastScrub = Date.now();
     this._rate = 1;
 
@@ -317,6 +317,7 @@ export class AnnotationPlayer extends TatorElement {
 
     this._video.addEventListener("frameChange", evt => {
       const frame = evt.detail.frame;
+      
       this._slider.value = frame;
       this._zoomSlider.value = frame;
       const time = this._frameToTime(frame);
@@ -592,6 +593,15 @@ export class AnnotationPlayer extends TatorElement {
     const now = Date.now();
     const frame = Number(evt.target.value);
     const waitOk = now - this._lastScrub > this._scrubInterval;
+    if (this._video.keyframeOnly == false && Math.abs(frame-this._video.currentFrame()) > 25)
+    {
+      this._video.keyframeOnly = true;
+    }
+    else
+    {
+      // Let the user slow down and get frame by frame scrubing
+      this._video.keyframeOnly = false;
+    }
     if (waitOk) {
 
       this._videoStatus = "paused";
@@ -616,7 +626,7 @@ export class AnnotationPlayer extends TatorElement {
     {
       frame = evt.detail.frame;
     }
-
+    this._video.keyframeOnly = false;
     this._videoStatus = "scrubbing";
 
     this._video.stopPlayerThread();

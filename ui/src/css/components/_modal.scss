@@ -37,6 +37,11 @@
   overflow: hidden;
   position: relative;
   width: 100%;
+
+  .fixed-height-scroll{
+    max-height: 300px;
+    overflow-y: scroll;
+  }
 }
 
 .modal__close {
@@ -72,12 +77,9 @@
   box-sizing: border-box;
   margin-bottom: $spacing-4;
   width: 95%;
-
-  &.fixed-height-scroll{
-    max-height: 300px;
-    overflow-y: scroll;
-  }
 }
+
+
 
 .modal__footer {
   width: 100%;

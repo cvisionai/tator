@@ -344,7 +344,7 @@ class TatorVideoBuffer {
     const timestampOffsetInCtx=Math.floor(timestampOffset*this._timescaleMap.get(timestampOffset));
     //console.info(`${this._name}: TIMESTAMP ${timestampOffset} is ${timestampOffsetInCtx}`);
     //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
-    if (muted == false || this._playing == true)
+    if (muted == false || this._playing == true || this.keyframeOnly == true)
     {
       this._seek_in_progress=true;
       let finished=false;      
@@ -367,6 +367,11 @@ class TatorVideoBuffer {
           {
             break;
           }
+        }
+
+        if (this.keyframeOnly == true && samples[idx].is_sync == false)
+        {
+          continue; // skip over non keyframes
         }
 
         //console.info(`${this._name}: SENDING ${timestampOffsetInCtx} + ${samples[idx].cts} ${this._timescaleMap.get(timestampOffset)}`);
@@ -497,6 +502,12 @@ class TatorVideoBuffer {
   {
     this._pendingSeek = null;
     //console.info(`PLAYING VIDEO ${this._current_cursor}`);
+    if (this._videoDecoder.state == 'closed')
+    {
+      this._videoDecoder = new VideoDecoder({
+        output: this._frameReady.bind(this),
+        error: this._frameError.bind(this)});
+    }
     this._videoDecoder.reset();
     this._videoDecoder.configure(this.activeCodecConfig);
     const timestampOffset = this.currentTimestampOffset;
@@ -618,13 +629,13 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = (this._current_cursor)*timeScale;
       const timestamp = frame.timestamp;
-      //console.info(`FRAME ${cursor_in_ctx} vs. ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
-      if (cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
+      //console.info(`FRAME ${cursor_in_ctx} vs. ${this.keyframeOnly} ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
+      if (this.keyframeOnly == true || cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
       {
         // Make an ImageBitmap from the frame and release the memory
         this._canvasCtx.drawImage(frame,0,0);
         let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
-        //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale}`);
+        //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
         frame.close();
         postMessage({"type": "image",
                     "data": image,
@@ -644,9 +655,16 @@ class TatorVideoBuffer {
 
   _frameError(error)
   {
-    console.warn(`${this._name} DECODE ERROR ${error}`);
+    console.warn(`${this._name} DECODER ERROR ${error}`);
     postMessage({"type": "error",
                  "message": error});
+    if (error.message.indexOf("Codec reclaimed due to inactivity.") > 0)
+    {
+      console.info(`${this._name} Resetting decoder`);
+      this._videoDecoder = new VideoDecoder({
+        output: this._frameReady.bind(this),
+        error: this._frameError.bind(this)});
+    }
   }
 
   // Set the current video time
@@ -1014,5 +1032,9 @@ onmessage = function(e)
   else if (msg.type == "deleteUpTo")
   {
     ref.deleteUpTo(msg.seconds);
+  }
+  else if (msg.type == "keyframeOnly")
+  {
+    ref.keyframeOnly = msg.value;
   }
 }

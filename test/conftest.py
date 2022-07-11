@@ -1,6 +1,5 @@
 import os
 import shutil
-import time
 import datetime
 import subprocess
 import tarfile
@@ -543,6 +542,16 @@ def multi_count(request, base_url, token, project, count_test, count_test_2):
     multi_types = [m for m in media_types if m.dtype == "multi"]
     multi_type_id = multi_types[0]
     response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test.multi",[count_test,count_test_2], "Multis")
+    yield response.id
+
+@pytest.fixture(scope='session')
+def multi_offset_count(request, base_url, token, project, count_test, count_test_2):
+    api = tator.get_api(host=base_url, token=token)
+    media_types = api.get_media_type_list(project)
+    multi_types = [m for m in media_types if m.dtype == "multi"]
+    multi_type_id = multi_types[0]
+    response = tator.util.make_multi_stream(api, multi_type_id.id, [1,2], "test_offset.multi",[count_test,count_test_2], "Multis")
+    api.update_media(response.id, {'multi': {'frameOffset': [0,100]}})
     yield response.id
 
 @pytest.fixture(scope='session')

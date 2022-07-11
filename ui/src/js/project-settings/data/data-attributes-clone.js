@@ -13,9 +13,7 @@ export class AttributesData {
       this.responseMessage = "";
     }
 
-    _fetchPostPromise({formData = null } = {}){
-        console.log("Attribute Clone Post Fetch");
-    
+    _fetchPostPromise({formData = null } = {}){    
         if(formData != null){
           return fetch("/rest/AttributeType/"+this.typeId, {
             method: "POST",
@@ -29,7 +27,7 @@ export class AttributesData {
             body: JSON.stringify(formData)
           });
         } else {
-          console.log("Problem with new attribute form data.");
+          console.error("Problem with new attribute form data.");
         }
       }
   

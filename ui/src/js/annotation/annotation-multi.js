@@ -144,7 +144,7 @@ export class AnnotationMulti extends TatorElement {
     const fullscreen = document.createElement("video-fullscreen");
     settingsDiv.appendChild(fullscreen);
 
-    this._scrubInterval = 100;
+    this._scrubInterval = 16;
     this._lastScrub = Date.now();
     this._rate = 1;
     this._playbackDisabled = false;
@@ -488,15 +488,24 @@ export class AnnotationMulti extends TatorElement {
     const waitOk = now - this._lastScrub > this._scrubInterval;
     this._playInteraction.disable(); // disable play on scrub
     if (waitOk) {
-
       this._videoStatus = "paused";
 
       this._play.setAttribute("is-paused","");
       let prime_fps = this._fps[this._longest_idx];
+      let prime_frame = this._videos[this._longest_idx].currentFrame();
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
+        if (video.keyframeOnly == false && Math.abs(frame-prime_frame) > 25)
+        {
+          video.keyframeOnly = true;
+        }
+        else
+        {
+          video.keyframeOnly = false;
+        }
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
+        this_frame += this._frameOffsets[idx];
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
         video.shutdownOnDemandDownload();
         video.seekFrame(this_frame, video.drawFrame)
@@ -528,7 +537,9 @@ export class AnnotationMulti extends TatorElement {
     for (let idx = 0; idx < this._videos.length; idx++)
     {
       let video = this._videos[idx];
+      video.keyframeOnly = false;
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
+      this_frame += this._frameOffsets[idx];
       video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
       video.shutdownOnDemandDownload();
       const seekPromise = video.seekFrame(this_frame, video.drawFrame, true);
@@ -547,6 +558,7 @@ export class AnnotationMulti extends TatorElement {
       {
         let video = this._videos[idx];
         let this_frame = Math.round(primeFrame * (this._fps[idx]/prime_fps));
+        this_frame += this._frameOffsets[idx];
         if (this_frame != video.currentFrame())
         {
             video.seekFrame(this_frame, video.drawFrame, true).then(() => {
@@ -672,7 +684,8 @@ export class AnnotationMulti extends TatorElement {
     this._videos = [];
     this._multi_layout = val.media_files['layout'];
 
-    if (val.media_files.quality)
+    let searchParams = new URLSearchParams(window.location.search);
+    if (val.media_files.quality && searchParams.has("playQuality") == false)
     {
       this._quality = val.media_files.quality;
     }
@@ -716,7 +729,9 @@ export class AnnotationMulti extends TatorElement {
         {
           if (global_progress[vid_idx] == 0)
           {
-            this._videos[vid_idx].refresh(); //draw first frame
+            setTimeout(() => {
+              this._videos[vid_idx].refresh(); //draw first frame
+            }, 333);
           }
           global_progress[vid_idx] = evt.detail.percent_complete;
           let fakeEvt = {
@@ -786,13 +801,6 @@ export class AnnotationMulti extends TatorElement {
              this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
              this._currentFrameText.style.width = (15 * String(frame).length) + "px";
            });
-        prime.addPauseListener(() => {
-          const frame = this._videos[this._primaryVideoIndex].currentFrame();
-          for (let video of this._videos)
-          {
-            video._dispFrame = Math.min(frame, video._numFrames-1);
-          }
-        });
       }
 
       this._videos[idx].addEventListener("playbackEnded", () => {
@@ -909,6 +917,7 @@ export class AnnotationMulti extends TatorElement {
 
     this._playbackReadyId = 0;
     this._numVideos = val.media_files['ids'].length;
+    this._frameOffsets = [];
     for (const vid_id of val.media_files['ids'])
     {
       const wrapper_div = document.createElement("div");
@@ -918,6 +927,14 @@ export class AnnotationMulti extends TatorElement {
       let roi_vid = document.createElement("video-canvas");
       this._videoGridInfo[vid_id] = {row: Math.floor(idx / this._multi_layout[1])+1, col: (idx % this._multi_layout[1])+1, video: roi_vid};
 
+      if ('frameOffset' in val.media_files)
+      {
+        this._frameOffsets.push(val.media_files.frameOffset[idx]);
+      }
+      else
+      {
+        this._frameOffsets.push(0);
+      }
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
       video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
@@ -928,7 +945,7 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[vidIdx].onDemandBufferAvailable() != "yes")
+          if (this._videos[vidIdx].bufferDelayRequired() && this._videos[vidIdx].onDemandBufferAvailable() != "yes")
           {
             allVideosReady = false;
           }
@@ -939,7 +956,7 @@ export class AnnotationMulti extends TatorElement {
           if (this.is_paused()) {
             this._playInteraction.enable();
             this._playbackDisabled = false;
-            this._rateControl.setValue(this._rate);
+            //this._rateControl.setValue(this._rate);
           }
         }
       });
@@ -954,6 +971,7 @@ export class AnnotationMulti extends TatorElement {
 
     let video_info = [];
     Promise.all(video_resp).then((values) => {
+      let idx = 0;
       for (let resp of values)
       {
         video_info.push(resp.json());
@@ -1001,6 +1019,18 @@ export class AnnotationMulti extends TatorElement {
         for (let idx = 0; idx < video_info.length; idx++)
         {
           setup_video(idx, info[idx]);
+          if (this._frameOffsets[idx] != 0)
+          {
+            const searchParams = new URLSearchParams(window.location.search);
+            let frameInit = 0;
+            if (searchParams.has("frame"))
+            {
+              frameInit = Number(searchParams.get("frame"));
+            }
+            this._videos[idx].gotoFrame(val.media_files.frameOffset[idx], true);
+            this._videos[idx]._dispFrame = frameInit + val.media_files.frameOffset[idx];
+            this._videos[idx]._frameOffset = val.media_files.frameOffset[idx];
+          }
         }
         this._fps_of_max = fps_of_max;
         this._totalTime.textContent = "/ " + this._frameToTime(max_frames);
@@ -1139,7 +1169,7 @@ export class AnnotationMulti extends TatorElement {
       else
       {
         this.setMultiviewUrl("focus", Number(videoId));
-        this.assignToPrimary(Number(videoId), this._quality);
+        this.assignToPrimary(Number(videoId), this._quality*2);
       }
     }
     this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
@@ -1252,7 +1282,7 @@ export class AnnotationMulti extends TatorElement {
     // These go invisible on a move.
     this.makeAllVisible(div);
     let video = div.children[0];
-    //video.setQuality(quality);
+    video.setQuality(quality);
 
     for (let idx = 0; idx < this._videos.length; idx++) {
       if (vid_id == this._videos[idx].video_id()) {
@@ -1270,7 +1300,7 @@ export class AnnotationMulti extends TatorElement {
     // These go invisible on a move.
     this.makeAllVisible(div);
     let video = div.children[0];
-    //video.setQuality(quality);
+    video.setQuality(quality);
   }
 
   assignToGrid(setContextMenu=true)
@@ -1538,10 +1568,10 @@ export class AnnotationMulti extends TatorElement {
           check_ready(this._videos[videoIndex].currentFrame())}, clock_check);
         return;
       }
-      if (this._videos[videoIndex].onDemandBufferAvailable() != "yes")
+      if (this._videos[videoIndex].bufferDelayRequired() && this._videos[videoIndex].onDemandBufferAvailable() != "yes")
       {
         not_ready = true;
-        if (timeoutCounter == timeouts[timeoutIndex]) {
+        if (timeoutCounter >= timeouts[timeoutIndex]) {
           timeoutCounter = 0;
           timeoutIndex += 1;
           console.log(`Video ${videoIndex} playback check - restart [Now: ${new Date().toISOString()}]`);
@@ -1580,35 +1610,32 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[vidIdx].onDemandBufferAvailable() != "yes")
+          const buffer_required = this._videos[vidIdx].bufferDelayRequired();
+          const on_demand_available = this._videos[vidIdx].onDemandBufferAvailable();
+          console.info(`${vidIdx}: ${buffer_required} and ${on_demand_available}`);
+          if (buffer_required == true && on_demand_available != "yes")
           {
-            console.log(`.... ${vidIdx} - ${this._videos[vidIdx].onDemandBufferAvailable()}`);
             allVideosReady = false;
           }
         }
 
         if (allVideosReady) {
           console.log("allVideosReady");
-
-          var seekPromiseList = [];
-          for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++) {
-            let video = this._videos[vidIdx];
-            const seekPromise = video.seekFrame(video.currentFrame(), video.drawFrame, true, null, true);
-            seekPromiseList.push(seekPromise);
-          }
-          Promise.allSettled(seekPromiseList).then(() => {
+          try
+          {
             this._playInteraction.enable();
             this._playbackDisabled = false;
-            this._rateControl.setValue(this._rate);
-          })
-          .catch((exc) => {
+            return;
+          }
+          catch(exc) 
+          {
             console.warn("allVideosReady() seekFrame promises error caught")
             console.warn(exc);
 
             this._playInteraction.enable();
             this._playbackDisabled = false;
-            this._rateControl.setValue(this._rate);
-          })
+            //this._rateControl.setValue(this._rate);
+          }
         }
       }
     };
@@ -1780,7 +1807,7 @@ export class AnnotationMulti extends TatorElement {
     this._ratesAvailable = null;
     this.dispatchEvent(new Event("paused", {composed: true}));
     this.enableRateChange();
-    this._rateControl.setValue(this._rate);
+    //this._rateControl.setValue(this._rate);
     this.checkReady(); // Verify ready state, this will gray out elements if buffering is required.
 
     const paused = this.is_paused();
@@ -1866,6 +1893,7 @@ export class AnnotationMulti extends TatorElement {
       }
     }
     this.forcePlaybackDownload();
+    this.checkReady();
   }
 
   /**
@@ -1953,6 +1981,7 @@ export class AnnotationMulti extends TatorElement {
     for (let video of this._videos)
     {
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
+      this_frame += this._frameOffsets[idx];
       video.onPlay();
       p_list.push(video.gotoFrame(Math.min(this_frame,video._numFrames-1), true));
       idx++;

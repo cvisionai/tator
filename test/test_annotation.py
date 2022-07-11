@@ -1,5 +1,4 @@
 import os
-import time
 import inspect
 
 from ._common import print_page_error
@@ -23,11 +22,11 @@ def common_annotation(page, canvas, bias=0):
         width = 100
         height = 100
         page.mouse.move(x, y, steps=50)
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         page.mouse.down()
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         page.mouse.move(x + width, y + height, steps=50)
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         page.mouse.up()
         page.wait_for_selector('save-dialog.is-open')
         save_dialog = page.query_selector('save-dialog.is-open')
@@ -44,15 +43,15 @@ def common_annotation(page, canvas, bias=0):
         x += canvas_center_x
         y += canvas_center_y
         page.mouse.move(x+50, y+50, steps=50)
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         page.mouse.click(x+50, y+50)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         page.mouse.down()
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         page.mouse.move(x, y, steps=50)
-        time.sleep(1)
+        page.wait_for_timeout(1000)
         page.mouse.up()
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
@@ -60,23 +59,34 @@ def common_annotation(page, canvas, bias=0):
     # Resize boxes
     print("Resizing boxes...")
     for idx, (start, enum_value) in enumerate(box_info):
+        print(f'Looping box info, at index: {idx}')
         x, y = start
         x += canvas_center_x
         y += canvas_center_y
+        
         page.mouse.move(x+45, y+45, steps=50)
-        time.sleep(1)
+        page.wait_for_timeout(5000)
+        
         page.mouse.click(x+45, y+45)
         selector = page.query_selector('entity-selector:visible')
         selector.wait_for_selector(f'#current-index :text("{idx+1+bias}")')
-        time.sleep(1)
+        page.wait_for_timeout(5000)
+        
         page.mouse.down()
-        time.sleep(1)
+        page.wait_for_timeout(5000)
+        
         page.mouse.move(x+95, y+95, steps=50)
-        time.sleep(1)
+        page.wait_for_timeout(5000)
+        
         page.mouse.up()
+        
+        print(f'Wait for success light....')
         light = page.query_selector('#tator-success-light')
         light.wait_for_element_state('visible')
         light.wait_for_element_state('hidden')
+
+        print(f'Success!')
+        page.wait_for_timeout(5000)
 
 
 def test_video_annotation(page_factory, project, video):
@@ -111,7 +121,7 @@ def test_multi_annotation(page_factory, project, multi):
     page.wait_for_selector('video-canvas')
     canvas = page.query_selector_all('video-canvas')
     page.wait_for_selector('play-button:not(.disabled)')
-    time.sleep(2) # Not sure what else to wait for here but sometimes vids load after play button enabled
+    page.wait_for_timeout(2000) # Not sure what else to wait for here but sometimes vids load after play button enabled
     assert(len(canvas) == 2)
     common_annotation(page, canvas[0])
     common_annotation(page, canvas[1], bias=3)

@@ -60,7 +60,7 @@ export class FilterUtilities {
     } else if (dtype == "datetime") {
       choices.push({ "value": "After" });
       choices.push({ "value": "Before" });
-    } else if (selectedAttributeType.name == "_modified_by") {
+    } else if (selectedAttributeType.name == "Modified By") { //_modified_by
       choices.push({ "value": "==" });
       choices.push({ "value": "NOT ==" });
       choices.push({ "value": "Includes" });

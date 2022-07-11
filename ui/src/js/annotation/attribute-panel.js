@@ -9,7 +9,7 @@ export class AttributePanel extends TatorElement {
     this._div = document.createElement("div");
     this._div.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
     this._shadow.appendChild(this._div);
-    this._emitChanges=true;
+    this._emitChanges = true;
 
     this._idWidget = document.createElement("text-input");
     this._idWidget.permission = "View Only";
@@ -94,12 +94,12 @@ export class AttributePanel extends TatorElement {
     return chevron;
   }
 
-  _toggleChevron(evt){
+  _toggleChevron(evt) {
     var el = evt.target;
     return el.classList.toggle('chevron-trigger-90');
   }
 
-  _toggleAttributes(el){
+  _toggleAttributes(el) {
     let hidden = el.hidden
     return el.hidden = !hidden;
   };
@@ -214,7 +214,7 @@ export class AttributePanel extends TatorElement {
         if (values.x != undefined) {
           let val = `${values.x.toFixed(4)}`;
           if (this._associatedMedia) {
-            val += ` | ${Math.round(values.x*this._associatedMedia.width)} px`;
+            val += ` | ${Math.round(values.x * this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
         }
@@ -223,7 +223,7 @@ export class AttributePanel extends TatorElement {
         if (values.y != undefined) {
           let val = `${values.y.toFixed(4)}`;
           if (this._associatedMedia) {
-            val += ` | ${Math.round(values.y*this._associatedMedia.height)} px`;
+            val += ` | ${Math.round(values.y * this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
         }
@@ -232,7 +232,7 @@ export class AttributePanel extends TatorElement {
         if (values.u != undefined) {
           let val = `${values.u.toFixed(4)}`;
           if (this._associatedMedia) {
-            val += ` | ${Math.round(values.u*this._associatedMedia.width)} px`;
+            val += ` | ${Math.round(values.u * this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
         }
@@ -241,7 +241,7 @@ export class AttributePanel extends TatorElement {
         if (values.v != undefined) {
           let val = `${values.v.toFixed(4)}`;
           if (this._associatedMedia) {
-            val += ` | ${Math.round(values.v*this._associatedMedia.height)} px`;
+            val += ` | ${Math.round(values.v * this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
         }
@@ -250,7 +250,7 @@ export class AttributePanel extends TatorElement {
         if (values.width != undefined) {
           let val = `${values.width.toFixed(4)}`;
           if (this._associatedMedia) {
-            val += ` | ${Math.round(values.width*this._associatedMedia.width)} px`;
+            val += ` | ${Math.round(values.width * this._associatedMedia.width)} px`;
           }
           widget.setValue(val);
         }
@@ -259,7 +259,7 @@ export class AttributePanel extends TatorElement {
         if (values.height != undefined) {
           let val = `${values.height.toFixed(4)}`;
           if (this._associatedMedia) {
-            val += ` | ${Math.round(values.height*this._associatedMedia.height)} px`;
+            val += ` | ${Math.round(values.height * this._associatedMedia.height)} px`;
           }
           widget.setValue(val);
         }
@@ -332,8 +332,10 @@ export class AttributePanel extends TatorElement {
       this._slider.addEventListener("input", () => {
         if (this._emitChanges) {
           this.dispatchEvent(new CustomEvent("trackSliderInput", {
-            detail: {frame: this._frames[this._slider.value],
-                     track: this._track},
+            detail: {
+              frame: this._frames[this._slider.value],
+              track: this._track
+            },
             composed: true
           }));
         }
@@ -341,8 +343,10 @@ export class AttributePanel extends TatorElement {
       this._slider.addEventListener("change", () => {
         if (this._emitChanges) {
           this.dispatchEvent(new CustomEvent("trackSliderChange", {
-            detail: {frame: this._frames[this._slider.value],
-                     track: this._track},
+            detail: {
+              frame: this._frames[this._slider.value],
+              track: this._track
+            },
             composed: true
           }));
         }
@@ -365,9 +369,9 @@ export class AttributePanel extends TatorElement {
       goToLocalizationButton.addEventListener("click", () => {
         this.dispatchEvent(new CustomEvent("goToLocalization", {
           detail: {
-              track: this._track,
-              frame: this._frames[this._slider.value]
-            },
+            track: this._track,
+            frame: this._frames[this._slider.value]
+          },
           composed: true
         }
         ));
@@ -394,7 +398,7 @@ export class AttributePanel extends TatorElement {
       goToTrackButton.style.marginLeft = "16px";
       goToTrackButton.addEventListener("click", () => {
         this.dispatchEvent(new CustomEvent("goToTrack", {
-          detail: {track: this._associatedTrack},
+          detail: { track: this._associatedTrack },
           composed: true
         }
         ));
@@ -462,18 +466,59 @@ export class AttributePanel extends TatorElement {
       widget.setAttribute("name", "y");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
-   }
+    }
 
     // User defined attributes
     const sorted = val.attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
+
     var columnIdx = 0;
     for (const column of sorted) {
       columnIdx += 1;
-      let widget;
-      var ignorePermission = false;
+      let widget = this._getUserDefinedWidget(column);
 
+      if (column.order < 0) {
+        this._hiddenAttrsDiv.appendChild(widget);
+      }
+      else {
+        if (this._attrColumns == 2) {
+          if (columnIdx / sorted.length > 0.5) {
+            this._innerDiv1.appendChild(widget);
+          }
+          else {
+            this._innerDiv2.appendChild(widget);
+          }
+        }
+        else {
+          this._div.appendChild(widget);
+        }
+      }
+
+
+      if (this._enableBuiltInAttributes && this._builtInAttrsDiv.children.length > 0) {
+        this._builtInAttrLabel.hidden = false;
+        this._builtInAttrsDiv.hidden = true;
+      }
+      else {
+        this._builtInAttrLabel.hidden = true;
+        this._builtInAttrsDiv.hidden = true;
+      }
+
+      if (this._enableHiddenAttributes && this._hiddenAttrsDiv.children.length > 0) {
+        this._hiddenAttrLabel.hidden = false;
+        this._hiddenAttrsDiv.hidden = true;
+      }
+      else {
+        this._hiddenAttrLabel.hidden = true;
+        this._hiddenAttrsDiv.hidden = true;
+      }
+    }
+  }
+
+  _getUserDefinedWidget(column) {
+      var ignorePermission = false;
+      let widget;
       if (column.dtype == "bool") {
         widget = document.createElement("bool-input");
         widget.setAttribute("name", column.name);
@@ -554,28 +599,11 @@ export class AttributePanel extends TatorElement {
       if (typeof column.description !== "undefined" && column.description !== "") {
         widget.setAttribute("title", column.description);
       } //else {
-        //widget.setAttribute("title", `Accepts "${column.dtype}" data input`);
+      //widget.setAttribute("title", `Accepts "${column.dtype}" data input`);
       //}
 
       if (typeof this._permission !== "undefined" && !ignorePermission) {
         widget.permission = this._permission;
-      }
-
-      if (column.order < 0) {
-        this._hiddenAttrsDiv.appendChild(widget);
-      }
-      else {
-        if (this._attrColumns == 2) {
-          if (columnIdx / sorted.length > 0.5) {
-            this._innerDiv1.appendChild(widget);
-          }
-          else {
-            this._innerDiv2.appendChild(widget);
-          }
-        }
-        else {
-          this._div.appendChild(widget);
-        }
       }
 
       if (column.default) {
@@ -588,25 +616,8 @@ export class AttributePanel extends TatorElement {
           this.dispatchEvent(new Event("change"));
         }
       });
-    }
-
-    if (this._enableBuiltInAttributes && this._builtInAttrsDiv.children.length > 0) {
-      this._builtInAttrLabel.hidden = false;
-      this._builtInAttrsDiv.hidden = true;
-    }
-    else {
-      this._builtInAttrLabel.hidden = true;
-      this._builtInAttrsDiv.hidden = true;
-    }
-
-    if (this._enableHiddenAttributes && this._hiddenAttrsDiv.children.length > 0) {
-      this._hiddenAttrLabel.hidden = false;
-      this._hiddenAttrsDiv.hidden = true;
-    }
-    else {
-      this._hiddenAttrLabel.hidden = true;
-      this._hiddenAttrsDiv.hidden = true;
-    }
+    
+    return widget;
   }
 
   getValues() {
@@ -661,7 +672,7 @@ export class AttributePanel extends TatorElement {
   }
 
   displaySlider(display) {
-    if (this._slider){
+    if (this._slider) {
       if (display) {
         this._slider.style.display = "block";
       }
@@ -673,11 +684,11 @@ export class AttributePanel extends TatorElement {
 
   setSlider(data) {
     // If there's no slider as a part of this panel, then just ignored this call.
-    if (!this._slider){ return; }
+    if (!this._slider) { return; }
 
     // Set the slider max and corresponding frame index list if
     // the track frame segments are provided (which are start/end pairs)
-    if (data.segments){
+    if (data.segments) {
       this._trackSegments = data.segments;
       this._frames = [];
       for (const [start, end] of data.segments) {
@@ -715,7 +726,7 @@ export class AttributePanel extends TatorElement {
   }
 
   _getUsername(userId, widget) {
-    if (userId){
+    if (userId) {
       fetch("/rest/User/" + userId, {
         method: "GET",
         credentials: "same-origin",
@@ -725,16 +736,16 @@ export class AttributePanel extends TatorElement {
           "Content-Type": "application/json"
         }
       })
-      .then(response => { return response.json(); })
-      .then(result => {
-        this._userList.push({result});
-        widget.setValue(result.username);
-      });
+        .then(response => { return response.json(); })
+        .then(result => {
+          this._userList.push({ result });
+          widget.setValue(result.username);
+        });
     }
   }
 
   _getVersion(versionId, widget) {
-    if (versionId){
+    if (versionId) {
       fetch("/rest/Version/" + versionId, {
         method: "GET",
         credentials: "same-origin",
@@ -744,11 +755,11 @@ export class AttributePanel extends TatorElement {
           "Content-Type": "application/json"
         }
       })
-      .then(response => { return response.json(); })
-      .then(result => {
-        this._versionList.push({result});
-        widget.setValue(result.name);
-      });
+        .then(response => { return response.json(); })
+        .then(result => {
+          this._versionList.push({ result });
+          widget.setValue(result.name);
+        });
     }
   }
 
@@ -832,13 +843,12 @@ export class AttributePanel extends TatorElement {
     // Check if the slider needs to be updated if there's different track data now.
     // If so, then update it.
     let trackSegmentsUpdated = false;
-    if (this._trackSegments && values.segments){
-       trackSegmentsUpdated = this._trackSegments != values.segments;
+    if (this._trackSegments && values.segments) {
+      trackSegmentsUpdated = this._trackSegments != values.segments;
     }
 
     // Skip resetting slider if we already display this track
-    if (this._track && this._track.id == values.id && !trackSegmentsUpdated)
-    {
+    if (this._track && this._track.id == values.id && !trackSegmentsUpdated) {
       return;
     }
 
@@ -846,8 +856,7 @@ export class AttributePanel extends TatorElement {
 
     // only relevant if we are dealing with objects
     // with ids
-    if (this._dataType.isTrack)
-    {
+    if (this._dataType.isTrack) {
       this._track = values;
     }
 

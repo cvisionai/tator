@@ -72,7 +72,7 @@ var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
-export const RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
+export var RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 export class VideoCanvas extends AnnotationCanvas {
@@ -162,8 +162,20 @@ export class VideoCanvas extends AnnotationCanvas {
 
 
     this.initialized = false;
+    this._fastMode = false;
   }
 
+  set keyframeOnly(val)
+  {
+    this._fastMode = val;
+    this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = val;
+    this._videoElement[this._play_idx].playBuffer().keyframeOnly = val;
+  }
+
+  get keyframeOnly()
+  {
+    return this._fastMode;
+  }
   /**
    * Permanently disable downloading the scrub buffer.
    * #TODO Allow some ability to re-enable downloading the scrub buffer.
@@ -538,6 +550,7 @@ export class VideoCanvas extends AnnotationCanvas {
         this._audioPlayer = document.createElement("AUDIO");
         console.log("MediaSource element created: AUDIO");
         this._audioPlayer.setAttribute('src', audio_def.path);
+        this._audioPlayer.crossOrigin = "anonymous";
         this._audioPlayer.volume = 0.5; // Default volume
         this.audio = true;
         this.addPauseListener(() => {
@@ -601,6 +614,11 @@ export class VideoCanvas extends AnnotationCanvas {
     if (mediaType)
       this.mediaType = mediaType;
     this._videoObject = videoObject;
+
+    if (numGridRows != undefined)
+    {
+      RATE_CUTOFF_FOR_ON_DEMAND = 4.0; // Cap multi at 8x on-demand playback
+    }
 
     if ('concat' in videoObject.media_files)
     {
@@ -714,7 +732,6 @@ export class VideoCanvas extends AnnotationCanvas {
                         this._numSeconds=new_length / this._fps;
                         this._dims=dims;
                         this.resetRoi();
-                        this.seekFrame(this._dispFrame, ()=>{}, true);
                         resolve();
                       }
                     });
@@ -1146,7 +1163,7 @@ export class VideoCanvas extends AnnotationCanvas {
       // seek operations
       this._seekFrame = frame;
 
-      if (this._lastDownloadSeekFrame != this._seekFrame || forceSeekDownload)
+      if ((forceSeekBuffer == true || bufferType == "seek") && this._lastDownloadSeekFrame != this._seekFrame)
       {
         downloadSeekFrame = true;
         this._lastDownloadSeekFrame = this._seekFrame;
@@ -1172,8 +1189,16 @@ export class VideoCanvas extends AnnotationCanvas {
         // Because we are using off-screen rendering we need to defer
         // updating the canvas until the video/frame is actually ready, we do this
         // by waiting for a signal off the video + then scheduling an animation frame.
+        let seekUniqueId = `${frame}_${video._name}`;
+        that._seekUniqueId = seekUniqueId;
         video.oncanplay=function()
         {
+          video.oncanplay=null;
+          // only honor latest seek
+          if (seekUniqueId != that._seekUniqueId)
+          {
+            return;
+          }
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime);
@@ -1202,6 +1227,10 @@ export class VideoCanvas extends AnnotationCanvas {
           if (video.use_codec_buffer)
           {
             image_buffer = video.codec_image_buffer;
+            if (image_buffer)
+            {
+              frame = that.timeToFrame(image_buffer.time);
+            }
           }
           if (image_buffer == null)
           {
@@ -1212,7 +1241,6 @@ export class VideoCanvas extends AnnotationCanvas {
           callback(frame, image_buffer, that._dims[0], that._dims[1]);
           that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
-          video.oncanplay=null;
           if (that._direction == Direction.STOPPED)
           {
             that.dispatchEvent(new CustomEvent("seekComplete",
@@ -1269,6 +1297,16 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement[this._play_idx].playBuffer().bias = time_comps.bias;
       this._videoElement[this._play_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;   
     }
+
+    // Always update the scrub buffer
+    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer &&
+        video != this._videoElement[this._scrub_idx].playBuffer())
+    {
+      //console.info(`Given ${time} ${video.currentTime} to play buffer`);
+      this._videoElement[this._scrub_idx].playBuffer().bias = time_comps.bias;
+      this._videoElement[this._scrub_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;
+    }
+
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
     {
@@ -1313,16 +1351,21 @@ export class VideoCanvas extends AnnotationCanvas {
   rateChange(newRate)
   {
     this._playbackRate=newRate;
+    this._draw.rateChange(newRate, this._fps);
     if (this._direction != Direction.STOPPED)
     {
+      this._calculateAudioEligibility();
       // If we are playing trim the frame buffer to a quarter second to make the rate change
       // feel responsive.
       this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
       const oldLoad = this._loadFrame;
       this._loadFrame = this._draw.trimBuffer(Math.round(this._fps*0.5));
       console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
-      clearTimeout(this._loaderTimeout);
-      this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
+      if (this._frameCallbackActive == false)
+      {
+        clearTimeout(this._loaderTimeout);
+        this._loaderTimeout = setTimeout(() => {this.loaderThread(false, this._loaderBuffer)}, 0);
+      }
     }
     this._onDemandPlaybackReady = (this.onDemandBufferAvailable(this._dispFrame) == "yes" ? true : false);
     this.dispatchEvent(new CustomEvent("rateChange", {
@@ -1375,6 +1418,18 @@ export class VideoCanvas extends AnnotationCanvas {
     return finalPromise;
   }
 
+  advanceOneSecond(forceSeekBuffer)
+  {
+    let newFrame = this._dispFrame + this._fps;
+    return this.gotoFrame(newFrame, forceSeekBuffer);
+  }
+
+  backwardOneSecond(forceSeekBuffer)
+  {
+    let newFrame = this._dispFrame - this._fps;
+    return this.gotoFrame(newFrame, forceSeekBuffer);
+  }
+
   captureFrame(localizations,frame)
   {
     if (frame == undefined)
@@ -1384,6 +1439,20 @@ export class VideoCanvas extends AnnotationCanvas {
 
     const filename = `Frame_${frame}_${this._mediaInfo['name']}`;
     this.makeOffscreenDownloadable(localizations, filename);
+  }
+
+  _calculateAudioEligibility()
+  {
+    this._audioEligible=false;
+    if (this._playbackRate >= 1.0 &&
+        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
+        this._audioPlayer &&
+        this._direction == Direction.FORWARD && 
+        this._children == undefined) // TODO: Support audio in concat mode
+    {
+      this._audioEligible = true;
+      this._audioPlayer.playbackRate = this._playbackRate;
+    }
   }
 
 
@@ -1400,18 +1469,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     this._playing = false;
 
-    // We are eligible for audio if we are at a supported playback rate
-    // have audio, and are going forward.
-    this._audioEligible=false;
-    if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
-        this._audioPlayer &&
-        direction == Direction.FORWARD && 
-        this._children == undefined) // TODO: Support audio in concat mode
-    {
-      this._audioEligible = true;
-      this._audioPlayer.playbackRate = this._playbackRate;
-    }
+    this._calculateAudioEligibility();
 
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
@@ -1428,7 +1486,14 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
-      this.frameCallbackMethod();
+      // Cap effective decode rate around 240 fps 
+      // This was emperically gathered as a good cut off for 5 15fps playing back at 16x
+      // Can fine tune this more if required
+      if (this._fps * this._playbackRate >= 16*15)
+      {
+        this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
+      }
+      this.frameCallbackMethod(this._scrub_idx);
     }
     else
     {
@@ -1485,18 +1550,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     this._playing = false;
 
-    // We are eligible for audio if we are at a supported playback rate
-    // have audio, and are going forward.
-    this._audioEligible=false;
-    if (this._playbackRate >= 1.0 &&
-        this._playbackRate <= RATE_CUTOFF_FOR_AUDIO &&
-        this._audioPlayer &&
-        direction == Direction.FORWARD &&
-        this._children == undefined)
-    {
-      this._audioEligible = true;
-      this._audioPlayer.playbackRate = this._playbackRate;
-    }
+    this._calculateAudioEligibility();
 
     // Diagnostics and audio readjust thread
     this._fpsDiag = 0;
@@ -1580,6 +1634,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
+      console.warn("Player Stalled.");
       // Done playing, clear playback.
       if (this._audioEligible && this._audioPlayer.paused)
       {
@@ -1697,11 +1752,21 @@ export class VideoCanvas extends AnnotationCanvas {
       this._pendingTimeout = setTimeout(push_pending, (1000/this._videoFps)/2);
     }
   }
-  frameCallbackMethod()
+  frameCallbackMethod(index)
   {
-    this._video
+    if (index == undefined)
+    {
+      index = this._play_idx;
+    }
     let frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
-    let video = this._videoElement[this._play_idx].playBuffer();
+
+    // We are actually in keyframe playback mode here
+    if (this._videoElement[index].playBuffer().keyframeOnly == true)
+    {
+      frameIncrement = this._playbackRate / 16;
+    }
+
+    let video = this._videoElement[index].playBuffer();
     let frameProfiler = new PeriodicTaskProfiler("Frame Fetch");
 
     // Clear any old frames
@@ -1712,10 +1777,12 @@ export class VideoCanvas extends AnnotationCanvas {
     // on frame processing logic
 
     let increment_clk = 0;
+    let lastRate = this._playbackRate;
     video.onFrame = (frame, timescale, timestampOffset) => {
       this._playing = true;
       let start = performance.now();
       frame.frameNumber = this.timeToFrame((frame.timestamp/timescale));
+      this._loadFrame = frame.frameNumber;
       this._fpsLoadDiag++;
       if (increment_clk % frameIncrement != 0)
       {
@@ -1732,12 +1799,23 @@ export class VideoCanvas extends AnnotationCanvas {
         this.pendingFramesMethod();
       }
 
+      if (lastRate != this._playbackRate)
+      {
+        frameIncrement = this._motionComp.frameIncrement(this._fps, this._playbackRate);
+        // We are actually in keyframe playback mode here
+        if (this._videoElement[index].playBuffer().keyframeOnly == true)
+        {
+          frameIncrement = this._playbackRate / 16;
+        }
+        lastRate = this._playbackRate;
+      }
+
       // Don't let increment clock blow up
       increment_clk = (increment_clk + 1) % frameIncrement;
       frameProfiler.push(performance.now()-start)
       
       // Kick off the player thread once we have 25 frames loaded
-      if (this._playerTimeout == null && this._draw.canPlay() > 4)
+      if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
       {
         this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
       }
@@ -1809,8 +1887,8 @@ export class VideoCanvas extends AnnotationCanvas {
     // Seek to the current frame and call our atomic callback
     this.seekFrame(this._loadFrame, pushAndGoToNextFrame, false, bufferName);
 
-    // Kick off the player thread once we have 25 frames loaded
-    if (this._playerTimeout == null && this._draw.canPlay() > 4)
+
+    if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
     {
       this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
     }
@@ -1845,38 +1923,39 @@ export class VideoCanvas extends AnnotationCanvas {
       var ranges = video.buffered;
       const absEnd = this.frameToTime(this._numFrames-1);
       const absStart = this.frameToTime(0);
-      let timeToAbsEnd = null;
       const currentTime = this.frameToTime(frame);
+      let timeToAbsEnd = absEnd - currentTime;
       for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
       {
         var end = ranges.end(rangeIdx);
         var start = ranges.start(rangeIdx);
+        if (currentTime < start || currentTime > end)
+        {
+          continue;
+        }
 
         if (this._direction == Direction.STOPPED) {
           if (this._lastDirection == Direction.FORWARD) {
             timeToEnd = end - currentTime;
-            timeToAbsEnd = absEnd - currentTime;
           }
           else {
             timeToEnd = currentTime - start;
-            timeToAbsEnd = currentTime - absStart;
           }
         }
         else if (this._direction == Direction.FORWARD)
         {
           this._lastDirection = this._direction;
           timeToEnd = end - currentTime;
-          timeToAbsEnd = absEnd - currentTime;
         }
         else
         {
           this._lastDirection = this._direction;
           timeToEnd = currentTime - start;
-          timeToAbsEnd = currentTime - absStart;
         }
       }
       
       appendThreshold = Math.min(timeToAbsEnd, appendThreshold);
+      console.info(`${timeToEnd} >= ${appendThreshold}`);
       return (timeToEnd >= appendThreshold ? "yes" : "more");
     }
   }
@@ -2320,11 +2399,13 @@ export class VideoCanvas extends AnnotationCanvas {
         if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._direction == Direction.FORWARD)
         {
           this._loaderStarted = true;
+          this._frameCallbackActive = true;
           this.frameCallbackMethod();
         }
         else
         {
           this._loaderStarted = true;
+          this._frameCallbackActive = false;
           this._loaderTimeout = setTimeout(() => {this.loaderThread(true, "play")}, 0);
         }
       }
@@ -2333,13 +2414,13 @@ export class VideoCanvas extends AnnotationCanvas {
     // Sleep for a period before checking the onDemand buffer again
     if (!this._onDemandPlaybackReady)
     {
-      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 500);
+      this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 100);
     }
     else
     {
       if (!this._onDemandFinished && !inhibited)
       {
-        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 500);
+        this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload()}, 100);
       }
     }
   }
@@ -2520,6 +2601,7 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   pause()
   {
+    this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = false;
     // Stoping the player thread sets the direction to stop
     const currentDirection = this._direction;
 
@@ -2548,6 +2630,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
       this._direction=Direction.STOPPED;
       this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame));
+      this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame));
 
       // force a redraw at the currently displayed frame
       var finalPromise = new Promise((resolve, reject) => {

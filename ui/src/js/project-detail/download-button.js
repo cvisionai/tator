@@ -1,6 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { svgNamespace } from "../components/tator-element.js";
-import streamSaver from "streamsaver";
+import streamSaver from "../util/StreamSaver.js";
+
 
 export class DownloadButton extends TatorElement {
   constructor() {

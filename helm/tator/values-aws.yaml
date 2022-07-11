@@ -1,4 +1,4 @@
-domain: www.yourdomain.com
+domain: &domain www.yourdomain.com
 # These domains will work the same way as the primary domain.
 #aliases:
 #  - domain: alias.duckdns.org
@@ -246,6 +246,13 @@ remoteTranscodes:
     -----BEGIN CERTIFICATE-----
     <Insert certificate here>
     -----END CERTIFICATE-----
+okta:
+  enabled: false
+  oauth2_key: "fill me in"
+  oauth2_secret: "fill me in"
+  oauth2_token_uri: "fill me in"
+  oauth2_issuer: "fill me in"
+  oauth2_auth_uri: "fill me in"
 email:
   enabled: false
   sender: "<fill in>"

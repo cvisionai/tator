@@ -216,6 +216,22 @@ spec:
             {{- else }}
               value: "FALSE"
             {{- end }}
+            - name: OKTA_ENABLED
+            {{- if .Values.okta.enabled }}
+              value: "TRUE"
+            - name: OKTA_OAUTH2_KEY
+              value: {{ .Values.okta.oauth2_key }}
+            - name: OKTA_OAUTH2_SECRET
+              value: {{ .Values.okta.oauth2_secret }}
+            - name: OKTA_OAUTH2_TOKEN_URI
+              value: {{ .Values.okta.oauth2_token_uri }}
+            - name: OKTA_OAUTH2_ISSUER
+              value: {{ .Values.okta.oauth2_issuer }}
+            - name: OKTA_OAUTH2_AUTH_URI
+              value: {{ .Values.okta.oauth2_auth_uri }}
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
             - name: ANONYMOUS_REGISTRATION_ENABLED
             {{- if hasKey .Values "anonymousRegistration" }}
             {{- if .Values.anonymousRegistration.enabled }}

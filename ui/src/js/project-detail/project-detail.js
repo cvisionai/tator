@@ -294,6 +294,7 @@ export class ProjectDetail extends TatorPage {
     this._projects.appendChild(uploadDialog);
 
     const attachmentDialog = document.createElement("attachment-dialog");
+    attachmentDialog._header.classList.add("fixed-height-scroll");
     this._projects.appendChild(attachmentDialog);
 
     this._activityNav = document.createElement("activity-nav");
@@ -739,7 +740,7 @@ export class ProjectDetail extends TatorPage {
             // First hide algorithms if needed. These are not appropriate to be
             // run at the project/this._section/media level.
             var hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
-            const hiddenAlgoCategories = ['annotator-view'];
+            const hiddenAlgoCategories = ['annotator-view', 'disabled'];
 
             //
             // Set up attributes for bulk edit

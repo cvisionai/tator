@@ -280,7 +280,6 @@ export class AnnotationPage extends TatorPage {
                   }
                   this._settings.quality = playbackQuality;
                   this._player.setAvailableQualities(primeMediaData);
-                  this._player.setQuality(playbackQuality, null, true);
                 }
               );
             } else if (type_data.dtype == "live") {
@@ -335,6 +334,9 @@ export class AnnotationPage extends TatorPage {
             const searchParams = this._settings._queryParams();
             const media_id = parseInt(newValue);
 
+            this.nextData = nextData;
+            this.prevData = prevData;
+
             // Turn disable selected_type.
             searchParams.delete("selected_type");
 
@@ -357,6 +359,8 @@ export class AnnotationPage extends TatorPage {
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
+              this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
+              this._prev.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
             }
 
             if (nextData.next == -1) {
@@ -377,6 +381,8 @@ export class AnnotationPage extends TatorPage {
                 url += "?" + searchParams.toString();
                 window.location.href = url;
               });
+              this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
+              this._next.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
             }
           })
           .catch(err => console.log("Failed to fetch adjacent media! " + err));
@@ -392,7 +398,9 @@ export class AnnotationPage extends TatorPage {
           .then(response => response.json())
           .then(data => {
             this._permission = data.permission;
+            if(this._permission === "View Only") this._settings._lock.viewOnly();
             this.enableEditing(true);
+            
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after_id", data.id);
@@ -429,8 +437,24 @@ export class AnnotationPage extends TatorPage {
     }
   }
 
+  showPrevPreview(e) {
+    if (this.prevData.prev == -1) return;
+    this._prev.preview.info = this.prevData.prev;
+  }
+
+  showNextPreview(e) {
+    if (this.nextData.next == -1) return;
+    this._next.preview.info = this.nextData.next;
+  }
+
+  removeNextPrevPreview(e) {
+    this._next.preview.hide();
+    this._prev.preview.hide();
+  }
+
   _setupInitHandlers(canvas) {
     this._canvas = canvas;
+
     const _handleQueryParams = () => {
       if (this._dataInitialized && this._canvasInitialized) {
         const searchParams = new URLSearchParams(window.location.search);
@@ -558,8 +582,10 @@ export class AnnotationPage extends TatorPage {
       this._videoSettingsDialog.defaultSources = evt.detail;
     });
 
-    this._settings._lock.addEventListener("click", evt=> {
-      this.enableEditing(true);
+    this._settings._lock.addEventListener("click", evt => {
+      evt.preventDefault()
+      // Do nothing if user has insufficient permission
+      if(!this._settings._lock._viewOnly) this.enableEditing(true);
     });
 
     this._settings._fill_boxes.addEventListener("click", evt => {
@@ -937,7 +963,6 @@ export class AnnotationPage extends TatorPage {
           this._settings.setAttribute("type-id", evt.detail.meta);
         });
         this._undo.addEventListener("update", evt => {
-
           // Force selecting this new entity in the browser if a new object was created
           // when the data is retrieved (ie freshData event)
           if (evt.detail.method == "POST") {
@@ -1148,8 +1173,7 @@ export class AnnotationPage extends TatorPage {
    });
   }
 
-  _setupAnnotatorMenuApplets(canvas) {
-
+  _setupAnnotatorApplets(canvas, canvasElement) {
     // Setup the menu applet dialog that will be loaded whenever the user right click menu selects
     // a registered applet
     this._menuAppletDialog = document.createElement("menu-applet-dialog");
@@ -1185,10 +1209,17 @@ export class AnnotationPage extends TatorPage {
     .then(response => response.json())
     .then(applets => {
       for (let applet of applets) {
+        // Init for annotator menu applets
         if (applet.categories != null && applet.categories.includes("annotator-menu")) {
           // Add the applet to the dialog
           this._menuAppletDialog.saveApplet(applet);
           canvas.addAppletToMenu(applet.name);
+        }
+         // Init for annotator tools applets
+        if (applet.categories != null && applet.categories.includes("annotator-tools")) {
+          // This puts the tools html into a panel next to the sidebar
+          const toolAppletPanel = document.createElement("tools-applet-panel");
+          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);        
         }
       }
     });
@@ -1196,7 +1227,7 @@ export class AnnotationPage extends TatorPage {
 
   _setupContextMenuDialogs(canvas, canvasElement, stateTypes) {
 
-    this._setupAnnotatorMenuApplets(canvas);
+    this._setupAnnotatorApplets(canvas, canvasElement);
 
     // This is a bit of a hack, but the modals will share the same
     // methods used by the save localization dialogs since the
@@ -1676,8 +1707,15 @@ export class AnnotationPage extends TatorPage {
 
   /// Turn on or off ability to edit annotations
   async enableEditing(mask) {
-    // Check state of lock button.
-    let enable = this._settings._lock._pathLocked.style.display == "none";
+    let enable;
+
+     // Check if user has permission before state of button
+    if (this._permission == "View Only") {
+      enable = false;
+      this._settings._lock.viewOnly();
+    } else {
+      enable = this._settings._lock._pathLocked.style.display == "none"
+    }
 
     // Check input.
     if (typeof mask !== "undefined") {
