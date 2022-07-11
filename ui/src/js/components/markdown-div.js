@@ -1,3 +1,5 @@
+import { marked } from "marked";
+
 // An unstyled div for displaying parsed markdown.
 export class MarkdownDiv extends HTMLElement {
   constructor() {
