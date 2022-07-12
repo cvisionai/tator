@@ -158,7 +158,7 @@ jobs:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          poetry shell;
+          $HOME/.local/bin/poetry shell;
           pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
           deactivate;
     - store_artifacts:
@@ -196,7 +196,7 @@ jobs:
     - run:
         name: Run tator-py tests
         command: |
-          poetry shell
+          $HOME/.local/bin/poetry shell
           pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
           deactivate
   cleanup-lightsail:
