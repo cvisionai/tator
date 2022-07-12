@@ -151,8 +151,8 @@ kubectl exec -it $GUNICORN_POD -- \
     python3 manage.py shell -c 'from main.models import User; user=User.objects.first(); user.set_password("admin"); user.save()'
 
 # Set up mc and configure lifecycle rule for uploads.
-MINIO_ACCESS_KEY=$(yq -r .minio.accessKey helm/tator/values.yaml)
-MINIO_SECRET_KEY=$(yq -r .minio.secretKey helm/tator/values.yaml)
+MINIO_ACCESS_KEY=$(poetry run yq -r .minio.accessKey helm/tator/values.yaml)
+MINIO_SECRET_KEY=$(poetry run yq -r .minio.secretKey helm/tator/values.yaml)
 kubectl exec -it $GUNICORN_POD -- bash <<EOF
 wget  https://dl.min.io/client/mc/release/linux-amd64/mc -O /usr/local/bin/mc
 chmod +x /usr/local/bin/mc
