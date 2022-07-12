@@ -1209,14 +1209,31 @@ export class AnnotationPage extends TatorPage {
     .then(response => response.json())
     .then(applets => {
       for (let applet of applets) {
+
+        if (applet.categories == null) {
+          continue;
+        }
+
+        if (applet.categories.includes("image-only") && this._player.mediaType.dtype != "image") {
+          continue;
+        }
+
+        if (applet.categories.includes("video-only") && this._player.mediaType.dtype != "video") {
+          continue;
+        }
+
+        if (applet.categories.includes("multi-only") && this._player.mediaType.dtype != "multi") {
+          continue;
+        }
+
         // Init for annotator menu applets
-        if (applet.categories != null && applet.categories.includes("annotator-menu")) {
+        if (applet.categories.includes("annotator-menu")) {
           // Add the applet to the dialog
           this._menuAppletDialog.saveApplet(applet);
           canvas.addAppletToMenu(applet.name);
         }
          // Init for annotator tools applets
-        if (applet.categories != null && applet.categories.includes("annotator-tools")) {
+        if (applet.categories.includes("annotator-tools")) {
           // This puts the tools html into a panel next to the sidebar
           const toolAppletPanel = document.createElement("tools-applet-panel");
           toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
