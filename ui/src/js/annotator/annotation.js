@@ -958,6 +958,11 @@ export class AnnotationCanvas extends TatorElement
     this._selectedMergeTrack = null;
     this._algoLaunchOptions = [];
     this._appletLaunchOptions = [];
+    this._menuAppletShortcuts = {
+      "ALT+1": null,
+      "ALT+2": null,
+      "ALT+3": null
+    };
 
     // Don't display the fill track gaps option until it has been verified the algorithm has been registered.
     this._contextMenuTrack.displayEntry("Fill track gaps", false);
@@ -1211,8 +1216,9 @@ export class AnnotationCanvas extends TatorElement
   /**
    * Add the given applet to the right click menu launch option
    * @param {string} appletName - Unique applet name name to add to the right click menu
+   * @param {list} categories - List of categories associated with the applet
    */
-  addAppletToMenu(appletName) {
+  addAppletToMenu(appletName, categories) {
     if (this._appletLaunchOptions.includes(appletName)) {
       Utilities.warningAlert(`Duplicate name registered for menu: ${appletName}`)
     }
@@ -1222,6 +1228,12 @@ export class AnnotationCanvas extends TatorElement
 
     this._appletLaunchOptions.push(appletName);
     this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this));
+
+    for (const choice of ["ALT+1", "ALT+2", "ALT+3"]) {
+      if (categories.includes(choice)) {
+        this._menuAppletShortcuts[choice] = appletName;
+      }
+    }
   }
 
   /**
@@ -1798,6 +1810,70 @@ export class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.QUERY)
     {
+      if (event.key == "1")
+      {
+        if (event.altKey == true) {
+          if (this._menuAppletShortcuts["ALT+1"] != null) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+              detail: {
+                appletName: this._menuAppletShortcuts["ALT+1"],
+                frame: this.currentFrame(),
+                media: this._videoObject,
+                projectId: this._data._projectId,
+                version: this._data.getVersion(),
+              },
+              composed: true,
+            }));
+            return;
+          }
+        }
+      }
+      if (event.key == "2")
+      {
+        if (event.altKey == true) {
+          if (this._menuAppletShortcuts["ALT+2"] != null) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+              detail: {
+                appletName: this._menuAppletShortcuts["ALT+2"],
+                frame: this.currentFrame(),
+                media: this._videoObject,
+                projectId: this._data._projectId,
+                version: this._data.getVersion(),
+              },
+              composed: true,
+            }));
+            return;
+          }
+        }
+      }
+      if (event.key == "3")
+      {
+        if (event.altKey == true) {
+          if (this._menuAppletShortcuts["ALT+3"] != null) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+              detail: {
+                appletName: this._menuAppletShortcuts["ALT+3"],
+                frame: this.currentFrame(),
+                media: this._videoObject,
+                projectId: this._data._projectId,
+                version: this._data.getVersion(),
+              },
+              composed: true,
+            }));
+            return;
+          }
+        }
+      }
+
       if (event.code == 'Tab')
       {
         event.preventDefault();
@@ -4415,7 +4491,7 @@ export class AnnotationCanvas extends TatorElement
     // #TODO Consider moving this outside of this function into its own
     //       routine that is called when a frame change occurs.
     if (this.currentFrame() != this._contextMenuFrame)
-    {    
+    {
       // Dont' call this stuff in playing mode.
       if (this._playing != true)
       {
@@ -4825,7 +4901,7 @@ export class AnnotationCanvas extends TatorElement
   }
 
   makeOffscreenDownloadable(localizations, filename)
-  {   
+  {
     this.getPNGdata(localizations).then((png_data) =>
         {
           var png_file = URL.createObjectURL(png_data);

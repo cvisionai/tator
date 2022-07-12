@@ -1183,6 +1183,7 @@ export class AnnotationPage extends TatorPage {
     this._menuAppletDialog.addEventListener("close", () => {
       this.removeAttribute("has-open-modal", "");
       document.body.classList.remove("shortcuts-disabled");
+      document.activeElement.blur()
     });
 
     this._menuAppletDialog.addEventListener("displayLoadingScreen", () => {
@@ -1230,7 +1231,7 @@ export class AnnotationPage extends TatorPage {
         if (applet.categories.includes("annotator-menu")) {
           // Add the applet to the dialog
           this._menuAppletDialog.saveApplet(applet);
-          canvas.addAppletToMenu(applet.name);
+          canvas.addAppletToMenu(applet.name, applet.categories);
         }
          // Init for annotator tools applets
         if (applet.categories.includes("annotator-tools")) {
@@ -1588,7 +1589,7 @@ export class AnnotationPage extends TatorPage {
 
       if (this._player.mediaType.dtype == "multi") {
         data.multiState = canvas._multiLayoutState;
-        data.primaryMedia = canvas._videos[canvas._primaryMediaIndex].mediaInfo;
+        data.primaryMedia = canvas._videos[canvas._primaryVideoIndex]._mediaInfo;
         data.multiMedia = canvas._mediaInfo;
       }
 

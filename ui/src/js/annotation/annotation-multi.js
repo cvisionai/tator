@@ -2062,10 +2062,10 @@ export class AnnotationMulti extends TatorElement {
     }
   }
 
-  addAppletToMenu(appletName) {
+  addAppletToMenu(appletName, categories) {
     for (let video of this._videos)
     {
-      video.addAppletToMenu(appletName);
+      video.addAppletToMenu(appletName, categories);
     }
   }
 
