@@ -46,15 +46,22 @@ export class MenuAppletDialog extends ModalDialog {
     if (width == "default") {
       this._div.classList.remove("modal-wide");
       this._div.classList.remove("modal-extra-wide");
+      this._div.classList.remove("modal-super-wide");
     }
     else if (width == "wide") {
       this._div.classList.add("modal-wide");
       this._div.classList.remove("modal-extra-wide");
-
+      this._div.classList.remove("modal-super-wide");
     }
     else if (width == "extra-wide") {
       this._div.classList.remove("modal-wide");
+      this._div.classList.remove("modal-super-wide");
       this._div.classList.add("modal-extra-wide");
+    }
+    else if (width == "super-wide") {
+      this._div.classList.remove("modal-wide");
+      this._div.classList.remove("modal-extra-wide");
+      this._div.classList.add("modal-super-wide");
     }
   }
 
