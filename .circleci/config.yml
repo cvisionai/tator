@@ -158,7 +158,9 @@ jobs:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          $HOME/.local/bin/poetry run pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          poetry shell;
+          pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          deactivate;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -193,7 +195,10 @@ jobs:
           curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://$(cat ~/public_ip_address.txt)/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
     - run:
         name: Run tator-py tests
-        command: $HOME/.local/bin/poetry run pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+        command: |
+          poetry shell
+          pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+          deactivate
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
