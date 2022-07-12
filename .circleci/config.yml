@@ -54,7 +54,7 @@ jobs:
         command: make python-bindings-only
     - run:
         name: Install python client
-        command: poetry run pip3 install scripts/packages/tator-py/dist/*.whl
+        command: $HOME/.local/bin/poetry run pip3 install scripts/packages/tator-py/dist/*.whl
     - run:
         name: Generate Markdown Docs
         command: make markdown-docs && tar cf doc/_build/tator-py.tar doc/_build/tator-py
@@ -145,7 +145,7 @@ jobs:
           sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
           sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
-          poetry run playwright install;
+          $HOME/.local/bin/poetry run playwright install;
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
           pip3 install /tmp/tator*.whl;
     - run:
@@ -156,7 +156,7 @@ jobs:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          poetry run pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          $HOME/.local/bin/poetry run pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -175,7 +175,7 @@ jobs:
         command: |
           sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip;
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
-          poetry run pip3 install /tmp/tator*.whl;
+          $HOME/.local/bin/poetry run pip3 install /tmp/tator*.whl;
           wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
           unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
           sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.;
