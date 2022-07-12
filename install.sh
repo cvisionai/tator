@@ -18,7 +18,7 @@ sudo snap install microk8s --classic --channel=1.22/stable
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
-    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip \
+    iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip python3-venv \
     build-essential nodejs
 
 # Install python environment manager Poetry
