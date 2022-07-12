@@ -143,7 +143,9 @@ jobs:
         command: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
           sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
-          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
+          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr python3-venv;
+          curl -sSL https://install.python-poetry.org | python3 -
+          $HOME/.local/bin/poetry install --no-root
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
           $HOME/.local/bin/poetry run playwright install;
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
@@ -173,7 +175,9 @@ jobs:
     - run:
         name: Install tator-py test dependencies
         command: |
-          sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip;
+          sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip python3-venv ffmpeg wget unzip;
+          curl -sSL https://install.python-poetry.org | python3 -
+          $HOME/.local/bin/poetry install --no-root
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
           $HOME/.local/bin/poetry run pip3 install /tmp/tator*.whl;
           wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
@@ -189,7 +193,7 @@ jobs:
           curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://$(cat ~/public_ip_address.txt)/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
     - run:
         name: Run tator-py tests
-        command: poetry run pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+        command: $HOME/.local/bin/poetry run pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
