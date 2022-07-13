@@ -18,6 +18,12 @@ export class VideoDownloader
         second_buffer = 1*1024*1024;
         second_chunk = (second_buffer*8) / bit_rate;
       }
+      if (second_buffer > 4*1024*1024)
+      {
+        console.info("VID_DOWNLOADER: Exteremely high bit rate video, maximum chunk set at 4mb");
+        second_buffer = 4*1024*1024;
+        second_chunk = (second_buffer*8) / bit_rate;
+      }
       this._blockSizes.push(second_buffer);
       console.info(`VID_DOWNLOADER: ${idx}: ${media_files[idx].resolution} ${second_chunk} seconds of data = ${second_buffer} bytes or ${second_buffer/1024/1024} megabytes`);
     }
