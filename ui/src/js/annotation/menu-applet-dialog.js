@@ -6,6 +6,7 @@ export class MenuAppletDialog extends ModalDialog {
     super();
 
     this._div.setAttribute("class", "modal-wrap modal-wide d-flex");
+    this._div.style.margin = "10vh auto";
     this._title.nodeValue = "Menu Applet";
 
     this._appletView = document.createElement("iframe");
