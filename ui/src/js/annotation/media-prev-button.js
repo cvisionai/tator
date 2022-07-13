@@ -24,8 +24,8 @@ export class MediaPrevButton extends TatorElement {
     svg.appendChild(path);
 
     // hidden preview box
-    this.preview = document.createElement('media-nav-preview');
-    this._shadow.appendChild(this.preview);
+    // this.preview = document.createElement('media-nav-preview');
+    // this._shadow.appendChild(this.preview);
   }
 
   set disabled(val) {
