@@ -1183,6 +1183,7 @@ export class AnnotationPage extends TatorPage {
     this._menuAppletDialog.addEventListener("close", () => {
       this.removeAttribute("has-open-modal", "");
       document.body.classList.remove("shortcuts-disabled");
+      document.activeElement.blur()
     });
 
     this._menuAppletDialog.addEventListener("displayLoadingScreen", () => {
@@ -1209,17 +1210,34 @@ export class AnnotationPage extends TatorPage {
     .then(response => response.json())
     .then(applets => {
       for (let applet of applets) {
+
+        if (applet.categories == null) {
+          continue;
+        }
+
+        if (applet.categories.includes("image-only") && this._player.mediaType.dtype != "image") {
+          continue;
+        }
+
+        if (applet.categories.includes("video-only") && this._player.mediaType.dtype != "video") {
+          continue;
+        }
+
+        if (applet.categories.includes("multi-only") && this._player.mediaType.dtype != "multi") {
+          continue;
+        }
+
         // Init for annotator menu applets
-        if (applet.categories != null && applet.categories.includes("annotator-menu")) {
+        if (applet.categories.includes("annotator-menu")) {
           // Add the applet to the dialog
           this._menuAppletDialog.saveApplet(applet);
-          canvas.addAppletToMenu(applet.name);
+          canvas.addAppletToMenu(applet.name, applet.categories);
         }
          // Init for annotator tools applets
-        if (applet.categories != null && applet.categories.includes("annotator-tools")) {
+        if (applet.categories.includes("annotator-tools")) {
           // This puts the tools html into a panel next to the sidebar
           const toolAppletPanel = document.createElement("tools-applet-panel");
-          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);        
+          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
         }
       }
     });
@@ -1568,6 +1586,13 @@ export class AnnotationPage extends TatorPage {
         media: evt.detail.media,
         projectId: evt.detail.projectId
       };
+
+      if (this._player.mediaType.dtype == "multi") {
+        data.multiState = canvas._multiLayoutState;
+        data.primaryMedia = canvas._videos[canvas._primaryVideoIndex]._mediaInfo;
+        data.multiMedia = canvas._mediaInfo;
+      }
+
       this._menuAppletDialog.setApplet(evt.detail.appletName, data);
     });
 

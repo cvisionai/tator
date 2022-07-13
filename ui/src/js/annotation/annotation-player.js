@@ -1154,8 +1154,8 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addAlgoLaunchOption(algoName);
   }
 
-  addAppletToMenu(appletName) {
-    this._video.addAppletToMenu(appletName);
+  addAppletToMenu(appletName, categories) {
+    this._video.addAppletToMenu(appletName, categories);
   }
 
   updateAllLocalizations() {
