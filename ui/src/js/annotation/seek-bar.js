@@ -42,6 +42,13 @@ export class SeekBar extends TatorElement {
 
     var dragHandler=function(evt)
     {
+
+      if (that._active && that._loadedPercentage < 0.99) {
+        that.bar.setAttribute("wide-tooltip", "Scrubbing is not available. Video download in progress.");
+        evt.stopPropagation();
+        return false;
+      }
+
       if (evt.button == 0)
       {
         var width = that.offsetWidth;
@@ -63,6 +70,7 @@ export class SeekBar extends TatorElement {
     }
     var releaseMouse=(evt)=>
     {
+      that.bar.removeAttribute("wide-tooltip");
       console.info("RELEASE MOUSE.");
       this._active = false;
       clearInterval(that._periodicCheck);
@@ -83,7 +91,7 @@ export class SeekBar extends TatorElement {
                                  {
                                    this._active = true;
                                    this._lastValue = this.value;
-          
+
                                    this._periodicCheck = setInterval(() =>
                                      {
                                       if (that._active == false)
