@@ -255,6 +255,10 @@ class TatorVideoManager {
     {
       func_ptr();
     }
+    else
+    {
+      console.info("Safe call can't call null function");
+    }
   }
 
   // Find the nearest object without going over

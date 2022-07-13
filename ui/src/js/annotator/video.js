@@ -1193,11 +1193,11 @@ export class VideoCanvas extends AnnotationCanvas {
         that._seekUniqueId = seekUniqueId;
         video.oncanplay=function()
         {
-          video.oncanplay=null;
+          //video.oncanplay=null;
           // only honor latest seek
           if (seekUniqueId != that._seekUniqueId)
           {
-            return;
+            //return;
           }
           if (video.summaryLevel)
           {
