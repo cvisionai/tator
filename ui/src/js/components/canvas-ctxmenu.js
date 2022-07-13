@@ -16,11 +16,16 @@ export class CanvasContextMenu extends TatorElement {
     this._numEntries = 0;
   }
 
-  addMenuEntry(newText, clickCallback)
+  addMenuEntry(newText, clickCallback, keyboardShortcut)
   {
     const button = document.createElement("button");
     button.setAttribute("class", "btn-clear d-flex flex-items-center py-2 text-gray hover-text-white");
-    button.textContent = newText;
+    if (keyboardShortcut != undefined) {
+      button.textContent = `${newText}${keyboardShortcut}`;
+    }
+    else {
+      button.textContent = newText;
+    }
     button.style.display = "block";
     button.addEventListener("click", () => {
       this.hideMenu();

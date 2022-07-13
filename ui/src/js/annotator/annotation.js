@@ -1227,13 +1227,15 @@ export class AnnotationCanvas extends TatorElement
     }
 
     this._appletLaunchOptions.push(appletName);
-    this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this));
 
+    var shortcuts = '';
     for (const choice of ["ALT+1", "ALT+2", "ALT+3"]) {
       if (categories.includes(choice)) {
         this._menuAppletShortcuts[choice] = appletName;
+        shortcuts += ` (${choice})`;
       }
     }
+    this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this), shortcuts);
   }
 
   /**
