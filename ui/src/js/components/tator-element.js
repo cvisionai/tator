@@ -1,5 +1,5 @@
 import "../../css/styles.scss";
-import "construct-style-sheets-polyfill";
+// import "construct-style-sheets-polyfill";
 export const svgNamespace = "http://www.w3.org/2000/svg";
 
 class StyleHolder {
