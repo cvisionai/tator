@@ -46,6 +46,7 @@ export class EntityGalleryPanelTop extends TatorElement {
 
     // Optional static image
     this._staticImage = document.createElement("img");
+    this._staticImage.setAttribute("crossorigin", "anonymous");
     this._staticImage.hidden = true;
     this._box.appendChild(this._staticImage);
 
