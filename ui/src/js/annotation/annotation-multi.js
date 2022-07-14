@@ -1567,8 +1567,9 @@ export class AnnotationMulti extends TatorElement {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._videos[videoIndex].currentFrame()} do not match. restarting check_ready`)
         timeoutIndex = 0;
         timeoutCounter = 0;
+        clearTimeout(this._handleNotReadyTimeout[videoIndex]);
+        this._handleNotReadyTimeout[videoIndex] = null;
         this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
-          this._handleNotReadyTimeout[videoIndex] = null;
           check_ready(this._videos[videoIndex].currentFrame())}, clock_check);
         return;
       }
@@ -1592,8 +1593,9 @@ export class AnnotationMulti extends TatorElement {
         }
         this._last_duration = this._videos[videoIndex].playBufferDuration();
         if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
+          clearTimeout(this._handleNotReadyTimeout[videoIndex]);
+          this._handleNotReadyTimeout[videoIndex] = null;
           this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
-            this._handleNotReadyTimeout[videoIndex] = null;
             check_ready(checkFrame);
           }, clock_check);
         }
@@ -1644,8 +1646,9 @@ export class AnnotationMulti extends TatorElement {
       }
     };
 
+    clearTimeout(this._handleNotReadyTimeout[videoIndex]);
+    this._handleNotReadyTimeout[videoIndex] = null;
     this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
-      this._handleNotReadyTimeout[videoIndex] = null;
       check_ready(this._videos[videoIndex].currentFrame())
     }, 0);
 
