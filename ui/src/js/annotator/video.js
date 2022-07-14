@@ -506,7 +506,7 @@ export class VideoCanvas extends AnnotationCanvas {
   find_closest(videoObject, target_quality) 
   {
     let play_idx = -1;
-    let max_delta = this._maxHeight;
+    let max_delta = Number.MAX_SAFE_INTEGER;
     let resolutions = videoObject.media_files["streaming"].length;
     for (let idx = 0; idx < resolutions; idx++)
     {
