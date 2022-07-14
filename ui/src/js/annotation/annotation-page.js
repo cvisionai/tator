@@ -31,6 +31,11 @@ export class AnnotationPage extends TatorPage {
     this._next = document.createElement("media-next-button");
     div.appendChild(this._next);
 
+    this._hidePrevPreview = true;
+    this._hideNextPreview = true;
+    this._prevPreviewTimeout = null;
+    this._nextPreviewTimeout = null;
+
     this._breadcrumbs = document.createElement("annotation-breadcrumbs");
     div.appendChild(this._breadcrumbs);
 
@@ -360,7 +365,7 @@ export class AnnotationPage extends TatorPage {
                 window.location.href = url;
               });
               this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
-              this._prev.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
+              this._prev.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
             }
 
             if (nextData.next == -1) {
@@ -382,7 +387,7 @@ export class AnnotationPage extends TatorPage {
                 window.location.href = url;
               });
               this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
-              this._next.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
+              this._next.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
             }
           })
           .catch(err => console.log("Failed to fetch adjacent media! " + err));
@@ -400,7 +405,7 @@ export class AnnotationPage extends TatorPage {
             this._permission = data.permission;
             if(this._permission === "View Only") this._settings._lock.viewOnly();
             this.enableEditing(true);
-            
+
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after_id", data.id);
@@ -439,15 +444,39 @@ export class AnnotationPage extends TatorPage {
 
   showPrevPreview(e) {
     if (this.prevData.prev == -1) return;
-    this._prev.preview.info = this.prevData.prev;
+
+    if (this._prevPreviewTimeout != null) return;
+
+    this._hidePrevPreview = false;
+
+    this._prevPreviewTimeout = setTimeout(() => {
+      this._prevPreviewTimeout = null;
+      if (!this._hidePrevPreview) {
+        this._next.preview.hide();
+        this._prev.preview.info = this.prevData.prev;
+      }
+    }, 500);
   }
 
   showNextPreview(e) {
     if (this.nextData.next == -1) return;
-    this._next.preview.info = this.nextData.next;
+
+    if (this._nextPreviewTimeout != null) return;
+
+    this._hideNextPreview = false;
+
+    this._nextPreviewTimeout = setTimeout(() => {
+      this._nextPreviewTimeout = null;
+      if (!this._hideNextPreview) {
+        this._prev.preview.hide();
+        this._next.preview.info = this.nextData.next;
+      }
+    }, 500);
   }
 
   removeNextPrevPreview(e) {
+    this._hidePrevPreview = true;
+    this._hideNextPreview = true;
     this._next.preview.hide();
     this._prev.preview.hide();
   }
