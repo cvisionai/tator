@@ -25,6 +25,11 @@ encode_config = {
                      'slower', 'veryslow'],
             'default': 'fast',
         },
+        'movflags': {
+            'type': 'string',
+            'description': 'Movflags to specify to packager',
+            'default': ''
+        },
         'tune': {
             'type': 'string',
             'description': 'Tune setting for ffmpeg.',
