@@ -313,12 +313,18 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._children)
     {
       console.info("Launching concat downloader.");
+      let frameJump = 0;
+      if (this._mediaInfo.summaryLevel && this._scrub_idx != this._play_idx)
+      {
+        frameJump = this._mediaInfo.summaryLevel*this._mediaInfo.fps;
+      }
       this._dlWorker = new ConcatDownloadManager(this, this._children, this._videoObject.media_files.concat);
       this._dlWorker.postMessage({"type": "start",
                                   "play_idx": this._play_idx,
                                   "hq_idx": this._seek_idx,
                                   "scrub_idx": this._scrub_idx,
-                                  "offsite_config": offsite_config});
+                                  "offsite_config": offsite_config,
+                                  "frameJump": frameJump});
     }
     else if (streaming_files[0].hls)
     {
@@ -345,6 +351,11 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       this._dlWorker = new DownloadManager(this);
       this._scrubDownloadCount = 0;
+      let frameJump = 0;
+      if (this._mediaInfo.summaryLevel && this._scrub_idx != this._play_idx)
+      {
+        frameJump = this._mediaInfo.summaryLevel*this._mediaInfo.fps;
+      }
 
       // Start downloading the scrub buffer
       this._dlWorker.postMessage({"type": "start",
@@ -352,7 +363,8 @@ export class VideoCanvas extends AnnotationCanvas {
                                   "play_idx": this._play_idx,
                                   "hq_idx": this._seek_idx,
                                   "scrub_idx": this._scrub_idx,
-                                  "offsite_config": offsite_config});
+                                  "offsite_config": offsite_config,
+                                  "frameJump": frameJump});
     }
   }
 

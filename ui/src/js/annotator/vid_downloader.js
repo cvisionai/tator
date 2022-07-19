@@ -2,10 +2,11 @@ import { fetchRetry } from "../util/fetch-retry.js";
 
 export class VideoDownloader
 {
-  constructor(media_files, blockSize, offsite_config)
+  constructor(media_files, blockSize, offsite_config, frameJump)
   {
     this._media_files = media_files;
     this._blockSizes = [];
+    this._frameJump = frameJump;
     console.info(JSON.stringify(media_files));
     for (let idx = 0; idx < media_files.length; idx++)
     {
@@ -23,6 +24,12 @@ export class VideoDownloader
         console.info("VID_DOWNLOADER: Exteremely high bit rate video, maximum chunk set at 4mb");
         second_buffer = 4*1024*1024;
         second_chunk = (second_buffer*8) / bit_rate;
+      }
+      if (this._frameJump > 0)
+      {
+        console.info("VID_DOWNLOADER: Summary buffer enabled");
+        second_chunk = 2;
+        second_buffer = bit_rate * second_chunk / 8;
       }
       this._blockSizes.push(second_buffer);
       console.info(`VID_DOWNLOADER: ${idx}: ${media_files[idx].resolution} ${second_chunk} seconds of data = ${second_buffer} bytes or ${second_buffer/1024/1024} megabytes`);
@@ -679,6 +686,7 @@ export class VideoDownloader
   {
     var currentSize=0;
     var idx = this._currentPacket[buf_idx];
+    var orig_idx = idx;
 
     // Temp code one can use to force network seeking
     //if (idx > 0)
@@ -695,7 +703,7 @@ export class VideoDownloader
 
     if (idx >= this._numPackets[buf_idx])
     {
-      //console.log("Done downloading... buf_idx: " + buf_idx);
+      console.log("Done downloading... buf_idx: " + buf_idx);
       postMessage({"type": "finished"});
       return;
     }
@@ -724,9 +732,17 @@ export class VideoDownloader
       idx++;
     }
 
-    var percent_complete=idx/this._numPackets[buf_idx];
+    
     //console.log(`Downloading '${currentSize}' at '${startByte}' (packet ${this._currentPacket[buf_idx]}:${idx} of ${this._numPackets[buf_idx]} ${parseInt(percent_complete*100)}) (buffer: ${buf_idx})`);
-    this._currentPacket[buf_idx] = idx; // @todo parameterize summary skip
+    // Skip loading of frames based on the summary level
+    if (idx > 2 && this._frameJump > 0)
+    {
+      idx = orig_idx + Math.floor(this._frameJump / 25)*2;
+      console.info(`Jumping to ${idx} from ${orig_idx} via ${this._frameJump} of ${this._numPackets[buf_idx]}`);
+      console.info(`Next packet: ${JSON.stringify(this._info[buf_idx]["segments"][idx])}`);
+    }
+    var percent_complete=idx/this._numPackets[buf_idx];
+    this._currentPacket[buf_idx] = idx;
 
     let headers = {'range':`bytes=${startByte}-${startByte+currentSize-1}`,
                    ...self._headers};
@@ -797,7 +813,8 @@ onmessage = function(e)
     {
       ref = new VideoDownloader(msg.media_files,
                                 2*1024*1024,
-                                msg.offsite_config);
+                                msg.offsite_config,
+                                msg.frameJump);
     }
   }
   else if (type == 'download')
