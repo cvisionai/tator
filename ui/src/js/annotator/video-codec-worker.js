@@ -266,7 +266,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, timestampOffset, samples)
   {
     let muted = true;
-    //console.info(`${this._name} GOT=${samples.length} ${timestampOffset}`);
+    console.info(`${this._name} GOT=${samples.length} ${timestampOffset}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     const relative_cursor = this._current_cursor - timestampOffset;
@@ -343,7 +343,7 @@ class TatorVideoBuffer {
 
     const timestampOffsetInCtx=Math.floor(timestampOffset*this._timescaleMap.get(timestampOffset));
     //console.info(`${this._name}: TIMESTAMP ${timestampOffset} is ${timestampOffsetInCtx}`);
-    //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
+    console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
     if (muted == false || this._playing == true || this.keyframeOnly == true)
     {
       this._seek_in_progress=true;
@@ -472,7 +472,7 @@ class TatorVideoBuffer {
         }
       }
     }
-    //this._bufferedRegions.print(`${this._name} ${this._frameDeltaMap.get(timestampOffset)} ${timestampOffset} ${timestampOffsetInCtx+min_cts} to ${timestampOffsetInCtx+max_cts}`);
+    //this._bufferedRegions.print(`${this._name} WORKER ${min_cts/this._timescaleMap.get(timestampOffset)} to ${max_cts/this._timescaleMap.get(timestampOffset)}`);
 
     if (max_cts >= min_cts)
     {
@@ -641,7 +641,7 @@ class TatorVideoBuffer {
         // Make an ImageBitmap from the frame and release the memory
         this._canvasCtx.drawImage(frame,0,0);
         let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
-        //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
+        console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
         frame.close();
         postMessage({"type": "image",
                     "data": image,
@@ -697,7 +697,7 @@ class TatorVideoBuffer {
     }
     for (let idx = 0; idx < this._bufferedRegions.length; idx++)
     {
-      if (video_time > this._bufferedRegions.start(idx) && video_time <= this._bufferedRegions.end(idx))
+      if (video_time >= this._bufferedRegions.start(idx) && video_time <= this._bufferedRegions.end(idx))
       {
         //console.info(`Found it, going in ${video_time} ${seek_timestamp} ${this._bufferedRegions.start(idx)} ${this._bufferedRegions.end(idx)}!`);
         this._lastSeek = performance.now();
