@@ -9,8 +9,6 @@ from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.views import LoginView
 
-import django_saml2_auth.views
-
 from rest_framework.schemas import get_schema_view
 
 from .views import APIBrowserView
