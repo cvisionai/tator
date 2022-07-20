@@ -28,9 +28,8 @@
     </div>
   </form>
   <div class="main__header d-flex flex-column flex-items-center flex-justify-center py-1">
-    <a href="/saml2_auth/signin" class="text-white">Log in with Okta (SAML2)</a>
     {% if okta_enabled %}
-    <a href="/oauth2/login" class="text-white">Log in with Okta (Oauth2)</a>
+    <a href="/oauth2/login" class="text-white">Log in with Okta</a>
     {% endif %}
     {% if email_enabled %}
     <div class="d-flex flex-row flex-items-center flex-justify-between"
