@@ -1,7 +1,7 @@
 import os
 import logging
 
-from django.urls import path
+from django.urls import path, re_path
 from django.urls import include
 from django.conf import settings
 from django.contrib.auth.views import PasswordChangeView
@@ -54,8 +54,7 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('saml2_auth/', include('django_saml2_auth.urls')),
-    path('saml2_auth/signin', django_saml2_auth.views.signin),
+    re_path(r'^saml2_auth/', include('django_saml2_auth.urls')),
     path('', MainRedirect.as_view(), name='home'),
     path('accounts/account-profile/',
          AccountProfileView.as_view(), name='account-profile'),
