@@ -320,33 +320,21 @@ if OKTA_ENABLED:
 
 PROTO = "https" if REQUIRE_HTTPS else "http"
 SAML2_AUTH = {
-    # Metadata is required, choose either remote url or local file path
     'METADATA_AUTO_CONF_URL': 'https://dev-25967869.okta.com/app/exk5psxl4bcRDi1WF5d7/sso/saml/metadata',
-    # 'METADATA_LOCAL_FILE_PATH': '[The metadata configuration file path]',
-    'DEBUG': True,
-
-    # Optional settings below
-    # 'DEFAULT_NEXT_URL': '/projects',  # Custom target redirect URL after the user get logged in. Default to /admin if not set. This setting will be overwritten if you have parameter ?next= specificed in the login URL.
-    # 'CREATE_USER': True, # Create a new Django user when a new user logs in. Defaults to True.
-    # 'NEW_USER_PROFILE': {
-    #     'USER_GROUPS': [],  # The default group name when a new user logs in
-    #     'ACTIVE_STATUS': True,  # The default active status for new users
-    #     'STAFF_STATUS': True,  # The staff status for new users
-    #     'SUPERUSER_STATUS': True,  # The superuser status for new users
-    # },
-    # 'ATTRIBUTES_MAP': {  # Change Email/UserName/FirstName/LastName to corresponding SAML2 userprofile attributes.
-    #     'email': 'email',
-    #     'username': 'email',
-    #     'first_name': 'given_name',
-    #     'last_name': 'family_name',
-    # },
-    # 'TRIGGER': {
-    #     'CREATE_USER': 'path.to.your.new.user.hook.method',
-    #     'BEFORE_LOGIN': 'path.to.your.login.hook.method',
-    # },
-    # 'ASSERTION_URL': f"{PROTO}://{MAIN_HOST}", # Custom URL to validate incoming SAML requests against
-    # 'ENTITY_ID': f"http://www.okta.com/exk5psxl4bcRDi1WF5d7", # Populates the Issuer element in authn request
-    # 'NAME_ID_FORMAT': FormatString, # Sets the Format property of authn NameIDPolicy element
-    # 'USE_JWT': False, # Set this to True if you are running a Single Page Application (SPA) with Django Rest Framework (DRF), and are using JWT authentication to authorize client users
-    # 'FRONTEND_URL': 'https://myfrontendclient.com', # Redirect URL for the client if you are using JWT auth with DRF. See explanation below
+    'DEFAULT_NEXT_URL': '/projects',
+    'CREATE_USER': True,
+    'NEW_USER_PROFILE': {
+        'USER_GROUPS': [],
+        'ACTIVE_STATUS': True,
+        'STAFF_STATUS': False,
+        'SUPERUSER_STATUS': False,
+    },
+    'ATTRIBUTES_MAP': {
+        'email': 'email',
+        'username': 'email',
+        'first_name': 'given_name',
+        'last_name': 'family_name',
+    },
+    'ENTITY_ID': f"{PROTO}://{MAIN_HOST}/saml2_auth/acs/",
+    'TOKEN_REQUIRED': False,
 }
