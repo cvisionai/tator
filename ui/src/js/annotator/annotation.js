@@ -4669,7 +4669,8 @@ export class AnnotationCanvas extends TatorElement
         this.activeLocalization = null;
         this._mouseMode = MouseMode.QUERY;
       } else {
-        this.selectLocalization(this.activeLocalization);
+        this.emphasizeLocalization(this.activeLocalization);
+        //this.selectLocalization(this.activeLocalization);
       }
     }
     if (this._activeTrack)
