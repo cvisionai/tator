@@ -3069,7 +3069,7 @@ export class AnnotationCanvas extends TatorElement
       }
       else
       {
-        this.gotoFrame(localization.frame).then(() => {
+        this.gotoFrame(localization.frame, true).then(() => {
           this.selectLocalization(localization, skipAnimation, muteOthers);
         });
         return;
