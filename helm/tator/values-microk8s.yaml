@@ -234,6 +234,9 @@ okta:
   oauth2_token_uri: "fill me in"
   oauth2_issuer: "fill me in"
   oauth2_auth_uri: "fill me in"
+saml:
+  enabled: false
+  metadata_url: "fill me in"
 email:
   enabled: false
   sender: "<fill in>"

@@ -232,6 +232,14 @@ spec:
             {{- else }}
               value: "FALSE"
             {{- end }}
+            - name: SAML_ENABLED
+            {{- if .Values.saml.enabled }}
+              value: "TRUE"
+            - name: SAML_METADATA_URL
+              value: {{ .Values.saml.metadata_url }}
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
             - name: ANONYMOUS_REGISTRATION_ENABLED
             {{- if hasKey .Values "anonymousRegistration" }}
             {{- if .Values.anonymousRegistration.enabled }}

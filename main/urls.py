@@ -1,7 +1,7 @@
 import os
 import logging
 
-from django.urls import path
+from django.urls import path, re_path
 from django.urls import include
 from django.conf import settings
 from django.contrib.auth.views import PasswordChangeView
@@ -105,6 +105,9 @@ if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
     urlpatterns.append(path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'))
     if settings.OKTA_ENABLED:
         urlpatterns.append(path('oauth2/login/', Oauth2LoginAPI.as_view(), name='oauth2'))
+
+if settings.SAML_ENABLED:
+    urlpatterns.append(re_path(r'^saml2_auth/', include('django_saml2_auth.urls')))
 
 if settings.TATOR_EMAIL_ENABLED:
     urlpatterns += [
