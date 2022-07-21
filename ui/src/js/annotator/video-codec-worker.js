@@ -599,6 +599,7 @@ class TatorVideoBuffer {
     //console.info(`INFO MAP = ${this._frameInfoMap.size}`);
     const timeScale = this._timescaleMap.get(timestampOffset);
     const frameDelta = this._frameDeltaMap.get(timestampOffset);
+    //console.info(`${this._name} TS=${timestampOffset} FD=${frameDelta}`);
     if (this._playing == true)
     {      
       const cursor_in_ctx = (this._current_cursor)*timeScale;
@@ -653,7 +654,7 @@ class TatorVideoBuffer {
       }
       else
       {
-        //console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+this._frame_delta)/timeScale}`);
+        //console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} FD=${frameDelta}`);
         frame.close(); // don't care about the frame
       }
     }
@@ -867,8 +868,9 @@ class TatorVideoBuffer {
             times.push(samples[idx].dts); // NOT CTS fix bug with frames more than 10 out of order
           }
           times.sort((a,b)=>a-b);
-          const frame_delta = times[1]-times[0];
+          const frame_delta = times[times.length-1]-times[times.length-2];
           this._frameDeltaMap.set(timestampOffset, frame_delta);
+          //console.info(`${this._name}: Setting TS=${timestampOffset} FD=${frame_delta}`);
           postMessage({"type": "frameDelta",
                       "frameDelta": frame_delta,
                       "timestampOffset": timestampOffset});
