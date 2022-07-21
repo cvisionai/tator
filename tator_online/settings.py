@@ -329,12 +329,6 @@ SAML2_AUTH = {
         'STAFF_STATUS': False,
         'SUPERUSER_STATUS': False,
     },
-    'ATTRIBUTES_MAP': {
-        'email': 'email',
-        'username': 'email',
-        'first_name': 'given_name',
-        'last_name': 'family_name',
-    },
     'ENTITY_ID': f"{PROTO}://{MAIN_HOST}/saml2_auth/acs/",
     'TOKEN_REQUIRED': False,
 }

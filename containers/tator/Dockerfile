@@ -6,11 +6,25 @@ RUN git clone https://github.com/rclone/rclone.git
 WORKDIR /go/rclone/librclone/
 RUN go build --buildmode=c-shared -o librclone.so github.com/rclone/rclone/librclone
 
+# =========================================== TEMPORARY ===========================================
+# Once https://github.com/grafana/django-saml2-auth merges the changes from
+# https://github.com/cvisionai/django-saml2-auth, this can be removed
+FROM python:3.8 as django_saml2_auth__build
+WORKDIR /tmp
+RUN git clone https://github.com/cvisionai/django-saml2-auth.git --single-branch
+WORKDIR /tmp/django-saml2-auth/
+RUN git fetch
+RUN git reset --hard 44e33a65e85a15159ed54ce34839a7f60850c2e1
+RUN python -m pip install build
+RUN python -m build --sdist --wheel .
+# =========================================== TEMPORARY ===========================================
+
 FROM ubuntu:20.04
 MAINTAINER CVision AI <info@cvisionai.com>
 
 # Copy librclone shared object to this container
 COPY --from=rclone_build /go/rclone/librclone/librclone.so /usr/local/lib/
+COPY --from=django_saml2_auth__build /tmp/django-saml2-auth/dist/grafana_django_saml2_auth*.whl /tmp/
 RUN mkdir -p /root/.config/rclone
 RUN touch /root/.config/rclone/rclone.conf
 
@@ -39,7 +53,12 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         django-cognito-jwt==0.0.4 boto3==1.20.41 \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
         kubernetes==21.7.0 minio==7.1.5 okta-jwt-verifier==0.2.3 \
-        grafana-django-saml2-auth==3.8.0
+        /tmp/grafana_django_saml2_auth*.whl
+# =========================================== TEMPORARY ===========================================
+# Once https://github.com/grafana/django-saml2-auth merges the changes from
+# https://github.com/cvisionai/django-saml2-auth, the wheel for grafana_django_saml2_auth can be
+# replaced with the PyPI package.
+# =========================================== TEMPORARY ===========================================
 
 # Get acme_tiny.py for certificate renewal
 WORKDIR /
