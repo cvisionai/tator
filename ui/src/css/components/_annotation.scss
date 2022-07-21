@@ -123,6 +123,7 @@
 
 save-dialog {
   box-sizing: border-box;
+  box-shadow: rgb(0 0 0 / 70%) 3px 3px 15px 5px;
   width: 334px;
   opacity: 0;
   overflow: initial;
@@ -143,6 +144,7 @@ modify-track-dialog {
   width: 334px;
   opacity: 0;
   overflow: initial;
+  box-shadow: rgb(0 0 0 / 70%) 3px 3px 15px 5px;
   pointer-events: none;
   position: absolute;
   transform: scale(0.95);

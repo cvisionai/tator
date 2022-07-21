@@ -1,5 +1,6 @@
 .tooltip-nav-preview {
   background-color: $color-charcoal--medium;
+  box-shadow: rgb(0 0 0 / 70%) 3px 3px 15px 5px;
   border-radius: 3px;
   color: $color-gray--dark;
   font-size: 12px;
@@ -29,6 +30,7 @@
   &:before {
     background-color: $color-charcoal--medium;
     border-radius: 3px;
+    box-shadow: rgb(0 0 0 / 70%) 3px 3px 15px 5px;
     color: $color-gray--dark;
     content: attr(tooltip);
     font-size: 12px;
@@ -43,6 +45,7 @@
     top: calc(100% + 8px);
     width: 100px;
     z-index: 1;
+    
   }
   &:hover:before {
     opacity: 1;

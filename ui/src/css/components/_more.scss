@@ -4,6 +4,7 @@
   box-shadow: 0 2px 4px $color-charcoal--dark70;
   position: absolute;
   z-index: 1000;
+  box-shadow: rgb(0 0 0 / 70%) 3px 3px 15px 5px;
 
   .main__header & {
     right: 8px;
