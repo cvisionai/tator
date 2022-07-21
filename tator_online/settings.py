@@ -318,17 +318,21 @@ if OKTA_ENABLED:
     OKTA_OAUTH2_ISSUER = os.getenv("OKTA_OAUTH2_ISSUER")
     OKTA_OAUTH2_AUTH_URI = os.getenv("OKTA_OAUTH2_AUTH_URI")
 
-PROTO = "https" if REQUIRE_HTTPS else "http"
-SAML2_AUTH = {
-    'METADATA_AUTO_CONF_URL': 'https://dev-25967869.okta.com/app/exk5psxl4bcRDi1WF5d7/sso/saml/metadata',
-    'DEFAULT_NEXT_URL': '/projects',
-    'CREATE_USER': True,
-    'NEW_USER_PROFILE': {
-        'USER_GROUPS': [],
-        'ACTIVE_STATUS': True,
-        'STAFF_STATUS': False,
-        'SUPERUSER_STATUS': False,
-    },
-    'ENTITY_ID': f"{PROTO}://{MAIN_HOST}/saml2_auth/acs/",
-    'TOKEN_REQUIRED': False,
-}
+SAML_ENABLED = os.getenv("SAML_ENABLED")
+SAML_ENABLED = SAML_ENABLED and SAML_ENABLED.lower() == "true"
+
+if SAML_ENABLED:
+    PROTO = "https" if REQUIRE_HTTPS else "http"
+    SAML2_AUTH = {
+        'METADATA_AUTO_CONF_URL': os.getenv("SAML_METADATA_URL"),
+        'DEFAULT_NEXT_URL': '/projects',
+        'CREATE_USER': True,
+        'NEW_USER_PROFILE': {
+            'USER_GROUPS': [],
+            'ACTIVE_STATUS': True,
+            'STAFF_STATUS': False,
+            'SUPERUSER_STATUS': False,
+        },
+        'ENTITY_ID': f"{PROTO}://{MAIN_HOST}/saml2_auth/acs/",
+        'TOKEN_REQUIRED': False,
+    }

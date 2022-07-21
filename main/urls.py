@@ -52,7 +52,6 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    re_path(r'^saml2_auth/', include('django_saml2_auth.urls')),
     path('', MainRedirect.as_view(), name='home'),
     path('accounts/account-profile/',
          AccountProfileView.as_view(), name='account-profile'),
@@ -106,6 +105,9 @@ if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
     urlpatterns.append(path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'))
     if settings.OKTA_ENABLED:
         urlpatterns.append(path('oauth2/login/', Oauth2LoginAPI.as_view(), name='oauth2'))
+
+if settings.SAML_ENABLED:
+    urlpatterns.append(re_path(r'^saml2_auth/', include('django_saml2_auth.urls')))
 
 if settings.TATOR_EMAIL_ENABLED:
     urlpatterns += [
