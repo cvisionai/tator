@@ -31,8 +31,11 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._settings.style.marginLeft = "50px";
     div.appendChild(this._settings);
 
-    // this._settings._bulkCorrect.hidden = false;
-        // entity-gallery-bulk-edit
+    
+
+    this._settings._localizationsView.hidden = false;
+    
+    // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
     this._shadow.appendChild(this._bulkEdit);
@@ -74,7 +77,8 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     //
     /* Right Navigation Pane - Annotation Detail Viewer */
     this.aside = document.createElement("aside");
-    this.aside.setAttribute("class", "hidden entity-panel--container slide-close col-3")
+    this.aside.setAttribute("class", "entity-panel--container slide-close col-3")
+    this.aside.hidden = true;
     this.mainWrapper.appendChild(this.aside);
 
     // Gallery navigation panel
@@ -185,7 +189,8 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       aside: this.aside,
       pageModal: this.modal,
       modelData: this._modelData,
-      gallery: this._filterResults
+      gallery: this._filterResults,
+      bulkEdit: this._bulkEdit
     });
 
     // Settings lock value

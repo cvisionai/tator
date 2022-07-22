@@ -68,50 +68,11 @@ export class SectionFiles extends TatorElement {
     this._mediaTypesMap = val;
   }
 
-  _updateCard(card, media, pos_text) {
-    card.setAttribute("media-id", media.id);
-
-    if (typeof media.num_frames !== "undefined" && media.num_frames !== null && typeof media.fps !== "undefined" && media.fps !== null) {
-      // Add duration to card
-      let seconds = Number(media.num_frames) / Number(media.fps);
-      let duration = new Date(seconds * 1000).toISOString().substr(11, 8);
-      card.setAttribute("duration", duration);
-    } else {
-      card.setAttribute("duration", null);
-    }
-
-    card.setAttribute("thumb", Spinner);
-    if (media.media_files) {
-      if (media.media_files.thumbnail) {
-        card.setAttribute("thumb", media.media_files.thumbnail[0].path);
-      }
-    }
-    card.removeAttribute("thumb-gif");
-    if (media.media_files) {
-      if (media.media_files.thumbnail_gif) {
-        card.setAttribute("thumb-gif", media.media_files.thumbnail_gif[0].path);
-      }
-    }
-    if (media.media_files) {
-      if (media.media_files.attachment) {
-        card.attachments = media.media_files.attachment;
-      } else {
-        card.attachments = [];
-      }
-    }
-
-    card.mediaParams = this._mediaParams();
-    card.media = media;
-    card.style.display = "block";
-    // card.rename(media.name);
-    card.setAttribute("name", media.name);
-    card.setAttribute("project-id", this.getAttribute("project-id"));
-    card.setAttribute("pos-text", pos_text)
-  }
-
   _makeCards(cardInfo) {
     const hasAlgorithms = typeof this._algorithms !== "undefined";
     const hasProject = this.hasAttribute("project-id");
+    console.log("MAKE CARDS");
+
     if (hasAlgorithms && hasProject) {
       const children = this._ul.children;
       // const cardList = [];
@@ -136,133 +97,84 @@ export class SectionFiles extends TatorElement {
 
 
         if (newCard) {
+          console.log("NEW CARD");
           card = document.createElement("entity-card");
+
+          // Only do these once
+          card._li.classList.add("dark-card");
           card.titleDiv.hidden = false;
           card._more.hidden = false;
           card._ext.hidden = false;
           card._title.hidden = false;
           card._id_text.hidden = true;
+
+          // All cards share project & algos, never needs to update
           card.project = this._project;
           card.algorithms = this._algorithms;
-          card._li.classList.add("dark-card");
 
-          card.addEventListener("mouseenter", () => {
-            if (card.hasAttribute("media-id")) {
-              this.dispatchEvent(new CustomEvent("cardMouseover", {
-                detail: { media: card.media }
-              }));
-            }
+          /* All cards share these listeners */
+          // Dispatches from card with the media-id in detail
+          card.addEventListener("cardMouseover", (e) => {
+            this.dispatchEvent(new CustomEvent("cardMouseover", e.detail));
+          });
+          card.addEventListener("cardMouseexit", (e) => {
+            this.dispatchEvent(new Event("cardMouseexit"));
+          });
+          
+          // Notifiy bulk edit about multi-select controls
+          card.addEventListener("ctrl-select", (e) => {
+            this._bulkEdit._openEditMode(e);
           });
 
-          card.addEventListener("mouseleave", () => {
-            if (card.hasAttribute("media-id")) {
-              this.dispatchEvent(new Event("cardMouseexit"));
-            }
+          // Update labels
+          this._cardAttributeLabels.addEventListener("labels-update", (evt) => this.updateShown(evt, card));
+
+          // When bulk edit changes tell the card
+          this._bulkEdit.addEventListener("multi-enabled", () => {
+            // console.log("multi-enabled heard in section files");
+            card.multiEnabled = true;
+            this.multiEnabled = true;
+          });
+
+          this._bulkEdit.addEventListener("multi-disabled", () => {
+            // console.log("multi-disabled heard in section files");
+            card.multiEnabled = false;
+            this.multiEnabled = false;
           });
         } else {
+          // When reusing a card
           card = children[index];
         }
 
-        // make reference lists / object
-        // cardList.push(card);
-        let cardInfo = {
-          card: card
-        };
-
-        
-        this._cardElements.push(cardInfo);
-        this._currentCardIndexes[cardObj.id] = index;
-
-
-        // Non-hidden attributes (ie order >= 0))
-        let nonHiddenAttrs = [];
-        let hiddenAttrs = [];
-        for (let attr of entityType.attribute_types) {
-          if (attr.order >= 0) {
-            nonHiddenAttrs.push(attr);
-          }
-          else {
-            hiddenAttrs.push(attr);
-          }
-        }
-
-        // Show array by order, or alpha
-        var cardLabelOptions = nonHiddenAttrs.sort((a, b) => {
-          return a.order - b.order || a.name - b.name;
-        });
-
-        cardLabelOptions.push(...hiddenAttrs);
-
+        // Setup attributes, and order for label options
         cardObj.attributes = media.attributes;
-        cardObj.attributeOrder = cardLabelOptions;
-        // console.log("MEDIA CARD? ................ cardObj=");
-        // console.log(cardObj)
+        cardObj.attributeOrder = this.getCardLabelOptions(entityType.attribute_types); //cardLabelOptions;
 
-        // Notifiy bulk edit about multi-select controls
-        card.addEventListener("ctrl-select", (e) => {
-          // console.log("Opening edit mode");
-          this._bulkEdit._openEditMode(e);
-        });
+        // Set in this order:mediaParams utilized to make a URL in set media()
+        card.mediaParams = this._mediaParams();
+        card.media = media;
+        card.posText = `(${this._startMediaIndex + index + 1} of ${this._numMedia})`;
+        card.multiEnabled = this.multiEnabled;
 
-        // card.addEventListener("shift-select", (e) => {
-        //   // console.log("Opening edit mode");
-        //   this._bulkEdit._openEditMode(e);
-        // });
+        // If we're still in multiselect.. check if this card should be toggled...
+        if (this.multiEnabled) this._addToBulkEditSelected(entityType, card, cardObj);
 
-        this._bulkEdit.addEventListener("multi-enabled", () => {
-          // console.log("multi-enabled heard in section files");
-          card.multiEnabled = true;
-          this.multiEnabled = true;
-        });
-        this._bulkEdit.addEventListener("multi-disabled", () => {
-          // console.log("multi-disabled heard in section files");
-          card.multiEnabled = false;
-          this.multiEnabled = false;
-        });
-
-        //
-        this._cardAttributeLabels.addEventListener("labels-update", (evt) => {
-          // console.log(evt);
-
-          if (entityTypeId == evt.detail.typeId) {
-            card._updateShownAttributes(evt);
-            // this._bulkEdit._updateShownAttributes({ typeId: evt.detail.typeId, values: evt.detail.value });
-  
-            // this.cardLabelsChosenByType[evt.detail.typeId] = evt.detail.value;     
-            // let msg = `Entry labels updated`;
-            // Utilities.showSuccessIcon(msg);            
-          }
-
-        });
-
-        const pos_text = `(${this._startMediaIndex + index + 1} of ${this._numMedia})`;
-        this._updateCard(card, media, pos_text); // todo init might do most of this and is required, maybe cut it out
-
-        if (newCard) {
-          this._ul.appendChild(card);
-        }
-        // console.log('this.cardLabelsChosenByType[entityTypeId]')
-        // console.log(this.cardLabelsChosenByType[entityTypeId]);
         // this is data used later by label chooser, and bulk edit
         card.init({
           obj: cardObj,
           idx: index,
           mediaInit: true,
           cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
-          // enableMultiselect: this.multiEnabled
         });
 
-        // If we're still in multiselect.. check if this card should be toggled...
-        if (this.multiEnabled) {
-          const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
-          if (typeof selectedArray !== "undefined" && Array.isArray(selectedArray) && selectedArray.includes(cardObj.id)) {
-            this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
-          } 
-        }
+       // make reference lists / object
+        // cardList.push(card);
+        this._cardElements.push({cardInfo: {card}});
+        this._currentCardIndexes[cardObj.id] = index;
 
-        //
-        // console.log("Is this.multiEnabled??? "+this.multiEnabled)
-        card.multiEnabled = this.multiEnabled;
+        // This should happen last
+        card.style.display = "block";
+        if (newCard) this._ul.appendChild(card);
       }
 
       
@@ -279,10 +191,18 @@ export class SectionFiles extends TatorElement {
           children[idx].style.display = "none";
         }
       }
-
-
     }
   }
+
+  _addToBulkEditSelected(entityType, card, cardObj) {
+    const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
+
+    if (typeof selectedArray !== "undefined" && Array.isArray(selectedArray) && selectedArray.includes(cardObj.id)) {
+      this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
+    } 
+  }
+
+
   updateCardData(newCardData) {
     if (newCardData.id in this._currentCardIndexes) {
       const index = this._currentCardIndexes[newCardData.id];
@@ -293,6 +213,40 @@ export class SectionFiles extends TatorElement {
       // });
     }
   }
+
+  updateShown(evt, card) {
+    if (card.cardObj.entityType.id == evt.detail.typeId) {
+      card._updateShownAttributes(evt);
+    }
+  }
+
+
+  getCardLabelOptions(attributeTypes) {
+    // Setup every time card is updated
+    // Non-hidden attributes (ie order >= 0))
+    let nonHiddenAttrs = [];
+    let hiddenAttrs = [];
+    for (let attr of attributeTypes) {
+      if (attr.order >= 0) {
+        nonHiddenAttrs.push(attr);
+      } else {
+        hiddenAttrs.push(attr);
+      }
+    }
+
+    // Show nonhidden by order, then alpha
+    nonHiddenAttrs = nonHiddenAttrs.sort((a, b) => {
+      return a.order - b.order || a.name - b.name;
+    });
+
+    // hidden by alpha
+    hiddenAttrs = nonHiddenAttrs.sort((a, b) => {
+      return a.name - b.name;
+    });
+
+    return [...nonHiddenAttrs, ...hiddenAttrs];
+  }
+  
 }
 
 customElements.define("section-files", SectionFiles);
