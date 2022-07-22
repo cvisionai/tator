@@ -233,10 +233,14 @@ spec:
               value: "FALSE"
             {{- end }}
             - name: SAML_ENABLED
+            {{- if hasKey .Values "saml" }}
             {{- if .Values.saml.enabled }}
               value: "TRUE"
             - name: SAML_METADATA_URL
               value: {{ .Values.saml.metadata_url }}
+            {{- else }}
+              value: "FALSE"
+            {{- end }}
             {{- else }}
               value: "FALSE"
             {{- end }}
