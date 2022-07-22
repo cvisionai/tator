@@ -267,8 +267,8 @@ python-bindings-only:
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
+	$(HOME)/.local/bin/poetry run python codegen.py
 	$(HOME)/.local/bin/poetry build
-	# $(HOME)/.local/bin/poetry install
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -282,8 +282,8 @@ python-bindings: tator-image
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
+	$(HOME)/.local/bin/poetry run python codegen.py
 	$(HOME)/.local/bin/poetry build
-	# $(HOME)/.local/bin/poetry install
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -388,12 +388,12 @@ markdown-docs:
 .PHONY: schema
 schema:
 	mkdir -p doc/_build
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) $(HOME)/.local/bin/poetry run python manage.py getschema > doc/_build/schema.yaml
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 .PHONY: check_schema
 check_schema:
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) $(HOME)/.local/bin/poetry run python manage.py getschema
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
 
 ifdef PROJECT_ID
 ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --project $(PROJECT_ID)
