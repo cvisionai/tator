@@ -268,7 +268,7 @@ python-bindings-only:
 	cd scripts/packages/tator-py
 	rm -rf dist
 	$(HOME)/.local/bin/poetry build
-	$(HOME)/.local/bin/poetry install
+	# $(HOME)/.local/bin/poetry install
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
@@ -283,7 +283,7 @@ python-bindings: tator-image
 	cd scripts/packages/tator-py
 	rm -rf dist
 	$(HOME)/.local/bin/poetry build
-	$(HOME)/.local/bin/poetry install
+	# $(HOME)/.local/bin/poetry install
 	if [ ! -f dist/*.whl ]; then
 		exit 1
 	fi
