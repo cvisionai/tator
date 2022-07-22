@@ -149,7 +149,7 @@ jobs:
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
           $HOME/.local/bin/poetry run playwright install;
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
-          pip3 install /tmp/tator*.whl;
+          $HOME/.local/bin/poetry run pip3 install /tmp/tator*.whl;
     - run:
         name: SSH forward
         command: ssh -N -L 8080:$(cat ~/public_ip_address.txt):80 lightsail
@@ -158,9 +158,7 @@ jobs:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          $HOME/.local/bin/poetry shell;
-          pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
-          deactivate;
+          $HOME/.local/bin/poetry run pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -196,9 +194,7 @@ jobs:
     - run:
         name: Run tator-py tests
         command: |
-          $HOME/.local/bin/poetry shell
-          pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
-          deactivate
+          $HOME/.local/bin/poetry run pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
