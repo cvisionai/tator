@@ -72,7 +72,7 @@ var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
-export var RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
+export var RATE_CUTOFF_FOR_ON_DEMAND = 4.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 export class VideoCanvas extends AnnotationCanvas {
