@@ -540,7 +540,7 @@ export class VideoCanvas extends AnnotationCanvas {
         scrub_idx = this.find_closest(videoObject, scrubQuality);
       }
       else {
-        scrub_idx = this.find_closest(videoObject, Math.min(playQuality,320));
+        scrub_idx = this.find_closest(videoObject, Math.min(playQuality,144));
       }
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
