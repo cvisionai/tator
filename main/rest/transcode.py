@@ -33,7 +33,7 @@ class TranscodeAPI(BaseListView):
         gid = str(params['gid'])
         uid = params['uid']
         url = params['url']
-        upload_size = params.get('size')
+        upload_size = params.get('size', -1)
         section = params['section']
         name = params['name']
         md5 = params['md5']
@@ -56,7 +56,6 @@ class TranscodeAPI(BaseListView):
                              "destination media type")
 
         # Attempt to determine upload size. Only use size parameter if size cannot be determined.
-        upload_size = -1
         path, bucket, upload = url_to_key(url, project_obj)
         if path is not None:
             logger.info(f"Attempting to retrieve size for object key {path}...")
