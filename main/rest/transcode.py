@@ -69,7 +69,7 @@ class TranscodeAPI(BaseListView):
         if upload_size == -1:
             logger.info(f"Failed to get object size from object, trying HEAD at {url}...")
             # This is a normal url. Use HEAD request to obtain content length.
-            response = requests.head(url)
+            response = requests.head(url, headers={'Accept-Encoding': None})
             head_succeeded = False
             if 'Content-Length' in response.headers:
                 head_size = int(response.headers['Content-Length'])
