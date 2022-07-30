@@ -120,18 +120,17 @@ status:
 check-migration:
 	scripts/check-migration.sh $(pwd)
 
-cluster: main/version.py
+cluster: main/version.py clean_schema
 	$(MAKE) images cluster-deps cluster-install
 
 cluster-deps:
 	helm dependency update helm/tator
 
 cluster-install:
-#	kubectl apply -f k8s/network_fix.yaml
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: check-migration main/version.py images
+cluster-upgrade: check-migration main/version.py clean_schema images
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-update: 
@@ -392,6 +391,10 @@ schema:
 .PHONY: check_schema
 check_schema:
 	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
+
+.PHONY: clean_schema
+clean_schema:
+	rm -f doc/_build/schema.yaml
 
 ifdef PROJECT_ID
 ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --project $(PROJECT_ID)
