@@ -88,9 +88,7 @@ export class MediaSection extends TatorElement {
     this._numFilesCount = 0;
     this._searchString = "";
 
-    this._more.addEventListener("bulk-edit", () => {
-      this.dispatchEvent(new Event("bulk-edit"));
-    });
+
     
     this._setCallbacks();
   }
@@ -132,9 +130,11 @@ export class MediaSection extends TatorElement {
     this._files.project = val;
     if (!hasPermission(val.permission, "Can Edit")) {
       this._more.style.display = "none";
+      this._more.setAttribute("editPermission", "Editing menu disable due to permissions.")
     }
     if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
       this._upload.style.display = "none";
+      this._more.setAttribute("uploadPermission", "Upload hidden due to permissions.")
     }
     this._more.project = val;
     this._project = val;
@@ -187,12 +187,18 @@ export class MediaSection extends TatorElement {
   }
 
   removeMedia(mediaId) {
+    const single = !(mediaId.indexOf(",") > -1);
+    if (!single) mediaId = mediaId.split(","); 
+
     for (const mediaCard of this._files._ul.children) {
-      if (mediaCard.getAttribute("media-id") == mediaId) {
+      console.log(mediaCard);
+      const currentCardId = mediaCard.getAttribute("media-id");
+
+      if ((single && currentCardId == mediaId) || (!single && mediaId.includes(currentCardId))) {
         mediaCard.parentNode.removeChild(mediaCard);
         const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
-        this._updateNumFiles(numFiles);
-      }
+        this._updateNumFiles(numFiles); // do this at the end
+      } 
     }
   }
 
@@ -225,7 +231,8 @@ export class MediaSection extends TatorElement {
     if (this._section !== null) {
       sectionParams.append("section", this._section.id);
     }
-    return joinParams(sectionParams, this._searchParams);
+    const filterAndSearchParams = this._getFilterQueryParams();
+    return joinParams(sectionParams, filterAndSearchParams);
   }
 
   _getAfter(index) {
@@ -702,6 +709,9 @@ export class MediaSection extends TatorElement {
   }
 
   _setCallbacks() {
+    this._more.addEventListener("bulk-edit", () => {
+      this.dispatchEvent(new Event("bulk-edit"));
+    });
 
     // launch algorithm on all the media in this section
     this._more.addEventListener("algorithmMenu", this._launchAlgorithm.bind(this));
@@ -712,6 +722,19 @@ export class MediaSection extends TatorElement {
     this._files.addEventListener("downloadAnnotations", this._downloadAnnotations.bind(this));
 
     this._more.addEventListener("rename", this._rename.bind(this));
+
+    this.addEventListener("renameSection", this._rename.bind(this));
+    this.addEventListener("deleteSection", (evt) => {
+      console.log(evt);
+      this.dispatchEvent(new CustomEvent("remove", {
+        detail: {
+          sectionParams: this._sectionParams(),
+          section: this._section,
+          projectId: this._project,
+          deleteMedia: false,
+        }
+      }));
+    });
 
     this._more.addEventListener("deleteSection", evt => {
       this.dispatchEvent(new CustomEvent("remove", {

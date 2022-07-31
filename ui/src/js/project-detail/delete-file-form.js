@@ -27,21 +27,51 @@ export class DeleteFileForm extends ModalDialog {
 
     this._accept.addEventListener("click", async evt => {
       const mediaId = this.getAttribute("media-id");
-      fetch("/rest/Media/" + mediaId, {
-        method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .catch(err => console.log(err));
+      const projecId = this.getAttribute("project-id");
+      const single = !(mediaId.indexOf(",") > -1);
 
+      if (single) {
+        this._deleteSingle(projecId, mediaId);
+      } else {
+        this._deleteMultiple(projecId, mediaId);
+      }
+    });
+  }
+
+  _deleteSingle(projecId, mediaId) {
+    return fetch("/rest/Media/" + mediaId, {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    }).then(() => { 
       this.dispatchEvent(new CustomEvent("confirmFileDelete", {
         detail: {mediaId: mediaId}
       }));
-    });
+    })
+    .catch(err => console.log(err)); 
+    
+  }
+
+  _deleteMultiple(projecId, mediaId) {
+    return fetch(`/rest/Medias/${projecId}?media_id=${mediaId}`, {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    })
+      .then(() => { 
+        this.dispatchEvent(new CustomEvent("confirmFileDelete", {
+          detail: {mediaId: mediaId}
+        }));
+      })
+      .catch(err => console.log(err));  
   }
 
   static get observedAttributes() {

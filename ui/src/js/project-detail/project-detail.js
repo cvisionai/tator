@@ -92,20 +92,6 @@ export class ProjectDetail extends TatorPage {
     this._folders.setAttribute("class", "sections");
     section.appendChild(this._folders);
 
-    const archivedFoldersButton = document.createElement("button");
-    archivedFoldersButton.setAttribute("class", "collapsible px-0 f2 btn-clear text-gray hover-text-white py-4");
-    section.appendChild(archivedFoldersButton);
-
-    const archivedFolderText = document.createElement("h2");
-    archivedFolderText.setAttribute("class", "h3 text-semibold");
-    archivedFolderText.textContent = "Archived Folders";
-    archivedFoldersButton.appendChild(archivedFolderText);
-
-    this._archivedFolders = document.createElement("ul");
-    this._archivedFolders.setAttribute("class", "content sections");
-    this._archivedFolders.style.display = "none";
-    section.appendChild(this._archivedFolders);
-
     const savedSearchHeader = document.createElement("div");
     savedSearchHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
     section.appendChild(savedSearchHeader);
@@ -145,6 +131,20 @@ export class ProjectDetail extends TatorPage {
     this._bookmarks = document.createElement("ul");
     this._bookmarks.setAttribute("class", "sections");
     section.appendChild(this._bookmarks);
+
+    const archivedFoldersButton = document.createElement("button");
+    archivedFoldersButton.setAttribute("class", "collapsible px-0 f2 btn-clear text-gray hover-text-white py-4");
+    section.appendChild(archivedFoldersButton);
+
+    this.archivedFolderText = document.createElement("h2");
+    this.archivedFolderText.setAttribute("class", "h3 text-semibold");
+    this.archivedFolderText.textContent = "+ Archived Folders";
+    archivedFoldersButton.appendChild(this.archivedFolderText);
+
+    this._archivedFolders = document.createElement("ul");
+    this._archivedFolders.setAttribute("class", "content sections");
+    this._archivedFolders.style.display = "none";
+    section.appendChild(this._archivedFolders);
 
     this._mainSection = document.createElement("section");
     this._mainSection.setAttribute("class", "py-3 px-6 flex-grow"); //project__main 
@@ -210,8 +210,6 @@ export class ProjectDetail extends TatorPage {
     // subheader.appendChild(this._search);
 
 
-
-
     const filterdiv = document.createElement("div");
     filterdiv.setAttribute("class", "mt-3");
     this._mainSection.appendChild(filterdiv);
@@ -228,10 +226,11 @@ export class ProjectDetail extends TatorPage {
 
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
-    this._bulkEdit._messageBar_top.hidden = false;
+    // this._bulkEdit._messageBar_top.hidden = false;
     this._bulkEdit._selectionPanel.hidden = true;
     this._shadow.appendChild(this._bulkEdit);
     filterdiv.appendChild(this._bulkEdit._selectionPanel);
+
 
     // this._bulkEdit.addEventListener("multi-enabled", () => {
     //   // console.log("multi-enabled heard in project detail");
@@ -249,7 +248,7 @@ export class ProjectDetail extends TatorPage {
     this._cardAttributeLabels = document.createElement("entity-gallery-labels");
     this._cardAttributeLabels.titleEntityTypeName = "media";
     this._cardAttributeLabels._titleText = document.createTextNode("Select media labels to display.");
-    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Media Labels";
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Show card attributes";
 
     this._mediaSection._hiddenMediaLabel.appendChild(this._cardAttributeLabels);
     this._mediaSection._more._cardLink.appendChild(this._cardAttributeLabels.menuLink);
@@ -275,8 +274,8 @@ export class ProjectDetail extends TatorPage {
     const deleteSection = document.createElement("delete-section-form");
     this._projects.appendChild(deleteSection);
 
-    const deleteFile = document.createElement("delete-file-form");
-    this._projects.appendChild(deleteFile);
+    this.deleteFileForm = document.createElement("delete-file-form");
+    this._projects.appendChild(this.deleteFileForm);
 
     this.modalNotify = document.createElement("modal-notify");
     this._projects.appendChild(this.modalNotify);
@@ -287,8 +286,8 @@ export class ProjectDetail extends TatorPage {
     const cancelJob = document.createElement("cancel-confirm");
     this._shadow.appendChild(cancelJob);
 
-    const moveFile = document.createElement("media-move-dialog");
-    this._shadow.appendChild(moveFile);
+    this.moveFile = document.createElement("media-move-dialog");
+    this._shadow.appendChild(this.moveFile);
 
     const newSectionDialog = document.createElement("name-dialog");
     this._projects.appendChild(newSectionDialog);
@@ -317,7 +316,7 @@ export class ProjectDetail extends TatorPage {
       }
     });
 
-    moveFile.addEventListener("reload", this._mediaSection.reload.bind(this._mediaSection));
+    this.moveFile.addEventListener("reload", this._mediaSection.reload.bind(this._mediaSection));
 
     addFolderButton.addEventListener("click", evt => {
       newSectionDialog.init("Add Folder", "folder");
@@ -330,8 +329,10 @@ export class ProjectDetail extends TatorPage {
       const content = this._archivedFolders
       if (content.style.display === "block") {
         content.style.display = "none";
+        this.archivedFolderText.textContent = "+ Archived Folders";
       } else {
         content.style.display = "block";
+        this.archivedFolderText.textContent = "- Archived Folders";
       }
     });
 
@@ -421,6 +422,16 @@ export class ProjectDetail extends TatorPage {
               } else {
                 this._archivedFolders.appendChild(card);
               }
+              
+              // Notifiy media section about section renames
+              card.addEventListener("renameSection", (evt) => {
+                this._mediaSection.dispatchEvent(new CustomEvent("renameSection", evt.details));
+              });
+              card.addEventListener("deleteSection", (evt) => {
+                this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.details ));
+              });
+
+              //
               card.addEventListener("click", () => {
                 const clearPage = true;
                 this._selectSection(sectionObj, projectId, clearPage);
@@ -435,6 +446,14 @@ export class ProjectDetail extends TatorPage {
             } else if (newSectionDialog._sectionType == "savedSearch") {
               card.sectionInit(sectionObj, "savedSearch");
               this._savedSearches.appendChild(card);
+
+              // Notifiy media section about section renames
+              card.addEventListener("renameSection", (evt) => {
+                this._mediaSection.dispatchEvent(new CustomEvent("renameSection", evt.details));
+              });
+              card.addEventListener("deleteSection", (evt) => {
+                this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.details ));
+              });
 
               card.addEventListener("click", () => {
                 const clearPage = true;
@@ -516,7 +535,7 @@ export class ProjectDetail extends TatorPage {
 
     this._moveFileCallback = evt => {
       console.log(evt);
-      moveFile.open(evt.detail.mediaId, evt.detail.mediaName, this.getAttribute("project-id"));
+      this.moveFile.open(evt.detail.mediaId, evt.detail.mediaName, this.getAttribute("project-id"));
     };
 
     this._removeCallback = evt => {
@@ -545,19 +564,19 @@ export class ProjectDetail extends TatorPage {
 
     this._deleteFileCallback = evt => {
       console.log("Test");
-      deleteFile.setAttribute("media-id", evt.detail.mediaId);
-      deleteFile.setAttribute("media-name", evt.detail.mediaName);
-      deleteFile.setAttribute("is-open", "");
+      this.deleteFileForm.setAttribute("media-id", evt.detail.mediaId);
+      this.deleteFileForm.setAttribute("media-name", evt.detail.mediaName);
+      this.deleteFileForm.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
 
-    deleteFile.addEventListener("close", evt => {
+    this.deleteFileForm.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal", "");
     });
 
-    deleteFile.addEventListener("confirmFileDelete", evt => {
+    this.deleteFileForm.addEventListener("confirmFileDelete", evt => {
       this._mediaSection.removeMedia(evt.detail.mediaId);
-      deleteFile.removeAttribute("is-open");
+      this.deleteFileForm.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
     });
 
@@ -646,6 +665,13 @@ export class ProjectDetail extends TatorPage {
     card.addEventListener("visibilityChange", evt => {
       this._sectionVisibilityEL(evt)
     });
+    // Notifiy media section about section renames
+    card.addEventListener("renameSection", (evt) => {
+      this._mediaSection.dispatchEvent(new CustomEvent("renameSection", evt.details));
+    });
+    card.addEventListener("deleteSection", (evt) => {
+      this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.details ));
+    });
     card.addEventListener("click", () => {
       const clearPage = true;
       this._selectSection(section, section.project, clearPage);
@@ -673,6 +699,7 @@ export class ProjectDetail extends TatorPage {
     this.showDimmer();
     this.loading.showSpinner();
     const projectId = this.getAttribute("project-id");
+    this._projectId = projectId;
     this._settingsButton.setAttribute("href", `/${projectId}/project-settings`);
     this._activityNav.init(projectId);
 
@@ -772,9 +799,34 @@ export class ProjectDetail extends TatorPage {
             this._mediaSection.mediaTypesMap = this.mediaTypesMap;
 
             //
+            const moveSelectedButton = document.createElement("media-move-button");
+            moveSelectedButton.setAttribute("name", "Move selected files to folder");
+            moveSelectedButton._span.textContent = "Move selected files to folder";
+            this._bulkEdit._otherTools.appendChild(moveSelectedButton);
+
+            moveSelectedButton.addEventListener("click", () => {
+              const list = Array.from(this._bulkEdit._currentMultiSelection);
+              console.log(list);
+              if (list && list.length > 0) {
+                const listString = String(list);
+                this.moveFile.open(list, null, this.getAttribute("project-id"), false);
+              } else {
+                this._notify("Make a selection", "Nothing to move! Make a selection first.", "error");
+              }
+            });
+
+            //
+            const deleteSelectedButton = document.createElement("delete-button");
+            deleteSelectedButton.setAttribute("name", "Delete selected files");
+            deleteSelectedButton._span.textContent = "Delete selected files";
+            this._bulkEdit._otherTools.appendChild(deleteSelectedButton);
+
+            deleteSelectedButton.addEventListener("click", this._deleteSelection.bind(this));
+
+            //
             this._mediaSection._files._cardAttributeLabels = this._cardAttributeLabels;
             this._mediaSection._bulkEdit = this._bulkEdit;
-            this._bulkEdit.init(this, this._mediaSection._files, "media", projectId);
+            this._bulkEdit.init(this, this._mediaSection._files, "media", projectId, true);
             // this._bulkEdit._showEditPanel();
 
             const parsedAlgos = algos.filter(function (alg) {
@@ -900,6 +952,7 @@ export class ProjectDetail extends TatorPage {
 
             // Is there a search to apply?
             if (params.has("search")) {
+              console.log(params.get("search"))
               this._mediaSection.searchString = params.get("search");
               this._addSavedSearchButton.style.opacity = 1.0;
               this._addSavedSearchButton.style.cursor = "pointer";
@@ -1120,6 +1173,23 @@ export class ProjectDetail extends TatorPage {
 
     this.loading.hideSpinner();
     this.hideDimmer();
+  }
+
+  _deleteSelection() {
+    console.log("test deleteSelected");
+    const list = Array.from(this._bulkEdit._currentMultiSelection);
+    console.log(list);
+    console.log(this._projectId);
+
+    if (list && list.length > 0) {
+      this.deleteFileForm.setAttribute("media-id", list);
+      this.deleteFileForm.setAttribute("project-id", this._projectId);
+      this.deleteFileForm.setAttribute("media-name", "Selected files");
+      this.deleteFileForm.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
+    } else {
+      this._notify("Make a selection", "Nothing to delete! Make a selection first.", "error");
+    }
   }
 
   // Modal for this page, and handlers

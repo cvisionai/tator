@@ -83,7 +83,8 @@ export class EntityGalleryPanel extends TatorElement {
       this.entityData._init({
         data: this.cardObj,
         attributePanelData: this.cardObj.localization,
-        associatedMedia: this.cardObj.mediaInfo.media
+        associatedMedia: this.cardObj.mediaInfo.media,
+        allowDelete: true
       });
     }
 

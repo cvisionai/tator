@@ -40,11 +40,11 @@ export class SectionMore extends TatorElement {
 
     this._bulkEditMedia = document.createElement("bulk-correct-button");
     // this._bulkEditMedia.setAttribute("id", "bulkCorrectButton");
-    this._bulkEditMedia.setAttribute("text", "Edit media attributes");
+    this._bulkEditMedia.setAttribute("text", "Bulk edit/move/delete");
     bulkDiv.appendChild(this._bulkEditMedia);
 
     this._download = document.createElement("download-button");
-    this._download.setAttribute("text", "Download files");
+    this._download.setAttribute("text", "Download media files");
     this._otherButtons.appendChild(this._download);
 
     this._annotations = document.createElement("download-button");
@@ -52,16 +52,22 @@ export class SectionMore extends TatorElement {
     this._otherButtons.appendChild(this._annotations);
 
     this._rename = document.createElement("rename-button");
-    this._rename.setAttribute("text", "Rename section");
+    this._rename.setAttribute("text", "Rename folder");
     this._otherButtons.appendChild(this._rename);
 
     this._deleteSection = document.createElement("delete-button");
-    this._deleteSection.init("Delete section");
+    this._deleteSection.init("Delete folder");
     this._otherButtons.appendChild(this._deleteSection);
 
     this._deleteMedia = document.createElement("delete-button");
-    this._deleteMedia.init("Delete media", "text-red");
+    this._deleteMedia.init("Delete media files", "text-red");
     this._otherButtons.appendChild(this._deleteMedia);
+
+    window.addEventListener("click", (e) => {
+      if (e.path[0].id != "icon-more-horizontal") {
+        details.removeAttribute("open");   
+      }
+    });
 
     this._bulkEditMedia.addEventListener("click", () => {
       details.removeAttribute("open");
@@ -69,10 +75,10 @@ export class SectionMore extends TatorElement {
       this.dispatchEvent(new Event("bulk-edit"));
     });
 
-    this._cardLink.addEventListener("click", () => {
-      details.removeAttribute("open");
-      // this.dispatchEvent(new Event("bulk-edit"));
-    });
+    // this._cardLink.addEventListener("click", () => {
+    //   details.removeAttribute("open");
+    //   this.dispatchEvent(new Event("bulk-edit"));
+    // });
 
     this._algorithmMenu.addEventListener("click", () => {
       details.removeAttribute("open");
@@ -110,6 +116,18 @@ export class SectionMore extends TatorElement {
       this._deleteSection.style.display = "none";
       this._deleteMedia.style.display = "none";
     } else {
+      console.log(val);
+
+      if (val.lucene_search == null) {
+        // not a saved search
+        this._rename.setAttribute("text", "Rename folder");
+        this._deleteSection.init("Delete folder");
+      } else {
+        // is a saved search
+        this._rename.setAttribute("text", "Rename saved search");
+        this._deleteSection.init("Delete saved search");
+      }
+      
       this._rename.style.display = "block";
       this._deleteSection.style.display = "block";
       this._deleteMedia.style.display = "block";

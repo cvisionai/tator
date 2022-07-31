@@ -108,7 +108,7 @@ entity-gallery-aspect-ratio {
   transition: 500ms ease right;
   background: $color-charcoal--dark;
   //padding-left: 5px;
-  // border-left: 5px solid $color-purple;
+  border-left: 5px solid $color-purple;
   -webkit-mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
   padding-bottom: 50px;
@@ -506,7 +506,7 @@ collections-card {
   top: 0;
   bottom: 0;
   
-  left: 0; // relative to the container
+  left: -5px; // relative to the container this puts it on the left border
   cursor: col-resize;
   float: left;
   background: $color-purple;

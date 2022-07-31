@@ -21,12 +21,6 @@ export class EntityCard extends TatorElement {
     this._link.setAttribute("href", "#");
     this._li.appendChild(this._link);
 
-    // Override default link drag behavior
-    this._link.addEventListener("dragstart", (evt) => {
-      evt.preventDefault();
-      console.log("Override default link drag behavior");
-    });
-
     // Image, spinner until SRC set
     this._img = document.createElement("img");
     this._img.setAttribute("src", Spinner);
@@ -62,12 +56,11 @@ export class EntityCard extends TatorElement {
     this._styledDiv.appendChild(this.descDiv);
     this.descDiv.hidden = true; // HIDDEN default
 
-    // "More" (three dots) menu (OPTIONAL)
+    // "More" (three dots) menu (OPTIONAL) #todo
     this._more = document.createElement("media-more");
     this._more.setAttribute("class", "entity-card__more text-right ");
-    this._more.style.opacity = 0;
-    this.titleDiv.appendChild(this._more);
     this._more.hidden = true; // HIDDEN default
+    this.titleDiv.appendChild(this._more);
 
     // Lower div start
     const lowerDiv = document.createElement("div");
@@ -145,20 +138,27 @@ export class EntityCard extends TatorElement {
     this._archiveDownEmblem.style.display = "none";
     this._emblemDiv.appendChild(this._archiveDownEmblem);
 
+    this.addEventListener("mouseenter", () => {
+      if (this.hasAttribute("media-id")) {
+        this.dispatchEvent(new CustomEvent("cardMouseover", {
+          detail: { media: this.media }
+        }));
+      }
+    });
+
+    this.addEventListener("mouseleave", () => {
+      if (this.hasAttribute("media-id")) {
+        this.dispatchEvent(new Event("cardMouseexit"));
+      }
+    });
+
     // OPTIONAL ID data
     this._id_text = document.createElement("span");
     this._id_text.setAttribute("class", "f3 text-gray px-2");
     this._bottom.appendChild(this._id_text);
 
+
     // More menu event listener (if included)
-    this.addEventListener("mouseenter", () => {
-      this._more.style.opacity = 1;
-    });
-
-    this.addEventListener("mouseleave", () => {
-      this._more.style.opacity = 0;
-    });
-
     this._more.addEventListener("algorithmMenu", evt => {
       this.dispatchEvent(
         new CustomEvent("runAlgorithm",
@@ -246,12 +246,12 @@ export class EntityCard extends TatorElement {
     // Card click / List item click listener
     this.addEventListener("click", this.togglePanel.bind(this));
     this._link.addEventListener("click", (e) => {
-      if (this._multiEnabled) {
+      if (this._multiEnabled || (!this._link.hasAttribute("href") || this._link.getAttribute("href") == "#")) {
         e.preventDefault();
       }
     });
     this._name.addEventListener("click", (e) => {
-      if (this._multiEnabled) {
+      if (this._multiEnabled || !this._name.hasAttribute("href" || this._link.getAttribute("href") == "#")) {
         e.preventDefault();
       }
     });
@@ -343,6 +343,9 @@ export class EntityCard extends TatorElement {
 
 
   init({ obj, panelContainer = null, cardLabelsChosen = null, enableMultiselect = false, idx = null, mediaInit = false }) {
+    //
+    // this.resetAll();
+
     // Give card access to panel
     this.panelContainer = panelContainer;
     this.cardObj = obj;
@@ -358,15 +361,11 @@ export class EntityCard extends TatorElement {
     if (!mediaInit) {
       // ID is title
       this._id_text.innerHTML = `ID: ${this.cardObj.id}`;
+      this._name.style.opacity = 1;
+      this._link.style.opacity = 1;
+      this._name.style.cursor = "pointer";
+      this._link.style.cursor = "pointer";
     }
-
-    this.setAttribute("draggable", true);
-    this.addEventListener("dragstart", (evt) => {
-      evt.preventDefault();
-      console.log("Trying to drag this file?");
-      // this._more.dispatchEvent("move");
-    });
-
 
     // Graphic
     if (typeof this.cardObj.image !== "undefined" && this.cardObj.image !== null) {
@@ -395,6 +394,7 @@ export class EntityCard extends TatorElement {
       // console.log(obj);
       // Clear this in case of reuse / re-init
       this.attributesDiv.innerHTML = "";
+
       for (const attr of obj.attributeOrder) {
         let attrStyleDiv = document.createElement("div");
         attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
@@ -477,7 +477,7 @@ export class EntityCard extends TatorElement {
   }
 
   set posText(val) {
-    this.setAttribute("pos-text", val);
+    this._pos_text.textContent = val;
   }
 
   set active(enabled) {
@@ -489,10 +489,13 @@ export class EntityCard extends TatorElement {
   }
 
   set project(val) {
-    if (!hasPermission(val.permission, "Can Edit")) {
-      this._more.style.display = "none";
-    }
+    this._project = val;
     this._more.project = val;
+    if (this._project && this._project.id) {
+      this.setAttribute("project-id", this._project.id);
+    } else {
+      this.setAttribute("project-id", "");
+    }
   }
 
   set algorithms(val) {
@@ -504,34 +507,74 @@ export class EntityCard extends TatorElement {
   }
 
   set media(val) {
+    // console.log("Set entity-card media.....");
+    // console.log(val);
     this._media = val;
     this._more.media = val;
     let valid = false;
+    let project = this._media.project;
+    if (typeof (this._media.project) == "undefined") {
+      project = this._media.project_id;
+    }
+
+    // Set ID for later use
+    if (this._media && this._media.id) {
+      this.setAttribute("media-id", this._media.id);
+    }
+
+    if (this._media && this._media.name) {
+      this.setAttribute("name", this._media.name);
+    }
+
+    // Set thumnail
+    if (this._media.media_files && this._media.media_files.thumbnail) {
+      this.setAttribute("thumb", this._media.media_files.thumbnail[0].path);
+    }
+    this.removeAttribute("thumb-gif"); // why is this always done? instead of below on else
+
+
+    if (this._media.media_files && this._media.media_files.thumbnail_gif) {
+      this.setAttribute("thumb-gif", this._media.media_files.thumbnail_gif[0].path);
+    }
+
     if (this._media.media_files) {
+      if (this._media.media_files.attachment) {
+        this.attachments = this._media.media_files.attachment;
+      } else {
+        this.attachments = [];
+      }
+    }
+    
+    // Check if file is valid and set LiveThumb
+    if (this._media.media_files !== null) {
       if ('streaming' in this._media.media_files ||
         'layout' in this._media.media_files ||
         'concat' in this._media.media_files ||
         'image' in this._media.media_files) {
         valid = true;
+      } else {
+        this._link.setAttribute("tooltip", "File is not available to view due to processing. If this doesn't resolve in 24 hours, contact the team as there could be an error in transcodes.");
       }
+      
       if (!('thumbnail' in this._media.media_files) && 'live' in this._media.media_files) {
         // Default to tator thumbnail
         // TODO: Have some visual indication if stream is active.
         this._img.setAttribute("src", LiveThumb);
+      }
+    }
 
-      }
-    }
-    if (valid == false) {
-      this._name.style.opacity = 0.35;
-      this._link.style.opacity = 0.35;
-      this._name.style.cursor = "not-allowed";
-      this._link.style.cursor = "not-allowed";
-    }
-    else {
-      let project = val.project;
-      if (typeof (val.project) == "undefined") {
-        project = val.project_id;
-      }
+
+    // console.log(`File "${val.name}" is valid? >>> ${valid}`)
+    // If valid setup up the values
+    if (valid) {
+
+    //   this._name.style.opacity = 0.35;
+    //   this._link.style.opacity = 0.35;
+    //   this._name.style.cursor = "not-allowed";
+    //   this._link.style.cursor = "not-allowed";
+    // } else {
+
+      // Setup name & link
       var uri = `/${project}/annotation/${val.id}?${this._mediaParams.toString()}`;
       this._name.setAttribute("href", uri);
       this._link.setAttribute("href", uri);
@@ -539,25 +582,37 @@ export class EntityCard extends TatorElement {
       this._link.style.opacity = 1;
       this._name.style.cursor = "pointer";
       this._link.style.cursor = "pointer";
+    
+      // Setup media emblem
+      if (this._media.archive_state == "to_archive") {
+        this._archiveDownEmblem.style.display = "flex";
+        this._archiveDownEmblem.setAttribute("tooltip", "Pending Archival");
+      } else if (this._media.archive_state == "archived") {
+        this._archiveEmblem.style.display = "flex";
+        this._archiveEmblem.setAttribute("tooltip", "Archived");
+      } else if (this._media.archive_state == "to_live") {
+        this._archiveUpEmblem.style.display = "flex";
+        this._archiveUpEmblem.setAttribute("tooltip", "Pending Live");
+      } else {
+        this._archiveDownEmblem.style.display = "none";
+        this._archiveUpEmblem.style.display = "none";
+        this._archiveEmblem.style.display = "none";
+      }
+
+      // Add duration to card
+      if (typeof this._media.num_frames !== "undefined" && this._media.num_frames !== null && typeof this._media.fps !== "undefined" && this._media.fps !== null) {
+        // Add duration to card
+        let seconds = Number(this._media.num_frames) / Number(this._media.fps);
+        let duration = new Date(seconds * 1000).toISOString().substr(11, 8);
+        this.setAttribute("duration", duration);
+      } else {
+        this.setAttribute("duration", null);
+      }
+    } else {
+      this.resetValues();
     }
 
-    if (this._media.archive_state == "to_archive") {
-      this._archiveDownEmblem.style.display = "flex";
-      this._archiveDownEmblem.setAttribute("tooltip", "Pending Archival");
-    }
-    else if (this._media.archive_state == "archived") {
-      this._archiveEmblem.style.display = "flex";
-      this._archiveEmblem.setAttribute("tooltip", "Archived");
-    }
-    else if (this._media.archive_state == "to_live") {
-      this._archiveUpEmblem.style.display = "flex";
-      this._archiveUpEmblem.setAttribute("tooltip", "Pending Live");
-    }
-    else {
-      this._archiveDownEmblem.style.display = "none";
-      this._archiveUpEmblem.style.display = "none";
-      this._archiveEmblem.style.display = "none";
-    }
+
   }
 
   get media() {
@@ -596,13 +651,18 @@ export class EntityCard extends TatorElement {
   }
 
   togglePanel(e) {
-    // console.log("TOGGLE CARD ")
-    if (this._link.getAttribute("href") !== "#" && !this._multiEnabled) {
+    console.log("TOGGLE CARD ");
+    console.log(this._multiEnabled);
+
+    console.log("Toggle panel");
+    if (this._link.hasAttribute("href") && this._link.getAttribute("href") !== "#" && !this._multiEnabled) {
       // follow the link...
-      // otherwise do some panel, or multi stuff
-      // console.log("clicked....");
+      console.log("SKIP");
+      return false;
     } else {
+      // otherwise do some panel, or multi stuff don't go # 
       e.preventDefault();
+      console.log("ELSE: Panel stuff.......");
 
       if (this._multiEnabled) {
         this._multiSelectionToggle = true;
@@ -631,12 +691,14 @@ export class EntityCard extends TatorElement {
         }
       }
 
-      if (this._li.classList.contains("is-selected") && !this._multiSelectionToggle && !this._mediaInit && !this._sectionInit) {
+
+      // In multi, we select the card, but don't ALWAYs pop it
+      if (this._li.classList.contains("is-selected") && !this._mediaInit && !this._sectionInit) {
         this._deselectedCardAndPanel();
-      } else if (!this._multiSelectionToggle && !this._mediaInit && !this._sectionInit) {
+      } else if (!this._mediaInit && !this._sectionInit) { //&&  !this._multiSelectionToggle
         this._selectedCardAndPanel();
       } else {
-        this.cardClickEvent(false);
+        this.cardClickEvent(false); // this sends event with open flag false, but no selection happens
       }
     }
   }
@@ -663,12 +725,12 @@ export class EntityCard extends TatorElement {
   _selectedCardAndPanel() {
     // Hide open panels
     this._unselectOpen();
-    this.cardClickEvent(true);
+    this.cardClickEvent();
     this.annotationEvent("open-annotation");
     this._li.classList.add("is-selected");
   }
 
-  cardClickEvent(openFlag = false) {
+  cardClickEvent(openFlag = true) {
     // Send event to panel to hide the localization canvas & title
     let cardClickEvent = new CustomEvent("card-click", { detail: { openFlag, cardObj: this.cardObj } });
     this.dispatchEvent(cardClickEvent);
@@ -743,15 +805,31 @@ export class EntityCard extends TatorElement {
       context.style.display = "none";
       this._shadow.appendChild(context);
 
-      const toggle = document.createElement("toggle-button");
+      const archiveToggle = document.createElement("toggle-button");
+      archiveToggle.before(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-archive"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>`);
       if (this._section.visible) {
-        toggle.setAttribute("text", "Archive folder");
+        archiveToggle.setAttribute("text", "Archive folder");
       } else {
-        toggle.setAttribute("text", "Restore folder");
+        archiveToggle.setAttribute("text", "Restore folder");
       }
-      context.appendChild(toggle);
+      context.appendChild(archiveToggle);
 
-      toggle.addEventListener("click", evt => {
+      const rename = document.createElement("rename-button");
+      rename.setAttribute("text", "Rename folder");
+      context.appendChild(rename);
+  
+      const deleteSection = document.createElement("delete-button");
+      deleteSection.init("Delete folder");
+      context.appendChild(deleteSection);
+
+      rename.addEventListener("click", evt => {
+        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "folder"} }));
+      });
+      deleteSection.addEventListener("click", evt => {
+        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "folder"} }));
+      });
+
+      archiveToggle.addEventListener("click", evt => {
         this._section.visible = !this._section.visible;
         const sectionId = Number();
         fetch(`/rest/Section/${this._section.id}`, {
@@ -768,9 +846,9 @@ export class EntityCard extends TatorElement {
         })
           .then(response => {
             if (this._section.visible) {
-              toggle.setAttribute("text", "Archive folder");
+              archiveToggle.setAttribute("text", "Archive folder");
             } else {
-              toggle.setAttribute("text", "Restore folder");
+              archiveToggle.setAttribute("text", "Restore folder");
             }
             this.dispatchEvent(new CustomEvent("visibilityChange", {
               detail: { section: this._section }
@@ -799,6 +877,37 @@ export class EntityCard extends TatorElement {
       line.setAttribute("x2", "16.65");
       line.setAttribute("y2", "16.65");
       svg.appendChild(line);
+
+      const context = document.createElement("div");
+      context.setAttribute("class", "more d-flex flex-column f2 px-3 py-2 lh-condensed");
+      context.style.display = "none";
+      this._shadow.appendChild(context);
+
+      const rename = document.createElement("rename-button");
+      rename.setAttribute("text", "Rename saved search");
+      context.appendChild(rename);
+  
+      const deleteSection = document.createElement("delete-button");
+      deleteSection.init("Delete saved search");
+      context.appendChild(deleteSection);
+
+      rename.addEventListener("click", evt => {
+        // console.log("HEARD THE CLICK");
+        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "saved search"} }));
+      });
+      deleteSection.addEventListener("click", evt => {
+        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "saved search"} }));
+      });
+
+      this.addEventListener("contextmenu", evt => {
+        evt.preventDefault();
+        context.style.display = "block";
+      });
+
+      window.addEventListener("click", evt => {
+        context.style.display = "none";
+      });
+
     } else if (sectionType == "bookmark") {
       const path = document.createElementNS(svgNamespace, "path");
       path.setAttribute("d", "M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z");
@@ -887,7 +996,7 @@ export class EntityCard extends TatorElement {
   }
 
   _moveMediaFile(evt) {
-    console.log("Entity card _moveMediaFile");
+    // console.log("Entity card _moveMediaFile");
     evt.preventDefault();
     this.dispatchEvent(new CustomEvent("moveFile", {
       detail: {
@@ -896,6 +1005,29 @@ export class EntityCard extends TatorElement {
       },
       composed: true
     }));
+  }
+
+  resetValues() {
+    this._name.style.opacity = 0.35;
+    this._link.style.opacity = 0.35;
+    // this._name.style.cursor = "not-allowed";
+    // this._link.style.cursor = "not-allowed";
+    this._link.setAttribute("href", "#");
+    this._name.removeAttribute("href");
+    this.setAttribute("duration", null);
+  }
+
+  handleDragStart(e) {
+    // evt.preventDefault();
+    console.log("Drag start: Trying to drag this file?");
+    this.dispatchEvent(new Event("card-moving"));
+
+    //
+    console.log(this.cardObj);
+    const data = this.cardObj;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData("text/plain", JSON.stringify(data));
+
   }
 
 }

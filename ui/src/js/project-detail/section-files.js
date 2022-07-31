@@ -131,13 +131,13 @@ export class SectionFiles extends TatorElement {
 
           // When bulk edit changes tell the card
           this._bulkEdit.addEventListener("multi-enabled", () => {
-            // console.log("multi-enabled heard in section files");
+            console.log("multi-enabled heard in section files");
             card.multiEnabled = true;
             this.multiEnabled = true;
           });
 
           this._bulkEdit.addEventListener("multi-disabled", () => {
-            // console.log("multi-disabled heard in section files");
+            console.log("multi-disabled heard in section files");
             card.multiEnabled = false;
             this.multiEnabled = false;
           });
@@ -148,28 +148,37 @@ export class SectionFiles extends TatorElement {
 
         // Setup attributes, and order for label options
         cardObj.attributes = media.attributes;
+        console.log(entityType.attribute_types);
+        console.log(this.getCardLabelOptions(entityType.attribute_types));
         cardObj.attributeOrder = this.getCardLabelOptions(entityType.attribute_types); //cardLabelOptions;
+
+
+
 
         // Set in this order:mediaParams utilized to make a URL in set media()
         card.mediaParams = this._mediaParams();
         card.media = media;
         card.posText = `(${this._startMediaIndex + index + 1} of ${this._numMedia})`;
         card.multiEnabled = this.multiEnabled;
+        console.log("this.multiEnabled "+this.multiEnabled)
 
         // If we're still in multiselect.. check if this card should be toggled...
         if (this.multiEnabled) this._addToBulkEditSelected(entityType, card, cardObj);
 
         // this is data used later by label chooser, and bulk edit
+        console.log("BEFORE INIT!")
+        console.log(cardObj.attributeOrder);
         card.init({
           obj: cardObj,
           idx: index,
           mediaInit: true,
           cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
+          enableMultiselect: this.multiEnabled
         });
 
        // make reference lists / object
         // cardList.push(card);
-        this._cardElements.push({cardInfo: {card}});
+        this._cardElements.push({card});
         this._currentCardIndexes[cardObj.id] = index;
 
         // This should happen last
@@ -215,6 +224,7 @@ export class SectionFiles extends TatorElement {
   }
 
   updateShown(evt, card) {
+    console.log("UPDATE SHOWN");
     if (card.cardObj.entityType.id == evt.detail.typeId) {
       card._updateShownAttributes(evt);
     }
@@ -240,7 +250,7 @@ export class SectionFiles extends TatorElement {
     });
 
     // hidden by alpha
-    hiddenAttrs = nonHiddenAttrs.sort((a, b) => {
+    hiddenAttrs = hiddenAttrs.sort((a, b) => {
       return a.name - b.name;
     });
 
