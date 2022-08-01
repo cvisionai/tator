@@ -600,7 +600,7 @@ export class AnnotationPlayer extends TatorElement {
     else
     {
       // Let the user slow down and get frame by frame scrubing
-      this._video.keyframeOnly = false;
+      //this._video.keyframeOnly = false;
     }
     if (waitOk) {
 
@@ -896,8 +896,9 @@ export class AnnotationPlayer extends TatorElement {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._video.currentFrame()} do not match. restarting check_ready`)
         timeoutIndex = 0;
         timeoutCounter = 0;
+        clearTimeout(this._handleNotReadyTimeout);
+        this._handleNotReadyTimeout = null;
         this._handleNotReadyTimeout = setTimeout(() => {
-          this._handleNotReadyTimeout = null;
           check_ready(this._video.currentFrame())}, 100);
         return;
       }
@@ -924,8 +925,9 @@ export class AnnotationPlayer extends TatorElement {
         // number of clocks in a given timeout attempt.
         if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
           //console.log(`Video playback check - Not ready: checking in ${timeouts[timeoutIndex]/1000} seconds [Now: ${new Date().toISOString()}]`);
+          clearTimeout(this._handleNotReadyTimeout);
+          this._handleNotReadyTimeout = null;
           this._handleNotReadyTimeout = setTimeout(() => {
-            this._handleNotReadyTimeout = null;
             check_ready(checkFrame);
           }, clock_check);
         }
@@ -947,8 +949,10 @@ export class AnnotationPlayer extends TatorElement {
       }
     };
 
+    clearTimeout(this._handleNotReadyTimeout);
+    this._handleNotReadyTimeout = null;
     // We can be faster in single play mode
-    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), 0);
+    this._handleNotReadyTimeout = setTimeout(check_ready(this._video.currentFrame()), clock_check);
   }
 
   play()
@@ -1154,8 +1158,8 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addAlgoLaunchOption(algoName);
   }
 
-  addAppletToMenu(appletName) {
-    this._video.addAppletToMenu(appletName);
+  addAppletToMenu(appletName, categories) {
+    this._video.addAppletToMenu(appletName, categories);
   }
 
   updateAllLocalizations() {

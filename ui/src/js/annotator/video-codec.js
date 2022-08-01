@@ -135,6 +135,7 @@ class TatorVideoManager {
     this._frameDeltaMap = new Map();
     this._bias = 0;
     this._keyframeOnly = false;
+    this._mute = false;
   }
 
   set keyframeOnly(val)
@@ -243,7 +244,7 @@ class TatorVideoManager {
     image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
-    if (this._cursor_is_hot() || this._keyframeOnly == true)
+    if ((this._cursor_is_hot() || this._keyframeOnly == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
     }
@@ -254,6 +255,10 @@ class TatorVideoManager {
     if (func_ptr)
     {
       func_ptr();
+    }
+    else
+    {
+      console.info("Safe call can't call null function");
     }
   }
 
@@ -340,6 +345,16 @@ class TatorVideoManager {
   {
     this._bias = bias;
   }
+
+  set mute(val)
+  {
+    this._mute = val;
+  }
+
+  get mute()
+  {
+    return this._mute;
+  }
   // Set the current video time
   //
   // Timing considerations:
@@ -385,7 +400,7 @@ class TatorVideoManager {
        "bias": this._bias,
        "informational": is_hot
     });
-    if (is_hot)
+    if (is_hot && this._mute == false)
     {
       this._safeCall(this.oncanplay);
       return;

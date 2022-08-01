@@ -70,6 +70,12 @@ export class AttributePanel extends TatorElement {
       this._toggleChevron(evt);
     });
 
+
+    this._builtInAttrLabel.hidden = true;
+    this._builtInAttrsDiv.hidden = true;
+    this._hiddenAttrLabel.hidden = true;
+    this._hiddenAttrsDiv.hidden = true;
+
     // #TODO refactor this to tator-data
     this._userList = [];
     this._versionList = [];
@@ -469,7 +475,14 @@ export class AttributePanel extends TatorElement {
     }
 
     // User defined attributes
-    const sorted = val.attribute_types.sort((a, b) => {
+    var attribute_types = [];
+    for (const attr_type of val.attribute_types) {
+      if (attr_type.visible === false) {
+        continue;
+      }
+      attribute_types.push(attr_type);
+    }
+    const sorted = attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
 
@@ -498,7 +511,7 @@ export class AttributePanel extends TatorElement {
 
       if (this._enableBuiltInAttributes && this._builtInAttrsDiv.children.length > 0) {
         this._builtInAttrLabel.hidden = false;
-        this._builtInAttrsDiv.hidden = true;
+        this._builtInAttrsDiv.hidden = false;
       }
       else {
         this._builtInAttrLabel.hidden = true;
@@ -507,7 +520,7 @@ export class AttributePanel extends TatorElement {
 
       if (this._enableHiddenAttributes && this._hiddenAttrsDiv.children.length > 0) {
         this._hiddenAttrLabel.hidden = false;
-        this._hiddenAttrsDiv.hidden = true;
+        this._hiddenAttrsDiv.hidden = false;
       }
       else {
         this._hiddenAttrLabel.hidden = true;

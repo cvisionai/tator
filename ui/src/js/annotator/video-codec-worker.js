@@ -403,8 +403,14 @@ class TatorVideoBuffer {
         if (samples[idx].is_sync)
         {
           this._keyframeMap.get(timestampOffset).push(samples[idx].cts);
-          if (idx > start_idx && this._playing == false)
+          //console.info(`${idx} > ${start_idx}, ${this._playing==false}, ${this.keyframeOnly}`);
+          if (this._playing == false && (idx > start_idx || this.keyframeOnly == true))
           {
+            //console.info("Bombing out!");
+            if (this.keyframeOnly == true)
+            {
+              this._mp4FileMap.get(timestampOffset).stop(); // Stop event handler
+            }
             break; // If we get to the next key frame we decoded enough.
           }
         }

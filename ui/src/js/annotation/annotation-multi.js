@@ -500,10 +500,10 @@ export class AnnotationMulti extends TatorElement {
         {
           video.keyframeOnly = true;
         }
-        else
-        {
-          video.keyframeOnly = false;
-        }
+        //else
+        // {
+        //  video.keyframeOnly = false;
+        //}
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         this_frame += this._frameOffsets[idx];
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
@@ -1158,6 +1158,7 @@ export class AnnotationMulti extends TatorElement {
 
   setFocus(vid_id)
   {
+    this._multiLayoutState = "focus";
     for (let videoId in this._videoDivs)
     {
       let video = this._videoDivs[videoId].children[0];
@@ -1183,6 +1184,7 @@ export class AnnotationMulti extends TatorElement {
 
   setHorizontal()
   {
+    this._multiLayoutState = "horizontal";
     this._selectedDock = this._focusBottomDockDiv;
     this.setMultiviewUrl("horizontal");
     for (let videoId in this._videoDivs)
@@ -1305,6 +1307,8 @@ export class AnnotationMulti extends TatorElement {
 
   assignToGrid(setContextMenu=true)
   {
+    this._multiLayoutState = "grid";
+
     for (let idx = 0; idx < this._mediaInfo.media_files['ids'].length; idx++)
     {
       let videoId = this._mediaInfo.media_files['ids'][idx];
@@ -1557,14 +1561,15 @@ export class AnnotationMulti extends TatorElement {
 
       timeoutCounter += performance.now() - lastTime;
       lastTime = performance.now();
-      
+
       let not_ready = false;
       if (checkFrame != this._videos[videoIndex].currentFrame()) {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._videos[videoIndex].currentFrame()} do not match. restarting check_ready`)
         timeoutIndex = 0;
         timeoutCounter = 0;
+        clearTimeout(this._handleNotReadyTimeout[videoIndex]);
+        this._handleNotReadyTimeout[videoIndex] = null;
         this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
-          this._handleNotReadyTimeout[videoIndex] = null;
           check_ready(this._videos[videoIndex].currentFrame())}, clock_check);
         return;
       }
@@ -1588,8 +1593,9 @@ export class AnnotationMulti extends TatorElement {
         }
         this._last_duration = this._videos[videoIndex].playBufferDuration();
         if (timeoutIndex < timeouts[timeouts.length-1]/clock_check) {
+          clearTimeout(this._handleNotReadyTimeout[videoIndex]);
+          this._handleNotReadyTimeout[videoIndex] = null;
           this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
-            this._handleNotReadyTimeout[videoIndex] = null;
             check_ready(checkFrame);
           }, clock_check);
         }
@@ -1627,7 +1633,7 @@ export class AnnotationMulti extends TatorElement {
             this._playbackDisabled = false;
             return;
           }
-          catch(exc) 
+          catch(exc)
           {
             console.warn("allVideosReady() seekFrame promises error caught")
             console.warn(exc);
@@ -1640,8 +1646,9 @@ export class AnnotationMulti extends TatorElement {
       }
     };
 
+    clearTimeout(this._handleNotReadyTimeout[videoIndex]);
+    this._handleNotReadyTimeout[videoIndex] = null;
     this._handleNotReadyTimeout[videoIndex] = setTimeout(() => {
-      this._handleNotReadyTimeout[videoIndex] = null;
       check_ready(this._videos[videoIndex].currentFrame())
     }, 0);
 
@@ -2058,10 +2065,10 @@ export class AnnotationMulti extends TatorElement {
     }
   }
 
-  addAppletToMenu(appletName) {
+  addAppletToMenu(appletName, categories) {
     for (let video of this._videos)
     {
-      video.addAppletToMenu(appletName);
+      video.addAppletToMenu(appletName, categories);
     }
   }
 

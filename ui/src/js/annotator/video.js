@@ -72,7 +72,7 @@ var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
-export var RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
+export var RATE_CUTOFF_FOR_ON_DEMAND = 4.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 export class VideoCanvas extends AnnotationCanvas {
@@ -506,7 +506,7 @@ export class VideoCanvas extends AnnotationCanvas {
   find_closest(videoObject, target_quality) 
   {
     let play_idx = -1;
-    let max_delta = this._maxHeight;
+    let max_delta = Number.MAX_SAFE_INTEGER;
     let resolutions = videoObject.media_files["streaming"].length;
     for (let idx = 0; idx < resolutions; idx++)
     {
@@ -540,7 +540,7 @@ export class VideoCanvas extends AnnotationCanvas {
         scrub_idx = this.find_closest(videoObject, scrubQuality);
       }
       else {
-        scrub_idx = this.find_closest(videoObject, Math.min(playQuality,320));
+        scrub_idx = this.find_closest(videoObject, Math.min(playQuality,144));
       }
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 
@@ -1189,16 +1189,8 @@ export class VideoCanvas extends AnnotationCanvas {
         // Because we are using off-screen rendering we need to defer
         // updating the canvas until the video/frame is actually ready, we do this
         // by waiting for a signal off the video + then scheduling an animation frame.
-        let seekUniqueId = `${frame}_${video._name}`;
-        that._seekUniqueId = seekUniqueId;
         video.oncanplay=function()
         {
-          video.oncanplay=null;
-          // only honor latest seek
-          if (seekUniqueId != that._seekUniqueId)
-          {
-            return;
-          }
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime);
@@ -1294,6 +1286,7 @@ export class VideoCanvas extends AnnotationCanvas {
         video != this._videoElement[this._play_idx].playBuffer())
     {
       //console.info(`Given ${time} ${video.currentTime} to play buffer`);
+      this._videoElement[this._play_idx].playBuffer().mute = true;
       this._videoElement[this._play_idx].playBuffer().bias = time_comps.bias;
       this._videoElement[this._play_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;   
     }
@@ -1303,10 +1296,12 @@ export class VideoCanvas extends AnnotationCanvas {
         video != this._videoElement[this._scrub_idx].playBuffer())
     {
       //console.info(`Given ${time} ${video.currentTime} to play buffer`);
+      this._videoElement[this._scrub_idx].playBuffer().mute = true;
       this._videoElement[this._scrub_idx].playBuffer().bias = time_comps.bias;
       this._videoElement[this._scrub_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;
     }
 
+    video.mute = false;
     this._decode_start = performance.now();
     if (time <= video.duration || isNaN(video.duration))
     {
@@ -1955,7 +1950,7 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       
       appendThreshold = Math.min(timeToAbsEnd, appendThreshold);
-      console.info(`${timeToEnd} >= ${appendThreshold}`);
+      //console.info(`${timeToEnd} >= ${appendThreshold}`);
       return (timeToEnd >= appendThreshold ? "yes" : "more");
     }
   }
