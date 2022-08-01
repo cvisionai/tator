@@ -81,6 +81,7 @@ jobs:
     - run:
         name: Push backend image to AWS
         command: |
+          make ecr_update
           docker tag cvisionai/tator_online:$CIRCLE_SHA1 $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
           docker push $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
   update-earlyaccess:
