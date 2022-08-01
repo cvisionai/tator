@@ -79,6 +79,8 @@ jobs:
           docker manifest push $(OCI_REGISTRY)/tator_client:$(CIRCLE_SHA1)
           docker manifest push $(OCI_REGISTRY)/tator_client:latest
   update-earlyaccess:
+    machine:
+      image: ubuntu-2004:202010-01
     steps:
     - checkout
     - run:
