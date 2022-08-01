@@ -70,14 +70,14 @@ jobs:
     - run:
         name: Push client image to OCI
         command: |
-          docker tag cvisionai/tator_client_amd64:$(CIRCLE_SHA1) $(OCI_REGISTRY)/tator_client_amd64:$(CIRCLE_SHA1)
-          docker tag cvisionai/tator_client_aarch64:$(CIRCLE_SHA1) $(OCI_REGISTRY)/tator_client_aarch64:$(CIRCLE_SHA1)
-          docker push $(OCI_REGISTRY)/tator_client_amd64:$(CIRCLE_SHA1)
-          docker push $(OCI_REGISTRY)/tator_client_aarch64:$(CIRCLE_SHA1)
-          docker manifest create --insecure $(OCI_REGISTRY)/tator_client:$(CIRCLE_SHA1) --amend $(OCI_REGISTRY)/tator_client_amd64:$(CIRCLE_SHA1) --amend $(OCI_REGISTRY)/tator_client_aarch64:$(CIRCLE_SHA1)
-          docker manifest create --insecure $(OCI_REGISTRY)/tator_client:latest --amend $(OCI_REGISTRY)/tator_client_amd64:$(CIRCLE_SHA1) --amend $(OCI_REGISTRY)/tator_client_aarch64:$(CIRCLE_SHA1)
-          docker manifest push $(OCI_REGISTRY)/tator_client:$(CIRCLE_SHA1)
-          docker manifest push $(OCI_REGISTRY)/tator_client:latest
+          docker tag cvisionai/tator_client_amd64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
+          docker tag cvisionai/tator_client_aarch64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker push $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
+          docker push $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker manifest create --insecure $OCI_REGISTRY/tator_client:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker manifest create --insecure $OCI_REGISTRY/tator_client:latest --amend $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker manifest push $OCI_REGISTRY/tator_client:$CIRCLE_SHA1
+          docker manifest push $OCI_REGISTRY/tator_client:latest
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
