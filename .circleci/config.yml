@@ -2,6 +2,7 @@ version: 2.1
 orbs:
   node: circleci/node@4.5.1
   slack: circleci/slack@4.4.2
+  aws-cli: circleci/aws-cli@1.4.1
 jobs:
   build-docker-images:
     machine:
@@ -237,7 +238,7 @@ workflows:
   build-and-test:
     jobs:
     - build-docker-images:
-        context: cvisionai
+        context: cd
         filters:
           tags:
             only: /.*/
