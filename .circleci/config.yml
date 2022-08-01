@@ -66,11 +66,9 @@ jobs:
         name: Make client image
         command: make client-image
     - run:
-        name: Log into OCI registry
-        command: echo "$OCIR_PASSWORD" | docker login "$OCIR_HOST" --username "$OCIR_USERNAME" --password-stdin
-    - run:
         name: Push client image to OCI
         command: |
+          echo "$OCIR_PASSWORD" | docker login "$OCIR_HOST" --username "$OCIR_USERNAME" --password-stdin
           docker tag cvisionai/tator_client_amd64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
           docker tag cvisionai/tator_client_aarch64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
           docker push $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
@@ -82,7 +80,7 @@ jobs:
     - run:
         name: Push backend image to AWS
         command: |
-          make ecr_update
+          echo $(aws ecr get-login-password) | docker login "$AWS_REGISTRY" --username AWS --password-stdin
           docker tag cvisionai/tator_online:$CIRCLE_SHA1 $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
           docker push $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
   update-earlyaccess:
