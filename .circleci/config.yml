@@ -247,7 +247,6 @@ workflows:
         filters:
           branches:
             only:
-            - dev/earlyaccess-cd
             - master
     - setup-lightsail:
         context: cvisionai
