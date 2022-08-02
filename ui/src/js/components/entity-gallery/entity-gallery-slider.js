@@ -68,10 +68,19 @@ export class EntityGallerySlider extends TatorElement {
       // Entity cards aren't deleted. They are reused and hidden if not used.
       this._cardElements = [];
 
+      this._topNav = document.createElement("div");
+      this._topNav.setAttribute("class", "entity-gallery-slider__nav py-2 d-flex flex-justify-center");
+      this.main.appendChild(this._topNav);
+
       // Div to contain slider cards styling
       this.styleDiv = document.createElement("div");
       this.styleDiv.setAttribute("class", "entity-gallery-slider__ul-container");
       this.main.appendChild(this.styleDiv);
+
+
+      this._bottomNav = document.createElement("div");
+      this._bottomNav.setAttribute("class", "entity-gallery-slider__nav py-2 d-flex flex-justify-center");
+      this.main.appendChild(this._bottomNav);
 
       // card columns inside slider #todo finish styling
       this.colSize = 272;

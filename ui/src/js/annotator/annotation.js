@@ -3069,7 +3069,7 @@ export class AnnotationCanvas extends TatorElement
       }
       else
       {
-        this.gotoFrame(localization.frame).then(() => {
+        this.gotoFrame(localization.frame, true).then(() => {
           this.selectLocalization(localization, skipAnimation, muteOthers);
         });
         return;
@@ -3157,10 +3157,14 @@ export class AnnotationCanvas extends TatorElement
     clearStatus();
     this.clearAnimation();
     this.activeLocalization = null;
-    this.deselectTrack();
-    this.refresh();
-    this._mouseMode = MouseMode.QUERY;
-    this._activeTrack = track;
+
+    if (this._activeTrack && track.id != this._activeTrack.id)
+    {
+      this.deselectTrack();
+      this.refresh();
+      this._mouseMode = MouseMode.QUERY;
+      this._activeTrack = track;
+    }
 
     let trackSelectFunctor = () => {
       // TODO: This lookup isn't very scalable; we shouldn't iterate over

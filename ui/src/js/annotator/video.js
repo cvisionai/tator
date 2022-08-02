@@ -72,7 +72,7 @@ var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
 
 var src_path="/static/js/annotator/";
 
-export var RATE_CUTOFF_FOR_ON_DEMAND = 16.0;
+export var RATE_CUTOFF_FOR_ON_DEMAND = 4.0;
 const RATE_CUTOFF_FOR_AUDIO = 4.0;
 
 export class VideoCanvas extends AnnotationCanvas {
@@ -540,7 +540,7 @@ export class VideoCanvas extends AnnotationCanvas {
         scrub_idx = this.find_closest(videoObject, scrubQuality);
       }
       else {
-        scrub_idx = this.find_closest(videoObject, Math.min(playQuality,320));
+        scrub_idx = this.find_closest(videoObject, Math.min(playQuality,144));
       }
       console.info(`NOTICE: Choose video stream ${play_idx}`);
 

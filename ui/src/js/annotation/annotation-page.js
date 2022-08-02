@@ -206,14 +206,14 @@ export class AnnotationPage extends TatorPage {
               this._player.mediaType = type_data;
               player.addDomParent({"object": this._headerDiv,
                                    "alignTo":  this._browser});
+              player.addEventListener("discoveredQualities", (evt) => {
+                this._videoSettingsDialog.mode("single", [evt.detail.media]);
+              });
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._video._canvas);
               this._browser.canvas = player._video;
-              player.addEventListener("discoveredQualities", (evt) => {
-                this._videoSettingsDialog.mode("single", [evt.detail.media]);
-              });
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
