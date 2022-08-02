@@ -20,7 +20,7 @@ export class MediaMoveDialog extends ModalDialog {
 
     this._newNameInput = document.createElement("input");
     this._newNameInput.setAttribute("placeholder", "Give it a name...");
-    this._newNameInput.setAttribute("class", "form-control f1 px-4 ");
+    this._newNameInput.setAttribute("class", "form-control f1 px-4 select-sm col-12");
     this._newNameInput.hidden = true;
     this._main.appendChild(this._newNameInput);
 
@@ -64,10 +64,12 @@ export class MediaMoveDialog extends ModalDialog {
 
     // Update text
     if (single) {
-      this._message.textContent = `Choose where to move "${this._mediaName}" (ID: ${this._mediaId}):`;
+      this._message.innerHTML = `Move "${this._mediaName}" <span class="text-gray">(ID: ${this._mediaId})</span> to:`;
     } else {
-      this._message.innerHTML = `Selection: ${this._mediaId}.<br/>Choose where to move selected ids :`;
+      this._message.innerHTML = `Move media files <span class="text-gray">(IDs: ${String(this._mediaId).replaceAll(",",", ")})</span> to:`;
     }
+
+    console.log( this._message);
 
     this._moveEnum.hidden = false;
     this._newNameInput.hidden = true;
@@ -117,10 +119,10 @@ export class MediaMoveDialog extends ModalDialog {
 
     if (typeof sectionTo.id !== "undefined" && sectionTo.id !== null && this._single) {
       this._sectionTo = sectionTo;
-      this._message.textContent = `Move "${this._mediaName}" (ID: ${this._mediaId}) to section "${this._sectionTo.name}" (ID ${this._sectionTo.id})?`;
+      this._message.innerHTML = `Move "${this._mediaName}" <span class="text-gray">(ID: ${this._mediaId})</span> to <span class="text-bold">${this._sectionTo.name}</span> folder?`;
     } else if (typeof sectionTo.id !== "undefined" && sectionTo.id !== null && !this._single) {
       this._sectionTo = sectionTo;
-      this._message.textContent = `Move media ids ${this._mediaId} to section "${this._sectionTo.name}" (ID ${this._sectionTo.id})?`;
+      this._message.innerHTML = `Move media file(s) <span class="text-gray">(ID: ${String(this._mediaId).replaceAll(",", ", ")})</span> to <span class="text-bold">${this._sectionTo.name}</span> folder?`;
     } else if (messageInfo) {
       this._message.textContent = `Could not move media: ${messageInfo}`;
       this._sectionTo = null;
@@ -156,7 +158,7 @@ export class MediaMoveDialog extends ModalDialog {
         this._moveEnum.hidden = true;
         this._newNameInput.hidden = true;
         this._footer.classList.add("hidden");
-        this._message.textContent = `Moving file...`;
+        this._message.textContent = `Moving file(s)...`;
 
 
         //fetch call
@@ -192,7 +194,7 @@ export class MediaMoveDialog extends ModalDialog {
           // Update text
           this.removeAttribute("is-open");
           // Reset values
-          this._moveEnum._select.value = "Select a section";
+          this._moveEnum._select.value = "Select a folder";
           this._newNameInput.value = ""; // reset form
           
           // Values
@@ -205,8 +207,10 @@ export class MediaMoveDialog extends ModalDialog {
           if (resp.status !== 200) {
             this._message.textContent = `Error: ${respJSON.message}`;
           } else {
-            this._message.textContent = `Success! ${respJSON.message}`;
+            this._message.innerHTML = `<span class="text-green">Success! ${respJSON.message}</span>`;
             this.dispatchEvent(new Event("reload"));
+            this.setAttribute("is-open", "true");
+            this.fadeOut(2000);
           }
 
         } catch (err) {
@@ -214,10 +218,10 @@ export class MediaMoveDialog extends ModalDialog {
           console.error("Error updating media.", err)
         }
 
-        this.setAttribute("is-open", "true");
+
+        
         setTimeout(() => {
-          this.removeAttribute("is-open");
-          this._message.textContent = "";
+          this._message.textContent = ""
         }, 3000);
 
       } else if (this._sectionTo.name == "NEW") {
@@ -263,7 +267,7 @@ export class MediaMoveDialog extends ModalDialog {
             this.dispatchEvent(new Event("reload"));
 
             // Reset values
-            this._moveEnum._select.value = "Select a section";
+            this._moveEnum._select.value = "Select a folder";
             this._newNameInput.value = ""; // reset form
             
             // get the new section fetch call
@@ -285,6 +289,7 @@ export class MediaMoveDialog extends ModalDialog {
                 "Was not able to get the new section data."
               )
             } else {
+              this.dispatchEvent(new CustomEvent("new-section", { detail: { section: data }}));
               //then
               this._moveEnum.dispatchEvent(new CustomEvent("move", {
                 detail: { to: JSON.stringify(data), message: respJSON.message },

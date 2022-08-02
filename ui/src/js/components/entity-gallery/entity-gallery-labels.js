@@ -76,7 +76,7 @@ export class EntityGalleryLabels extends TatorElement {
 
     // Main labels box
     let labelsMain = document.createElement("div");
-    labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
+    labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
     if(!hideTypeName){
       let _title = document.createElement("div");

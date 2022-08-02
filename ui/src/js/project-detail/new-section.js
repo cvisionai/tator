@@ -18,7 +18,7 @@ export class NewSection extends UploadElement {
 
     const span = document.createElement("span");
     span.setAttribute("class", "clickable");
-    span.textContent = "+ New Section";
+    span.textContent = "+ New Folder";
     h2.appendChild(span);
 
     const div = document.createElement("div");

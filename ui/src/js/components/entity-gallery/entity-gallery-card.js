@@ -611,8 +611,6 @@ export class EntityCard extends TatorElement {
     } else {
       this.resetValues();
     }
-
-
   }
 
   get media() {
@@ -1008,13 +1006,24 @@ export class EntityCard extends TatorElement {
   }
 
   resetValues() {
+    // Link reset
     this._name.style.opacity = 0.35;
     this._link.style.opacity = 0.35;
     // this._name.style.cursor = "not-allowed";
     // this._link.style.cursor = "not-allowed";
     this._link.setAttribute("href", "#");
     this._name.removeAttribute("href");
-    this.setAttribute("duration", null);
+
+    // Other data reset
+    this._duration.textContent = "";
+    this._attachmentButton.style.display = "none";
+    this._archiveEmblem.style.display = "none";
+    this._archiveUpEmblem.style.display = "none";
+    this._archiveDownEmblem.style.display = "none";
+
+    // TODO - the above are set on media these are note, clear diff time?
+    // this._ext.hidden = true;
+    // this._pos_text.textContent = "";
   }
 
   handleDragStart(e) {

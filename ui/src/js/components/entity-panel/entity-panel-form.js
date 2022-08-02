@@ -1,5 +1,4 @@
 import { TatorElement } from "../tator-element.js";
-import { AttributePanel } from "../../annotation/attribute-panel.js";
 
 export class EntityGalleryPanelForm extends TatorElement {
   constructor() {
@@ -129,9 +128,7 @@ export class EntityGalleryPanelForm extends TatorElement {
           this._modalNotify.init("Success!", `${result}`, "ok", "ok", false)
         }).catch(err => {
           console.error("Error deleting localization entity.", err);
-        })
-
-      })
+        });
     });
   }
 

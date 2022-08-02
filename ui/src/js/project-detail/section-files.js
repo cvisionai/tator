@@ -163,6 +163,8 @@ export class SectionFiles extends TatorElement {
         console.log("this.multiEnabled "+this.multiEnabled)
 
         // If we're still in multiselect.. check if this card should be toggled...
+        console.log(`if ${(this.multiEnabled)} this._addToBulkEditSelected(entityType, card, cardObj)`);
+        console.log(`if (this.multiEnabled) ${this._addToBulkEditSelected(entityType, card, cardObj)}`);
         if (this.multiEnabled) this._addToBulkEditSelected(entityType, card, cardObj);
 
         // this is data used later by label chooser, and bulk edit
@@ -207,6 +209,7 @@ export class SectionFiles extends TatorElement {
     const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
 
     if (typeof selectedArray !== "undefined" && Array.isArray(selectedArray) && selectedArray.includes(cardObj.id)) {
+      console.log("TEST")
       this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
     } 
   }

@@ -48,7 +48,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       this._bulkEditBar.appendChild(barMiddleTop);
 
       let barRightTop = document.createElement("div");
-      barRightTop.setAttribute("class", "col-4 d-flex")
+      barRightTop.setAttribute("class", "col-4")
       this._bulkEditBar.appendChild(barRightTop);
 
       // let barLeft = document.createElement("div");
@@ -167,6 +167,16 @@ export class MultiAttributeEditPanel extends TatorElement {
       this._editButton.disabled = true;
       this._editButton.appendChild(this._selectionSummary);
       barRightTop.appendChild(this._editButton);
+
+
+      // Other tools
+      this._otherTools = document.createElement("div");
+      this._otherTools.setAttribute("class", "mt-3");
+      // this._otherTools.hidden = true;
+      barRightTop.appendChild(this._otherTools);
+
+      // const otherToolsText = document.createTextNode("Other tools:");
+      // this._otherTools.appendChild(otherToolsText);
 
       // this._continueToSelect = document.createElement("button");
       // this._continueToSelect.setAttribute("class", "btn btn-clear py-2 col-12 disabled")

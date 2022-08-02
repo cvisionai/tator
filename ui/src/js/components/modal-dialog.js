@@ -58,6 +58,31 @@ export class ModalDialog extends TatorElement {
         break;
     }
   }
+
+  fadeOut(timeOut = 2000) {
+    this._div.style.opacity = 1;
+    const opacityTurnDown = () => {
+      const currentOpacity = this._div.style.opacity;
+      this._div.style.opacity = currentOpacity * .5;
+    }
+
+    const startFade = setInterval(opacityTurnDown, 200);
+
+    // const closeOut = () => {
+    //   this._closeCallback();
+    //   clearInterval(startFade);
+    //   this._div.style.opacity = 1;
+    //   console.log("Closed out");
+    // };
+    
+    setTimeout(() => {
+        this._closeCallback();
+        clearInterval(startFade);
+        this._div.style.opacity = 1;
+        console.log("Closed out");
+      }, timeOut)
+  }
+
 }
 
 if (!customElements.get("modal-dialog")) {

@@ -52,16 +52,6 @@ export class GalleryBulkEdit extends TatorElement {
       this._selectionPanel.addEventListener("select-all", this.selectAllOnPage.bind(this));
       // this._bulkEditBar.appendChild(this._selectionPanel);
 
-
-      // Other tools
-      this._otherTools = document.createElement("div");
-      this._otherTools.setAttribute("class", "d-flex flex-row");
-      this._otherTools.hidden = true;
-      this._selectionPanel._shadow.appendChild(this._otherTools);
-      
-      // const otherToolsText = document.createTextNode("Other tools:");
-      // this._otherTools.appendChild(otherToolsText);
-
       // Edit panel
       this._editPanel = document.createElement("entity-gallery-multi-attribute-edit-panel");
       this._editPanel.addEventListener("select-click", this._showSelectionPanel.bind(this)); // Back

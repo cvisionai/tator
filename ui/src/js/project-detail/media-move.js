@@ -6,30 +6,30 @@ export class MediaMove extends TatorElement {
     super();
 
     const div = document.createElement("div");
-    div.setAttribute("class", "px-4 py-3");
+    div.setAttribute("class", "py-3");
     this._shadow.appendChild(div);
 
     const label = document.createElement("label");
     label.setAttribute("class", "position-relative");
     div.appendChild(label);
 
-    const span = document.createElement("span");
-    span.setAttribute("class", "d-flex py-2 f3 text-uppercase text-gray");
-    span.textContent = "Move to:";
-    label.appendChild(span);
+    // const span = document.createElement("span");
+    // span.setAttribute("class", "d-flex py-2 f3 text-uppercase text-gray");
+    // span.textContent = "Move to:";
+    // label.appendChild(span);
 
     this._select = document.createElement("select");
     this._select.setAttribute("class", "form-select select-sm col-12");
     label.appendChild(this._select);
 
-    const option = document.createElement("option");
-    option.setAttribute("selected", "");
-    option.setAttribute("disabled", "");
-    option.textContent = "Select a section";
-    this._select.appendChild(option);
+    this._none = document.createElement("option");
+    this._none.setAttribute("selected", "");
+    this._none.setAttribute("disabled", "");
+    this._none.textContent = "Select a folder";
+    this._select.appendChild(this._none);
 
     this._new = document.createElement("option");
-    this._new.textContent = "+ New Section";
+    this._new.textContent = "+ New Folder";
     this._select.appendChild(this._new);
 
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -46,8 +46,8 @@ export class MediaMove extends TatorElement {
     svg.appendChild(path);
 
     this._select.addEventListener("change", evt => {
-      const isReset = evt.target.value === "Select a section";
-      const isNew = evt.target.value === "+ New Section";
+      const isReset = evt.target.value === "Select a folder";
+      const isNew = evt.target.value === "+ New Folder";
       if (isNew) {
         this.dispatchEvent(new Event("moveToNew", {composed: true}));
       } else if (!isReset) {
@@ -55,7 +55,7 @@ export class MediaMove extends TatorElement {
           detail: {to: evt.target.value},
           composed: true
         }));
-        this._select.value = "Select a section";
+        this._select.value = "Select a folder";
       }
       
     });
@@ -73,8 +73,8 @@ export class MediaMove extends TatorElement {
       }
     }
     for (const option of options) {
-      const isReset = option.value === "Select a section";
-      const isNew = option.value === "+ New Section";
+      const isReset = option.value === "Select a folder";
+      const isNew = option.value === "+ New Folder";
       if (isReset || isNew) {
         continue;
       }
