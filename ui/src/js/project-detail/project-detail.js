@@ -429,15 +429,6 @@ export class ProjectDetail extends TatorPage {
               } else {
                 this._archivedFolders.appendChild(card);
               }
-              
-              // Notifiy media section about section renames
-              card.addEventListener("renameSection", (evt) => {
-                this._mediaSection.dispatchEvent(new CustomEvent("renameSection", evt.details));
-              });
-              card.addEventListener("deleteSection", (evt) => {
-                this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.details ));
-              });
-
               //
               card.addEventListener("click", () => {
                 const clearPage = true;
@@ -447,17 +438,20 @@ export class ProjectDetail extends TatorPage {
                 }
                 card.active = true;
               });
+
               card.addEventListener("visibilityChange", this._sectionVisibilityEL.bind(this));
+
             } else if (newSectionDialog._sectionType == "savedSearch") {
               card.sectionInit(sectionObj, "savedSearch");
               this._savedSearches.appendChild(card);
 
               // Notifiy media section about section renames
               card.addEventListener("renameSection", (evt) => {
-                this._mediaSection.dispatchEvent(new CustomEvent("renameSection", evt.details));
+                console.log(evt);
+                this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
               });
               card.addEventListener("deleteSection", (evt) => {
-                this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.details ));
+                this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.detail));
               });
 
               card.addEventListener("click", () => {
@@ -564,10 +558,10 @@ export class ProjectDetail extends TatorPage {
         }
       }
       this._bulkEdit._clearSelection();
-      
+
       deleteSection.removeAttribute("is-open");
       this.removeAttribute("has-open-modal", "");
-      
+
     });
 
     this._deleteFileCallback = evt => {
@@ -675,10 +669,11 @@ export class ProjectDetail extends TatorPage {
     });
     // Notifiy media section about section renames
     card.addEventListener("renameSection", (evt) => {
-      this._mediaSection.dispatchEvent(new CustomEvent("renameSection", evt.details));
+      console.log(evt);
+      this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
     });
     card.addEventListener("deleteSection", (evt) => {
-      this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.details ));
+      this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.detail));
     });
     card.addEventListener("click", () => {
       const clearPage = true;
@@ -862,7 +857,7 @@ export class ProjectDetail extends TatorPage {
             // this._search.autocomplete = project.filter_autocomplete;
 
             let projectParams = null;
-            
+
             // Home folder
             const home = document.createElement("entity-card");
             home.sectionInit(null, false);
@@ -943,7 +938,7 @@ export class ProjectDetail extends TatorPage {
                   this._addSavedSearchButton.style.cursor = "pointer";
                 }
 
- 
+
                 // used to setup filter options & string utils
                 this._mediaSection._modelData = this._modelData;
                 this._mediaSection._files.memberships = this._modelData._memberships;
@@ -1181,40 +1176,55 @@ export class ProjectDetail extends TatorPage {
   }
 
   _makeFolders(sections, projectId) {
-      for (const section of sections) {
-        const hasSection = Boolean(section.tator_user_sections);
-        const hasSearch = (Boolean(section.lucene_search)
-          || Boolean(section.media_bools)
-          || Boolean(section.annotation_bools));
-        let sectionType;
-        if (hasSection && !hasSearch) {
-          sectionType = "folder";
-        } else {
-          sectionType = "savedSearch";
-        }
-        const card = document.createElement("entity-card");
-        card.sectionInit(section, sectionType);
-        if (sectionType == "folder") {
-          if (section.visible) {
-            this._folders.appendChild(card);
-          } else {
-            this._archivedFolders.appendChild(card);
-          }
-          card.addEventListener("visibilityChange", evt => {
-            this._sectionVisibilityEL(evt)
-          });
-        } else {
-          this._savedSearches.appendChild(card);
-        }
-        card.addEventListener("click", () => {
-          const clearPage = true;
-          this._selectSection(section, projectId, clearPage);
-          for (const child of this._allSections()) {
-            child.active = false;
-          }
-          card.active = true;
-        });
+    for (const section of sections) {
+      const hasSection = Boolean(section.tator_user_sections);
+      const hasSearch = (Boolean(section.lucene_search)
+        || Boolean(section.media_bools)
+        || Boolean(section.annotation_bools));
+      let sectionType;
+      if (hasSection && !hasSearch) {
+        sectionType = "folder";
+      } else {
+        sectionType = "savedSearch";
       }
+      const card = document.createElement("entity-card");
+      // Notifiy media section about section renames
+      card.addEventListener("renameSection", (evt) => {
+        console.log("HEARD RENAME SECTION!")
+        const clearPage = true;
+        this._selectSection(evt.detail.section, evt.detail.section.project, clearPage);
+        for (const child of this._allSections()) {
+          child.active = false;
+        }
+        card.active = true;
+        this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
+      });
+      card.addEventListener("deleteSection", (evt) => {
+        this._mediaSection.dispatchEvent(new CustomEvent("deleteSection", evt.detail));
+      });
+
+      card.sectionInit(section, sectionType);
+      if (sectionType == "folder") {
+        if (section.visible) {
+          this._folders.appendChild(card);
+        } else {
+          this._archivedFolders.appendChild(card);
+        }
+        card.addEventListener("visibilityChange", evt => {
+          this._sectionVisibilityEL(evt)
+        });
+      } else {
+        this._savedSearches.appendChild(card);
+      }
+      card.addEventListener("click", () => {
+        const clearPage = true;
+        this._selectSection(section, projectId, clearPage);
+        for (const child of this._allSections()) {
+          child.active = false;
+        }
+        card.active = true;
+      });
+    }
   }
 
   reloadSections() {

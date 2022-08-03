@@ -861,10 +861,16 @@ export class EntityCard extends TatorElement {
       context.appendChild(deleteSection);
 
       rename.addEventListener("click", evt => {
-        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "folder"} }));
+        evt.stopPropagation();
+        console.log("renameSection CLICK 22");
+        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "folder", section: this._section} }));
+        context.style.display = "none";
       });
       deleteSection.addEventListener("click", evt => {
-        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "folder"} }));
+        evt.stopPropagation();
+        console.log("deleteSection CLICK 22");
+        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "folder", section: this._section } }));
+        context.style.display = "none";
       });
 
       archiveToggle.addEventListener("click", evt => {
@@ -930,11 +936,16 @@ export class EntityCard extends TatorElement {
       context.appendChild(deleteSection);
 
       rename.addEventListener("click", evt => {
-        // console.log("HEARD THE CLICK");
-        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "saved search"} }));
+        console.log("rename CLICK");
+        evt.stopPropagation();
+        this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "saved search", section: this._section} }));
+        context.style.display = "none";
       });
       deleteSection.addEventListener("click", evt => {
-        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "saved search"} }));
+        console.log("deleteSection CLICK");
+        evt.stopPropagation();
+        this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "saved search", section: this._section } }));
+        context.style.display = "none";
       });
 
       this.addEventListener("contextmenu", evt => {

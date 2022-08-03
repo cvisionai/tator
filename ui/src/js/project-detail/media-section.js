@@ -313,12 +313,12 @@ export class MediaSection extends TatorElement {
     });
   }
 
-  reload() {
+  async reload() {
     console.log("Reload media section...");
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
-    return fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
+    const response = await fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -326,12 +326,11 @@ export class MediaSection extends TatorElement {
         "Accept": "application/json",
         "Content-Type": "application/json"
       }
-    })
-      .then(response => response.json())
-      .then(count => this.numMedia = count)
-      .then(() => {
-        return this._loadMedia();
-      });
+    });
+    const count = await response.json();
+    this.numMedia = count;
+
+    return await this._loadMedia();
   }
 
   _launchAlgorithm(evt) {
@@ -653,10 +652,12 @@ export class MediaSection extends TatorElement {
   }
 
   _rename(evt) {
+    console.log(this._section);
     if (this._name.contains(this._nameText)) {
       const input = document.createElement("input");
-      input.setAttribute("class", "form-control input-sm f1");
-      input.setAttribute("value", this._sectionName);
+      input.style.borderWidth = "3px";
+      input.setAttribute("class", "form-control input-sm f1 text-white text-bold");
+      input.setAttribute("value", this._section.name);
       this._name.replaceChild(input, this._nameText);
       input.addEventListener("focus", evt => {
         evt.target.select();
@@ -676,6 +677,7 @@ export class MediaSection extends TatorElement {
           //});
           this._sectionName = evt.target.value;
         }
+        console.log(this._section);
         fetch("/rest/Section/" + this._section.id, {
           method: "PATCH",
           credentials: "same-origin",
@@ -691,6 +693,12 @@ export class MediaSection extends TatorElement {
         this._nameText.textContent = this._sectionName;
         this._section.name = this._sectionName;
         this._name.replaceChild(this._nameText, evt.target);
+
+        this._name.classList.add("text-green");
+        setTimeout(() => {
+          this._name.classList.remove("text-green");
+        }, 800)
+        
         this.dispatchEvent(new CustomEvent("newName", {
           detail: {
             id: this._section.id,
@@ -723,7 +731,8 @@ export class MediaSection extends TatorElement {
 
     this._more.addEventListener("rename", this._rename.bind(this));
 
-    this.addEventListener("renameSection", this._rename.bind(this));
+    // New right click options
+    this.addEventListener("renameSection", this._reloadAndRename.bind(this));
     this.addEventListener("deleteSection", (evt) => {
       console.log(evt);
       this.dispatchEvent(new CustomEvent("remove", {
@@ -920,6 +929,12 @@ export class MediaSection extends TatorElement {
     } else {
       return [];
     }
+  }
+  async _reloadAndRename(evt) {
+    console.log(evt);
+    // this.section = evt.detail.section;
+    // await this.reload();
+    this._rename();
   }
 }
 
