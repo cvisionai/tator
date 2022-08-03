@@ -140,7 +140,7 @@ export class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         const searchParams = new URLSearchParams(window.location.search);
-        fetch(`/rest/Media/${newValue}?presigned=28800`, {
+        fetchRetry(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -183,7 +183,7 @@ export class AnnotationPage extends TatorPage {
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
 
-          fetch("/rest/MediaType/" + data.meta, {
+          fetchRetry("/rest/MediaType/" + data.meta, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -316,7 +316,7 @@ export class AnnotationPage extends TatorPage {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
           });
-          const nextPromise = fetch(`/rest/MediaNext/${newValue}${window.location.search}`, {
+          const nextPromise = fetchRetry(`/rest/MediaNext/${newValue}${window.location.search}`, {
             method: "GET",
             headers: {
               "X-CSRFToken": getCookie("csrftoken"),
@@ -324,7 +324,7 @@ export class AnnotationPage extends TatorPage {
               "Content-Type": "application/json",
             }
           });
-          const prevPromise = fetch(`/rest/MediaPrev/${newValue}${window.location.search}`, {
+          const prevPromise = fetchRetry(`/rest/MediaPrev/${newValue}${window.location.search}`, {
             method: "GET",
             headers: {
               "X-CSRFToken": getCookie("csrftoken"),
@@ -391,7 +391,7 @@ export class AnnotationPage extends TatorPage {
             }
           })
           .catch(err => console.log("Failed to fetch adjacent media! " + err));
-          fetch("/rest/Project/" + data.project, {
+          fetchRetry("/rest/Project/" + data.project, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -764,7 +764,7 @@ export class AnnotationPage extends TatorPage {
       mediaId = subelement_id;
     }
     const query = "?media_id=" + mediaId;
-    const favoritePromise = fetch("/rest/Favorites/" + projectId, {
+    const favoritePromise = fetchRetry("/rest/Favorites/" + projectId, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -773,7 +773,7 @@ export class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
-    const versionPromise = fetch("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
+    const versionPromise = fetchRetry("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -782,7 +782,7 @@ export class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
-    const membershipPromise = fetch(`/rest/Memberships/${projectId}`, {
+    const membershipPromise = fetchRetry(`/rest/Memberships/${projectId}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -793,7 +793,7 @@ export class AnnotationPage extends TatorPage {
     });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
-      return fetch(url, {
+      return fetchRetry(url, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -1227,7 +1227,7 @@ export class AnnotationPage extends TatorPage {
     });
 
     const projectId = Number(this.getAttribute("project-id"));
-    fetch("/rest/Applets/" + projectId, {
+    fetchRetry("/rest/Applets/" + projectId, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -1798,7 +1798,7 @@ export class AnnotationPage extends TatorPage {
     const uri = `${window.location.pathname}${window.location.search}`;
     const name = "Last visited";
     // Get the last visited, if it exists.
-    fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
+    fetchRetry(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -1822,7 +1822,7 @@ export class AnnotationPage extends TatorPage {
         });
       } else {
         const id = data[0].id;
-        fetch(`/rest/Bookmark/${id}`, {
+        fetchRetry(`/rest/Bookmark/${id}`, {
           method: "PATCH",
           credentials: "same-origin",
           headers: {
