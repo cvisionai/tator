@@ -112,7 +112,7 @@ export class VideoDownloader
     {
       let info_url = this._media_files[buf_idx].segment_info;
       const info = new Request(info_url, {headers:this._headers});
-      init_promises.push(fetch(info));
+      init_promises.push(fetchRetry(info));
     }
     Promise.all(init_promises).then((responses) => {
       for (let buf_idx = 0; buf_idx < responses.length; buf_idx++)
@@ -540,7 +540,7 @@ export class VideoDownloader
     let headers = {'range':`bytes=${startByte}-${startByte+downloadSize}`,
                    ...self._headers};
 
-    fetch(this._media_files[mediaFileIndex].path,
+    fetchRetry(this._media_files[mediaFileIndex].path,
           {headers: headers}
          ).then(
           (response) =>
@@ -731,7 +731,7 @@ export class VideoDownloader
     let headers = {'range':`bytes=${startByte}-${startByte+currentSize-1}`,
                    ...self._headers};
     var that = this;
-    fetch(this._media_files[buf_idx].path,
+    fetchRetry(this._media_files[buf_idx].path,
           {headers: headers}
          ).then(
            (response) =>

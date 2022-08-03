@@ -3,6 +3,7 @@ import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
 import { handle_video_error, PlayInteraction } from "./annotation-common.js";
+import { fetchRetry } from "../util/fetch-retry.js";
 
 export class AnnotationMulti extends TatorElement {
   constructor() {
@@ -937,7 +938,7 @@ export class AnnotationMulti extends TatorElement {
       }
       this._videos.push(roi_vid);
       wrapper_div.appendChild(roi_vid);
-      video_resp.push(fetch(`/rest/Media/${vid_id}?presigned=28800`));
+      video_resp.push(fetchRetry(`/rest/Media/${vid_id}?presigned=28800`));
       this._handleNotReadyTimeout.push(null);
       this._timeoutIndex.push(0);
 
