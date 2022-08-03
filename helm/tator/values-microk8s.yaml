@@ -3,8 +3,7 @@
 # are installing Tator in a VM.
 domain: &domain <Insert static IP or domain>
 # These domains will work the same way as the primary domain.
-aliases:
-   - domain: localhost # Enables localhost to work for port unit test.
+#aliases:
 #  - domain: alias.duckdns.org
 #    # Key filename that will be used in secret for this domain.
 #    tlsKeyFile: alias_key.key
