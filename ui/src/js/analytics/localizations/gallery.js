@@ -249,7 +249,8 @@ export class AnnotationsGallery extends EntityCardGallery {
       card.init({
         obj: cardObj,
         panelContainer : this.panelContainer,
-        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
+        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
+        memberships: this.modelData._memberships
       });
 
       this._currentCardIndexes[cardObj.id] = index;

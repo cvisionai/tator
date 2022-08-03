@@ -10,6 +10,12 @@ export class EntityCard extends TatorElement {
   constructor() {
     super();
 
+    // Built ins
+    this.builtIns = ["id", "modified_by", "modified_datetime",  "created_datetime", "type"];
+    this.builtIns_MediaOnly = ["created_by"];
+    this.builtIns_LocOnly = ["frame"];
+    this._type = null;
+
     // List element (card)
     this._li = document.createElement("li");
     this._li.setAttribute("class", "entity-card rounded-2 clickable");
@@ -221,7 +227,7 @@ export class EntityCard extends TatorElement {
     });
 
     this._more.addEventListener("delete", evt => {
-      console.log(this);
+      // console.log(this);
       this.dispatchEvent(new CustomEvent("deleteFile", {
         detail: {
           mediaId: this.getAttribute("media-id"),
@@ -342,7 +348,7 @@ export class EntityCard extends TatorElement {
 
 
 
-  init({ obj, panelContainer = null, cardLabelsChosen = null, enableMultiselect = false, idx = null, mediaInit = false }) {
+  init({ obj, panelContainer = null, cardLabelsChosen = null, enableMultiselect = false, idx = null, mediaInit = false, memberships = null }) {
     //
     // this.resetAll();
 
@@ -352,6 +358,7 @@ export class EntityCard extends TatorElement {
     this.multiEnabled = enableMultiselect;
     this._idx = idx;
     this._mediaInit = mediaInit;
+    this._type = mediaInit ? "media" : "localization"; // Section set in different init
 
     if (this._idx !== null) {
       // console.log(`Tab index ${this._idx}`);
@@ -385,17 +392,30 @@ export class EntityCard extends TatorElement {
       this.setAttribute("pos-text", obj.posText);
     }
 
+    this._membershipMap = new Map();
+    if (memberships !== null) {
+      console.log(memberships);
+      for (let member of memberships) {
+        this._membershipMap.set(member.id, member.username)
+      }
+    }
+
 
     /**
      * Attributes hidden on card are controlled by outer menu 
     */
-    if (obj.attributeOrder && obj.attributeOrder.length > 0) {
+    let attrList = [...obj.attributeOrder, ...this.builtIns];
+    if (this._type == "localization") attrList = [...attrList, ...this.builtIns_LocOnly];
+    if (this._type == "media") attrList = [...attrList, ...this.builtIns_MediaOnly];
+    if (attrList && attrList.length > 0) {
       // console.log("Setting up labels on card with this data:");
       // console.log(obj);
       // Clear this in case of reuse / re-init
       this.attributesDiv.innerHTML = "";
+      console.log("This type: " + this._type);
+      console.log(obj);
 
-      for (const attr of obj.attributeOrder) {
+      for (const attr of attrList) {
         let attrStyleDiv = document.createElement("div");
         attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
 
@@ -403,12 +423,32 @@ export class EntityCard extends TatorElement {
         attrLabel.setAttribute("class", "f3 text-gray text-normal");
         attrStyleDiv.appendChild(attrLabel);
 
-        let key = attr.name;
-        if (obj.attributes !== null && typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== "") {
-          attrLabel.appendChild(document.createTextNode(`${obj.attributes[key]}`));
+        let key;
+        if (typeof attr == "string") {
+          key = attr;
+          if (typeof obj[this._type][key] !== null && obj[key] !== "" && key !== "type") {
+            if (key.indexOf("_by") > -1 && this._membershipMap.has(Number(obj[this._type][key]))) {
+              // It is a user ID lookup
+              const username = this._membershipMap.get(Number(obj[this._type][key]));
+              attrLabel.appendChild(document.createTextNode(`${username}`));
+            } else {
+              attrLabel.appendChild(document.createTextNode(`${obj[this._type][key]}`));
+            }
+            
+          } else if(key === "type" && typeof obj.entityType["dtype"] !== null && obj.entityType["dtype"] !== "") {
+            attrLabel.appendChild(document.createTextNode(`${obj.entityType["dtype"]}`));
+          } else {
+            attrLabel.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+          }
         } else {
-          attrLabel.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+          key = attr.name;
+          if (obj.attributes !== null && typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== "") {
+            attrLabel.appendChild(document.createTextNode(`${obj.attributes[key]}`));
+          } else {
+            attrLabel.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+          }
         }
+ 
 
         // add to the card & keep a list
         this.attributeDivs[key] = {};
@@ -428,6 +468,8 @@ export class EntityCard extends TatorElement {
 
         this.attributesDiv.appendChild(attrStyleDiv);
       }
+
+ 
 
       if (this.attributeDivs) {
         // Show description div
@@ -649,18 +691,15 @@ export class EntityCard extends TatorElement {
   }
 
   togglePanel(e) {
-    console.log("TOGGLE CARD ");
-    console.log(this._multiEnabled);
-
-    console.log("Toggle panel");
+    // console.log("Toggle panel");
     if (this._link.hasAttribute("href") && this._link.getAttribute("href") !== "#" && !this._multiEnabled) {
       // follow the link...
-      console.log("SKIP");
+      // console.log("SKIP");
       return false;
     } else {
       // otherwise do some panel, or multi stuff don't go # 
       e.preventDefault();
-      console.log("ELSE: Panel stuff.......");
+      // console.log("ELSE: Panel stuff.......");
 
       if (this._multiEnabled) {
         this._multiSelectionToggle = true;
@@ -763,6 +802,7 @@ export class EntityCard extends TatorElement {
     this._li.classList.add("section");
     this._li.classList.remove("entity-card");
     this._sectionInit = true;
+    this._type = "section";
 
     if (section === null) {
       this._title.textContent = "All Media";
@@ -1028,11 +1068,11 @@ export class EntityCard extends TatorElement {
 
   handleDragStart(e) {
     // evt.preventDefault();
-    console.log("Drag start: Trying to drag this file?");
+    // console.log("Drag start: Trying to drag this file?");
     this.dispatchEvent(new Event("card-moving"));
 
     //
-    console.log(this.cardObj);
+    // console.log(this.cardObj);
     const data = this.cardObj;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData("text/plain", JSON.stringify(data));

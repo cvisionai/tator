@@ -64,10 +64,10 @@ export class EntityGalleryLabels extends TatorElement {
    * @param {typeData} - object
    *
   */
-  async add({ typeData, hideTypeName = false, checkedFirst = null }) {
+  async add({ typeData, hideTypeName = false, checkedFirst = null, customBuiltIns = [] }) {
     // console.log(typeData);
     let typeName = typeData.name ? typeData.name : "";
-    if(this._shownTypes[typeData.id] || typeData.visible == false || typeData.attribute_types.length == 0) {
+    if(this._shownTypes[typeData.id] || typeData.visible == false) {
       // don't re-add this type, or don't add if visible=false...
       return false;
     } else {
@@ -111,7 +111,7 @@ export class EntityGalleryLabels extends TatorElement {
      * Label Choice
      */
     // If ok, create the checkbox list
-    const checkboxList = this.makeListFrom(typeData, checkedFirst);
+    const checkboxList = this.makeListFrom(typeData, checkedFirst, customBuiltIns);
 
     const selectionBoxes = document.createElement("checkbox-set");
     selectionBoxes._colSize = "py-1 pr-2";
@@ -169,7 +169,7 @@ export class EntityGalleryLabels extends TatorElement {
    * - - @param name : string, attr.name
    * - - @param checked : boolean
   */
-  makeListFrom(typeData, checkedFirst) {
+  makeListFrom(typeData, checkedFirst, customBuiltIns) {
     this.newList = [];
     let tmpArray = [...typeData.attribute_types];
 
@@ -179,25 +179,50 @@ export class EntityGalleryLabels extends TatorElement {
     for (let attr of typeData.attribute_types) {
       if (attr.order >= 0) {
         nonHiddenAttrs.push(attr);
-      }
-      else {
+      } else {
         hiddenAttrs.push(attr);
       }
     }
 
+    // for (let [name, value] of Object.entries(typeData)) {
+    //   if(name !== "attribute_types") {
+        
+    //   }
+    // }
+
     // Show array by order, or alpha
-    const sorted = nonHiddenAttrs.sort((a, b) => {
+    // Should hidden be shown?
+    const sorted = [...nonHiddenAttrs, ...hiddenAttrs].sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
 
-    sorted.push(...hiddenAttrs);
+    // Built ins used by Media or Localizations
+    sorted.push({ name: "ID", id: "id" });
+    sorted.push({ name: "Modified By", id: "modified_by" });
+    sorted.push({ name: "Modified Datetime", id: "modified_datetime" });
+    sorted.push({ name: "Created Datetime", id: "created_datetime" });
+    sorted.push({ name: "Type", id: "type" });
+
+    // Built ins for some types only #todo
+    // if (TODO == "localization") {
+    //   sorted.push({ name: "Frame", id: "frame" });
+    // }
+    // if (TODO == "media") {
+    //   sorted.push({ name: "Created By", id: "created_by" });
+    // }
+
+    if (customBuiltIns) {
+      for (const bi of customBuiltIns) {
+        sorted.push({ name: bi.name, id: `${bi.id}` });
+      }
+    }
 
     // Create an array for checkbox set el
     // console.log("checkedFirst "+checkedFirst)
     let checkedValue = checkedFirst == null ? false : checkedFirst;
     for (let attr of sorted) {
       this.newList.push({
-        id: encodeURI(attr.name),
+        id: (attr.id || encodeURI(attr.name)),
         name: attr.name,
         checked: checkedValue
       });
@@ -205,6 +230,8 @@ export class EntityGalleryLabels extends TatorElement {
       // reset checked - only check the first one
       checkedValue = false;
     }
+    console.log(this.newList);
+
     return this.newList;
   }
 }

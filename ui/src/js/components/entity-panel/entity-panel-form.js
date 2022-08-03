@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { AttributePanel } from "../../annotation/attribute-panel.js";
 
 export class EntityGalleryPanelForm extends TatorElement {
   constructor() {
@@ -58,6 +59,7 @@ export class EntityGalleryPanelForm extends TatorElement {
   _init({ data, attributePanelData, associatedMedia, allowDelete = false }) {
     if (data.entityType) data.entityType.isTrack = false;
     this._attributes.dataType = data.entityType;
+    console.log(this._attributes);
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);
     this._attributes.displayGoToLocalization(false);
@@ -69,7 +71,7 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._data = data;
 
     if (allowDelete) {
-      this._removeEntity.init(`Delete ${this._data.entityType.name} ID: ${this._data.id}`, "text-red");
+      this._removeEntity.init(`Delete ${this._data.entityType.name} ID: ${this._data.id}`, "text-gray");
       this._lowerDiv.hidden = false;
     }
 

@@ -31,6 +31,10 @@ export class SectionFiles extends TatorElement {
     this._bulkEdit = val;
   }
 
+  set memberships(val) {
+    this._memberships = val;
+  }
+
   set cardAtributeLabels(val) {
     this._cardAttributeLabels = val;
   }
@@ -71,7 +75,6 @@ export class SectionFiles extends TatorElement {
   _makeCards(cardInfo) {
     const hasAlgorithms = typeof this._algorithms !== "undefined";
     const hasProject = this.hasAttribute("project-id");
-    console.log("MAKE CARDS");
 
     if (hasAlgorithms && hasProject) {
       const children = this._ul.children;
@@ -97,7 +100,6 @@ export class SectionFiles extends TatorElement {
 
 
         if (newCard) {
-          console.log("NEW CARD");
           card = document.createElement("entity-card");
 
           // Only do these once
@@ -131,13 +133,13 @@ export class SectionFiles extends TatorElement {
 
           // When bulk edit changes tell the card
           this._bulkEdit.addEventListener("multi-enabled", () => {
-            console.log("multi-enabled heard in section files");
+            // console.log("multi-enabled heard in section files");
             card.multiEnabled = true;
             this.multiEnabled = true;
           });
 
           this._bulkEdit.addEventListener("multi-disabled", () => {
-            console.log("multi-disabled heard in section files");
+            // console.log("multi-disabled heard in section files");
             card.multiEnabled = false;
             this.multiEnabled = false;
           });
@@ -148,34 +150,35 @@ export class SectionFiles extends TatorElement {
 
         // Setup attributes, and order for label options
         cardObj.attributes = media.attributes;
-        console.log(entityType.attribute_types);
-        console.log(this.getCardLabelOptions(entityType.attribute_types));
         cardObj.attributeOrder = this.getCardLabelOptions(entityType.attribute_types); //cardLabelOptions;
-
-
-
 
         // Set in this order:mediaParams utilized to make a URL in set media()
         card.mediaParams = this._mediaParams();
         card.media = media;
         card.posText = `(${this._startMediaIndex + index + 1} of ${this._numMedia})`;
         card.multiEnabled = this.multiEnabled;
-        console.log("this.multiEnabled "+this.multiEnabled)
+        // console.log("this.multiEnabled "+this.multiEnabled)
 
         // If we're still in multiselect.. check if this card should be toggled...
-        console.log(`if ${(this.multiEnabled)} this._addToBulkEditSelected(entityType, card, cardObj)`);
-        console.log(`if (this.multiEnabled) ${this._addToBulkEditSelected(entityType, card, cardObj)}`);
-        if (this.multiEnabled) this._addToBulkEditSelected(entityType, card, cardObj);
+        if (this.multiEnabled) {
+          const selectedSet = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
+          // console.log(selectedSet);
+
+          if (typeof selectedSet !== "undefined" && selectedSet.has(cardObj.id)) {
+            this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
+          } 
+        }
 
         // this is data used later by label chooser, and bulk edit
-        console.log("BEFORE INIT!")
-        console.log(cardObj.attributeOrder);
+        console.log("this._memberships");
+        console.log(this._memberships);
         card.init({
           obj: cardObj,
           idx: index,
           mediaInit: true,
           cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
-          enableMultiselect: this.multiEnabled
+          enableMultiselect: this.multiEnabled,
+          memberships: this._memberships
         });
 
        // make reference lists / object
@@ -206,12 +209,7 @@ export class SectionFiles extends TatorElement {
   }
 
   _addToBulkEditSelected(entityType, card, cardObj) {
-    const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
 
-    if (typeof selectedArray !== "undefined" && Array.isArray(selectedArray) && selectedArray.includes(cardObj.id)) {
-      console.log("TEST")
-      this._bulkEdit._addSelected({ element: card, id: cardObj.id, isSelected: true })
-    } 
   }
 
 
@@ -227,7 +225,6 @@ export class SectionFiles extends TatorElement {
   }
 
   updateShown(evt, card) {
-    console.log("UPDATE SHOWN");
     if (card.cardObj.entityType.id == evt.detail.typeId) {
       card._updateShownAttributes(evt);
     }

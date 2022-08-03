@@ -102,6 +102,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
+    
 
     // this.panelControls._headingText.innerHTML = `Select Attributes`;
 
@@ -308,7 +309,8 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
         idx: index,
         obj: cardObj,
         panelContainer : this.panelContainer,
-        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
+        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
+        memberships: this.modelData._memberships
       });
 
       const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);

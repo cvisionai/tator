@@ -875,81 +875,83 @@ export class ProjectDetail extends TatorPage {
             });
             this._folders.appendChild(home);
 
-            // Sorts sections into Folder (archive/not), and Saved Search
-            this._makeFolders(sections, projectId);
-
-            // Put "Last visited" bookmark on top
-            const first = "Last visited";
-            bookmarks.sort((a, b) => { return a.name == first ? -1 : b.name == first ? 1 : 0; });
-            for (const bookmark of bookmarks) {
-              const card = document.createElement("entity-card");
-              card.sectionInit(bookmark, "bookmark");
-              this._bookmarks.appendChild(card);
-            }
-
-            // If there is a selected section click that otherwise
-            const params = new URLSearchParams(document.location.search.substring(1));
-            if (params.has("section")) {
-              const sectionId = Number(params.get("section"));
-              for (const child of this._allSections()) {
-                if (child._section) {
-                  if (child._section.id == sectionId) {
-                    for (const other of this._allSections()) {
-                      other.active = false;
-                    }
-                    child.active = true;
-                    try {
-                      this._selectSection(child._section, child._section.project).then(() => {
-                        this.loading.hideSpinner();
-                        this.hideDimmer();
-                      });
-                    } catch (err) {
-                      console.error("Error getting section.", err);
-                      child.click();
-                      this.loading.hideSpinner();
-                      this.hideDimmer();
-                    }
-
-                    break;
-                  }
-                }
-              }
-            } else {
-              //
-              try {
-                home.active = true;
-                this._selectSection(null, projectId).then(async () => {
-                  this.loading.hideSpinner();
-                  this.hideDimmer();
-                });
-              } catch (err) {
-                console.error("Error getting home section.", err);
-                home.click();
-                this.loading.hideSpinner();
-                this.hideDimmer();
-              }
-            }
-
-            // Is there a search to apply?
-            if (params.has("search")) {
-              console.log(params.get("search"))
-              this._mediaSection.searchString = params.get("search");
-              this._addSavedSearchButton.style.opacity = 1.0;
-              this._addSavedSearchButton.style.cursor = "pointer";
-            }
-
-            // Filter interface
+            // Model data & filter setup
             try {
               this._modelData = new TatorData(projectId);
               this._modelData.init().then(() => {
+
+                // Sorts sections into Folder (archive/not), and Saved Search
+                this._makeFolders(sections, projectId);
+
+                // Put "Last visited" bookmark on top
+                const first = "Last visited";
+                bookmarks.sort((a, b) => { return a.name == first ? -1 : b.name == first ? 1 : 0; });
+                for (const bookmark of bookmarks) {
+                  const card = document.createElement("entity-card");
+                  card.sectionInit(bookmark, "bookmark");
+                  this._bookmarks.appendChild(card);
+                }
+
+                // If there is a selected section click that otherwise
+                const params = new URLSearchParams(document.location.search.substring(1));
+                if (params.has("section")) {
+                  const sectionId = Number(params.get("section"));
+                  for (const child of this._allSections()) {
+                    if (child._section) {
+                      if (child._section.id == sectionId) {
+                        for (const other of this._allSections()) {
+                          other.active = false;
+                        }
+                        child.active = true;
+                        try {
+                          this._selectSection(child._section, child._section.project).then(() => {
+                            this.loading.hideSpinner();
+                            this.hideDimmer();
+                          });
+                        } catch (err) {
+                          console.error("Error getting section.", err);
+                          child.click();
+                          this.loading.hideSpinner();
+                          this.hideDimmer();
+                        }
+
+                        break;
+                      }
+                    }
+                  }
+                } else {
+                  //
+                  try {
+                    home.active = true;
+                    this._selectSection(null, projectId).then(async () => {
+                      this.loading.hideSpinner();
+                      this.hideDimmer();
+                    });
+                  } catch (err) {
+                    console.error("Error getting home section.", err);
+                    home.click();
+                    this.loading.hideSpinner();
+                    this.hideDimmer();
+                  }
+                }
+
+                // Is there a search to apply?
+                if (params.has("search")) {
+                  console.log(params.get("search"))
+                  this._mediaSection.searchString = params.get("search");
+                  this._addSavedSearchButton.style.opacity = 1.0;
+                  this._addSavedSearchButton.style.cursor = "pointer";
+                }
+
+ 
                 // used to setup filter options & string utils
                 this._mediaSection._modelData = this._modelData;
+                this._mediaSection._files.memberships = this._modelData._memberships;
+
                 this._filterDataView = new FilterData(
                   this._modelData, null, ["MediaStates", "LocalizationStates", "Localizations"], null);
                 this._filterDataView.init();
                 this._filterView.dataView = this._filterDataView;
-
-
 
                 // Set UI and results to any url param conditions that exist (from URL)
                 this._mediaSection._filterConditions = this._mediaSection.getFilterConditionsObject();
@@ -960,8 +962,6 @@ export class ProjectDetail extends TatorPage {
 
                 // Listen for filter events
                 this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
-
-
               });
 
             } catch (err) {
