@@ -71,6 +71,9 @@ wget $BENTO4_URL -q -O bento4.zip \
 # Copy over values.yaml.
 echo "Configuring values.yaml."
 cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
+if [[ -n "$DOMAIN_ALIAS" ]]; then
+yq --yaml-output '({aliases: [{domain: "$DOMAIN_ALIAS"}]} + .)' <helm/tator/values-microk8s.yaml > helm/tator/values.yaml
+fi
 sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
 sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
 
