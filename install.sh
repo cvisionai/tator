@@ -13,13 +13,14 @@ ARGO_MANIFEST_URL="https://github.com/argoproj/argo-workflows/releases/download/
 # Install snaps.
 sudo snap install helm --classic
 sudo snap install microk8s --classic --channel=1.22/stable
+sudo snap install yq
 
 # Install apt packages.
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
     iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip \
-    build-essential nodejs yq
+    build-essential nodejs
 
 # Install node packages.
 cd ui && npm install && cd ..
