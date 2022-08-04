@@ -13,7 +13,6 @@ ARGO_MANIFEST_URL="https://github.com/argoproj/argo-workflows/releases/download/
 # Install snaps.
 sudo snap install helm --classic
 sudo snap install microk8s --classic --channel=1.22/stable
-sudo snap install yq
 
 # Install apt packages.
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
@@ -69,15 +68,6 @@ wget $BENTO4_URL -q -O bento4.zip \
     && sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/. \
     && sudo chmod +x /usr/local/bin/mp4dump
 
-# Copy over values.yaml.
-echo "Configuring values.yaml."
-cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
-if [[ -n "$DOMAIN_ALIAS" ]]; then
-yq --yaml-output '({aliases: [{domain: "$DOMAIN_ALIAS"}]} + .)' <helm/tator/values-microk8s.yaml > helm/tator/values.yaml
-fi
-sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
-sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
-
 # Configure local storage.
 echo "Configuring local storage."
 sudo mkdir /media/kubernetes_share \
@@ -132,6 +122,16 @@ pip3 install setuptools
 pip3 install pillow
 pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pyyaml yq
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
+
+# Copy over values.yaml.
+echo "Configuring values.yaml."
+if [[ -n "$DOMAIN_ALIAS" ]]; then
+  yq --yaml-output '({aliases: [{domain: "$DOMAIN_ALIAS"}]} + .)' <helm/tator/values-microk8s.yaml > helm/tator/values.yaml
+else
+  cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
+fi
+sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
+sed -i "s/<Insert static IP or domain>/$HOST_IP/g" helm/tator/values.yaml
 
 # Install tator.
 echo "Installing tator."
