@@ -59,28 +59,35 @@ export class ModalDialog extends TatorElement {
     }
   }
 
-  fadeOut(timeOut = 2000) {
+  fadeOut(timeOut = 500) {
     this._div.style.opacity = 1;
+    const interval = 100;
+    const percent = 1 - ((interval / timeOut) * 2);
+    console.log(percent);
+
     const opacityTurnDown = () => {
       const currentOpacity = this._div.style.opacity;
-      this._div.style.opacity = currentOpacity * .5;
+      const turnDown = currentOpacity * percent;
+      this._div.style.opacity = turnDown
+
+      console.log(`currentOpacity ${currentOpacity}`);
+      console.log(`turnDown =  ${turnDown}`);
+      
+      if (turnDown == 0 || turnDown < .3) {
+        this.stopFade();
+      }
     }
 
-    const startFade = setInterval(opacityTurnDown, 200);
-
-    // const closeOut = () => {
-    //   this._closeCallback();
-    //   clearInterval(startFade);
-    //   this._div.style.opacity = 1;
-    //   console.log("Closed out");
-    // };
-    
     setTimeout(() => {
-        this._closeCallback();
-        clearInterval(startFade);
-        this._div.style.opacity = 1;
-        console.log("Closed out");
-      }, timeOut)
+      this.startFade = setInterval(opacityTurnDown, interval);
+    }, timeOut)
+  }
+
+  stopFade() {
+    this._closeCallback();
+    this._div.style.opacity = 1;
+    if(this.startFade) clearInterval(this.startFade);
+    console.log("Closed out");
   }
 
 }

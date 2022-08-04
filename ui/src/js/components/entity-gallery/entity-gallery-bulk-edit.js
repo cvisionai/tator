@@ -761,6 +761,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _editLocalization(e, formData) {
+      console.log("_editLocalization");
       // button.addEventListener("click", (e) => {
       e.preventDefault();
       this.boxHelper.modal._closeCallback();
@@ -799,6 +800,7 @@ export class GalleryBulkEdit extends TatorElement {
          this._page.hideDimmer();
 
          if (errorText === "" && text !== "") {
+            console.log(this.boxHelper.modal);
             this.boxHelper._modalSuccess(text);
          } else if (errorText !== "" && text === "") {
             this.boxHelper._modalError(errorText, "Error");

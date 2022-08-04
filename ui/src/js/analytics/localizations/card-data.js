@@ -138,8 +138,8 @@ export class AnnotationCardData extends HTMLElement {
    * @returns {object}
    */
   async makeCardList(filterConditions, paginationState) {
-    console.log(filterConditions)
-    console.log(paginationState);
+    // console.log(filterConditions)
+    // console.log(paginationState);
     if (this._needReload(filterConditions)) {
       await this._reload(filterConditions);
     }

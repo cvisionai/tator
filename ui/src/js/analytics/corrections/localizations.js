@@ -120,99 +120,99 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this.cardData.addEventListener("setCardImage", (evt) => {
       this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
     });
-
-    // Pass panel and localization types to gallery
-    this._filterResults._initPanel({
-      panelContainer: this._panelContainer,
-      pageModal: this.modal,
-      modelData: this._modelData,
-      cardData: this.cardData,
-      bulkEdit: this._bulkEdit
-    });
-
-    // Initialize the settings with the URL. The settings will be used later on.
-    this._settings.processURL();
-
-    // Set lock value
-    this._settings._lock.hidden = true; // #TODO
-
-    // if (this._settings.hasAttribute("lock")) {
-    //   let settingsLock = this._settings.getAttribute("lock");
-
-    //   if (settingsLock === "1") {
-    //     this._settings._lock.unlock();
-    //     this._panelContainer.setAttribute("permissionValue", "Can Edit");
-    //   }
-    // }
-
-    // Init vars for filter state
-    this._filterConditions = this._settings.getFilterConditionsObject();
-    this._bulkEdit.checkForFilters(this._filterConditions);
-    this._useCachedResults = false;
-
-    // Init vars for pagination state
-    let pageSize = this._settings.getPageSize();
-    if (Number.isNaN(pageSize)) {
-      pageSize = this._filterResults._paginator.getPageSize();
-    }
-
-    let page = this._settings.getPage();
-    if (Number.isNaN(page)) {
-      page = 1;
-    }
-
-    let pageStart = (page - 1) * pageSize;
-    let pageStop = pageStart + pageSize;
-    this._paginationState = {
-      pageSize: pageSize,
-      page: page,
-      start: pageStart,
-      stop: pageStop,
-      init: true
-    };
-
-
-
-    // Init Card Gallery and Right Panel
-    await this._cardGallery(
-      this._filterConditions,
-      this._paginationState
-    );
-
-    // Filter interface
-    this._filterDataView = new FilterData(
-      this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
-
-    // Init panel side behavior
-    this._panelContainer.init({
-      main: this.main,
-      aside: this.aside,
-      pageModal: this.modal,
-      modelData: this._modelData,
-      gallery: this._filterResults,
-      bulkEdit: this._bulkEdit
-    });
-
-    // Settings lock value
-    // this._settings._lock.addEventListener("click", evt => {
-    //   const locked = this._settings._lock._pathLocked.style.display != "none";
-    //   const permissionValue = locked ? "View Only" : "Can Edit";
-    //   const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-    //   this._panelContainer.dispatchEvent(panelPermissionEvt);
-
-    //   if (locked) {
-    //     this._settings.setAttribute("lock", 0);
-    //   } else {
-    //     this._settings.setAttribute("lock", 1);
-    //   }
-    //   //window.history.pushState({}, "", this._settings.getURL());
-    // });
-
-
-
-    // this.loading.showSpinner();
+        // this.loading.showSpinner();
     // this.showDimmer();
-    this._modelData.init().then(() => {
+    await this._modelData.init()
+
+      // Pass panel and localization types to gallery
+      this._filterResults._initPanel({
+        panelContainer: this._panelContainer,
+        pageModal: this.modal,
+        modelData: this._modelData,
+        cardData: this.cardData,
+        bulkEdit: this._bulkEdit
+      });
+
+      // Initialize the settings with the URL. The settings will be used later on.
+      this._settings.processURL();
+
+      // Set lock value
+      this._settings._lock.hidden = true; // #TODO
+
+      // if (this._settings.hasAttribute("lock")) {
+      //   let settingsLock = this._settings.getAttribute("lock");
+
+      //   if (settingsLock === "1") {
+      //     this._settings._lock.unlock();
+      //     this._panelContainer.setAttribute("permissionValue", "Can Edit");
+      //   }
+      // }
+
+      // Init vars for filter state
+      this._filterConditions = this._settings.getFilterConditionsObject();
+      this._bulkEdit.checkForFilters(this._filterConditions);
+      this._useCachedResults = false;
+
+      // Init vars for pagination state
+      let pageSize = this._settings.getPageSize();
+      if (Number.isNaN(pageSize)) {
+        pageSize = this._filterResults._paginator.getPageSize();
+      }
+
+      let page = this._settings.getPage();
+      if (Number.isNaN(page)) {
+        page = 1;
+      }
+
+      let pageStart = (page - 1) * pageSize;
+      let pageStop = pageStart + pageSize;
+      this._paginationState = {
+        pageSize: pageSize,
+        page: page,
+        start: pageStart,
+        stop: pageStop,
+        init: true
+      };
+
+
+
+      // Init Card Gallery and Right Panel
+      await this._cardGallery(
+        this._filterConditions,
+        this._paginationState
+      );
+
+      // Filter interface
+      this._filterDataView = new FilterData(
+        this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
+
+
+      
+      // Init panel side behavior
+      this._panelContainer.init({
+        main: this.main,
+        aside: this.aside,
+        pageModal: this.modal,
+        modelData: this._modelData,
+        gallery: this._filterResults,
+        bulkEdit: this._bulkEdit
+      });
+
+      // Settings lock value
+      // this._settings._lock.addEventListener("click", evt => {
+      //   const locked = this._settings._lock._pathLocked.style.display != "none";
+      //   const permissionValue = locked ? "View Only" : "Can Edit";
+      //   const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
+      //   this._panelContainer.dispatchEvent(panelPermissionEvt);
+
+      //   if (locked) {
+      //     this._settings.setAttribute("lock", 0);
+      //   } else {
+      //     this._settings.setAttribute("lock", 1);
+      //   }
+      //   //window.history.pushState({}, "", this._settings.getURL());
+      // });
+
       this._filterDataView.init(); // requires model data to be init
       this._filterView.dataView = this._filterDataView;
       this._filterView.setFilterConditions(this._filterConditions);
@@ -225,10 +225,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       this._filterResults._paginator_top.setValues(this._paginationState);
 
       // Listen for filter events
-      this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
-    });
-
-    
+      this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));    
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

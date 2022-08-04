@@ -210,7 +210,7 @@ export class MediaMoveDialog extends ModalDialog {
             this._message.innerHTML = `<span class="text-green">Success! ${respJSON.message}</span>`;
             this.dispatchEvent(new Event("reload"));
             this.setAttribute("is-open", "true");
-            this.fadeOut(2000);
+            this.fadeOut();
           }
 
         } catch (err) {

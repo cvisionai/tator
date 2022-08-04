@@ -88,13 +88,15 @@ export class AnnotationsGallery extends EntityCardGallery {
     panelContainer,
     pageModal,
     cardData,
-    modelData
+    modelData,
+    modalNotify
   }){
     this.panelContainer = panelContainer;
     this.panelControls = this.panelContainer._panelTop;
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
+    this._modalNotify = modalNotify;
 
     // Listen for attribute changes
     this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
@@ -219,6 +221,34 @@ export class AnnotationsGallery extends EntityCardGallery {
         };
         this._cardElements.push(cardInfo);
 
+        // Delete localization / entity
+        this.addEventListener("delete-entity", (evt) => {
+          this._modalNotify.init("Confirm remove", `Are you sure you want to delete ${this.cardObj.localization.name}?`, "error", "confirm", false);
+          this._modalNotify.setAttribute("is-open", "true");
+        
+          this._modalNotify._accept.addEventListener("click", () => {
+            this._modalNotify.closeCallback();
+            console.log("OL!");
+            fetch(`/rest/Localization/${this.cardObj.id}`, {
+              method: "DELETE",
+              credentials: "same-origin",
+              headers: {
+                "X-CSRFToken": getCookie("csrftoken"),
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+              }
+            })
+              .then(response => { return response.json(); })
+              .then(result => {
+                this._modalNotify.init("Success!", `${result}`, "ok", "ok", false);
+                this._modalNotify.setAttribute("is-open", "");
+                this._modalNotify.fadeOut();
+              }).catch(err => {
+                console.error("Error deleting localization entity.", err);
+              });
+          });
+        });
+
         this._ul.appendChild(card);
       } else {
         card = this._cardElements[index].card;
@@ -246,6 +276,7 @@ export class AnnotationsGallery extends EntityCardGallery {
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
+      console.log(this.modelData._memberships);
       card.init({
         obj: cardObj,
         panelContainer : this.panelContainer,

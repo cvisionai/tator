@@ -239,6 +239,8 @@ export class EntityCard extends TatorElement {
 
     this._more.addEventListener("move", this._moveMediaFile.bind(this));
 
+    
+
 
     // Attachment button listener
     this._attachmentButton.addEventListener("click", () => {
@@ -249,7 +251,7 @@ export class EntityCard extends TatorElement {
     });
 
 
-    // Card click / List item click listener
+    // Card LINK (both _name and _link)click / List item click listener
     this.addEventListener("click", this.togglePanel.bind(this));
     this._link.addEventListener("click", (e) => {
       if (this._multiEnabled || (!this._link.hasAttribute("href") || this._link.getAttribute("href") == "#")) {
@@ -393,8 +395,9 @@ export class EntityCard extends TatorElement {
     }
 
     this._membershipMap = new Map();
+    console.log("memberships");
+    console.log(memberships);
     if (memberships !== null) {
-      console.log(memberships);
       for (let member of memberships) {
         this._membershipMap.set(member.id, member.username)
       }
@@ -488,7 +491,7 @@ export class EntityCard extends TatorElement {
     // console.log(this.cardObj);
     let labelValues = evt.detail.value;
 
-    if (this.attributeDivs && evt.detail.typeId === this.cardObj.entityType.id) {
+    if (this.attributeDivs && (evt.detail.typeId === this.cardObj.entityType.id || evt.detail.typeId === -1)) {
       // show selected
       for (let [key, value] of Object.entries(this.attributeDivs)) {
         if (labelValues.includes(key)) {

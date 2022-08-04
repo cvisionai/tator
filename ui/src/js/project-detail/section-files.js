@@ -225,13 +225,15 @@ export class SectionFiles extends TatorElement {
   }
 
   updateShown(evt, card) {
-    if (card.cardObj.entityType.id == evt.detail.typeId) {
+    if (card.cardObj.entityType.id == evt.detail.typeId || evt.detail.typeId == -1) {
       card._updateShownAttributes(evt);
     }
   }
 
 
   getCardLabelOptions(attributeTypes) {
+    console.log("attributeTypes");
+    console.log(attributeTypes);
     // Setup every time card is updated
     // Non-hidden attributes (ie order >= 0))
     let nonHiddenAttrs = [];

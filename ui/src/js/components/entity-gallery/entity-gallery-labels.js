@@ -53,6 +53,22 @@ export class EntityGalleryLabels extends TatorElement {
 
     // Keep track of values by TypeId
     this._selectionValues = {};
+
+    this._builtInAttributes = [
+      { name: "ID", id: "id" },
+      { name: "Modified By", id: "modified_by" },
+      { name: "Modified Datetime", id: "modified_datetime" },
+      { name: "Created Datetime", id: "created_datetime" },
+      { name: "Type", id: "type" }
+    ]
+
+    this.add({
+      typeData: {
+        id: -1,
+        name: "Built In (all types)",
+        attribute_types: this._builtInAttributes
+      }
+    });
   }
 
   set titleEntityTypeName(val) {
@@ -67,8 +83,9 @@ export class EntityGalleryLabels extends TatorElement {
   async add({ typeData, hideTypeName = false, checkedFirst = null, customBuiltIns = [] }) {
     // console.log(typeData);
     let typeName = typeData.name ? typeData.name : "";
-    if(this._shownTypes[typeData.id] || typeData.visible == false) {
-      // don't re-add this type, or don't add if visible=false...
+
+    // don't re-add this type, or don't add if visible=false...
+    if(this._shownTypes[typeData.id] || typeData.visible === false) {
       return false;
     } else {
       this._shownTypes[typeData.id] = true;
@@ -107,31 +124,37 @@ export class EntityGalleryLabels extends TatorElement {
     styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
     _labelDetails.appendChild(styleDiv);
 
-    /**
-     * Label Choice
-     */
-    // If ok, create the checkbox list
-    const checkboxList = this.makeListFrom(typeData, checkedFirst, customBuiltIns);
+    // No attributes, so we can stop and provide a message
+    if (typeData.attribute_types.length == 0) {       
+      const message = document.createElement("span");
+      message.setAttribute("class", "text-gray f2")
+      message.textContent = `${typeName} has no custom attributes.`;
+      styleDiv.appendChild(message);
+    } else {
+      // If ok, create the checkbox list
+      const checkboxList = this.makeListFrom(typeData, checkedFirst, customBuiltIns);
 
-    const selectionBoxes = document.createElement("checkbox-set");
-    selectionBoxes._colSize = "py-1 pr-2";
-    selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-12");
-    selectionBoxes.setValue(checkboxList);
+      const selectionBoxes = document.createElement("checkbox-set");
+      selectionBoxes._colSize = "py-1 pr-2";
+      selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-12");
+      selectionBoxes.setValue(checkboxList);
 
-    // Save to refer to in get/set later
-    this._selectionValues[typeData.id] = selectionBoxes;
+      // Save to refer to in get/set later
+      this._selectionValues[typeData.id] = selectionBoxes;
 
-    // Append to main box
-    styleDiv.appendChild(selectionBoxes);
+      // Append to main box
+      styleDiv.appendChild(selectionBoxes);
 
-    selectionBoxes.addEventListener("change", (e) => {
-      this.dispatchEvent(new CustomEvent("labels-update", {
-          detail: {
-              value: e.target.getValue(),
-              typeId: typeData.id
-            }
-        }));
-    });
+      selectionBoxes.addEventListener("change", (e) => {
+        this.dispatchEvent(new CustomEvent("labels-update", {
+            detail: {
+                value: e.target.getValue(),
+                typeId: typeData.id
+              }
+          }));
+      });
+    }
+    
 
     this.div.appendChild(labelsMain)
 
@@ -184,32 +207,11 @@ export class EntityGalleryLabels extends TatorElement {
       }
     }
 
-    // for (let [name, value] of Object.entries(typeData)) {
-    //   if(name !== "attribute_types") {
-        
-    //   }
-    // }
-
     // Show array by order, or alpha
     // Should hidden be shown?
     const sorted = [...nonHiddenAttrs, ...hiddenAttrs].sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
-
-    // Built ins used by Media or Localizations
-    sorted.push({ name: "ID", id: "id" });
-    sorted.push({ name: "Modified By", id: "modified_by" });
-    sorted.push({ name: "Modified Datetime", id: "modified_datetime" });
-    sorted.push({ name: "Created Datetime", id: "created_datetime" });
-    sorted.push({ name: "Type", id: "type" });
-
-    // Built ins for some types only #todo
-    // if (TODO == "localization") {
-    //   sorted.push({ name: "Frame", id: "frame" });
-    // }
-    // if (TODO == "media") {
-    //   sorted.push({ name: "Created By", id: "created_by" });
-    // }
 
     if (customBuiltIns) {
       for (const bi of customBuiltIns) {

@@ -84,6 +84,12 @@ export class AnalyticsLocalizations extends TatorPage {
     this._shadow.appendChild(this.modal);
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
+
+    // Modal parent - to pass to page components
+    this.modalNotify = document.createElement("modal-notify");
+    this._shadow.appendChild(this.modalNotify );
+    this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
+    this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
   }
 
   async _init() {

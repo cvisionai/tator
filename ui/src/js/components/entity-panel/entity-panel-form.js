@@ -20,20 +20,7 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.permission = "View Only"; // start as view only - set to user permission on page
     this._div.appendChild(this._attributes);
 
-    this._attributes.addEventListener("change", this._emitChangedData.bind(this));
-
-    this._lowerDiv = document.createElement("div");
-    this._lowerDiv.setAttribute("class", "border-top py-3");
-    this._lowerDiv.hidden = true;
-    this._div.appendChild(this._lowerDiv);
-
-    this._removeEntity = document.createElement("delete-button");
-    this._lowerDiv.appendChild(this._removeEntity);
-
-    this._modalNotify = document.createElement("modal-notify");
-    this._shadow.appendChild(this._modalNotify);
-
-    this._removeEntity.addEventListener("click", this._removeCallback.bind(this));  
+    this._attributes.addEventListener("change", this._emitChangedData.bind(this)); 
   }
 
   static get observedAttributes() {
@@ -70,11 +57,6 @@ export class EntityGalleryPanelForm extends TatorElement {
 
     this._data = data;
 
-    if (allowDelete) {
-      this._removeEntity.init(`Delete ${this._data.entityType.name} ID: ${this._data.id}`, "text-gray");
-      this._lowerDiv.hidden = false;
-    }
-
 
     if (attributePanelData.attributes !== null) {
       this._attributes.setValues(attributePanelData);
@@ -104,36 +86,6 @@ export class EntityGalleryPanelForm extends TatorElement {
   setValues(data) {
     this._attributes.setValues(data);
   }
-
-  _removeCallback() {
-    // Make a popup and confirm deletion.....
-    console.log("REMOVE....");
-    console.log(this._data);
-    this._modalNotify.init("Confirm remove", `Are you sure you want to delete ${this._data.entityType.name}?`, "error", "confirm", false);
-    this._modalNotify.setAttribute("isopen", "");
-
-    this._modalNotify._accept.addEventListener("click", () => {
-      this._modalNotify.closeCallback();
-      console.log("OL!");
-      fetch(`/rest/Localization/${this._data.id}`, {
-        method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        }
-      })
-        .then(response => { return response.json(); })
-        .then(result => {
-          this._modalNotify.setAttribute("is-open", "true");
-          this._modalNotify.init("Success!", `${result}`, "ok", "ok", false)
-        }).catch(err => {
-          console.error("Error deleting localization entity.", err);
-        });
-    });
-  }
-
 }
 
 customElements.define("entity-panel-form", EntityGalleryPanelForm);

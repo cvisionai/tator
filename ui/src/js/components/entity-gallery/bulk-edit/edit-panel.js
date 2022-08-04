@@ -279,14 +279,16 @@ export class MultiAttributeEditPanel extends TatorElement {
    }
 
    addLocType(typeData) {
+      console.log("ADD loc type typedata=");
+      console.log(typeData);
+
       let typeName = typeData.name ? typeData.name : "";
 
-      if (this._shownTypes.has(typeData.id) || typeData.visible == false || typeData.attribute_types.length == 0) {
-         // don't re-add this type, or don't add if visible=false...
+      // don't re-add this type, or don't add if visible=false...
+      if(this._shownTypes[typeData.id] || typeData.visible == false) {
          return false;
       } else {
-         console.log(`Adding typeName ${typeName}`);
-         this._shownTypes.set(typeData.id, true);
+         this._shownTypes[typeData.id] = true;
       }
 
       // // Main labels box
@@ -322,40 +324,47 @@ export class MultiAttributeEditPanel extends TatorElement {
       this._prefetchBool.hidden = true;
       // this._warningConfirmation.appendChild(this._prefetchBool);
 
+      // No attributes, so we can stop and provide a message
+      console.log("Are we here? "+typeData.attribute_types.length)
+      if (typeData.attribute_types.length === 0) {
+         const message = document.createElement("div");
+         message.setAttribute("class", "text-white f2 py-2")
+         message.textContent = `${typeName} has no custom attributes.`;
+         styleDiv.appendChild(message);
+      } else {
+         // If ok, create the checkbox list
+         const checkboxList = this.makeListFrom(typeData);
 
-      /**
-    * Label Choice
-    */
-      // If ok, create the checkbox list
-      const checkboxList = this.makeListFrom(typeData);
+         // 
 
-      // 
+         const selectionBoxes = document.createElement("checkbox-set");
+         selectionBoxes._colSize = "py-1 pr-2";
+         selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-12");
+         selectionBoxes.setValue(checkboxList);
 
-      const selectionBoxes = document.createElement("checkbox-set");
-      selectionBoxes._colSize = "py-1 pr-2";
-      selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-12");
-      selectionBoxes.setValue(checkboxList);
+         // Save to refer to in get/set later
+         this._selectionValues.set(typeData.id, selectionBoxes);
+         this._selectionMain.set(typeData.id, styleDiv);
 
-      // Save to refer to in get/set later
-      this._selectionValues.set(typeData.id, selectionBoxes);
-      this._selectionMain.set(typeData.id, styleDiv);
+         // Append to main box
+         styleDiv.appendChild(selectionBoxes);
 
-      // Append to main box
-      styleDiv.appendChild(selectionBoxes);
+         selectionBoxes.addEventListener("change", (e) => {
+            this._boxValueChanged(selectionBoxes, typeData.id);
+         });
 
-      selectionBoxes.addEventListener("change", (e) => {
-         this._boxValueChanged(selectionBoxes, typeData.id);
-      });
-
-      // when we relied on global attribute list (not by type)
-      // we cleared each time, because the last iteration would have all the types
-      // this.div.innerHTML = "";
-
+         // when we relied on global attribute list (not by type)
+         // we cleared each time, because the last iteration would have all the types
+         // this.div.innerHTML = "";
+         
+         // Make and Add associated hidden inputs
+         this._addInputs(typeData.attribute_types, typeData.id);
+      }
+      
       // Add the selection boxes
       this.div.appendChild(labelsMain);
 
-      // Make and Add associated hidden inputs
-      this._addInputs(typeData.attribute_types, typeData.id);
+
    }
 
    _boxValueChanged(checkBoxSet, typeId) {

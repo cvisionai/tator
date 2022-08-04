@@ -742,7 +742,8 @@ export class OrganizationTypeForm extends TatorElement {
     this.modal._main.innerHTML = message;
     //this.modal._main.classList.add("fixed-height-scroll");
 
-    return this.modal.setAttribute("is-open", "true")
+    this.modal.setAttribute("is-open", "true");
+    this.modal.fadeOut();
   }
 
   _modalError(message) {
@@ -792,7 +793,8 @@ export class OrganizationTypeForm extends TatorElement {
     this.modal._footer.innerHTML = "";
     this.modal._main.classList.add("fixed-height-scroll");
 
-    return this.modal.setAttribute("is-open", "true");
+    this.modal.setAttribute("is-open", "true");
+    this.modal.fadeOut();
   }
 
   _modalClear() {

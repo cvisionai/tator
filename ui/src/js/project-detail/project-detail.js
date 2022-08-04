@@ -246,9 +246,10 @@ export class ProjectDetail extends TatorPage {
     * CARD Label display options link for menu, and checkbox div
     */
     this._cardAttributeLabels = document.createElement("entity-gallery-labels");
+    this._cardAttributeLabels.setAttribute("id", "showMediaAttributes")
     this._cardAttributeLabels.titleEntityTypeName = "media";
     this._cardAttributeLabels._titleText = document.createTextNode("Select media labels to display.");
-    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Show card attributes";
+    this._cardAttributeLabels.menuLinkTextSpan.innerHTML = "Show file attributes";
 
     this._mediaSection._hiddenMediaLabel.appendChild(this._cardAttributeLabels);
     this._mediaSection._more._cardLink.appendChild(this._cardAttributeLabels.menuLink);

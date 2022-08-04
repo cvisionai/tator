@@ -304,7 +304,7 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
-      // console.log(cardObj);
+      console.log(this.modelData._memberships);
       card.init({
         idx: index,
         obj: cardObj,
