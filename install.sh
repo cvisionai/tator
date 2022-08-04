@@ -19,7 +19,7 @@ curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get update \
     && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install \
     iproute2 net-tools gzip wget unzip jq ffmpeg python3 python3-pip \
-    build-essential nodejs
+    build-essential nodejs yq
 
 # Install node packages.
 cd ui && npm install && cd ..
