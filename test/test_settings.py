@@ -30,7 +30,7 @@ def test_settings_projectEdit(page_factory, project, image_file):
     page.click('project-main-edit input[type="submit"]')
     page.wait_for_selector(f'text="Project {project} updated successfully!"')
     print(f"Project {project} updated successfully!")
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
 
     #todo - Assert information saved, edit and re-assert
 
@@ -56,7 +56,7 @@ def test_settings_mediaTypes(page_factory, project):
         page.click('#itemDivId-MediaType-New bool-input[name="Visible"] label[for="on"]')
         page.click('#itemDivId-MediaType-New button[value="Save"]')
         page.wait_for_selector(f'text="Media type created successfully!"')
-        page.click('modal-dialog modal-close .modal__close')
+        # page.click('modal-dialog modal-close .modal__close')
         print(f"{dtypeName} Media type created successfully!")
 
         # todo - Assert information saved, edit and re-assert
@@ -85,7 +85,7 @@ def test_settings_localizationTypes(page_factory, project):
         page.click('#itemDivId-LocalizationType-New span:text("Test Images")')
         page.click('#itemDivId-LocalizationType-New button[value="Save"]')
         page.wait_for_selector(f'text="Localization type created successfully!"')
-        page.click('modal-dialog modal-close .modal__close')
+        # page.click('modal-dialog modal-close .modal__close')
         print(f"{dtypeName} - Localization type created successfully!!")
     page.close()
 
@@ -103,7 +103,7 @@ def test_settings_leafType(page_factory, project, base_url):
     page.fill('#itemDivId-LeafType-New text-input[name="Description"] input', leafTypeDescription)
     page.click('#itemDivId-LeafType-New button[value="Save"]')
     page.wait_for_selector(f'text="Leaf type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"Leaf type created successfully!!")
     page.wait_for_timeout(5000)
 
@@ -123,7 +123,7 @@ def test_settings_leafType(page_factory, project, base_url):
     with page.expect_response(url) as response_info:
         page.click('modal-dialog input[type="submit"]')
         page.wait_for_selector(f'text="New attribute type \'String Type\' added"')
-        page.click('modal-dialog modal-close .modal__close')
+        # page.click('modal-dialog modal-close .modal__close')
 
     # Get data for Assert statements
     leaf_types_obj = response_info.value.json()
@@ -153,8 +153,8 @@ def test_settings_leafType(page_factory, project, base_url):
     page.fill('modal-dialog text-input[name="Name"] input', 'A')
     page.click('modal-dialog input[value="Save"]')
     # page.wait_for_selector('text="Complete')
-    page.wait_for_timeout(5000)
-    page.click('modal-dialog modal-close .modal__close')
+    # page.wait_for_timeout(5000)
+    # page.click('modal-dialog modal-close .modal__close')
 
     page.wait_for_timeout(5000)
     page.click('text=" New Leaf"')
@@ -162,8 +162,8 @@ def test_settings_leafType(page_factory, project, base_url):
     page.fill('modal-dialog text-input[name="Name"] input', 'B')
     page.click('modal-dialog input[value="Save"]')
     # page.wait_for_selector('text="Complete')
-    page.wait_for_timeout(5000)
-    page.click('modal-dialog modal-close .modal__close')
+    # page.wait_for_timeout(5000)
+    # page.click('modal-dialog modal-close .modal__close')
 
     # this should be top level and visible to click into
     # asserts its level, and successful add
@@ -190,8 +190,8 @@ def test_settings_leafType(page_factory, project, base_url):
     # Child element B won't be seen, need to click into, and if you edit it the paren = A
     page.wait_for_selector('text="Confirm move"')
     page.click('modal-dialog input[type="submit"]')
-    page.wait_for_timeout(5000)
-    page.click('modal-dialog modal-close .modal__close')
+    # page.wait_for_timeout(5000)
+    # page.click('modal-dialog modal-close .modal__close')
 
     page.wait_for_timeout(5000)
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
@@ -219,8 +219,8 @@ def test_settings_leafType(page_factory, project, base_url):
     page.click('text="Confirm"')
 
     page.wait_for_selector('text="Complete"')
-    page.click('modal-dialog modal-close .modal__close')
-    page.wait_for_timeout(5000)
+    # page.click('modal-dialog modal-close .modal__close')
+    # page.wait_for_timeout(5000)
     
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
     hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
@@ -253,7 +253,7 @@ def test_settings_stateTypes(page_factory, project):
     page.click('#itemDivId-StateType-New bool-input[name="Delete Child Localizations"] label[for="on"]')
     page.click('#itemDivId-StateType-New button[value="Save"]')
     page.wait_for_selector(f'text="State type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"State type created successfully - Association: Localization, Interpolation: Latest")
 
     page.click('.heading-for-StateType .Nav-action')
@@ -268,7 +268,7 @@ def test_settings_stateTypes(page_factory, project):
     page.click('#itemDivId-StateType-New bool-input[name="Delete Child Localizations"] label[for="on"]')
     page.click('#itemDivId-StateType-New button[value="Save"]')
     page.wait_for_selector(f'text="State type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"State type created successfully - Association: Media, Interpolation: Latest")
     
     page.click('.heading-for-StateType .Nav-action')
@@ -283,7 +283,7 @@ def test_settings_stateTypes(page_factory, project):
     page.click('#itemDivId-StateType-New bool-input[name="Delete Child Localizations"] label[for="on"]')
     page.click('#itemDivId-StateType-New button[value="Save"]')
     page.wait_for_selector(f'text="State type created successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"State type created successfully - Association: Frame, Interpolation: Latest")
     page.close()
 
@@ -313,7 +313,7 @@ def test_settings_projectMemberships(page_factory, project):
     page.select_option(f'{formSelector} enum-input[name="Version"] select', label='Baseline')
     page.click(f'{formSelector} input[type="Submit"]')
     page.wait_for_selector(f'text="Membership {memberId} successfully updated!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"Membershipship id {memberId} updated successfully!")
    
     #todo... reference org settings, use a membership from those tests to actually add new
@@ -324,7 +324,7 @@ def test_settings_projectMemberships(page_factory, project):
     page.click('#itemDivId-Membership-New button[value="Save"]')
     # page.wait_for_selector('text="Failed to create 0 memberships."')
     page.wait_for_selector(f'text=" Error"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"Membership endpoint hit (error) re-adding current user successfully!")
 
     page.close()
@@ -344,7 +344,7 @@ def test_settings_versionTests(page_factory, project):
     page.click('#itemDivId-Version-New button[value="Save"]')
     page.wait_for_selector(f'text="Created version successfully!"')
     print(f"Version created successfully!!")
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     page.close()
 
 def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
@@ -376,7 +376,7 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     with page.expect_response(url) as response_info:
         page.click('div[id="itemDivId-JobCluster-New"] button[value="Save"]')
         page.wait_for_selector(f'text="Successfully registered job cluster."')
-        page.click('modal-dialog modal-close .modal__close')
+        # page.click('modal-dialog modal-close .modal__close')
     response = response_info.value
     respObject = response.json()
     print(respObject)
@@ -400,7 +400,7 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     page.fill('#itemDivId-Algorithm-New text-input[name="Files Per Job"] input', '100')
     page.click('#itemDivId-Algorithm-New button[value="Save"]')
     page.wait_for_selector('text="Successfully registered algorithm argo workflow."')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"Successfully registered algorithm argo workflow!")
     page.close()
 
@@ -430,7 +430,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     applet_id = respObject["id"]
     
     page.wait_for_selector(f'text="Successfully created applet {applet_id}!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
 
     # Go to dashboards
     page.goto(f"/{project}/dashboards", wait_until='networkidle')
@@ -477,7 +477,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
         with page.expect_response(url) as response_info:
             page.click('modal-dialog input[type="submit"]')
             page.wait_for_selector(f'text="New attribute type \'{dtype} Type\' added"')
-            page.click('modal-dialog modal-close .modal__close')
+            # page.click('modal-dialog modal-close .modal__close')
 
         # Get data for Assert statements
         media_types = response_info.value.json()
@@ -529,7 +529,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
             page.wait_for_selector('modal-dialog modal-success')
             successMessages = page.query_selector_all('modal-dialog modal-success')
             assert len(successMessages) == 1
-            page.click('modal-dialog modal-close .modal__close')
+            # page.click('modal-dialog modal-close .modal__close')
 
         # Get data for Assert statements
         media_types = response_info.value.json()
@@ -575,7 +575,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
             page.wait_for_selector('modal-dialog modal-success')
             successMessages = page.query_selector_all('modal-dialog modal-success')
             assert len(successMessages) == 1
-            page.click('modal-dialog modal-close .modal__close')
+            # page.click('modal-dialog modal-close .modal__close')
 
         # Get data for Assert statements
         media_types = response_info.value.json()
