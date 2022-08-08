@@ -57,8 +57,8 @@ if __name__ == '__main__':
                 continue
             # Reformat property docs
             if line.startswith('#### _property_'):
-                line = line.replace('#### _property_ ', '*')
-                line = line.replace('()', '*')
+                line = line.replace('#### _property_ ', '**')
+                line = line.replace('()', '**')
                 property_name = line.strip('\n')
                 desc_next = True
                 type_next = False
@@ -76,7 +76,7 @@ if __name__ == '__main__':
                             type = line.strip(' \n')
                         lines_to_skip -= 1
                     else:
-                        out.write(f"{property_name} **{type}** - {description}\n")
+                        out.write(f"* {property_name} (*{type}*) - {description}\n\n")
                         property_name = ""
                         type_next = False
                 continue
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                 and line.endswith(')\n')):
                 func = line.split('(')[0].replace(' _class_', '').replace(' _exception_', '').split('.')[-1]
                 signature = line.split(' ', 1)[1].strip('\n')
-                out.write('\n----------------------------------\n\n')
+                out.write('----------------------------------\n\n')
                 out.write(f"### {func}\n\n")
                 out.write(f"{signature}\n\n")
                 continue
