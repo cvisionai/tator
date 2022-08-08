@@ -824,7 +824,7 @@ export class TypeForm extends TatorElement {
     this.modal._main.classList.remove("fixed-height-scroll");
 
     this.modal.setAttribute("is-open", "true");
-    this.modal.fadeOut();
+    // this.modal.fadeOut();
   }
 
   _modalClear() {

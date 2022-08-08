@@ -794,7 +794,7 @@ export class OrganizationTypeForm extends TatorElement {
     this.modal._main.classList.add("fixed-height-scroll");
 
     this.modal.setAttribute("is-open", "true");
-    this.modal.fadeOut();
+    // this.modal.fadeOut();
   }
 
   _modalClear() {

@@ -241,7 +241,7 @@ export class SettingsBox {
     buttonContinue.addEventListener("click", this.modal._closeCallback);
 
     this.modal.setAttribute("is-open", "true");
-    this.modal.fadeOut();
+    // this.modal.fadeOut();
   }
 
   _modalClear(){
