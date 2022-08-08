@@ -21,8 +21,32 @@ if __name__ == '__main__':
         out.write(f'title: {title}\n')
         out.write('---\n\n\n')
         skip_newlines = False
+        skip_section = False
+        skip_parameter = False
+        skip_sync_blurb = False
         for line in f:
             if line.startswith('#### openapi_types') or line.startswith('#### attribute_map'):
+                continue
+            # Skip sections with "http_info"
+            if line.startswith('### tator'):
+                skip_section = 'with_http_info' in line
+                skip_parameter = False
+            if skip_section:
+                continue
+            # Skip parameters that are repeated everywhere
+            if line.startswith('    * **'):
+                skip_parameter = '_preload_content' in line \
+                                 or '_request_timeout' in line \
+                                 or 'async_req' in line
+            if skip_parameter:
+                continue
+            # Skip asynchronous request blurb
+            if line.startswith('This method makes a synch'):
+                skip_sync_blurb = True
+            if line.startswith('* **'):
+                out.write('\n')
+                skip_sync_blurb = False
+            if skip_sync_blurb:
                 continue
             line = line.replace('# noqa: E501', '')
             line = line.replace('models.md#tator.models.', 'models.md#')
@@ -48,5 +72,12 @@ if __name__ == '__main__':
                 continue
             if not (line.isspace() and skip_newlines):
                 out.write(line)
+            if line.startswith('## REST API'):
+                out.write("\n:::note\n\n")
+                out.write("The following parameters are shared by all functions described below:\n\n")
+                out.write("* **async_req** (*bool*) – execute request asynchronously\n\n")
+                out.write("* **_preload_content** – if False, the urllib3.HTTPResponse object will be returned without reading/decoding response data. Default is True.\n\n")
+                out.write("* **_request_timeout** – timeout setting for this request. If one number provided, it will be total request timeout. It can also be a pair (tuple) of (connection, read) timeouts. Default is 300.\n\n")
+                out.write(":::")
     out.close()
     subprocess.run(['scripts/fix_links.sh', args.out_file], check=True)
