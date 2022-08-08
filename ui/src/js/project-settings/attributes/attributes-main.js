@@ -217,9 +217,6 @@ export class AttributesMain extends HTMLElement {
     })
     .then(data => {
       let currentMessage = data.message;
-      // let succussIcon = document.createElement("modal-success");
-      let warningIcon = document.createElement("modal-warning");
-      let iconWrap = document.createElement("span");
 
       this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
         once : true
@@ -232,7 +229,7 @@ export class AttributesMain extends HTMLElement {
       } else if(status == 400) {
         iconWrap.appendChild(warningIcon);
         this.loading.hideSpinner();
-        this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
+        this.boxHelper._modalError(`${currentMessage}`);
       }
     }).catch((error) => {
       this.loading.hideSpinner();

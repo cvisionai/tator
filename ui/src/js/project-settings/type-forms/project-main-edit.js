@@ -293,10 +293,15 @@ export class ProjectMainEdit extends TypeForm {
     if(this.typeId != "undefined"){
       deleteProject.deleteFetch().then((data) => {
         this.loading.hideSpinner();
-        this._modalComplete(data.message)
+        if (data.status == 200) {
+          this._modalSuccess(data.message + " Redirecting back to project list...");
+        } else {
+          this._modalError(data.message);
+        }
+
         return setTimeout(function(){
           window.location.href = '/projects/';
-       }, 3000);;
+       }, 3000);
       }).catch((err) => {
         console.error(err);
         this.loading.hideSpinner();

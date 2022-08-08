@@ -507,7 +507,12 @@ export class TypeForm extends TatorElement {
       deleteType.deleteFetch().then((data) => {
         this._updateNavEvent("remove");
         this.loading.hideSpinner();
-        return this._modalComplete(data.message);
+        if (data.status == 200) {
+          this._modalSuccess(data.message);
+        } else {
+          this._modalError(data.message);
+        }
+        
       }).catch((err) => {
         console.error(err);
         this.loading.hideSpinner();
@@ -641,18 +646,21 @@ export class TypeForm extends TatorElement {
   async _showSaveCompleteModal() {
     this.saveModalMessage = "";
 
-    if (this.successMessages) {
+    if (this.successMessages !== "") {
       let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
       this.saveModalMessage += heading + this.successMessages;
     }
-    if (this.failedMessages) {
+    if (this.failedMessages !== "") {
       let heading_1 = `<div class=" pt-4 h3 pt-4">Error</div>`;
       this.saveModalMessage += heading_1 + this.failedMessages;
     }
     let mainText = `${this.saveModalMessage}`;
-    this._modalComplete(
-      mainText
-    );
+
+    if (this.failedMessages !== "") {
+      this.boxHelper._modalComplete(mainText);
+    } else {
+      this.boxHelper._modalSuccess(mainText);
+    }
     
     await this.resetHard();
 
