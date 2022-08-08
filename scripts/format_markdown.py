@@ -20,6 +20,12 @@ if __name__ == '__main__':
         out.write('---\n')
         out.write(f'title: {title}\n')
         out.write('---\n\n\n')
+        if title.lower() == 'models':
+            out.write(':::note\n\n')
+            out.write('Each of the models below include the following two functions:\n')
+            out.write('* `to_dict()` - Converts the class into a dictionary.\n')
+            out.write('* `to_str()` - Serializes the class as a string.\n')
+            out.write('\n:::\n')
         skip_newlines = False
         skip_section = False
         skip_parameter = False
