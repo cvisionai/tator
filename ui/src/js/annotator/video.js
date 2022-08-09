@@ -352,9 +352,9 @@ export class VideoCanvas extends AnnotationCanvas {
       this._dlWorker = new DownloadManager(this);
       this._scrubDownloadCount = 0;
       let frameJump = 0;
-      if (this._mediaInfo.summaryLevel && this._scrub_idx != this._play_idx)
+      if (this._summaryLevel && this._scrub_idx != this._play_idx)
       {
-        frameJump = this._mediaInfo.summaryLevel*this._mediaInfo.fps;
+        frameJump = this._summaryLevel*this._mediaInfo.fps;
       }
 
       // Start downloading the scrub buffer
@@ -1924,17 +1924,24 @@ export class VideoCanvas extends AnnotationCanvas {
   //Calculate the appropriate appendThreshold
   _calculateAppendThreshold()
   {
-    const fps_swag = Math.max(1, 15 / this._fps);
     // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
     // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
     if (this._direction == Direction.STOPPED)
     {
-      return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
+      return 300; // 5 minutes when paused
     }
     else
     {
       return 600; // 10 Minutes whilst playing.
     }
+  }
+
+  _calculateReadyThreshold()
+  {
+    const fps_swag = Math.max(1, 15 / this._fps);
+    // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
+    // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
+    return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
   }
 
   // Calculate if the on-demand buffer is present and has sufficient runway to play.
@@ -1945,7 +1952,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       frame = this._dispFrame;
     }
-    let appendThreshold = this._calculateAppendThreshold();
+    let appendThreshold = this._calculateReadyThreshold();
     let video = this.videoBuffer(frame, "play", true);
     if (video == null)
     {
@@ -2175,6 +2182,8 @@ export class VideoCanvas extends AnnotationCanvas {
       }
     }
 
+    var needMoreData = false;
+
     if (!this._onDemandInit)
     {
       if (!this._onDemandInitSent)
@@ -2235,8 +2244,6 @@ export class VideoCanvas extends AnnotationCanvas {
       // If we are within X seconds of the end of the buffer, drop the frames before
       // the current one and start downloading again.
       //console.log(`Pending onDemand downloads: ${this._onDemandPendingDownloads} ranges.length: ${ranges.length}`);
-
-      var needMoreData = false;
       if (ranges.length == 0 && this._onDemandPendingDownloads < 1)
       {
         // No data in the buffer, big surprise - need more data.
@@ -2247,7 +2254,7 @@ export class VideoCanvas extends AnnotationCanvas {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
         const appendThreshold = this._calculateAppendThreshold();
-        var playbackReadyThreshold = appendThreshold;
+        var playbackReadyThreshold = this._calculateReadyThreshold();
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
           (totalVideoTime - currentTime < playbackReadyThreshold))
@@ -2446,7 +2453,8 @@ export class VideoCanvas extends AnnotationCanvas {
     }
 
     // Sleep for a period before checking the onDemand buffer again
-    if (!this._onDemandPlaybackReady)
+    // Let the buffer run even if we are 'ready' but could benefit from more data
+    if (!this._onDemandPlaybackReady || needMoreData == true)
     {
       this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 100);
     }
