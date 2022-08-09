@@ -1,6 +1,7 @@
 import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
+import { MultiRenderer } from "../annotator/multi-renderer";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
 import { handle_video_error, PlayInteraction } from "./annotation-common.js";
 import { fetchRetry } from "../util/fetch-retry.js";
@@ -919,6 +920,7 @@ export class AnnotationMulti extends TatorElement {
     this._playbackReadyId = 0;
     this._numVideos = val.media_files['ids'].length;
     this._frameOffsets = [];
+    let renderer = new MultiRenderer();
     for (const vid_id of val.media_files['ids'])
     {
       const wrapper_div = document.createElement("div");
@@ -928,6 +930,8 @@ export class AnnotationMulti extends TatorElement {
       let roi_vid = document.createElement("video-canvas");
       this._videoGridInfo[vid_id] = {row: Math.floor(idx / this._multi_layout[1])+1, col: (idx % this._multi_layout[1])+1, video: roi_vid};
 
+      roi_vid.renderer = renderer;
+      renderer.addVideo(vid_id, roi_vid);
       if ('frameOffset' in val.media_files)
       {
         this._frameOffsets.push(val.media_files.frameOffset[idx]);

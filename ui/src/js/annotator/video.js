@@ -1450,6 +1450,11 @@ export class VideoCanvas extends AnnotationCanvas {
     }
   }
 
+  set renderer(value)
+  {
+    this._renderer = value;
+  }
+
 
   _playGenericScrub(direction)
   {
@@ -1621,7 +1626,11 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     
 
-    if (this._draw.canPlay() > 0)
+    if (this._renderer && (this._draw.canPlay() > 0))
+    {
+      this._renderer.notifyReady(this._videoObject.id, player);
+    }
+    else if (this._draw.canPlay() > 0)
     {
       // Ready to update the video.
       // Request browser to call player function to update an animation before the next repaint
@@ -1892,10 +1901,17 @@ export class VideoCanvas extends AnnotationCanvas {
   //Calculate the appropriate appendThreshold
   _calculateAppendThreshold()
   {
+    const fps_swag = Math.max(1, 15 / this._fps);
     // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
     // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
-    const fps_swag = Math.max(1, 15 / this._fps);
-    return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
+    if (this._direction == Direction.STOPPED)
+    {
+      return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
+    }
+    else
+    {
+      return 600; // 10 Minutes whilst playing.
+    }
   }
 
   // Calculate if the on-demand buffer is present and has sufficient runway to play.
@@ -2297,7 +2313,7 @@ export class VideoCanvas extends AnnotationCanvas {
               var trimEnd = currentTime - 30;
               if (trimEnd > start && this._playing)
               {
-                console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                //console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
                 video.deletePendingOnDemand([start, trimEnd]);
               }
             }
@@ -2306,7 +2322,7 @@ export class VideoCanvas extends AnnotationCanvas {
               var trimEnd = currentTime + 30;
               if (trimEnd < end && this._playing)
               {
-                console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                //console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
                 video.deletePendingOnDemand([trimEnd, end]);
               }
             }
@@ -2555,6 +2571,10 @@ export class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._playerTimeout);
       cancelAnimationFrame(this._playerTimeout)
       this._playerTimeout=null;
+    }
+    if (this._renderer)
+    {
+      this._renderer.stopThread();
     }
     if (this._pendingTimeout)
     {
