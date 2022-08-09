@@ -600,7 +600,7 @@ export class AnnotationPlayer extends TatorElement {
     else
     {
       // Let the user slow down and get frame by frame scrubing
-      //this._video.keyframeOnly = false;
+      this._video.keyframeOnly = false;
     }
     if (waitOk) {
 

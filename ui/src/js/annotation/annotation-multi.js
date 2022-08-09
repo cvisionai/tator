@@ -502,10 +502,10 @@ export class AnnotationMulti extends TatorElement {
         {
           video.keyframeOnly = true;
         }
-        //else
-        // {
-        //  video.keyframeOnly = false;
-        //}
+        else
+         {
+          video.keyframeOnly = false;
+        }
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         this_frame += this._frameOffsets[idx];
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
