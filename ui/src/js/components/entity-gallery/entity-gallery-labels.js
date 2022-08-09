@@ -146,9 +146,12 @@ export class EntityGalleryLabels extends TatorElement {
       styleDiv.appendChild(selectionBoxes);
 
       selectionBoxes.addEventListener("change", (e) => {
+        const builtIns = this._selectionValues[-1] ? this._selectionValues[-1].getValue() : [];
+        const currentBoxes = typeData.id == -1 ? [] : e.target.getValue();
+
         this.dispatchEvent(new CustomEvent("labels-update", {
             detail: {
-                value: e.target.getValue(),
+                value: [...builtIns, ...currentBoxes],
                 typeId: typeData.id
               }
           }));

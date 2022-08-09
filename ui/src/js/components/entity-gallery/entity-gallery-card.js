@@ -12,8 +12,11 @@ export class EntityCard extends TatorElement {
 
     // Built ins
     this.builtIns = ["id", "modified_by", "modified_datetime",  "created_datetime", "type"];
-    this.builtIns_MediaOnly = ["created_by"];
-    this.builtIns_LocOnly = ["frame"];
+    
+    // #todo These are not supported in card labels yet
+    // this.builtIns_MediaOnly = ["created_by"];
+    // this.builtIns_LocOnly = ["frame"];
+    
     this._type = null;
 
     // List element (card)
@@ -78,6 +81,7 @@ export class EntityCard extends TatorElement {
     lowerDiv.appendChild(durationDiv);
 
     this._duration = document.createElement("span");
+    this._duration.setAttribute("title", "duration");
     this._duration.setAttribute("class", "f3 text-gray duration");
     durationDiv.appendChild(this._duration);
 
@@ -88,6 +92,7 @@ export class EntityCard extends TatorElement {
 
     // OPTIONAL Detail text (ie file extension)
     this._ext = document.createElement("span");
+    this._ext.setAttribute("title", "file extension");
     this._ext.setAttribute("class", "f3 text-gray");
     this._ext.hidden = true;
     this._bottom.appendChild(this._ext);
@@ -399,7 +404,7 @@ export class EntityCard extends TatorElement {
     console.log(memberships);
     if (memberships !== null) {
       for (let member of memberships) {
-        this._membershipMap.set(member.id, member.username)
+        this._membershipMap.set(member.user, member.username)
       }
     }
 
@@ -407,9 +412,12 @@ export class EntityCard extends TatorElement {
     /**
      * Attributes hidden on card are controlled by outer menu 
     */
-    let attrList = [...obj.attributeOrder, ...this.builtIns];
-    if (this._type == "localization") attrList = [...attrList, ...this.builtIns_LocOnly];
-    if (this._type == "media") attrList = [...attrList, ...this.builtIns_MediaOnly];
+    let attrList = [...this.builtIns, ...obj.attributeOrder];
+
+    // #todo These are not supported in card labels yet
+    // if (this._type == "localization") attrList = [...attrList, ...this.builtIns_LocOnly];
+    // if (this._type == "media") attrList = [...attrList, ...this.builtIns_MediaOnly];
+    
     if (attrList && attrList.length > 0) {
       // console.log("Setting up labels on card with this data:");
       // console.log(obj);
@@ -439,7 +447,7 @@ export class EntityCard extends TatorElement {
             }
             
           } else if(key === "type" && typeof obj.entityType["dtype"] !== null && obj.entityType["dtype"] !== "") {
-            attrLabel.appendChild(document.createTextNode(`${obj.entityType["dtype"]}`));
+            attrLabel.appendChild(document.createTextNode(`${obj.entityType["name"]}`));
           } else {
             attrLabel.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
           }
@@ -452,6 +460,7 @@ export class EntityCard extends TatorElement {
           }
         }
  
+        attrStyleDiv.setAttribute("title", `${key}`);
 
         // add to the card & keep a list
         this.attributeDivs[key] = {};
@@ -486,18 +495,25 @@ export class EntityCard extends TatorElement {
   * Custom label display update
   */
   _updateShownAttributes(evt) {
-    // console.log("_updateShownAttributes, evt.detail.value=");
-    // console.log(evt.detail);
-    // console.log(this.cardObj);
+    console.log("_updateShownAttributes, evt.detail.value=");
+    console.log(evt.detail.value);
     let labelValues = evt.detail.value;
 
+    // We want to treat builtIn like the attribute's on the type
+    // 
     if (this.attributeDivs && (evt.detail.typeId === this.cardObj.entityType.id || evt.detail.typeId === -1)) {
       // show selected
       for (let [key, value] of Object.entries(this.attributeDivs)) {
         if (labelValues.includes(key)) {
           value.div.classList.remove("hidden");
         } else {
-          value.div.classList.add("hidden");
+          // typeData know about built ins, but not the other way around
+          // only HIDE a non-built in if we have an entity type
+          const nonBuiltWithType = !this.builtIns.includes(key) && evt.detail.typeId !== -1;
+          const isBuiltType = this.builtIns.includes(key) && evt.detail.typeId == -1
+          if (nonBuiltWithType || isBuiltType) {
+            value.div.classList.add("hidden");
+          }
         }
       }
     }
