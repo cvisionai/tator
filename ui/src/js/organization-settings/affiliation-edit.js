@@ -15,11 +15,11 @@ export class AffiliationEdit extends OrganizationTypeForm {
 
   _getEmptyData() {
     return {
-      "id" : `New`,
-      "user" : "",
+      "id": `New`,
+      "user": "",
       "permission": "",
-      "organization" : this.organizationId,
-      "form" : "empty"
+      "organization": this.organizationId,
+      "form": "empty"
     };
   }
 
@@ -31,9 +31,9 @@ export class AffiliationEdit extends OrganizationTypeForm {
     console.log("Get existing form");
     console.log(data.id);
 
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+    let current = this.boxHelper.boxWrapDefault({
+      "children": ""
+    });
 
     //
     this._setForm();
@@ -50,7 +50,7 @@ export class AffiliationEdit extends OrganizationTypeForm {
     this._permissionSelect.setValue(data.permission);
     this._permissionSelect.default = data.permission;
     this._permissionSelect.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild( this._permissionSelect );
+    this._form.appendChild(this._permissionSelect);
 
     current.appendChild(this._form);
 
@@ -59,9 +59,9 @@ export class AffiliationEdit extends OrganizationTypeForm {
 
   _getNewForm(data) {
     console.log("Get new form");
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+    let current = this.boxHelper.boxWrapDefault({
+      "children": ""
+    });
     this._setForm();
 
     this._userData = document.createElement("user-data");
@@ -73,8 +73,8 @@ export class AffiliationEdit extends OrganizationTypeForm {
     this._permission = document.createElement("enum-input");
     this._permission.setAttribute("name", "Permission");
     this._permission.choices = [
-      {value: "Member"},
-      {value: "Admin"},
+      { value: "Member" },
+      { value: "Admin" },
     ];
     this._form.appendChild(this._permission);
 
@@ -89,7 +89,7 @@ export class AffiliationEdit extends OrganizationTypeForm {
       return this._getExistingForm(data);
     }
   }
-  
+
   _getFormData(id) {
     let formData;
     if (id == "New") {
@@ -132,34 +132,34 @@ export class AffiliationEdit extends OrganizationTypeForm {
         console.log(data.message);
         this.loading.hideSpinner();
 
-        if(status != 400){
-          
+        if (status != 400) {
+
           // Hide the add new form
           this.sideNav.hide(`itemDivId-${this.typeName}-New`);
 
           // Create and show the container with new type
           this.sideNav.addItemContainer({
-            "type" : this.typeName,
-            "id" : data.id,
-            "hidden" : false
+            "type": this.typeName,
+            "id": data.id,
+            "hidden": false
           });
 
-          let form = document.createElement( this._getTypeClass() );
+          let form = document.createElement(this._getTypeClass());
           form.init(this._data);
 
           this.sideNav.fillContainer({
-            "type" : this.typeName,
-            "id" : data.id,
-            "itemContents" : form
+            "type": this.typeName,
+            "id": data.id,
+            "itemContents": form
           });
 
           // init form with the data
           formData.id = data.id;
           formData.organization = this.organization;
-          form._init({ 
-            data : formData, 
-            modal : this.modal, 
-            sidenav : this.sideNav,
+          form._init({
+            data: formData,
+            modal: this.modal,
+            sidenav: this.sideNav,
             orgData: this.orgData
           });
 
@@ -185,13 +185,22 @@ export class AffiliationEdit extends OrganizationTypeForm {
       this.loading.hideSpinner();
       this._userData.reset();
       let message;
+
+      console.log(`numSucceeded ${numSucceeded} (${typeof numSucceeded}) and ${numFailed} (${typeof numFailed})`);
+
       if (numSucceeded > 0) {
         message = `Successfully created ${numSucceeded} ${numSucceeded > 1 ? 'affiliations' : 'affiliation'}.`;
         if (numFailed > 0) {
-          message = `${message} Failed to create ${numFailed} ${numFailed > 1 ? 'affiliations' : 'affiliation'}.\n${errorMessages}`;
+          message += ` Failed to create ${numFailed} ${numFailed > 1 ? 'affiliations' : 'affiliation'}.\n${errorMessages}`;
+          
+          // mix of succcess and failure
+          return this._modalComplete(message);
+        } else {
+          // only success messages
+          return this._modalSuccess(message);
         }
-        return this._modalSuccess(message);
       } else {
+        // only failures
         return this._modalError(`Failed to create ${numFailed > 1 ? 'affiliations' : 'affiliation'}.\n${errorMessages}`);
       }
     });

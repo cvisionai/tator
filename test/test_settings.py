@@ -218,7 +218,7 @@ def test_settings_leafType(page_factory, project, base_url):
     page.wait_for_selector('text="Delete Confirmation"')
     page.click('text="Confirm"')
 
-    page.wait_for_selector('text="Complete"')
+    page.wait_for_selector('modal-dialog modal-success')
     # page.click('modal-dialog modal-close .modal__close')
     # page.wait_for_timeout(5000)
     
@@ -528,7 +528,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
             page.click(f'.modal__footer input[type="submit"]')
             page.wait_for_selector('modal-dialog modal-success')
             successMessages = page.query_selector_all('modal-dialog modal-success')
-            assert len(successMessages) == 1
+            assert len(successMessages) == 2 # heading success icon and main body
             # page.click('modal-dialog modal-close .modal__close')
 
         # Get data for Assert statements
@@ -552,7 +552,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
         # if "string" in dtypeName:
         #     assert not "autocomplete" in attr_type_obj
 
-        print(f'> Successfully edited {len(successMessages)} new attribute named {dtypeName}!')
+        print(f'> Successfully edited new attribute named {dtypeName}!')
     
 
     # Edit Attribute Types (GLOBAL)
@@ -574,7 +574,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
             page.click('text="Confirm"')
             page.wait_for_selector('modal-dialog modal-success')
             successMessages = page.query_selector_all('modal-dialog modal-success')
-            assert len(successMessages) == 1
+            assert len(successMessages) == 2 # heading and body icon
             # page.click('modal-dialog modal-close .modal__close')
 
         # Get data for Assert statements
@@ -598,7 +598,7 @@ def test_settings_attributeTests(page_factory, project, base_url):
         if "string" in dtypeName:
             assert not "autocomplete" in attr_type_obj
             print(attr_type_obj)     
-        print(f'> Successfully edited {len(successMessages)} global attribute named {dtypeName}!')
+        print(f'> Successfully edited global attribute named {dtypeName}!')
     
     
     # todo test clone
@@ -620,6 +620,6 @@ def test_settings_projectDelete(page_factory, project):
     page.click('project-main-edit .text-red button')
     page.wait_for_selector(f'text="Delete Confirmation"')
     page.click('button:has-text("Confirm")')
-    page.wait_for_selector(f'text="Project {project} deleted successfully!"')
+    page.wait_for_selector(f'text="Project {project} deleted successfully! Redirecting to projects..."')
     print(f"Project deleted successfully!")
     page.close()

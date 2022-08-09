@@ -68,7 +68,7 @@ export class ModalDialog extends TatorElement {
       const currentOpacity = this._div.style.opacity;
       const turnDown = currentOpacity * percent;
       this._div.style.opacity = turnDown
-      
+      console.log(turnDown);
       if (turnDown == 0 || turnDown < .3) {
         this.stopFade();
       }
