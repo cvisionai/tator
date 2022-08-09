@@ -318,7 +318,6 @@ export class ProjectDetail extends TatorPage {
     });
 
     this.moveFile.addEventListener("reload", () => {
-      console.log("RELOAD!")
       this._mediaSection.reload();
       this._bulkEdit._clearSelection();
     });
@@ -449,7 +448,7 @@ export class ProjectDetail extends TatorPage {
 
               // Notifiy media section about section renames
               card.addEventListener("renameSection", (evt) => {
-                console.log(evt);
+                // console.log(evt);
                 this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
               });
               card.addEventListener("deleteSection", (evt) => {
@@ -535,7 +534,7 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._moveFileCallback = evt => {
-      console.log(evt);
+      // console.log(evt);
       this.moveFile.open(evt.detail.mediaId, evt.detail.mediaName, this.getAttribute("project-id"));
     };
 
@@ -567,7 +566,6 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._deleteFileCallback = evt => {
-      console.log("Test");
       this.deleteFileForm.setAttribute("media-id", evt.detail.mediaId);
       this.deleteFileForm.setAttribute("media-name", evt.detail.mediaName);
       this.deleteFileForm.setAttribute("is-open", "");
@@ -671,7 +669,6 @@ export class ProjectDetail extends TatorPage {
     });
     // Notifiy media section about section renames
     card.addEventListener("renameSection", (evt) => {
-      console.log(evt);
       this._mediaSection.dispatchEvent(new CustomEvent("renameSection", { detail: evt.detail }));
     });
     card.addEventListener("deleteSection", (evt) => {
@@ -812,7 +809,6 @@ export class ProjectDetail extends TatorPage {
 
             moveSelectedButton.addEventListener("click", () => {
               const list = Array.from(this._bulkEdit._currentMultiSelection);
-              console.log(list);
               if (list && list.length > 0) {
                 const listString = String(list);
                 this.moveFile.open(list, null, this.getAttribute("project-id"), false);
@@ -934,7 +930,7 @@ export class ProjectDetail extends TatorPage {
 
                 // Is there a search to apply?
                 if (params.has("search")) {
-                  console.log(params.get("search"))
+                  // console.log(params.get("search"));
                   this._mediaSection.searchString = params.get("search");
                   this._addSavedSearchButton.style.opacity = 1.0;
                   this._addSavedSearchButton.style.cursor = "pointer";

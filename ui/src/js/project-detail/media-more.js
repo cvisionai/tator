@@ -170,7 +170,7 @@ export class MediaMore extends TatorElement {
         }
         break;
       case "processing":
-        console.log(`Processing value: ${newValue}`)
+        console.log(`Processing value: ${newValue}`);
         // if (newValue === null) {
         //   const hide = false;
         //   this.toggleAll(hide);
@@ -182,7 +182,7 @@ export class MediaMore extends TatorElement {
         // }
         break;
       case "open":
-        console.log(newValue);
+        // console.log(newValue);
         if (newValue != null) {
           this._details.hidden = false;
         } else {

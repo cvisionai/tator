@@ -46,7 +46,6 @@ export class EntityGalleryPanelForm extends TatorElement {
   _init({ data, attributePanelData, associatedMedia, allowDelete = false }) {
     if (data.entityType) data.entityType.isTrack = false;
     this._attributes.dataType = data.entityType;
-    console.log(this._attributes);
     this._attributes.displaySlider(false);
     this._attributes.displayGoToTrack(false);
     this._attributes.displayGoToLocalization(false);

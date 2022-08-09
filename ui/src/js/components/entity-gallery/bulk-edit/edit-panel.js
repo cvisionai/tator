@@ -279,8 +279,8 @@ export class MultiAttributeEditPanel extends TatorElement {
    }
 
    addLocType(typeData) {
-      console.log("ADD loc type typedata=");
-      console.log(typeData);
+      // console.log("ADD loc type typedata=");
+      // console.log(typeData);
 
       let typeName = typeData.name ? typeData.name : "";
 
@@ -325,7 +325,6 @@ export class MultiAttributeEditPanel extends TatorElement {
       // this._warningConfirmation.appendChild(this._prefetchBool);
 
       // No attributes, so we can stop and provide a message
-      console.log("Are we here? "+typeData.attribute_types.length)
       if (typeData.attribute_types.length === 0) {
          const message = document.createElement("div");
          message.setAttribute("class", "text-white f2 py-2")
@@ -456,7 +455,7 @@ export class MultiAttributeEditPanel extends TatorElement {
       }
       this._attributeCheckBoxList = this.newList;
 
-      console.log(typeCheckboxList);
+      // console.log(typeCheckboxList);
 
       // return this.newList;
       return typeCheckboxList;
@@ -507,7 +506,7 @@ export class MultiAttributeEditPanel extends TatorElement {
 
    // Loop through and add hidden inputs for each data type
    _addInputs(attributeTypes, dataTypeId) {
-      console.log("Creating div for inputs... type id " + dataTypeId)
+      // console.log("Creating div for inputs... type id " + dataTypeId);
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group_bulk-edit text-gray f2");
       div.setAttribute("id", dataTypeId);

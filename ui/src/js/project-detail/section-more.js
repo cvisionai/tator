@@ -71,7 +71,7 @@ export class SectionMore extends TatorElement {
 
     this._bulkEditMedia.addEventListener("click", () => {
       details.removeAttribute("open");
-      console.log("dispatch bulk edit!")
+      // console.log("dispatch bulk edit!")
       this.dispatchEvent(new Event("bulk-edit"));
     });
 
@@ -116,7 +116,7 @@ export class SectionMore extends TatorElement {
       this._deleteSection.style.display = "none";
       this._deleteMedia.style.display = "none";
     } else {
-      console.log(val);
+      // console.log(val);
 
       if (val.lucene_search == null) {
         // not a saved search

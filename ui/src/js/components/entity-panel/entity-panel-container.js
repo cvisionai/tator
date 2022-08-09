@@ -165,7 +165,6 @@ export class EntityPanelContainer extends TatorElement {
 
 
    setUpResize() {
-      console.log(this.main);
       const initResizePanel = (e) => {
          if (!this._movingPanel) {
             this._movingPanel = true;
@@ -174,7 +173,6 @@ export class EntityPanelContainer extends TatorElement {
          }
       }
       const resizePanel = (e) => {
-         console.log(this.main.style);
          if (!this.open) {
             // #todo take what you need from toggleOpen so this doesn't end up in the negative side
             // but fix the jump when this happens
@@ -185,19 +183,14 @@ export class EntityPanelContainer extends TatorElement {
                this.aside.style.width = (e.clientX) + 'px';
                this.main.style.width = `${this.aside.offsetLeft + 40} px`;
                this._resizer.style.left = `${(e.clientX - 10)}px !important`;
-               console.log(this._resizer.style.left);
                // #todo left isn't done, add bulkEdit when panel bugs fixed
                // if (this.bulkEdit !== null) {
-                  
                // }
             } else {
                //right panel 
-               console.log(this.main.style.width);
                let num = window.innerWidth - this.aside.offsetLeft;
-               console.log(window.innerWidth -  Number(num) );
                this.aside.style.width = (window.innerWidth - e.clientX + (.02 * window.innerWidth)) + 'px';
                this.main.style.width = `${window.innerWidth - Number(num)}px`;
-               console.log(this.bulkEdit);
                if (this.bulkEdit !== null) {
                   this.bulkEdit._bulkEditBar.style.right = (window.innerWidth - e.clientX + (.02 * window.innerWidth)) + 'px';
                }
@@ -212,11 +205,8 @@ export class EntityPanelContainer extends TatorElement {
             this.main.style.width = `${this.aside.offsetLeft + 40} px`;
          } else {
             let num = window.innerWidth - this.aside.offsetLeft - this.aside.offsetWidth;
-            console.log(num);
             this.main.style.width = `${window.innerWidth - Number(num) } px`;
          }
-         console.log(this.main.style.width)
-         console.log("STOP");
          this._movingPanel = false;
       }
 

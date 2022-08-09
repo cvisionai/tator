@@ -400,8 +400,8 @@ export class EntityCard extends TatorElement {
     }
 
     this._membershipMap = new Map();
-    console.log("memberships");
-    console.log(memberships);
+    // console.log("memberships");
+    // console.log(memberships);
     if (memberships !== null) {
       for (let member of memberships) {
         this._membershipMap.set(member.user, member.username)
@@ -423,8 +423,8 @@ export class EntityCard extends TatorElement {
       // console.log(obj);
       // Clear this in case of reuse / re-init
       this.attributesDiv.innerHTML = "";
-      console.log("This type: " + this._type);
-      console.log(obj);
+      // console.log("This type: " + this._type);
+      // console.log(obj);
 
       for (const attr of attrList) {
         let attrStyleDiv = document.createElement("div");
@@ -495,8 +495,8 @@ export class EntityCard extends TatorElement {
   * Custom label display update
   */
   _updateShownAttributes(evt) {
-    console.log("_updateShownAttributes, evt.detail.value=");
-    console.log(evt.detail.value);
+    // console.log("_updateShownAttributes, evt.detail.value=");
+    // console.log(evt.detail.value);
     let labelValues = evt.detail.value;
 
     // We want to treat builtIn like the attribute's on the type
@@ -881,13 +881,11 @@ export class EntityCard extends TatorElement {
 
       rename.addEventListener("click", evt => {
         evt.stopPropagation();
-        console.log("renameSection CLICK 22");
         this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "folder", section: this._section} }));
         context.style.display = "none";
       });
       deleteSection.addEventListener("click", evt => {
         evt.stopPropagation();
-        console.log("deleteSection CLICK 22");
         this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "folder", section: this._section } }));
         context.style.display = "none";
       });
@@ -955,13 +953,11 @@ export class EntityCard extends TatorElement {
       context.appendChild(deleteSection);
 
       rename.addEventListener("click", evt => {
-        console.log("rename CLICK");
         evt.stopPropagation();
         this.dispatchEvent(new CustomEvent("renameSection", { detail: { type: "saved search", section: this._section} }));
         context.style.display = "none";
       });
       deleteSection.addEventListener("click", evt => {
-        console.log("deleteSection CLICK");
         evt.stopPropagation();
         this.dispatchEvent(new CustomEvent("deleteSection", { detail: { type: "saved search", section: this._section } }));
         context.style.display = "none";

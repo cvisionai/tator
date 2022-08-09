@@ -69,8 +69,6 @@ export class MediaMoveDialog extends ModalDialog {
       this._message.innerHTML = `Move media files <span class="text-gray">(IDs: ${String(this._mediaId).replaceAll(",",", ")})</span> to:`;
     }
 
-    console.log( this._message);
-
     this._moveEnum.hidden = false;
     this._newNameInput.hidden = true;
     this._footer.classList.add("hidden");
@@ -107,8 +105,6 @@ export class MediaMoveDialog extends ModalDialog {
     const messageInfo = evt.detail.message;
     this._single = (this._mediaId.indexOf(",") > -1);
 
-    console.log(`is this single? ${this._single} and from this this._mediaId.includes(",") ${this._mediaId.includes(",")}`)
-
     // Update text
     this.removeAttribute("is-open");
 
@@ -136,7 +132,7 @@ export class MediaMoveDialog extends ModalDialog {
 
   moveToNew(evt) {
     this._sectionTo = { name: "NEW" };
-    console.log(evt);
+    // console.log(evt);
 
     // Update text
     this.removeAttribute("is-open");
@@ -191,7 +187,6 @@ export class MediaMoveDialog extends ModalDialog {
 
           // Reload media
           this.dispatchEvent(new Event("reload"));
-          console.log(this);
 
           // Update text
           this.removeAttribute("is-open");
@@ -229,7 +224,7 @@ export class MediaMoveDialog extends ModalDialog {
 
       } else if (this._sectionTo.name == "NEW") {
         // CREATE A NEW SECTION AND RETURN THE CONFIRMED DIALOG contents WITH THE NEW SECTION!
-        console.log("Create new section, and then show them modal again......");
+        // console.log("Create new section, and then show them modal again......");
         // hide all
         this._moveEnum.hidden = true;
         this._newNameInput.hidden = true;

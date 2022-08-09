@@ -191,7 +191,7 @@ export class MediaSection extends TatorElement {
     if (!single) mediaId = mediaId.split(","); 
 
     for (const mediaCard of this._files._ul.children) {
-      console.log(mediaCard);
+      // console.log(mediaCard);
       const currentCardId = mediaCard.getAttribute("media-id");
 
       if ((single && currentCardId == mediaId) || (!single && mediaId.includes(currentCardId))) {
@@ -652,7 +652,7 @@ export class MediaSection extends TatorElement {
   }
 
   _rename(evt) {
-    console.log(this._section);
+    // console.log(this._section);
     if (this._name.contains(this._nameText)) {
       const input = document.createElement("input");
       input.style.borderWidth = "3px";
@@ -677,7 +677,7 @@ export class MediaSection extends TatorElement {
           //});
           this._sectionName = evt.target.value;
         }
-        console.log(this._section);
+        // console.log(this._section);
         fetch("/rest/Section/" + this._section.id, {
           method: "PATCH",
           credentials: "same-origin",
@@ -734,7 +734,7 @@ export class MediaSection extends TatorElement {
     // New right click options
     this.addEventListener("renameSection", this._reloadAndRename.bind(this));
     this.addEventListener("deleteSection", (evt) => {
-      console.log(evt);
+      // console.log(evt);
       this.dispatchEvent(new CustomEvent("remove", {
         detail: {
           sectionParams: this._sectionParams(),
@@ -931,7 +931,7 @@ export class MediaSection extends TatorElement {
     }
   }
   async _reloadAndRename(evt) {
-    console.log(evt);
+    // console.log(evt);
     // this.section = evt.detail.section;
     // await this.reload();
     this._rename();

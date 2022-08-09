@@ -37,7 +37,7 @@ export class MediaMoveButton extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "text":
-        console.log(newValue);
+        // console.log(newValue);
         this._span.textContent = newValue;
         break;
     }

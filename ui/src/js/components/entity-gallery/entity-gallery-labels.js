@@ -176,8 +176,6 @@ export class EntityGalleryLabels extends TatorElement {
     // # assumes values are in the accepted format for checkbox set
     //
     let valuesList = this._getValue(typeId);
-    console.log("valuesList");
-    console.log(valuesList);
     for(let box in valuesList){
       if(values.contains(box.name)){
         box.checked = true;

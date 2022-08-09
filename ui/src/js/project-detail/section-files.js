@@ -232,8 +232,6 @@ export class SectionFiles extends TatorElement {
 
 
   getCardLabelOptions(attributeTypes) {
-    console.log("attributeTypes");
-    console.log(attributeTypes);
     // Setup every time card is updated
     // Non-hidden attributes (ie order >= 0))
     let nonHiddenAttrs = [];
