@@ -496,7 +496,6 @@ export class AnnotationMulti extends TatorElement {
       let prime_fps = this._fps[this._longest_idx];
       let prime_frame = this._videos[this._longest_idx].currentFrame();
       let promises = [];
-      console.info(`${performance.now()} NOTICE: Start multiview seek to ${frame}`);
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
@@ -521,16 +520,15 @@ export class AnnotationMulti extends TatorElement {
         }
         promises.push(video.seekFrame(this_frame, cb));
       }
-      Promise.all(promises).then(() => {
-        console.info(`${performance.now()} NOTICE: All videos finished seeking to ${frame}`);
+      Promise.allSettled(promises).then(() => {
 		    for (let idx = 0; idx < this._videos.length; idx++)
         {
           let video = this._videos[idx];
-
           // Update the display with the latest
           video.displayLatest(true);
-
+          video.onDemandDownloadPrefetch();
         }
+        this._videoStatus = "paused";
       });
     }
   }
@@ -561,38 +559,25 @@ export class AnnotationMulti extends TatorElement {
       this_frame += this._frameOffsets[idx];
       video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
       video.shutdownOnDemandDownload();
-      const seekPromise = video.seekFrame(this_frame, video.drawFrame, true);
+      video._draw.clear();
+      let cb=(frameIdx,source,width,height) => {
+        video.pushFrame(frameIdx,source,width,height);
+        video.updateOffscreenBuffer(frameIdx,source,width,height);
+      }
+      const seekPromise = video.seekFrame(this_frame, cb, true);
       seekPromiseList.push(seekPromise);
     }
 
-    // It's possible that the prime video will be out of sync with other videos if
-    // there are network seek expired. Until that's addressed, this will verify
-    // the videos are the same frame and if not, it'll attempt to seek to the
-    // prime video's location. This essentially is only a +1 retry.
     Promise.allSettled(seekPromiseList).then(() => {
-      let primeFrame = this._videos[this._longest_idx].currentFrame();
-      let prime_fps = this._fps[this._longest_idx];
-      this._lastScrub = Date.now();
-      for (let idx = 0; idx < this._videos.length; idx++)
-      {
-        let video = this._videos[idx];
-        let this_frame = Math.round(primeFrame * (this._fps[idx]/prime_fps));
-        this_frame += this._frameOffsets[idx];
-        if (this_frame != video.currentFrame())
+        for (let idx = 0; idx < this._videos.length; idx++)
         {
-            video.seekFrame(this_frame, video.drawFrame, true).then(() => {
-		this._lastScrub = Date.now();
-	    });
+          let video = this._videos[idx];
+          // Update the display with the latest
+          video.displayLatest(true);
+          video.onDemandDownloadPrefetch();
         }
-	      video.onDemandDownloadPrefetch(this_frame);
-      };
-
-      this._videoStatus = "paused";
-      this.dispatchEvent(new Event("hideLoading", {composed: true}));
-    })
-    .catch(() => {
-      this.dispatchEvent(new Event("hideLoading", {composed: true}));
-    });
+        this._videoStatus = "paused";
+      });
   }
 
   /**
@@ -999,20 +984,6 @@ export class AnnotationMulti extends TatorElement {
         video_info.push(resp.json());
       }
       Promise.all(video_info).then((info) => {
-        // When a seek is complete check to make sure the display all set
-        this._videos[0].addEventListener("seekComplete", evt => {
-          // Only run check ready on final seek
-          if (this._slider.active == false)
-          {
-            this.checkReady();
-          }
-          else
-          {
-            // Disable buttons when actively seeking
-            this._playInteraction.disable();
-          }
-        });
-
         let max_frames = 0;
         let max_time = 0;
         let fps_of_max = 0;
@@ -2006,17 +1977,29 @@ export class AnnotationMulti extends TatorElement {
     let p_list=[];
     let prime_fps = this._fps[this._longest_idx]
     let idx = 0;
-    this.checkReady();
+    
+    this._playInteraction.disable();
     for (let video of this._videos)
     {
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
       this_frame += this._frameOffsets[idx];
-      video.onPlay();
-      p_list.push(video.gotoFrame(Math.min(this_frame,video._numFrames-1), true));
+      let cb=(frameIdx,source,width,height) => {
+        video.pushFrame(frameIdx,source,width,height);
+        video.updateOffscreenBuffer(frameIdx,source,width,height);
+      }
+      video._draw.clear();
+      p_list.push(video.seekFrame(Math.min(this_frame,video._numFrames-1), cb, true));
       idx++;
     }
     let coupled_promise = new Promise((resolve,_) => {
       Promise.all(p_list).then(() =>{
+        for (let idx = 0; idx < this._videos.length; idx++)
+        {
+          let video = this._videos[idx];
+          // Update the display with the latest
+          video.displayLatest(true);
+          video.onDemandDownloadPrefetch();
+        }
         this.checkReady();
         resolve();
       });

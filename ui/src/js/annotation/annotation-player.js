@@ -207,21 +207,6 @@ export class AnnotationPlayer extends TatorElement {
       this._slider.setAttribute('min', evt.detail.value);
     });
 
-    // When a seek is complete check to make sure the display all set
-    this._video.addEventListener("seekComplete", evt => {
-      // Only run check ready on final seek
-      if (this._slider.active == false)
-      {
-        clearTimeout(this._handleNotReadyTimeout);
-        this._handleNotReadyTimeout = null;
-        this.checkReady();
-      }
-      else
-      {
-        this._playInteraction.disable();
-      }
-    });
-
     // When a playback is stalled, pause the video
     this._video.addEventListener("playbackStalled", evt => {
       Utilities.warningAlert("Video playback stalled.");
