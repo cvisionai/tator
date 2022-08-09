@@ -490,11 +490,13 @@ export class AnnotationMulti extends TatorElement {
     const waitOk = now - this._lastScrub > this._scrubInterval;
     this._playInteraction.disable(); // disable play on scrub
     if (waitOk) {
+      this._lastScrub = Date.now();
       this._videoStatus = "paused";
-
       this._play.setAttribute("is-paused","");
       let prime_fps = this._fps[this._longest_idx];
       let prime_frame = this._videos[this._longest_idx].currentFrame();
+      let promises = [];
+      console.info(`${performance.now()} NOTICE: Start multiview seek to ${frame}`);
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
@@ -503,18 +505,33 @@ export class AnnotationMulti extends TatorElement {
           video.keyframeOnly = true;
         }
         else
-         {
+        {
           video.keyframeOnly = false;
         }
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         this_frame += this._frameOffsets[idx];
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
         video.shutdownOnDemandDownload();
-        video.seekFrame(this_frame, video.drawFrame)
-              .then(() => {
-		  this._lastScrub = Date.now();
-	      });
+        video._draw.clear();
+
+        // Seek callbacks are called from the perspective of the video class
+        let cb=(frameIdx,source,width,height) => {
+          video.pushFrame(frameIdx,source,width,height);
+          video.updateOffscreenBuffer(frameIdx,source,width,height);
+        }
+        promises.push(video.seekFrame(this_frame, cb));
       }
+      Promise.all(promises).then(() => {
+        console.info(`${performance.now()} NOTICE: All videos finished seeking to ${frame}`);
+		    for (let idx = 0; idx < this._videos.length; idx++)
+        {
+          let video = this._videos[idx];
+
+          // Update the display with the latest
+          video.displayLatest(true);
+
+        }
+      });
     }
   }
 
