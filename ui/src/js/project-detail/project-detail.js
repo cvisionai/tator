@@ -318,7 +318,8 @@ export class ProjectDetail extends TatorPage {
     });
 
     this.moveFile.addEventListener("reload", () => {
-      this._mediaSection.reload.bind(this._mediaSection);
+      console.log("RELOAD!")
+      this._mediaSection.reload();
       this._bulkEdit._clearSelection();
     });
     this.moveFile.addEventListener("new-section", (evt) => {

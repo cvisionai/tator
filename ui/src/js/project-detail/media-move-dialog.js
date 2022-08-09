@@ -150,8 +150,6 @@ export class MediaMoveDialog extends ModalDialog {
   }
 
   async _moveConfirmed() {
-    console.log("_moveConfirmed");
-    console.log(this._sectionTo);
     if (this._sectionTo !== null && this._sectionTo.name !== null && this._mediaId !== null) {
       if (this._sectionTo.name !== "NEW") {
         // hide all
@@ -191,6 +189,10 @@ export class MediaMoveDialog extends ModalDialog {
 
           const respJSON = await resp.json();
 
+          // Reload media
+          this.dispatchEvent(new Event("reload"));
+          console.log(this);
+
           // Update text
           this.removeAttribute("is-open");
           // Reset values
@@ -204,11 +206,12 @@ export class MediaMoveDialog extends ModalDialog {
           this._sectionTo = null;
           this._single = true;
 
+          
+
           if (resp.status !== 200) {
             this._message.textContent = `Error: ${respJSON.message}`;
           } else {
             this._message.innerHTML = `<span class="text-green">Success! ${respJSON.message}</span>`;
-            this.dispatchEvent(new Event("reload"));
             this.setAttribute("is-open", "true");
             this.fadeOut();
           }
@@ -263,7 +266,7 @@ export class MediaMoveDialog extends ModalDialog {
               this._message.textContent = "";
             }, 3000);
           } else {
-            // #todo Show newly added section in the bg?
+            //updated media list
             this.dispatchEvent(new Event("reload"));
 
             // Reset values
@@ -289,6 +292,7 @@ export class MediaMoveDialog extends ModalDialog {
                 "Was not able to get the new section data."
               )
             } else {
+              // refreshes section sidebar
               this.dispatchEvent(new CustomEvent("new-section", { detail: { section: data }}));
               //then
               this._moveEnum.dispatchEvent(new CustomEvent("move", {
