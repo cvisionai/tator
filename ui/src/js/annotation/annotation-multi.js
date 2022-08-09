@@ -533,7 +533,7 @@ export class AnnotationMulti extends TatorElement {
     }
 
     this._videoStatus = "scrubbing";
-
+    this._playInteraction.disable(); // disable play on seek
     var seekPromiseList = [];
     let prime_fps = this._fps[this._longest_idx];
     for (let idx = 0; idx < this._videos.length; idx++)

@@ -633,6 +633,7 @@ export class AnnotationPlayer extends TatorElement {
     this._video.shutdownOnDemandDownload();
 
     // Use the hq buffer when the input is finalized
+    this._playInteraction.disable(); // disable play on seek
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
       this._video.onDemandDownloadPrefetch(frame);
