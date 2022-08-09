@@ -65,7 +65,7 @@ export class MediaMove extends TatorElement {
     const options = [...this._select.querySelectorAll("option")];
     const names = options.map(elem => elem.value);
     for (const section of val) {
-      if (!names.includes(section)) {
+      if (!names.includes(section) && !section.lucene_search) {
         const option = document.createElement("option");
         option.textContent = section.name;
         option.value = JSON.stringify(section);
