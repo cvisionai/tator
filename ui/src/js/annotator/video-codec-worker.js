@@ -642,7 +642,7 @@ class TatorVideoBuffer {
         // Make an ImageBitmap from the frame and release the memory
         this._canvasCtx.drawImage(frame,0,0);
         let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
-        console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
+        //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
         frame.close();
         postMessage({"type": "image",
                     "data": image,
