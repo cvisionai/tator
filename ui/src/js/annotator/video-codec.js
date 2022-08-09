@@ -422,7 +422,7 @@ class TatorVideoManager {
        "currentTime": this._current_cursor,
        "videoTime": video_time,
        "bias": this._bias,
-       "informational": is_hot
+       "informational": is_hot || this._mute
     });
     if (is_hot && this._mute == false)
     {
