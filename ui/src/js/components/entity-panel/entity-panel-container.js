@@ -117,7 +117,11 @@ export class EntityPanelContainer extends TatorElement {
          // this._resizer.paddingRight = "400px";
          this.gallery._main.classList.remove("mr-6");
          this.gallery._main.classList.add("mr-3");
-      }   
+      }
+
+      if (this.bulkEdit !== null) {
+         this.bulkEdit._bulkEditBar.style.right = "25%";
+      }
 
       this._panelTop._topBarArrow.style.transform = "scaleX(1)";
       this.open = true;
@@ -147,6 +151,10 @@ export class EntityPanelContainer extends TatorElement {
       } else{
          this.gallery._main.classList.add("mr-6");
          this.gallery._main.classList.remove("mr-3");
+      }
+
+      if (this.bulkEdit !== null) {
+         this.bulkEdit._bulkEditBar.style.right = "2%";
       }
       
       this.open = false;
