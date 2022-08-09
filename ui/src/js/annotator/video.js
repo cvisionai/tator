@@ -106,6 +106,11 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       this._dispFrame = Number(searchParams.get("frame"));
     }
+    this._summaryLevel = null;
+    if (searchParams.has("summaryLevel"))
+    {
+      this._summaryLevel = Number(searchParams.get("summaryLevel"));
+    }
     this._lastDirection=Direction.FORWARD;
     this._direction=Direction.STOPPED;
     this._fpsDiag=0;
@@ -474,7 +479,7 @@ export class VideoCanvas extends AnnotationCanvas {
       // Hook up summary level indication
       if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
       {
-        p.playBuffer().summaryLevel = this._mediaInfo.summaryLevel;
+        p.playBuffer().summaryLevel = this._summaryLevel;
       }
       if (idx == this._play_idx)
       {
@@ -614,6 +619,12 @@ export class VideoCanvas extends AnnotationCanvas {
     if (mediaType)
       this.mediaType = mediaType;
     this._videoObject = videoObject;
+    
+    // If summary level is not set, grab it from the media's default.
+    if (this._summaryLevel == null)
+    {
+      this._summaryLevel = videoObject.summaryLevel;
+    }
 
     if (numGridRows != undefined)
     {
@@ -1432,7 +1443,7 @@ export class VideoCanvas extends AnnotationCanvas {
       frame = this.currentFrame()
     }
 
-    const filename = `Frame_${frame}_${this._mediaInfo['name']}`;
+    const filename = `Frame_${frame}_${this._videoObject.name}`;
     this.makeOffscreenDownloadable(localizations, filename);
   }
 
