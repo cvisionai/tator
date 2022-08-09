@@ -369,7 +369,7 @@ export class DownloadManager
         {
           // Done processing the downloaded segment.
           // Watchdog will kick off the next segment to download.
-          console.log(`Requesting more onDemand data: done.`);
+          // console.log(`Requesting more onDemand data: done.`);
           this._parent._onDemandPendingDownloads -= 1;
           this._parent._onDemandCompletedDownloads += 1;
           return;

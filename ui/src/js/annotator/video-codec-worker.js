@@ -266,7 +266,7 @@ class TatorVideoBuffer {
   _mp4Samples(track_id, timestampOffset, samples)
   {
     let muted = true;
-    console.info(`${this._name} GOT=${samples.length} ${timestampOffset}`);
+    //console.info(`${this._name} GOT=${samples.length} ${timestampOffset}`);
     let min_cts = Number.MAX_VALUE;
     let max_cts = Number.MIN_VALUE;
     const relative_cursor = this._current_cursor - timestampOffset;
@@ -343,7 +343,7 @@ class TatorVideoBuffer {
 
     const timestampOffsetInCtx=Math.floor(timestampOffset*this._timescaleMap.get(timestampOffset));
     //console.info(`${this._name}: TIMESTAMP ${timestampOffset} is ${timestampOffsetInCtx}`);
-    console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
+    //console.info(`${performance.now()}: Calling mp4 samples, count=${samples.length} muted=${muted} cursor_ctx=${cursor_in_ctx}`);
     if (muted == false || this._playing == true || this.keyframeOnly == true)
     {
       this._seek_in_progress=true;

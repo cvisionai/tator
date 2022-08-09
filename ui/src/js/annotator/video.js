@@ -2206,7 +2206,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
           this._onDemandId += 1;
           console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: onDemandInit`);
-
+          this._lastLoadTime = null;
           this._dlWorker.postMessage(
             {
               "type": "onDemandInit",
@@ -2417,12 +2417,37 @@ export class VideoCanvas extends AnnotationCanvas {
       if (needMoreData && !this._onDemandFinished && this._onDemandPendingDownloads == 0)// && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
       {
         // Kick of the download worker to get the next onDemand segments
-        console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data (pendingDownloads/playbackReady/ranges.length): ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady} ${ranges.length}`);
+        //console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data (pendingDownloads/playbackReady/ranges.length): ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady} ${ranges.length}`);
         for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
         {
           var end = ranges.end(rangeIdx);
           var start = ranges.start(rangeIdx);
-          console.log(`    range ${rangeIdx} (start/end/current) - ${start} ${end} ${this.frameToTime(this._dispFrame)}`)
+          const current = this.frameToTime(this._dispFrame);
+          const runway = end-current;
+          const now = performance.now();
+          // Only print this message once a second
+          if (this._lastLoadTime == null)
+          {
+            this._lastLoadTime = now;
+            this._lastEnd = end;
+          }
+          if (now - this._lastLoadTime > 1000)
+          {
+            // Load score greater than 1 means loads are faster video playback requirement.
+            // Load score less than 1 means loads are not keeping up.
+            const loadScore = (end - this._lastEnd)/(((now-this._lastLoadTime)/1000)*this._playbackRate);
+            const msg = `Buffer Status: time=${now}: id=${this._videoObject.id}: ${rangeIdx} score=${loadScore} (start/end/current/runway)= ${start}/${end}/${current}/${runway}`;
+            if (loadScore < 1)
+            {
+              console.warn(msg)
+            }
+            else
+            {
+              console.info(msg);
+            }
+            this._lastLoadTime = now;
+            this._lastEnd = end;
+          }
         }
         this._onDemandPendingDownloads += 1;
         this._dlWorker.postMessage({

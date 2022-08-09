@@ -542,7 +542,7 @@ export class VideoDownloader
     var downloadSize = currentSize - 1;
     var onDemandId = this._onDemandConfig["id"];
 
-    console.log(`onDemand downloading '${downloadSize}' at '${startByte}' (next segment idx - ${packetIndex}) ID: ${onDemandId}`);
+    //console.log(`onDemand downloading '${downloadSize}' at '${startByte}' (next segment idx - ${packetIndex}) ID: ${onDemandId}`);
 
     let headers = {'range':`bytes=${startByte}-${startByte+downloadSize}`,
                    ...self._headers};
@@ -843,7 +843,7 @@ onmessage = function(e)
   }
   else if (type == 'onDemandDownload')
   {
-    console.info(`${JSON.stringify(msg)} ${ref.inOnDemandMode()}`);
+    //console.info(`${JSON.stringify(msg)} ${ref.inOnDemandMode()}`);
     if (ref.inOnDemandMode())
     {
       ref.downloadNextOnDemandBlock();
