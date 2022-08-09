@@ -1925,7 +1925,7 @@ export class VideoCanvas extends AnnotationCanvas {
   _calculateAppendThreshold()
   {
     // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
-    // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
+    // @TODO: These would be great to pull from user settings or project settings
     if (this._direction == Direction.STOPPED)
     {
       return 300; // 5 minutes when paused
