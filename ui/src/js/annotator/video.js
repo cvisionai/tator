@@ -2310,7 +2310,7 @@ export class VideoCanvas extends AnnotationCanvas {
             // We can do GC even if we don't need more data.
             if (this._direction == Direction.FORWARD)
             {
-              var trimEnd = currentTime - 30;
+              var trimEnd = currentTime - 240;
               if (trimEnd > start && this._playing)
               {
                 //console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
@@ -2319,7 +2319,7 @@ export class VideoCanvas extends AnnotationCanvas {
             }
             else if (this._direction == Direction.BACKWARDS)
             {
-              var trimEnd = currentTime + 30;
+              var trimEnd = currentTime + 240;
               if (trimEnd < end && this._playing)
               {
                 //console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
