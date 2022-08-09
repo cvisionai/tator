@@ -42,13 +42,6 @@ export class SeekBar extends TatorElement {
 
     var dragHandler=function(evt)
     {
-
-      if (that._active && that._loadedPercentage < 0.99) {
-        that.bar.setAttribute("wide-tooltip", "Scrubbing is not available. Video download in progress.");
-        evt.stopPropagation();
-        return false;
-      }
-
       if (evt.button == 0)
       {
         var width = that.offsetWidth;
@@ -61,6 +54,17 @@ export class SeekBar extends TatorElement {
                      width);
         const percentage = Math.min(relativeX/width,
                                     that._loadedPercentage);
+
+        if (that._active && that._loadedPercentage < 0.99 && percentage > (that._loadedPercentage * 0.75)) {
+          that.bar.setAttribute("wide-tooltip", "Scrubbing region is not available. Video download in progress.");
+          evt.stopPropagation();
+          return false;
+        }
+        else
+        {
+          that.bar.removeAttribute("wide-tooltip");
+        }
+
         that.value = Math.round((percentage * (that._max - that._min) + that._min));
         evt.stopPropagation();
         return false;
