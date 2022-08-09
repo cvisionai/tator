@@ -321,7 +321,7 @@ export class DownloadManager
             {
               end += offsets[b_idx][1];
             }
-            var bufferToSend = data.slice(begin, end);
+            var bufferToSend = data;//.slice(begin, end);
             bufferToSend.fileStart = data.fileStart + begin;
             if (sentOffset == false)
             {
