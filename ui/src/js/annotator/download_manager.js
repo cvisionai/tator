@@ -50,7 +50,6 @@ export class DownloadManager
       console.info(`Converting ${msg.data["frameStart"]} to ${msg.data["frameStart"]/this._parent._fps}`);
       msg.data["buffer"].frameStart = (msg.data["frameStart"]/this._parent._fps);
       this._parent._videoElement[this._parent._seek_idx].appendSeekBuffer(msg.data["buffer"], msg.data['time']);
-      document.body.style.cursor = null;
       let seek_time = performance.now() - this._parent._seekStart;
       let seek_msg = `Seek time = ${seek_time} ms`;
       console.info(seek_msg);

@@ -947,6 +947,7 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   displayLatest(hold)
   {
+    document.body.style.cursor = null;
     let gl_start = performance.now();
     this._fpsDiag++;
     this._dispFrame=this._draw.dispImage(hold);
@@ -1256,14 +1257,7 @@ export class VideoCanvas extends AnnotationCanvas {
           callback(frame, image_buffer, that._dims[0], that._dims[1]);
           that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
-          if (that._direction == Direction.STOPPED)
-          {
-            that.dispatchEvent(new CustomEvent("seekComplete",
-                                        {composed: true,
-                                          detail: {
-                                            forceSeekBuffer: forceSeekBuffer
-                                          }}));
-          }
+          
           if (forceSeekBuffer && that._audioPlayer)
           {
             if (that._audioPlayer.currentTime != audio_time)
@@ -1289,7 +1283,7 @@ export class VideoCanvas extends AnnotationCanvas {
             console.warn("Network Seek expired");
             that.refresh(false);
             reject();
-          }, 3000);
+          }, 30000);
         }
 
         if (downloadSeekFrame)
