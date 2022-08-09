@@ -1150,13 +1150,12 @@ export class ProjectDetail extends TatorPage {
 
   _deleteSelection() {
     const list = Array.from(this._bulkEdit._currentMultiSelection);
-    console.log(list);
-    console.log(this._projectId);
 
     if (list && list.length > 0) {
       this.deleteFileForm.setAttribute("media-id", list);
       this.deleteFileForm.setAttribute("project-id", this._projectId);
       this.deleteFileForm.setAttribute("media-name", "Selected files");
+      this.deleteFileForm.setAttribute("media-id", String(list));
       this.deleteFileForm.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     } else {

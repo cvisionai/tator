@@ -294,7 +294,7 @@ export class ProjectMainEdit extends TypeForm {
       deleteProject.deleteFetch().then((data) => {
         this.loading.hideSpinner();
         if (data.status == 200) {
-          this._modalSuccess(data.message + " Redirecting back to project list...");
+          this._modalSuccess(data.message + " Redirecting to projects...");
         } else {
           this._modalError(data.message);
         }

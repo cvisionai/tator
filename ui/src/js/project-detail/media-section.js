@@ -189,17 +189,24 @@ export class MediaSection extends TatorElement {
   removeMedia(mediaId) {
     const single = !(mediaId.indexOf(",") > -1);
     if (!single) mediaId = mediaId.split(","); 
+    console.log("MEDIA ID (list or single? ... "+single);
+    console.log(mediaId);
 
     for (const mediaCard of this._files._ul.children) {
-      // console.log(mediaCard);
+      console.log(mediaCard);
       const currentCardId = mediaCard.getAttribute("media-id");
 
-      if ((single && currentCardId == mediaId) || (!single && mediaId.includes(currentCardId))) {
+      if (currentCardId == mediaId || (Array.isArray(mediaId) && mediaId.includes(Number(currentCardId)))) {
         mediaCard.parentNode.removeChild(mediaCard);
         const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
         this._updateNumFiles(numFiles); // do this at the end
       } 
     }
+    
+    // clear any selected cards & reload
+    this.reload();
+    this._bulkEdit.clearAllCheckboxes();
+    
   }
 
   _updateNumFiles(numFiles) {
