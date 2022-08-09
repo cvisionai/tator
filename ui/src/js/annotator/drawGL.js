@@ -1083,8 +1083,10 @@ export class DrawGL
     if (points.length == 4)
     {
       if (points[0][0] == points[3][0] && points[0][1] == points[3][1])
-      console.warn("We only support rectangle fill");
-      return;
+      {
+        console.warn("We only support rectangle fill");
+        return;
+      }
     }
 
 
