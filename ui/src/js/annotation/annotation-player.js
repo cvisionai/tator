@@ -603,14 +603,13 @@ export class AnnotationPlayer extends TatorElement {
       this._video.keyframeOnly = false;
     }
     if (waitOk) {
-
+      this._lastScrub = Date.now();
       this._videoStatus = "paused";
 
       this._play.setAttribute("is-paused","");
       this._video.stopPlayerThread();
       this._video.shutdownOnDemandDownload();
-      this._video.seekFrame(frame, this._video.drawFrame)
-      .then(this._lastScrub = Date.now());
+      this._video.seekFrame(frame, this._video.drawFrame);
     }
   }
 
