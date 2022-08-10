@@ -578,6 +578,7 @@ export class AnnotationPlayer extends TatorElement {
     const now = Date.now();
     const frame = Number(evt.target.value);
     const waitOk = now - this._lastScrub > this._scrubInterval;
+    this._video.scrubbing = true;
     if (this._video.keyframeOnly == false && Math.abs(frame-this._video.currentFrame()) > 25)
     {
       this._video.keyframeOnly = true;
@@ -611,6 +612,7 @@ export class AnnotationPlayer extends TatorElement {
       frame = evt.detail.frame;
     }
     this._video.keyframeOnly = false;
+    this._video.scrubbing = false;
     this._videoStatus = "scrubbing";
 
     this._video.stopPlayerThread();

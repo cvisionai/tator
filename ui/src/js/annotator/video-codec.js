@@ -136,6 +136,7 @@ class TatorVideoManager {
     this._frameDeltaMap = new Map();
     this._bias = 0;
     this._keyframeOnly = false;
+    this._scrubbing = false;
     this._mute = false;
   }
 
@@ -148,6 +149,11 @@ class TatorVideoManager {
     //}
     this._keyframeOnly = val;
     this._codec_worker.postMessage({"type": "keyframeOnly", "value": val});
+  }
+
+  set scrubbing(val)
+  {
+    this._scrubbing = val;
   }
 
   get keyframeOnly()
@@ -250,7 +256,7 @@ class TatorVideoManager {
     image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
-    if ((this._cursor_is_hot() || this._keyframeOnly == true) && this._mute == false)
+    if ((this._cursor_is_hot() || this._keyframeOnly == true || this._scrubbing == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
     }

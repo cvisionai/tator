@@ -499,6 +499,7 @@ export class AnnotationMulti extends TatorElement {
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
+        video.scrubbing = true;
         if (video.keyframeOnly == false && Math.abs(frame-prime_frame) > 25)
         {
           video.keyframeOnly = true;
@@ -527,7 +528,6 @@ export class AnnotationMulti extends TatorElement {
           let video = this._videos[idx];
           // Update the display with the latest
           video.displayLatest(true);
-          video.onDemandDownloadPrefetch();
         }
         this._videoStatus = "paused";
       });
@@ -556,6 +556,7 @@ export class AnnotationMulti extends TatorElement {
     {
       let video = this._videos[idx];
       video.keyframeOnly = false;
+      video.scrubbing = false;
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
       this_frame += this._frameOffsets[idx];
       video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
