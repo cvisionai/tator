@@ -199,11 +199,12 @@ def test_basic(request, page_factory, project): #video
    # page.on("pageerror", print_page_error)
 
    ## Test multiple edit.....
-   print("Start: Test media labels and mult edit") 
+   print("Start: Test media labels and mult edit")
+   
    # Show labels, and multiselect, close more menu
-   page.query_selector('#icon-more-horizontal').click()
-   page.wait_for_selector('text="Media Labels"')
-   page.query_selector('text="Media Labels"').click()
+   page.query_selector('section-more #icon-more-horizontal').click()
+   page.wait_for_selector('text="Show file attributes"')
+   page.query_selector('text="Show file attributes"').click()
 
    # select image labels & video (some in the card list and some not) @todo add video to this project
    test_string = page.query_selector_all('.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="Test String"]')
@@ -213,9 +214,9 @@ def test_basic(request, page_factory, project): #video
    
    page.query_selector('.enitity-gallery__labels-div nav-close').click()
 
-   page.query_selector('#icon-more-horizontal').click()
-   page.wait_for_selector('text="Edit media attributes"')
-   page.locator('text="Edit media attributes"').click()
+   page.query_selector('section-more #icon-more-horizontal').click()
+   page.wait_for_selector('text="Bulk edit/move/delete"')
+   page.locator('text="Bulk edit/move/delete"').click()
 
    # Did label selection also preselect attributes?
    ## There should be two input checked 
@@ -271,11 +272,11 @@ def test_basic(request, page_factory, project): #video
    page.locator('.save-confirmation').click()
    page.wait_for_timeout(2000)
 
-   responseText = page.locator('modal-dialog .modal__main').all_inner_texts()
-   print(f'responseText {responseText[0]}')
-   assert responseText[0] == 'Successfully patched 1 medias!\n\n'
+   # responseText = page.locator('modal-dialog .modal__main').all_inner_texts()
+   # print(f'responseText {responseText[0]}')
+   # assert responseText[0] == 'Successfully patched 1 medias!\n\n'
 
-   page.locator('text="OK"').click()
+   # page.locator('text="OK"').click()
 
    attributeShown = page.query_selector_all('.entity-gallery-card__attribute:not(.hidden)')
    attributeShownText = attributeShown[1].text_content()

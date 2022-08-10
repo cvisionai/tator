@@ -20,8 +20,7 @@ export class EntityGalleryPanelForm extends TatorElement {
     this._attributes.permission = "View Only"; // start as view only - set to user permission on page
     this._div.appendChild(this._attributes);
 
-    this._attributes.addEventListener("change", this._emitChangedData.bind(this));
-  
+    this._attributes.addEventListener("change", this._emitChangedData.bind(this)); 
   }
 
   static get observedAttributes() {
@@ -32,6 +31,9 @@ export class EntityGalleryPanelForm extends TatorElement {
     switch (name) {
       case "permission":
         this._attributes.permission = newValue;
+        if (newValue == "View Only") {
+          this._lowerDiv.hidden = false;
+        }
         break;
     }
   }
@@ -41,7 +43,7 @@ export class EntityGalleryPanelForm extends TatorElement {
    * @param {object} data - cardData (add more info)
    * @param {Media/Localization} attributePanelData
    */
-  _init({ data, attributePanelData, associatedMedia }) {
+  _init({ data, attributePanelData, associatedMedia, allowDelete = false }) {
     if (data.entityType) data.entityType.isTrack = false;
     this._attributes.dataType = data.entityType;
     this._attributes.displaySlider(false);
@@ -53,6 +55,8 @@ export class EntityGalleryPanelForm extends TatorElement {
     }
 
     this._data = data;
+
+
     if (attributePanelData.attributes !== null) {
       this._attributes.setValues(attributePanelData);
       this._attributes.style.display = "block";
@@ -81,7 +85,6 @@ export class EntityGalleryPanelForm extends TatorElement {
   setValues(data) {
     this._attributes.setValues(data);
   }
-
 }
 
 customElements.define("entity-panel-form", EntityGalleryPanelForm);

@@ -7,7 +7,7 @@ export class EntityGalleryPaginator extends TatorElement {
 
     //Controls default page size & page indexes to list on number line
     this._pageSize = 10;
-    this._pageMax = 50;
+    this._pageMax = 200;
     this._showIndexLength = 8;
   }
 
@@ -81,7 +81,7 @@ export class EntityGalleryPaginator extends TatorElement {
 
     this.pageSizeEl = document.createElement("select");
     this.pageSizeEl.setAttribute("class", "form-select select-sm2 has-border");
-    for (const pageOption of [10, 25, 50, 100]) { // #TODO Fix
+    for (const pageOption of [10, 25, 50, 100, 150, 200]) { // #TODO Fix
       if (pageOption <= this._pageMax) {
         const option = document.createElement("option");
         option.setAttribute("value", pageOption);

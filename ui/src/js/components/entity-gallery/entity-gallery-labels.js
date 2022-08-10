@@ -53,6 +53,22 @@ export class EntityGalleryLabels extends TatorElement {
 
     // Keep track of values by TypeId
     this._selectionValues = {};
+
+    this._builtInAttributes = [
+      { name: "ID", id: "id" },
+      { name: "Modified By", id: "modified_by" },
+      { name: "Modified Datetime", id: "modified_datetime" },
+      { name: "Created Datetime", id: "created_datetime" },
+      { name: "Type", id: "type" }
+    ]
+
+    this.add({
+      typeData: {
+        id: -1,
+        name: "Built In (all types)",
+        attribute_types: this._builtInAttributes
+      }
+    });
   }
 
   set titleEntityTypeName(val) {
@@ -64,11 +80,12 @@ export class EntityGalleryLabels extends TatorElement {
    * @param {typeData} - object
    *
   */
-  async add({ typeData, hideTypeName = false, checkedFirst = null }) {
+  async add({ typeData, hideTypeName = false, checkedFirst = null, customBuiltIns = [] }) {
     // console.log(typeData);
     let typeName = typeData.name ? typeData.name : "";
-    if(this._shownTypes[typeData.id] || typeData.visible == false || typeData.attribute_types.length == 0) {
-      // don't re-add this type, or don't add if visible=false...
+
+    // don't re-add this type, or don't add if visible=false...
+    if(this._shownTypes[typeData.id] || typeData.visible === false) {
       return false;
     } else {
       this._shownTypes[typeData.id] = true;
@@ -76,7 +93,7 @@ export class EntityGalleryLabels extends TatorElement {
 
     // Main labels box
     let labelsMain = document.createElement("div");
-    labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 my-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
+    labelsMain.setAttribute("class", "entity-gallery-labels rounded-2 d-flex flex-row flex-justify-center flex-justify-between col-12");
 
     if(!hideTypeName){
       let _title = document.createElement("div");
@@ -107,31 +124,40 @@ export class EntityGalleryLabels extends TatorElement {
     styleDiv.setAttribute("class", "entity-gallery-labels--checkbox-div px-3 py-1 rounded-2");
     _labelDetails.appendChild(styleDiv);
 
-    /**
-     * Label Choice
-     */
-    // If ok, create the checkbox list
-    const checkboxList = this.makeListFrom(typeData, checkedFirst);
+    // No attributes, so we can stop and provide a message
+    if (typeData.attribute_types.length == 0) {       
+      const message = document.createElement("span");
+      message.setAttribute("class", "text-gray f2")
+      message.textContent = `${typeName} has no custom attributes.`;
+      styleDiv.appendChild(message);
+    } else {
+      // If ok, create the checkbox list
+      const checkboxList = this.makeListFrom(typeData, checkedFirst, customBuiltIns);
 
-    const selectionBoxes = document.createElement("checkbox-set");
-    selectionBoxes._colSize = "py-1 pr-2";
-    selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-12");
-    selectionBoxes.setValue(checkboxList);
+      const selectionBoxes = document.createElement("checkbox-set");
+      selectionBoxes._colSize = "py-1 pr-2";
+      selectionBoxes._inputDiv.setAttribute("class", "d-flex flex-row flex-wrap col-12");
+      selectionBoxes.setValue(checkboxList);
 
-    // Save to refer to in get/set later
-    this._selectionValues[typeData.id] = selectionBoxes;
+      // Save to refer to in get/set later
+      this._selectionValues[typeData.id] = selectionBoxes;
 
-    // Append to main box
-    styleDiv.appendChild(selectionBoxes);
+      // Append to main box
+      styleDiv.appendChild(selectionBoxes);
 
-    selectionBoxes.addEventListener("change", (e) => {
-      this.dispatchEvent(new CustomEvent("labels-update", {
-          detail: {
-              value: e.target.getValue(),
-              typeId: typeData.id
-            }
-        }));
-    });
+      selectionBoxes.addEventListener("change", (e) => {
+        const builtIns = this._selectionValues[-1] ? this._selectionValues[-1].getValue() : [];
+        const currentBoxes = typeData.id == -1 ? [] : e.target.getValue();
+
+        this.dispatchEvent(new CustomEvent("labels-update", {
+            detail: {
+                value: [...builtIns, ...currentBoxes],
+                typeId: typeData.id
+              }
+          }));
+      });
+    }
+    
 
     this.div.appendChild(labelsMain)
 
@@ -150,8 +176,6 @@ export class EntityGalleryLabels extends TatorElement {
     // # assumes values are in the accepted format for checkbox set
     //
     let valuesList = this._getValue(typeId);
-    console.log("valuesList");
-    console.log(valuesList);
     for(let box in valuesList){
       if(values.contains(box.name)){
         box.checked = true;
@@ -169,7 +193,7 @@ export class EntityGalleryLabels extends TatorElement {
    * - - @param name : string, attr.name
    * - - @param checked : boolean
   */
-  makeListFrom(typeData, checkedFirst) {
+  makeListFrom(typeData, checkedFirst, customBuiltIns) {
     this.newList = [];
     let tmpArray = [...typeData.attribute_types];
 
@@ -179,25 +203,29 @@ export class EntityGalleryLabels extends TatorElement {
     for (let attr of typeData.attribute_types) {
       if (attr.order >= 0) {
         nonHiddenAttrs.push(attr);
-      }
-      else {
+      } else {
         hiddenAttrs.push(attr);
       }
     }
 
     // Show array by order, or alpha
-    const sorted = nonHiddenAttrs.sort((a, b) => {
+    // Should hidden be shown?
+    const sorted = [...nonHiddenAttrs, ...hiddenAttrs].sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
 
-    sorted.push(...hiddenAttrs);
+    if (customBuiltIns) {
+      for (const bi of customBuiltIns) {
+        sorted.push({ name: bi.name, id: `${bi.id}` });
+      }
+    }
 
     // Create an array for checkbox set el
     // console.log("checkedFirst "+checkedFirst)
     let checkedValue = checkedFirst == null ? false : checkedFirst;
     for (let attr of sorted) {
       this.newList.push({
-        id: encodeURI(attr.name),
+        id: (attr.id || encodeURI(attr.name)),
         name: attr.name,
         checked: checkedValue
       });
@@ -205,6 +233,8 @@ export class EntityGalleryLabels extends TatorElement {
       // reset checked - only check the first one
       checkedValue = false;
     }
+    console.log(this.newList);
+
     return this.newList;
   }
 }

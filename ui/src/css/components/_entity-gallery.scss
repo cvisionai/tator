@@ -26,6 +26,8 @@
   }
 }
 
+
+
 entity-gallery-aspect-ratio {
   min-width: 200px;
 
@@ -115,6 +117,8 @@ entity-gallery-aspect-ratio {
   right: 0;
   top: 62px;
   bottom: 0;
+  z-index: 2000;
+  min-width: 40px;
 
   &.slide-close {
     right: -23%;
@@ -386,7 +390,7 @@ collections-card {
   background: $color-charcoal--light;
   box-shadow: 0 2px 4px $color-charcoal--dark70;
   // transition: all 300ms cubic-bezier(0.39, 0.575, 0.565, 1);
-  z-index: 1000;
+  z-index: 100;
   width: 200px;
   margin-left: -185px;
 
@@ -493,4 +497,22 @@ collections-card {
 
 .entity-panel--container.slide-close.species-app {
   margin-right: -50%;
+}
+
+.entity-panel-draghandle {
+  position: absolute;
+  z-index: 100;
+  width: 8px;
+  top: 0;
+  bottom: 0;
+  
+  left: -5px; // relative to the container this puts it on the left border
+  cursor: col-resize;
+  float: left;
+  background: $color-purple;
+}
+
+.entity-panel-draghandle.left {
+  float: right;
+  left: 365px;
 }

@@ -10,6 +10,7 @@ export class LeafDelete {
     async deleteFetch(){     
         const response = await this._fetchPromise();
         const data = await response.json();
+        data.status = response.status;
         return data;
     }
 

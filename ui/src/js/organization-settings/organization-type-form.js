@@ -546,9 +546,15 @@ export class OrganizationTypeForm extends TatorElement {
             } else {
               let mainText = `${message}`;
               this.loading.hideSpinner();
-              this._modalComplete(
-                mainText
-              );
+
+              if (messageObj.messageError && !messageObj.messageSuccess) {
+                this._modalError(mainText);
+              } else if (messageObj.messageError && messageObj.messageSuccess) {
+                this._modalComplete(mainText);
+              } else if (!messageObj.messageError && messageObj.messageSuccess){
+                this._modalSuccess(mainText);
+              }
+
               // Reset forms to the saved data from model
               this.resetHard();
             }
@@ -570,6 +576,9 @@ export class OrganizationTypeForm extends TatorElement {
               this._updateNavEvent("rename", this._nameEdit.newName)
             }
 
+          }).catch(err => {
+            console.error("Error saving", err);
+            this._modalError(err);
           });
 
       }).catch(err => {
@@ -742,7 +751,8 @@ export class OrganizationTypeForm extends TatorElement {
     this.modal._main.innerHTML = message;
     //this.modal._main.classList.add("fixed-height-scroll");
 
-    return this.modal.setAttribute("is-open", "true")
+    this.modal.setAttribute("is-open", "true");
+    this.modal.fadeOut();
   }
 
   _modalError(message) {
@@ -792,7 +802,8 @@ export class OrganizationTypeForm extends TatorElement {
     this.modal._footer.innerHTML = "";
     this.modal._main.classList.add("fixed-height-scroll");
 
-    return this.modal.setAttribute("is-open", "true");
+    this.modal.setAttribute("is-open", "true");
+    // this.modal.fadeOut();
   }
 
   _modalClear() {

@@ -32,7 +32,7 @@ export class SectionPaginator extends TatorElement {
       this._pages.push(document.createElement("a"));
       this._pages[idx].addEventListener("click", evt => {
         this._setPage(Number(evt.target.textContent) - 1);
-        console.log("Clicked "+  evt.target.textContent );
+        // console.log("Clicked "+  evt.target.textContent );
         this._emit();
       });
       this._pages[idx].style.cursor = "pointer";
@@ -130,7 +130,7 @@ export class SectionPaginator extends TatorElement {
   }
 
   set pageSize(val) {
-    console.log(`Set function page size is ${val}`)
+    // console.log(`Set function page size is ${val}`)
     if (Number(val) !== this._pageSize) {
       this._pageSize = val;
       this._pageSizeSelect.value = val;
