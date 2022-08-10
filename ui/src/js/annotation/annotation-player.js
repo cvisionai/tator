@@ -622,8 +622,8 @@ export class AnnotationPlayer extends TatorElement {
     this._playInteraction.disable(); // disable play on seek
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
-      this._video.onDemandDownloadPrefetch(frame);
       this._videoStatus = "paused";
+      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     });/*;.catch((e) => {
       console.error(`"ERROR: ${e}`)

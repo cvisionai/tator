@@ -581,6 +581,7 @@ export class AnnotationMulti extends TatorElement {
         }
         this._videoStatus = "paused";
       });
+      this.checkReady();
   }
 
   /**
