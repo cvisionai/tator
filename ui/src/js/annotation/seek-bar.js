@@ -1,5 +1,6 @@
 import { TatorElement } from "../components/tator-element.js";
 
+const GUARD_PERCENTAGE = 0.75; // guard to use whilst loading is in progress
 export class SeekBar extends TatorElement {
   constructor() {
     super();
@@ -55,7 +56,7 @@ export class SeekBar extends TatorElement {
         const percentage = Math.min(relativeX/width,
                                     that._loadedPercentage);
 
-        if (that._active && that._loadedPercentage < 0.99 && percentage > (that._loadedPercentage * 0.75)) {
+        if (that._active && that._loadedPercentage < 0.99 && percentage > (that._loadedPercentage * GUARD_PERCENTAGE)) {
           that.bar.setAttribute("wide-tooltip", "Scrubbing region is not available. Video download in progress.");
           evt.stopPropagation();
           return false;
@@ -155,8 +156,8 @@ export class SeekBar extends TatorElement {
     }
     else {
       this.handle.style.display = "block";
-      this.handle.style.left = `${percentage}%`;
-    }
+        this.handle.style.left = `${percentage}%`;
+      }
   }
 
   get active()
@@ -193,7 +194,15 @@ export class SeekBar extends TatorElement {
   {
     this._loadedPercentage = evt.detail['percent_complete'];
     const percent_complete = evt.detail['percent_complete']*100;
-    this.loadProgress.style.width=`${percent_complete}%`;
+
+    if (percent_complete < 0.99)
+    {
+      this.loadProgress.style.width=`${percent_complete*GUARD_PERCENTAGE}%`;
+    }
+    else
+    {
+      this.loadProgress.style.width=`${percent_complete}%`;
+    }
   }
 
   onDemandLoaded(evt)
