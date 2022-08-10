@@ -511,10 +511,11 @@ export class AnnotationMulti extends TatorElement {
         this_frame += this._frameOffsets[idx];
         video.stopPlayerThread(); // Don't use video.pause because we are seeking ourselves
         video.shutdownOnDemandDownload();
-        video._draw.clear();
 
         // Seek callbacks are called from the perspective of the video class
         let cb=(frameIdx,source,width,height) => {
+          video._draw.clear();
+          video._effectManager.clear();
           video.pushFrame(frameIdx,source,width,height);
           video.updateOffscreenBuffer(frameIdx,source,width,height);
         }
@@ -559,8 +560,9 @@ export class AnnotationMulti extends TatorElement {
       this_frame += this._frameOffsets[idx];
       video.stopPlayerThread();  // Don't use video.pause because we are seeking ourselves
       video.shutdownOnDemandDownload();
-      video._draw.clear();
       let cb=(frameIdx,source,width,height) => {
+        video._draw.clear();
+        video._effectManager.clear();
         video.pushFrame(frameIdx,source,width,height);
         video.updateOffscreenBuffer(frameIdx,source,width,height);
       }
@@ -1984,10 +1986,11 @@ export class AnnotationMulti extends TatorElement {
       let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
       this_frame += this._frameOffsets[idx];
       let cb=(frameIdx,source,width,height) => {
+        video._draw.clear();
+        video._effectManager.clear();
         video.pushFrame(frameIdx,source,width,height);
         video.updateOffscreenBuffer(frameIdx,source,width,height);
       }
-      video._draw.clear();
       p_list.push(video.seekFrame(Math.min(this_frame,video._numFrames-1), cb, true));
       idx++;
     }

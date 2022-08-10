@@ -7,7 +7,8 @@ import { PeriodicTaskProfiler } from "./periodic_task_profiler";
 import { VideoBufferDemux } from "./video_buffer_demux";
 import { MotionComp } from "./motion_comp";
 import { ConcatDownloadManager } from "./concat_download_manager.js";
-
+import { color } from "./drawGL_colors.js";
+import { EffectManager } from "./video-effects.js";
 
 // Video export class handles interactions between HTML presentation layer and the
 // javascript application.
@@ -88,6 +89,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._playerProfiler = new PeriodicTaskProfiler("Display Logic");
     this._glProfiler = new PeriodicTaskProfiler("GL Draw");
     this._firstFrame = 0;
+    this._effectManager = new EffectManager(this._canvas, this._draw);
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))
@@ -269,6 +271,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       forceSeekBuffer = true;
     }
+    this._effectManager.clear();
     this._draw.beginDraw();
     return this.gotoFrame(this._dispFrame, forceSeekBuffer);
   }
@@ -947,6 +950,7 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   displayLatest(hold)
   {
+    this._effectManager.clear();
     document.body.style.cursor = null;
     let gl_start = performance.now();
     this._fpsDiag++;
@@ -1272,6 +1276,8 @@ export class VideoCanvas extends AnnotationCanvas {
 
         if (createTimeout)
         {
+          // Gray out video to show something is going on
+          that._effectManager.grayOut();
           that._seek_expire = setTimeout(() => {
             if (that.videoBuffer(that._seekFrame, "seek") == null) {
               // Current seek frame is still not in buffer, allow redownload
