@@ -580,8 +580,9 @@ export class AnnotationMulti extends TatorElement {
           video.onDemandDownloadPrefetch();
         }
         this._videoStatus = "paused";
+        setTimeout(()=>{this.checkReady();},33);
       });
-      this.checkReady();
+      
   }
 
   /**
@@ -2005,7 +2006,7 @@ export class AnnotationMulti extends TatorElement {
           video.displayLatest(true);
           video.onDemandDownloadPrefetch();
         }
-        this.checkReady();
+        setTimeout(()=>{this.checkReady();},33);
         resolve();
       });
     });
