@@ -1299,7 +1299,7 @@ export class VideoCanvas extends AnnotationCanvas {
             console.warn("Network Seek expired");
             that.refresh(false);
             reject();
-          }, 30000);
+          }, 5000);
         }
 
         if (downloadSeekFrame)
