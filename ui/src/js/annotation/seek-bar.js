@@ -78,8 +78,6 @@ export class SeekBar extends TatorElement {
 
     var dragHandler=function(evt)
     {
-      that.preview.hide();
-      that.bar.removeEventListener("mousemove", mouseOver);
       if (evt.button == 0)
       {
         var width = that.offsetWidth;
@@ -93,7 +91,8 @@ export class SeekBar extends TatorElement {
         const percentage = Math.min(relativeX/width,
                                     that._loadedPercentage);
 
-        if (that._active && that._loadedPercentage < 0.99 && percentage > (that._loadedPercentage * GUARD_PERCENTAGE)) {
+        // Once scrub on load is fixed:  && percentage > (that._loadedPercentage * GUARD_PERCENTAGE)
+        if (that._active && that._loadedPercentage < 0.99) {
           that.bar.setAttribute("tooltip-wide", "Scrubbing region is not available. Video download in progress.");
           evt.stopPropagation();
           return false;
@@ -132,6 +131,8 @@ export class SeekBar extends TatorElement {
     }
     this.handle.addEventListener("mousedown", evt =>
                                  {
+                                  this.preview.hide();
+                                  this.bar.removeEventListener("mousemove", mouseOver);
                                    this._active = true;
                                    this._lastValue = this.value;
 
@@ -238,11 +239,13 @@ export class SeekBar extends TatorElement {
     this._loadedPercentage = evt.detail['percent_complete'];
     const percent_complete = evt.detail['percent_complete']*100;
 
+    /* // Once scrub on load is fixed
     if (percent_complete < 0.99)
     {
       this.loadProgress.style.width=`${percent_complete*GUARD_PERCENTAGE}%`;
     }
     else
+    */
     {
       this.loadProgress.style.width=`${percent_complete}%`;
     }

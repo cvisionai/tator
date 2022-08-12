@@ -9,6 +9,7 @@ export class MediaSeekPreview extends TatorElement {
       this._previewBox = document.createElement('div');
       this._previewBox.setAttribute("class", "tooltip-seek-preview");
       this._previewBox.hidden = true;
+      this._previewBox.style.userSelect = "none";
       this._shadow.appendChild(this._previewBox);
 
       const nameDiv = document.createElement('div');
