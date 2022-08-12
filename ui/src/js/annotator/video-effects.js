@@ -22,7 +22,7 @@ export class EffectManager
       if (this._idx > delay)
       {
         this._draw.fillPolygon([[0,0], [maxX,0],[maxX,maxY],[0,maxY]], 0, color.BLACK, 10 + (75*Math.atan((this._idx-delay)/10)));
-        this._draw.dispImage(true,true, frame);
+        this._draw.dispImage(true,false, frame);
       }
       this._animator = requestAnimationFrame(prog);
       this._idx++;
