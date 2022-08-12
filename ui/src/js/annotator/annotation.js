@@ -3288,7 +3288,7 @@ export class AnnotationCanvas extends TatorElement
     else
     {
       // TODO: Why is this check really here to avoid a refresh?
-      if (this._emphasis && this._emphasis.id != localization.id)
+      if (this._emphasis == null || (this._emphasis == null && (this._emphasis.id != localization.id)))
       {
         this._emphasis = localization;
         this.refresh();
