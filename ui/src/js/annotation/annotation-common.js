@@ -50,6 +50,23 @@ export function handle_video_error(evt, root)
   sessionStorage.setItem(`handle_error__${errorType}_${document.location.pathname}`, 'true');
 }
 
+export function frameToTime(frame, fps)
+{
+    const totalSeconds = frame / fps;
+    const seconds = Math.floor(totalSeconds % 60);
+    const secFormatted = ("0" + seconds).slice(-2);
+    const minutes = Math.floor(totalSeconds / 60);
+    if (minutes < 60)
+    {
+      return minutes + ":" + secFormatted;
+    }
+    else
+    {
+      let hours = Math.floor(minutes / 60)
+      const minFormatted = ("0" + Math.floor(minutes % 60)).slice(-2);
+      return hours + ":" + minFormatted + ":" + secFormatted;
+    }
+}
 // Class to handle the repetitive nature of graying out / disabling the play button
 export class PlayInteraction
 {

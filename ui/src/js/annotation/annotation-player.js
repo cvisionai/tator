@@ -2,7 +2,7 @@ import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
-import { handle_video_error, PlayInteraction } from "./annotation-common.js";
+import { frameToTime, handle_video_error, PlayInteraction } from "./annotation-common.js";
 
 export class AnnotationPlayer extends TatorElement {
   constructor() {
@@ -197,7 +197,7 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addEventListener("videoLengthChanged", evt =>
     {
       this._slider.setAttribute('max',evt.detail.length);
-      this._totalTime.textContent = "/ " + this._frameToTime(evt.detail.length);
+      this._totalTime.textContent = "/ " + frameToTime(evt.detail.length, this._mediaInfo.fps);
       this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     });
 
@@ -305,7 +305,7 @@ export class AnnotationPlayer extends TatorElement {
       
       this._slider.value = frame;
       this._zoomSlider.value = frame;
-      const time = this._frameToTime(frame);
+      const time = frameToTime(frame, this._mediaInfo.fps);
       this._currentTimeText.textContent = time;
       this._currentFrameText.textContent = frame;
       this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
@@ -734,8 +734,9 @@ export class AnnotationPlayer extends TatorElement {
     this._slider.setAttribute("min", 0);
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames)-1);
+    this._slider.fps = val.fps;
     this._fps = val.fps;
-    this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
+    this._totalTime.textContent = "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
       .then(() => {
@@ -1173,23 +1174,6 @@ export class AnnotationPlayer extends TatorElement {
 
   selectTimelineData(data) {
     this._timelineD3.selectData(data);
-  }
-
-  _frameToTime(frame) {
-    const totalSeconds = frame / this._fps;
-    const seconds = Math.floor(totalSeconds % 60);
-    const secFormatted = ("0" + seconds).slice(-2);
-    const minutes = Math.floor(totalSeconds / 60);
-    if (minutes < 60)
-    {
-      return minutes + ":" + secFormatted;
-    }
-    else
-    {
-      let hours = Math.floor(minutes / 60)
-      const minFormatted = ("0" + Math.floor(minutes % 60)).slice(-2);
-      return hours + ":" + minFormatted + ":" + secFormatted;
-    }
   }
 
   _timeToFrame(minutes, seconds) {

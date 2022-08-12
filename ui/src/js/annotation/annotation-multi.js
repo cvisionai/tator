@@ -3,7 +3,7 @@ import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { MultiRenderer } from "../annotator/multi-renderer";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
-import { handle_video_error, PlayInteraction } from "./annotation-common.js";
+import { handle_video_error, frameToTime, PlayInteraction } from "./annotation-common.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 
 export class AnnotationMulti extends TatorElement {
@@ -804,7 +804,7 @@ export class AnnotationMulti extends TatorElement {
              const frame = evt.detail.frame;
              this._slider.value = frame;
              this._zoomSlider.value = frame;
-             const time = this._frameToTime(frame);
+             const time = frameToTime(frame, this._fps[this._longest_idx]);
              this._currentTimeText.textContent = time;
              this._currentFrameText.textContent = frame;
              this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
@@ -1031,9 +1031,10 @@ export class AnnotationMulti extends TatorElement {
           }
         }
         this._fps_of_max = fps_of_max;
-        this._totalTime.textContent = "/ " + this._frameToTime(max_frames);
+        this._totalTime.textContent = "/ " + frameToTime(max_frames, fps_of_max);
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
         this._slider.setAttribute("max", max_frames-1);
+        this._slider.fps = this._fps[this._primaryVideoIndex];
         this._maxFrameNumber = max_frames - 1;
 
         let multiview = null;
@@ -2124,14 +2125,6 @@ export class AnnotationMulti extends TatorElement {
 
   selectTimelineData(data) {
     this._timelineD3.selectData(data);
-  }
-
-  _frameToTime(frame) {
-    const totalSeconds = frame / this._fps_of_max;
-    const seconds = Math.floor(totalSeconds % 60);
-    const secFormatted = ("0" + seconds).slice(-2);
-    const minutes = Math.floor(totalSeconds / 60);
-    return minutes + ":" + secFormatted;
   }
 
   _timeToFrame(minutes, seconds) {
