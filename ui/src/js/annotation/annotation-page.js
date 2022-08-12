@@ -573,7 +573,7 @@ export class AnnotationPage extends TatorPage {
 
     let maskEdits = (evt) => {
       this.enableEditing(!evt.detail.enabled);
-      console.info("Setting edit mask to " + evt.detail.enabled);
+      //console.info("Setting edit mask to " + evt.detail.enabled);
     };
     // Disable edits via the player + annotation browser
     // only during a network operation
