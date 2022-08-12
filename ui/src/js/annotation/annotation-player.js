@@ -348,8 +348,12 @@ export class AnnotationPlayer extends TatorElement {
       else {
         this._timelineMore.style.display = "none";
       }
-      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
-      window.dispatchEvent(new Event("resize"));
+      const newHeight = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
+      if (newHeight != this._videoHeightPadObject.height)
+      {
+        this._videoHeightPadObject.height = newHeight;
+        window.dispatchEvent(new Event("resize"));
+      }
     });
 
     this._timelineD3.addEventListener("select", evt => {
