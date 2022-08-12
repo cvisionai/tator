@@ -82,7 +82,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Set global variable to find us
     window.tator_video = this;
-    var that = this;
+    this._ready = false;
     this._diagnosticMode = false;
     this._videoVersion = 1;
     this._decode_profiler = new PeriodicTaskProfiler("Video Decode");
@@ -495,6 +495,16 @@ export class VideoCanvas extends AnnotationCanvas {
       if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
       {
         p.playBuffer().summaryLevel = this._summaryLevel;
+      }
+      if (idx == this._seek_idx)
+      {
+        p.onReady = () => {
+          this.dispatchEvent(new CustomEvent("seekReady",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
+          this._ready = true;
+          p.onReady = null;
+        }
       }
       if (idx == this._play_idx)
       {

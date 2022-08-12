@@ -2151,9 +2151,15 @@ export class AnnotationCanvas extends TatorElement
     }
     console.info("Fetched " + data.length + " annotations.");
 
-    if (needRefresh == true)
+    if (needRefresh == true && this._ready == true)
     {
       this.refresh();
+    }
+    else
+    {
+      this.addEventListener("seekReady", ()=>{
+        this.refresh();
+      });
     }
   }
 

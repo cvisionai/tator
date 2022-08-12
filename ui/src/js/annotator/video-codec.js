@@ -168,10 +168,9 @@ class TatorVideoManager {
     {
       this._codec_string = msg.data.data.tracks[0].codec;
       this._timescaleMap.set(msg.data.timestampOffset,msg.data.data.tracks[0].timescale);
-      if (this._parent._loadedDataCallback)
+      if (this._parent.onReady)
       {
-        this._parent._loadedDataCallback();
-        this._parent._loadedDataCallback=null;
+        this._parent.onReady();
       }
     }
     else if (msg.data.type == "frame")
@@ -189,6 +188,11 @@ class TatorVideoManager {
     else if (msg.data.type == "image")
     {
       this._imageReady(msg.data);
+      if (this._parent._loadedDataCallback)
+      {
+        this._parent._loadedDataCallback();
+        this._parent._loadedDataCallback=null;
+      }
     }
     else if (msg.data.type == "buffered")
     {
