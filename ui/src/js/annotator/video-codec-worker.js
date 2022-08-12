@@ -430,9 +430,10 @@ class TatorVideoBuffer {
       }
 
       // Handle all samples for processing keyframes and what not at the end of decoding
-      for (; idx < samples.length; idx++)
+      for (idx = start_idx; idx < samples.length; idx++)
       {
-        this._bufferedRegions.push(timestampOffset+samples[idx].cts/this._timescaleMap.get(timestampOffset), timestampOffset+(samples[idx].cts+this._frameDeltaMap.get(timestampOffset))/this._timescaleMap.get(timestampOffset));
+        this._bufferedRegions.push(timestampOffset+samples[idx].cts/this._timescaleMap.get(timestampOffset), 
+                                  timestampOffset+(samples[idx].cts+this._frameDeltaMap.get(timestampOffset))/this._timescaleMap.get(timestampOffset));
         if (samples[idx].cts < min_cts)
         {
           min_cts = samples[idx].cts;
