@@ -1938,11 +1938,11 @@ export class VideoCanvas extends AnnotationCanvas {
     // @TODO: These would be great to pull from user settings or project settings
     if (this._direction == Direction.STOPPED)
     {
-      return 300; // 5 minutes when paused
+      return 240; // 2 minutes when paused
     }
     else
     {
-      return 600; // 10 Minutes whilst playing.
+      return 480; // 4 Minutes whilst playing.
     }
   }
 
