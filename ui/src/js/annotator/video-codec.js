@@ -250,7 +250,7 @@ class TatorVideoManager {
 
   _imageReady(image)
   {
-    //console.info(`${performance.now()}: GOT ${image.timestamp}`);
+    //console.info(`${performance.now()}: GOT ${this._name}: GOT h=${image.height}`);
     image.data.timescale = image.timescale;
     image.data.frameDelta = image.frameDelta;
     image.data.time = image.timestamp / image.data.timescale;
@@ -378,12 +378,6 @@ class TatorVideoManager {
   //   jump to the nearest preceding keyframe and decode new frames (slightly slower)
   set currentTime(video_time)
   {
-    if (this._codec_string == undefined)
-    {
-      console.info("Can not seek until file is loaded.")
-      return;
-    }
-    
     // If we are approximating seeking, we should land on the nearest buffered time
     if (this.summaryLevel)
     {

@@ -47,7 +47,7 @@ export class VideoDownloader
     this._fileInfoSent = [];
     this._readyMessages = [];
     this._readyMessagesSent = false;
-    this._info = [];
+    this._info = {};
     this._fileInfoRequested = false;
     this._infoObjectsInitialized = 0;
     for (var idx = 0; idx < this._num_res; idx++)
@@ -318,7 +318,7 @@ export class VideoDownloader
     }
     if (version < 2 || version == undefined)
     {
-      console.warn("Old version of segment file doesn't support seek operation");
+      console.warn(`Old version of segment file ${buf_idx} doesn't support seek operation`);
       return {matchIdx, boundary};
     }
 
@@ -587,7 +587,7 @@ export class VideoDownloader
 
     }
     // Save download for when the file is initialized in case the cart leads the horse
-    if (version == undefined)
+    if (!(buf_idx in this._info))
     {
       console.info("Keeping pending download in line for post-init");
       this._pendingDownload = {'buf_idx': buf_idx, 'frame': frame, 'time': time};
@@ -595,7 +595,7 @@ export class VideoDownloader
     }
     if (version < 2)
     {
-      console.warn("Old version of segment file doesn't support seek operation");
+      console.warn(`Old version of segment file ${buf_idx} doesn't support seek operation`);
       return;
     }
     var matchIdx = -1;
