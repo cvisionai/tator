@@ -172,6 +172,11 @@ class TatorVideoManager {
       {
         this._parent.onReady();
       }
+      if (this._parent._loadedDataCallback)
+      {
+        this._parent._loadedDataCallback();
+        this._parent._loadedDataCallback=null;
+      }
     }
     else if (msg.data.type == "frame")
     {
@@ -188,11 +193,6 @@ class TatorVideoManager {
     else if (msg.data.type == "image")
     {
       this._imageReady(msg.data);
-      if (this._parent._loadedDataCallback)
-      {
-        this._parent._loadedDataCallback();
-        this._parent._loadedDataCallback=null;
-      }
     }
     else if (msg.data.type == "buffered")
     {
