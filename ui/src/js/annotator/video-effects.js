@@ -1,14 +1,16 @@
 import { color } from "./drawGL_colors.js";
 export class EffectManager
 {
-  constructor(canvas, draw)
+  constructor(video, canvas, draw)
   {
+    this._video = video;
     this._canvas = canvas;
     this._draw = draw;
   }
 
   grayOut()
   {
+    const frame = this._video.currentFrame();
     const maxX = this._canvas.width;
     const maxY = this._canvas.height;
     
@@ -20,7 +22,7 @@ export class EffectManager
       if (this._idx > delay)
       {
         this._draw.fillPolygon([[0,0], [maxX,0],[maxX,maxY],[0,maxY]], 0, color.BLACK, 10 + (75*Math.atan((this._idx-delay)/10)));
-        this._draw.dispImage(true,true);
+        this._draw.dispImage(true,true, frame);
       }
       this._animator = requestAnimationFrame(prog);
       this._idx++;

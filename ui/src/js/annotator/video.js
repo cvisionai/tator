@@ -89,7 +89,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._playerProfiler = new PeriodicTaskProfiler("Display Logic");
     this._glProfiler = new PeriodicTaskProfiler("GL Draw");
     this._firstFrame = 0;
-    this._effectManager = new EffectManager(this._canvas, this._draw);
+    this._effectManager = new EffectManager(this, this._canvas, this._draw);
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))

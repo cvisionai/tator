@@ -641,7 +641,7 @@ export class DrawGL
   // @param hold If true, will not call done() after display.
   //        defaults to false.
   //
-  dispImage(hold, muteAnnotations)
+  dispImage(hold, muteAnnotations, frameHint)
   {
     if (hold == undefined)
     {
@@ -661,7 +661,11 @@ export class DrawGL
     var gl = this.gl;
 
     // Display the latest image
-    var frameInfo=this.frameBuffer.display()
+    var frameInfo=this.frameBuffer.display(frameHint)
+    if (frameInfo == null)
+    {
+      return null;
+    }
     gl.bindTexture(gl.TEXTURE_2D, frameInfo.tex);
 
     var dWidth=frameInfo.dims[0];
