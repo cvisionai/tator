@@ -269,9 +269,10 @@ export class CanvasDrag
   // @param canvas jquery object for canvas element
   // @param cb callback function to handle dragging
   // @param dragLimiter minimum interval to report mouseMove
-  constructor(parent, canvas, scaleFn, cb, dragLimiter)
+  constructor(parent, canvas, scaleFn, cb, finalizer, dragLimiter)
   {
     this._cb = cb;
+    this._finalizer = finalizer;
     this._canvas = canvas;
     this._scaleFn=scaleFn;
     this._active = false;
@@ -387,6 +388,7 @@ export class CanvasDrag
            this._event.end.y == this._event.start.y))
     {
       this._cb(this._event);
+      this._finalizer(this._event);
     }
   }
 }
@@ -990,7 +992,8 @@ export class AnnotationCanvas extends TatorElement
     this._dragHandler = new CanvasDrag(this,
                                        this._canvas,
                                        this._draw.displayToViewportScale.bind(this._draw),
-                                       this.dragHandler.bind(this));
+                                       this.dragHandler.bind(this),
+                                       this.mouseUpHandler.bind(this));
     this._draw.setPushCallback((frameInfo) => {return this.drawAnnotations(frameInfo);});
 
     // Text-overlay is in a higher z-index so mouse events get masked
