@@ -1,4 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
+import { frameToTime } from "./annotation-common.js"
 
 const GUARD_PERCENTAGE = 0.75; // guard to use whilst loading is in progress
 export class SeekBar extends TatorElement {
@@ -41,8 +42,44 @@ export class SeekBar extends TatorElement {
     }
     this.bar.addEventListener("click", clickHandler);
 
+    var mouseOver=(evt)=>
+    {
+      var width = that.offsetWidth;
+      var startX = that.offsetLeft;
+      if (width == 0)
+      {
+        width =
+          that.parentElement.offsetWidth;
+        startX = that.parentElement.offsetLeft;
+      }
+      const percentage = ((evt.clientX-startX)/
+                          width);
+      const proposed_value = Math.round((percentage * (that._max - that._min) + that._min));
+
+
+      if (proposed_value > 0)
+      {
+        this.preview.info = {frame:proposed_value,
+                             margin:evt.clientX-startX,
+                             time: frameToTime(proposed_value, this._fps)};
+      }
+      else
+      {
+        this.preview.hide();
+      }
+      
+      evt.stopPropagation();
+      return false;
+    }
+    this.preview = document.createElement('media-seek-preview');
+    this.bar.appendChild(this.preview);
+    this.bar.addEventListener("mousemove", mouseOver);
+    this.bar.addEventListener("mouseout", ()=>{this.preview.hide()});
+
     var dragHandler=function(evt)
     {
+      that.preview.hide();
+      that.bar.removeEventListener("mousemove", mouseOver);
       if (evt.button == 0)
       {
         var width = that.offsetWidth;
@@ -57,13 +94,13 @@ export class SeekBar extends TatorElement {
                                     that._loadedPercentage);
 
         if (that._active && that._loadedPercentage < 0.99 && percentage > (that._loadedPercentage * GUARD_PERCENTAGE)) {
-          that.bar.setAttribute("wide-tooltip", "Scrubbing region is not available. Video download in progress.");
+          that.bar.setAttribute("tooltip-wide", "Scrubbing region is not available. Video download in progress.");
           evt.stopPropagation();
           return false;
         }
         else
         {
-          that.bar.removeAttribute("wide-tooltip");
+          that.bar.removeAttribute("tooltip-wide");
         }
 
         that.value = Math.round((percentage * (that._max - that._min) + that._min));
@@ -75,6 +112,7 @@ export class SeekBar extends TatorElement {
     }
     var releaseMouse=(evt)=>
     {
+      this.bar.addEventListener("mousemove", mouseOver);
       that.bar.removeAttribute("wide-tooltip");
       console.info("RELEASE MOUSE.");
       this._active = false;
@@ -183,6 +221,11 @@ export class SeekBar extends TatorElement {
   {
     this._value=val;
     this.updateVisuals();
+  }
+
+  set fps(val)
+  {
+    this._fps = val;
   }
 
   get value()
