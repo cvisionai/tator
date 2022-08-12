@@ -52,7 +52,7 @@ def _get_element_center(element):
 
 def _wait_for_color(page, canvas, looking_for, timeout=30, name='unknown'):
   found = False
-  if type(color_idx) != list:
+  if type(looking_for) != list:
     looking_for = [looking_for]
   for _ in range(timeout):
     page.wait_for_timeout(1000)
