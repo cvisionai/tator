@@ -16,8 +16,12 @@ export class EffectManager
     let prog = ()=>{
       this.clear();
       //this._draw.fillPolygon([[0,0], [maxX,0],[maxX,maxY],[0,maxY]], 0, color.BLACK, 75, [1.0,Math.atan(this._idx/10)*0.0025,0,0]);
-      this._draw.fillPolygon([[0,0], [maxX,0],[maxX,maxY],[0,maxY]], 0, color.BLACK, 10 + (75*Math.atan(this._idx/10)));
-      this._draw.dispImage(true,true);
+      const delay = Math.floor(150 / 16);
+      if (this._idx > delay)
+      {
+        this._draw.fillPolygon([[0,0], [maxX,0],[maxX,maxY],[0,maxY]], 0, color.BLACK, 10 + (75*Math.atan((this._idx-delay)/10)));
+        this._draw.dispImage(true,true);
+      }
       this._animator = requestAnimationFrame(prog);
       this._idx++;
     };
