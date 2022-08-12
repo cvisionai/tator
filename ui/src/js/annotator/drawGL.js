@@ -345,8 +345,7 @@ export class DrawGL
     }
 
     // Initialize the frame buffer in GPU memory
-    // We should only need one GOP pre-catched at a time, give or take.
-    this.bufferDepth = 16;
+    this.bufferDepth = 4;
     this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
 
     // Initialze the backbuffer to use for MSAA
