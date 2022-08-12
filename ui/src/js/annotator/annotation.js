@@ -2762,11 +2762,6 @@ export class AnnotationCanvas extends TatorElement
             this._textOverlay.classList.add("select-grabbing");
           }
           this.emphasizeLocalization(localization);
-          if (mouseEvent.buttons == 0)
-          {
-            // Don't draw if we are dragging because then the drag handler is using the pen.
-            this.refresh();
-          }
         }
         else if (localization)
         {
@@ -2832,7 +2827,7 @@ export class AnnotationCanvas extends TatorElement
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
     }
-    if (this._mouseMode == MouseMode.PAN)
+    else if (this._mouseMode == MouseMode.PAN)
     {
       // When drawing a poly, only allow one move at a time.
       if (this._overrideState == MouseMode.NEW_POLY)
@@ -2844,6 +2839,13 @@ export class AnnotationCanvas extends TatorElement
                                 }));
         this.defaultMode();
       }
+    }
+
+    // Mode Change logic
+    if (this._mouseMode == MouseMode.MOVE || this._mouseMode == MouseMode.RESIZE)
+    {
+      // Change back to SELECT after a MOVE or RESIZE
+      this._mouseMode = MouseMode.SELECT;
     }
   }
 
