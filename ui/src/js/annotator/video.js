@@ -1402,6 +1402,11 @@ export class VideoCanvas extends AnnotationCanvas {
     }));
   }
 
+  get rate()
+  {
+    return this._playbackRate;
+  }
+
   processRateChange(event)
   {
     this._playbackRate=this._controls.rateControl.val();

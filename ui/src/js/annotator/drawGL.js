@@ -345,7 +345,7 @@ export class DrawGL
     }
 
     // Initialize the frame buffer in GPU memory
-    this.bufferDepth = 4; //More in rewind mode is helpful
+    this.bufferDepth = 6; //More in rewind mode is helpful
     this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
 
     // Initialze the backbuffer to use for MSAA

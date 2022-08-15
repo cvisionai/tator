@@ -1781,6 +1781,7 @@ export class AnnotationMulti extends TatorElement {
       clearTimeout(this._failSafeTimer);
       this._videoStatus = "paused";
       this.goToFrame(this._videos[this._primaryVideoIndex].currentFrame());
+      
     };
     clearTimeout(this._failSafeTimer);
     if (paused == false) {
@@ -1790,6 +1791,7 @@ export class AnnotationMulti extends TatorElement {
         pausePromises.push(video.pause());
       }
       this._play.setAttribute("is-paused", "");
+      this._rateControl.setValue(this._videos[this._primaryVideoIndex].rate);
       this._failSafeTimer = setTimeout(failSafeFunction, 1500);
     }
     clearTimeout(this._syncThread);
