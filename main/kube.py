@@ -41,16 +41,16 @@ def _transcode_name(project, user, media_name, media_id=None):
     """
     slug_name = re.sub('[^0-9a-zA-Z.]+', '-', media_name).lower()
     if media_id:
-        out = f"transcode-project-{project}-user-{user}-media-{media_id}-name-{slug_name}-"
+        out = f"transcode-proj-{project}-usr-{user}-media-{media_id}-name-{slug_name}-"
     else:
-        out = f"transcode-project-{project}-user-{user}-name-{slug_name}-"
+        out = f"transcode-proj-{project}-usr-{user}-name-{slug_name}-"
     return out
 
 def _algo_name(algorithm_id, project, user, name):
     """ Reformats an algorithm name to ensure it conforms to kube's rigid requirements.
     """
     slug_name = re.sub('[^0-9a-zA-Z.]+', '-', name).lower()
-    out = f"algorithm-{algorithm_id}-project-{project}-user-{user}-name-{slug_name}-"
+    out = f"alg-{algorithm_id}-proj-{project}-usr-{user}-name-{slug_name}-"
     return out
 
 def _select_storage_class():
