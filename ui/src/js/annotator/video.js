@@ -1065,7 +1065,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       return this._videoElement[this._seek_idx].returnSeekIfPresent(time, direction);
     }
-    else
+    else if (bufferType == "scrub" || bufferType == "play")
     {
       // Treat play and scrub buffer as best available.
       let play_attempt = null;
@@ -1093,6 +1093,14 @@ export class VideoCanvas extends AnnotationCanvas {
         return play_attempt;
       }
       return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
+    }
+    else if (bufferType == "scrub-only")
+    {
+      return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
+    }
+    else
+    {
+      console.error(`Unknown buffer type requsted: ${bufferType}`);
     }
   }
 
@@ -1535,7 +1543,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
-      this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub");}, 0);
+      this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub-only");}, 0);
     }
     this._sentPlaybackReady = false;
     // Kick off the loader
