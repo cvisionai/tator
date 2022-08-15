@@ -467,7 +467,7 @@ class TatorTranscode(JobManagerMixin):
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
-                    'name': 'scratch-prepare',
+                    'name': 'scratch',
                     'mountPath': '/work',
                 }],
                 'resources': {
@@ -480,7 +480,7 @@ class TatorTranscode(JobManagerMixin):
         }
         if use_ram_disk:
             task['volumes'] = [{
-                'name': 'scratch-prepare',
+                'name': 'scratch',
                 'emptyDir': {
                     'medium': 'Memory',
                 },
@@ -959,7 +959,6 @@ class TatorTranscode(JobManagerMixin):
                        'url': url,
                        'host': host,
                        'rest_url': f'{host}/rest',
-                       'tus_url' : f'{host}/files/',
                        'token' : str(token),
                        'project' : str(project),
                        'type': str(entity_type),
@@ -973,7 +972,6 @@ class TatorTranscode(JobManagerMixin):
                        'size': str(upload_size)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
-        pipeline_task = self.get_single_file_pipeline(args, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -1012,7 +1010,7 @@ class TatorTranscode(JobManagerMixin):
         if not use_ram_disk:
             manifest['spec']['volumeClaimTemplates'] = [{
                 'metadata': {
-                    'name': f'scratch-{workload}',
+                    'name': f'scratch',
                 },
                 'spec': {
                     'storageClassName': os.getenv('SCRATCH_STORAGE_CLASS'),
@@ -1023,7 +1021,7 @@ class TatorTranscode(JobManagerMixin):
                         }
                     }
                 }
-            } for workload in ['prepare'] + list(range(MAX_WORKLOADS))]
+            }]
 
         # Create the workflow
         response = self.create_workflow(manifest)
