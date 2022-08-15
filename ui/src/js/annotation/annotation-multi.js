@@ -1729,74 +1729,29 @@ export class AnnotationMulti extends TatorElement {
 
   playBackwards()
   {
-    this._ratesAvailable = this.computeRatesAvailable();
-    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
-    {
       let playing = false;
       // Check to see if the video player can play at this rate
       // at the current frame. If not, inform the user.
       for (let video of this._videos)
       {
-        if (!video.canPlayRate(this._rate, video.currentFrame()))
+        if (!video.canPlayRate(0.5, video.currentFrame()))
         {
           window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
           return;
         }
       }
+      this.disableRateChange();
+      this._rateControl.setValue(0.5, true);
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
-        video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
         playing |= video.playBackwards();
       }
-
-      if (playing)
-      {
-        this._videoStatus = "playing";
-        this._play.removeAttribute("is-paused");
-        this._syncThread = setTimeout(() => {this.syncCheck()},
-                                      500);
-      }
-      return;
-    }
-
-    for (let idx = 0; idx < this._videos.length; idx++)
-    {
-	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx].onDemandBufferAvailable() != "yes")
-	    {
-	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
-        this.handleNotReadyEvent(idx);
-        return;
-	    }
-    }
-    this.dispatchEvent(new Event("playing", {composed: true}));
-    this._fastForward.setAttribute("disabled", "");
-    this._rewind.setAttribute("disabled", "");
-    this.disableRateChange();
-    this._rateControl.setValue(0.5, true);
-
-    const paused = this.is_paused();
-    if (paused) {
-      let playing = false;
-      this._playbackReadyId += 1;
-      this._playbackReadyCount = 0;
-      this._pauseId = this._playbackReadyId;
-      let prime_fps = this._fps[this._longest_idx];
-      for (let idx = 0; idx < this._videos.length; idx++)
-      {
-	let video = this._videos[idx];
-	video.pause();
-	video.rateChange(this._rate * (prime_fps/video._videoObject.fps));
-	playing |= video.playBackwards();
-	if (playing)
-	{
-    this._videoStatus = "playing";
-	  this._play.removeAttribute("is-paused");
-	}
-      }
-      this.syncCheck();
-    }
+      this._videoStatus = "playing";
+      this._play.removeAttribute("is-paused");
+      this._fastForward.setAttribute("disabled", "");
+      this._rewind.setAttribute("disabled", "");
   }
 
   computeRatesAvailable()

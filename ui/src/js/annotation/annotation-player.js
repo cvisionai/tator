@@ -989,38 +989,19 @@ export class AnnotationPlayer extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
-    {
-      // Check to see if the video player can play at this rate
-      // at the current frame. If not, inform the user.
-      if (!this._video.canPlayRate(this._rate, this._video.currentFrame()))
-      {
-        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
-        return;
-      }
-    }
-    this._ratesAvailable = this._video.playbackRatesAvailable();
-
-    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
-    {
-      this.handleNotReadyEvent();
-      return;
-    }
-
     if (this._video.currentFrame() <= 0) {
       this.pause();
       return;
     }
 
-    this.dispatchEvent(new Event("playing", {composed: true}));
-    this._fastForward.setAttribute("disabled", "");
-    this._rewind.setAttribute("disabled", "");
-    this.disableRateChange();
-    this._rateControl.setValue(0.5, true);
-
     const paused = this.is_paused();
     if (paused) {
-      this._video.rateChange(this._rate);
+      this.dispatchEvent(new Event("playing", {composed: true}));
+      this._fastForward.setAttribute("disabled", "");
+      this._rewind.setAttribute("disabled", "");
+      this.disableRateChange();
+      this._rateControl.setValue(0.5, true);
+      //this._video.rateChange(this._rate);
       if (this._video.playBackwards())
       {
         this._videoStatus = "playing";

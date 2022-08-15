@@ -1879,6 +1879,10 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       //console.info("Loader Full");
       this._loaderTimeout = setTimeout(loader, 0);
+      if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
+      {
+        this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
+      }
       return;
     }
 
