@@ -269,9 +269,10 @@ export class CanvasDrag
   // @param canvas jquery object for canvas element
   // @param cb callback function to handle dragging
   // @param dragLimiter minimum interval to report mouseMove
-  constructor(parent, canvas, scaleFn, cb, dragLimiter)
+  constructor(parent, canvas, scaleFn, cb, finalizer, dragLimiter)
   {
     this._cb = cb;
+    this._finalizer = finalizer;
     this._canvas = canvas;
     this._scaleFn=scaleFn;
     this._active = false;
@@ -387,6 +388,7 @@ export class CanvasDrag
            this._event.end.y == this._event.start.y))
     {
       this._cb(this._event);
+      this._finalizer(this._event);
     }
   }
 }
@@ -990,7 +992,8 @@ export class AnnotationCanvas extends TatorElement
     this._dragHandler = new CanvasDrag(this,
                                        this._canvas,
                                        this._draw.displayToViewportScale.bind(this._draw),
-                                       this.dragHandler.bind(this));
+                                       this.dragHandler.bind(this),
+                                       this.mouseUpHandler.bind(this));
     this._draw.setPushCallback((frameInfo) => {return this.drawAnnotations(frameInfo);});
 
     // Text-overlay is in a higher z-index so mouse events get masked
@@ -2148,9 +2151,15 @@ export class AnnotationCanvas extends TatorElement
     }
     console.info("Fetched " + data.length + " annotations.");
 
-    if (needRefresh == true)
+    if (needRefresh == true && this._ready == true)
     {
       this.refresh();
+    }
+    else
+    {
+      this.addEventListener("seekReady", ()=>{
+        this.refresh();
+      });
     }
   }
 
@@ -2762,11 +2771,6 @@ export class AnnotationCanvas extends TatorElement
             this._textOverlay.classList.add("select-grabbing");
           }
           this.emphasizeLocalization(localization);
-          if (mouseEvent.buttons == 0)
-          {
-            // Don't draw if we are dragging because then the drag handler is using the pen.
-            this.refresh();
-          }
         }
         else if (localization)
         {
@@ -2832,7 +2836,7 @@ export class AnnotationCanvas extends TatorElement
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
     }
-    if (this._mouseMode == MouseMode.PAN)
+    else if (this._mouseMode == MouseMode.PAN)
     {
       // When drawing a poly, only allow one move at a time.
       if (this._overrideState == MouseMode.NEW_POLY)
@@ -2844,6 +2848,13 @@ export class AnnotationCanvas extends TatorElement
                                 }));
         this.defaultMode();
       }
+    }
+
+    // Mode Change logic
+    if (this._mouseMode == MouseMode.MOVE || this._mouseMode == MouseMode.RESIZE)
+    {
+      // Change back to SELECT after a MOVE or RESIZE
+      this._mouseMode = MouseMode.SELECT;
     }
   }
 
@@ -3283,7 +3294,7 @@ export class AnnotationCanvas extends TatorElement
     else
     {
       // TODO: Why is this check really here to avoid a refresh?
-      if (this._emphasis != localization)
+      if (this._emphasis == null || (this._emphasis == null && (this._emphasis.id != localization.id)))
       {
         this._emphasis = localization;
         this.refresh();
@@ -4669,7 +4680,8 @@ export class AnnotationCanvas extends TatorElement
         this.activeLocalization = null;
         this._mouseMode = MouseMode.QUERY;
       } else {
-        this.selectLocalization(this.activeLocalization);
+        this.emphasizeLocalization(this.activeLocalization);
+        //this.selectLocalization(this.activeLocalization);
       }
     }
     if (this._activeTrack)

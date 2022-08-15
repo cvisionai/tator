@@ -430,9 +430,10 @@ class TatorVideoBuffer {
       }
 
       // Handle all samples for processing keyframes and what not at the end of decoding
-      for (; idx < samples.length; idx++)
+      for (idx = start_idx; idx < samples.length; idx++)
       {
-        this._bufferedRegions.push(timestampOffset+samples[idx].cts/this._timescaleMap.get(timestampOffset), timestampOffset+(samples[idx].cts+this._frameDeltaMap.get(timestampOffset))/this._timescaleMap.get(timestampOffset));
+        this._bufferedRegions.push(timestampOffset+samples[idx].cts/this._timescaleMap.get(timestampOffset), 
+                                  timestampOffset+(samples[idx].cts+this._frameDeltaMap.get(timestampOffset))/this._timescaleMap.get(timestampOffset));
         if (samples[idx].cts < min_cts)
         {
           min_cts = samples[idx].cts;
@@ -472,7 +473,7 @@ class TatorVideoBuffer {
         }
       }
     }
-    //this._bufferedRegions.print(`${this._name} ${this._frameDeltaMap.get(timestampOffset)} ${timestampOffset} ${timestampOffsetInCtx+min_cts} to ${timestampOffsetInCtx+max_cts}`);
+    //this._bufferedRegions.print(`${this._name} WORKER ${min_cts/this._timescaleMap.get(timestampOffset)} to ${max_cts/this._timescaleMap.get(timestampOffset)}`);
 
     if (max_cts >= min_cts)
     {
@@ -599,6 +600,7 @@ class TatorVideoBuffer {
     //console.info(`INFO MAP = ${this._frameInfoMap.size}`);
     const timeScale = this._timescaleMap.get(timestampOffset);
     const frameDelta = this._frameDeltaMap.get(timestampOffset);
+    //console.info(`${this._name} TS=${timestampOffset} FD=${frameDelta}`);
     if (this._playing == true)
     {      
       const cursor_in_ctx = (this._current_cursor)*timeScale;
@@ -653,7 +655,7 @@ class TatorVideoBuffer {
       }
       else
       {
-        //console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+this._frame_delta)/timeScale}`);
+        //console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} FD=${frameDelta}`);
         frame.close(); // don't care about the frame
       }
     }
@@ -697,7 +699,7 @@ class TatorVideoBuffer {
     }
     for (let idx = 0; idx < this._bufferedRegions.length; idx++)
     {
-      if (video_time > this._bufferedRegions.start(idx) && video_time <= this._bufferedRegions.end(idx))
+      if (video_time >= this._bufferedRegions.start(idx) && video_time <= this._bufferedRegions.end(idx))
       {
         //console.info(`Found it, going in ${video_time} ${seek_timestamp} ${this._bufferedRegions.start(idx)} ${this._bufferedRegions.end(idx)}!`);
         this._lastSeek = performance.now();
@@ -805,7 +807,7 @@ class TatorVideoBuffer {
 
   reset(limit)
   {
-    console.info(`RESETTING LIMIT=${limit}`);
+    //console.info(`RESETTING LIMIT=${limit}`);
     let all = [];
 
     let timestamps = [...this._mp4FileMap.keys()];
@@ -814,7 +816,7 @@ class TatorVideoBuffer {
       const timestamp = timestamps[idx];
       if (timestamp >= limit)
       {
-        console.info(`LIMIT HIT ${timestamp} > ${limit}`);
+        //console.info(`LIMIT HIT ${timestamp} > ${limit}`);
         break;
       }
       all.push(new Promise((resolve) => 
@@ -838,7 +840,7 @@ class TatorVideoBuffer {
       postMessage({'type': "buffered",
                   'ranges': this._bufferedRegions._buffer});
     }
-    console.info(`Resetting ${all.length} subfiles.`);
+    //console.info(`Resetting ${all.length} subfiles.`);
     return Promise.all(all);
   }
 
@@ -867,8 +869,9 @@ class TatorVideoBuffer {
             times.push(samples[idx].dts); // NOT CTS fix bug with frames more than 10 out of order
           }
           times.sort((a,b)=>a-b);
-          const frame_delta = times[1]-times[0];
+          const frame_delta = times[times.length-1]-times[times.length-2];
           this._frameDeltaMap.set(timestampOffset, frame_delta);
+          //console.info(`${this._name}: Setting TS=${timestampOffset} FD=${frame_delta}`);
           postMessage({"type": "frameDelta",
                       "frameDelta": frame_delta,
                       "timestampOffset": timestampOffset});
@@ -909,7 +912,7 @@ class TatorVideoBuffer {
       tempFile.lastBoxStartPosition = data.fileStart;
       tempFile.nextParsePosition = data.fileStart;
       tempFile.dtsBias = Math.round(data.frameStart * this._timescaleMap.get(timestampOffset));
-      console.info(`TEMP Setting dts bias to FS=${data.fileStart} BIAS=${tempFile.dtsBias} ${tempFile.dtsBias/this._timescaleMap.get(timestampOffset)}`);
+      console.info(`${this._name} TEMP Setting dts bias to FS=${data.fileStart} BIAS=${tempFile.dtsBias} ${tempFile.dtsBias/this._timescaleMap.get(timestampOffset)}`);
       tempFile.stop();
       tempFile.appendBuffer(data);
       tempFile.seek(0); // Always go to 0 for this

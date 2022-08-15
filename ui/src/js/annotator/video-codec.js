@@ -45,6 +45,7 @@ export class TatorTimeRanges {
 
   push(start,end)
   {
+    //console.info(`Pushing ${start} to ${end}`);
     this._buffer.push([start,end]);
     this._merge_collapse();
   }
@@ -135,13 +136,24 @@ class TatorVideoManager {
     this._frameDeltaMap = new Map();
     this._bias = 0;
     this._keyframeOnly = false;
+    this._scrubbing = false;
     this._mute = false;
   }
 
   set keyframeOnly(val)
   {
+    // Don't go into keyframe only if we are in summary mode (they conflict)
+    //if (this.summaryLevel > 0)
+    //{
+      //return;
+    //}
     this._keyframeOnly = val;
     this._codec_worker.postMessage({"type": "keyframeOnly", "value": val});
+  }
+
+  set scrubbing(val)
+  {
+    this._scrubbing = val;
   }
 
   get keyframeOnly()
@@ -156,6 +168,10 @@ class TatorVideoManager {
     {
       this._codec_string = msg.data.data.tracks[0].codec;
       this._timescaleMap.set(msg.data.timestampOffset,msg.data.data.tracks[0].timescale);
+      if (this._parent.onReady)
+      {
+        this._parent.onReady();
+      }
       if (this._parent._loadedDataCallback)
       {
         this._parent._loadedDataCallback();
@@ -238,15 +254,19 @@ class TatorVideoManager {
 
   _imageReady(image)
   {
-    //console.info(`${performance.now()}: GOT ${image.timestamp}`);
+    //console.info(`${performance.now()}: GOT ${this._name}: GOT h=${image.height}`);
     image.data.timescale = image.timescale;
     image.data.frameDelta = image.frameDelta;
     image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
     this._clean_hot();
-    if ((this._cursor_is_hot() || this._keyframeOnly == true) && this._mute == false)
+    if ((this._cursor_is_hot() || this._keyframeOnly == true || this._scrubbing == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
+    }
+    if (this._mute)
+    {
+      console.info(`${this._name} is muted.`);
     }
   }
 
@@ -362,30 +382,38 @@ class TatorVideoManager {
   //   jump to the nearest preceding keyframe and decode new frames (slightly slower)
   set currentTime(video_time)
   {
-    if (this._codec_string == undefined)
-    {
-      console.info("Can not seek until file is loaded.")
-      return;
-    }
-    
     // If we are approximating seeking, we should land on the nearest buffered time
     if (this.summaryLevel)
     {
-      const approx = Math.floor(video_time / this.summaryLevel)*this.summaryLevel;
+      // Round to the nearest Nth second based on the summary level
+      const approx = Math.floor((video_time + this._bias)/ this.summaryLevel)*this.summaryLevel;
+      let lastDistance = 40000000;
       for (let idx = 0; idx < this.buffered.length; idx++)
       {
+        if (idx == 0 && approx < this.buffered.start(idx))
+        {
+          this._current_cursor = this.buffered.start(idx);
+          break;
+        }
+        const fromBufStart = Math.abs(approx - this.buffered.start(idx));
+        //console.info(`${idx}: APPX=${approx} ${fromBufStart} ${this.buffered.start(idx)} SL=${this.summaryLevel}`);
         if (approx >= this.buffered.start(idx) && approx < this.buffered.end(idx))
         {
           this._current_cursor = approx;
           break;
         }
-        else if (Math.abs(approx - this.buffered.start(idx)) < this.summaryLevel)
+        else if (lastDistance < fromBufStart)
         {
-          this._current_cursor = this.buffered.start(idx);
+          // If we went past it pick the last good start
+          this._current_cursor = this.buffered.start(idx-1);
           break;
         }
+        else
+        {
+          lastDistance = fromBufStart;
+        }
       }
-      //console.info(`${this._name}: SUMMARIZING ${video_time} to ${this._current_cursor} via ${this.summaryLevel}`);
+      //console.info(`${this._name}: SUMMARIZING ${video_time+this._bias} to ${this._current_cursor} via ${this.summaryLevel}`);
     }
     else
     {
@@ -398,7 +426,7 @@ class TatorVideoManager {
        "currentTime": this._current_cursor,
        "videoTime": video_time,
        "bias": this._bias,
-       "informational": is_hot
+       "informational": is_hot || this._mute
     });
     if (is_hot && this._mute == false)
     {
@@ -609,7 +637,15 @@ export class TatorVideoDecoder {
         return this._buffer;
       }
     }
-    return null;
+    // Always return if summary is turned on
+    if (this._buffer.summaryLevel > 0)
+    {
+      return this._buffer;
+    }
+    else
+    {
+      return null;
+    }
   }
 
   // Returns the seek buffer if it is present, or
@@ -632,7 +668,6 @@ export class TatorVideoDecoder {
     let p_func = (resolve, reject) => 
     {
       this.reset().then(() => {
-        this.buffered.print(`${this._name} RESET`);
         resolve();
       });
     };

@@ -7,7 +7,8 @@ import { PeriodicTaskProfiler } from "./periodic_task_profiler";
 import { VideoBufferDemux } from "./video_buffer_demux";
 import { MotionComp } from "./motion_comp";
 import { ConcatDownloadManager } from "./concat_download_manager.js";
-
+import { color } from "./drawGL_colors.js";
+import { EffectManager } from "./video-effects.js";
 
 // Video export class handles interactions between HTML presentation layer and the
 // javascript application.
@@ -81,13 +82,14 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Set global variable to find us
     window.tator_video = this;
-    var that = this;
+    this._ready = false;
     this._diagnosticMode = false;
     this._videoVersion = 1;
     this._decode_profiler = new PeriodicTaskProfiler("Video Decode");
     this._playerProfiler = new PeriodicTaskProfiler("Display Logic");
     this._glProfiler = new PeriodicTaskProfiler("GL Draw");
     this._firstFrame = 0;
+    this._effectManager = new EffectManager(this, this._canvas, this._draw);
 
     let parameters = new URLSearchParams(window.location.search);
     if (parameters.has('diagnostic'))
@@ -105,6 +107,11 @@ export class VideoCanvas extends AnnotationCanvas {
     if (searchParams.has("frame"))
     {
       this._dispFrame = Number(searchParams.get("frame"));
+    }
+    this._summaryLevel = null;
+    if (searchParams.has("summaryLevel"))
+    {
+      this._summaryLevel = Number(searchParams.get("summaryLevel"));
     }
     this._lastDirection=Direction.FORWARD;
     this._direction=Direction.STOPPED;
@@ -264,6 +271,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       forceSeekBuffer = true;
     }
+    this._effectManager.clear();
     this._draw.beginDraw();
     return this.gotoFrame(this._dispFrame, forceSeekBuffer);
   }
@@ -308,12 +316,18 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._children)
     {
       console.info("Launching concat downloader.");
+      let frameJump = 0;
+      if (this._mediaInfo.summaryLevel && this._scrub_idx != this._play_idx)
+      {
+        frameJump = this._mediaInfo.summaryLevel*this._mediaInfo.fps;
+      }
       this._dlWorker = new ConcatDownloadManager(this, this._children, this._videoObject.media_files.concat);
       this._dlWorker.postMessage({"type": "start",
                                   "play_idx": this._play_idx,
                                   "hq_idx": this._seek_idx,
                                   "scrub_idx": this._scrub_idx,
-                                  "offsite_config": offsite_config});
+                                  "offsite_config": offsite_config,
+                                  "frameJump": frameJump});
     }
     else if (streaming_files[0].hls)
     {
@@ -340,6 +354,11 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       this._dlWorker = new DownloadManager(this);
       this._scrubDownloadCount = 0;
+      let frameJump = 0;
+      if (this._summaryLevel && this._scrub_idx != this._play_idx)
+      {
+        frameJump = this._summaryLevel*this._mediaInfo.fps;
+      }
 
       // Start downloading the scrub buffer
       this._dlWorker.postMessage({"type": "start",
@@ -347,7 +366,8 @@ export class VideoCanvas extends AnnotationCanvas {
                                   "play_idx": this._play_idx,
                                   "hq_idx": this._seek_idx,
                                   "scrub_idx": this._scrub_idx,
-                                  "offsite_config": offsite_config});
+                                  "offsite_config": offsite_config,
+                                  "frameJump": frameJump});
     }
   }
 
@@ -474,7 +494,17 @@ export class VideoCanvas extends AnnotationCanvas {
       // Hook up summary level indication
       if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
       {
-        p.playBuffer().summaryLevel = this._mediaInfo.summaryLevel;
+        p.playBuffer().summaryLevel = this._summaryLevel;
+      }
+      if (idx == this._seek_idx)
+      {
+        p.onReady = () => {
+          this.dispatchEvent(new CustomEvent("seekReady",
+                                       {composed: true,
+                                        detail: {enabled: true}}));
+          this._ready = true;
+          p.onReady = null;
+        }
       }
       if (idx == this._play_idx)
       {
@@ -614,6 +644,12 @@ export class VideoCanvas extends AnnotationCanvas {
     if (mediaType)
       this.mediaType = mediaType;
     this._videoObject = videoObject;
+    
+    // If summary level is not set, grab it from the media's default.
+    if (this._summaryLevel == null)
+    {
+      this._summaryLevel = videoObject.summaryLevel;
+    }
 
     if (numGridRows != undefined)
     {
@@ -924,6 +960,8 @@ export class VideoCanvas extends AnnotationCanvas {
    */
   displayLatest(hold)
   {
+    this._effectManager.clear();
+    document.body.style.cursor = null;
     let gl_start = performance.now();
     this._fpsDiag++;
     this._dispFrame=this._draw.dispImage(hold);
@@ -1027,7 +1065,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       return this._videoElement[this._seek_idx].returnSeekIfPresent(time, direction);
     }
-    else
+    else if (bufferType == "scrub" || bufferType == "play")
     {
       // Treat play and scrub buffer as best available.
       let play_attempt = null;
@@ -1055,6 +1093,14 @@ export class VideoCanvas extends AnnotationCanvas {
         return play_attempt;
       }
       return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
+    }
+    else if (bufferType == "scrub-only")
+    {
+      return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
+    }
+    else
+    {
+      console.error(`Unknown buffer type requsted: ${bufferType}`);
     }
   }
 
@@ -1233,14 +1279,7 @@ export class VideoCanvas extends AnnotationCanvas {
           callback(frame, image_buffer, that._dims[0], that._dims[1]);
           that._decode_profiler.push(performance.now()-that._decode_start);
           resolve();
-          if (that._direction == Direction.STOPPED)
-          {
-            that.dispatchEvent(new CustomEvent("seekComplete",
-                                        {composed: true,
-                                          detail: {
-                                            forceSeekBuffer: forceSeekBuffer
-                                          }}));
-          }
+          
           if (forceSeekBuffer && that._audioPlayer)
           {
             if (that._audioPlayer.currentTime != audio_time)
@@ -1255,6 +1294,8 @@ export class VideoCanvas extends AnnotationCanvas {
 
         if (createTimeout)
         {
+          // Gray out video to show something is going on
+          that._effectManager.grayOut();
           that._seek_expire = setTimeout(() => {
             if (that.videoBuffer(that._seekFrame, "seek") == null) {
               // Current seek frame is still not in buffer, allow redownload
@@ -1266,7 +1307,7 @@ export class VideoCanvas extends AnnotationCanvas {
             console.warn("Network Seek expired");
             that.refresh(false);
             reject();
-          }, 3000);
+          }, 5000);
         }
 
         if (downloadSeekFrame)
@@ -1369,6 +1410,11 @@ export class VideoCanvas extends AnnotationCanvas {
     }));
   }
 
+  get rate()
+  {
+    return this._playbackRate;
+  }
+
   processRateChange(event)
   {
     this._playbackRate=this._controls.rateControl.val();
@@ -1432,7 +1478,7 @@ export class VideoCanvas extends AnnotationCanvas {
       frame = this.currentFrame()
     }
 
-    const filename = `Frame_${frame}_${this._mediaInfo['name']}`;
+    const filename = `Frame_${frame}_${this._videoObject.name}`;
     this.makeOffscreenDownloadable(localizations, filename);
   }
 
@@ -1448,6 +1494,11 @@ export class VideoCanvas extends AnnotationCanvas {
       this._audioEligible = true;
       this._audioPlayer.playbackRate = this._playbackRate;
     }
+  }
+
+  set renderer(value)
+  {
+    this._renderer = value;
   }
 
 
@@ -1492,7 +1543,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
-      this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub");}, 0);
+      this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub-only");}, 0);
     }
     this._sentPlaybackReady = false;
     // Kick off the loader
@@ -1621,7 +1672,11 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     
 
-    if (this._draw.canPlay() > 0)
+    if (this._renderer && (this._draw.canPlay() > 0))
+    {
+      this._renderer.notifyReady(this._videoObject.id, player);
+    }
+    else if (this._draw.canPlay() > 0)
     {
       // Ready to update the video.
       // Request browser to call player function to update an animation before the next repaint
@@ -1837,6 +1892,10 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       //console.info("Loader Full");
       this._loaderTimeout = setTimeout(loader, 0);
+      if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
+      {
+        this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
+      }
       return;
     }
 
@@ -1893,8 +1952,22 @@ export class VideoCanvas extends AnnotationCanvas {
   _calculateAppendThreshold()
   {
     // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
-    // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
+    // @TODO: These would be great to pull from user settings or project settings
+    if (this._direction == Direction.STOPPED)
+    {
+      return 240; // 2 minutes when paused
+    }
+    else
+    {
+      return 480; // 4 Minutes whilst playing.
+    }
+  }
+
+  _calculateReadyThreshold()
+  {
     const fps_swag = Math.max(1, 15 / this._fps);
+    // FPS swag accounts for low frame rate videos that get sped up to 15x on playback
+    // @TODO: Can probably make this 30 now, but should make it a constant at top of file.
     return 7.5 * Math.min(RATE_CUTOFF_FOR_ON_DEMAND, Math.max(1,this._playbackRate)) * fps_swag;
   }
 
@@ -1906,7 +1979,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       frame = this._dispFrame;
     }
-    let appendThreshold = this._calculateAppendThreshold();
+    let appendThreshold = this._calculateReadyThreshold();
     let video = this.videoBuffer(frame, "play", true);
     if (video == null)
     {
@@ -2136,6 +2209,8 @@ export class VideoCanvas extends AnnotationCanvas {
       }
     }
 
+    var needMoreData = false;
+
     if (!this._onDemandInit)
     {
       if (!this._onDemandInitSent)
@@ -2158,7 +2233,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
           this._onDemandId += 1;
           console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data: onDemandInit`);
-
+          this._lastLoadTime = null;
           this._dlWorker.postMessage(
             {
               "type": "onDemandInit",
@@ -2196,8 +2271,6 @@ export class VideoCanvas extends AnnotationCanvas {
       // If we are within X seconds of the end of the buffer, drop the frames before
       // the current one and start downloading again.
       //console.log(`Pending onDemand downloads: ${this._onDemandPendingDownloads} ranges.length: ${ranges.length}`);
-
-      var needMoreData = false;
       if (ranges.length == 0 && this._onDemandPendingDownloads < 1)
       {
         // No data in the buffer, big surprise - need more data.
@@ -2208,7 +2281,7 @@ export class VideoCanvas extends AnnotationCanvas {
         const currentTime = this.frameToTime(this._dispFrame);
         // Make these scale to the selected playback rate
         const appendThreshold = this._calculateAppendThreshold();
-        var playbackReadyThreshold = appendThreshold;
+        var playbackReadyThreshold = this._calculateReadyThreshold();
         const totalVideoTime = this.frameToTime(this._numFrames);
         if (this._direction == Direction.FORWARD &&
           (totalVideoTime - currentTime < playbackReadyThreshold))
@@ -2294,19 +2367,19 @@ export class VideoCanvas extends AnnotationCanvas {
             // We can do GC even if we don't need more data.
             if (this._direction == Direction.FORWARD)
             {
-              var trimEnd = currentTime - 30;
+              var trimEnd = currentTime - 240;
               if (trimEnd > start && this._playing)
               {
-                console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
+                //console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${start} to ${trimEnd} in sourceBuffer`);
                 video.deletePendingOnDemand([start, trimEnd]);
               }
             }
             else if (this._direction == Direction.BACKWARDS)
             {
-              var trimEnd = currentTime + 30;
+              var trimEnd = currentTime + 240;
               if (trimEnd < end && this._playing)
               {
-                console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
+                //console.log(`(ID:${this._videoObject.id}) ...Removing seconds ${trimEnd} to ${end} in sourceBuffer`);
                 video.deletePendingOnDemand([trimEnd, end]);
               }
             }
@@ -2371,12 +2444,37 @@ export class VideoCanvas extends AnnotationCanvas {
       if (needMoreData && !this._onDemandFinished && this._onDemandPendingDownloads == 0)// && !(this._direction == Direction.STOPPED && this._onDemandPlaybackReady))
       {
         // Kick of the download worker to get the next onDemand segments
-        console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data (pendingDownloads/playbackReady/ranges.length): ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady} ${ranges.length}`);
+        //console.log(`(ID:${this._videoObject.id}) Requesting more onDemand data (pendingDownloads/playbackReady/ranges.length): ${this._onDemandPendingDownloads} ${this._onDemandPlaybackReady} ${ranges.length}`);
         for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
         {
           var end = ranges.end(rangeIdx);
           var start = ranges.start(rangeIdx);
-          console.log(`    range ${rangeIdx} (start/end/current) - ${start} ${end} ${this.frameToTime(this._dispFrame)}`)
+          const current = this.frameToTime(this._dispFrame);
+          const runway = end-current;
+          const now = performance.now();
+          // Only print this message once a second
+          if (this._lastLoadTime == null)
+          {
+            this._lastLoadTime = now;
+            this._lastEnd = end;
+          }
+          if (now - this._lastLoadTime > 1000)
+          {
+            // Load score greater than 1 means loads are faster video playback requirement.
+            // Load score less than 1 means loads are not keeping up.
+            const loadScore = (end - this._lastEnd)/(((now-this._lastLoadTime)/1000)*this._playbackRate);
+            const msg = `Buffer Status: time=${now}: id=${this._videoObject.id}: ${rangeIdx} score=${loadScore} (start/end/current/runway)= ${start}/${end}/${current}/${runway}`;
+            if (loadScore < 1)
+            {
+              console.warn(msg)
+            }
+            else
+            {
+              console.info(msg);
+            }
+            this._lastLoadTime = now;
+            this._lastEnd = end;
+          }
         }
         this._onDemandPendingDownloads += 1;
         this._dlWorker.postMessage({
@@ -2407,7 +2505,8 @@ export class VideoCanvas extends AnnotationCanvas {
     }
 
     // Sleep for a period before checking the onDemand buffer again
-    if (!this._onDemandPlaybackReady)
+    // Let the buffer run even if we are 'ready' but could benefit from more data
+    if (!this._onDemandPlaybackReady || needMoreData == true)
     {
       this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload(inhibited)}, 100);
     }
@@ -2555,6 +2654,10 @@ export class VideoCanvas extends AnnotationCanvas {
       clearTimeout(this._playerTimeout);
       cancelAnimationFrame(this._playerTimeout)
       this._playerTimeout=null;
+    }
+    if (this._renderer)
+    {
+      this._renderer.stopThread();
     }
     if (this._pendingTimeout)
     {

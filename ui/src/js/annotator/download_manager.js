@@ -50,7 +50,6 @@ export class DownloadManager
       console.info(`Converting ${msg.data["frameStart"]} to ${msg.data["frameStart"]/this._parent._fps}`);
       msg.data["buffer"].frameStart = (msg.data["frameStart"]/this._parent._fps);
       this._parent._videoElement[this._parent._seek_idx].appendSeekBuffer(msg.data["buffer"], msg.data['time']);
-      document.body.style.cursor = null;
       let seek_time = performance.now() - this._parent._seekStart;
       let seek_msg = `Seek time = ${seek_time} ms`;
       console.info(seek_msg);
@@ -321,7 +320,7 @@ export class DownloadManager
             {
               end += offsets[b_idx][1];
             }
-            var bufferToSend = data.slice(begin, end);
+            var bufferToSend = data;//.slice(begin, end);
             bufferToSend.fileStart = data.fileStart + begin;
             if (sentOffset == false)
             {
@@ -369,7 +368,7 @@ export class DownloadManager
         {
           // Done processing the downloaded segment.
           // Watchdog will kick off the next segment to download.
-          console.log(`Requesting more onDemand data: done.`);
+          // console.log(`Requesting more onDemand data: done.`);
           this._parent._onDemandPendingDownloads -= 1;
           this._parent._onDemandCompletedDownloads += 1;
           return;

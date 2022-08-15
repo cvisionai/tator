@@ -2,7 +2,7 @@ import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
-import { handle_video_error, PlayInteraction } from "./annotation-common.js";
+import { frameToTime, handle_video_error, PlayInteraction } from "./annotation-common.js";
 
 export class AnnotationPlayer extends TatorElement {
   constructor() {
@@ -197,7 +197,7 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addEventListener("videoLengthChanged", evt =>
     {
       this._slider.setAttribute('max',evt.detail.length);
-      this._totalTime.textContent = "/ " + this._frameToTime(evt.detail.length);
+      this._totalTime.textContent = "/ " + frameToTime(evt.detail.length, this._mediaInfo.fps);
       this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     });
 
@@ -205,21 +205,6 @@ export class AnnotationPlayer extends TatorElement {
     this._video.addEventListener("firstFrame", evt =>
     {
       this._slider.setAttribute('min', evt.detail.value);
-    });
-
-    // When a seek is complete check to make sure the display all set
-    this._video.addEventListener("seekComplete", evt => {
-      // Only run check ready on final seek
-      if (this._slider.active == false)
-      {
-        clearTimeout(this._handleNotReadyTimeout);
-        this._handleNotReadyTimeout = null;
-        this.checkReady();
-      }
-      else
-      {
-        this._playInteraction.disable();
-      }
     });
 
     // When a playback is stalled, pause the video
@@ -320,7 +305,7 @@ export class AnnotationPlayer extends TatorElement {
       
       this._slider.value = frame;
       this._zoomSlider.value = frame;
-      const time = this._frameToTime(frame);
+      const time = frameToTime(frame, this._mediaInfo.fps);
       this._currentTimeText.textContent = time;
       this._currentFrameText.textContent = frame;
       this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
@@ -363,8 +348,12 @@ export class AnnotationPlayer extends TatorElement {
       else {
         this._timelineMore.style.display = "none";
       }
-      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
-      window.dispatchEvent(new Event("resize"));
+      const newHeight = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
+      if (newHeight != this._videoHeightPadObject.height)
+      {
+        this._videoHeightPadObject.height = newHeight;
+        window.dispatchEvent(new Event("resize"));
+      }
     });
 
     this._timelineD3.addEventListener("select", evt => {
@@ -593,6 +582,7 @@ export class AnnotationPlayer extends TatorElement {
     const now = Date.now();
     const frame = Number(evt.target.value);
     const waitOk = now - this._lastScrub > this._scrubInterval;
+    this._video.scrubbing = true;
     if (this._video.keyframeOnly == false && Math.abs(frame-this._video.currentFrame()) > 25)
     {
       this._video.keyframeOnly = true;
@@ -600,17 +590,16 @@ export class AnnotationPlayer extends TatorElement {
     else
     {
       // Let the user slow down and get frame by frame scrubing
-      //this._video.keyframeOnly = false;
+      this._video.keyframeOnly = false;
     }
     if (waitOk) {
-
+      this._lastScrub = Date.now();
       this._videoStatus = "paused";
 
       this._play.setAttribute("is-paused","");
       this._video.stopPlayerThread();
       this._video.shutdownOnDemandDownload();
-      this._video.seekFrame(frame, this._video.drawFrame)
-      .then(this._lastScrub = Date.now());
+      this._video.seekFrame(frame, this._video.drawFrame);
     }
   }
 
@@ -627,16 +616,18 @@ export class AnnotationPlayer extends TatorElement {
       frame = evt.detail.frame;
     }
     this._video.keyframeOnly = false;
+    this._video.scrubbing = false;
     this._videoStatus = "scrubbing";
 
     this._video.stopPlayerThread();
     this._video.shutdownOnDemandDownload();
 
     // Use the hq buffer when the input is finalized
+    this._playInteraction.disable(); // disable play on seek
     this._video.seekFrame(frame, this._video.drawFrame, true).then(() => {
       this._lastScrub = Date.now()
-      this._video.onDemandDownloadPrefetch(frame);
       this._videoStatus = "paused";
+      this.checkReady();
       this.dispatchEvent(new Event("hideLoading", {composed: true}));
     });/*;.catch((e) => {
       console.error(`"ERROR: ${e}`)
@@ -747,8 +738,9 @@ export class AnnotationPlayer extends TatorElement {
     this._slider.setAttribute("min", 0);
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames)-1);
+    this._slider.fps = val.fps;
     this._fps = val.fps;
-    this._totalTime.textContent = "/ " + this._frameToTime(val.num_frames);
+    this._totalTime.textContent = "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
     this._video.loadFromVideoObject(val, this.mediaType, this._quality, null, null, null, this._videoHeightPadObject, this._seekQuality, this._scrubQuality)
       .then(() => {
@@ -997,38 +989,19 @@ export class AnnotationPlayer extends TatorElement {
 
   playBackwards()
   {
-    if (this._rate > RATE_CUTOFF_FOR_ON_DEMAND)
-    {
-      // Check to see if the video player can play at this rate
-      // at the current frame. If not, inform the user.
-      if (!this._video.canPlayRate(this._rate, this._video.currentFrame()))
-      {
-        window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
-        return;
-      }
-    }
-    this._ratesAvailable = this._video.playbackRatesAvailable();
-
-    if (this._video.bufferDelayRequired() && this._video._onDemandPlaybackReady != true)
-    {
-      this.handleNotReadyEvent();
-      return;
-    }
-
     if (this._video.currentFrame() <= 0) {
       this.pause();
       return;
     }
 
-    this.dispatchEvent(new Event("playing", {composed: true}));
-    this._fastForward.setAttribute("disabled", "");
-    this._rewind.setAttribute("disabled", "");
-    this.disableRateChange();
-    this._rateControl.setValue(0.5, true);
-
     const paused = this.is_paused();
     if (paused) {
-      this._video.rateChange(this._rate);
+      this.dispatchEvent(new Event("playing", {composed: true}));
+      this._fastForward.setAttribute("disabled", "");
+      this._rewind.setAttribute("disabled", "");
+      this.disableRateChange();
+      this._rateControl.setValue(0.5, true);
+      //this._video.rateChange(this._rate);
       if (this._video.playBackwards())
       {
         this._videoStatus = "playing";
@@ -1186,23 +1159,6 @@ export class AnnotationPlayer extends TatorElement {
 
   selectTimelineData(data) {
     this._timelineD3.selectData(data);
-  }
-
-  _frameToTime(frame) {
-    const totalSeconds = frame / this._fps;
-    const seconds = Math.floor(totalSeconds % 60);
-    const secFormatted = ("0" + seconds).slice(-2);
-    const minutes = Math.floor(totalSeconds / 60);
-    if (minutes < 60)
-    {
-      return minutes + ":" + secFormatted;
-    }
-    else
-    {
-      let hours = Math.floor(minutes / 60)
-      const minFormatted = ("0" + Math.floor(minutes % 60)).slice(-2);
-      return hours + ":" + minFormatted + ":" + secFormatted;
-    }
   }
 
   _timeToFrame(minutes, seconds) {

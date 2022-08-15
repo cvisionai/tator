@@ -1,4 +1,5 @@
 import { TatorElement } from "../components/tator-element.js";
+import { frameToTime } from "./annotation-common.js"
 
 export class SeekBar extends TatorElement {
   constructor() {
@@ -40,15 +41,42 @@ export class SeekBar extends TatorElement {
     }
     this.bar.addEventListener("click", clickHandler);
 
+    var mouseOver=(evt)=>
+    {
+      var width = that.offsetWidth;
+      var startX = that.offsetLeft;
+      if (width == 0)
+      {
+        width =
+          that.parentElement.offsetWidth;
+        startX = that.parentElement.offsetLeft;
+      }
+      const percentage = ((evt.clientX-startX)/
+                          width);
+      const proposed_value = Math.round((percentage * (that._max - that._min) + that._min));
+
+
+      if (proposed_value > 0)
+      {
+        this.preview.info = {frame:proposed_value,
+                             margin:evt.clientX-startX,
+                             time: frameToTime(proposed_value, this._fps)};
+      }
+      else
+      {
+        this.preview.hide();
+      }
+      
+      evt.stopPropagation();
+      return false;
+    }
+    this.preview = document.createElement('media-seek-preview');
+    this.bar.appendChild(this.preview);
+    this.bar.addEventListener("mousemove", mouseOver);
+    this.bar.addEventListener("mouseout", ()=>{this.preview.hide()});
+
     var dragHandler=function(evt)
     {
-
-      if (that._active && that._loadedPercentage < 0.99) {
-        that.bar.setAttribute("wide-tooltip", "Scrubbing is not available. Video download in progress.");
-        evt.stopPropagation();
-        return false;
-      }
-
       if (evt.button == 0)
       {
         var width = that.offsetWidth;
@@ -61,6 +89,7 @@ export class SeekBar extends TatorElement {
                      width);
         const percentage = Math.min(relativeX/width,
                                     that._loadedPercentage);
+
         that.value = Math.round((percentage * (that._max - that._min) + that._min));
         evt.stopPropagation();
         return false;
@@ -70,6 +99,7 @@ export class SeekBar extends TatorElement {
     }
     var releaseMouse=(evt)=>
     {
+      this.bar.addEventListener("mousemove", mouseOver);
       that.bar.removeAttribute("wide-tooltip");
       console.info("RELEASE MOUSE.");
       this._active = false;
@@ -89,6 +119,8 @@ export class SeekBar extends TatorElement {
     }
     this.handle.addEventListener("mousedown", evt =>
                                  {
+                                  this.preview.hide();
+                                  this.bar.removeEventListener("mousemove", mouseOver);
                                    this._active = true;
                                    this._lastValue = this.value;
 
@@ -151,8 +183,8 @@ export class SeekBar extends TatorElement {
     }
     else {
       this.handle.style.display = "block";
-      this.handle.style.left = `${percentage}%`;
-    }
+        this.handle.style.left = `${percentage}%`;
+      }
   }
 
   get active()
@@ -180,6 +212,11 @@ export class SeekBar extends TatorElement {
     this.updateVisuals();
   }
 
+  set fps(val)
+  {
+    this._fps = val;
+  }
+
   get value()
   {
     return this._value;
@@ -189,6 +226,7 @@ export class SeekBar extends TatorElement {
   {
     this._loadedPercentage = evt.detail['percent_complete'];
     const percent_complete = evt.detail['percent_complete']*100;
+
     this.loadProgress.style.width=`${percent_complete}%`;
   }
 
