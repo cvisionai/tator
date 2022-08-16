@@ -14,7 +14,7 @@ resolution_config = {
             'type': 'integer',
             'description': 'Constant rate factor.',
             'minimum': 0,
-            'maximum': 51,
+            'maximum': 63,
             'default': 23,
         },
         'resolution': {
