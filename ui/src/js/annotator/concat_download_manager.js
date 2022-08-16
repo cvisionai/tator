@@ -53,13 +53,13 @@ export class ConcatDownloadManager
             key: keys[found_idx]};
   }
 
-  biasForTime(time)
+  biasForTime(time, buf_idx)
   {
     let biasSum = 0.0;
     let keys = [...this._startBiasMap.keys()].sort((a,b)=>{return a-b;});
     for (let idx = 0; idx < keys.length && keys[idx] < time; idx++)
     {
-      biasSum += this._startBiasMap.get(keys[idx]);
+      biasSum += this._startBiasMap.get(keys[idx]).get(buf_idx);
     }
     return biasSum;
   }
@@ -308,10 +308,15 @@ export class ConcatDownloadManager
     }
     else if (type == "ready")
     {
+      const bias = msg.data["startBias"];
+      if (this._startBiasMap.has(timestampOffset) == false)
+      {
+        this._startBiasMap.set(timestampOffset, new Map());
+      }
+      let this_map = this._startBiasMap.get(timestampOffset);
+      this_map.set(buf_idx, bias);
       if (msg.data["buf_idx"] == this._parent._scrub_idx)
       {
-        const bias = msg.data["startBias"];
-        this._startBiasMap.set(timestampOffset,bias);
         this._parent._videoVersion = msg.data["version"];
         console.info(`Video has start bias of ${this._startBias} - buffer: ${this._scrub_idx}`);
         console.info("Setting hi performance mode");

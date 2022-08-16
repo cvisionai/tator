@@ -534,6 +534,16 @@ class TatorVideoManager {
     this._codec_worker.postMessage(
       {"type": "play"});
   }
+
+  set named_idx(val)
+  {
+    this._named_idx = val;
+  }
+
+  get named_idx()
+  {
+    return this._named_idx;
+  }
 }
 
 export class TatorVideoDecoder {
@@ -717,6 +727,17 @@ export class TatorVideoDecoder {
   currentIdx()
   {
     
+  }
+
+  set named_idx(val)
+  {
+    this._named_idx = val;
+    this._buffer.named_idx = val;
+  }
+
+  get named_idx()
+  {
+    return this._named_idx;
   }
 
   error()

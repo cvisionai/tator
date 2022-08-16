@@ -12,7 +12,7 @@ export class DownloadManager
     this._worker = new Worker(new URL("./vid_downloader.js", import.meta.url),
     {'name': 'Video Download Worker'});
     this._worker.onmessage = this._onMessage.bind(this);
-    this._startBias = 0.0;
+    this._startBias = new Map();
   }
 
   // Forward a message to the underlying worker
@@ -27,9 +27,9 @@ export class DownloadManager
     this._worker.terminate();
   }
 
-  biasForTime(time)
+  biasForTime(time, idx)
   {
-    return this._startBias;
+    return this._startBias.get(idx)
   }
 
   _onMessage(msg)
@@ -185,9 +185,10 @@ export class DownloadManager
     }
     else if (type == "ready")
     {
+      this._startBias.set(msg.data["buf_idx"], msg.data["startBias"]);
       if (msg.data["buf_idx"] == this._parent._scrub_idx)
       {
-        this._startBias = msg.data["startBias"];
+        const buf_idx = msg.data["buf_idx"];
         this._parent._firstFrame = msg.data.firstFrame;
         if (msg.data.firstFrame != 0)
         {
@@ -197,7 +198,7 @@ export class DownloadManager
                                           }));
         }
         this._parent._videoVersion = msg.data["version"];
-        console.info(`Video has start bias of ${this._startBias} - buffer: ${this._parent._scrub_idx}`);
+        console.info(`Video buf${buf_idx} has start bias of ${this._startBias.get(buf_idx)} - buffer: ${this._parent._scrub_idx}`);
         console.info("Setting hi performance mode");
         guiFPS = 60;
       }

@@ -517,8 +517,8 @@ export class VideoCanvas extends AnnotationCanvas {
           let ranges_list = [];
           for (let idx = 0; idx < ranges.length; idx++)
           {
-            let startFrame = this.timeToFrame(ranges.start(idx));
-            let endFrame = this.timeToFrame(ranges.end(idx));
+            let startFrame = this.timeToFrame(ranges.start(idx), null, idx);
+            let endFrame = this.timeToFrame(ranges.end(idx), null, idx);
             if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
             {
               ranges_list.push([startFrame, endFrame]);
@@ -1047,7 +1047,9 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       frame = this.currentFrame();
     }
-    var time=this.frameToTime(frame);
+    var seek_time=this.frameToTime(frame, this._seek_idx);
+    var play_time=this.frameToTime(frame, this._play_idx);
+    var scrub_time=this.frameToTime(frame, this._scrub_idx);
     var direction = this._direction;
     if (direction == Direction.STOPPED)
     {
@@ -1063,7 +1065,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (bufferType == "seek")
     {
-      return this._videoElement[this._seek_idx].returnSeekIfPresent(time, direction);
+      return this._videoElement[this._seek_idx].returnSeekIfPresent(seek_time, direction);
     }
     else if (bufferType == "scrub" || bufferType == "play")
     {
@@ -1074,7 +1076,7 @@ export class VideoCanvas extends AnnotationCanvas {
       // quality frame out of the on-demand buffer.
       if (this._play_idx != this._scrub_idx)
       {
-        play_attempt = this._videoElement[this._play_idx].forTime(time, "play", direction, this._numSeconds);
+        play_attempt = this._videoElement[this._play_idx].forTime(play_time, "play", direction, this._numSeconds);
       }
 
       // To test degraded mode (every 10th frame is degraded):
@@ -1092,11 +1094,11 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         return play_attempt;
       }
-      return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
+      return this._videoElement[this._scrub_idx].forTime(scrub_time, "scrub", direction, this._numSeconds);
     }
     else if (bufferType == "scrub-only")
     {
-      return this._videoElement[this._scrub_idx].forTime(time, "scrub", direction, this._numSeconds);
+      return this._videoElement[this._scrub_idx].forTime(scrub_time, "scrub", direction, this._numSeconds);
     }
     else
     {
@@ -1104,22 +1106,22 @@ export class VideoCanvas extends AnnotationCanvas {
     }
   }
 
-  frameToTime(frame)
+  frameToTime(frame, buf_idx)
   {
-    let comps = this.frameToComps(frame);
+    let comps = this.frameToComps(frame, buf_idx);
     return comps.bias + comps.time;
   }
 
-  frameToComps(frame)
+  frameToComps(frame, buf_idx)
   {
     const time = ((1/this._fps)*frame)+(1/(this._fps*4));
-    const bias = this._dlWorker.biasForTime(time);
+    const bias = this._dlWorker.biasForTime(time, buf_idx);
     return {'time': time, 'bias': bias};
   }
 
-  timeToFrame(time, bias)
+  timeToFrame(time, bias, buf_idx)
   {
-    let video_time = time - this._dlWorker.biasForTime(time);
+    let video_time = time - this._dlWorker.biasForTime(time, buf_idx);
     if (bias)
     {
       video_time -= (1/(this._fps*4));
@@ -1155,8 +1157,15 @@ export class VideoCanvas extends AnnotationCanvas {
       frame = this._firstFrame;
     }
     var that = this;
-    var time_comps = this.frameToComps(frame);
-    var time = time_comps.time+time_comps.bias;
+    var seek_time_comps = this.frameToComps(frame, this._seek_idx);
+    var seek_time = seek_time_comps.time+seek_time_comps.bias;
+    var play_time_comps = this.frameToComps(frame, this._play_idx);
+    var scrub_time_comps = this.frameToComps(frame, this._scrub_idx);
+    let compMap = new Map();
+    compMap.set(this._seek_idx, seek_time_comps);
+    compMap.set(this._play_idx, play_time_comps);
+    compMap.set(this._scrub_idx, scrub_time_comps);
+  
     var audio_time = this.frameToAudioTime(frame);
     var downloadSeekFrame = false;
     var createTimeout = false;
@@ -1239,7 +1248,7 @@ export class VideoCanvas extends AnnotationCanvas {
         {
           if (video.summaryLevel)
           {
-            frame = that.timeToFrame(video.currentTime);
+            frame = that.timeToFrame(video.currentTime, null, video.named_idx);
             if (frame == that._lastSummaryFrame)
             {
               return;
@@ -1267,7 +1276,7 @@ export class VideoCanvas extends AnnotationCanvas {
             image_buffer = video.codec_image_buffer;
             if (image_buffer)
             {
-              frame = that.timeToFrame(image_buffer.time);
+              frame = that.timeToFrame(image_buffer.time, null, video.named_idx);
             }
           }
           if (image_buffer == null)
@@ -1315,7 +1324,7 @@ export class VideoCanvas extends AnnotationCanvas {
           that._dlWorker.postMessage(
             {"type": "seek",
              "frame": frame,
-             "time": time,
+             "time": seek_time,
              "buf_idx": that._seek_idx});
         }
       });
@@ -1328,8 +1337,8 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       //console.info(`Given ${time} ${video.currentTime} to play buffer`);
       this._videoElement[this._play_idx].playBuffer().mute = true;
-      this._videoElement[this._play_idx].playBuffer().bias = time_comps.bias;
-      this._videoElement[this._play_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;   
+      this._videoElement[this._play_idx].playBuffer().bias = play_time_comps.bias;
+      this._videoElement[this._play_idx].playBuffer().currentTime = play_time_comps.time;//video.currentTime;   
     }
 
     // Always update the scrub buffer
@@ -1338,35 +1347,36 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       //console.info(`Given ${time} ${video.currentTime} to play buffer`);
       this._videoElement[this._scrub_idx].playBuffer().mute = true;
-      this._videoElement[this._scrub_idx].playBuffer().bias = time_comps.bias;
-      this._videoElement[this._scrub_idx].playBuffer().currentTime = time_comps.time;//video.currentTime;
+      this._videoElement[this._scrub_idx].playBuffer().bias = scrub_time_comps.bias;
+      this._videoElement[this._scrub_idx].playBuffer().currentTime = scrub_time_comps.time;//video.currentTime;
     }
 
     video.mute = false;
     this._decode_start = performance.now();
-    if (time <= video.duration || isNaN(video.duration))
+    if (seek_time <= video.duration || isNaN(video.duration))
     {
       if (video.use_codec_buffer)
       {
+        let comps = compMap.get(video.named_idx);
         // Let the video decoder do the bias addition
-        video.bias = time_comps.bias;
-        video.currentTime = time_comps.time;
+        video.bias = comps.bias;
+        video.currentTime = comps.time;
       }
       else
       {
-        video.currentTime = time;
+        video.currentTime = seek_time;
       }
     }
-    else if (time > video.duration)
+    else if (seek_time > video.duration)
     {
       var end = video.duration;
-      time = end;
+      seek_time = end;
       frame = end*this._fps;
       video.currentTime = end;
     }
     else
     {
-      time = 0;
+      seek_time = 0;
       frame = 0;
       video.currentTime = 0;
     }
@@ -1831,7 +1841,7 @@ export class VideoCanvas extends AnnotationCanvas {
     video.onFrame = (frame, timescale, timestampOffset) => {
       this._playing = true;
       let start = performance.now();
-      frame.frameNumber = this.timeToFrame((frame.timestamp/timescale));
+      frame.frameNumber = this.timeToFrame((frame.timestamp/timescale), null, video.named_idx);
       this._loadFrame = frame.frameNumber;
       this._fpsLoadDiag++;
       if (increment_clk % frameIncrement != 0)
@@ -1989,9 +1999,9 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       let timeToEnd = null;
       var ranges = video.buffered;
-      const absEnd = this.frameToTime(this._numFrames-1);
-      const absStart = this.frameToTime(0);
-      const currentTime = this.frameToTime(frame);
+      const absEnd = this.frameToTime(this._numFrames-1, this._play_idx);
+      const absStart = this.frameToTime(0, this._play_idx);
+      const currentTime = this.frameToTime(frame, this._play_idx);
       let timeToAbsEnd = absEnd - currentTime;
       for (var rangeIdx = 0; rangeIdx < ranges.length; rangeIdx++)
       {
@@ -2142,9 +2152,9 @@ export class VideoCanvas extends AnnotationCanvas {
 
     let timeToEnd = 0;
     let ranges = this._videoElement[this._play_idx].playBuffer().buffered;
-    let absEnd = this.frameToTime(this._numFrames-1);
+    let absEnd = this.frameToTime(this._numFrames-1, this._play_idx);
     let timeToAbsEnd = Number.MAX_SAFE_INTEGER;
-    let this_time =  this.frameToTime(reqFrame);
+    let this_time =  this.frameToTime(reqFrame, this._play_idx);
     timeToAbsEnd = absEnd - this_time;
     let found_it = false;
     for (let idx = 0; idx < ranges.length; idx++)
@@ -2278,11 +2288,11 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
-        const currentTime = this.frameToTime(this._dispFrame);
+        const currentTime = this.frameToTime(this._dispFrame, this._play_idx);
         // Make these scale to the selected playback rate
         const appendThreshold = this._calculateAppendThreshold();
         var playbackReadyThreshold = this._calculateReadyThreshold();
-        const totalVideoTime = this.frameToTime(this._numFrames);
+        const totalVideoTime = this.frameToTime(this._numFrames, this._play_idx);
         if (this._direction == Direction.FORWARD &&
           (totalVideoTime - currentTime < playbackReadyThreshold))
         {
@@ -2449,7 +2459,7 @@ export class VideoCanvas extends AnnotationCanvas {
         {
           var end = ranges.end(rangeIdx);
           var start = ranges.start(rangeIdx);
-          const current = this.frameToTime(this._dispFrame);
+          const current = this.frameToTime(this._dispFrame, this._play_idx);
           const runway = end-current;
           const now = performance.now();
           // Only print this message once a second
@@ -2727,8 +2737,8 @@ export class VideoCanvas extends AnnotationCanvas {
       this._pauseCb.forEach(cb => {cb();});
 
       this._direction=Direction.STOPPED;
-      this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame));
-      this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame));
+      this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame, this._play_idx));
+      this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame, this._scrub_idx));
 
       // force a redraw at the currently displayed frame
       var finalPromise = new Promise((resolve, reject) => {
