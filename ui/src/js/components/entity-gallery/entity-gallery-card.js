@@ -613,8 +613,6 @@ export class EntityCard extends TatorElement {
         'concat' in this._media.media_files ||
         'image' in this._media.media_files) {
         valid = true;
-      } else {
-        this._link.setAttribute("tooltip", "File is not available to view due to processing. If this doesn't resolve in 24 hours, contact the team as there could be an error in transcodes.");
       }
       
       if (!('thumbnail' in this._media.media_files) && 'live' in this._media.media_files) {
