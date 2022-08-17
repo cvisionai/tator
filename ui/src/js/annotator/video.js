@@ -2648,8 +2648,11 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
-      this._oldRate = this._playbackRate;
-      this._playbackRate = 0.50;
+      if (this._playbackRate > 1)
+      {
+        this._oldRate = this._playbackRate;
+        this._playbackRate = 1.0;
+      }
       this._playCb.forEach(cb => {cb();});
       this._playGenericScrub(Direction.BACKWARDS);
       return true;

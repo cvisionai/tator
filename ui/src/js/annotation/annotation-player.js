@@ -1007,8 +1007,11 @@ export class AnnotationPlayer extends TatorElement {
       this._fastForward.setAttribute("disabled", "");
       this._rewind.setAttribute("disabled", "");
       this.disableRateChange();
-      this._rateControl.setValue(0.5, true);
-      //this._video.rateChange(this._rate);
+      if (this._rateControl.value > 1)
+      {
+        this._rateControl.setValue(1.0, true);
+        this._video.rateChange(this._rate);
+      }
       if (this._video.playBackwards())
       {
         this._videoStatus = "playing";

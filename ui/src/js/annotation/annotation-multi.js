@@ -1741,14 +1741,17 @@ export class AnnotationMulti extends TatorElement {
       // at the current frame. If not, inform the user.
       for (let video of this._videos)
       {
-        if (!video.canPlayRate(0.5, video.currentFrame()))
+        if (!video.canPlayRate(1.0, video.currentFrame()))
         {
           window.alert("Please wait until this portion of the video has been downloaded. Playing at speeds greater than 4x require the video to be buffered.")
           return;
         }
       }
       this.disableRateChange();
-      this._rateControl.setValue(0.5, true);
+      if (this._rateControl.value > 1)
+      {
+        this._rateControl.setValue(1.0, true);
+      }
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++)
       {

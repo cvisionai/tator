@@ -313,7 +313,6 @@ class TatorVideoManager {
     this._hot_frames.set(image.timestamp, image.data);
     if ((this.cursor_in_image(image) || this._keyframeOnly == true || this._scrubbing == true) && this._mute == false)
     {
-      console.info(`CUR=${this._current_cursor}, image=${image.data.time}`);
       this._safeCall(this.oncanplay);
     }
     this._clean_hot();

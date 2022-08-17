@@ -63,6 +63,11 @@ export class RateControl extends TatorElement {
     this.setIdx(this._rates.findIndex(el => el == rate), noEvent);
   }
 
+  get value()
+  {
+    return this._value;
+  }
+
   setIdx(idx, noEvent)
   {
     if (idx < 0 || idx >= this._rates.length)
