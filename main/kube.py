@@ -21,7 +21,7 @@ from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .cache import TatorCache
-from .models import Algorithm, JobCluster
+from .models import Algorithm, JobCluster, MediaType
 from .version import Git
 
 logger = logging.getLogger(__name__)
@@ -1004,6 +1004,40 @@ class TatorTranscode(JobManagerMixin):
                     self.exit_handler,
                 ],
                 'onExit': 'exit-handler',
+            },
+        }
+
+        # Set affinity for nodes labeled with codec
+        media_type = MediaType.objects.get(pk=entity_type)
+        codecs = []
+        if isinstance(media_type.streaming_config, list):
+            for config in streaming_config:
+                codecs.append(config['vcodec'])
+        elif media_type.streaming_config is None:
+            # H264 is the default streaming codec
+            codecs.append('h264')
+        if isinstance(media_type.archive_config, list):
+            for config in media_type.archive_config:
+                codecs.append(config['encode']['vcodec'])
+        for codec in ['av1', 'hevc', 'h264', 'copy']:
+            if codec in codecs:
+                break
+        manifest['spec']['affinity'] = {
+            'nodeAffinity': {
+                'preferredDuringSchedulingIgnoredDuringExecution': [
+                    {
+                        'preference': {
+                            'matchExpressions': [
+                                {
+                                    'key': 'codec',
+                                    'operator': 'In',
+                                    'values': [codec]
+                                }
+                            ]
+                        },
+                        'weight': 100
+                    }
+                ],
             },
         }
 
