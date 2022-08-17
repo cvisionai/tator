@@ -638,27 +638,19 @@ class TatorVideoBuffer {
     {
       const cursor_in_ctx = (this._current_cursor)*timeScale;
       const timestamp = frame.timestamp;
-      //console.info(`FRAME ${cursor_in_ctx} vs. ${this.keyframeOnly} ${timestamp}-${timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)}`);
-      if (this.keyframeOnly == true || cursor_in_ctx >= timestamp && cursor_in_ctx < (timestamp + this._frameDeltaMap.get(this.currentTimestampOffset)))
-      {
-        // Make an ImageBitmap from the frame and release the memory
-        this._canvasCtx.drawImage(frame,0,0);
-        let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
-        //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
-        frame.close();
-        postMessage({"type": "image",
-                    "data": image,
-                    "timestamp": timestamp,
-                    "timescale": timeScale,
-                    "frameDelta": frameDelta,
-                    "seconds": timestamp/timeScale},
-                    image);
-      }
-      else
-      {
-        //console.info(`${this._name}@${this._current_cursor}: Did not care about frame @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} FD=${frameDelta}`);
-        frame.close(); // don't care about the frame
-      }
+      // Make an ImageBitmap from the frame and release the memory
+      // Send all decoded frames to draw UI
+      this._canvasCtx.drawImage(frame,0,0);
+      let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
+      //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
+      frame.close();
+      postMessage({"type": "image",
+                  "data": image,
+                  "timestamp": timestamp,
+                  "timescale": timeScale,
+                  "frameDelta": frameDelta,
+                  "seconds": timestamp/timeScale},
+                  image);
     }
   }
 

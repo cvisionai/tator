@@ -253,6 +253,40 @@ class TatorVideoManager {
     return false;
   }
 
+  // Returns true if the cursor is in the range of the hot frames
+  time_is_hot(time)
+  {
+    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
+    for (let timestamp of timestamps)
+    {
+      let image_timescale = this._hot_frames.get(timestamp).timescale;
+      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
+      let time_in_ctx = time * image_timescale;
+      if (time_in_ctx >= timestamp && time_in_ctx < timestamp+frame_delta)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  cursor_in_image(image)
+  {
+    const image_timescale = image.data.timescale;
+    const frame_delta = image.data.frameDelta;
+    const time = image.data.time;
+    let time_in_ctx = time * image_timescale;
+    let cursor_in_ctx = this._current_cursor * image_timescale;
+    if (cursor_in_ctx >= time_in_ctx && cursor_in_ctx < time_in_ctx+frame_delta)
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+
   _frameReady(msg)
   {
     // If there is a frame handler callback potentially avoid 
@@ -277,11 +311,12 @@ class TatorVideoManager {
     image.data.frameDelta = image.frameDelta;
     image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
-    this._clean_hot();
-    if ((this._cursor_is_hot() || this._keyframeOnly == true || this._scrubbing == true) && this._mute == false)
+    if ((this.cursor_in_image(image) || this._keyframeOnly == true || this._scrubbing == true) && this._mute == false)
     {
+      console.info(`CUR=${this._current_cursor}, image=${image.data.time}`);
       this._safeCall(this.oncanplay);
     }
+    this._clean_hot();
     if (this._mute)
     {
       console.info(`${this._name} is muted.`);
@@ -323,7 +358,7 @@ class TatorVideoManager {
   // to support extra fast prev/next 
   _clean_hot()
   {
-    if (this._hot_frames.size < 10)
+    if (this._hot_frames.size < 25)
     {
       return;
     }
@@ -336,7 +371,7 @@ class TatorVideoManager {
     for (let hot_frame of timestamps)
     {
       // Only keep a max of 100 frames in memory
-      if (Math.abs(hot_frame - cursor_in_ctx)/this._frameDeltaMap.get(search.key) >= 10)
+      if (Math.abs(hot_frame - cursor_in_ctx)/this._frameDeltaMap.get(search.key) >= 25)
       {
         delete_elements.push(hot_frame);
       }
@@ -344,11 +379,6 @@ class TatorVideoManager {
     for (let key of delete_elements)
     {
       this._hot_frames.delete(key);
-    }
-
-    if (this._hot_frames.size > 20)
-    {
-      console.error("Garbage collection is not working!");
     }
   }
 
@@ -665,6 +695,12 @@ export class TatorVideoDecoder {
       {
         return this._buffer;
       }
+    }
+
+    // If it is a hot frame don't redownload
+    if (this._buffer.time_is_hot(time))
+    {
+      return this._buffer;
     }
     // Always return if summary is turned on
     if (this._buffer.summaryLevel > 0)
