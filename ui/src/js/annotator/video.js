@@ -490,7 +490,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
-      let p = new TatorVideoDecoder(resolution);
+      let p = new TatorVideoDecoder(resolution, this);
       // Hook up summary level indication
       if (idx == this._scrub_idx && this._scrub_idx != this._play_idx)
       {

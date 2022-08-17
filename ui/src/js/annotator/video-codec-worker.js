@@ -233,6 +233,7 @@ class TatorVideoBuffer {
       this._codecString = this._codecString.replace('.7M', '.07M');
       this._codecString = this._codecString.replace('.8M', '.08M');
       this._codecString = this._codecString.replace('.9M', '.09M');
+      info.tracks[0].codec = this._codecString;
 
       // Configure codec
       this._encoderConfig.set(timestampOffset,{

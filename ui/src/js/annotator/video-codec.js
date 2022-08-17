@@ -8,6 +8,8 @@
 //        operations.
 
 
+
+
 // TimeRanges isn't user constructable so make our own
 export class TatorTimeRanges {
   constructor()
@@ -113,6 +115,7 @@ export class TatorTimeRanges {
     }
   }
 }
+
 class TatorVideoManager {
   constructor(parent, name)
   {
@@ -138,6 +141,7 @@ class TatorVideoManager {
     this._keyframeOnly = false;
     this._scrubbing = false;
     this._mute = false;
+    this._checked = false;
   }
 
   set keyframeOnly(val)
@@ -167,6 +171,20 @@ class TatorVideoManager {
     if (msg.data.type == "ready")
     {
       this._codec_string = msg.data.data.tracks[0].codec;
+      if (this._checked == false)
+      {
+        this._checked = true;
+        VideoDecoder.isConfigSupported({'codec': this._codec_string, codedWidth: 1280,codedHeight: 720}).then(support =>
+        {
+          if (support.supported != true)
+          {
+            this._parent._canvas.dispatchEvent(new CustomEvent("codecNotSupported",
+                                    {composed: true,
+                                      detail: {"codec": this._codec_string}}));
+          }
+        } 
+      );
+      }
       this._timescaleMap.set(msg.data.timestampOffset,msg.data.data.tracks[0].timescale);
       if (this._parent.onReady)
       {
@@ -547,8 +565,9 @@ class TatorVideoManager {
 }
 
 export class TatorVideoDecoder {
-  constructor(id)
+  constructor(id, canvas)
   {
+    this._canvas = canvas;
     console.info("Created WebCodecs based Video Decoder");
     this._buffer = new TatorVideoManager(this, `Video Buffer ${id}`);
     this._init = false;

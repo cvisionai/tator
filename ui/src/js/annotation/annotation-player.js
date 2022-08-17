@@ -2,7 +2,7 @@ import { TatorElement } from "../components/tator-element.js";
 import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
-import { frameToTime, handle_video_error, PlayInteraction } from "./annotation-common.js";
+import { frameToTime, handle_video_error, handle_decoder_error, PlayInteraction } from "./annotation-common.js";
 
 export class AnnotationPlayer extends TatorElement {
   constructor() {
@@ -18,6 +18,13 @@ export class AnnotationPlayer extends TatorElement {
       if (alert_sent == false)
       {
         handle_video_error(evt, this._shadow);
+        alert_sent = true;
+      }
+    });
+    this._video.addEventListener("codecNotSupported", (evt) => {
+      if (alert_sent == false)
+      {
+        handle_decoder_error(evt, this._shadow);
         alert_sent = true;
       }
     });
