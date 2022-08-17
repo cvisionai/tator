@@ -34,6 +34,12 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
         python3-setuptools python3-dev gcc libgdal-dev git vim curl libffi-dev \
         ffmpeg wget xmlsec1 && rm -rf /var/lib/apt/lists
 
+# Install fork of openapi-core that works in DRF views
+WORKDIR /working
+RUN git clone https://github.com/jrtcppv/openapi-core.git
+WORKDIR /working/openapi-core
+RUN python3 setup.py install
+
 # Install pip packages
 RUN python3 -m pip --no-cache-dir --timeout=1000 install --upgrade pip
 RUN pip3 --no-cache-dir --timeout=1000 install wheel
@@ -52,7 +58,7 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         gevent==1.4.0 uritemplate==4.1.1 pylint pylint-django \
         django-cognito-jwt==0.0.4 boto3==1.20.41 \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
-        kubernetes==21.7.0 minio==7.1.5 okta-jwt-verifier==0.2.3 \
+        kubernetes==21.7.0 minio==7.1.5 okta-jwt-verifier==0.2.3 jsonschema==4.9.1 \
         /tmp/grafana_django_saml2_auth*.whl
 # =========================================== TEMPORARY ===========================================
 # Once https://github.com/grafana/django-saml2-auth merges the changes from
@@ -68,12 +74,6 @@ RUN wget https://raw.githubusercontent.com/diafygi/acme-tiny/4.1.0/acme_tiny.py
 RUN wget https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/linux/amd64/kubectl
 RUN chmod +x kubectl
 RUN mv kubectl /usr/local/bin/.
-
-# Install fork of openapi-core that works in DRF views
-WORKDIR /working
-RUN git clone https://github.com/jrtcppv/openapi-core.git
-WORKDIR /working/openapi-core
-RUN python3 setup.py install
 
 # Copy over the project
 COPY . /tator_online
