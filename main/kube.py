@@ -264,7 +264,6 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'inputs': {'parameters' : spell_out_params(['url'])},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -297,7 +296,6 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : spell_out_params(['original'])},
             'outputs': {'parameters' : unpack_params},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -319,7 +317,6 @@ class TatorTranscode(JobManagerMixin):
         self.data_import = {
             'name': 'data-import',
             'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -357,7 +354,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -401,7 +397,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -446,7 +441,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -501,7 +495,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -566,7 +559,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
                                                         'category', 'raw_width', 'raw_height',
                                                         'configs', 'id'])},
@@ -625,7 +617,6 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : [{'name': 'original'},
                                        {'name': 'url'}]},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -876,6 +867,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'unpack-pipeline',
+                'nodeSelector': {'cpuWorker': 'yes'},
                 'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
@@ -922,7 +914,6 @@ class TatorTranscode(JobManagerMixin):
                         section, md5, gid, uid,
                         user, upload_size,
                         attributes, media_id):
-        MAX_WORKLOADS = 7 # 5 resolutions + audio + archival
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -992,6 +983,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'one-shot-transcode',
+                'nodeSelector': {'cpuWorker': 'yes'},
                 'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
@@ -1007,7 +999,8 @@ class TatorTranscode(JobManagerMixin):
             },
         }
 
-        # Set affinity for nodes labeled with codec
+        # Set node selectors for codecs if enabled
+        if os.getenv('TRANSCODER_CODEC_NODE_SELECTORS') == 'TRUE':
         media_type = MediaType.objects.get(pk=entity_type)
         codecs = []
         if isinstance(media_type.streaming_config, list):
