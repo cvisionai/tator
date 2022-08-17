@@ -240,14 +240,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - update-earlyaccess:
-        requires:
-        - build-docker-images
-        context: cd
-        filters:
-          branches:
-            only:
-            - master
     - setup-lightsail:
         context: cvisionai
         filters:
@@ -282,6 +274,15 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - update-earlyaccess:
+        requires:
+        - rest-tests
+        - tator-py-tests
+        context: cd
+        filters:
+          branches:
+            only:
+            - master
     - cleanup-lightsail:
         requires:
         - rest-tests
