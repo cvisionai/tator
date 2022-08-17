@@ -127,6 +127,16 @@
   value: {{ .Values.transcoderCpuLimit | default "4000m" | quote }}
 - name: TRANSCODER_MEMORY_LIMIT
   value: {{ .Values.transcoderMemoryLimit | default "8Gi" | quote }}
+- name: TRANSCODER_CODEC_NODE_SELECTORS
+{{- if hasKey .Values transcoderCodecNodeSelectors }}
+{{- if .Values.transcoderCodecNodeSelectors }}
+  value: "TRUE"
+{{- else }}
+  value: "FALSE"
+{{- end }}
+{{- else }}
+  value: "FALSE"
+{{- end }}
 - name: POD_GC_STRATEGY
   value: {{ .Values.podGCStrategy | default "OnPodCompletion" | quote }}
 - name: WORKFLOW_STORAGE_CLASSES

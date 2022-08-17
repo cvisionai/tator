@@ -110,6 +110,7 @@ hpa:
 transcoderMaxRamDiskSize: 2Gi
 transcoderCpuLimit: 1000m
 transcoderMemoryLimit: 2Gi
+transcoderCodecNodeSelectors: false
 # Gunicorn resource settings
 gunicornCpuLimit: 4000m
 gunicornCpuRequest: 1000m

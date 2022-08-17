@@ -59,6 +59,24 @@ def _select_storage_class():
     storage_classes = os.getenv('WORKFLOW_STORAGE_CLASSES').split(',')
     return random.choice(storage_classes)
 
+def _get_codec_node_selectors(type_id):
+    """ Returns node selectors for codecs if enabled
+    """
+    selectors = {}
+    if os.getenv('TRANSCODER_CODEC_NODE_SELECTORS') == 'TRUE':
+        media_type = MediaType.objects.get(pk=entity_type)
+        if isinstance(media_type.streaming_config, list):
+            for config in media_type.streaming_config:
+                codecs.append(config['vcodec'])
+        elif media_type.streaming_config is None:
+            # H264 is the default streaming codec
+            codecs.append('h264')
+        if isinstance(media_type.archive_config, list):
+            for config in media_type.archive_config:
+                codecs.append(config['encode']['vcodec'])
+        selectors = {codec:'yes' for codec in codecs}
+    return selectors
+
 def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
     return f"{num_megabytes}Mi"
@@ -983,7 +1001,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'one-shot-transcode',
-                'nodeSelector': {'cpuWorker': 'yes'},
+                'nodeSelector': {'cpuWorker': 'yes', **_get_codec_node_selectors(entity_type)},
                 'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
@@ -996,41 +1014,6 @@ class TatorTranscode(JobManagerMixin):
                     self.exit_handler,
                 ],
                 'onExit': 'exit-handler',
-            },
-        }
-
-        # Set node selectors for codecs if enabled
-        if os.getenv('TRANSCODER_CODEC_NODE_SELECTORS') == 'TRUE':
-        media_type = MediaType.objects.get(pk=entity_type)
-        codecs = []
-        if isinstance(media_type.streaming_config, list):
-            for config in media_type.streaming_config:
-                codecs.append(config['vcodec'])
-        elif media_type.streaming_config is None:
-            # H264 is the default streaming codec
-            codecs.append('h264')
-        if isinstance(media_type.archive_config, list):
-            for config in media_type.archive_config:
-                codecs.append(config['encode']['vcodec'])
-        for codec in ['av1', 'hevc', 'h264', 'copy']:
-            if codec in codecs:
-                break
-        manifest['spec']['affinity'] = {
-            'nodeAffinity': {
-                'preferredDuringSchedulingIgnoredDuringExecution': [
-                    {
-                        'preference': {
-                            'matchExpressions': [
-                                {
-                                    'key': 'codec',
-                                    'operator': 'In',
-                                    'values': [codec]
-                                }
-                            ]
-                        },
-                        'weight': 100
-                    }
-                ],
             },
         }
 
