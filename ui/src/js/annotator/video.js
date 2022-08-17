@@ -1129,10 +1129,15 @@ export class VideoCanvas extends AnnotationCanvas {
     return Math.round(video_time * this._fps);
   }
 
-  frameToAudioTime(frame)
+  frameToAudioTime(frame, buf_idx)
   {
+    // Assume play buffer if buf_idx is not defined (likely close enough)
+    if (buf_idx == undefined)
+    {
+      buf_idx = this._play_idx;
+    }
     const time = ((1/this._fps)*frame);
-    return this._dlWorker.biasForTime(time) + time;
+    return this._dlWorker.biasForTime(time, buf_idx) + time;
   }
 
   /**
@@ -1166,7 +1171,6 @@ export class VideoCanvas extends AnnotationCanvas {
     compMap.set(this._play_idx, play_time_comps);
     compMap.set(this._scrub_idx, scrub_time_comps);
   
-    var audio_time = this.frameToAudioTime(frame);
     var downloadSeekFrame = false;
     var createTimeout = false;
 
@@ -1291,6 +1295,7 @@ export class VideoCanvas extends AnnotationCanvas {
           
           if (forceSeekBuffer && that._audioPlayer)
           {
+            var audio_time = that.frameToAudioTime(frame, video.named_idx);
             if (that._audioPlayer.currentTime != audio_time)
             {
               that._audioPlayer.currentTime = audio_time;
@@ -1516,6 +1521,7 @@ export class VideoCanvas extends AnnotationCanvas {
   {
     console.log("Setting playback direction " + direction);
     this._direction=direction;
+    this._active_idx = this._scrub_idx;
 
     // Reset the GPU buffer on a new play action
     this._draw.clear();
@@ -1582,6 +1588,7 @@ export class VideoCanvas extends AnnotationCanvas {
     var that = this;
     console.log(`_playGenericOnDemand (ID:${this._videoObject.id}) Setting direction ${direction}`);
     this._direction=direction;
+    this._active_idx = this._play_idx;
 
     /*
     // If we are going backwards re-init the buffers
@@ -1718,7 +1725,7 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._audioEligible && this._audioPlayer && this._audioCheck % AUDIO_CHECK_INTERVAL == 0)
     {
       // Audio can be corrected by up to a +/- 1% to arrive at audio/visual sync
-      const audioDelta = (this.frameToAudioTime(this._dispFrame)-this._audioPlayer.currentTime) * 1000;
+      const audioDelta = (this.frameToAudioTime(this._dispFrame, this._active_idx)-this._audioPlayer.currentTime) * 1000;
       const correction = 1.0 + (audioDelta/2000);
       const swag = Math.max(0.99,Math.min(1.01,correction));
       this._audioPlayer.playbackRate = (swag) * this._playbackRate;
@@ -1728,7 +1735,7 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         console.info("Readjusting audio time");
         const audio_increment = 1+this._motionComp.frameIncrement(this._fps,this._playbackRate);
-        this._audioPlayer.currentTime = this.frameToAudioTime(this._dispFrame+audio_increment);
+        this._audioPlayer.currentTime = this.frameToAudioTime(this._dispFrame+audio_increment, this._active_idx);
       }
     }
     else
