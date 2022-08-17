@@ -989,6 +989,17 @@ export class AnnotationCanvas extends TatorElement
     this._polyMaker = new PolyMaker(this);
 
     this._draw=new DrawGL(this._canvas);
+    this._canvas.addEventListener('webglcontextlost', (evt) => {
+      console.warn("WebGL Context lost");
+      evt.preventDefault();
+      return false;
+    });
+    this._canvas.addEventListener('webglcontextrestored', (evt) => {
+      console.info("Restoring webGL context");
+      this.reinitCanvas();
+      evt.preventDefault();
+      return false;
+    });
     this._dragHandler = new CanvasDrag(this,
                                        this._canvas,
                                        this._draw.displayToViewportScale.bind(this._draw),
@@ -1481,6 +1492,7 @@ export class AnnotationCanvas extends TatorElement
     this._shadow.appendChild(this._canvas);
 
     // Re-initalize openGL component
+    delete this._draw;
     this._draw=new DrawGL(this._canvas);
     this._dragHandler = new CanvasDrag(this,
                                        this._canvas,
