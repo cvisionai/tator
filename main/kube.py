@@ -1011,7 +1011,7 @@ class TatorTranscode(JobManagerMixin):
         media_type = MediaType.objects.get(pk=entity_type)
         codecs = []
         if isinstance(media_type.streaming_config, list):
-            for config in streaming_config:
+            for config in media_type.streaming_config:
                 codecs.append(config['vcodec'])
         elif media_type.streaming_config is None:
             # H264 is the default streaming codec
