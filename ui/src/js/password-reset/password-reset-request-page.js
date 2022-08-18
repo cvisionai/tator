@@ -100,7 +100,7 @@ export class PasswordResetRequestPage extends TatorElement {
                                  "ok",
                                  "Close");
           this._modalNotify.addEventListener("close", evt => {
-            window.location.replace("/accounts/login");
+            window.location.replace("/redirect/login");
           });
         } else {
           this._modalNotify.init("Password reset request failed!",

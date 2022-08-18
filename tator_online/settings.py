@@ -68,6 +68,7 @@ GRAPH_MODELS = {
 }
 
 LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = "/redirect/login/"
 LOGOUT_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'main.User'
 
