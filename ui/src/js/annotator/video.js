@@ -1804,7 +1804,7 @@ export class VideoCanvas extends AnnotationCanvas {
         let start = performance.now();
         let frame = this._pendingFrames.shift();
         this.pushFrame(frame.frameNumber, frame, frame.displayWidth, frame.displayHeight);
-        frame.close();
+        frame.returnFrame();
         this._push_profiler.push(performance.now()-start);
       }
       if (this._pendingFrames.length > 0)
@@ -1853,12 +1853,12 @@ export class VideoCanvas extends AnnotationCanvas {
       this._fpsLoadDiag++;
       if (increment_clk % frameIncrement != 0)
       {
-        frame.close();
+        frame.returnFrame();
       }
-      else if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
+      if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
       {
         this.pushFrame(frame.frameNumber, frame, frame.displayWidth, frame.displayHeight);
-        frame.close();
+        frame.returnFrame();
       }
       else
       {
