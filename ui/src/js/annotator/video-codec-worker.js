@@ -395,7 +395,7 @@ class TatorVideoBuffer {
                                   timestampOffset);
             this._videoDecoder.decode(chunk);
           };
-          if (this._framesOut < MAX_DECODED_FRAMES_PER_DECODER)
+          if (this._framesOut < MAX_DECODED_FRAMES_PER_DECODER && this._pendingEncodedFrames.length == 0)
           {
             push_it();
           }
