@@ -128,7 +128,7 @@
 - name: TRANSCODER_MEMORY_LIMIT
   value: {{ .Values.transcoderMemoryLimit | default "8Gi" | quote }}
 - name: TRANSCODER_CODEC_NODE_SELECTORS
-{{- if hasKey .Values transcoderCodecNodeSelectors }}
+{{- if hasKey .Values "transcoderCodecNodeSelectors" }}
 {{- if .Values.transcoderCodecNodeSelectors }}
   value: "TRUE"
 {{- else }}

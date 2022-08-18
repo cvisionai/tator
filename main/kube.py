@@ -64,7 +64,8 @@ def _get_codec_node_selectors(type_id):
     """
     selectors = {}
     if os.getenv('TRANSCODER_CODEC_NODE_SELECTORS') == 'TRUE':
-        media_type = MediaType.objects.get(pk=entity_type)
+        codecs = []
+        media_type = MediaType.objects.get(pk=type_id)
         if isinstance(media_type.streaming_config, list):
             for config in media_type.streaming_config:
                 codecs.append(config['vcodec'])
