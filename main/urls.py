@@ -8,6 +8,7 @@ from django.contrib.auth.views import PasswordChangeView
 from django.contrib.auth.views import PasswordChangeDoneView
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth.views import LoginView
+from django.shortcuts import redirect
 
 from rest_framework.schemas import get_schema_view
 
@@ -89,25 +90,43 @@ urlpatterns = [
     path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
          name='password_change_done'),
     path('accounts/logout/', LogoutView.as_view()),
-    path(
-        "accounts/login/",
-        LoginView.as_view(
-            extra_context={
-                "email_enabled": settings.TATOR_EMAIL_ENABLED,
-                "okta_enabled": settings.OKTA_ENABLED,
-            }
-        ),
-        name="login",
-    ),
 ]
+
+if settings.SAML_ENABLED:
+    urlpatterns.append(
+        path("accounts/login/", lambda request: redirect(settings.SAML_SSO_URL), name="login")
+    )
+    urlpatterns.append(
+        path(
+            "backdoor/login/",
+            LoginView.as_view(
+                extra_context={
+                    "email_enabled": settings.TATOR_EMAIL_ENABLED,
+                    "okta_enabled": settings.OKTA_ENABLED,
+                }
+            ),
+            name="login",
+        )
+    )
+    urlpatterns.append(re_path(r"^saml2_auth/", include("django_saml2_auth.urls")))
+else:
+    urlpatterns.append(
+        path(
+            "accounts/login/",
+            LoginView.as_view(
+                extra_context={
+                    "email_enabled": settings.TATOR_EMAIL_ENABLED,
+                    "okta_enabled": settings.OKTA_ENABLED,
+                }
+            ),
+            name="login",
+        )
+    )
 
 if settings.COGNITO_ENABLED or settings.OKTA_ENABLED:
     urlpatterns.append(path('jwt-gateway/', JwtGatewayAPI.as_view(), name='jwt-gateway'))
     if settings.OKTA_ENABLED:
         urlpatterns.append(path('oauth2/login/', Oauth2LoginAPI.as_view(), name='oauth2'))
-
-if settings.SAML_ENABLED:
-    urlpatterns.append(re_path(r'^saml2_auth/', include('django_saml2_auth.urls')))
 
 if settings.TATOR_EMAIL_ENABLED:
     urlpatterns += [

@@ -224,7 +224,7 @@ class TatorStorage(ABC):
 
     @abstractmethod
     def _put_archive_tag(self, path):
-        """Adds tag to object marking it for archival."""
+        """Adds tag to object marking it for archive."""
 
     @abstractmethod
     def put_media_id_tag(self, path):

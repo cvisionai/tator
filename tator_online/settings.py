@@ -336,3 +336,5 @@ if SAML_ENABLED:
         'ENTITY_ID': f"{PROTO}://{MAIN_HOST}/saml2_auth/acs/",
         'TOKEN_REQUIRED': False,
     }
+
+    SAML_SSO_URL = os.getenv("SAML_SSO_URL")
