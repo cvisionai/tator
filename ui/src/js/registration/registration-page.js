@@ -138,7 +138,7 @@ export class RegistrationPage extends TatorElement {
                                  "ok",
                                  "Continue");
           this._modalNotify.addEventListener("close", evt => {
-            window.location.replace("/accounts/login");
+            window.location.replace("/redirect/login");
           });
         } else {
           this._modalNotify.init("Registration failed!",
