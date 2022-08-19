@@ -43,7 +43,7 @@ class APIBrowserView(LoginRequiredMixin, TemplateView):
 class LoginRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         """ Redirects SAML logins to the IdP and caches the next url """
-        url = "accounts/login"
+        url = "/accounts/login"
 
         if settings.SAML_ENABLED:
             if settings.SAML_SSO_URL:
