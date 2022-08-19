@@ -71,10 +71,9 @@ class MainRedirect(View):
                     client_ip, _ = get_client_ip(request)
                     if client_ip:
                         tc = TatorCache()
-                        next_url = tc.get_saml_next_url(client_ip)
+                        next_url = tc.pop_saml_next_url(client_ip)
                         if next_url:
                             out = redirect(next_url)
-                            tc.delete_saml_next_url(client_ip)
                 except:
                     logger.warning("Unable to retrieve 'next' url", exc_info=True)
         else:
