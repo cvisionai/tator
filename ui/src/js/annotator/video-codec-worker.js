@@ -393,7 +393,15 @@ class TatorVideoBuffer {
             this._framesOut++;
             this._frameInfoMap.set(Math.floor(timestampOffsetInCtx+sample_cts),
                                   timestampOffset);
-            this._videoDecoder.decode(chunk);
+            try
+            {
+              console.info(`Decode ${sample_cts}`);
+              this._videoDecoder.decode(chunk);
+            }
+            catch (evt)
+            {
+              console.warn(`Failed to decode ${sample_cts}: ${evt}`);
+            }
           };
           if (this._framesOut < MAX_DECODED_FRAMES_PER_DECODER && this._pendingEncodedFrames.length == 0)
           {
@@ -620,10 +628,11 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
+    console.info(`GOT FRAME ${frame.timestamp}`);
     if (this._frameInfoMap.has(frame.timestamp) == false)
     {
       // Frames came in past the reset
-      //console.warn(`IGNORING unknown frame ${frame.timestamp}`);
+      console.warn(`IGNORING unknown frame ${frame.timestamp}`);
       frame.close();
       this._frameReturn();
       return;
