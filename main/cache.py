@@ -20,18 +20,16 @@ class TatorCache:
         self.rds.set(key, str(next_url))
 
 
-    def get_saml_next_url(self, client_ip):
-        key = f"saml_{client_ip}"
-        val = self.rds.get(key)
-        if val is not None:
-            val = val.decode()
-        return val
-
-
-    def delete_saml_next_url(self, client_ip):
+    def pop_saml_next_url(self, client_ip):
         key = f"saml_{client_ip}"
         if self.rds.exists(key):
+            val = self.rds.get(key)
+            if val is not None:
+                val = val.decode()
             self.rds.delete(key)
+        else:
+            val = None
+        return val
 
 
     def get_cred_cache(self, user_id, project_id):
