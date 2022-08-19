@@ -390,17 +390,16 @@ class TatorVideoBuffer {
         {
           const sample_cts = samples[idx].cts;
           let push_it = () => {
-            this._framesOut++;
             this._frameInfoMap.set(Math.floor(timestampOffsetInCtx+sample_cts),
                                   timestampOffset);
             try
             {
-              console.info(`Decode ${sample_cts}`);
+              //console.info(`${this._name}: Decode ${sample_cts}`);
               this._videoDecoder.decode(chunk);
             }
             catch (evt)
             {
-              console.warn(`Failed to decode ${sample_cts}: ${evt}`);
+              //console.warn(`${this._name}: Failed to decode ${sample_cts}: ${evt}`);
             }
           };
           if (this._framesOut < MAX_DECODED_FRAMES_PER_DECODER && this._pendingEncodedFrames.length == 0)
@@ -412,6 +411,14 @@ class TatorVideoBuffer {
             //console.info(`Deferring ${sample_cts}`);
             //console.info(`${performance.now()} ${this._name}: Decode Governor engaged FO=${this._framesOut}.`)
             this._pendingEncodedFrames.push(push_it);
+            if (this._framesOut < MAX_DECODED_FRAMES_PER_DECODER)
+            {
+              let pending = this._pendingEncodedFrames.shift();
+              if (pending)
+              {
+                pending();
+              }
+            }
           }
         }
         catch(e)
@@ -620,7 +627,7 @@ class TatorVideoBuffer {
   {
     this._framesOut--;
     let pending = this._pendingEncodedFrames.shift();
-    if (this._playing && pending)
+    if (pending)
     {
       pending();
     }
@@ -628,11 +635,12 @@ class TatorVideoBuffer {
 
   _frameReady(frame)
   {
-    console.info(`GOT FRAME ${frame.timestamp}`);
+    this._framesOut++;
+    //console.info(`GOT FRAME ${frame.timestamp}`);
     if (this._frameInfoMap.has(frame.timestamp) == false)
     {
       // Frames came in past the reset
-      console.warn(`IGNORING unknown frame ${frame.timestamp}`);
+      //console.warn(`IGNORING unknown frame ${frame.timestamp}`);
       frame.close();
       this._frameReturn();
       return;
@@ -686,7 +694,7 @@ class TatorVideoBuffer {
       let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
       //console.info(`${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
       frame.close();
-      this._framesOut--;
+      this._frameReturn();
       postMessage({"type": "image",
                   "data": image,
                   "timestamp": timestamp,
@@ -756,10 +764,12 @@ class TatorVideoBuffer {
           this._videoDecoder = new VideoDecoder({
             output: this._frameReady.bind(this),
             error: this._frameError.bind(this)});
-          
         }
         this._videoDecoder.reset();
         this._videoDecoder.configure(this.activeCodecConfig);
+        this._framesOut = 0;
+        this._pendingEncodedFrames=[];
+        
         let nearest_keyframe = keyframe_info.thisSegment;
         mp4File.stop();
         //console.info(`${this._name}: COMMANDING MP4 SEEK ${search.key} ${video_time} ${nearest_keyframe/timescale}`);

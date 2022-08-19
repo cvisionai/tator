@@ -326,7 +326,7 @@ class TatorVideoManager {
     this._clean_hot();
     if (this._mute)
     {
-      console.info(`${this._name} is muted.`);
+      //console.info(`${this._name} is muted.`);
     }
   }
 
