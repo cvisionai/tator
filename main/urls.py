@@ -11,6 +11,8 @@ from django.contrib.auth.views import LoginView
 
 from rest_framework.schemas import get_schema_view
 
+import django_saml2_auth.views
+
 from .views import (
     APIBrowserView,
     AcceptView,
@@ -101,7 +103,7 @@ urlpatterns = [
                 "okta_enabled": settings.OKTA_ENABLED,
             }
         ),
-        name="login",
+    name="login",
     ),
 ]
 
