@@ -15,6 +15,25 @@ class TatorCache:
             health_check_interval=30,
         )
 
+    def set_saml_next_url(self, client_ip, next_url):
+        key = f"saml_{client_ip}"
+        self.rds.set(key, str(next_url))
+
+
+    def get_saml_next_url(self, client_ip):
+        key = f"saml_{client_ip}"
+        val = self.rds.get(key)
+        if val is not None:
+            val = val.decode()
+        return val
+
+
+    def delete_saml_next_url(self, client_ip):
+        key = f"saml_{client_ip}"
+        if self.rds.exists(key):
+            self.rds.delete(key)
+
+
     def get_cred_cache(self, user_id, project_id):
         group = f'creds_{project_id}'
         key = f'creds_{project_id}_{user_id}'

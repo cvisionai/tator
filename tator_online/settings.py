@@ -67,8 +67,8 @@ GRAPH_MODELS = {
     'group_models': True,
 }
 
-LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = "/redirect/login/"
+LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'main.User'
 
@@ -326,7 +326,7 @@ if SAML_ENABLED:
     PROTO = "https" if REQUIRE_HTTPS else "http"
     SAML2_AUTH = {
         'METADATA_AUTO_CONF_URL': os.getenv("SAML_METADATA_URL"),
-        'DEFAULT_NEXT_URL': '/projects',
+        'DEFAULT_NEXT_URL': LOGIN_REDIRECT_URL,
         'CREATE_USER': True,
         'NEW_USER_PROFILE': {
             'USER_GROUPS': [],
