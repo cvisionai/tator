@@ -43,19 +43,20 @@ class APIBrowserView(LoginRequiredMixin, TemplateView):
 class LoginRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         """ Redirects SAML logins to the IdP and caches the next url """
-        if settings.SAML_ENABLED:
-            url = settings.SAML_SSO_URL
+        url = "accounts/login"
 
-            try:
-                client_ip, _ = get_client_ip(request)
-                if client_ip:
-                    next_url = getattr(request, request.method).get('next')
-                    if next_url:
-                        TatorCache().set_saml_next_url(client_ip, next_url)
-            except:
-                logger.warning("Unable to cache 'next' query parameter", exc_info=True)
-        else:
-            url = "accounts/login"
+        if settings.SAML_ENABLED:
+            if settings.SAML_SSO_URL:
+                url = settings.SAML_SSO_URL
+
+                try:
+                    client_ip, _ = get_client_ip(request)
+                    if client_ip:
+                        next_url = getattr(request, request.method).get('next')
+                        if next_url:
+                            TatorCache().set_saml_next_url(client_ip, next_url)
+                except:
+                    logger.warning("Unable to cache 'next' query parameter", exc_info=True)
         return redirect(url)
 
 class MainRedirect(View):
