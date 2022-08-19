@@ -1855,7 +1855,7 @@ export class VideoCanvas extends AnnotationCanvas {
       {
         frame.returnFrame();
       }
-      if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
+      else if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
       {
         this.pushFrame(frame.frameNumber, frame, frame.displayWidth, frame.displayHeight);
         frame.returnFrame();

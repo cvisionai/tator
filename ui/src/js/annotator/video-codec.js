@@ -326,7 +326,7 @@ class TatorVideoManager {
     this._clean_hot();
     if (this._mute)
     {
-      console.info(`${this._name} is muted.`);
+      //console.info(`${this._name} is muted.`);
     }
   }
 
@@ -705,7 +705,7 @@ export class TatorVideoDecoder {
     }
 
     // If it is a hot frame don't redownload
-    if (this._buffer.time_is_hot(time))
+    if (buffer == "seek" && this._buffer.time_is_hot(time))
     {
       return this._buffer;
     }
@@ -724,7 +724,7 @@ export class TatorVideoDecoder {
   // The time buffer if in there
   returnSeekIfPresent(time, direction)
   {
-    return this.forTime(time, direction);
+    return this.forTime(time, "seek", direction);
   }
 
   playBuffer()

@@ -309,6 +309,7 @@ export class ConcatDownloadManager
     else if (type == "ready")
     {
       const bias = msg.data["startBias"];
+      const buf_idx = msg.data["buf_idx"];
       if (this._startBiasMap.has(timestampOffset) == false)
       {
         this._startBiasMap.set(timestampOffset, new Map());
