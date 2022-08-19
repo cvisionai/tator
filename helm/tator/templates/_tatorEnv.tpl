@@ -230,8 +230,10 @@
   value: "TRUE"
 - name: SAML_METADATA_URL
   value: {{ .Values.saml.metadata_url }}
+{{- if hasKey .Values.saml "sso_url" }}
 - name: SAML_SSO_URL
   value: {{ .Values.saml.sso_url }}
+{{- end }}
 {{- else }}
   value: "FALSE"
 {{- end }}
