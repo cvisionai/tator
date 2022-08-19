@@ -104,7 +104,7 @@ urlpatterns = [
                 "okta_enabled": settings.OKTA_ENABLED,
             }
         ),
-    name="login",
+        name="login",
     ),
 ]
 
