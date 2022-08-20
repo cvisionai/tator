@@ -81,11 +81,13 @@ jobs:
           docker manifest push $OCI_REGISTRY/tator_client:$CIRCLE_SHA1
           docker manifest push $OCI_REGISTRY/tator_client:latest
     - run:
-        name: Push backend image to AWS
+        name: Push backend images to AWS
         command: |
           echo $(aws ecr get-login-password) | docker login "$AWS_REGISTRY" --username AWS --password-stdin
           docker tag cvisionai/tator_online:$CIRCLE_SHA1 $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
           docker push $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
+          docker tag cvisionai/tator_graphql:$CIRCLE_SHA1 $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
+          docker push $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
