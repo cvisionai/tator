@@ -38,7 +38,7 @@ else:
     USE_MIN_JS = False
 
 MAIN_HOST = os.getenv('MAIN_HOST')
-ALLOWED_HOSTS = [MAIN_HOST]
+ALLOWED_HOSTS = [MAIN_HOST, 'gunicorn-svc']
 ALIAS_HOSTS = os.getenv('ALIAS_HOSTS')
 if ALIAS_HOSTS:
     ALLOWED_HOSTS += ALIAS_HOSTS.split(',')

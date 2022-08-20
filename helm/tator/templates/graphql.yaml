@@ -29,7 +29,7 @@ spec:
           args:
           - /schema.yaml
           - --cors
-          - --operatonIdFieldNames
+          - --operationIdFieldNames
           resources:
             limits:
               cpu: {{ .Values.graphqlCpuLimit | default "4000m" }}
