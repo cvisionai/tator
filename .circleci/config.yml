@@ -60,6 +60,9 @@ jobs:
         path: doc/_build/tator-py.tar
         destination: docs/tator-py.tar
     - run:
+        name: Make graphql image
+        command: make graphql-image
+    - run:
         name: Make postgis image
         command: make postgis-image
     - run:
