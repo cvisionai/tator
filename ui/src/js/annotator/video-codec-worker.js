@@ -439,10 +439,10 @@ class TatorVideoBuffer {
         {
           this._keyframeMap.get(timestampOffset).push(samples[idx].cts);
           //console.info(`${idx} > ${start_idx}, ${this._playing==false}, ${this.keyframeOnly}`);
-          if (this._playing == false && (idx > start_idx || this.keyframeOnly == true || this.scrubbing == true))
+          if (this._playing == false && (idx > start_idx || this.keyframeOnly == true))
           {
             //
-            if (this.keyframeOnly == true || this.scrubbing == true)
+            if (this.keyframeOnly == true)
             {
               console.info(`${this._performance} ${this._name}: Cancelling seek event handler`);
               this._mp4FileMap.get(timestampOffset).stop(); // Stop event handler
@@ -450,19 +450,6 @@ class TatorVideoBuffer {
             break; // If we get to the next key frame we decoded enough.
           }
         }
-      }
-
-      // In seek cases wait for the whole GOP to decode.
-      if (this._playing == false)
-      {
-        //console.info("Forcing a flush to get all frames from this GOP");
-        this._videoDecoder.flush()
-        .then(()=>{
-          //console.info("Completed GOP");
-        })
-        .catch((e)=>{
-          //console.warn(e)
-        });
       }
 
       // Handle all samples for processing keyframes and what not at the end of decoding
