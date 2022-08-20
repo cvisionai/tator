@@ -158,11 +158,17 @@ class TatorVideoManager {
   set scrubbing(val)
   {
     this._scrubbing = val;
+    this._codec_worker.postMessage({"type": "scrubbing", "value": val});
   }
 
   get keyframeOnly()
   {
     return this._keyframeOnly;
+  }
+
+  clearPending()
+  {
+    this._codec_worker.postMessage({"type": "clearAllPending"});
   }
 
   _on_message(msg)
@@ -524,7 +530,7 @@ class TatorVideoManager {
     }
     else
     {
-      console.error(`${this._name}: NULL For ${this._current_cursor}`);
+      //console.error(`${this._name}: NULL For ${this._current_cursor}`);
       return null;
     }
   }

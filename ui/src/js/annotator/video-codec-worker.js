@@ -394,24 +394,25 @@ class TatorVideoBuffer {
                                   timestampOffset);
             try
             {
-              //console.info(`${this._name}: Decode ${sample_cts}`);
+              //console.info(`${performance.now()} ${this._name}: Decode ${sample_cts}`);
               this._videoDecoder.decode(chunk);
+              this._sentFrames++;
             }
             catch (evt)
             {
               //console.warn(`${this._name}: Failed to decode ${sample_cts}: ${evt}`);
             }
           };
-          if (this._framesOut < MAX_DECODED_FRAMES_PER_DECODER && this._pendingEncodedFrames.length == 0)
+          if (this._framesOut+this._videoDecoder.decodeQueueSize < MAX_DECODED_FRAMES_PER_DECODER && this._pendingEncodedFrames.length == 0)
           {
             push_it();
           }
           else
           {
             //console.info(`Deferring ${sample_cts}`);
-            //console.info(`${performance.now()} ${this._name}: Decode Governor engaged FO=${this._framesOut}.`)
+            //console.info(`${performance.now()} ${this._name}: Decode ${sample_cts} Governor engaged FO=${this._framesOut}.`)
             this._pendingEncodedFrames.push(push_it);
-            if (this._framesOut < MAX_DECODED_FRAMES_PER_DECODER)
+            if (this._framesOut+this._videoDecoder.decodeQueueSize < MAX_DECODED_FRAMES_PER_DECODER)
             {
               let pending = this._pendingEncodedFrames.shift();
               if (pending)
@@ -419,7 +420,7 @@ class TatorVideoBuffer {
                 pending();
               }
             }
-          }
+        };
         }
         catch(e)
         {
@@ -440,27 +441,15 @@ class TatorVideoBuffer {
           //console.info(`${idx} > ${start_idx}, ${this._playing==false}, ${this.keyframeOnly}`);
           if (this._playing == false && (idx > start_idx || this.keyframeOnly == true))
           {
-            //console.info("Bombing out!");
+            //
             if (this.keyframeOnly == true)
             {
+              console.info(`${this._performance} ${this._name}: Cancelling seek event handler`);
               this._mp4FileMap.get(timestampOffset).stop(); // Stop event handler
             }
             break; // If we get to the next key frame we decoded enough.
           }
         }
-      }
-
-      // In seek cases wait for the whole GOP to decode.
-      if (this._playing == false)
-      {
-        //console.info("Forcing a flush to get all frames from this GOP");
-        this._videoDecoder.flush()
-        .then(()=>{
-          //console.info("Completed GOP");
-        })
-        .catch((e)=>{
-          //console.warn(e)
-        });
       }
 
       // Handle all samples for processing keyframes and what not at the end of decoding
@@ -633,10 +622,17 @@ class TatorVideoBuffer {
     }
   }
 
+  _clearAllPending()
+  {
+    this._framesOut = 0;
+    this._pendingEncodedFrames = [];
+    this._videoDecoder.reset();
+  }
+
   _frameReady(frame)
   {
     this._framesOut++;
-    //console.info(`GOT FRAME ${frame.timestamp}`);
+    //console.info(`${performance.now()} ${this._name}: GOT FRAME ${frame.timestamp}`);
     if (this._frameInfoMap.has(frame.timestamp) == false)
     {
       // Frames came in past the reset
@@ -1092,8 +1088,16 @@ onmessage = function(e)
   {
     ref.keyframeOnly = msg.value;
   }
+  else if (msg.type == "scrubbing")
+  {
+    ref.scrubbing = msg.value;
+  }
   else if (msg.type == "frameReturn")
   {
     ref._frameReturn();
+  }
+  else if (msg.type == "clearAllPending")
+  {
+    ref._clearAllPending();
   }
 }

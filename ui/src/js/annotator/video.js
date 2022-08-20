@@ -1285,7 +1285,7 @@ export class VideoCanvas extends AnnotationCanvas {
           }
           if (image_buffer == null)
           {
-            console.warn("Image buffered cleared itself before we could use it.");
+            //console.warn("Image buffered cleared itself before we could use it.");
             return;
           }
           
@@ -1559,11 +1559,24 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
+      if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
+      {
+        this._videoElement[this._scrub_idx].playBuffer().clearPending();
+      }
       this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub-only");}, 0);
     }
     this._sentPlaybackReady = false;
     // Kick off the loader
     
+  }
+
+  set scrubbing(val)
+  {
+    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
+    {
+      this._videoElement[this._scrub_idx].playBuffer().scrubbing = val;
+      this._videoElement[this._play_idx].playBuffer().scrubbing = val;
+    }
   }
 
   /**
