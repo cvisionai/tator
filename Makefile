@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings postgis-image client-image
+IMAGES=python-bindings graphql-image postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -152,6 +152,14 @@ tator-image:
 	$(MAKE) webpack
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
+
+.PHONY: graphql-image
+graphql-image:
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	docker build --network host -t $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION) -f containers/tator_graphql/Dockerfile . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION)
 
 .PHONY: postgis-image
 postgis-image:
