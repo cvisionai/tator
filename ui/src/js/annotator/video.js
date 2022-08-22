@@ -1285,7 +1285,7 @@ export class VideoCanvas extends AnnotationCanvas {
           }
           if (image_buffer == null)
           {
-            //console.warn("Image buffered cleared itself before we could use it.");
+            console.warn("Image buffered cleared itself before we could use it.");
             return;
           }
           

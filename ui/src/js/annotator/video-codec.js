@@ -325,6 +325,7 @@ class TatorVideoManager {
     image.data.frameDelta = image.frameDelta;
     image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
+    //console.info(`${performance.now()}: ${this._name}: _imageReady() time=${image.data.time}: CiI=${this.cursor_in_image(image)} KFO=${this._keyframeOnly} SCRUBBING=${this._scrubbing} MUTE=${this._mute}`);
     if ((this.cursor_in_image(image) || this._keyframeOnly == true || this._scrubbing == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
@@ -402,6 +403,7 @@ class TatorVideoManager {
     let lastDistance = Number.MAX_VALUE;
     let lastTimestamp = 0;
     let timestamps = [...this._hot_frames.keys()].sort((a,b)=>a-b); // make sure keys are sorted!
+    //console.info(`${this._name}: ${timestamps} Looking for ${cursorInCts} ${this._current_cursor}`);
     for (let timestamp of timestamps)
     {
       let thisDistance = Math.abs(timestamp-cursorInCts);
@@ -524,7 +526,7 @@ class TatorVideoManager {
   //        - Currently we use an 'ImageData' reference from the internal OffscreenCanvas data
   get codec_image_buffer()
   {
-    if (this._cursor_is_hot() || this._keyframeOnly == true)
+    if (this._cursor_is_hot() || this._keyframeOnly == true || this._scrubbing == true)
     {
       return this._closest_frame_to_cursor();
     }

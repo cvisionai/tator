@@ -111,6 +111,8 @@ export class AnnotationPlayer extends TatorElement {
     this._zoomSliderDiv.hidden = true;
     this._zoomSliderDiv.appendChild(this._zoomSlider);
 
+    this._slider.setPair(this._zoomSlider);
+
     var innerDiv = document.createElement("div");
     this._timelineD3 = document.createElement("timeline-d3");
     this._timelineD3.rangeInput = this._slider;
@@ -590,14 +592,14 @@ export class AnnotationPlayer extends TatorElement {
     const frame = Number(evt.target.value);
     const waitOk = now - this._lastScrub > this._scrubInterval;
     this._video.scrubbing = true;
-    if (this._video.keyframeOnly == false && Math.abs(frame-this._video.currentFrame()) > 25)
+    if (this._video.keyframeOnly == false && Math.abs(frame-this._video.currentFrame()) > 0)
     {
       this._video.keyframeOnly = true;
     }
     else
     {
       // Let the user slow down and get frame by frame scrubing
-      this._video.keyframeOnly = false;
+      //this._video.keyframeOnly = false;
     }
     if (waitOk) {
       this._lastScrub = Date.now();
@@ -746,6 +748,7 @@ export class AnnotationPlayer extends TatorElement {
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames)-1);
     this._slider.fps = val.fps;
+    this._zoomSlider.fps = val.fps;
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
