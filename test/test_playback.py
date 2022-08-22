@@ -61,7 +61,7 @@ def _wait_for_color(page, canvas, looking_for, timeout=30, name='unknown'):
       found = True
       break
   if not found:
-    raise ValueError(f"Did not capture desired color {color_idx} after {timeout} seconds. "
+    raise ValueError(f"Did not capture desired color(s) {looking_for} after {timeout} seconds. "
                      f"Last color: {canvas_color}")
 
 def _wait_for_frame(canvas, frame, timeout=30):
