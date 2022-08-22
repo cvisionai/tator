@@ -52,7 +52,6 @@ class LoginRedirect(View):
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            # Default redirect is to projects
             out = redirect('projects')
         else:
             if os.getenv('COGNITO_ENABLED') == 'TRUE':
