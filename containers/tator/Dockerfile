@@ -59,7 +59,7 @@ RUN pip3 --no-cache-dir --timeout=1000 install \
         django-cognito-jwt==0.0.4 boto3==1.20.41 \
         google-cloud-storage==2.1.0 datadog==0.43.0 \
         kubernetes==21.7.0 minio==7.1.5 okta-jwt-verifier==0.2.3 jsonschema==4.9.1 \
-        django-ipware==4.0.2 /tmp/grafana_django_saml2_auth*.whl
+        /tmp/grafana_django_saml2_auth*.whl
 # =========================================== TEMPORARY ===========================================
 # Once https://github.com/grafana/django-saml2-auth merges the changes from
 # https://github.com/cvisionai/django-saml2-auth, the wheel for grafana_django_saml2_auth can be

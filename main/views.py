@@ -9,7 +9,6 @@ from django.http import HttpResponse
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
-from ipware import get_client_ip
 
 from django.template.response import TemplateResponse
 from rest_framework.authentication import TokenAuthentication
@@ -43,48 +42,26 @@ class APIBrowserView(LoginRequiredMixin, TemplateView):
 class LoginRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         """ Redirects SAML logins to the IdP and caches the next url """
-        url = "/accounts/login"
+        if settings.SAML_ENABLED and settings.SAML_SSO_URL:
+            out = settings.SAML_SSO_URL
+        else:
+            out = "/accounts/login"
 
-        if settings.SAML_ENABLED:
-            if settings.SAML_SSO_URL:
-                url = settings.SAML_SSO_URL
-
-                try:
-                    client_ip, _ = get_client_ip(request)
-                    if client_ip:
-                        next_url = getattr(request, request.method).get('next')
-                        if next_url:
-                            TatorCache().set_saml_next_url(client_ip, next_url)
-                except:
-                    logger.warning("Unable to cache 'next' query parameter", exc_info=True)
-        return redirect(url)
+        return redirect(out)
 
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             # Default redirect is to projects
             out = redirect('projects')
-
-            # If SAML login, try to get the 'next' url from the cache, but fall back to default
-            # redirect above if there isn't one
-            if settings.SAML_ENABLED:
-                try:
-                    client_ip, _ = get_client_ip(request)
-                    if client_ip:
-                        tc = TatorCache()
-                        next_url = tc.pop_saml_next_url(client_ip)
-                        if next_url:
-                            out = redirect(next_url)
-                except:
-                    logger.warning("Unable to retrieve 'next' url", exc_info=True)
         else:
-            if settings.COGNITO_ENABLED == 'TRUE':
+            if os.getenv('COGNITO_ENABLED') == 'TRUE':
                 with open('/cognito/cognito.yaml', 'r') as f:
                     config = yaml.safe_load(f)
                 out = redirect(f"https://{config['domain']}/login"
                                f"?client_id={config['client-id']}"
                                "&response_type=code&scope=openid"
-                               f"&redirect_uri=https://{settings.MAIN_HOST}/jwt-gateway")
+                               f"&redirect_uri=https://{os.getenv('MAIN_HOST')}/jwt-gateway")
             else:
                 out = redirect('redirect/login')
         return out
