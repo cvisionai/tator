@@ -475,13 +475,14 @@ class TatorVideoBuffer {
           if (this._playing == false && (idx > start_idx || this.keyframeOnly == true))
           {
             //console.info(`${performance.now()} ${this._name}: Breaking out of loop handler ${idx}, ${start_idx}, QS=${this._videoDecoder.decodeQueueSize}`);
+            // drain the pending queue before bailing
             let pending = this._pendingEncodedFrames.shift();
             while (pending)
             {
               pending();
               pending = this._pendingEncodedFrames.shift();
             }
-            this._videoDecoder.flush().catch(e=>{});
+            this._videoDecoder.flush().catch(e=>{}); // NOTE: FLUSH will unconfigure the decoder and require keyframe + in-order decode again...
             this._mp4FileMap.get(timestampOffset).stop(); // Stop event handler
             this._setIdle(true);
             break; // If we get to the next key frame we decoded enough.
