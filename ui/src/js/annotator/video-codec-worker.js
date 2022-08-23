@@ -433,7 +433,7 @@ class TatorVideoBuffer {
             }
             catch (evt)
             {
-              //console.warn(`${this._name}: Failed to decode ${sample_cts}: ${evt}`);
+              console.warn(`${this._name}: Failed to decode ${sample_cts}: ${evt}`);
             }
           };
           if (this._framesOut+this._videoDecoder.decodeQueueSize < MAX_DECODED_FRAMES_PER_DECODER && this._pendingEncodedFrames.length == 0)
@@ -471,10 +471,16 @@ class TatorVideoBuffer {
         if (samples[idx].is_sync)
         {
           this._keyframeMap.get(timestampOffset).push(samples[idx].cts);
-          //console.info(`${idx} > ${start_idx}, ${this._playing==false}, ${this.keyframeOnly}`);
+          //console.info(`${idx} > ${start_idx}, Playing=${this._playing}, KFO=${this.keyframeOnly}`);
           if (this._playing == false && (idx > start_idx || this.keyframeOnly == true))
           {
             //console.info(`${performance.now()} ${this._name}: Breaking out of loop handler ${idx}, ${start_idx}, QS=${this._videoDecoder.decodeQueueSize}`);
+            let pending = this._pendingEncodedFrames.shift();
+            while (pending)
+            {
+              pending();
+              pending = this._pendingEncodedFrames.shift();
+            }
             this._videoDecoder.flush().catch(e=>{});
             this._mp4FileMap.get(timestampOffset).stop(); // Stop event handler
             this._setIdle(true);
