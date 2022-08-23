@@ -1546,6 +1546,15 @@ export class VideoCanvas extends AnnotationCanvas {
     this._lastTime = performance.now();
     this._animationIdx = 0;
 
+    if (direction == Direction.BACKWARDS)
+    {
+      this._draw.prepBackward();
+    }
+    else
+    {
+      this._draw.prepForward();
+    }
+
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
       // Cap effective decode rate around 240 fps 
@@ -2773,6 +2782,7 @@ export class VideoCanvas extends AnnotationCanvas {
         var seekPromise = this.seekFrame(this._dispFrame, this.drawFrame, true);
         seekPromise.then(() => {
           document.body.style.cursor=null;
+          this._draw.prepForward();
           resolve();
         }).catch(() => {
           resolve();

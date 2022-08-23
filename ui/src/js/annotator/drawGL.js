@@ -365,6 +365,18 @@ export class DrawGL
     // No-Op
   }
 
+  prepBackward()
+  {
+    this.bufferDepth = 16; //More in rewind mode is helpful
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
+  }
+
+  prepForward()
+  {
+    this.bufferDepth = 6; //More in rewind mode is helpful
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
+  }
+
   // This takes image width and image height.
   resizeViewport(width, height)
   {
