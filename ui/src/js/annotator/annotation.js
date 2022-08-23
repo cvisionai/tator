@@ -992,12 +992,9 @@ export class AnnotationCanvas extends TatorElement
     this._canvas.addEventListener('webglcontextlost', (evt) => {
       console.warn("WebGL Context lost");
       evt.preventDefault();
-      return false;
-    });
-    this._canvas.addEventListener('webglcontextrestored', (evt) => {
-      console.info("Restoring webGL context");
-      this.reinitCanvas();
-      evt.preventDefault();
+      setTimeout(() => {
+        console.info("Restoring webGL context");
+        this.reinitCanvas();}, 1000);
       return false;
     });
     this._dragHandler = new CanvasDrag(this,
