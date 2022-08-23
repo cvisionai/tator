@@ -1748,10 +1748,10 @@ export class AnnotationMulti extends TatorElement {
         }
       }
       this.disableRateChange();
-      if (this._rateControl.value > 1)
-      {
-        this._rateControl.setValue(1.0, true);
-      }
+      //if (this._rateControl.value > 1)
+      //{
+      //  this._rateControl.setValue(1.0, true);
+      //}
       let prime_fps = this._fps[this._longest_idx];
       for (let idx = 0; idx < this._videos.length; idx++)
       {

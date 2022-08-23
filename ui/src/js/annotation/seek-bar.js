@@ -222,6 +222,13 @@ export class SeekBar extends TatorElement {
     return this._value;
   }
 
+  setPair(other)
+  {
+    // Link up twin sliders
+    this._pair = other;
+    other._pair = this;
+  }
+
   onBufferLoaded(evt)
   {
     this._loadedPercentage = evt.detail['percent_complete'];

@@ -111,6 +111,8 @@ export class AnnotationPlayer extends TatorElement {
     this._zoomSliderDiv.hidden = true;
     this._zoomSliderDiv.appendChild(this._zoomSlider);
 
+    this._slider.setPair(this._zoomSlider);
+
     var innerDiv = document.createElement("div");
     this._timelineD3 = document.createElement("timeline-d3");
     this._timelineD3.rangeInput = this._slider;
@@ -746,6 +748,7 @@ export class AnnotationPlayer extends TatorElement {
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames)-1);
     this._slider.fps = val.fps;
+    this._zoomSlider.fps = val.fps;
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
@@ -1007,11 +1010,11 @@ export class AnnotationPlayer extends TatorElement {
       this._fastForward.setAttribute("disabled", "");
       this._rewind.setAttribute("disabled", "");
       this.disableRateChange();
-      if (this._rateControl.value > 1)
-      {
-        this._rateControl.setValue(1.0, true);
-        this._video.rateChange(this._rate);
-      }
+      //if (this._rateControl.value > 1)
+      //{
+      //  this._rateControl.setValue(1.0, true);
+      //  this._video.rateChange(this._rate);
+      //}
       if (this._video.playBackwards())
       {
         this._videoStatus = "playing";

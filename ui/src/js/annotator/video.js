@@ -1285,7 +1285,7 @@ export class VideoCanvas extends AnnotationCanvas {
           }
           if (image_buffer == null)
           {
-            //console.warn("Image buffered cleared itself before we could use it.");
+            console.warn("Image buffered cleared itself before we could use it.");
             return;
           }
           
@@ -1562,6 +1562,10 @@ export class VideoCanvas extends AnnotationCanvas {
       if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
       {
         this._videoElement[this._scrub_idx].playBuffer().clearPending();
+        if (this._fps * this._playbackRate >= 16*15)
+        {
+          this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
+        }
       }
       this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub-only");}, 0);
     }
@@ -2661,11 +2665,12 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
-      if (this._playbackRate > 1)
-      {
-        this._oldRate = this._playbackRate;
-        this._playbackRate = 1.0;
-      }
+      //if (this._playbackRate > 1)
+      //{
+      //  this._oldRate = this._playbackRate;
+      //  this._playbackRate = 1.0;
+      //}
+      this._direction = Direction.BACKWARDS
       this._playCb.forEach(cb => {cb();});
       this._playGenericScrub(Direction.BACKWARDS);
       return true;
