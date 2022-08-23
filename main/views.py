@@ -35,10 +35,19 @@ import traceback
 logger = logging.getLogger(__name__)
 
 
-
 class APIBrowserView(LoginRequiredMixin, TemplateView):
     template_name = 'browser.html'
     extra_context = {'schema_url': 'schema'}
+
+class LoginRedirect(View):
+    def dispatch(self, request, *args, **kwargs):
+        """ Redirects SAML logins to the IdP and caches the next url """
+        if settings.SAML_ENABLED and settings.SAML_SSO_URL:
+            out = settings.SAML_SSO_URL
+        else:
+            out = "/accounts/login"
+
+        return redirect(out)
 
 class MainRedirect(View):
     def dispatch(self, request, *args, **kwargs):
@@ -53,7 +62,7 @@ class MainRedirect(View):
                                "&response_type=code&scope=openid"
                                f"&redirect_uri=https://{os.getenv('MAIN_HOST')}/jwt-gateway")
             else:
-                out = redirect('accounts/login')
+                out = redirect('redirect/login')
         return out
 
 class RegistrationView(TemplateView):

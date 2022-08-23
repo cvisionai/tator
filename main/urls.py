@@ -11,31 +11,36 @@ from django.contrib.auth.views import LoginView
 
 from rest_framework.schemas import get_schema_view
 
-from .views import APIBrowserView
-from .views import MainRedirect
-from .views import RegistrationView
-from .views import AcceptView
-from .views import PasswordResetRequestView
-from .views import PasswordResetView
-from .views import OrganizationsView
-from .views import ProjectsView
-from .views import AccountProfileView
-from .views import TokenView
-from .views import ProjectDetailView
-from .views import StreamSaverSWLocal
-from .views import StreamSaverMITMLocal
-from .views import ProjectSettingsView
-from .views import OrganizationSettingsView
-from .views import AnnotationView
-from .views import AuthProjectView
-from .views import AuthAdminView
-from .views import DashboardPortalView
-from .views import DashboardView
-from .views import AnalyticsLocalizationsView
-from .views import AnalyticsCorrectionsView
-from .views import AnalyticsCollectionsView
-from .views import AnalyticsPortalView
-from .views import FilesView
+import django_saml2_auth.views
+
+from .views import (
+    APIBrowserView,
+    AcceptView,
+    AccountProfileView,
+    AnalyticsCollectionsView,
+    AnalyticsCorrectionsView,
+    AnalyticsLocalizationsView,
+    AnalyticsPortalView,
+    AnnotationView,
+    AuthAdminView,
+    AuthProjectView,
+    DashboardPortalView,
+    DashboardView,
+    FilesView,
+    LoginRedirect,
+    MainRedirect,
+    OrganizationSettingsView,
+    OrganizationsView,
+    PasswordResetRequestView,
+    PasswordResetView,
+    ProjectDetailView,
+    ProjectSettingsView,
+    ProjectsView,
+    RegistrationView,
+    StreamSaverMITMLocal,
+    StreamSaverSWLocal,
+    TokenView,
+)
 
 from .schema import NoAliasRenderer
 from .schema import CustomGenerator
@@ -89,6 +94,7 @@ urlpatterns = [
     path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
          name='password_change_done'),
     path('accounts/logout/', LogoutView.as_view()),
+    path("redirect/login/", LoginRedirect.as_view()),
     path(
         "accounts/login/",
         LoginView.as_view(

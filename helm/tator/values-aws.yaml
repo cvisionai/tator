@@ -256,6 +256,7 @@ okta:
 saml:
   enabled: false
   metadata_url: "fill me in"
+  sso_url: "fill me in"
 email:
   enabled: false
   sender: "<fill in>"
