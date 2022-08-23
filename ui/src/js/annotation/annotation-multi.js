@@ -504,13 +504,13 @@ export class AnnotationMulti extends TatorElement {
       {
         let video = this._videos[idx];
         video.scrubbing = true;
-        if (video.keyframeOnly == false && Math.abs(frame-prime_frame) > 0)
+        if (video.keyframeOnly == false && Math.abs(frame-prime_frame) > 25)
         {
           video.keyframeOnly = true;
         }
         else
         {
-          //video.keyframeOnly = false;
+          video.keyframeOnly = false;
         }
         let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
         this_frame += this._frameOffsets[idx];

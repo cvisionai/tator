@@ -143,6 +143,10 @@ class TatorVideoBuffer {
     this._current_cursor = 0.0;
     this._current_duration = 0.0;
 
+    // Idle state logic
+    this._lastIdleScan = 0;
+    this._lastAppend = 0;
+
     this._ready_frames=[];
   }
 
@@ -160,13 +164,14 @@ class TatorVideoBuffer {
         {
           this._setIdle(false);
         } 
-        else
+        else if (this._lastIdleScan <= this._lastAppend)
         {
           this.activeMp4File.stop();
           this.activeMp4File.seek(0);
           this.activeMp4File.start();
+          this._lastIdleScan = performance.now();
         }
-      }, 500);
+      }, 100);
     }
   }
 
@@ -428,7 +433,7 @@ class TatorVideoBuffer {
             }
             catch (evt)
             {
-              console.warn(`${this._name}: Failed to decode ${sample_cts}: ${evt}`);
+              //console.warn(`${this._name}: Failed to decode ${sample_cts}: ${evt}`);
             }
           };
           if (this._framesOut+this._videoDecoder.decodeQueueSize < MAX_DECODED_FRAMES_PER_DECODER && this._pendingEncodedFrames.length == 0)
@@ -467,15 +472,12 @@ class TatorVideoBuffer {
         {
           this._keyframeMap.get(timestampOffset).push(samples[idx].cts);
           //console.info(`${idx} > ${start_idx}, ${this._playing==false}, ${this.keyframeOnly}`);
-          if (this._playing == false && (idx > start_idx || this.keyframeOnly == true || this.scrubbing == true))
+          if (this._playing == false && (idx > start_idx || this.keyframeOnly == true))
           {
-            if (this.keyframeOnly == true)
-            {
-              this._videoDecoder.flush();
-              //console.info(`${performance.now()} ${this._name}: Cancelling seek event handler ${idx}, ${start_idx}, QS=${this._videoDecoder.decodeQueueSize}`);
-              this._mp4FileMap.get(timestampOffset).stop(); // Stop event handler
-              this._setIdle(true);
-            }
+            //console.info(`${performance.now()} ${this._name}: Breaking out of loop handler ${idx}, ${start_idx}, QS=${this._videoDecoder.decodeQueueSize}`);
+            this._videoDecoder.flush().catch(e=>{});
+            this._mp4FileMap.get(timestampOffset).stop(); // Stop event handler
+            this._setIdle(true);
             break; // If we get to the next key frame we decoded enough.
           }
         }
@@ -558,7 +560,7 @@ class TatorVideoBuffer {
     this._framesOut = 0;
     this._playing = false;
     this._frameInfoMap = new Map(); // clear on pause
-    this.activeMp4File.stop();
+    this._setIdle(true);
   }
 
   play()
@@ -817,7 +819,7 @@ class TatorVideoBuffer {
   // - Prior to adding video segments the mp4 header must be supplied first.
   appendBuffer(data, timestampOffset)
   {
-    
+    this._lastAppend = performance.now();
     //console.info(`${this._name}: Appending Data ${data.fileStart} ${data.byteLength} ${data.frameStart}`);
     if (data.fileStart == 0)
     {
@@ -834,13 +836,13 @@ class TatorVideoBuffer {
         mp4File.dtsBias = Math.round(data.frameStart * timescale);
         mp4File.stop();
         mp4File.appendBuffer(data);
-        mp4File.seek(0); // Always go to 0 for this
-        mp4File.start();
+        this._setIdle(true);
       }
       else
       {
         mp4File.dtsBias = null;
         mp4File.appendBuffer(data);
+        this._setIdle(true);
       }
     }
 

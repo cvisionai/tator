@@ -326,7 +326,7 @@ class TatorVideoManager {
     image.data.time = image.timestamp / image.data.timescale;
     this._hot_frames.set(image.timestamp, image.data);
     //console.info(`${performance.now()}: ${this._name}: _imageReady() time=${image.data.time}: CiI=${this.cursor_in_image(image)} KFO=${this._keyframeOnly} SCRUBBING=${this._scrubbing} MUTE=${this._mute}`);
-    if ((this.cursor_in_image(image) || this._keyframeOnly == true || this._scrubbing == true) && this._mute == false)
+    if ((this.cursor_in_image(image) || this._keyframeOnly == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
     }
