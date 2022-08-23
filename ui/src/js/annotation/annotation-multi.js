@@ -1047,6 +1047,7 @@ export class AnnotationMulti extends TatorElement {
         this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
         this._slider.setAttribute("max", max_frames-1);
         this._slider.fps = this._fps[this._primaryVideoIndex];
+        this._zoomSlider.fps = this._fps[this._primaryVideoIndex];
         this._maxFrameNumber = max_frames - 1;
 
         let multiview = null;
