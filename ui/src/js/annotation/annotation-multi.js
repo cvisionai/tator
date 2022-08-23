@@ -500,11 +500,12 @@ export class AnnotationMulti extends TatorElement {
       let prime_fps = this._fps[this._longest_idx];
       let prime_frame = this._videos[this._longest_idx].currentFrame();
       let promises = [];
+      console.info(`${performance.now()}: Requesting seek to ${frame}`);
       for (let idx = 0; idx < this._videos.length; idx++)
       {
         let video = this._videos[idx];
         video.scrubbing = true;
-        if (video.keyframeOnly == false && Math.abs(frame-prime_frame) > 25)
+        if (video.keyframeOnly == false && Math.abs(frame-prime_frame) > 10)
         {
           video.keyframeOnly = true;
         }
