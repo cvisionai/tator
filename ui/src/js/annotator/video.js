@@ -1862,6 +1862,8 @@ export class VideoCanvas extends AnnotationCanvas {
     let video = this._videoElement[index].playBuffer();
     let frameProfiler = new PeriodicTaskProfiler("Frame Fetch");
 
+    video.frameIncrement = frameIncrement;
+
     // Clear any old frames
     this._pendingFrames = [];
     clearTimeout(this._pendingTimeout);
@@ -1869,7 +1871,6 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // on frame processing logic
 
-    let increment_clk = 0;
     let lastRate = this._playbackRate;
     video.onFrame = (frame, timescale, timestampOffset) => {
       this._playing = true;
@@ -1877,11 +1878,8 @@ export class VideoCanvas extends AnnotationCanvas {
       frame.frameNumber = this.timeToFrame((frame.timestamp/timescale), null, video.named_idx);
       this._loadFrame = frame.frameNumber;
       this._fpsLoadDiag++;
-      if (increment_clk % frameIncrement != 0)
-      {
-        frame.returnFrame();
-      }
-      else if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
+
+      if (this._draw.canLoad() > 0 && this._pendingFrames.length == 0)
       {
         this.pushFrame(frame.frameNumber, frame, frame.displayWidth, frame.displayHeight);
         frame.returnFrame();
@@ -1900,14 +1898,13 @@ export class VideoCanvas extends AnnotationCanvas {
         {
           frameIncrement = this._playbackRate / 16;
         }
+        video.frameIncrement = frameIncrement;
         lastRate = this._playbackRate;
       }
 
-      // Don't let increment clock blow up
-      increment_clk = (increment_clk + 1) % frameIncrement;
       frameProfiler.push(performance.now()-start)
       
-      // Kick off the player thread once we have 25 frames loaded
+      // Kick off the player thread once we have some frames loaded
       if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
       {
         this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);

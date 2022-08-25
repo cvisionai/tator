@@ -573,6 +573,7 @@ class TatorVideoBuffer {
   play()
   {
     this._setIdle(false);
+    this._frameIdx = 0;
     this._pendingSeek = null;
     //console.info(`PLAYING VIDEO ${this._current_cursor}`);
     if (this._videoDecoder.state == 'closed')
@@ -697,6 +698,14 @@ class TatorVideoBuffer {
         this._frameReturn();
         return;
       }
+      console.info()
+      if (this._frameIdx % this.frameIncrement != 0)
+      {
+        frame.close();
+        this._frameReturn();
+        this._frameIdx = (this._frameIdx + 1) % this.frameIncrement;
+        return;
+      }
       this._current_cursor = (frame.timestamp / timeScale);
       //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
       postMessage({"type": "frame",  
@@ -706,6 +715,7 @@ class TatorVideoBuffer {
                   "timestampOffset": timestampOffset},
                   [frame]
                   ); // transfer frame copy to primary UI thread
+      this._frameIdx = (this._frameIdx + 1) % this.frameIncrement;
       if (this._switchTape)
       {
         this._mp4FileMap.get(this._oldTape).stop();
@@ -1141,5 +1151,9 @@ onmessage = function(e)
   else if (msg.type == "clearAllPending")
   {
     ref._clearAllPending();
+  }
+  else if (msg.type == "frameIncrement")
+  {
+    ref.frameIncrement = msg.value;
   }
 }

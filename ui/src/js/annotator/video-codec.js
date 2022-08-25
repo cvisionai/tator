@@ -155,6 +155,12 @@ class TatorVideoManager {
     this._codec_worker.postMessage({"type": "keyframeOnly", "value": val});
   }
 
+  set frameIncrement(val)
+  {
+    this._frameIncrement = val;
+    this._codec_worker.postMessage({"type": "frameIncrement", "value": val});
+  }
+
   set scrubbing(val)
   {
     this._scrubbing = val;
