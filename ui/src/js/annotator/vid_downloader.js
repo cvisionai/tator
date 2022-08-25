@@ -2,11 +2,12 @@ import { fetchRetry } from "../util/fetch-retry.js";
 
 export class VideoDownloader
 {
-  constructor(media_files, blockSize, offsite_config, frameJump)
+  constructor(media_files, blockSize, offsite_config, frameJump, infoOnly)
   {
     this._media_files = media_files;
     this._blockSizes = [];
     this._frameJump = frameJump;
+    this._infoOnly = infoOnly;
     console.info(JSON.stringify(media_files));
     for (let idx = 0; idx < media_files.length; idx++)
     {
@@ -80,6 +81,10 @@ export class VideoDownloader
 
   buffersInitialized()
   {
+    if (this._infoOnly == true)
+    {
+      return true;
+    }
     // Processed all the segment files yet?
     if (this._infoObjectsInitialized < this._num_res)
     {
@@ -189,10 +194,17 @@ export class VideoDownloader
         if (that._infoObjectsInitialized == that._num_res)
         {
           that._fileInfoRequested = true;
-          for (let buf_idx = 0; buf_idx < that._media_files.length; buf_idx++)
+          if (that._infoOnly != true)
           {
-            // Download the initial fragment info into each buffer
-            that.downloadNextSegment(buf_idx, 2);
+            for (let buf_idx = 0; buf_idx < that._media_files.length; buf_idx++)
+            {
+              // Download the initial fragment info into each buffer
+              that.downloadNextSegment(buf_idx, 2);
+            }
+          }
+          if (that._infoOnly == true)
+          {
+            that.sendReadyMessages();
           }
         }
 
@@ -814,7 +826,8 @@ onmessage = function(e)
       ref = new VideoDownloader(msg.media_files,
                                 2*1024*1024,
                                 msg.offsite_config,
-                                msg.frameJump);
+                                msg.frameJump,
+                                msg.infoOnly);
     }
   }
   else if (type == 'download')
@@ -825,7 +838,10 @@ onmessage = function(e)
         ref.saveDownloadNextSegmentRequest(msg.buf_idx);
       }
       else {
-        ref.downloadNextSegment(msg.buf_idx);
+        if (ref._infoOnly != true)
+        {
+          ref.downloadNextSegment(msg.buf_idx);
+        }
       }
     }
   }

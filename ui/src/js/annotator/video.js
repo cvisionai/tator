@@ -82,6 +82,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     // Set global variable to find us
     window.tator_video = this;
+    this._localMode = false;
     this._ready = false;
     this._diagnosticMode = false;
     this._videoVersion = 1;
@@ -112,6 +113,10 @@ export class VideoCanvas extends AnnotationCanvas {
     if (searchParams.has("summaryLevel"))
     {
       this._summaryLevel = Number(searchParams.get("summaryLevel"));
+    }
+    if (searchParams.has("localMode"))
+    {
+      this._localMode = Number(searchParams.get("localMode"));
     }
     this._lastDirection=Direction.FORWARD;
     this._direction=Direction.STOPPED;
@@ -311,7 +316,7 @@ export class VideoCanvas extends AnnotationCanvas {
       }));
   }
 
-  startDownload(streaming_files, offsite_config)
+  startDownload(streaming_files, offsite_config, info_only)
   {
     if (this._children)
     {
@@ -327,7 +332,8 @@ export class VideoCanvas extends AnnotationCanvas {
                                   "hq_idx": this._seek_idx,
                                   "scrub_idx": this._scrub_idx,
                                   "offsite_config": offsite_config,
-                                  "frameJump": frameJump});
+                                  "frameJump": frameJump,
+                                  "infoOnly": info_only});
     }
     else if (streaming_files[0].hls)
     {
@@ -367,7 +373,8 @@ export class VideoCanvas extends AnnotationCanvas {
                                   "hq_idx": this._seek_idx,
                                   "scrub_idx": this._scrub_idx,
                                   "offsite_config": offsite_config,
-                                  "frameJump": frameJump});
+                                  "frameJump": frameJump,
+                                  "infoOnly": info_only});
     }
   }
 
@@ -442,7 +449,7 @@ export class VideoCanvas extends AnnotationCanvas {
         if (new_play_idx != this._scrub_idx) {
           this.stopDownload();
           this._videoElement[this._scrub_idx].clearScrubBuffer();
-          this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig);
+          this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig, false);
         }
         this._scrub_idx = new_play_idx;
       }
@@ -760,7 +767,7 @@ export class VideoCanvas extends AnnotationCanvas {
                        {composed: true, detail: {media: this._children[0]}}));
                         
                         // Clear the buffer in case this is a hot-swap
-                        this.startDownload(streaming_files, offsite_config);
+                        this.startDownload(streaming_files, offsite_config, false);
                         this._draw.clear();
                         this._draw.resizeViewport(dims[0], dims[1]);
                         this._fps=Math.round(1000*this._children[0].fps)/1000;
@@ -817,11 +824,71 @@ export class VideoCanvas extends AnnotationCanvas {
     fps = videoObject.fps;
     numFrames = videoObject.num_frames;
 
+    this._videoElement = [];
+    let streaming_files = this._videoObject.media_files.streaming;
+
+    if (this._localMode == 1)
+    {
+      dims = this.identify_qualities(videoObject, quality, scrubQuality, seekQuality, offsite_config);
+      this._draw.resizeViewport(dims[0], dims[1]);
+      this._fps=Math.round(1000*fps)/1000;
+      this._numFrames=numFrames-1;
+      this._numSeconds=fps*numFrames;
+      this._dims=dims;
+      this.resetRoi();
+
+      // For local we only use buffer 0
+      this._scrub_idx = 0;
+      this._play_idx = 0;
+      this._seek_idx = 0;
+      this.startDownload([streaming_files[0]], offsite_config, true);
+
+      let element = this.construct_demuxer(0, dims[1]);
+      element.named_idx = 0;
+      this._videoElement.push(element);
+
+      document.onclick = () => {
+        document.onclick = null;
+        window.showOpenFilePicker().then((fileHandle) => {
+          fileHandle[0].getFile().then(file => {
+            console.info("Got file, making array buffer.");
+            file.arrayBuffer().then(buffer => {
+              const length = buffer.byteLength;
+              const chunk_size = 1*1024*1024;
+              console.info(`Appending ${length} to video buffer`);
+
+              // Send it once to grease the wheels
+              let bufferToSend=buffer.slice(0,chunk_size);
+              bufferToSend.fileStart = 0;
+              this._videoElement[0].appendLatestBuffer(bufferToSend, ()=>{}, 0);
+
+              // Send the file for real
+              for (let idx = 0; idx < length; idx+=chunk_size)
+              {
+                let bufferToSend=buffer.slice(idx,idx+chunk_size);
+                bufferToSend.fileStart = idx;
+                console.info(`${bufferToSend.byteLength} @ ${bufferToSend.fileStart}`);
+                this._videoElement[0].appendLatestBuffer(bufferToSend, ()=>{}, 0);
+                this._videoElement[0]._init = true;
+              }
+
+              this.dispatchEvent(new CustomEvent("bufferLoaded",
+                                          {composed: true,
+                                          detail: {"percent_complete":1.00}
+                                          }));
+              this.dispatchEvent(new CustomEvent("playbackReady",
+                                        {composed: true,
+                                          detail: {playbackReadyId: 1},
+                                          }));
+            });
+          })
+      })};
+      return this._videoElement[this._scrub_idx].loadedDataPromise(this);
+    }
+
     // Use the largest resolution to set the viewport
     dims = this.identify_qualities(videoObject, quality, scrubQuality, seekQuality, offsite_config);
 
-    this._videoElement = [];
-    let streaming_files = this._videoObject.media_files.streaming;
     for (let idx = 0; idx < streaming_files.length; idx++)
     {
       this._videoElement.push(this.construct_demuxer(idx, streaming_files[idx].resolution[0]));
@@ -843,7 +910,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this.stopDownload();
     var promise = this._videoElement[this._scrub_idx].loadedDataPromise(this);
 
-    this.startDownload(streaming_files, offsite_config);
+    this.startDownload(streaming_files, offsite_config, false);
     if (fps < 20)
     {
       console.info("Disable safe mode for low FPS");
