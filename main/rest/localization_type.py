@@ -7,7 +7,6 @@ from ..models import MediaType
 from ..models import LocalizationType
 from ..models import Localization
 from ..models import Project
-from ..search import TatorSearch
 from ..schema import LocalizationTypeListSchema
 from ..schema import LocalizationTypeDetailSchema
 
@@ -15,8 +14,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
-from ._annotation_query import get_annotation_es_query
-from ._util import bulk_delete_and_log_changes
+from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'colorMap', 'line_width', 'visible', 'drawable', 'grouping_default']
@@ -155,17 +153,7 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             types associated with it.
         """
         loc_type = LocalizationType.objects.get(pk=params["id"])
-        loc_qs = Localization.objects.filter(meta=loc_type.id)
-        count = loc_qs.count()
-
-        # Delete any instances of the localization type first
-        if count:
-            es_params = {"ids": list(loc_qs.values_list("id", flat=True))}
-            bulk_delete_and_log_changes(loc_qs, loc_type.project, self.request.user)
-            query = get_annotation_es_query(loc_type.project, es_params, "localization")
-            TatorSearch().delete(loc_type.project.id, query)
-
-        # Delete the localization type
+        count = delete_instances(loc_type, Localization, self.request.user, "localization")
         loc_type.delete()
         return {
             "message": f"Localization type {params['id']} (and {count} instances) deleted successfully!"

@@ -6,7 +6,6 @@ from ..models import MediaType
 from ..models import StateType
 from ..models import State
 from ..models import Project
-from ..search import TatorSearch
 from ..schema import StateTypeListSchema
 from ..schema import StateTypeDetailSchema
 
@@ -14,8 +13,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
-from ._annotation_query import get_annotation_es_query
-from ._util import bulk_delete_and_log_changes
+from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible', 'grouping_default',
@@ -168,17 +166,7 @@ class StateTypeDetailAPI(BaseDetailView):
             types associated with it.
         """
         state_type = StateType.objects.get(pk=params["id"])
-        state_qs = State.objects.filter(meta=state_type.id)
-        count = state_qs.count()
-
-        # Delete any instances of the state type first
-        if count:
-            es_params = {"ids": list(state_qs.values_list("id", flat=True))}
-            bulk_delete_and_log_changes(state_qs, state_type.project, self.request.user)
-            query = get_annotation_es_query(state_type.project, es_params, "state")
-            TatorSearch().delete(state_type.project.id, query)
-
-        # Delete the state type
+        count = delete_instances(state_type, State, self.request.user, "state")
         state_type.delete()
         return {
             "message": f"State type {params['id']} (and {count} instances) deleted successfully!"
