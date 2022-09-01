@@ -138,7 +138,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
     start = params.get('start')
     stop = params.get('stop')
 
-    qs = File.objects.filter(project=project)
+    qs = File.objects.filter(project=project, deleted=False)
 
     file_ids = []
     if file_id is not None:

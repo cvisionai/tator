@@ -1155,6 +1155,7 @@ class File(Model, ModelDiffMixin):
     """ Type associated with file """
     attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
+    deleted = BooleanField(default=False)
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
