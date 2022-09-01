@@ -112,6 +112,8 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
     this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
+    this._cardAttributeLabels.init(this.modelData._project);
+
     // Initialize
     for (let locTypeData of this.modelData._localizationTypes) {
 

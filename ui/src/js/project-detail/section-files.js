@@ -174,8 +174,6 @@ export class SectionFiles extends TatorElement {
         }
 
         // this is data used later by label chooser, and bulk edit
-        console.log("this._memberships");
-        console.log(this._memberships);
         card.init({
           obj: cardObj,
           idx: index,

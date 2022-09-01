@@ -102,7 +102,10 @@ export class AnnotationsGallery extends EntityCardGallery {
     this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
     this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
+    
+
     // Initialize labels selection
+    this._cardAttributeLabels.init(this.modelData._project);
     for (let locTypeData of this.modelData._localizationTypes){
       this._cardAttributeLabels.add({ 
          typeData: locTypeData,

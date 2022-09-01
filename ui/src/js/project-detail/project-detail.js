@@ -782,6 +782,8 @@ export class ProjectDetail extends TatorPage {
             var hiddenAlgos = ['tator_extend_track', 'tator_fill_track_gaps'];
             const hiddenAlgoCategories = ['annotator-view', 'disabled'];
 
+            this._cardAttributeLabels.init(projectId);
+
             //
             // Set up attributes for bulk edit
             for (let mediaTypeData of mediaTypes) {
