@@ -94,10 +94,14 @@ export class SectionFiles extends TatorElement {
 
         /**
         * Card labels / attributes of localization or media type
+        * - Sticky choices from localStorage or Preferences set these
+        * - But, can be overridden during a session
+        * - This always goes off of the selection in entity-gallery-labels
         */
+        const builtInChosen = this._cardAttributeLabels._getValue(-1);
         this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
         // this._bulkEdit._updateShownAttributes({ typeId: entityTypeId, values: this.cardLabelsChosenByType[entityTypeId] });
-
+        const cardLabelsChosen = [...this.cardLabelsChosenByType[entityTypeId], ...builtInChosen];
 
         if (newCard) {
           card = document.createElement("entity-card");
@@ -176,7 +180,7 @@ export class SectionFiles extends TatorElement {
           obj: cardObj,
           idx: index,
           mediaInit: true,
-          cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
+          cardLabelsChosen,
           enableMultiselect: this.multiEnabled,
           memberships: this._memberships
         });
