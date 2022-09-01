@@ -284,9 +284,9 @@ class TatorVideoManager {
 
   cursor_in_image(image)
   {
-    const image_timescale = image.data.timescale;
-    const frame_delta = image.data.frameDelta;
-    const time = image.data.time;
+    const image_timescale = image.timescale;
+    const frame_delta = image.frameDelta;
+    const time = image.time;
     let time_in_ctx = time * image_timescale;
     let cursor_in_ctx = this._current_cursor * image_timescale;
     if (cursor_in_ctx >= time_in_ctx && cursor_in_ctx < time_in_ctx+frame_delta)
@@ -327,12 +327,15 @@ class TatorVideoManager {
   _imageReady(image)
   {
     //console.info(`${performance.now()}: GOT ${this._name}: GOT h=${image.height}`);
-    image.data.timescale = image.timescale;
-    image.data.frameDelta = image.frameDelta;
-    image.data.time = image.timestamp / image.data.timescale;
-    this._hot_frames.set(image.timestamp, image.data);
+    let imageBytes = new Uint8Array(image.data);
+    imageBytes.timescale = image.timescale;
+    imageBytes.frameDelta = image.frameDelta;
+    imageBytes.time = image.timestamp / image.timescale;
+    imageBytes.width = image.width;
+    imageBytes.height = image.height;
+    this._hot_frames.set(image.timestamp, imageBytes);
     //console.info(`${performance.now()}: ${this._name}: _imageReady() time=${image.data.time}: CiI=${this.cursor_in_image(image)} KFO=${this._keyframeOnly} SCRUBBING=${this._scrubbing} MUTE=${this._mute}`);
-    if ((this.cursor_in_image(image) || this._keyframeOnly == true) && this._mute == false)
+    if ((this.cursor_in_image(imageBytes) || this._keyframeOnly == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
     }

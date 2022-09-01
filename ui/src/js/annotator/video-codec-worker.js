@@ -737,18 +737,23 @@ class TatorVideoBuffer {
       const timestamp = frame.timestamp;
       // Make an ImageBitmap from the frame and release the memory
       // Send all decoded frames to draw UI
-      this._canvasCtx.drawImage(frame,0,0);
-      let image = this._canvas.transferToImageBitmap(); //GPU copy of frame
-      //console.info(`${performance.now()}: ${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
-      frame.close();
-      this._frameReturn();
-      postMessage({"type": "image",
-                  "data": image,
-                  "timestamp": timestamp,
-                  "timescale": timeScale,
-                  "frameDelta": frameDelta,
-                  "seconds": timestamp/timeScale},
-                  image);
+      console.info(`${this._name}: FRAME ALLOC=${frame.format}`);
+      let image = new SharedArrayBuffer(frame.allocationSize());
+      frame.copyTo(image).then(() => {
+        console.info(`${performance.now()}: ${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
+        const width = frame.displayWidth;
+        const height = frame.displayHeight;
+        frame.close();
+        this._frameReturn();
+        postMessage({"type": "image",
+                    "data": image,
+                    "width": width,
+                    "height": height,
+                    "timestamp": timestamp,
+                    "timescale": timeScale,
+                    "frameDelta": frameDelta,
+                    "seconds": timestamp/timeScale});
+      });
     }
   }
 

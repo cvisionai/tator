@@ -582,7 +582,14 @@ export class DrawGL
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, frameInfo.tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frameData);
+    if ('height' in frameData)
+    {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, frameData.width, frameData.height,0, gl.RGBA, gl.UNSIGNED_BYTE, frameData);
+    }
+    else
+    {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frameData);
+    }
   };
 
   reloadQuadVertices(dWidth, dHeight, uv)
