@@ -327,15 +327,17 @@ class TatorVideoManager {
   _imageReady(image)
   {
     //console.info(`${performance.now()}: GOT ${this._name}: GOT h=${image.height}`);
-    let imageBytes = new Uint8Array(image.data);
-    imageBytes.timescale = image.timescale;
-    imageBytes.frameDelta = image.frameDelta;
-    imageBytes.time = image.timestamp / image.timescale;
-    imageBytes.width = image.width;
-    imageBytes.height = image.height;
-    this._hot_frames.set(image.timestamp, imageBytes);
+    // Make the image a uint8 clamped array
+    image.data.timescale = image.timescale;
+    image.data.frameDelta = image.frameDelta;
+    image.data.time = image.timestamp / image.timescale;
+    image.data.width = image.width;
+    image.data.height = image.height;
+    image.data.format = image.format;
+    image.data.timestamp = image.timestamp;
+    this._hot_frames.set(image.timestamp, image.data);
     //console.info(`${performance.now()}: ${this._name}: _imageReady() time=${image.data.time}: CiI=${this.cursor_in_image(image)} KFO=${this._keyframeOnly} SCRUBBING=${this._scrubbing} MUTE=${this._mute}`);
-    if ((this.cursor_in_image(imageBytes) || this._keyframeOnly == true) && this._mute == false)
+    if ((this.cursor_in_image(image.data) || this._keyframeOnly == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
     }
@@ -401,6 +403,8 @@ class TatorVideoManager {
     }
     for (let key of delete_elements)
     {
+      //console.info(`${this._name}: Deleting ${key}!`);
+      delete this._hot_frames.get(key);
       this._hot_frames.delete(key);
     }
   }

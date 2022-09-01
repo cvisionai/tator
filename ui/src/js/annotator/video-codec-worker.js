@@ -737,18 +737,19 @@ class TatorVideoBuffer {
       const timestamp = frame.timestamp;
       // Make an ImageBitmap from the frame and release the memory
       // Send all decoded frames to draw UI
-      console.info(`${this._name}: FRAME ALLOC=${frame.format}`);
       let image = new SharedArrayBuffer(frame.allocationSize());
       frame.copyTo(image).then(() => {
-        console.info(`${performance.now()}: ${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
+        //console.info(`${performance.now()}: ${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
         const width = frame.displayWidth;
         const height = frame.displayHeight;
+        const format = frame.format;
         frame.close();
         this._frameReturn();
         postMessage({"type": "image",
                     "data": image,
                     "width": width,
                     "height": height,
+                    "format": format,
                     "timestamp": timestamp,
                     "timescale": timeScale,
                     "frameDelta": frameDelta,

@@ -294,6 +294,9 @@ export class DrawGL
 
   setViewport(canvas)
   {
+    // Support format changing prior to openGL call
+    this._formatCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+    this._formatCtx = this._formatCanvas.getContext("2d", {desynchronized:true});
     // Turn off default antialias as we control it ourselves
     var gl = this.viewport.getContext("webgl2", {antialias: false,
                                                  depth: false
@@ -380,6 +383,8 @@ export class DrawGL
   // This takes image width and image height.
   resizeViewport(width, height)
   {
+    this._formatCanvas = new OffscreenCanvas(width, height);
+    this._formatCtx = this._formatCanvas.getContext("2d", {desynchronized:true});
     var gl=this.gl;
     try
     {
@@ -582,9 +587,16 @@ export class DrawGL
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, frameInfo.tex);
-    if ('height' in frameData)
+    if ('format' in frameData && !('returnFrame' in frameData))
     {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, frameData.width, frameData.height,0, gl.RGBA, gl.UNSIGNED_BYTE, frameData);
+      // Convert to RGBA prior to push to GL
+      let newFrame = new VideoFrame(new Uint8Array(frameData), {'format': frameData.format,
+                                                'codedWidth': frameData.width,
+                                                'codedHeight': frameData.height,
+                                                'timestamp': frameData.timestamp});
+      this._formatCtx.drawImage(newFrame,0,0);
+      newFrame.close();
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._formatCanvas.transferToImageBitmap());
     }
     else
     {
