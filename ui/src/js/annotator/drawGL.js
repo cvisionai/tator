@@ -594,9 +594,10 @@ export class DrawGL
                                                 'codedWidth': frameData.width,
                                                 'codedHeight': frameData.height,
                                                 'timestamp': frameData.timestamp});
-      this._formatCtx.drawImage(newFrame,0,0);
+      this._formatCtx.drawImage(newFrame,0,0, this._formatCanvas.width, this._formatCanvas.height);
       newFrame.close();
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._formatCanvas.transferToImageBitmap());
+      let bitmap = this._formatCanvas.transferToImageBitmap();
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
     }
     else
     {
