@@ -91,6 +91,10 @@ const imageFsSource = `#version 300 es
     // Image resolution (useful for filters)
     uniform vec2 u_Resolution;
 
+    uniform int u_csmEnable;
+    uniform mat4 u_csm;
+    uniform vec4 u_csmOffset;
+
     void main() {
          // special mode is -1, so we have plenty of room to spare
          if (texcoord.x >= -0.25)
@@ -137,6 +141,10 @@ const imageFsSource = `#version 300 es
              else
              {
                  pixelOutput = texture(imageTexture, texcoord);
+                 if (u_csmEnable == 1)
+                 {
+                  pixelOutput = (pixelOutput * u_csm)+u_csmOffset;
+                 }
              }
          }
          else
@@ -454,6 +462,56 @@ export class DrawGL
     var imageTexLoc = gl.getUniformLocation(this.imageShaderProg,
                                             "imageTexture");
     gl.uniform1i(imageTexLoc, 0);
+
+    let loc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
+    gl.uniform1i(loc, 0);
+  }
+
+  _decomposeFilterMatrix(filter)
+  {
+    let rgba=[];
+    let offset=[];
+    for (let i = 0; i < filter.length; i++)
+    {
+      if ((i+1) % 5 == 0)
+      {
+        offset.push(filter[i])
+      }
+      else
+      {
+        rgba.push(filter[i]);
+      }
+    }
+    return {'rgba': rgba, 'offset': offset};
+  }
+
+  // Set a color filter matrix for the video/image
+  // Layout:
+  // [
+  //  RedRed,     RedGreen,    RedBblue,   RedAlpha,     RedOffset,
+  //  GreenRed,   GreenGreen,  GreenBlue,  GreenAlpha,   GOffset,
+  //  BlueRed,    BlueGreen,   BlueBlue,   BlueAlpha,    BOffset,
+  //  AlphaRed,   AlphaGreen,  AlphaBlue,  AlphaAlpha,   AOffset,
+  // ]
+  setCFM(filter)
+  {
+    let temp = this._decomposeFilterMatrix(filter);
+    var gl=this.gl;
+    let loc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
+    gl.uniform1i(loc, 1);
+
+    loc = gl.getUniformLocation(this.imageShaderProg, "u_csm");
+    gl.uniformMatrix4fv(loc, false, temp.rgba);
+
+
+    loc = gl.getUniformLocation(this.imageShaderProg, "u_csmOffset");
+    gl.uniform4fv(loc, temp.offset);
+  }
+  disableCFM()
+  {
+    var gl=this.gl;
+    let loc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
+    gl.uniform1i(loc, 0);
   }
 
   // Constructs the vertices into the viewport
