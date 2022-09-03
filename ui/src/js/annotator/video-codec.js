@@ -265,6 +265,35 @@ class TatorVideoManager {
     return false;
   }
 
+  images_near_cursor(max_distance, limit)
+  {
+    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
+    let matches=[];
+    for (let timestamp of timestamps)
+    {
+      let image_timescale = this._hot_frames.get(timestamp).timescale;
+      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
+      let cursor_in_ctx = this._current_cursor * image_timescale;
+      if (Math.abs(cursor_in_ctx - timestamp) <= (max_distance*frame_delta))
+      {
+        matches.push(timestamp);
+      }
+    }
+    return matches;
+  }
+
+  get_image(timestamp)
+  {
+    if (this._hot_frames.has(timestamp))
+    {
+      return this._hot_frames.get(timestamp);
+    }
+    else
+    {
+      return null;
+    }
+  }
+
   // Returns true if the cursor is in the range of the hot frames
   time_is_hot(time)
   {

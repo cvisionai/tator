@@ -976,7 +976,7 @@ export class VideoCanvas extends AnnotationCanvas {
   // Update the canvas (immediate) with the source material, centered on
   // the view screen (resets GPU-bound frame buffer)
   // holds the buffer
-  drawFrame(frameIdx, source, width, height)
+  drawFrame(frameIdx, source, width, height, skipOffscreen)
   {
     // Need to draw the image to the viewable size of the canvas
     // .width is actually the rendering width which may be different
@@ -1009,10 +1009,13 @@ export class VideoCanvas extends AnnotationCanvas {
     this._dirty=false;
 
     this.displayLatest(true);
-    this.updateOffscreenBuffer(frameIdx,
-                               source,
-                               width,
-                               height);
+    if (skipOffscreen != true)
+    {
+      this.updateOffscreenBuffer(frameIdx,
+                                 source,
+                                 width,
+                                 height);
+    }
   }
 
   /**

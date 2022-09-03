@@ -5,6 +5,7 @@ import { DrawGL } from "./drawGL.js";
 import { color } from "./drawGL_colors.js";
 import { Utilities } from "../util/utilities.js";
 import { handle_video_error } from "../annotation/annotation-common.js";
+const getColorFilterMatrix = require('underwater-image-color-correction');
 
 
 var statusAnimator=null;
@@ -1836,6 +1837,27 @@ export class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.QUERY)
     {
+      if (event.ctrlKey && event.code == "Digit9")
+      {
+        this._effectManager.grayscale();
+        return;
+      }
+      if (event.ctrlKey && event.code == "Digit8")
+      {
+        this._effectManager.grayscale({'color': color.BLACK, 'alpha': 128});
+        document.body.style.cursor = "progress";
+        setTimeout(()=>{
+        this.underwaterCorrection();
+        },33);
+        return;
+      }
+      if (event.ctrlKey && event.code == "Digit7")
+      {
+        setTimeout(()=>{
+        this.refresh(true);
+        },0);
+        return;
+      }
       if (event.key == "1")
       {
         if (event.altKey == true) {
@@ -4959,5 +4981,135 @@ export class AnnotationCanvas extends TatorElement
     this._offscreenDraw.dispImage(true, !localizations);
 
     return this._offscreen.convertToBlob();
+  }
+
+  underwaterCorrection()
+  {
+    const begin = performance.now();
+    // TODO this actually lets us due the entire GOP (this is in NV12 off the decoder!)
+    let frameData = this._videoElement[this._seek_idx]._buffer.codec_image_buffer;
+    let newFrame = new VideoFrame(new Uint8Array(frameData), {'format': frameData.format,
+                                                'codedWidth': frameData.width,
+                                                'codedHeight': frameData.height,
+                                                'timestamp': frameData.timestamp});
+    const width = frameData.width;
+    const height = frameData.height;
+    console.info(`Underwater correction using ${width}x${height} canvas`);
+    let temp = new OffscreenCanvas(width, height);
+    let tempCtx = temp.getContext("2d", {desynchronized:true});
+    console.info(`Canvas creation (Remove this step) ${performance.now()-begin} ms`);
+    // Rasterize to RGBA / ImageData
+    tempCtx.drawImage(newFrame,0,0, width, height);
+    newFrame.close();
+
+    let imageData = tempCtx.getImageData(0,0,width,height);
+    // Get the Array Buffer + off to the races
+    let data = imageData.data;
+
+    let histogram_input = this.getGOPTile();
+    let filter = getColorFilterMatrix(histogram_input.data, width, height);
+    console.info(`Underwater correction Matrix in ${performance.now()-begin} ms`);
+    console.info(`Color correction matrix: ${filter}`);
+    for (var i = 0; i < data.length; i += 4) 
+    {
+      data[i] = Math.min(255, Math.max(0, data[i] * filter[0] + data[i + 1] * filter[1] + data[i + 2] * filter[2] + filter[4] * 255)) // Red
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * filter[6] + filter[9] * 255)) // Green
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * filter[12] + filter[14] * 255)) // Blue
+    }
+
+    // update display, this function takes an ImageData too!
+    this.drawFrame(this.currentFrame(), imageData, this._dims[0], this._dims[1], true);
+    this._effectManager.clear();
+    console.info(`Underwater correction finished in ${performance.now()-begin} ms`);
+    document.body.style.cursor = null;
+  }
+
+  underwaterCorrection_notile()
+  {
+    const begin = performance.now();
+    // TODO this actually lets us due the entire GOP (this is in NV12 off the decoder!)
+    let frameData = this._videoElement[this._seek_idx]._buffer.codec_image_buffer;
+    let newFrame = new VideoFrame(new Uint8Array(frameData), {'format': frameData.format,
+                                                'codedWidth': frameData.width,
+                                                'codedHeight': frameData.height,
+                                                'timestamp': frameData.timestamp});
+    const width = frameData.width;
+    const height = frameData.height;
+    console.info(`Underwater correction using ${width}x${height} canvas`);
+    let temp = new OffscreenCanvas(width, height);
+    let tempCtx = temp.getContext("2d", {desynchronized:true});
+    console.info(`Canvas creation (Remove this step) ${performance.now()-begin} ms`);
+    // Rasterize to RGBA / ImageData
+    tempCtx.drawImage(newFrame,0,0, width, height);
+    newFrame.close();
+
+    let imageData = tempCtx.getImageData(0,0,width,height);
+    // Get the Array Buffer + off to the races
+    let data = imageData.data;
+    
+    let filter = getColorFilterMatrix(data, width, height);
+    console.info(`Underwater correction Matrix in ${performance.now()-begin} ms`);
+    console.info(`Color correction matrix: ${filter}`);
+    for (var i = 0; i < data.length; i += 4) 
+    {
+      data[i] = Math.min(255, Math.max(0, data[i] * filter[0] + data[i + 1] * filter[1] + data[i + 2] * filter[2] + filter[4] * 255)) // Red
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * filter[6] + filter[9] * 255)) // Green
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * filter[12] + filter[14] * 255)) // Blue
+    }
+
+    // update display, this function takes an ImageData too!
+    this.drawFrame(this.currentFrame(), imageData, this._dims[0], this._dims[1], true);
+    this._effectManager.clear();
+    console.info(`Underwater correction finished in ${performance.now()-begin} ms`);
+    document.body.style.cursor = null;
+  }
+
+  getGOPTile()
+  {
+    let frameData = this._videoElement[this._seek_idx]._buffer.codec_image_buffer;
+    let newFrame = new VideoFrame(new Uint8Array(frameData), {'format': frameData.format,
+                                                'codedWidth': frameData.width,
+                                                'codedHeight': frameData.height,
+                                                'timestamp': frameData.timestamp});
+    const width = frameData.width;
+    const height = frameData.height;
+    console.info(`Tile GOP using ${width}x${height} canvas`);
+    let temp = new OffscreenCanvas(width, height);
+    let tempCtx = temp.getContext("2d", {desynchronized:true});
+    newFrame.close();
+    // Rasterize to RGBA / ImageData
+
+    let matches = this._videoElement[this._seek_idx]._buffer.images_near_cursor(25, 25);
+    let nearest_square = Math.floor(Math.sqrt(matches.length));
+    console.info(`Found ${matches.length} near by frames. ${nearest_square}`);
+    const tileWidth = Math.round(width/nearest_square);
+    const tileHeight = Math.round(height/nearest_square);
+    let idx = 0;
+    for (let i = 0; i < nearest_square; i++)
+    {
+      for (let j = 0; j < nearest_square; j++)
+      {
+        frameData = this._videoElement[this._seek_idx]._buffer.get_image(matches[idx]);
+        newFrame = new VideoFrame(new Uint8Array(frameData), {'format': frameData.format,
+                                                  'codedWidth': frameData.width,
+                                                  'codedHeight': frameData.height,
+                                                  'timestamp': frameData.timestamp});
+        tempCtx.drawImage(newFrame,i*tileWidth,j*tileHeight, tileWidth, tileHeight);
+        newFrame.close();
+        idx++;
+      }
+    }
+    
+    return tempCtx.getImageData(0,0,width,height);
+  }
+  tileGOP()
+  {
+    const begin = performance.now();
+    // TODO this actually lets us due the entire GOP (this is in NV12 off the decoder!)
+    let imageData = this.getGOPTile();
+    // update display, this function takes an ImageData too!
+    this.drawFrame(this.currentFrame(), imageData, this._dims[0], this._dims[1], true);
+    console.info(`Tile GOP finished in ${performance.now()-begin} ms`);
+    document.body.style.cursor = null;
   }
 }
