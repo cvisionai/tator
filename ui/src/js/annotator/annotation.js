@@ -4983,7 +4983,7 @@ export class AnnotationCanvas extends TatorElement
     return this._offscreen.convertToBlob();
   }
 
-  underwaterCorrection()
+  underwaterCorrection(skip_shader)
   {
     const begin = performance.now();
     // TODO this actually lets us due the entire GOP (this is in NV12 off the decoder!)
@@ -5008,18 +5008,29 @@ export class AnnotationCanvas extends TatorElement
 
     let histogram_input = this.getGOPTile();
     let filter = getColorFilterMatrix(histogram_input.data, width, height);
+
     console.info(`Underwater correction Matrix in ${performance.now()-begin} ms`);
     console.info(`Color correction matrix: ${filter}`);
-    for (var i = 0; i < data.length; i += 4) 
+
+    if (skip_shader == true)
     {
-      data[i] = Math.min(255, Math.max(0, data[i] * filter[0] + data[i + 1] * filter[1] + data[i + 2] * filter[2] + filter[4] * 255)) // Red
-      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * filter[6] + filter[9] * 255)) // Green
-      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * filter[12] + filter[14] * 255)) // Blue
+      for (var i = 0; i < data.length; i += 4)
+      {
+        data[i] = Math.min(255, Math.max(0, data[i] * filter[0] + data[i + 1] * filter[1] + data[i + 2] * filter[2] + filter[4] * 255)) // Red
+        data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * filter[6] + filter[9] * 255)) // Green
+        data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * filter[12] + filter[14] * 255)) // Blue
+      }
+    }
+    else
+    {
+      console.info("Using OpenGL accelerated CFM")
+      this._draw.setCFM(filter);
     }
 
     // update display, this function takes an ImageData too!
     this.drawFrame(this.currentFrame(), imageData, this._dims[0], this._dims[1], true);
     this._effectManager.clear();
+    this._draw.disableCFM();
     console.info(`Underwater correction finished in ${performance.now()-begin} ms`);
     document.body.style.cursor = null;
   }
@@ -5046,15 +5057,23 @@ export class AnnotationCanvas extends TatorElement
     let imageData = tempCtx.getImageData(0,0,width,height);
     // Get the Array Buffer + off to the races
     let data = imageData.data;
-    
+
     let filter = getColorFilterMatrix(data, width, height);
     console.info(`Underwater correction Matrix in ${performance.now()-begin} ms`);
     console.info(`Color correction matrix: ${filter}`);
-    for (var i = 0; i < data.length; i += 4) 
+    if (skip_shader == true)
     {
-      data[i] = Math.min(255, Math.max(0, data[i] * filter[0] + data[i + 1] * filter[1] + data[i + 2] * filter[2] + filter[4] * 255)) // Red
-      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * filter[6] + filter[9] * 255)) // Green
-      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * filter[12] + filter[14] * 255)) // Blue
+      for (var i = 0; i < data.length; i += 4)
+      {
+        data[i] = Math.min(255, Math.max(0, data[i] * filter[0] + data[i + 1] * filter[1] + data[i + 2] * filter[2] + filter[4] * 255)) // Red
+        data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * filter[6] + filter[9] * 255)) // Green
+        data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * filter[12] + filter[14] * 255)) // Blue
+      }
+    }
+    else
+    {
+      console.info("Using OpenGL accelerated CFM")
+      this._draw.setCFM(filter);
     }
 
     // update display, this function takes an ImageData too!
