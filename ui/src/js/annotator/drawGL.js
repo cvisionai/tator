@@ -438,33 +438,36 @@ export class DrawGL
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     // Load the uniform for the view screen size + shift
-    var viewShiftLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewShift");
-    gl.uniform2fv(viewShiftLoc,[this.clientWidth/2,
+    this._viewShiftLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewShift");
+    gl.uniform2fv(this._viewShiftLoc,[this.clientWidth/2,
                                 this.clientHeight/2]);
 
     // The scale is in terms of actual image pixels so that inputs are in image
     // pixels not device pixels.
     var viewScale = [2/((this.clientWidth)),2/((this.clientHeight))];
     // This vector scales an image unit to a viewscale unit
-    var viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewScale");
-    gl.uniform2fv(viewScaleLoc,viewScale);
+    this._viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewScale");
+    gl.uniform2fv(this._viewScaleLoc,viewScale);
 
     var resolution = [this.clientWidth,this.clientHeight];
     // This vector scales an image unit to a viewscale unit
-    var viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_Resolution");
-    gl.uniform2fv(viewScaleLoc,resolution);
+    this._resolutionLoc = gl.getUniformLocation(this.imageShaderProg, "u_Resolution");
+    gl.uniform2fv(this._resolutionLoc,resolution);
 
     this.viewFlip=this.clientHeight;
-    var viewFlipLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewFlip");
-    gl.uniform1f(viewFlipLoc,this.viewFlip);
+    this._viewFlipLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewFlip");
+    gl.uniform1f(this._viewFlipLoc,this.viewFlip);
 
     // Image texture is in slot 0
-    var imageTexLoc = gl.getUniformLocation(this.imageShaderProg,
+    this._imageTexLoc = gl.getUniformLocation(this.imageShaderProg,
                                             "imageTexture");
-    gl.uniform1i(imageTexLoc, 0);
+    gl.uniform1i(this._imageTexLoc, 0);
 
-    let loc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
-    gl.uniform1i(loc, 0);
+    this._csmEnableLoc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
+    gl.uniform1i(this._csmEnableLoc, 0);
+
+    this._csmLoc = gl.getUniformLocation(this.imageShaderProg, "u_csm");
+    this._csmOffsetLoc = gl.getUniformLocation(this.imageShaderProg, "u_csmOffset");
   }
 
   _decomposeFilterMatrix(filter)
@@ -497,21 +500,14 @@ export class DrawGL
   {
     let temp = this._decomposeFilterMatrix(filter);
     var gl=this.gl;
-    let loc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
-    gl.uniform1i(loc, 1);
-
-    loc = gl.getUniformLocation(this.imageShaderProg, "u_csm");
-    gl.uniformMatrix4fv(loc, false, temp.rgba);
-
-
-    loc = gl.getUniformLocation(this.imageShaderProg, "u_csmOffset");
-    gl.uniform4fv(loc, temp.offset);
+    gl.uniform1i(this._csmEnableLoc, 1);
+    gl.uniformMatrix4fv(this._csmLoc, false, temp.rgba);
+    gl.uniform4fv(this._csmOffsetLoc, temp.offset);
   }
   disableCFM()
   {
     var gl=this.gl;
-    let loc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
-    gl.uniform1i(loc, 0);
+    gl.uniform1i(this._csmEnableLoc, 0);
   }
 
   // Constructs the vertices into the viewport
@@ -786,11 +782,9 @@ export class DrawGL
 
     if (this.lastDx != dx || this.lastDy != dy)
     {
-      var viewShiftLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewShift");
-
       var cHeight = this.clientHeight;
       var cWidth = this.clientWidth;
-      gl.uniform2fv(viewShiftLoc,[(cWidth/2)-dx,
+      gl.uniform2fv(this._viewShiftLoc,[(cWidth/2)-dx,
                                   (cHeight/2)-dy]);
       this.lastDx = dx;
       this.lastDy = dy;

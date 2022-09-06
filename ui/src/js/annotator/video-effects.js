@@ -20,7 +20,7 @@ export class EffectManager
     
     this._idx = 1;
     let prog = ()=>{
-      this.clear();
+      this._draw.beginDraw();
       //this._draw.fillPolygon([[0,0], [maxX,0],[maxX,maxY],[0,maxY]], 0, color.BLACK, 75, [1.0,Math.atan(this._idx/10)*0.0025,0,0]);
       const delay = Math.floor(delay_ms / 16);
       if (this._idx > delay)
@@ -68,8 +68,11 @@ export class EffectManager
 
   clear()
   {
-    window.cancelAnimationFrame(this._animator);
-    this._animator = null;
+    if (this._animator != null)
+    {
+      window.cancelAnimationFrame(this._animator);
+      this._animator = null;
+    }
     this._draw.beginDraw();
   }
 

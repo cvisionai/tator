@@ -1320,6 +1320,7 @@ export class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
+          that._effectManager.clear();
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime, null, video.named_idx);
