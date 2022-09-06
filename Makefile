@@ -148,8 +148,7 @@ dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 .PHONY: tator-image
-tator-image:
-	$(MAKE) webpack
+tator-image: webpack
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
