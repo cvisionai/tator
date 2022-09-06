@@ -47,6 +47,11 @@ class LoginRedirect(View):
         else:
             out = "/accounts/login"
 
+            # Carry `next` query parameter over to the login view, if it exists
+            next_url = getattr(request, request.method).get("next")
+            if next_url:
+                out += f"?next={next_url}"
+
         return redirect(out)
 
 class MainRedirect(View):
