@@ -1,5 +1,5 @@
 
-import guiFPS from "./video.js";
+import {guiFPS} from "./video.js";
 
 // Manages the interactions to a download worker for a concat video
 // Companion class to VideoCanvas in video.js
