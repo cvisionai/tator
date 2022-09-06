@@ -5035,6 +5035,27 @@ export class AnnotationCanvas extends TatorElement
     document.body.style.cursor = null;
   }
 
+  loadPerFrameCFM()
+  {
+    let attachments = this._mediaInfo.media_files.attachment;
+    let found_it = false;
+    if (attachments != null)
+    {
+      for (let idx = 0; idx < attachments.length; idx++)
+      {
+        if (attachments[idx].name == "cfm.bin")
+        {
+          found_it = true;
+        }
+      }
+    }
+    if (found_it == false)
+    {
+      window.alert("No per-frame color correction available for this video.");
+      return;
+    }
+
+  }
   underwaterCorrection_notile()
   {
     const begin = performance.now();
