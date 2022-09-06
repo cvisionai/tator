@@ -106,7 +106,7 @@ export class MenuAppletDialog extends ModalDialog {
 
     var appletView = document.createElement("iframe");
     appletView.setAttribute("class", "d-flex col-12");
-    appletView.hidden = true;
+    appletView.style.display = "none";
     appletView.src = applet.html_file;
     this._main.appendChild(appletView);
     this._appletViews[applet.name] = appletView;
@@ -126,9 +126,9 @@ export class MenuAppletDialog extends ModalDialog {
    */
   setApplet(appletName, data) {
     for (const key in this._appletViews) {
-      this._appletViews[key].hidden = true;
+      this._appletViews[key].style.display = "none";
     }
-    this._appletViews[appletName].hidden = false;
+    this._appletViews[appletName].style.display = "flex";
     this._appletName = appletName;
     this._appletData = data;
     this.initApplet();
