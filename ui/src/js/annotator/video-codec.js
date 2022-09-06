@@ -329,17 +329,17 @@ class TatorVideoManager {
   }
 
   _returnFrame(frame)
-    {
+  {
     frame.close();
     this._codec_worker.postMessage({"type": "frameReturn"})
-    }
+  }
 
   _frameReady(msg)
   {
     // If there is a frame handler callback potentially avoid 
     // internal buffering.
     msg.data.returnFrame = () => {this._returnFrame(msg.data);};
-    //console.info(`${performance.now()} ${this._name} Frame @ ${msg.cursor} Ready`);
+    //console.info(`${performance.now()} ${this._name} Frame @ ${msg.data.timestamp}} Ready`);
     if (this.onFrame && this._playing == true)
     {
       this._current_cursor = msg.data.cursor;

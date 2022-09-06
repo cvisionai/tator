@@ -707,7 +707,7 @@ class TatorVideoBuffer {
         return;
       }
       this._current_cursor = (frame.timestamp / timeScale);
-      //console.info(`${performance.now()}: Sending ${this._ready_frames.length}`);
+      //console.info(`${performance.now()}: Sending ${frame.timestamp}`);
       postMessage({"type": "frame",  
                   "data": frame,
                   "cursor": this._current_cursor,

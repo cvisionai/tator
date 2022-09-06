@@ -2845,6 +2845,14 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame, this._play_idx));
       this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame, this._scrub_idx));
 
+      // Reclaim memory from any pending frames
+      let pendingFrame = this._pendingFrames.shift();
+      while (pendingFrame)
+      {
+        pendingFrame.returnFrame();
+        pendingFrame = this._pendingFrames.shift();
+      }
+
       // force a redraw at the currently displayed frame
       var finalPromise = new Promise((resolve, reject) => {
         var seekPromise = this.seekFrame(this._dispFrame, this.drawFrame, true);
