@@ -8,7 +8,7 @@
 //        operations.
 
 
-
+import { CTRL_SIZE } from "./video-buffer-manager";
 
 // TimeRanges isn't user constructable so make our own
 export class TatorTimeRanges {
@@ -286,7 +286,17 @@ class TatorVideoManager {
   {
     if (this._hot_frames.has(timestamp))
     {
-      return this._hot_frames.get(timestamp);
+      let sab = this._hot_frames.get(timestamp);
+      let image = new Uint8Array(sab, CTRL_SIZE);
+      // Todo function this
+      image.timescale = sab.timescale;
+      image.frameDelta = sab.frameDelta;
+      image.time = sab.timestamp / sab.timescale;
+      image.width = sab.width;
+      image.height = sab.height;
+      image.format = sab.format;
+      image.timestamp = sab.timestamp;
+      return image;
     }
     else
     {
@@ -432,6 +442,9 @@ class TatorVideoManager {
     }
     for (let key of delete_elements)
     {
+      let sab = this._hot_frames.get(key);
+      let ctrl = new Uint32Array(sab,0,CTRL_SIZE);
+      Atomics.store(ctrl, 0, 0);
       //console.info(`${this._name}: Deleting ${key}!`);
       delete this._hot_frames.get(key);
       this._hot_frames.delete(key);
@@ -459,7 +472,16 @@ class TatorVideoManager {
         lastTimestamp = timestamp;
       }
     }
-    return this._hot_frames.get(lastTimestamp);
+    let sab = this._hot_frames.get(lastTimestamp);
+    let image = new Uint8Array(sab, CTRL_SIZE);
+    image.timescale = sab.timescale;
+    image.frameDelta = sab.frameDelta;
+    image.time = sab.timestamp / sab.timescale;
+    image.width = sab.width;
+    image.height = sab.height;
+    image.format = sab.format;
+    image.timestamp = sab.timestamp;
+    return image;
   }
 
   ///////////////////////////////////////////////////////////

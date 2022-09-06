@@ -1,5 +1,6 @@
 
 import * as MP4Box from "./mp4box.all.js";
+import { CTRL_SIZE, VideoBufferManager } from "./video-buffer-manager.js";
 import { TatorTimeRanges } from "./video-codec.js";
 
 const MAX_DECODED_FRAMES_PER_DECODER = 8;
@@ -737,7 +738,19 @@ class TatorVideoBuffer {
       const timestamp = frame.timestamp;
       // Make an ImageBitmap from the frame and release the memory
       // Send all decoded frames to draw UI
-      let image = new SharedArrayBuffer(frame.allocationSize());
+      if (this._bufferManager == null)
+      {
+        // Allocate enough static space for 100 frames
+        this._bufferManager = new VideoBufferManager(frame.allocationSize(), 100);
+      }
+      let slot = this._bufferManager.getSlot();
+      if (slot == null)
+      {
+        // No slots, out of luck
+        frame.close();
+        return;
+      }
+      let image = new Uint8Array(slot, CTRL_SIZE);
       frame.copyTo(image).then(() => {
         //console.info(`${performance.now()}: ${this._name}@${this._current_cursor}: Publishing @ ${frame.timestamp/timeScale}-${(frame.timestamp+frameDelta)/timeScale} KFO=${this.keyframeOnly}`);
         const width = frame.displayWidth;
@@ -746,7 +759,7 @@ class TatorVideoBuffer {
         frame.close();
         this._frameReturn();
         postMessage({"type": "image",
-                    "data": image,
+                    "data": slot,
                     "width": width,
                     "height": height,
                     "format": format,
