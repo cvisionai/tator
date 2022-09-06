@@ -118,6 +118,13 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       this._localMode = Number(searchParams.get("localMode"));
     }
+
+    this._networkSeekTimeout = 5000;
+    if (searchParams.has("seekTimeout"))
+    {
+      this._networkSeekTimeout = Number(searchParams.get("seekTimeout"));
+    }
+
     this._lastDirection=Direction.FORWARD;
     this._direction=Direction.STOPPED;
     this._fpsDiag=0;
@@ -1392,7 +1399,7 @@ export class VideoCanvas extends AnnotationCanvas {
             console.warn("Network Seek expired");
             that.refresh(false);
             reject();
-          }, 5000);
+          }, that._networkSeekTimeout);
         }
 
         if (downloadSeekFrame)
