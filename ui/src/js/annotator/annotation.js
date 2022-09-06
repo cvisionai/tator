@@ -1246,7 +1246,13 @@ export class AnnotationCanvas extends TatorElement
         shortcuts += ` (${choice})`;
       }
     }
-    this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this), shortcuts);
+
+    if (categories.includes("track-applet")) {
+      this._contextMenuTrack.addMenuEntry(appletName, this.contextMenuCallback.bind(this));
+    }
+    else {
+      this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this), shortcuts);
+    }
   }
 
   /**
@@ -1306,6 +1312,19 @@ export class AnnotationCanvas extends TatorElement
    */
   contextMenuCallback(menuText)
   {
+
+    // It's possible that right clicking on a localization didn't actually set
+    // the active track.
+    // Handle case when localization is in a track
+    if (this.activeLocalization) {
+      if (this.activeLocalization.id in this._data._trackDb)
+      {
+        const track = this._data._trackDb[this.activeLocalization.id];
+        this._activeTrack = track;
+        this._activeTrackFrame = this.currentFrame();
+      }
+    }
+
     if (this._appletLaunchOptions.includes(menuText)) {
       this.dispatchEvent(new CustomEvent("launchMenuApplet", {
         detail: {
@@ -1314,6 +1333,8 @@ export class AnnotationCanvas extends TatorElement
           media: this._videoObject,
           projectId: this._data._projectId,
           version: this._data.getVersion(),
+          selectedTrack: this._activeTrack,
+          selectedLocalization: this.activeLocalization
         },
         composed: true,
       }));
@@ -1326,23 +1347,14 @@ export class AnnotationCanvas extends TatorElement
           algoName: menuText,
           frame: this.currentFrame(),
           mediaId: this._videoObject.id,
-          projectId: this._data._projectId
+          projectId: this._data._projectId,
+          version: this._data.getVersion(),
+          selectedTrack: this._activeTrack,
+          selectedLocalization: this.activeLocalization
         },
         composed: true,
       }));
       return;
-    }
-
-    // It's possible that right clicking on a localization didn't actually set
-    // the active track.
-    // Handle case when localization is in a track
-    if (this.activeLocalization) {
-      if (this.activeLocalization.id in this._data._trackDb)
-      {
-        const track = this._data._trackDb[this.activeLocalization.id];
-        this._activeTrack = track;
-        this._activeTrackFrame = this.currentFrame();
-      }
     }
 
     // Save the general data that will be passed along to the dialog window

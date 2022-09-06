@@ -128,10 +128,11 @@ export class MenuAppletDialog extends ModalDialog {
     for (const key in this._appletViews) {
       this._appletViews[key].style.display = "none";
     }
-    this._appletViews[appletName].style.display = "flex";
-    this._appletName = appletName;
     this._appletData = data;
+    this._appletName = appletName;
     this.initApplet();
+
+    this._appletViews[appletName].style.display = "flex";
   }
 
   initApplet() {
