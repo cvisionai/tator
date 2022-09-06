@@ -2502,7 +2502,10 @@ export class AnnotationCanvas extends TatorElement
     {
       for (let typed_list of this._framedData.get(currentFrame))
       {
-        localizations.push(...typed_list[1]);
+        if (typed_list[0] != "CFM")
+        {
+          localizations.push(...typed_list[1]);
+        }
       }
     }
 
@@ -4603,6 +4606,12 @@ export class AnnotationCanvas extends TatorElement
       var typeDict = this._framedData.get(frameIdx);
       for (let typeid of typeDict.keys())
       {
+        // Handle CFM if present
+        if (typeid == "CFM")
+        {
+          this._draw.setCFM(this._framedData.get(frameIdx).get('CFM'));
+          continue;
+        }
         var localList = typeDict.get(typeid);
 
         for (var localIdx = 0; localIdx < localList.length; localIdx++)
@@ -5038,23 +5047,40 @@ export class AnnotationCanvas extends TatorElement
   loadPerFrameCFM()
   {
     let attachments = this._mediaInfo.media_files.attachment;
-    let found_it = false;
+    let found_it = -1;
     if (attachments != null)
     {
       for (let idx = 0; idx < attachments.length; idx++)
       {
         if (attachments[idx].name == "cfm.bin")
         {
-          found_it = true;
+          found_it = idx;
         }
       }
     }
-    if (found_it == false)
+    if (found_it == -1)
     {
       window.alert("No per-frame color correction available for this video.");
       return;
     }
 
+    fetch(attachments[found_it].path)
+    .then(response => {return response.arrayBuffer();})
+    .then((buffer)=>{
+      let cfm = new Float64Array(buffer);
+      const cfmLength = 4*5;
+      console.info(`Fetched color filter matrix for ${cfm.length/cfmLength} frames (size=${buffer.byteLength})!`);
+      for (let frameIdx = 0; frameIdx < cfm.length; frameIdx++)
+      {
+        if (this._framedData.has(frameIdx) != true)
+        {
+          this._framedData.set(frameIdx,new Map());
+        }
+        let frameMap = this._framedData.get(frameIdx);
+        frameMap.set('CFM', cfm.slice(frameIdx*cfmLength, (frameIdx+1)*cfmLength));
+      }
+      this.refresh();
+    });
   }
   underwaterCorrection_notile()
   {
