@@ -279,8 +279,11 @@ class TatorVideoBuffer {
         codedHeight: Number(this._trackHeight),
         optimizeForLatency: true});
     }
-    console.info(JSON.stringify(info.tracks[0]));
-    console.info(`${this._name} is configuring decoder = ${JSON.stringify(this._encoderConfig.get(timestampOffset))}`);
+    if (this._sentReady == undefined)
+    {
+      console.info(JSON.stringify(info.tracks[0]));
+      console.info(`${this._name} is configuring decoder = ${JSON.stringify(this._encoderConfig.get(timestampOffset))}`);
+    }
     try
     {
       this._videoDecoder.configure(this._encoderConfig.get(timestampOffset));
