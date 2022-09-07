@@ -2330,7 +2330,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     var needMoreData = false;
 
-    if (!this._onDemandInit)
+    if (!this._onDemandInit && this._onDemandPlaybackReady == false)
     {
       if (!this._onDemandInitSent)
       {
