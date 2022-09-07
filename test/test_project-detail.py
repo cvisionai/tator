@@ -207,7 +207,8 @@ def test_basic(request, page_factory, project): #video
    page.query_selector('text="Show file attributes"').click()
 
    # select image labels & video (some in the card list and some not) @todo add video to this project
-   test_string = page.query_selector_all('.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="Test String"]')
+   attribute_selected_name = "Test String"
+   test_string = page.query_selector_all(f'.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="{attribute_selected_name}"]')
    print(f'Label panel is open: found {len(test_string)} string labels....')
    test_string[0].click()  # for images
    test_string[2].click()  # for video
@@ -262,7 +263,7 @@ def test_basic(request, page_factory, project): #video
    # attributeShown = page.locator('section-files .entity-gallery-card__attribute span[display="block"]').innerHTML()
    attributeShown = page.query_selector_all('.entity-gallery-card__attribute:not(.hidden)')
    attributeShownText = attributeShown[1].text_content()
-   assert attributeShownText == '<not set>'
+   assert attributeShownText == f'{attribute_selected_name}: <not set>'
 
    #
    page.fill('.annotation__panel-group_bulk-edit text-input:not([hidden=""]) input', 'updated')
@@ -280,7 +281,7 @@ def test_basic(request, page_factory, project): #video
 
    attributeShown = page.query_selector_all('.entity-gallery-card__attribute:not(.hidden)')
    attributeShownText = attributeShown[1].text_content()
-   assert attributeShownText == 'updated'
+   assert attributeShownText == f'{attribute_selected_name}: updated'
    print('Complete!')
 
    # # test download file is working
