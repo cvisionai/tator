@@ -1649,6 +1649,7 @@ export class VideoCanvas extends AnnotationCanvas {
       if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
       {
         this._videoElement[this._scrub_idx].playBuffer().clearPending();
+        this._videoElement[this._scrub_idx].playBuffer()._clean_hot(true);
         if (this._fps * this._playbackRate >= 16*15)
         {
           this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
@@ -2853,7 +2854,11 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame, this._scrub_idx));
 
       // Reclaim memory from any pending frames
-      let pendingFrame = this._pendingFrames.shift();
+      let pendingFrame = null;
+      if (this._pendingFrames)
+      {
+        pendingFrame = this._pendingFrames.shift();
+      }
       while (pendingFrame)
       {
         pendingFrame.returnFrame();

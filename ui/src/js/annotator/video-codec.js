@@ -420,9 +420,9 @@ class TatorVideoManager {
 
   // The seek buffer can keep up to 10 frames pre-decoded ready to go in either direction
   // to support extra fast prev/next 
-  _clean_hot()
+  _clean_hot(force)
   {
-    if (this._hot_frames.size < 25)
+    if (this._hot_frames.size < 25 && force != true)
     {
       return;
     }
@@ -435,7 +435,7 @@ class TatorVideoManager {
     for (let hot_frame of timestamps)
     {
       // Only keep a max of 100 frames in memory
-      if (Math.abs(hot_frame - cursor_in_ctx)/this._frameDeltaMap.get(search.key) >= 25)
+      if (Math.abs(hot_frame - cursor_in_ctx)/this._frameDeltaMap.get(search.key) >= 25 || force == true)
       {
         delete_elements.push(hot_frame);
       }

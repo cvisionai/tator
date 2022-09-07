@@ -740,8 +740,8 @@ class TatorVideoBuffer {
       // Send all decoded frames to draw UI
       if (this._bufferManager == null)
       {
-        // Allocate enough static space for 100 frames
-        this._bufferManager = new VideoBufferManager(frame.allocationSize(), 100);
+        // Allocate enough static space for 55 frames
+        this._bufferManager = new VideoBufferManager(frame.allocationSize(), 55);
       }
       let slot = this._bufferManager.getSlot();
       if (slot == null)
