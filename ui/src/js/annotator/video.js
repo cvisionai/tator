@@ -2330,7 +2330,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
     var needMoreData = false;
 
-    if (!this._onDemandInit && this._onDemandPlaybackReady == false)
+    if (!this._onDemandInit)
     {
       if (!this._onDemandInitSent)
       {
@@ -2847,9 +2847,8 @@ export class VideoCanvas extends AnnotationCanvas {
     // If we weren't already paused send the event
     if (currentDirection != Direction.STOPPED)
     {
-      this._pauseCb.forEach(cb => {cb();});
-
       this._direction=Direction.STOPPED;
+      this._pauseCb.forEach(cb => {cb();}); 
       this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame, this._play_idx));
       this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame, this._scrub_idx));
 

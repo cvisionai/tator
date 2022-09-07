@@ -969,7 +969,7 @@ export class AnnotationMulti extends TatorElement {
         let allVideosReady = true;
         for (let vidIdx = 0; vidIdx < this._videos.length; vidIdx++)
         {
-          if (this._videos[vidIdx].bufferDelayRequired() && this._videos[vidIdx].onDemandBufferAvailable() != "yes")
+          if (this._videos[vidIdx].bufferDelayRequired() && this._videos[vidIdx].onDemandBufferAvailable() == false)
           {
             allVideosReady = false;
           }
@@ -1459,7 +1459,7 @@ export class AnnotationMulti extends TatorElement {
     let notReady;
     for (let video of this._videos)
     {
-      notReady |= video.bufferDelayRequired() && video.onDemandBufferAvailable() != "yes";
+      notReady |= video.bufferDelayRequired() && video.onDemandBufferAvailable() == false;
     }
     if (notReady)
     {
@@ -1516,7 +1516,7 @@ export class AnnotationMulti extends TatorElement {
   {
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx].onDemandBufferAvailable() != "yes")
+	    if (this._videos[idx].onDemandBufferAvailable() == false)
 	    {
         this.handleNotReadyEvent(idx);
         return;
@@ -1585,7 +1585,7 @@ export class AnnotationMulti extends TatorElement {
           check_ready(this._videos[videoIndex].currentFrame())}, clock_check);
         return;
       }
-      if (this._videos[videoIndex].bufferDelayRequired() && this._videos[videoIndex].onDemandBufferAvailable() != "yes")
+      if (this._videos[videoIndex].bufferDelayRequired() && this._videos[videoIndex].onDemandBufferAvailable() == false)
       {
         not_ready = true;
         if (timeoutCounter >= timeouts[timeoutIndex]) {
@@ -1631,7 +1631,7 @@ export class AnnotationMulti extends TatorElement {
           const buffer_required = this._videos[vidIdx].bufferDelayRequired();
           const on_demand_available = this._videos[vidIdx].onDemandBufferAvailable();
           console.info(`${vidIdx}: ${buffer_required} and ${on_demand_available}`);
-          if (buffer_required == true && on_demand_available != "yes")
+          if (buffer_required == true && on_demand_available == false)
           {
             allVideosReady = false;
           }
@@ -1704,7 +1704,7 @@ export class AnnotationMulti extends TatorElement {
 
     for (let idx = 0; idx < this._videos.length; idx++)
     {
-	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx].onDemandBufferAvailable() != "yes")
+	    if (this._videos[idx].bufferDelayRequired() && this._videos[idx].onDemandBufferAvailable() == false)
 	    {
 	      console.info(`Video ${idx} not yet ready, ignoring play request.`);
 	      this.handleNotReadyEvent(idx);

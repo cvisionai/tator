@@ -904,7 +904,7 @@ export class AnnotationPlayer extends TatorElement {
           check_ready(this._video.currentFrame())}, 100);
         return;
       }
-      if (this._video.onDemandBufferAvailable() != "yes")
+      if (this._video.onDemandBufferAvailable() == false)
       {
         not_ready = true;
         if (timeoutCounter >= timeouts[timeoutIndex]) {
@@ -971,7 +971,7 @@ export class AnnotationPlayer extends TatorElement {
     }
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
-    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() != "yes")
+    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() == false)
     {
       this.handleNotReadyEvent();
       return;
