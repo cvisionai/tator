@@ -374,6 +374,13 @@ class TatorVideoManager {
     image.data.height = image.height;
     image.data.format = image.format;
     image.data.timestamp = image.timestamp;
+    if (this._hot_frames.has(image.timestamp))
+    {
+      // Clear old one.
+      let sab = this._hot_frames.get(image.timestamp);
+      let ctrl = new Uint32Array(sab,0,CTRL_SIZE);
+      Atomics.store(ctrl, 0, 0);
+    }
     this._hot_frames.set(image.timestamp, image.data);
     //console.info(`${performance.now()}: ${this._name}: _imageReady() time=${image.data.time}: CiI=${this.cursor_in_image(image)} KFO=${this._keyframeOnly} SCRUBBING=${this._scrubbing} MUTE=${this._mute}`);
     if ((this.cursor_in_image(image.data) || this._keyframeOnly == true) && this._mute == false)
@@ -422,6 +429,7 @@ class TatorVideoManager {
   // to support extra fast prev/next 
   _clean_hot(force)
   {
+    //console.info(`${this._name}: _clean_hot(): ${this._hot_frames.size}`);
     if (this._hot_frames.size < 25 && force != true)
     {
       return;
