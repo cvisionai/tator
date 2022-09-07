@@ -293,10 +293,14 @@ class TatorVideoBuffer {
             error: this._frameError.bind(this)});
       this._videoDecoder.configure(this._encoderConfig.get(timestampOffset));
     }
-    console.info(`${this._name} decoder reports ${this._videoDecoder.state}`);
 
-    console.info(JSON.stringify(info));
+    if (this._sentReady == undefined)
+    {
+      this._sentReady = true;
+      console.info(`${this._name} decoder reports ${this._videoDecoder.state}`);
 
+      console.info(JSON.stringify(info));
+    }
     postMessage({"type": "ready",
                  "data": info,
                  "timestampOffset": timestampOffset});
@@ -556,6 +560,7 @@ class TatorVideoBuffer {
           const seek_value = this._pendingSeek;
           this._pendingSeek = null;
           this._setCurrentTime(seek_value, false);
+          break;
         }
       }
     }
@@ -866,7 +871,7 @@ class TatorVideoBuffer {
       if (data.frameStart != undefined && data.fileStart != mp4File.nextParsePosition)
       {
         const timescale=this._timescaleMap.get(timestampOffset);
-        console.info(`Setting dts bias to SF=${data.frameStart} FS=${data.fileStart} (was ${mp4File.nextParsePosition}) BIAS=${mp4File.dtsBias} ${mp4File.dtsBias/timescale}`);
+        //console.info(`Setting dts bias to SF=${data.frameStart} FS=${data.fileStart} (was ${mp4File.nextParsePosition}) BIAS=${mp4File.dtsBias} ${mp4File.dtsBias/timescale}`);
         mp4File.lastBoxStartPosition = data.fileStart;
         mp4File.nextParsePosition = data.fileStart;
         mp4File.dtsBias = Math.round(data.frameStart * timescale);
@@ -1025,7 +1030,7 @@ class TatorVideoBuffer {
       tempFile.lastBoxStartPosition = data.fileStart;
       tempFile.nextParsePosition = data.fileStart;
       tempFile.dtsBias = Math.round(data.frameStart * this._timescaleMap.get(timestampOffset));
-      console.info(`${this._name} TEMP Setting dts bias to FS=${data.fileStart} BIAS=${tempFile.dtsBias} ${tempFile.dtsBias/this._timescaleMap.get(timestampOffset)}`);
+      //console.info(`${this._name} TEMP Setting dts bias to FS=${data.fileStart} BIAS=${tempFile.dtsBias} ${tempFile.dtsBias/this._timescaleMap.get(timestampOffset)}`);
       tempFile.stop();
       tempFile.appendBuffer(data);
       tempFile.seek(0); // Always go to 0 for this

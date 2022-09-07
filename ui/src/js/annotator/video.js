@@ -1489,7 +1489,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
       const oldLoad = this._loadFrame;
       this._loadFrame = this._draw.trimBuffer(Math.round(this._fps*0.5));
-      console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
+      //console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
       if (this._frameCallbackActive == false)
       {
         clearTimeout(this._loaderTimeout);
