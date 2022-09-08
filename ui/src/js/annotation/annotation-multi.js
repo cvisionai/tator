@@ -6,6 +6,8 @@ import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
 import { handle_video_error, handle_decoder_error, frameToTime, PlayInteraction } from "./annotation-common.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 
+let MAGIC_PAD = 5; // if videos are failing at the end jump back this number of frames
+
 export class AnnotationMulti extends TatorElement {
   constructor() {
     super();
@@ -525,7 +527,18 @@ export class AnnotationMulti extends TatorElement {
           video.pushFrame(frameIdx,source,width,height);
           video.updateOffscreenBuffer(frameIdx,source,width,height);
         }
-        promises.push(video.seekFrame(this_frame, cb));
+        if (this_frame < video.length)
+        {
+          promises.push(video.seekFrame(this_frame, cb));
+        }
+        else
+        {
+          if (video.currentFrame() < video.length-MAGIC_PAD)
+          {
+            const seekPromise = video.seekFrame(video.length-MAGIC_PAD, cb);
+            promises.push(seekPromise);
+          }
+        }
       }
       Promise.allSettled(promises).then(() => {
 		    for (let idx = 0; idx < this._videos.length; idx++)
@@ -572,8 +585,19 @@ export class AnnotationMulti extends TatorElement {
         video.pushFrame(frameIdx,source,width,height);
         video.updateOffscreenBuffer(frameIdx,source,width,height);
       }
-      const seekPromise = video.seekFrame(this_frame, cb, true);
-      seekPromiseList.push(seekPromise);
+      if (this_frame < video.length)
+      {
+        const seekPromise = video.seekFrame(this_frame, cb, true);
+        seekPromiseList.push(seekPromise);
+      }
+      else
+      {
+        if (video.currentFrame() < video.length-MAGIC_PAD)
+        {
+          const seekPromise = video.seekFrame(video.length-MAGIC_PAD, cb, true);
+          seekPromiseList.push(seekPromise);
+        }
+      }
     }
 
     Promise.allSettled(seekPromiseList).then(() => {
@@ -821,6 +845,13 @@ export class AnnotationMulti extends TatorElement {
              this._currentFrameText.textContent = frame;
              this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
              this._currentFrameText.style.width = (15 * String(frame).length) + "px";
+             let prime_fps = this._fps[this._longest_idx];
+             // Update global renderer
+             for (let idx = 0; idx < this._videos.length; idx++)
+            {
+              let this_frame = Math.round(frame * (this._fps[idx]/prime_fps));
+              this._multiRenderer.setFrameReq(this._videos[idx]._videoObject.id, this_frame);
+            }
            });
       }
 
@@ -939,7 +970,7 @@ export class AnnotationMulti extends TatorElement {
     this._playbackReadyId = 0;
     this._numVideos = val.media_files['ids'].length;
     this._frameOffsets = [];
-    let renderer = new MultiRenderer();
+    this._multiRenderer = new MultiRenderer();
     for (const vid_id of val.media_files['ids'])
     {
       const wrapper_div = document.createElement("div");
@@ -949,8 +980,8 @@ export class AnnotationMulti extends TatorElement {
       let roi_vid = document.createElement("video-canvas");
       this._videoGridInfo[vid_id] = {row: Math.floor(idx / this._multi_layout[1])+1, col: (idx % this._multi_layout[1])+1, video: roi_vid};
 
-      roi_vid.renderer = renderer;
-      renderer.addVideo(vid_id, roi_vid);
+      roi_vid.renderer = this._multiRenderer;
+      this._multiRenderer.addVideo(vid_id, roi_vid);
       if ('frameOffset' in val.media_files)
       {
         this._frameOffsets.push(val.media_files.frameOffset[idx]);
@@ -1969,8 +2000,19 @@ export class AnnotationMulti extends TatorElement {
         video.pushFrame(frameIdx,source,width,height);
         video.updateOffscreenBuffer(frameIdx,source,width,height);
       }
-      p_list.push(video.seekFrame(Math.min(this_frame,video._numFrames-1), cb, true));
-      idx++;
+      if (this_frame < video.length)
+      {
+        p_list.push(video.seekFrame(Math.min(this_frame,video._numFrames-1), cb, true));
+        idx++;
+      }
+      else
+      {
+        if (video.currentFrame() < video.length-MAGIC_PAD)
+        {
+          const seekPromise = video.seekFrame(video.length-MAGIC_PAD, cb, true);
+          p_list.push(seekPromise);
+        }
+      }
     }
     let coupled_promise = new Promise((resolve,_) => {
       Promise.all(p_list).then(() =>{

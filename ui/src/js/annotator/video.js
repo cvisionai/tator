@@ -2159,6 +2159,11 @@ export class VideoCanvas extends AnnotationCanvas {
     return (this._playbackRate <= RATE_CUTOFF_FOR_ON_DEMAND && this._play_idx != this._scrub_idx);
   }
 
+  get length()
+  {
+    return this._numFrames;
+  }
+
   onDemandDownloadPrefetch(reqFrame)
   {
     if (reqFrame == -1)
@@ -2291,6 +2296,7 @@ export class VideoCanvas extends AnnotationCanvas {
     })
     */;
   }
+
   onDemandDownload(inhibited)
   {
     if (this._disableAutoDownloads) {
