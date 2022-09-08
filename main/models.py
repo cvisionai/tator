@@ -1088,7 +1088,9 @@ class Media(Model, ModelDiffMixin):
             if files is None:
                 files = []
             for obj in files:
-                yield (key, obj)
+                # Make sure `obj` is subscriptable
+                if hasattr(obj, "__getitem__"):
+                    yield (key, obj)
 
     def path_iterator(self, keys: List[str] = None) -> Generator[str, None, None]:
         """
@@ -1104,10 +1106,17 @@ class Media(Model, ModelDiffMixin):
             keys = []
 
         for key, media_def in self.media_def_iterator(keys):
-                yield media_def["path"]
+            # Do not yield invalid media definitions; must have at least the `path` field and, if
+            # streaming, must also have the `segment_info` field
+            if "path" not in media_def:
+                continue
+            if key == "streaming" and "segment_info" not in media_def:
+                continue
 
-                if key == "streaming":
-                    yield media_def["segment_info"]
+            yield media_def["path"]
+
+            if key == "streaming":
+                yield media_def["segment_info"]
 
 
 class FileType(Model):
@@ -1311,7 +1320,7 @@ def media_delete(sender, instance, **kwargs):
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
     # Delete all the files referenced in media_files
-    project_id = instance.project.id
+    project_id = instance.project and instance.project.id
     for path in instance.path_iterator():
         safe_delete(path, project_id)
 
