@@ -197,6 +197,15 @@ export class DownloadManager
                                           detail: {"value" : msg.data.firstFrame}
                                           }));
         }
+        // If the reported number of frames is different we have a problem to rectify
+        if (msg.data.numFrames != this._parent.length)
+        {
+          console.warn(`Video length was ${this._parent.length} but segment map reports ${msg.data.numFrames}.`);
+          this._parent._numFrames = msg.data.numFrames;
+          this._parent.dispatchEvent(new CustomEvent("videoLengthChanged",
+                                           {composed: true,
+                                            detail: {length:this._parent._numFrames}}));
+        }
         this._parent._videoVersion = msg.data["version"];
         console.info(`Video buf${buf_idx} has start bias of ${this._startBias.get(buf_idx)} - buffer: ${this._parent._scrub_idx}`);
         console.info("Setting hi performance mode");
