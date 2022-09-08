@@ -156,6 +156,7 @@ export class VideoDownloader
         }
         var startBias = 0.0;
         var firstFrame = 0.0;
+        var numFrames = 0.0;
         if ('file' in data)
         {
           startBias = data.file.start;
@@ -170,9 +171,14 @@ export class VideoDownloader
             break;
           }
         }
-        if (firstFrame != 0)
+
+        for (let idx = data.segments.length-1; idx > 0; idx--)
         {
-          console.info("");
+          if (data.segments[idx].name == "moof")
+          {
+            numFrames = data.segments[idx].frame_start+data.segments[idx].frame_samples;
+            break;
+          }
         }
 
         that._readyMessages.push(
@@ -180,6 +186,7 @@ export class VideoDownloader
             "type": "ready",
             "startBias": startBias,
             "firstFrame": firstFrame,
+            "numFrames": numFrames,
             "version": version,
             "buf_idx": buf_idx
           });
