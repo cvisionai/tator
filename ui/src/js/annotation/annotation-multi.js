@@ -1550,6 +1550,7 @@ export class AnnotationMulti extends TatorElement {
       console.log("Already handling a not ready event");
       return;
     }
+    this._videos[videoIndex].onDemandDownloadPrefetch(-1);
 
     this._playInteraction.disable();
 
