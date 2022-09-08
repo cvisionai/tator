@@ -66,7 +66,7 @@ import { EffectManager } from "./video-effects.js";
 
 // Constrain the video display FPS to not allow dropped frames during playback
 //
-export var guiFPS=30;
+export var guiFPS = 30;
 
 var Direction = { BACKWARDS:-1, STOPPED: 0, FORWARD: 1};
 var State = {PLAYING: 0, IDLE: 1, LOADING: -1};
@@ -118,6 +118,13 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       this._localMode = Number(searchParams.get("localMode"));
     }
+
+    this._networkSeekTimeout = 5000;
+    if (searchParams.has("seekTimeout"))
+    {
+      this._networkSeekTimeout = Number(searchParams.get("seekTimeout"));
+    }
+
     this._lastDirection=Direction.FORWARD;
     this._direction=Direction.STOPPED;
     this._fpsDiag=0;
@@ -976,7 +983,7 @@ export class VideoCanvas extends AnnotationCanvas {
   // Update the canvas (immediate) with the source material, centered on
   // the view screen (resets GPU-bound frame buffer)
   // holds the buffer
-  drawFrame(frameIdx, source, width, height)
+  drawFrame(frameIdx, source, width, height, skipOffscreen)
   {
     // Need to draw the image to the viewable size of the canvas
     // .width is actually the rendering width which may be different
@@ -1009,10 +1016,13 @@ export class VideoCanvas extends AnnotationCanvas {
     this._dirty=false;
 
     this.displayLatest(true);
-    this.updateOffscreenBuffer(frameIdx,
-                               source,
-                               width,
-                               height);
+    if (skipOffscreen != true)
+    {
+      this.updateOffscreenBuffer(frameIdx,
+                                 source,
+                                 width,
+                                 height);
+    }
   }
 
   /**
@@ -1317,6 +1327,7 @@ export class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
+          that._effectManager.clear();
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime, null, video.named_idx);
@@ -1388,7 +1399,7 @@ export class VideoCanvas extends AnnotationCanvas {
             console.warn("Network Seek expired");
             that.refresh(false);
             reject();
-          }, 5000);
+          }, that._networkSeekTimeout);
         }
 
         if (downloadSeekFrame)
@@ -1478,7 +1489,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
       const oldLoad = this._loadFrame;
       this._loadFrame = this._draw.trimBuffer(Math.round(this._fps*0.5));
-      console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
+      //console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
       if (this._frameCallbackActive == false)
       {
         clearTimeout(this._loaderTimeout);
@@ -1638,6 +1649,7 @@ export class VideoCanvas extends AnnotationCanvas {
       if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer)
       {
         this._videoElement[this._scrub_idx].playBuffer().clearPending();
+        this._videoElement[this._scrub_idx].playBuffer()._clean_hot(true);
         if (this._fps * this._playbackRate >= 16*15)
         {
           this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
@@ -2835,11 +2847,22 @@ export class VideoCanvas extends AnnotationCanvas {
     // If we weren't already paused send the event
     if (currentDirection != Direction.STOPPED)
     {
-      this._pauseCb.forEach(cb => {cb();});
-
       this._direction=Direction.STOPPED;
+      this._pauseCb.forEach(cb => {cb();}); 
       this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame, this._play_idx));
       this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame, this._scrub_idx));
+
+      // Reclaim memory from any pending frames
+      let pendingFrame = null;
+      if (this._pendingFrames)
+      {
+        pendingFrame = this._pendingFrames.shift();
+      }
+      while (pendingFrame)
+      {
+        pendingFrame.returnFrame();
+        pendingFrame = this._pendingFrames.shift();
+      }
 
       // force a redraw at the currently displayed frame
       var finalPromise = new Promise((resolve, reject) => {
