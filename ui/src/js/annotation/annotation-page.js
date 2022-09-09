@@ -31,6 +31,11 @@ export class AnnotationPage extends TatorPage {
     this._next = document.createElement("media-next-button");
     div.appendChild(this._next);
 
+    this._hidePrevPreview = true;
+    this._hideNextPreview = true;
+    this._prevPreviewTimeout = null;
+    this._nextPreviewTimeout = null;
+
     this._breadcrumbs = document.createElement("annotation-breadcrumbs");
     div.appendChild(this._breadcrumbs);
 
@@ -135,7 +140,7 @@ export class AnnotationPage extends TatorPage {
         break;
       case "media-id":
         const searchParams = new URLSearchParams(window.location.search);
-        fetch(`/rest/Media/${newValue}?presigned=28800`, {
+        fetchRetry(`/rest/Media/${newValue}?presigned=28800`, {
           method: "GET",
           credentials: "same-origin",
           headers: {
@@ -178,7 +183,7 @@ export class AnnotationPage extends TatorPage {
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
 
-          fetch("/rest/MediaType/" + data.meta, {
+          fetchRetry("/rest/MediaType/" + data.meta, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -201,14 +206,14 @@ export class AnnotationPage extends TatorPage {
               this._player.mediaType = type_data;
               player.addDomParent({"object": this._headerDiv,
                                    "alignTo":  this._browser});
+              player.addEventListener("discoveredQualities", (evt) => {
+                this._videoSettingsDialog.mode("single", [evt.detail.media]);
+              });
               player.mediaInfo = data;
               this._main.insertBefore(player, this._browser);
               this._setupInitHandlers(player);
               this._getMetadataTypes(player, player._video._canvas);
               this._browser.canvas = player._video;
-              player.addEventListener("discoveredQualities", (evt) => {
-                this._videoSettingsDialog.mode("single", [evt.detail.media]);
-              });
               this._settings._capture.addEventListener(
                 'captureFrame',
                 (e) =>
@@ -311,7 +316,7 @@ export class AnnotationPage extends TatorPage {
               window.alert(`Unknown media type ${type_data.dtype}`)
             }
           });
-          const nextPromise = fetch(`/rest/MediaNext/${newValue}${window.location.search}`, {
+          const nextPromise = fetchRetry(`/rest/MediaNext/${newValue}${window.location.search}`, {
             method: "GET",
             headers: {
               "X-CSRFToken": getCookie("csrftoken"),
@@ -319,7 +324,7 @@ export class AnnotationPage extends TatorPage {
               "Content-Type": "application/json",
             }
           });
-          const prevPromise = fetch(`/rest/MediaPrev/${newValue}${window.location.search}`, {
+          const prevPromise = fetchRetry(`/rest/MediaPrev/${newValue}${window.location.search}`, {
             method: "GET",
             headers: {
               "X-CSRFToken": getCookie("csrftoken"),
@@ -360,7 +365,7 @@ export class AnnotationPage extends TatorPage {
                 window.location.href = url;
               });
               this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
-              this._prev.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
+              this._prev.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
             }
 
             if (nextData.next == -1) {
@@ -382,11 +387,11 @@ export class AnnotationPage extends TatorPage {
                 window.location.href = url;
               });
               this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
-              this._next.addEventListener("mouseleave", this.removeNextPrevPreview.bind(this));
+              this._next.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
             }
           })
           .catch(err => console.log("Failed to fetch adjacent media! " + err));
-          fetch("/rest/Project/" + data.project, {
+          fetchRetry("/rest/Project/" + data.project, {
             method: "GET",
             credentials: "same-origin",
             headers: {
@@ -400,7 +405,7 @@ export class AnnotationPage extends TatorPage {
             this._permission = data.permission;
             if(this._permission === "View Only") this._settings._lock.viewOnly();
             this.enableEditing(true);
-            
+
           });
           const countUrl = `/rest/MediaCount/${data.project}?${searchParams.toString()}`;
           searchParams.set("after_id", data.id);
@@ -439,15 +444,39 @@ export class AnnotationPage extends TatorPage {
 
   showPrevPreview(e) {
     if (this.prevData.prev == -1) return;
-    this._prev.preview.info = this.prevData.prev;
+
+    if (this._prevPreviewTimeout != null) return;
+
+    this._hidePrevPreview = false;
+
+    this._prevPreviewTimeout = setTimeout(() => {
+      this._prevPreviewTimeout = null;
+      if (!this._hidePrevPreview) {
+        this._next.preview.hide();
+        this._prev.preview.info = this.prevData.prev;
+      }
+    }, 500);
   }
 
   showNextPreview(e) {
     if (this.nextData.next == -1) return;
-    this._next.preview.info = this.nextData.next;
+
+    if (this._nextPreviewTimeout != null) return;
+
+    this._hideNextPreview = false;
+
+    this._nextPreviewTimeout = setTimeout(() => {
+      this._nextPreviewTimeout = null;
+      if (!this._hideNextPreview) {
+        this._prev.preview.hide();
+        this._next.preview.info = this.nextData.next;
+      }
+    }, 500);
   }
 
   removeNextPrevPreview(e) {
+    this._hidePrevPreview = true;
+    this._hideNextPreview = true;
     this._next.preview.hide();
     this._prev.preview.hide();
   }
@@ -544,7 +573,7 @@ export class AnnotationPage extends TatorPage {
 
     let maskEdits = (evt) => {
       this.enableEditing(!evt.detail.enabled);
-      console.info("Setting edit mask to " + evt.detail.enabled);
+      //console.info("Setting edit mask to " + evt.detail.enabled);
     };
     // Disable edits via the player + annotation browser
     // only during a network operation
@@ -735,7 +764,7 @@ export class AnnotationPage extends TatorPage {
       mediaId = subelement_id;
     }
     const query = "?media_id=" + mediaId;
-    const favoritePromise = fetch("/rest/Favorites/" + projectId, {
+    const favoritePromise = fetchRetry("/rest/Favorites/" + projectId, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -744,7 +773,7 @@ export class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
-    const versionPromise = fetch("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
+    const versionPromise = fetchRetry("/rest/Versions/" + projectId + "?media_id=" + mediaId, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -753,7 +782,7 @@ export class AnnotationPage extends TatorPage {
         "Content-Type": "application/json"
       }
     });
-    const membershipPromise = fetch(`/rest/Memberships/${projectId}`, {
+    const membershipPromise = fetchRetry(`/rest/Memberships/${projectId}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -764,7 +793,7 @@ export class AnnotationPage extends TatorPage {
     });
     const getMetadataType = endpoint => {
       const url = "/rest/" + endpoint + "/" + projectId + query;
-      return fetch(url, {
+      return fetchRetry(url, {
         method: "GET",
         credentials: "same-origin",
         headers: {
@@ -1183,6 +1212,7 @@ export class AnnotationPage extends TatorPage {
     this._menuAppletDialog.addEventListener("close", () => {
       this.removeAttribute("has-open-modal", "");
       document.body.classList.remove("shortcuts-disabled");
+      document.activeElement.blur()
     });
 
     this._menuAppletDialog.addEventListener("displayLoadingScreen", () => {
@@ -1197,7 +1227,7 @@ export class AnnotationPage extends TatorPage {
     });
 
     const projectId = Number(this.getAttribute("project-id"));
-    fetch("/rest/Applets/" + projectId, {
+    fetchRetry("/rest/Applets/" + projectId, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -1209,17 +1239,34 @@ export class AnnotationPage extends TatorPage {
     .then(response => response.json())
     .then(applets => {
       for (let applet of applets) {
+
+        if (applet.categories == null) {
+          continue;
+        }
+
+        if (applet.categories.includes("image-only") && this._player.mediaType.dtype != "image") {
+          continue;
+        }
+
+        if (applet.categories.includes("video-only") && this._player.mediaType.dtype != "video") {
+          continue;
+        }
+
+        if (applet.categories.includes("multi-only") && this._player.mediaType.dtype != "multi") {
+          continue;
+        }
+
         // Init for annotator menu applets
-        if (applet.categories != null && applet.categories.includes("annotator-menu")) {
+        if (applet.categories.includes("annotator-menu")) {
           // Add the applet to the dialog
           this._menuAppletDialog.saveApplet(applet);
-          canvas.addAppletToMenu(applet.name);
+          canvas.addAppletToMenu(applet.name, applet.categories);
         }
          // Init for annotator tools applets
-        if (applet.categories != null && applet.categories.includes("annotator-tools")) {
+        if (applet.categories.includes("annotator-tools")) {
           // This puts the tools html into a panel next to the sidebar
           const toolAppletPanel = document.createElement("tools-applet-panel");
-          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);        
+          toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
         }
       }
     });
@@ -1568,6 +1615,13 @@ export class AnnotationPage extends TatorPage {
         media: evt.detail.media,
         projectId: evt.detail.projectId
       };
+
+      if (this._player.mediaType.dtype == "multi") {
+        data.multiState = canvas._multiLayoutState;
+        data.primaryMedia = canvas._videos[canvas._primaryVideoIndex]._mediaInfo;
+        data.multiMedia = canvas._mediaInfo;
+      }
+
       this._menuAppletDialog.setApplet(evt.detail.appletName, data);
     });
 
@@ -1744,7 +1798,7 @@ export class AnnotationPage extends TatorPage {
     const uri = `${window.location.pathname}${window.location.search}`;
     const name = "Last visited";
     // Get the last visited, if it exists.
-    fetch(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
+    fetchRetry(`/rest/Bookmarks/${this.getAttribute("project-id")}?name=${name}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -1768,7 +1822,7 @@ export class AnnotationPage extends TatorPage {
         });
       } else {
         const id = data[0].id;
-        fetch(`/rest/Bookmark/${id}`, {
+        fetchRetry(`/rest/Bookmark/${id}`, {
           method: "PATCH",
           credentials: "same-origin",
           headers: {

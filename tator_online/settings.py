@@ -37,11 +37,11 @@ if os.getenv("TATOR_USE_MIN_JS").lower() == "true":
 else:
     USE_MIN_JS = False
 
-ALLOWED_HOSTS = [
-    os.getenv('MAIN_HOST'),
-]
-if os.getenv('ALIAS_HOSTS'):
-    ALLOWED_HOSTS += os.getenv('ALIAS_HOSTS').split(',')
+MAIN_HOST = os.getenv('MAIN_HOST')
+ALLOWED_HOSTS = [MAIN_HOST, 'gunicorn-svc']
+ALIAS_HOSTS = os.getenv('ALIAS_HOSTS')
+if ALIAS_HOSTS:
+    ALLOWED_HOSTS += ALIAS_HOSTS.split(',')
 
 # Application definition
 
@@ -54,11 +54,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'main',
+    'django_saml2_auth',
     'rest_framework',
     'rest_framework.authtoken',
     'django_extensions',
     'django_admin_json_editor',
-    'django_ltree'
+    'django_ltree',
 ]
 
 GRAPH_MODELS = {
@@ -66,6 +67,7 @@ GRAPH_MODELS = {
     'group_models': True,
 }
 
+LOGIN_URL = "/redirect/login/"
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 AUTH_USER_MODEL = 'main.User'
@@ -253,7 +255,8 @@ REST_FRAMEWORK = {
 }
 
 AUTHENTICATION_BACKENDS = ['main.auth.TatorAuth']
-if os.getenv('REQUIRE_HTTPS') == 'TRUE':
+REQUIRE_HTTPS = os.getenv('REQUIRE_HTTPS') == 'TRUE'
+if REQUIRE_HTTPS:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 TATOR_SLACK_TOKEN = os.getenv('TATOR_SLACK_TOKEN')
@@ -315,3 +318,24 @@ if OKTA_ENABLED:
     OKTA_OAUTH2_USERINFO_URI = os.getenv("OKTA_OAUTH2_USERINFO_URI")
     OKTA_OAUTH2_ISSUER = os.getenv("OKTA_OAUTH2_ISSUER")
     OKTA_OAUTH2_AUTH_URI = os.getenv("OKTA_OAUTH2_AUTH_URI")
+
+SAML_ENABLED = os.getenv("SAML_ENABLED")
+SAML_ENABLED = SAML_ENABLED and SAML_ENABLED.lower() == "true"
+
+if SAML_ENABLED:
+    PROTO = "https" if REQUIRE_HTTPS else "http"
+    SAML2_AUTH = {
+        'METADATA_AUTO_CONF_URL': os.getenv("SAML_METADATA_URL"),
+        'DEFAULT_NEXT_URL': LOGIN_REDIRECT_URL,
+        'CREATE_USER': True,
+        'NEW_USER_PROFILE': {
+            'USER_GROUPS': [],
+            'ACTIVE_STATUS': True,
+            'STAFF_STATUS': False,
+            'SUPERUSER_STATUS': False,
+        },
+        'ENTITY_ID': f"{PROTO}://{MAIN_HOST}/saml2_auth/acs/",
+        'TOKEN_REQUIRED': False,
+    }
+
+    SAML_SSO_URL = os.getenv("SAML_SSO_URL")

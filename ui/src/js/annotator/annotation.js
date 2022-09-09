@@ -269,9 +269,10 @@ export class CanvasDrag
   // @param canvas jquery object for canvas element
   // @param cb callback function to handle dragging
   // @param dragLimiter minimum interval to report mouseMove
-  constructor(parent, canvas, scaleFn, cb, dragLimiter)
+  constructor(parent, canvas, scaleFn, cb, finalizer, dragLimiter)
   {
     this._cb = cb;
+    this._finalizer = finalizer;
     this._canvas = canvas;
     this._scaleFn=scaleFn;
     this._active = false;
@@ -387,6 +388,7 @@ export class CanvasDrag
            this._event.end.y == this._event.start.y))
     {
       this._cb(this._event);
+      this._finalizer(this._event);
     }
   }
 }
@@ -958,6 +960,11 @@ export class AnnotationCanvas extends TatorElement
     this._selectedMergeTrack = null;
     this._algoLaunchOptions = [];
     this._appletLaunchOptions = [];
+    this._menuAppletShortcuts = {
+      "ALT+1": null,
+      "ALT+2": null,
+      "ALT+3": null
+    };
 
     // Don't display the fill track gaps option until it has been verified the algorithm has been registered.
     this._contextMenuTrack.displayEntry("Fill track gaps", false);
@@ -982,10 +989,19 @@ export class AnnotationCanvas extends TatorElement
     this._polyMaker = new PolyMaker(this);
 
     this._draw=new DrawGL(this._canvas);
+    this._canvas.addEventListener('webglcontextlost', (evt) => {
+      console.warn("WebGL Context lost");
+      evt.preventDefault();
+      setTimeout(() => {
+        console.info("Restoring webGL context");
+        this.reinitCanvas();}, 1000);
+      return false;
+    });
     this._dragHandler = new CanvasDrag(this,
                                        this._canvas,
                                        this._draw.displayToViewportScale.bind(this._draw),
-                                       this.dragHandler.bind(this));
+                                       this.dragHandler.bind(this),
+                                       this.mouseUpHandler.bind(this));
     this._draw.setPushCallback((frameInfo) => {return this.drawAnnotations(frameInfo);});
 
     // Text-overlay is in a higher z-index so mouse events get masked
@@ -1211,8 +1227,9 @@ export class AnnotationCanvas extends TatorElement
   /**
    * Add the given applet to the right click menu launch option
    * @param {string} appletName - Unique applet name name to add to the right click menu
+   * @param {list} categories - List of categories associated with the applet
    */
-  addAppletToMenu(appletName) {
+  addAppletToMenu(appletName, categories) {
     if (this._appletLaunchOptions.includes(appletName)) {
       Utilities.warningAlert(`Duplicate name registered for menu: ${appletName}`)
     }
@@ -1221,7 +1238,15 @@ export class AnnotationCanvas extends TatorElement
     }
 
     this._appletLaunchOptions.push(appletName);
-    this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this));
+
+    var shortcuts = '';
+    for (const choice of ["ALT+1", "ALT+2", "ALT+3"]) {
+      if (categories.includes(choice)) {
+        this._menuAppletShortcuts[choice] = appletName;
+        shortcuts += ` (${choice})`;
+      }
+    }
+    this._contextMenuNone.addMenuEntry(appletName, this.contextMenuCallback.bind(this), shortcuts);
   }
 
   /**
@@ -1464,6 +1489,7 @@ export class AnnotationCanvas extends TatorElement
     this._shadow.appendChild(this._canvas);
 
     // Re-initalize openGL component
+    delete this._draw;
     this._draw=new DrawGL(this._canvas);
     this._dragHandler = new CanvasDrag(this,
                                        this._canvas,
@@ -1798,6 +1824,70 @@ export class AnnotationCanvas extends TatorElement
 
     if (this._mouseMode == MouseMode.QUERY)
     {
+      if (event.key == "1")
+      {
+        if (event.altKey == true) {
+          if (this._menuAppletShortcuts["ALT+1"] != null) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+              detail: {
+                appletName: this._menuAppletShortcuts["ALT+1"],
+                frame: this.currentFrame(),
+                media: this._videoObject,
+                projectId: this._data._projectId,
+                version: this._data.getVersion(),
+              },
+              composed: true,
+            }));
+            return;
+          }
+        }
+      }
+      if (event.key == "2")
+      {
+        if (event.altKey == true) {
+          if (this._menuAppletShortcuts["ALT+2"] != null) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+              detail: {
+                appletName: this._menuAppletShortcuts["ALT+2"],
+                frame: this.currentFrame(),
+                media: this._videoObject,
+                projectId: this._data._projectId,
+                version: this._data.getVersion(),
+              },
+              composed: true,
+            }));
+            return;
+          }
+        }
+      }
+      if (event.key == "3")
+      {
+        if (event.altKey == true) {
+          if (this._menuAppletShortcuts["ALT+3"] != null) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            this.dispatchEvent(new CustomEvent("launchMenuApplet", {
+              detail: {
+                appletName: this._menuAppletShortcuts["ALT+3"],
+                frame: this.currentFrame(),
+                media: this._videoObject,
+                projectId: this._data._projectId,
+                version: this._data.getVersion(),
+              },
+              composed: true,
+            }));
+            return;
+          }
+        }
+      }
+
       if (event.code == 'Tab')
       {
         event.preventDefault();
@@ -2070,9 +2160,15 @@ export class AnnotationCanvas extends TatorElement
     }
     console.info("Fetched " + data.length + " annotations.");
 
-    if (needRefresh == true)
+    if (needRefresh == true && this._ready == true)
     {
       this.refresh();
+    }
+    else
+    {
+      this.addEventListener("seekReady", ()=>{
+        this.refresh();
+      });
     }
   }
 
@@ -2684,11 +2780,6 @@ export class AnnotationCanvas extends TatorElement
             this._textOverlay.classList.add("select-grabbing");
           }
           this.emphasizeLocalization(localization);
-          if (mouseEvent.buttons == 0)
-          {
-            // Don't draw if we are dragging because then the drag handler is using the pen.
-            this.refresh();
-          }
         }
         else if (localization)
         {
@@ -2754,7 +2845,7 @@ export class AnnotationCanvas extends TatorElement
     {
       cursorTypes.forEach((t) => {this._textOverlay.classList.remove("select-"+t);});
     }
-    if (this._mouseMode == MouseMode.PAN)
+    else if (this._mouseMode == MouseMode.PAN)
     {
       // When drawing a poly, only allow one move at a time.
       if (this._overrideState == MouseMode.NEW_POLY)
@@ -2766,6 +2857,13 @@ export class AnnotationCanvas extends TatorElement
                                 }));
         this.defaultMode();
       }
+    }
+
+    // Mode Change logic
+    if (this._mouseMode == MouseMode.MOVE || this._mouseMode == MouseMode.RESIZE)
+    {
+      // Change back to SELECT after a MOVE or RESIZE
+      this._mouseMode = MouseMode.SELECT;
     }
   }
 
@@ -2991,7 +3089,7 @@ export class AnnotationCanvas extends TatorElement
       }
       else
       {
-        this.gotoFrame(localization.frame).then(() => {
+        this.gotoFrame(localization.frame, true).then(() => {
           this.selectLocalization(localization, skipAnimation, muteOthers);
         });
         return;
@@ -3079,10 +3177,14 @@ export class AnnotationCanvas extends TatorElement
     clearStatus();
     this.clearAnimation();
     this.activeLocalization = null;
-    this.deselectTrack();
-    this.refresh();
-    this._mouseMode = MouseMode.QUERY;
-    this._activeTrack = track;
+
+    if (this._activeTrack && track.id != this._activeTrack.id)
+    {
+      this.deselectTrack();
+      this.refresh();
+      this._mouseMode = MouseMode.QUERY;
+      this._activeTrack = track;
+    }
 
     let trackSelectFunctor = () => {
       // TODO: This lookup isn't very scalable; we shouldn't iterate over
@@ -3201,7 +3303,7 @@ export class AnnotationCanvas extends TatorElement
     else
     {
       // TODO: Why is this check really here to avoid a refresh?
-      if (this._emphasis != localization)
+      if (this._emphasis == null || (this._emphasis == null && (this._emphasis.id != localization.id)))
       {
         this._emphasis = localization;
         this.refresh();
@@ -4415,7 +4517,7 @@ export class AnnotationCanvas extends TatorElement
     // #TODO Consider moving this outside of this function into its own
     //       routine that is called when a frame change occurs.
     if (this.currentFrame() != this._contextMenuFrame)
-    {    
+    {
       // Dont' call this stuff in playing mode.
       if (this._playing != true)
       {
@@ -4587,7 +4689,8 @@ export class AnnotationCanvas extends TatorElement
         this.activeLocalization = null;
         this._mouseMode = MouseMode.QUERY;
       } else {
-        this.selectLocalization(this.activeLocalization);
+        this.emphasizeLocalization(this.activeLocalization);
+        //this.selectLocalization(this.activeLocalization);
       }
     }
     if (this._activeTrack)
@@ -4825,7 +4928,7 @@ export class AnnotationCanvas extends TatorElement
   }
 
   makeOffscreenDownloadable(localizations, filename)
-  {   
+  {
     this.getPNGdata(localizations).then((png_data) =>
         {
           var png_file = URL.createObjectURL(png_data);

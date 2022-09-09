@@ -23,6 +23,10 @@ export class RenameButton extends TatorElement {
     this._span = document.createElement("span");
     this._span.setAttribute("class", "px-2");
     button.appendChild(this._span);
+
+    button.addEventListener("click", () => {
+      this.dispatchEvent(new Event("click"));
+    });
   }
 
   static get observedAttributes() {

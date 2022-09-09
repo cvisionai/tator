@@ -217,20 +217,20 @@ export class AttributesMain extends HTMLElement {
     })
     .then(data => {
       let currentMessage = data.message;
-      let succussIcon = document.createElement("modal-success");
-      let warningIcon = document.createElement("modal-warning");
-      let iconWrap = document.createElement("span");
 
-      if(status == 201) iconWrap.appendChild(succussIcon);
-      if(status == 400) iconWrap.appendChild(warningIcon);
-      
-      this.loading.hideSpinner();
-      this.completed = this.boxHelper._modalComplete(`${iconWrap.innerHTML} ${currentMessage}`);
-    
       this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
         once : true
       });
-    
+
+      if (status == 201) {
+        // iconWrap.appendChild(succussIcon);
+        this.loading.hideSpinner();
+        this.boxHelper._modalSuccess(currentMessage);
+      } else if(status == 400) {
+        iconWrap.appendChild(warningIcon);
+        this.loading.hideSpinner();
+        this.boxHelper._modalError(`${currentMessage}`);
+      }
     }).catch((error) => {
       this.loading.hideSpinner();
       this.boxHelper._modalError(`Error: ${error}`);
@@ -300,9 +300,14 @@ export class AttributesMain extends HTMLElement {
           typeName: this.typeName,
           selectedData
         });
-        return cloneData.createClones().then((r) => {
+        return cloneData.createClones().then((resp) => {
+          if(resp.ok){
+            this.boxHelper._modalSuccess(resp.message);
+          } else {
+            this.boxHelper._modalComplete(resp.message);
+          }
           this.dispatchEvent(this.refreshTypeEvent);
-          this.boxHelper._modalComplete(r);
+          
         });               
       });
 
@@ -538,7 +543,12 @@ export class AttributesMain extends HTMLElement {
       deleteAttribute.deleteFetch().then((data) => {
         this.loading.hideSpinner();
         this.dispatchEvent(this.refreshTypeEvent);
-        return this.boxHelper._modalComplete(data.message);
+        
+        if (data.status == 200) {
+          this.boxHelper._modalSuccess(data.message);
+        } else {
+          this.boxHelper._modalError(data.message);
+        }
       }).catch((err) => {
         console.error(err);
         this.loading.hideSpinner();
@@ -627,11 +637,11 @@ export class AttributesMain extends HTMLElement {
         }
       }
     }).then(() => {
-      if (this.successMessages) {
+      if (this.successMessages !== "") {
         let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
         this.saveModalMessage += heading + this.successMessages;
       }
-      if (this.failedMessages) {
+      if (this.failedMessages !== "") {
         let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
         this.saveModalMessage += heading + this.failedMessages;
       }
@@ -649,11 +659,13 @@ export class AttributesMain extends HTMLElement {
           buttonSave
         });
       } else {
-        let mainText = `${this.saveModalMessage}`;
+        let mainText = `${this.saveModalMessage}`;     
         
-        this.boxHelper._modalComplete(
-          mainText
-        );
+        if (this.failedMessages !== "") {
+          this.boxHelper._modalComplete(mainText);
+        } else {
+          this.boxHelper._modalSuccess(mainText);
+        }
         // Reset forms to the saved data from model
         return this.dispatchEvent(this.refreshTypeEvent);
       }

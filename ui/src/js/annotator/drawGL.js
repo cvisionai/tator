@@ -345,8 +345,7 @@ export class DrawGL
     }
 
     // Initialize the frame buffer in GPU memory
-    // We should only need one GOP pre-catched at a time, give or take.
-    this.bufferDepth = 16;
+    this.bufferDepth = 6; //More in rewind mode is helpful
     this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
 
     // Initialze the backbuffer to use for MSAA
@@ -364,6 +363,18 @@ export class DrawGL
   rateChange(rate, fps)
   {
     // No-Op
+  }
+
+  prepBackward()
+  {
+    this.bufferDepth = 16; //More in rewind mode is helpful
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
+  }
+
+  prepForward()
+  {
+    this.bufferDepth = 6; //More in rewind mode is helpful
+    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
   }
 
   // This takes image width and image height.
@@ -642,7 +653,7 @@ export class DrawGL
   // @param hold If true, will not call done() after display.
   //        defaults to false.
   //
-  dispImage(hold, muteAnnotations)
+  dispImage(hold, muteAnnotations, frameHint)
   {
     if (hold == undefined)
     {
@@ -662,7 +673,11 @@ export class DrawGL
     var gl = this.gl;
 
     // Display the latest image
-    var frameInfo=this.frameBuffer.display()
+    var frameInfo=this.frameBuffer.display(frameHint)
+    if (frameInfo == null)
+    {
+      return null;
+    }
     gl.bindTexture(gl.TEXTURE_2D, frameInfo.tex);
 
     var dWidth=frameInfo.dims[0];
@@ -1083,8 +1098,10 @@ export class DrawGL
     if (points.length == 4)
     {
       if (points[0][0] == points[3][0] && points[0][1] == points[3][1])
-      console.warn("We only support rectangle fill");
-      return;
+      {
+        console.warn("We only support rectangle fill");
+        return;
+      }
     }
 
 

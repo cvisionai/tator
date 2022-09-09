@@ -25,7 +25,9 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.fill('text-input[name="Name"] input', f"{name} updated")
     page.click('input[type="submit"]')
     page.wait_for_selector(f'text="Organization {organization_id} updated successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
+    # #todo (without modal no "assert")
+    # #wait for response, assert it is successful
 
     print("Testing invitation create...")
     url = base_url + "/rest/Invitations/" + str(organization_id)
@@ -44,7 +46,8 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
             page.keyboard.press("Tab")
         page.keyboard.press("Enter")
     page.wait_for_selector(f'text="Successfully created 1 invitation."')
-    page.locator('modal-dialog modal-close .modal__close').click()
+    # page.locator('modal-dialog modal-close .modal__close').click()
+    # OK without modal check - response is required for next step
     response = response_info.value
     respObject = response.json()
     registration_link = str(respObject["message"]).replace('User can register at ', '')
@@ -104,7 +107,8 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     respObject = response.json()
     print(respObject)
     affiliationId = respObject["id"]
-    page.click('modal-dialog modal-close .modal__close')
+    # OK without modal close
+    # page.click('modal-dialog modal-close .modal__close')
     print(f"Affiliation id {affiliationId} created!")
 
     print(f"Testing affiliation update...")
@@ -112,7 +116,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.select_option(f'div[id="itemDivId-Affiliation-{affiliationId}"] enum-input[name="Permission"] select', label="Admin")
     page.click(f'div[id="itemDivId-Affiliation-{affiliationId}"] input[type="submit"]')
     page.wait_for_selector(f'text=updated permissions updated to Admin!')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
 
     print("Testing aws bucket creation...")
     page.click('.heading-for-Bucket')
@@ -135,13 +139,14 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     print(respObject)
     bucketId = respObject["id"]
     print(f"Created bucket id {bucketId}")
-    page.click('modal-dialog modal-close .modal__close')
+    # OK without modal close
+    # page.click('modal-dialog modal-close .modal__close')
 
     print(f'Testing aws bucket editing...')
     page.fill(f'div[id="itemDivId-Bucket-{bucketId}"] text-input[name="Access Key"] input', f"NewKey654321")
     page.click(f'div[id="itemDivId-Bucket-{bucketId}"] input[type="submit"]')
     page.wait_for_selector(f'text="Bucket {bucketId} updated successfully!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.click('modal-dialog modal-close .modal__close')
 
     print("Testing gcs bucket creation (partial)...")
     page.click('.heading-for-Bucket .Nav-action')
@@ -178,7 +183,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     with page.expect_response(url) as response_info:
         page.click('div[id="itemDivId-JobCluster-New"] button[value="Save"]')
         page.wait_for_selector(f'text="Successfully registered job cluster."')
-        page.click('modal-dialog modal-close .modal__close')
+        # page.click('modal-dialog modal-close .modal__close')
     response = response_info.value
     respObject = response.json()
     newClusterId = respObject["id"]
@@ -188,9 +193,9 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     page.fill(f'div[id="itemDivId-JobCluster-{newClusterId}"] text-input[name="Name"] input', 'Test Cluster Updated Name')
     url = base_url + "/rest/JobCluster/" + str(newClusterId)
     page.click(f'div[id="itemDivId-JobCluster-{newClusterId}"] input[type="submit"]')
-    page.wait_for_selector(f'text="Job Cluster {newClusterId} successfully updated!"')
-    page.click('modal-dialog modal-close .modal__close')
+    # page.wait_for_selector(f'text="Job Cluster {newClusterId} successfully updated!"')
+    # page.click('modal-dialog modal-close .modal__close')
+    # #todo (without modal no "assert")
+    # #wait for response, assert it is successful
     print(f"Cluster id {newClusterId} updated!")
     page.close()
-    
-    

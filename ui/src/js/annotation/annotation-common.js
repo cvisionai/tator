@@ -50,6 +50,44 @@ export function handle_video_error(evt, root)
   sessionStorage.setItem(`handle_error__${errorType}_${document.location.pathname}`, 'true');
 }
 
+export function handle_decoder_error(evt, root)
+{
+  let msg_html = "";
+  let errorType = "";
+
+  const edge_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://apps.microsoft.com/store/detail/av1-video-extension/9MVZQVXJBQ9V?hl=en-us&gl=US'>Microsoft Edge</a></span>`;
+  const chrome_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.google.com/chrome/'>Google Chrome</a></span>`;
+  msg_html += "<span class='text-normal' style='line-height:1.7rem'>";
+  msg_html += `Your browser does not support the codec required by this video "${evt.detail.codec}"`;
+  if (evt.detail.codec.indexOf("av01") >= 0)
+  {
+    msg_html += `<br>To resolve this please utilize ${chrome_link} or install the appropriate plug-in for ${edge_link}.`;
+  }
+  msg_html += "</span>";
+  let modalError = document.createElement("modal-notify");
+  root.appendChild(modalError);
+  modalError.init("System Incompatibility Warning", msg_html, 'error', 'Exit', true);
+  modalError.setAttribute("is-open", "");
+  sessionStorage.setItem(`handle_error__${errorType}_${document.location.pathname}`, 'true');
+}
+
+export function frameToTime(frame, fps)
+{
+    const totalSeconds = frame / fps;
+    const seconds = Math.floor(totalSeconds % 60);
+    const secFormatted = ("0" + seconds).slice(-2);
+    const minutes = Math.floor(totalSeconds / 60);
+    if (minutes < 60)
+    {
+      return minutes + ":" + secFormatted;
+    }
+    else
+    {
+      let hours = Math.floor(minutes / 60)
+      const minFormatted = ("0" + Math.floor(minutes % 60)).slice(-2);
+      return hours + ":" + minFormatted + ":" + secFormatted;
+    }
+}
 // Class to handle the repetitive nature of graying out / disabling the play button
 export class PlayInteraction
 {

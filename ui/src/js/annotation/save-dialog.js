@@ -56,7 +56,8 @@ export class SaveDialog extends TatorElement {
     });
 
     this._favorites.addEventListener("load", evt => {
-      this._attributes.setValues({attributes: evt.detail});
+      this._attributes.setValues({ attributes: evt.detail });
+      console.log(evt.detail);
     });
 
     this._favorites.addEventListener("store", evt => {

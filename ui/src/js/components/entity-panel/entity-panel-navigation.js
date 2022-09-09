@@ -68,6 +68,19 @@ export class EntityPanelNavigation extends TatorElement {
       this._goToFrameButton.button.setAttribute("target", "_blank");
       this.controls.appendChild(this._goToFrameButton);
 
+      this._removeEntityButton = document.createElement("delete-button");
+      this._removeEntityButton._button.classList.add("ml-3");
+      this._removeEntityButton._button.classList.add("tooltip-left");
+      this._removeEntityButton._button.setAttribute("tooltip", "Delete Entity");
+      this._removeEntityButton._button.setAttribute("target", "_blank");
+      // Uncomment to finish issue #737
+      // this.controls.appendChild(this._removeEntityButton);
+
+      this._modalNotify = document.createElement("modal-notify");
+      this._shadow.appendChild(this._modalNotify);
+  
+      this._removeEntityButton.addEventListener("click", this._removeCallback.bind(this)); 
+
       this._data = null;
       this._selectedCardEl = null;
    }
@@ -147,6 +160,18 @@ export class EntityPanelNavigation extends TatorElement {
    showSelectedNav(){
 
    }
+
+   _removeCallback() {
+      // Make a popup and confirm deletion.....
+      // console.log("DELETE from panel....");
+      // console.log(this._selectedCardEl.card);
+
+      if (this._selectedCardEl.card) {
+         return this._selectedCardEl.card.dispatchEvent(new Event("delete-entity"));
+      }
+      
+      
+    }
 }
 
 

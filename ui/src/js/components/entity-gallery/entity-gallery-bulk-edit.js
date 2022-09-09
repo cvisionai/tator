@@ -20,11 +20,11 @@ export class GalleryBulkEdit extends TatorElement {
        * What is max that can be selected?
        * 
        */
-      // // Mesage bar top
-      this._messageBar_top = document.createElement("div");
-      this._messageBar_top.setAttribute("class", "px-6 py-2 bulk-edit-bar_top text-center hidden");
-      this._messageBar_top.hidden = true;
-      this._shadow.appendChild(this._messageBar_top);
+      // // // Mesage bar top
+      // this._messageBar_top = document.createElement("div");
+      // this._messageBar_top.setAttribute("class", "px-6 py-2 "); //bulk-edit-bar_top text-center hidden
+      // this._messageBar_top.hidden = true;
+      // this._shadow.appendChild(this._messageBar_top);
 
       // this._h2 = document.createElement("h2");
       // this._h2.setAttribute("class", "py-2 px-2 f1 semi-bold");
@@ -33,10 +33,12 @@ export class GalleryBulkEdit extends TatorElement {
 
 
 
+
       // Message Panel
       this._bulkEditBar = document.createElement("div");
-      this._bulkEditBar.setAttribute("class", "bulk-edit-bar hidden py-4")
+      this._bulkEditBar.setAttribute("class", "bulk-edit-bar px-3 hidden py-4")
       this._shadow.appendChild(this._bulkEditBar);
+
 
 
       /**
@@ -59,11 +61,13 @@ export class GalleryBulkEdit extends TatorElement {
       this._editPanel.hidden = true;
       this._bulkEditBar.appendChild(this._editPanel);
 
+
+
       // Comparison panel
       this._comparisonPanel = document.createElement("entity-gallery-attribute-comparison-panel");
       this._comparisonPanel.addEventListener("select-click", this._showSelectionPanel.bind(this)); // Back
       this._comparisonPanel.addEventListener("save-edit-click", this._showEditPanel.bind(this));
-      // this._comparisonPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
+      this._comparisonPanel.addEventListener("comparison-click", this._showComparisonPanel.bind(this));
       this._comparisonPanel.hidden = true;
       this._bulkEditBar.appendChild(this._comparisonPanel);
 
@@ -145,7 +149,9 @@ export class GalleryBulkEdit extends TatorElement {
       this._elementIndexes = val;
    }
 
-   init(page, gallery, type = "localization", projectId = null) {
+
+
+   init(page, gallery, type = "localization", projectId = null, additionalTools = false) {
       // console.log("BULK EDIT INITIALIZED!");
       this._page = page;
       this._projectId = this._page.getAttribute("project-id");
@@ -155,6 +161,12 @@ export class GalleryBulkEdit extends TatorElement {
          this._editPanel.xClose.classList.remove("hidden");
          this._selectionPanel.xClose.classList.remove("hidden");
          this._editPanel._selectionCountText.textContent = "Media(s)";
+      } else {
+         this._selectionPanel._galleryLink.hidden = false;
+      }
+
+      if (additionalTools) {
+         this._editPanel.tools = additionalTools;
       }
 
       this.boxHelper = new SettingsBox(this._page.modal);
@@ -380,15 +392,15 @@ export class GalleryBulkEdit extends TatorElement {
       this._editMode = true;
 
       for (let el of this._elements) {
-         // console.log(el);
-         el.card.multiEnabled = true;
-         if (el.card._li.classList.contains("is-selected") && !this._currentMultiSelection.has(el.card.cardObj.id)) {
-            this._addSelected({ element: el.card, id: el.card.cardObj.id, isSelected: el.card._li.classList.contains("is-selected") })
+         const cardFromEl = typeof el.cardInfo != "undefined" ? el.cardInfo.card : el.card;
+         cardFromEl.multiEnabled = true;
+         if (cardFromEl._li.classList.contains("is-selected") && !this._currentMultiSelection.has(cardFromEl.cardObj.id)) {
+            this._addSelected({ element: cardFromEl, id: cardFromEl.cardObj.id, isSelected: cardFromEl._li.classList.contains("is-selected") })
          }
       }
 
       // show edit drawer and tools
-      this._messageBar_top.classList.remove("hidden");
+      // this._messageBar_top.classList.remove("hidden");
       this._bulkEditBar.classList.remove("hidden");
 
       if (this._editType != "media") {
@@ -435,7 +447,7 @@ export class GalleryBulkEdit extends TatorElement {
       this._editMode = false;
 
       // hide edit drawer and tools
-      this._messageBar_top.classList.add("hidden");
+      // this._messageBar_top.classList.add("hidden");
       this._bulkEditBar.classList.add("hidden");
 
       // In correction page this panel stays open, in media is it open / shut
@@ -749,6 +761,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _editLocalization(e, formData) {
+      console.log("_editLocalization");
       // button.addEventListener("click", (e) => {
       e.preventDefault();
       this.boxHelper.modal._closeCallback();
@@ -787,6 +800,7 @@ export class GalleryBulkEdit extends TatorElement {
          this._page.hideDimmer();
 
          if (errorText === "" && text !== "") {
+            console.log(this.boxHelper.modal);
             this.boxHelper._modalSuccess(text);
          } else if (errorText !== "" && text === "") {
             this.boxHelper._modalError(errorText, "Error");

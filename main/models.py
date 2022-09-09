@@ -1019,7 +1019,7 @@ class Media(Model, ModelDiffMixin):
     recycled_from = ForeignKey(
         Project, on_delete=SET_NULL, null=True, blank=True, related_name='recycled_from'
     )
-    source_url = CharField(max_length=512, blank=True, null=True)
+    source_url = CharField(max_length=2048, blank=True, null=True)
     """ URL where original media was hosted. """
     summaryLevel = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """

@@ -8,6 +8,16 @@ export class DeleteFileForm extends ModalDialog {
     const icon = document.createElement("modal-warning");
     this._header.insertBefore(icon, this._titleDiv);
 
+    const summary = document.createElement("p");
+    summary.setAttribute("class", "text-gray py-3");
+    this._main.appendChild(summary);
+
+    const textSummary = document.createTextNode("ID(s): ");
+    summary.appendChild(textSummary);
+
+    this._deleteId = document.createElement("span");
+    summary.appendChild(this._deleteId);
+
     const warning = document.createElement("p");
     warning.setAttribute("class", "text-semibold py-3");
     warning.textContent = "Warning: This cannot be undone";
@@ -27,25 +37,56 @@ export class DeleteFileForm extends ModalDialog {
 
     this._accept.addEventListener("click", async evt => {
       const mediaId = this.getAttribute("media-id");
-      fetch("/rest/Media/" + mediaId, {
-        method: "DELETE",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .catch(err => console.log(err));
+      const projecId = this.getAttribute("project-id");
+      const single = !(mediaId.indexOf(",") > -1);
 
-      this.dispatchEvent(new CustomEvent("confirmFileDelete", {
-        detail: {mediaId: mediaId}
-      }));
+      if (single) {
+        this._deleteSingle(projecId, mediaId);
+      } else {
+        this._deleteMultiple(projecId, mediaId);
+      }
     });
   }
 
+  _deleteSingle(projecId, mediaId) {
+    return fetch("/rest/Media/" + mediaId, {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+    }).then(() => { 
+      this.dispatchEvent(new CustomEvent("confirmFileDelete", {
+        detail: {mediaId: mediaId}
+      }));
+    })
+    .catch(err => console.log(err)); 
+    
+  }
+
+  _deleteMultiple(projecId, mediaId) { this._deleteId
+    const url = `/rest/Medias/${projecId}?media_id=${mediaId}`
+    return fetch(url, {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    })
+      .then(() => { 
+        this.dispatchEvent(new CustomEvent("confirmFileDelete", {
+          detail: { mediaId: mediaId }
+        }));
+      })
+      .catch(err => console.log(err));  
+  }
+
   static get observedAttributes() {
-    return ["media-name"].concat(ModalDialog.observedAttributes);
+    return ["media-name","media-id"].concat(ModalDialog.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -53,6 +94,9 @@ export class DeleteFileForm extends ModalDialog {
     switch (name) {
       case "media-name":
         this._title.nodeValue = "Delete \"" + newValue + "\"";
+        break;
+      case "media-id":
+        this._deleteId.textContent = newValue.replace(",", ", ");
         break;
       case "is-open":
         break;

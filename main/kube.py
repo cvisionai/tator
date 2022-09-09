@@ -21,7 +21,7 @@ from urllib.parse import urljoin, urlsplit
 import yaml
 
 from .cache import TatorCache
-from .models import Algorithm, JobCluster
+from .models import Algorithm, JobCluster, MediaType
 from .version import Git
 
 logger = logging.getLogger(__name__)
@@ -41,16 +41,16 @@ def _transcode_name(project, user, media_name, media_id=None):
     """
     slug_name = re.sub('[^0-9a-zA-Z.]+', '-', media_name).lower()
     if media_id:
-        out = f"transcode-project-{project}-user-{user}-media-{media_id}-name-{slug_name}-"
+        out = f"transcode-proj-{project}-usr-{user}-media-{media_id}-name-{slug_name}-"
     else:
-        out = f"transcode-project-{project}-user-{user}-name-{slug_name}-"
+        out = f"transcode-proj-{project}-usr-{user}-name-{slug_name}-"
     return out
 
 def _algo_name(algorithm_id, project, user, name):
     """ Reformats an algorithm name to ensure it conforms to kube's rigid requirements.
     """
     slug_name = re.sub('[^0-9a-zA-Z.]+', '-', name).lower()
-    out = f"algorithm-{algorithm_id}-project-{project}-user-{user}-name-{slug_name}-"
+    out = f"alg-{algorithm_id}-proj-{project}-usr-{user}-name-{slug_name}-"
     return out
 
 def _select_storage_class():
@@ -58,6 +58,25 @@ def _select_storage_class():
     """
     storage_classes = os.getenv('WORKFLOW_STORAGE_CLASSES').split(',')
     return random.choice(storage_classes)
+
+def _get_codec_node_selectors(type_id):
+    """ Returns node selectors for codecs if enabled
+    """
+    selectors = {}
+    if os.getenv('TRANSCODER_CODEC_NODE_SELECTORS') == 'TRUE':
+        codecs = []
+        media_type = MediaType.objects.get(pk=type_id)
+        if isinstance(media_type.streaming_config, list):
+            for config in media_type.streaming_config:
+                codecs.append(config['vcodec'])
+        elif media_type.streaming_config is None:
+            # H264 is the default streaming codec
+            codecs.append('h264')
+        if isinstance(media_type.archive_config, list):
+            for config in media_type.archive_config:
+                codecs.append(config['encode']['vcodec'])
+        selectors = {codec:'yes' for codec in codecs}
+    return selectors
 
 def bytes_to_mi_str(num_bytes):
     num_megabytes = int(math.ceil(float(num_bytes)/1024/1024))
@@ -264,7 +283,6 @@ class TatorTranscode(JobManagerMixin):
                 'labels': {'app': 'transcoder'},
             },
             'inputs': {'parameters' : spell_out_params(['url'])},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -297,7 +315,6 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : spell_out_params(['original'])},
             'outputs': {'parameters' : unpack_params},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -319,7 +336,6 @@ class TatorTranscode(JobManagerMixin):
         self.data_import = {
             'name': 'data-import',
             'inputs': {'parameters' : spell_out_params(['md5', 'file', 'mode'])},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -357,7 +373,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -401,7 +416,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -446,7 +460,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -467,7 +480,7 @@ class TatorTranscode(JobManagerMixin):
                 ],
                 'workingDir': '/scripts',
                 'volumeMounts': [{
-                    'name': 'scratch-prepare',
+                    'name': 'scratch',
                     'mountPath': '/work',
                 }],
                 'resources': {
@@ -480,7 +493,7 @@ class TatorTranscode(JobManagerMixin):
         }
         if use_ram_disk:
             task['volumes'] = [{
-                'name': 'scratch-prepare',
+                'name': 'scratch',
                 'emptyDir': {
                     'medium': 'Memory',
                 },
@@ -501,7 +514,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -566,7 +578,6 @@ class TatorTranscode(JobManagerMixin):
                     'factor': 2
                 },
             },
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'inputs': {'parameters' : spell_out_params(['original', 'transcoded', 'media',
                                                         'category', 'raw_width', 'raw_height',
                                                         'configs', 'id'])},
@@ -625,7 +636,6 @@ class TatorTranscode(JobManagerMixin):
             },
             'inputs': {'parameters' : [{'name': 'original'},
                                        {'name': 'url'}]},
-            'nodeSelector' : {'cpuWorker' : 'yes'},
             'container': {
                 'image': '{{workflow.parameters.client_image}}',
                 'imagePullPolicy': 'IfNotPresent',
@@ -876,6 +886,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'unpack-pipeline',
+                'nodeSelector': {'cpuWorker': 'yes'},
                 'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
@@ -922,7 +933,6 @@ class TatorTranscode(JobManagerMixin):
                         section, md5, gid, uid,
                         user, upload_size,
                         attributes, media_id):
-        MAX_WORKLOADS = 7 # 5 resolutions + audio + archival
         """ Creates an argo workflow for performing a transcode.
         """
         # Define paths for transcode outputs.
@@ -959,7 +969,6 @@ class TatorTranscode(JobManagerMixin):
                        'url': url,
                        'host': host,
                        'rest_url': f'{host}/rest',
-                       'tus_url' : f'{host}/files/',
                        'token' : str(token),
                        'project' : str(project),
                        'type': str(entity_type),
@@ -973,7 +982,6 @@ class TatorTranscode(JobManagerMixin):
                        'size': str(upload_size)}
         global_parameters=[{"name": x, "value": global_args[x]} for x in global_args]
 
-        pipeline_task = self.get_single_file_pipeline(args, url)
         # Define the workflow spec.
         manifest = {
             'apiVersion': 'argoproj.io/v1alpha1',
@@ -994,6 +1002,7 @@ class TatorTranscode(JobManagerMixin):
             },
             'spec': {
                 'entrypoint': 'one-shot-transcode',
+                'nodeSelector': {'cpuWorker': 'yes', **_get_codec_node_selectors(entity_type)},
                 'podGC': {'strategy': os.getenv('POD_GC_STRATEGY')},
                 'volumeClaimGC': {'strategy': 'OnWorkflowCompletion'},
                 'arguments': {'parameters' : global_parameters},
@@ -1012,7 +1021,7 @@ class TatorTranscode(JobManagerMixin):
         if not use_ram_disk:
             manifest['spec']['volumeClaimTemplates'] = [{
                 'metadata': {
-                    'name': f'scratch-{workload}',
+                    'name': f'scratch',
                 },
                 'spec': {
                     'storageClassName': os.getenv('SCRATCH_STORAGE_CLASS'),
@@ -1023,7 +1032,7 @@ class TatorTranscode(JobManagerMixin):
                         }
                     }
                 }
-            } for workload in ['prepare'] + list(range(MAX_WORKLOADS))]
+            }]
 
         # Create the workflow
         response = self.create_workflow(manifest)

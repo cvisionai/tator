@@ -12,12 +12,21 @@ export class MultiSelectionPanel extends TatorElement {
       this._shortCuts = document.createElement("div");
       this._shortCuts.setAttribute("class", "py-2 col-6")
       this._shortCuts.innerHTML = `<span class="text-gray">Shortcuts: Use <kbd>Ctrl+A</kbd> to select all on the page, and <kbd>Esc</kbd> to deselect all.</span>`;
-      this._bulkEditBar.appendChild(this._shortCuts)
+      this._bulkEditBar.appendChild(this._shortCuts);
 
       this._minimizeBar = document.createElement("div");
       this._minimizeBar.setAttribute("class", "text-center d-flex flex-wrap  flex-align-center flex-justify-right col-6"); //flex-justify-between
       // this._minimizeBar.style.height = "25px";
       this._bulkEditBar.appendChild(this._minimizeBar);
+
+      this._galleryLink = document.createElement("a");
+      this._galleryLink.setAttribute("class", "f1 text-purple pb-3");
+      this._galleryLink.setAttribute("href", "#");
+      this._galleryLink.textContent = "View in Localizations Gallery";
+      this._galleryLink.hidden = true;
+      this._shadow.appendChild(this._galleryLink);
+
+      this._galleryLink.addEventListener("click", this._backToLocGallery.bind(this));
 
       // let barLeftTop = document.createElement("div");
       // barLeftTop.setAttribute("class", "pb-2 bulk-edit-bar--left col-3")
@@ -115,6 +124,12 @@ export class MultiSelectionPanel extends TatorElement {
    isHidden() {
       return this.hidden;
    }
+
+   _backToLocGallery(e) {
+      e.preventDefault();
+      const link = String(window.location.href).replace("corrections", "localizations");
+      window.location = link;
+    }
 
 }
 customElements.define("entity-gallery-multi-selection-panel", MultiSelectionPanel);

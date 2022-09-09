@@ -1,4 +1,5 @@
 import { TatorElement } from "../tator-element.js";
+import { SvgDefinition } from "../svg-definitions/all-svg.js";
 
 export class EntityGallerySort extends TatorElement {
   constructor() {

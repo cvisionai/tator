@@ -13,7 +13,8 @@ export class AttributesData {
       this.responseMessage = "";
     }
 
-    _fetchPostPromise({formData = null } = {}){    
+    _fetchPostPromise({formData = null } = {}){
+      console.log(formData);
         if(formData != null){
           return fetch("/rest/AttributeType/"+this.typeId, {
             method: "POST",
@@ -45,9 +46,10 @@ export class AttributesData {
 
         this.attributeForm = new AttributesForm();
         this.attributeForm._getFormWithValues({clone : true, ...cloneValue});
+        let dataFromForm = this.attributeForm._getAttributeFormData();
         let formJSON = {
           "entity_type": this.typeName,
-          "addition": this.attributeForm._getAttributeFormData()
+          "addition": dataFromForm.formData
         };
 
         promise = promise.then(() => {return this._fetchPostPromise({
@@ -68,7 +70,11 @@ export class AttributesData {
           }
         });
       }
-      promise = promise.then(() => {return this.successMessages + this.failedMessages;});
+      promise = promise.then(() => {
+        return { 
+          ok: (this.successMessages != "" && this.failedMessages == ""),
+          message: `${this.successMessages}${this.failedMessages}`}
+        });
       return promise;
     }
   

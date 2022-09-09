@@ -127,8 +127,8 @@ export class AnnotationImage extends TatorElement {
     this._image.toggleTextOverlays(on);
   }
 
-  addAppletToMenu(appletName) {
-    this._image.addAppletToMenu(appletName);
+  addAppletToMenu(appletName, categories) {
+    this._image.addAppletToMenu(appletName, categories);
   }
 
   addAlgoLaunchOption(algoName) {

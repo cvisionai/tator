@@ -32,6 +32,15 @@ export class AnalyticsSettings extends TatorElement {
     this._bulkCorrect.hidden = true;
     div.appendChild(this._bulkCorrect);
 
+    this._localizationsView = document.createElement("localizations-gallery-button");
+    this._localizationsView.hidden = true;
+    div.appendChild(this._localizationsView);
+
+    this._localizationsView.addEventListener("click", () => {
+      let url = String(window.location.href).replace("corrections", "localizations");
+      window.location = url;
+    });
+
     this._bulkCorrect.addEventListener("click", () => {
       const searchParams = new URLSearchParams(window.location.search);
       let url = window.location.origin + window.location.pathname;

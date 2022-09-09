@@ -40,7 +40,6 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     this._name.textContent = "Corrections";
     header.appendChild(this._name);
 
-
     this._numFiles = document.createElement("span");
     this._numFiles.setAttribute("class", "text-gray px-2");
     header.appendChild(this._numFiles);
@@ -103,8 +102,9 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
     this.pageModal = pageModal;
     this.cardData = cardData;
     this.modelData = modelData;
+    
 
-    this.panelControls._headingText.innerHTML = `Select Attributes`;
+    // this.panelControls._headingText.innerHTML = `Select Attributes`;
 
     this._bulkEdit = bulkEdit;
 
@@ -237,13 +237,13 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
 
         // Open panel if a card is clicked
         card.addEventListener("card-click", (e) => {
-          if (!this._bulkEdit._editMode) {
+          console.log("Heard card click....")
+          // if (!this._bulkEdit._editMode) {
             this.openClosedPanel(e);
-          } else {
+          // } else {
             // For regular clicks while edit mode is true
             this._bulkEdit._openEditMode({ detail: { element : card, id: card.cardObj.id, isSelected:  card._li.classList.contains("is-selected") } });
-          }
-          
+          // }
         }); // open if panel is closed
 
         // Notifiy bulk edit about multi-select controls
@@ -304,12 +304,13 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
       cardObj.attributeOrder = cardLabelOptions;
 
       // Initialize Card
-      // console.log(cardObj);
+      console.log(this.modelData._memberships);
       card.init({
         idx: index,
         obj: cardObj,
         panelContainer : this.panelContainer,
-        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId]
+        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
+        memberships: this.modelData._memberships
       });
 
       const selectedArray = this._bulkEdit._currentMultiSelectionToId.get(entityType.id);
@@ -429,8 +430,9 @@ export class AnnotationsCorrectionsGallery extends EntityCardGallery {
 
   openClosedPanel(e){
       // For all regular clicks while edit mode is false
-      if (!this.panelContainer.open) this.panelContainer._toggleOpen();
-    this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
+      // if (!this.panelContainer.open) this.panelContainer._toggleOpen();
+    e.detail.openFlag = true;
+      this.panelControls.openHandler(e.detail, this._cardElements, this._currentCardIndexes);
 
   }
 

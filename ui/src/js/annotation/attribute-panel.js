@@ -70,6 +70,12 @@ export class AttributePanel extends TatorElement {
       this._toggleChevron(evt);
     });
 
+
+    this._builtInAttrLabel.hidden = true;
+    this._builtInAttrsDiv.hidden = true;
+    this._hiddenAttrLabel.hidden = true;
+    this._hiddenAttrsDiv.hidden = true;
+
     // #TODO refactor this to tator-data
     this._userList = [];
     this._versionList = [];
@@ -175,7 +181,6 @@ export class AttributePanel extends TatorElement {
   }
 
   _setBuiltInAttributes(values) {
-
     for (const widget of this._builtInAttrsDiv.children) {
       const name = widget.getAttribute("name");
 
@@ -379,8 +384,7 @@ export class AttributePanel extends TatorElement {
       this.displayGoToLocalization(false);
 
       this._currentFrame = 0;
-    }
-    else {
+    } else {
       const div = document.createElement("div");
       div.setAttribute("class", "annotation__panel-group px-4 py-3 text-gray f2");
       this._shadow.insertBefore(div, this._div);
@@ -430,8 +434,7 @@ export class AttributePanel extends TatorElement {
       widget.setAttribute("name", "height");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
-    }
-    else if (val.dtype == "line") {
+    } else if (val.dtype == "line") {
       this._addCommonBuiltInAttributes();
 
       let widget = document.createElement("text-input");
@@ -453,8 +456,7 @@ export class AttributePanel extends TatorElement {
       widget.setAttribute("name", "v");
       widget.permission = "View Only";
       this._builtInAttrsDiv.appendChild(widget);
-    }
-    else if (val.dtype == "dot") {
+    } else if (val.dtype == "dot") {
       this._addCommonBuiltInAttributes();
 
       let widget = document.createElement("text-input");
@@ -469,7 +471,14 @@ export class AttributePanel extends TatorElement {
     }
 
     // User defined attributes
-    const sorted = val.attribute_types.sort((a, b) => {
+    var attribute_types = [];
+    for (const attr_type of val.attribute_types) {
+      if (attr_type.visible === false) {
+        continue;
+      }
+      attribute_types.push(attr_type);
+    }
+    const sorted = attribute_types.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
 
@@ -480,8 +489,7 @@ export class AttributePanel extends TatorElement {
 
       if (column.order < 0) {
         this._hiddenAttrsDiv.appendChild(widget);
-      }
-      else {
+      } else {
         if (this._attrColumns == 2) {
           if (columnIdx / sorted.length > 0.5) {
             this._innerDiv1.appendChild(widget);
@@ -489,30 +497,27 @@ export class AttributePanel extends TatorElement {
           else {
             this._innerDiv2.appendChild(widget);
           }
-        }
-        else {
+        } else {
           this._div.appendChild(widget);
         }
       }
+    }
 
+    // After adding custom attributes hide or unhide builtInAttr
+    if (this._enableBuiltInAttributes && this._builtInAttrsDiv.children.length > 0) {
+      this._builtInAttrLabel.hidden = false;
+      this._builtInAttrsDiv.hidden = false;
+    } else {
+      this._builtInAttrLabel.hidden = true;
+      this._builtInAttrsDiv.hidden = true;
+    }
 
-      if (this._enableBuiltInAttributes && this._builtInAttrsDiv.children.length > 0) {
-        this._builtInAttrLabel.hidden = false;
-        this._builtInAttrsDiv.hidden = true;
-      }
-      else {
-        this._builtInAttrLabel.hidden = true;
-        this._builtInAttrsDiv.hidden = true;
-      }
-
-      if (this._enableHiddenAttributes && this._hiddenAttrsDiv.children.length > 0) {
-        this._hiddenAttrLabel.hidden = false;
-        this._hiddenAttrsDiv.hidden = true;
-      }
-      else {
-        this._hiddenAttrLabel.hidden = true;
-        this._hiddenAttrsDiv.hidden = true;
-      }
+    if (this._enableHiddenAttributes && this._hiddenAttrsDiv.children.length > 0) {
+      this._hiddenAttrLabel.hidden = false;
+      this._hiddenAttrsDiv.hidden = false;
+    } else {
+      this._hiddenAttrLabel.hidden = true;
+      this._hiddenAttrsDiv.hidden = true;
     }
   }
 

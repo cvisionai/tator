@@ -1,5 +1,6 @@
 from rest_framework.schemas.openapi import SchemaGenerator
 from rest_framework.renderers import BaseRenderer
+from django.conf import settings
 import yaml
 
 from .components import *
@@ -197,6 +198,10 @@ class CustomGenerator(SchemaGenerator):
                 {'TokenAuth': []},
                 {'CookieAuth': []},
             ]
+
+            # Set server entry.
+            url = f"http{'s' if settings.REQUIRE_HTTPS else ''}://{settings.MAIN_HOST}"
+            schema['servers'] = [{'url': url}]
 
         return schema
 

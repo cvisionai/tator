@@ -50,16 +50,18 @@ def _get_element_center(element):
   center_y = box['y'] + box['height'] / 2
   return center_x,center_y
 
-def _wait_for_color(page, canvas, color_idx, timeout=30, name='unknown'):
+def _wait_for_color(page, canvas, looking_for, timeout=30, name='unknown'):
   found = False
+  if type(looking_for) != list:
+    looking_for = [looking_for]
   for _ in range(timeout):
     page.wait_for_timeout(1000)
     canvas_color = _get_canvas_color(canvas)
-    if np.argmax(canvas_color) == color_idx:
+    if np.argmax(canvas_color) in looking_for:
       found = True
       break
   if not found:
-    raise ValueError(f"Did not capture desired color {color_idx} after {timeout} seconds. "
+    raise ValueError(f"Did not capture desired color(s) {looking_for} after {timeout} seconds. "
                      f"Last color: {canvas_color}")
 
 def _wait_for_frame(canvas, frame, timeout=30):
@@ -284,7 +286,8 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   _wait_for_color(page, canvas, 1, timeout=30, name='small scrub (play buffer)')
 
   page.mouse.move(seek_x+1000, seek_y, steps=50)
-  _wait_for_color(page, canvas, 2, timeout=30, name='big scrub (scrub buffer)')
+  # Look for either green(play) or blue(scrub) based on how much got buffered, both are correct
+  _wait_for_color(page, canvas, [1,2], timeout=30, name='big scrub (scrub buffer)')
 
   # Release the scrub
   page.mouse.up()
@@ -329,8 +332,8 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
 
   page.mouse.move(seek_x+1900, seek_y, steps=50)
-  _wait_for_color(page, canvas[0], 2, timeout=30)
-  _wait_for_color(page, canvas[0], 2, timeout=30)
+  _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
+  _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
 
   # Release the scrub
   page.mouse.up()

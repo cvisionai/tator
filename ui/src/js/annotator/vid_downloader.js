@@ -2,10 +2,11 @@ import { fetchRetry } from "../util/fetch-retry.js";
 
 export class VideoDownloader
 {
-  constructor(media_files, blockSize, offsite_config)
+  constructor(media_files, blockSize, offsite_config, frameJump)
   {
     this._media_files = media_files;
     this._blockSizes = [];
+    this._frameJump = frameJump;
     console.info(JSON.stringify(media_files));
     for (let idx = 0; idx < media_files.length; idx++)
     {
@@ -17,6 +18,18 @@ export class VideoDownloader
         console.info("VID_DOWNLOADER: Exteremely low bit rate video, minimum chunk set at 1mb");
         second_buffer = 1*1024*1024;
         second_chunk = (second_buffer*8) / bit_rate;
+      }
+      if (second_buffer > 4*1024*1024)
+      {
+        console.info("VID_DOWNLOADER: Exteremely high bit rate video, maximum chunk set at 4mb");
+        second_buffer = 4*1024*1024;
+        second_chunk = (second_buffer*8) / bit_rate;
+      }
+      if (this._frameJump > 0)
+      {
+        console.info("VID_DOWNLOADER: Summary buffer enabled");
+        second_chunk = 2;
+        second_buffer = bit_rate * second_chunk / 8;
       }
       this._blockSizes.push(second_buffer);
       console.info(`VID_DOWNLOADER: ${idx}: ${media_files[idx].resolution} ${second_chunk} seconds of data = ${second_buffer} bytes or ${second_buffer/1024/1024} megabytes`);
@@ -34,7 +47,7 @@ export class VideoDownloader
     this._fileInfoSent = [];
     this._readyMessages = [];
     this._readyMessagesSent = false;
-    this._info = [];
+    this._info = {};
     this._fileInfoRequested = false;
     this._infoObjectsInitialized = 0;
     for (var idx = 0; idx < this._num_res; idx++)
@@ -106,7 +119,7 @@ export class VideoDownloader
     {
       let info_url = this._media_files[buf_idx].segment_info;
       const info = new Request(info_url, {headers:this._headers});
-      init_promises.push(fetch(info));
+      init_promises.push(fetchRetry(info));
     }
     Promise.all(init_promises).then((responses) => {
       for (let buf_idx = 0; buf_idx < responses.length; buf_idx++)
@@ -305,7 +318,7 @@ export class VideoDownloader
     }
     if (version < 2 || version == undefined)
     {
-      console.warn("Old version of segment file doesn't support seek operation");
+      console.warn(`Old version of segment file ${buf_idx} doesn't support seek operation`);
       return {matchIdx, boundary};
     }
 
@@ -529,12 +542,12 @@ export class VideoDownloader
     var downloadSize = currentSize - 1;
     var onDemandId = this._onDemandConfig["id"];
 
-    console.log(`onDemand downloading '${downloadSize}' at '${startByte}' (next segment idx - ${packetIndex}) ID: ${onDemandId}`);
+    //console.log(`onDemand downloading '${downloadSize}' at '${startByte}' (next segment idx - ${packetIndex}) ID: ${onDemandId}`);
 
     let headers = {'range':`bytes=${startByte}-${startByte+downloadSize}`,
                    ...self._headers};
 
-    fetch(this._media_files[mediaFileIndex].path,
+    fetchRetry(this._media_files[mediaFileIndex].path,
           {headers: headers}
          ).then(
           (response) =>
@@ -574,7 +587,7 @@ export class VideoDownloader
 
     }
     // Save download for when the file is initialized in case the cart leads the horse
-    if (version == undefined)
+    if (!(buf_idx in this._info))
     {
       console.info("Keeping pending download in line for post-init");
       this._pendingDownload = {'buf_idx': buf_idx, 'frame': frame, 'time': time};
@@ -582,7 +595,7 @@ export class VideoDownloader
     }
     if (version < 2)
     {
-      console.warn("Old version of segment file doesn't support seek operation");
+      console.warn(`Old version of segment file ${buf_idx} doesn't support seek operation`);
       return;
     }
     var matchIdx = -1;
@@ -673,6 +686,7 @@ export class VideoDownloader
   {
     var currentSize=0;
     var idx = this._currentPacket[buf_idx];
+    var orig_idx = idx;
 
     // Temp code one can use to force network seeking
     //if (idx > 0)
@@ -689,7 +703,7 @@ export class VideoDownloader
 
     if (idx >= this._numPackets[buf_idx])
     {
-      //console.log("Done downloading... buf_idx: " + buf_idx);
+      console.log("Done downloading... buf_idx: " + buf_idx);
       postMessage({"type": "finished"});
       return;
     }
@@ -718,14 +732,22 @@ export class VideoDownloader
       idx++;
     }
 
-    var percent_complete=idx/this._numPackets[buf_idx];
+    
     //console.log(`Downloading '${currentSize}' at '${startByte}' (packet ${this._currentPacket[buf_idx]}:${idx} of ${this._numPackets[buf_idx]} ${parseInt(percent_complete*100)}) (buffer: ${buf_idx})`);
-    this._currentPacket[buf_idx] = idx; // @todo parameterize summary skip
+    // Skip loading of frames based on the summary level
+    if (idx > 2 && this._frameJump > 0)
+    {
+      idx = orig_idx + Math.floor(this._frameJump / 25)*2;
+      console.info(`Jumping to ${idx} from ${orig_idx} via ${this._frameJump} of ${this._numPackets[buf_idx]}`);
+      console.info(`Next packet: ${JSON.stringify(this._info[buf_idx]["segments"][idx])}`);
+    }
+    var percent_complete=idx/this._numPackets[buf_idx];
+    this._currentPacket[buf_idx] = idx;
 
     let headers = {'range':`bytes=${startByte}-${startByte+currentSize-1}`,
                    ...self._headers};
     var that = this;
-    fetch(this._media_files[buf_idx].path,
+    fetchRetry(this._media_files[buf_idx].path,
           {headers: headers}
          ).then(
            (response) =>
@@ -791,7 +813,8 @@ onmessage = function(e)
     {
       ref = new VideoDownloader(msg.media_files,
                                 2*1024*1024,
-                                msg.offsite_config);
+                                msg.offsite_config,
+                                msg.frameJump);
     }
   }
   else if (type == 'download')
@@ -820,7 +843,7 @@ onmessage = function(e)
   }
   else if (type == 'onDemandDownload')
   {
-    console.info(`${JSON.stringify(msg)} ${ref.inOnDemandMode()}`);
+    //console.info(`${JSON.stringify(msg)} ${ref.inOnDemandMode()}`);
     if (ref.inOnDemandMode())
     {
       ref.downloadNextOnDemandBlock();

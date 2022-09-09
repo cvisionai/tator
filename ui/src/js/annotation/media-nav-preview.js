@@ -13,6 +13,7 @@ export class MediaNavPreview extends TatorElement {
 
       this._img = document.createElement('img');
       this._img.setAttribute("style", "max-width: 100%;");
+      this._img.setAttribute("crossorigin", "anonymous");
       this._previewBox.appendChild(this._img);
 
       const idDiv = document.createElement('div');

@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings postgis-image client-image
+IMAGES=python-bindings graphql-image postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -120,18 +120,17 @@ status:
 check-migration:
 	scripts/check-migration.sh $(pwd)
 
-cluster: main/version.py
+cluster: main/version.py clean_schema
 	$(MAKE) images cluster-deps cluster-install
 
 cluster-deps:
 	helm dependency update helm/tator
 
 cluster-install:
-#	kubectl apply -f k8s/network_fix.yaml
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: check-migration main/version.py images
+cluster-upgrade: check-migration main/version.py clean_schema images
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-update: 
@@ -154,18 +153,46 @@ tator-image:
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
+.PHONY: graphql-image
+graphql-image:
+	if [ ! -f doc/_build/schema.yaml ]; then
+		make schema
+	fi
+	docker build --network host -t $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION) -f containers/tator_graphql/Dockerfile . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION)
+
 .PHONY: postgis-image
 postgis-image:
 	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
 
+EXPERIMENTAL_DOCKER=$(shell docker version --format '{{json .Client.Experimental}}')
+ifeq ($(EXPERIMENTAL_DOCKER), true)
+# exists if experimental docker is not found
+.PHONY: experimental_docker
+experimental_docker:
+	@echo "NOTICE:\tDetected experimental docker"
+else
+.PHONY: experimental_docker
+experimental_docker:
+	@echo  "ERROR:\tImage build requires '--platform' argument which requires docker client experimental features"
+	@echo "\tUpgrade to docker client version >= 20.10.17 or turn on the experimental flag manually in config.json"
+	@echo "\tFor more info, see 'man docker-config-json'"
+	exit 255
+endif
+
+
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image:
-	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
-	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
-	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
+client-image: experimental_docker
+	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
+	docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
+	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION)
+	docker manifest push $(SYSTEM_IMAGE_REGISTRY)/tator_client:latest
 
 .PHONY: client-latest
 client-latest: client-image
@@ -299,8 +326,8 @@ js-bindings:
 	npx webpack --config webpack.dev.js
 	mv tator.min.js dist/.
 	cd ../../../..
-	cp scripts/packages/tator-js/pkg/dist/tator.min.js main/static/js/.
-	cp scripts/packages/tator-js/pkg/dist/tator.js main/static/js/.
+	cp scripts/packages/tator-js/pkg/dist/tator.min.js ui/dist/.
+	cp scripts/packages/tator-js/pkg/dist/tator.js ui/dist/.
 
 .PHONY: r-docs
 r-docs:
@@ -372,6 +399,10 @@ schema:
 .PHONY: check_schema
 check_schema:
 	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
+
+.PHONY: clean_schema
+clean_schema:
+	rm -f doc/_build/schema.yaml
 
 ifdef PROJECT_ID
 ANNOUNCE_CMD=python3 manage.py announce --file /tmp/announce.md --project $(PROJECT_ID)

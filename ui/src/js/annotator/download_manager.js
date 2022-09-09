@@ -12,7 +12,7 @@ export class DownloadManager
     this._worker = new Worker(new URL("./vid_downloader.js", import.meta.url),
     {'name': 'Video Download Worker'});
     this._worker.onmessage = this._onMessage.bind(this);
-    this._startBias = 0.0;
+    this._startBias = new Map();
   }
 
   // Forward a message to the underlying worker
@@ -27,9 +27,9 @@ export class DownloadManager
     this._worker.terminate();
   }
 
-  biasForTime(time)
+  biasForTime(time, idx)
   {
-    return this._startBias;
+    return this._startBias.get(idx)
   }
 
   _onMessage(msg)
@@ -50,7 +50,6 @@ export class DownloadManager
       console.info(`Converting ${msg.data["frameStart"]} to ${msg.data["frameStart"]/this._parent._fps}`);
       msg.data["buffer"].frameStart = (msg.data["frameStart"]/this._parent._fps);
       this._parent._videoElement[this._parent._seek_idx].appendSeekBuffer(msg.data["buffer"], msg.data['time']);
-      document.body.style.cursor = null;
       let seek_time = performance.now() - this._parent._seekStart;
       let seek_msg = `Seek time = ${seek_time} ms`;
       console.info(seek_msg);
@@ -186,9 +185,10 @@ export class DownloadManager
     }
     else if (type == "ready")
     {
+      this._startBias.set(msg.data["buf_idx"], msg.data["startBias"]);
       if (msg.data["buf_idx"] == this._parent._scrub_idx)
       {
-        this._startBias = msg.data["startBias"];
+        const buf_idx = msg.data["buf_idx"];
         this._parent._firstFrame = msg.data.firstFrame;
         if (msg.data.firstFrame != 0)
         {
@@ -198,7 +198,7 @@ export class DownloadManager
                                           }));
         }
         this._parent._videoVersion = msg.data["version"];
-        console.info(`Video has start bias of ${this._startBias} - buffer: ${this._parent._scrub_idx}`);
+        console.info(`Video buf${buf_idx} has start bias of ${this._startBias.get(buf_idx)} - buffer: ${this._parent._scrub_idx}`);
         console.info("Setting hi performance mode");
         guiFPS = 60;
       }
@@ -321,7 +321,7 @@ export class DownloadManager
             {
               end += offsets[b_idx][1];
             }
-            var bufferToSend = data.slice(begin, end);
+            var bufferToSend = data;//.slice(begin, end);
             bufferToSend.fileStart = data.fileStart + begin;
             if (sentOffset == false)
             {
@@ -369,7 +369,7 @@ export class DownloadManager
         {
           // Done processing the downloaded segment.
           // Watchdog will kick off the next segment to download.
-          console.log(`Requesting more onDemand data: done.`);
+          // console.log(`Requesting more onDemand data: done.`);
           this._parent._onDemandPendingDownloads -= 1;
           this._parent._onDemandCompletedDownloads += 1;
           return;

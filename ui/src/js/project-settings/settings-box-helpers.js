@@ -115,7 +115,6 @@ export class SettingsBox {
   // MODAL
   // @TODO attributes main still using these, but form has its own
   _modalSuccess(message){
-    
     this._modalClear();
     let text = document.createTextNode(" Success");
     this.modal._titleDiv.innerHTML = "";
@@ -124,14 +123,17 @@ export class SettingsBox {
     this.modal._main.innerHTML = message;
     //this.modal._main.classList.add("fixed-height-scroll");
 
-    let buttonContinue = document.createElement("button");
-    buttonContinue.setAttribute("class", "btn background-green f1 text-semibold");
-    let confirmTextContinue = document.createTextNode("OK")
-    buttonContinue.appendChild(confirmTextContinue);
-    this.modal._footer.appendChild(buttonContinue);
-    buttonContinue.addEventListener("click", this.modal._closeCallback);
+    // let buttonContinue = document.createElement("button");
+    // buttonContinue.setAttribute("class", "btn background-green f1 text-semibold");
+    
+    // let confirmTextContinue = document.createTextNode("OK")
+    // buttonContinue.appendChild(confirmTextContinue);
+    
+    // this.modal._footer.appendChild(buttonContinue);
+    // buttonContinue.addEventListener("click", this.modal._closeCallback);
 
-    return this.modal.setAttribute("is-open", "true")
+    this.modal.setAttribute("is-open", "true");
+    this.modal.fadeOut();
   }
 
   _modalSuccessConfirm({
@@ -238,7 +240,8 @@ export class SettingsBox {
     this.modal._footer.appendChild(buttonContinue);
     buttonContinue.addEventListener("click", this.modal._closeCallback);
 
-    return this.modal.setAttribute("is-open", "true");
+    this.modal.setAttribute("is-open", "true");
+    // this.modal.fadeOut();
   }
 
   _modalClear(){

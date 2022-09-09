@@ -2,10 +2,11 @@ version: 2.1
 orbs:
   node: circleci/node@4.5.1
   slack: circleci/slack@4.4.2
+  aws-cli: circleci/aws-cli@1.4.1
 jobs:
   build-docker-images:
     machine:
-      image: ubuntu-2004:202010-01
+      image: ubuntu-2004:2022.04.2
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
@@ -26,8 +27,8 @@ jobs:
         name: Log into Docker Hub
         command: echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
     - run:
-        name: Install python
-        command: sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential
+        name: Install packages from apt for build deps (Python3, etc.)
+        command: sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential qemu-user-static binfmt-support
     - run:
         name: Install pip packages
         command: pip3 install setuptools wheel sphinx-markdown-builder progressbar2 pyyaml
@@ -59,11 +60,47 @@ jobs:
         path: doc/_build/tator-py.tar
         destination: docs/tator-py.tar
     - run:
+        name: Make graphql image
+        command: make graphql-image
+    - run:
         name: Make postgis image
         command: make postgis-image
     - run:
         name: Make client image
         command: make client-image
+    - run:
+        name: Push client image to OCI
+        command: |
+          echo "$OCIR_PASSWORD" | docker login "$OCIR_HOST" --username "$OCIR_USERNAME" --password-stdin
+          docker tag cvisionai/tator_client_amd64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
+          docker tag cvisionai/tator_client_aarch64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker push $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
+          docker push $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker manifest create --insecure $OCI_REGISTRY/tator_client:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker manifest create --insecure $OCI_REGISTRY/tator_client:latest --amend $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
+          docker manifest push $OCI_REGISTRY/tator_client:$CIRCLE_SHA1
+          docker manifest push $OCI_REGISTRY/tator_client:latest
+    - run:
+        name: Push backend images to AWS
+        command: |
+          echo $(aws ecr get-login-password) | docker login "$AWS_REGISTRY" --username AWS --password-stdin
+          docker tag cvisionai/tator_online:$CIRCLE_SHA1 $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
+          docker push $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
+          docker tag cvisionai/tator_graphql:$CIRCLE_SHA1 $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
+          docker push $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
+  update-earlyaccess:
+    machine:
+      image: ubuntu-2004:202010-01
+    steps:
+    - checkout
+    - run:
+        name: Clone private repo
+        command: cd "$HOME" && git clone "$PRIVATE_REPO"
+    - run:
+        name: Update earlyaccess
+        command: |
+          mv $HOME/project $HOME/tator
+          $HOME/$PRIVATE_REPO_NAME/aws/update.sh
   setup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
@@ -100,7 +137,7 @@ jobs:
     - run:
         name: Install Tator
         command: |
-          ssh lightsail 'cd tator && ./install.sh';
+          ssh lightsail 'export DOMAIN_ALIAS='"'localhost'"';cd tator && ./install.sh';
     - run:
         name: Set public IP as primary domain
         command: |
@@ -204,7 +241,7 @@ workflows:
   build-and-test:
     jobs:
     - build-docker-images:
-        context: cvisionai
+        context: cd
         filters:
           tags:
             only: /.*/
@@ -242,6 +279,15 @@ workflows:
         filters:
           tags:
             only: /.*/
+    - update-earlyaccess:
+        requires:
+        - rest-tests
+        - tator-py-tests
+        context: cd
+        filters:
+          branches:
+            only:
+            - master
     - cleanup-lightsail:
         requires:
         - rest-tests

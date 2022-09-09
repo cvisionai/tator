@@ -14,7 +14,7 @@ resolution_config = {
             'type': 'integer',
             'description': 'Constant rate factor.',
             'minimum': 0,
-            'maximum': 51,
+            'maximum': 63,
             'default': 23,
         },
         'resolution': {
@@ -22,6 +22,11 @@ resolution_config = {
             'description': 'Vertical Resolution',
             'minimum': 0,
             'maximum': 8192,
+        },
+        'preset': {
+            'type': 'string',
+            'description': 'Codec Specific Preset (e.g. fast, medium, or 0,1,2)',
+            'default': ''
         }
     },
 }

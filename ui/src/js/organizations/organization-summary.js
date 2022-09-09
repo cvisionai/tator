@@ -14,6 +14,7 @@ export class OrganizationSummary extends TatorElement {
     div.appendChild(this._link);
 
     this._img = document.createElement("img");
+    this._img.setAttribute("crossorigin", "anonymous");
     this._img.setAttribute("class", "projects__image px-2 rounded-1");
     this._link.appendChild(this._img);
 

@@ -88,9 +88,7 @@ export class MediaSection extends TatorElement {
     this._numFilesCount = 0;
     this._searchString = "";
 
-    this._more.addEventListener("bulk-edit", () => {
-      this.dispatchEvent(new Event("bulk-edit"));
-    });
+
     
     this._setCallbacks();
   }
@@ -132,9 +130,11 @@ export class MediaSection extends TatorElement {
     this._files.project = val;
     if (!hasPermission(val.permission, "Can Edit")) {
       this._more.style.display = "none";
+      this._more.setAttribute("editPermission", "Editing menu disable due to permissions.")
     }
     if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
       this._upload.style.display = "none";
+      this._more.setAttribute("uploadPermission", "Upload hidden due to permissions.")
     }
     this._more.project = val;
     this._project = val;
@@ -183,16 +183,30 @@ export class MediaSection extends TatorElement {
       sections.splice(index, 1);
     }
     this._files.sections = sections;
+    this._mediaMove.sections = sections;
   }
 
   removeMedia(mediaId) {
+    const single = !(mediaId.indexOf(",") > -1);
+    if (!single) mediaId = mediaId.split(","); 
+    console.log("MEDIA ID (list or single? ... "+single);
+    console.log(mediaId);
+
     for (const mediaCard of this._files._ul.children) {
-      if (mediaCard.getAttribute("media-id") == mediaId) {
+      console.log(mediaCard);
+      const currentCardId = mediaCard.getAttribute("media-id");
+
+      if (currentCardId == mediaId || (Array.isArray(mediaId) && mediaId.includes(Number(currentCardId)))) {
         mediaCard.parentNode.removeChild(mediaCard);
         const numFiles = Number(this._numFiles.textContent.split(' ')[0]) - 1;
-        this._updateNumFiles(numFiles);
-      }
+        this._updateNumFiles(numFiles); // do this at the end
+      } 
     }
+    
+    // clear any selected cards & reload
+    this.reload();
+    this._bulkEdit.clearAllCheckboxes();
+    
   }
 
   _updateNumFiles(numFiles) {
@@ -224,7 +238,8 @@ export class MediaSection extends TatorElement {
     if (this._section !== null) {
       sectionParams.append("section", this._section.id);
     }
-    return joinParams(sectionParams, this._searchParams);
+    const filterAndSearchParams = this._getFilterQueryParams();
+    return joinParams(sectionParams, filterAndSearchParams);
   }
 
   _getAfter(index) {
@@ -305,12 +320,12 @@ export class MediaSection extends TatorElement {
     });
   }
 
-  reload() {
+  async reload() {
     console.log("Reload media section...");
     this._reload.busy();
 
     const sectionQuery = this._sectionParams();
-    return fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
+    const response = await fetch(`/rest/MediaCount/${this._project}?${sectionQuery.toString()}`, {
       method: "GET",
       credentials: "same-origin",
       headers: {
@@ -318,12 +333,11 @@ export class MediaSection extends TatorElement {
         "Accept": "application/json",
         "Content-Type": "application/json"
       }
-    })
-      .then(response => response.json())
-      .then(count => this.numMedia = count)
-      .then(() => {
-        return this._loadMedia();
-      });
+    });
+    const count = await response.json();
+    this.numMedia = count;
+
+    return await this._loadMedia();
   }
 
   _launchAlgorithm(evt) {
@@ -645,10 +659,12 @@ export class MediaSection extends TatorElement {
   }
 
   _rename(evt) {
+    // console.log(this._section);
     if (this._name.contains(this._nameText)) {
       const input = document.createElement("input");
-      input.setAttribute("class", "form-control input-sm f1");
-      input.setAttribute("value", this._sectionName);
+      input.style.borderWidth = "3px";
+      input.setAttribute("class", "form-control input-sm f1 text-white text-bold");
+      input.setAttribute("value", this._section.name);
       this._name.replaceChild(input, this._nameText);
       input.addEventListener("focus", evt => {
         evt.target.select();
@@ -668,6 +684,7 @@ export class MediaSection extends TatorElement {
           //});
           this._sectionName = evt.target.value;
         }
+        // console.log(this._section);
         fetch("/rest/Section/" + this._section.id, {
           method: "PATCH",
           credentials: "same-origin",
@@ -683,6 +700,12 @@ export class MediaSection extends TatorElement {
         this._nameText.textContent = this._sectionName;
         this._section.name = this._sectionName;
         this._name.replaceChild(this._nameText, evt.target);
+
+        this._name.classList.add("text-green");
+        setTimeout(() => {
+          this._name.classList.remove("text-green");
+        }, 800)
+        
         this.dispatchEvent(new CustomEvent("newName", {
           detail: {
             id: this._section.id,
@@ -701,6 +724,9 @@ export class MediaSection extends TatorElement {
   }
 
   _setCallbacks() {
+    this._more.addEventListener("bulk-edit", () => {
+      this.dispatchEvent(new Event("bulk-edit"));
+    });
 
     // launch algorithm on all the media in this section
     this._more.addEventListener("algorithmMenu", this._launchAlgorithm.bind(this));
@@ -711,6 +737,20 @@ export class MediaSection extends TatorElement {
     this._files.addEventListener("downloadAnnotations", this._downloadAnnotations.bind(this));
 
     this._more.addEventListener("rename", this._rename.bind(this));
+
+    // New right click options
+    this.addEventListener("renameSection", this._reloadAndRename.bind(this));
+    this.addEventListener("deleteSection", (evt) => {
+      // console.log(evt);
+      this.dispatchEvent(new CustomEvent("remove", {
+        detail: {
+          sectionParams: this._sectionParams(),
+          section: this._section,
+          projectId: this._project,
+          deleteMedia: false,
+        }
+      }));
+    });
 
     this._more.addEventListener("deleteSection", evt => {
       this.dispatchEvent(new CustomEvent("remove", {
@@ -896,6 +936,12 @@ export class MediaSection extends TatorElement {
     } else {
       return [];
     }
+  }
+  async _reloadAndRename(evt) {
+    // console.log(evt);
+    // this.section = evt.detail.section;
+    // await this.reload();
+    this._rename();
   }
 }
 

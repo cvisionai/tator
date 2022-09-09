@@ -285,6 +285,57 @@ server {
   }
   {{- end }}
 
+  location /graphql {
+    alias /graphql/;
+
+    # Allow for big REST responses.
+    proxy_connect_timeout 1200;
+    proxy_send_timeout 1200;
+    proxy_read_timeout 1200;
+    send_timeout 1200;
+
+    {{- if .Values.maintenance }}
+    return 503;
+    {{- end }}
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy require-corp;
+    proxy_pass http://graphql-svc:3000;
+
+    proxy_redirect off;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host $server_name;
+    {{- if .Values.requireHttps }}
+    proxy_set_header X-Forwarded-Proto https;
+    {{- end }}
+    add_header Cache-Control "max-age=0, must-revalidate";
+    {{- if hasKey .Values "allowCors" }}
+    {{- if $.Values.allowCors }}
+    add_header Access-Control-Allow-Origin *;
+    add_header Access-Control-Allow-Methods *;
+    add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+    add_header Access-Control-Allow-Credentials true;
+    if ($request_method = OPTIONS)
+    {
+      add_header Content-Length 0;
+      add_header Content-Type text/plain;
+      add_header Access-Control-Allow-Origin *;
+      add_header Access-Control-Allow-Methods *;
+      add_header Access-Control-Allow-Headers "Authorization,Content-Type";
+      add_header Access-Control-Allow-Credentials true;
+      return 200;
+    }
+    {{- end }}
+    {{- end }}
+
+    gzip on;
+    gzip_types application/json;
+    gzip_min_length 1024;
+  }
+
   error_page 503 /static/maintenance.html;
   # Allow POST on static pages
   error_page 405 =200 $uri;

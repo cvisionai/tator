@@ -34,11 +34,19 @@ export class FrameBuffer
     }
     
     // Return the next buffer to display
-    display()
+    // If supplied return null if it isn't frameHint
+    display(frameHint)
     {
-	var cur = this._dispIdx % this._buffer.length;
-	this._active=true;
-	return this._buffer[cur];
+        var cur = this._dispIdx % this._buffer.length;
+        if (frameHint && this._buffer[cur].frame != frameHint)
+        {
+            return null;
+        }
+        else
+        {
+            this._active=true;
+            return this._buffer[cur];
+        }
     }
 
     active()
