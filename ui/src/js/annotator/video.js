@@ -9,6 +9,7 @@ import { MotionComp } from "./motion_comp";
 import { ConcatDownloadManager } from "./concat_download_manager.js";
 import { color } from "./drawGL_colors.js";
 import { EffectManager } from "./video-effects.js";
+import { TatorSimpleVideo } from "./video-simple.js";
 
 // Video export class handles interactions between HTML presentation layer and the
 // javascript application.
@@ -456,7 +457,7 @@ export class VideoCanvas extends AnnotationCanvas {
         if (new_play_idx != this._scrub_idx) {
           this.stopDownload();
           this._videoElement[this._scrub_idx].clearScrubBuffer();
-          this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig, false);
+          this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig, this._videoElement[0]._compat == true);
         }
         this._scrub_idx = new_play_idx;
       }
@@ -487,15 +488,9 @@ export class VideoCanvas extends AnnotationCanvas {
     let use_hls = (this._videoObject.media_files.streaming[0].hls ? true : false);
     let searchParams = new URLSearchParams(window.location.search);
     console.info(`VideoDecoder: ${'VideoDecoder' in window}; Secure Context: ${window.isSecureContext}`);
-    if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1 || use_hls == true)
+    if ('VideoDecoder' in window == false || Number(searchParams.get('force_compat'))==1 || use_hls == true)
     {
-      // TODO: Can possibly make this a warning and fall back to compat mode.
-      // with some caveats on performance.
-      let decoder = 'VideoDecoder' in window;
-      if (Number(searchParams.get('force_mse'))==1)
-      {
-        decoder = false;
-      }
+      return new TatorSimpleVideo(idx, this._videoObject.media_files.streaming[idx].path);
       this.dispatchEvent(new CustomEvent("videoError",
                          {composed: true,
                           detail: {"videoDecoderPresent": decoder,
@@ -917,7 +912,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this.stopDownload();
     var promise = this._videoElement[this._scrub_idx].loadedDataPromise(this);
 
-    this.startDownload(streaming_files, offsite_config, false);
+    this.startDownload(streaming_files, offsite_config, this._videoElement[0]._compat == true);
     if (fps < 20)
     {
       console.info("Disable safe mode for low FPS");

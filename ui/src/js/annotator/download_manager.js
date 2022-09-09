@@ -29,7 +29,14 @@ export class DownloadManager
 
   biasForTime(time, idx)
   {
-    return this._startBias.get(idx)
+    if (this._startBias.has(idx) == false)
+    {
+      return null;
+    }
+    else
+    {
+      return this._startBias.get(idx)
+    }
   }
 
   _onMessage(msg)

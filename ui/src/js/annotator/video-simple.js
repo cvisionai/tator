@@ -1,0 +1,514 @@
+// Module using WebCodecs API to decode video instead of MediaSource Extensions
+// reference: https://developer.mozilla.org/en-US/docs/Web/API/WebCodecs_API
+
+// Attempt is made to partially implement the HTML5 MediaElement interface
+// such that this is a drop-in replacement for frame accurate MSE applications
+// 
+// @TODO: Supply a 'cv2.VideoDecode.read()' type interface for client-side decode
+//        operations.
+
+
+import { CTRL_SIZE } from "./video-buffer-manager";
+
+
+class SimpleVideoWrapper {
+  constructor(parent, name, path)
+  {
+    this._name = name;
+    this._parent = parent;
+    this._video = document.createElement("VIDEO");
+    this._path = path;
+    this._bias = 0;
+    this._keyframeOnly = false;
+    this._scrubbing = false;
+    this._mute = false;
+    this._checked = false;
+  }
+
+  init()
+  {
+    this._video.onloadeddata = () => {
+      this._video.onloadeddata = null;
+      this._parent._loadedDataCallback();
+    };
+    this._video.oncanplay = () => {
+      if (this._parent.oncanplay)
+      {
+        this._parent.oncanplay();
+      }
+    }
+    this._video.src = this._path;
+  }
+
+  set keyframeOnly(val)
+  {
+    // Don't go into keyframe only if we are in summary mode (they conflict)
+    //if (this.summaryLevel > 0)
+    //{
+      //return;
+    //}
+    this._keyframeOnly = val;
+  }
+
+  set frameIncrement(val)
+  {
+    
+  }
+
+  set scrubbing(val)
+  {
+
+  }
+
+  get keyframeOnly()
+  {
+    return this._keyframeOnly;
+  }
+
+  clearPending()
+  {
+    
+  }
+
+  // Returns true if the cursor is in the range of the hot frames
+  _cursor_is_hot()
+  {
+    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
+    for (let timestamp of timestamps)
+    {
+      let image_timescale = this._hot_frames.get(timestamp).timescale;
+      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
+      let cursor_in_ctx = this._current_cursor * image_timescale;
+      if (cursor_in_ctx >= timestamp && cursor_in_ctx < timestamp+frame_delta)
+      {
+        return true;
+      }
+    }
+   
+    return false;
+  }
+
+  images_near_cursor(max_distance, limit)
+  {
+    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
+    let matches=[];
+    for (let timestamp of timestamps)
+    {
+      let image_timescale = this._hot_frames.get(timestamp).timescale;
+      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
+      let cursor_in_ctx = this._current_cursor * image_timescale;
+      if (Math.abs(cursor_in_ctx - timestamp) <= (max_distance*frame_delta))
+      {
+        matches.push(timestamp);
+      }
+    }
+    return matches;
+  }
+
+  get_image(timestamp)
+  {
+    if (this._hot_frames.has(timestamp))
+    {
+      let sab = this._hot_frames.get(timestamp);
+      let image = new Uint8Array(sab, CTRL_SIZE);
+      // Todo function this
+      image.timescale = sab.timescale;
+      image.frameDelta = sab.frameDelta;
+      image.time = sab.timestamp / sab.timescale;
+      image.width = sab.width;
+      image.height = sab.height;
+      image.format = sab.format;
+      image.timestamp = sab.timestamp;
+      return image;
+    }
+    else
+    {
+      return null;
+    }
+  }
+
+  // Returns true if the cursor is in the range of the hot frames
+  time_is_hot(time)
+  {
+    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
+    for (let timestamp of timestamps)
+    {
+      let image_timescale = this._hot_frames.get(timestamp).timescale;
+      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
+      let time_in_ctx = time * image_timescale;
+      if (time_in_ctx >= timestamp && time_in_ctx < timestamp+frame_delta)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  _returnFrame(frame)
+  {
+
+  }
+
+  _safeCall(func_ptr)
+  {
+    if (func_ptr)
+    {
+      func_ptr();
+    }
+    else
+    {
+      console.info("Safe call can't call null function");
+    }
+  }
+
+  // The seek buffer can keep up to 10 frames pre-decoded ready to go in either direction
+  // to support extra fast prev/next 
+  _clean_hot(force)
+  {
+   
+  }
+
+  _closest_frame_to_cursor()
+  {
+    
+  }
+
+  ///////////////////////////////////////////////////////////
+  // Public interface mirrors that of a standard HTML5 video
+  ///////////////////////////////////////////////////////////
+
+  set bias(bias)
+  {
+    this._bias = bias;
+  }
+
+  set mute(val)
+  {
+    this._mute = val;
+  }
+
+  get mute()
+  {
+    return this._mute;
+  }
+  // Set the current video time
+  //
+  // Timing considerations:
+  // - This will either grab from pre-decoded frames and run very quickly or
+  //   jump to the nearest preceding keyframe and decode new frames (slightly slower)
+  set currentTime(video_time)
+  {
+    // If we are approximating seeking, we should land on the nearest buffered time
+    if (this.summaryLevel)
+    {
+      // Round to the nearest Nth second based on the summary level
+      const approx = Math.floor((video_time + this._bias)/ this.summaryLevel)*this.summaryLevel;
+      let lastDistance = 40000000;
+      for (let idx = 0; idx < this.buffered.length; idx++)
+      {
+        if (idx == 0 && approx < this.buffered.start(idx))
+        {
+          this._current_cursor = this.buffered.start(idx);
+          break;
+        }
+        const fromBufStart = Math.abs(approx - this.buffered.start(idx));
+        //console.info(`${idx}: APPX=${approx} ${fromBufStart} ${this.buffered.start(idx)} SL=${this.summaryLevel}`);
+        if (approx >= this.buffered.start(idx) && approx < this.buffered.end(idx))
+        {
+          this._current_cursor = approx;
+          break;
+        }
+        else if (lastDistance < fromBufStart)
+        {
+          // If we went past it pick the last good start
+          this._current_cursor = this.buffered.start(idx-1);
+          break;
+        }
+        else
+        {
+          lastDistance = fromBufStart;
+        }
+      }
+      //console.info(`${this._name}: SUMMARIZING ${video_time+this._bias} to ${this._current_cursor} via ${this.summaryLevel}`);
+    }
+    else
+    {
+      // Keep worker and manager up to date.
+      this._current_cursor = video_time+this._bias;
+    }
+    this._video.currentTime = this._current_cursor;
+  }
+
+  /// Return a list of TimeRange objects representing the downloaded/playable regions of the
+  /// video data.
+  get buffered()
+  {
+    return this._time_ranges;
+  }
+
+  // Returns the current video cursor position
+  get currentTime()
+  {
+    return this._current_cursor;
+  }
+
+  // Append data to the mp4 file
+  // - This data should either be sequentially added or added on a segment boundary
+  // - Prior to adding video segments the mp4 header must be supplied first.
+  appendBuffer(data, timestampOffset)
+  {
+    
+  }
+
+   // Append data to the mp4 file (seek alt)
+  // - This data should either be sequentially added or added on a segment boundary
+  // - Prior to adding video segments the mp4 header must be supplied first.
+  appendSeekBuffer(data, time, timestampOffset)
+  {
+   
+  }
+
+  deleteUpTo(seconds)
+  {
+    
+  }
+
+  pause()
+  {
+    
+  }
+
+  play()
+  {
+ 
+  }
+
+  set named_idx(val)
+  {
+    this._named_idx = val;
+  }
+
+  get named_idx()
+  {
+    return this._named_idx;
+  }
+}
+
+export class TatorSimpleVideo {
+  constructor(id, path)
+  {
+    console.info("Created Simple Video Decoder");
+    this._buffer = new SimpleVideoWrapper(this, `Simple Video Buffer ${id}`, path)
+    this._init = false;
+    this._compat = true; // Set to tell higher level code this is the simple player.
+  }
+
+  getMediaElementCount() {
+    // 1 for seek video, 1 for onDemand video, 1 for all of the scrub
+    return 1;
+  }
+
+  // Save off the initialization data for this mp4 file
+  saveBufferInitData(data) {
+   
+  }
+
+  clearScrubBuffer() {
+
+  }
+
+  recreateOnDemandBuffers(callback) {
+   
+  }
+
+  status()
+  {
+    
+  }
+
+  pause(time)
+  {
+   
+  }
+
+  play()
+  {
+   
+  }
+
+  /**
+   * Return the source buffer associated with the given frame / buffer type. Or null if not present
+   *
+   * @param {float} time - Seconds timestamp of frame request
+   * @param {string} buffer - "play" | "scrub"
+   * @param {Direction} direction - Forward or backward class
+   * @param {float} maxTime - Maximum number of seconds in the video
+   * @returns Video element based on the provided time. Returns null if the given time does not
+   *          match any of the video buffers.
+   */
+  forTime(time, buffer, direction, maxTime)
+  {
+    
+  }
+
+  // Returns the seek buffer if it is present, or
+  // The time buffer if in there
+  returnSeekIfPresent(time, direction)
+  {
+    return this.forTime(time, "seek", direction);
+  }
+
+  playBuffer()
+  {
+    return this._buffer;
+  }
+
+  /**
+   * Queues the requests to delete buffered onDemand video ranges
+   */
+  resetOnDemandBuffer()
+  {
+    let p_func = (resolve, reject) => 
+    {
+      this.reset().then(() => {
+        resolve();
+      });
+    };
+    let p = new Promise(p_func);
+    return p;
+  }
+
+  /**
+   * @returns {boolean} True if the onDemand buffer has no data
+   */
+  isOnDemandBufferCleared()
+  {
+    
+  }
+
+  /**
+   * @returns {boolean} True if the onDemand buffer is busy
+   */
+  isOnDemandBufferBusy()
+  {
+    return false;
+  }
+
+  /**
+   * If there are any pending deletes for the onDemand buffer, this will rotate through
+   * them and delete them
+   */
+  cleanOnDemandBuffer()
+  {
+ 
+  }
+
+  /**
+   * Removes the given range from the play buffer
+   * @param {tuple} delete_range - start/end (seconds)
+   */
+  deletePendingOnDemand(delete_range)
+  {
+    this._buffer.deleteUpTo(delete_range[1]);
+  }
+
+  seekBuffer()
+  {
+    return this._buffer;
+  }
+
+  currentIdx()
+  {
+    
+  }
+
+  set named_idx(val)
+  {
+    this._named_idx = val;
+    this._buffer.named_idx = val;
+  }
+
+  get named_idx()
+  {
+    return this._named_idx;
+  }
+
+  error()
+  {
+    
+  }
+
+  /**
+   * Used for initialization of the video object.
+   * @returns Promise that is resolved when the first video element is in the ready state or
+   *          data has been loaded. This promise is rejected if an error occurs
+   *          with the video element.
+   */
+  loadedDataPromise(parent)
+  {
+    let p = new Promise((resolve, reject) => {
+      if (this._init)
+      {
+        resolve();
+      }
+      else
+      {
+        this._loadedDataCallback = resolve;
+        this._loadedDataError = reject;
+      }
+    });
+    this._buffer.init();
+    return p;
+  }
+
+  /**
+   * If there are any pending deletes for the seek buffer, this will rotate through them
+   * and delete them
+   */
+  cleanSeekBuffer()
+  {
+
+  }
+
+  reset()
+  {
+  
+  }
+
+  appendSeekBuffer(data, time, timestampOffset)
+  {
+    
+  }
+
+  appendLatestBuffer(data, callback, timestampOffset)
+  {
+    
+  }
+
+  /**
+   * Appends the video data to the onDemand buffer.
+   * After the buffer has been updated, the callback routine will be called.
+   *
+   * @param {bytes} data - Video segment
+   * @param {function} callback - Callback executed once the buffer has been updated
+   * @param {bool} force - Force update if true. False will yield updates only if init'd
+   */
+  appendOnDemandBuffer(data, callback, force, timestampOffset)
+  {
+    //console.info(`${JSON.stringify(data)}`);
+    // Fail-safe, if we have a frame start this is the start of a new buffer
+    // and we need to clear everything we had.
+    
+  }
+
+  /**
+   * Appends data to all buffers (generally init information)
+   * @param {*} data 
+   * @param {*} callback 
+   * @param {*} force 
+   */
+  appendAllBuffers(data, callback, force, timestampOffset)
+  {
+    
+  }
+}
