@@ -53,14 +53,10 @@ def get_annotation_es_query(project, params, annotation_type):
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort']['_postgres_id'] = 'asc'
     media_bools = []
+    annotation_types = ["box", "line", "dot", "poly"]
     if annotation_type == 'localization':
         annotation_bools = [{'bool': {
-            'should': [
-                {'match': {'_dtype': 'box'}},
-                {'match': {'_dtype': 'line'}},
-                {'match': {'_dtype': 'dot'}},
-                {'match': {'_dtype': 'poly'}},
-            ],
+            "should": [{"match": {"_dtype": type_}} for type_ in annotation_types],
             'minimum_should_match': 1,
         }}]
     elif annotation_type == 'state':
@@ -69,31 +65,26 @@ def get_annotation_es_query(project, params, annotation_type):
         raise ValueError(f"Programming error: invalid annotation type {annotation_type}")
 
     media_ids = []
+    media_types = ["image", "video", "multi"]
     if media_id_put is not None:
-        media_ids += [f'image_{id_}' for id_ in media_id_put]\
-                   + [f'video_{id_}' for id_ in media_id_put]\
-                   + [f'multi_{id_}' for id_ in media_id_put]
+        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id_put)
 
     if media_query is not None:
         media_query_ids = query_string_to_media_ids(project, media_query)
-        media_ids += [f'image_{id_}' for id_ in media_query_ids]\
-                   + [f'video_{id_}' for id_ in media_query_ids]\
-                   + [f'multi_{id_}' for id_ in media_query_ids]
+        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_query_ids)
 
     if media_id is not None:
-        media_ids += [f'image_{id_}' for id_ in media_id]\
-                   + [f'video_{id_}' for id_ in media_id]\
-                   + [f'multi_{id_}' for id_ in media_id]
+        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id)
     if media_ids:
         media_bools.append({'ids': {'values': media_ids}})
 
     annotation_ids = []
     if localization_ids is not None:
-        annotation_ids += [f'box_{id_}' for id_ in localization_ids]\
-                        + [f'line_{id_}' for id_ in localization_ids]\
-                        + [f'dot_{id_}' for id_ in localization_ids]
+        annotation_ids.extend(
+            f"{type_}_{id_}" for type_ in annotation_types for id_ in localization_ids
+        )
     if state_ids is not None:
-        annotation_ids += [f'state_{id_}' for id_ in state_ids]
+        annotation_ids.extend(f"state_{id_}" for id_ in state_ids)
     if annotation_ids:
         annotation_bools.append({'ids': {'values': annotation_ids}})
 
@@ -166,9 +157,11 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if localization_id_put:
         localization_ids += localization_id_put
     if state_ids and (annotation_type == 'localization'):
-        localization_ids += list(State.localizations.through.objects\
-                                 .filter(state__in=state_ids)\
-                                 .values_list('localization_id', flat=True).distinct())
+        localization_ids += list(
+            State.localizations.through.objects.filter(state__in=state_ids)
+            .values_list("localization_id", flat=True)
+            .distinct()
+        )
     if localization_ids:
         if annotation_type == 'localization':
             qs = qs.filter(pk__in=localization_ids)

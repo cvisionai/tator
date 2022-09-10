@@ -121,7 +121,7 @@ class FileDetailAPI(BaseDetailView):
 
     def _delete(self, params: dict) -> dict:
         # Grab the file object and delete it from the database
-        obj = File.objects.get(pk=params[fields.id])
+        obj = File.objects.get(pk=params[fields.id], deleted=False)
 
         # Delete the correlated file
         if obj.path and hasattr(obj.path, "path"):

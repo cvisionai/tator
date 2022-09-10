@@ -20,7 +20,6 @@ def get_leaf_es_query(params):
     # Get parameters.
     leaf_id = params.get('leaf_id', None)
     leaf_id_put = params.get('ids', None) # PUT request only
-    project = params['project']
     filter_type = params.get('type', None)
     start = params.get('start', None)
     stop = params.get('stop', None)

@@ -11,6 +11,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
+from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'attribute_types']
 
@@ -88,8 +89,12 @@ class FileTypeDetailAPI(BaseDetailView):
             name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        FileType.objects.get(pk=params['id']).delete()
-        return {'message': f'File type {params["id"]} deleted successfully!'}
+        file_type = FileType.objects.get(pk=params["id"])
+        count = delete_instances(file_type, File, self.request.user, "file")
+        file_type.delete()
+        return {
+            "message": f"File type {params['id']} (and {count} instances) deleted successfully!"
+        }
 
     def get_queryset(self):
         return FileType.objects.all()

@@ -10,6 +10,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
+from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'file_format',
           'default_volume', 'visible', 'archive_config', 'streaming_config', 'overlay_config',
@@ -169,8 +170,12 @@ class MediaTypeDetailAPI(BaseDetailView):
             name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        MediaType.objects.get(pk=params['id']).delete()
-        return {'message': f'Media type {params["id"]} deleted successfully!'}
+        media_type = MediaType.objects.get(pk=params["id"])
+        count = delete_instances(media_type, Media, self.request.user, "media")
+        media_type.delete()
+        return {
+            "message": f"Media type {params['id']} (and {count} instances) deleted successfully!"
+        }
 
     def get_queryset(self):
         return MediaType.objects.all()

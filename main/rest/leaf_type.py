@@ -10,6 +10,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
+from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'visible']
 
@@ -67,9 +68,12 @@ class LeafTypeDetailAPI(BaseDetailView):
         return {'message': f'Leaf type {obj.id} updated successfully!'}
 
     def _delete(self, params):
-        LeafType.objects.get(pk=params['id']).delete()
-        return {'message': f'Leaf type {params["id"]} deleted successfully!'}
+        leaf_type = LeafType.objects.get(pk=params["id"])
+        count = delete_instances(leaf_type, Leaf, self.request.user, "leaf")
+        leaf_type.delete()
+        return {
+            "message": f"Leaf type {params['id']} (and {count} instances) deleted successfully!"
+        }
 
     def get_queryset(self):
         return LeafType.objects.all()
-

@@ -2,7 +2,7 @@ export class MultiRenderer {
   constructor() {
    this._videos = {}; 
    this._callbacks = {};
-   this._count = 0; 
+   this._frameReq = {};
    this._readyCount = 0;
   }
 
@@ -10,7 +10,7 @@ export class MultiRenderer {
   {
     this._videos[video] = element;
     this._callbacks[video] = null;
-    this._count += 1;
+    this._frameReq[video] = 0;
   }
 
   notifyReady(video, callback)
@@ -19,12 +19,27 @@ export class MultiRenderer {
     this.checkAll();
   }
 
+  setFrameReq(video, frame)
+  {
+    this._frameReq[video] = frame;
+  }
+
   checkAll()
   {
     // Check all the videos for ready, bail out if they aren't all set.
     for (let video in this._videos)
     {
       let callback = this._callbacks[video];
+      // If we get to the end let it go.
+      if (this._frameReq[video] > this._videos[video].length-5)
+      {
+        if (callback != null)
+        {
+          this._videos[video].gotoFrame(this._videos[video].length-5, true);
+        }
+        this._callbacks[video] = null;
+        continue;
+      }
       if (callback == null || this._videos[video]._draw.canPlay() <= 0)
       {
         return;
@@ -46,7 +61,10 @@ export class MultiRenderer {
       // upon successful drawing.
       for (let video in this._videos)
       {
-        this._callbacks[video].bind(this._videos[video])(domtime);
+        if (this._callbacks[video] != null)
+        {
+          this._callbacks[video].bind(this._videos[video])(domtime);
+        }
       }
     });
   }
