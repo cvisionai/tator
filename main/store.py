@@ -473,8 +473,11 @@ class GCPStorage(TatorStorage):
         blob.custom_time = datetime.now()
         blob.patch()
 
-    def put_media_id_tag(self, path):
-        pass  # TODO: implement this
+    def put_media_id_tag(self, path, media_id):
+        blob = self._get_blob(path)
+        metadata = {MEDIA_ID_KEY : str(media_id)}
+        blob.metadata = metadata
+        blob.path()
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(
