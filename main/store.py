@@ -477,7 +477,7 @@ class GCPStorage(TatorStorage):
         blob = self._get_blob(path)
         metadata = {MEDIA_ID_KEY : str(media_id)}
         blob.metadata = metadata
-        blob.path()
+        blob.patch()
 
     def copy(self, source_path, dest_path, extra_args=None):
         self.gcs_bucket.copy_blob(
