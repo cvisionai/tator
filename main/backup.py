@@ -229,7 +229,7 @@ class TatorBackupManager:
                     )
                 except:
                     logger.error(
-                        f"Failed to create remote config for bucket {bucket_name} in project "
+                        f"Failed to create remote config for bucket {bucket_info['bucket_name']} in project "
                         f"{project.id}",
                         exc_info=True,
                     )
