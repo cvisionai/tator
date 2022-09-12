@@ -106,7 +106,6 @@ export class TatorData {
       .then(response => response.json())
       .then(memberships => {
         this._memberships = memberships;
-        console.log(memberships);
         resolve();
       });
     });

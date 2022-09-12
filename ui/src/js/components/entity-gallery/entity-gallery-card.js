@@ -430,36 +430,43 @@ export class EntityCard extends TatorElement {
         let attrStyleDiv = document.createElement("div");
         attrStyleDiv.setAttribute("class", `entity-gallery-card__attribute`);
 
-        let attrLabel = document.createElement("span");
+        let attrLabel = document.createElement("div");
         attrLabel.setAttribute("class", "f3 text-gray text-normal");
         attrStyleDiv.appendChild(attrLabel);
 
-        let key;
+        let key = "";
+        let keyString = ""
+        
+        // Assign key and output string based on attr info
         if (typeof attr == "string") {
           key = attr;
+
           if (typeof obj[this._type][key] !== null && obj[key] !== "" && key !== "type") {
             if (key.indexOf("_by") > -1 && this._membershipMap.has(Number(obj[this._type][key]))) {
               // It is a user ID lookup
               const username = this._membershipMap.get(Number(obj[this._type][key]));
-              attrLabel.appendChild(document.createTextNode(`${username}`));
+              keyString = `<span class="text-dark-gray">${key}</span>: ${username}`;
             } else {
-              attrLabel.appendChild(document.createTextNode(`${obj[this._type][key]}`));
+              keyString = `<span class="text-dark-gray">${key}</span>: ${obj[this._type][key]}`;
             }
             
           } else if(key === "type" && typeof obj.entityType["dtype"] !== null && obj.entityType["dtype"] !== "") {
-            attrLabel.appendChild(document.createTextNode(`${obj.entityType["name"]}`));
+            keyString = `<span class="text-dark-gray">${key}</span>: ${obj.entityType["name"]}`;
           } else {
-            attrLabel.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+            keyString = `<span class="text-dark-gray"><span class="text-dark-gray">${key}</span>: <<span class="text-italics ">not set</span>></span>`;
           }
         } else {
           key = attr.name;
+
           if (obj.attributes !== null && typeof obj.attributes[key] !== "undefined" && obj.attributes[key] !== null && obj.attributes[key] !== "") {
-            attrLabel.appendChild(document.createTextNode(`${obj.attributes[key]}`));
+            keyString = `<span class="text-dark-gray">${key}</span>: ${obj.attributes[key]}`;
           } else {
-            attrLabel.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+            keyString = `<span class="text-dark-gray"><span class="text-dark-gray">${key}</span>: <<span class="text-italics ">not set</span>></span>`;
           }
         }
- 
+
+        // Update output based on key and keystring
+        attrLabel.innerHTML = keyString; 
         attrStyleDiv.setAttribute("title", `${key}`);
 
         // add to the card & keep a list

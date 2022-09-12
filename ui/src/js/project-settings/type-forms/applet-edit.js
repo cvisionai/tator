@@ -23,6 +23,7 @@ export class AppletEdit extends TypeForm {
          "children": ""
       });
 
+
       // append input for name
       this._editName = document.createElement("text-input");
       this._editName.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
@@ -32,6 +33,14 @@ export class AppletEdit extends TypeForm {
       this._editName.default = this.data.name;
       this._editName.addEventListener("change", this._formChanged.bind(this));
       this._form.appendChild(this._editName);
+
+      // append link
+      if (this.appletId && this.appletId !== "New") {
+         this._linkToDashboard = document.createElement("link-input");
+         this._linkToDashboard.setAttribute("name", "Link");
+         this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this.projectId}/dashboards/${this.appletId}`);
+         this._form.appendChild(this._linkToDashboard); 
+      }
 
       // description
       this._editDescription = document.createElement("text-input");

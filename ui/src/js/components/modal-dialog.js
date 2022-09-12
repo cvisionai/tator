@@ -59,30 +59,10 @@ export class ModalDialog extends TatorElement {
     }
   }
 
-  fadeOut(timeOut = 500) {
-    this._div.style.opacity = 1;
-    const interval = 100;
-    const percent = 1 - ((interval / timeOut) * 2);
-
-    const opacityTurnDown = () => {
-      const currentOpacity = this._div.style.opacity;
-      const turnDown = currentOpacity * percent;
-      this._div.style.opacity = turnDown
-      console.log(turnDown);
-      if (turnDown == 0 || turnDown < .3) {
-        this.stopFade();
-      }
-    }
-
+  fadeOut(timeOut = 1500) {
     setTimeout(() => {
-      this.startFade = setInterval(opacityTurnDown, interval);
+      this._closeCallback();
     }, timeOut)
-  }
-
-  stopFade() {
-    this._closeCallback();
-    this._div.style.opacity = 1;
-    if(this.startFade) clearInterval(this.startFade);
   }
 
 }
