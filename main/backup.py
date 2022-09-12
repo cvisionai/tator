@@ -1,5 +1,6 @@
 from collections import defaultdict
 from ctypes import CDLL, c_char_p, c_int, Structure
+from enum import auto, Enum
 import logging
 import json
 import os
@@ -13,7 +14,11 @@ from main.store import get_tator_store
 
 logger = logging.getLogger(__name__)
 LIVE_STORAGE_CLASS = "STANDARD"
-ALL_STORE_TYPES = ["backup", "live"]
+
+
+class StoreType(Enum):
+    BACKUP = auto()
+    LIVE = auto()
 
 
 """
@@ -150,8 +155,8 @@ class TatorBackupManager:
         if project_id not in TatorBackupManager.__project_stores:
             TatorBackupManager.__project_stores[project_id] = {}
             # Get the `TatorStore` object that connects to object storage for the given type
-            for store_type in ALL_STORE_TYPES:
-                is_backup = store_type == "backup"
+            for store_type in StoreType:
+                is_backup = store_type == StoreType.BACKUP
                 project_bucket = project.get_bucket(backup=is_backup)
                 use_default_bucket = project_bucket is None
                 try:
@@ -163,13 +168,13 @@ class TatorBackupManager:
                         exc_info=True,
                     )
                     break
-                else:
-                    if store:
-                        TatorBackupManager.__project_stores[project_id][store_type] = {
-                            "store": store,
-                            "remote_name": f"{project_id}_{store_type}",
-                            "bucket_name": store.bucket_name,
-                        }
+
+                if store:
+                    TatorBackupManager.__project_stores[project_id][store_type] = {
+                        "store": store,
+                        "remote_name": f"{project_id}_{store_type}",
+                        "bucket_name": store.bucket_name,
+                    }
 
             if failed:
                 TatorBackupManager.__project_stores.pop(project_id, None)
@@ -187,10 +192,10 @@ class TatorBackupManager:
 
     @staticmethod
     def get_backup_store(store_info):
-        if "backup" in store_info:
-            return True, store_info["backup"]["store"]
-        if "live" in store_info:
-            return True, store_info["live"]["store"]
+        if StoreType.BACKUP in store_info:
+            return True, store_info[StoreType.BACKUP]["store"]
+        if StoreType.LIVE in store_info:
+            return True, store_info[StoreType.LIVE]["store"]
 
         return False, None
 
@@ -259,22 +264,22 @@ class TatorBackupManager:
             project = self.project_from_resource(resource)
             path = resource.path
             success, store_info = self.get_store_info(project)
-            success = success and "backup" in store_info
+            success = success and StoreType.BACKUP in store_info
 
             if success:
-                if store_info["backup"]["store"].check_key(path):
+                if store_info[StoreType.BACKUP]["store"].check_key(path):
                     logger.info(f"Resource {path} already backed up")
                     continue
 
                 # Get presigned url from the live bucket, set to expire in 1h
-                download_url = store_info["live"]["store"].get_download_url(path, 3600)
+                download_url = store_info[StoreType.LIVE]["store"].get_download_url(path, 3600)
 
                 # Perform the actual copy operation directly from the presigned url
                 try:
                     self._rpc(
                         "operations/copyurl",
-                        fs=f"{store_info['backup']['remote_name']}:",
-                        remote=f"{store_info['backup']['bucket_name']}/{path}",
+                        fs=f"{store_info[StoreType.BACKUP]['remote_name']}:",
+                        remote=f"{store_info[StoreType.BACKUP]['bucket_name']}/{path}",
                         url=download_url,
                     )
                 except:
@@ -313,7 +318,9 @@ class TatorBackupManager:
             success, store = self.get_backup_store(store_info)
 
         if success:
-            live_storage_class = store_info["live"]["store"].get_live_sc() or LIVE_STORAGE_CLASS
+            live_storage_class = (
+                store_info[StoreType.LIVE]["store"].get_live_sc() or LIVE_STORAGE_CLASS
+            )
             response = store.head_object(path)
             if not response:
                 logger.warning(f"Object {path} not found, skipping")
@@ -364,7 +371,7 @@ class TatorBackupManager:
         if success:
             # If no backup store is defined, use the live bucket
             success, backup_store = self.get_backup_store(store_info)
-            live_store = store_info["live"]["store"]
+            live_store = store_info[StoreType.LIVE]["store"]
 
         if success:
             live_storage_class = live_store.get_live_sc() or LIVE_STORAGE_CLASS
@@ -374,11 +381,11 @@ class TatorBackupManager:
                 return success
 
             request_state = response.get("Restore", "")
-            if 'true' in request_state:
+            if "true" in request_state:
                 # There is an ongoing request and the object is not ready to be permanently restored
                 logger.info(f"Object {path} not in standard access yet, skipping")
                 success = False
-            elif 'false' in request_state:
+            elif "false" in request_state:
                 # The request has completed and the object is ready for restoration
                 logger.info(f"Object {path} restoration request is complete, restoring...")
             elif "StorageClass" not in response or response["StorageClass"] == live_storage_class:
@@ -410,7 +417,7 @@ class TatorBackupManager:
 
                 # Perform the actual copy operation directly from the presigned url
                 try:
-                    live_info = store_info["live"]
+                    live_info = store_info[StoreType.LIVE]
                     self._rpc(
                         "operations/copyurl",
                         fs=f"{live_info['remote_name']}:",
@@ -448,10 +455,10 @@ class TatorBackupManager:
         success, store_info = self.get_store_info(project)
 
         if success:
-            if resource.backed_up:
-                store_type = "backup"
+            if resource.backed_up and StoreType.BACKUP in store_info:
+                store_type = StoreType.BACKUP
             else:
-                store_type = "live"
+                store_type = StoreType.LIVE
 
             size = store_info[store_type]["store"].get_size(resource.path)
         return size
