@@ -6,7 +6,7 @@ import traceback
 
 from rest_framework.response import Response
 from rest_framework import status
-from django.http import response
+from django.http import Http404, response
 
 from ..models import Localization, Media
 from ..renderers import PngRenderer
@@ -239,7 +239,10 @@ class LocalizationGraphicAPI(BaseDetailView):
         """
 
         # Get the localization associated with the given ID
-        obj = Localization.objects.get(pk=params['id'])
+        qs = Localization.objects.filter(pk=params['id'], deleted=False)
+        if not qs.exists():
+            raise Http404
+        obj = qs.first()
 
         # Extract the force image size argument and assert if there's a problem with the provided inputs
         force_image_size = params.get(self.schema.PARAMS_IMAGE_SIZE, None)

@@ -91,6 +91,10 @@ const imageFsSource = `#version 300 es
     // Image resolution (useful for filters)
     uniform vec2 u_Resolution;
 
+    uniform int u_csmEnable;
+    uniform mat4 u_csm;
+    uniform vec4 u_csmOffset;
+
     void main() {
          // special mode is -1, so we have plenty of room to spare
          if (texcoord.x >= -0.25)
@@ -137,6 +141,10 @@ const imageFsSource = `#version 300 es
              else
              {
                  pixelOutput = texture(imageTexture, texcoord);
+                 if (u_csmEnable == 1)
+                 {
+                  pixelOutput = (pixelOutput * u_csm)+u_csmOffset;
+                 }
              }
          }
          else
@@ -294,6 +302,9 @@ export class DrawGL
 
   setViewport(canvas)
   {
+    // Support format changing prior to openGL call
+    this._formatCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+    this._formatCtx = this._formatCanvas.getContext("2d", {desynchronized:true});
     // Turn off default antialias as we control it ourselves
     var gl = this.viewport.getContext("webgl2", {antialias: false,
                                                  depth: false
@@ -380,6 +391,8 @@ export class DrawGL
   // This takes image width and image height.
   resizeViewport(width, height)
   {
+    this._formatCanvas = new OffscreenCanvas(width, height);
+    this._formatCtx = this._formatCanvas.getContext("2d", {desynchronized:true});
     var gl=this.gl;
     try
     {
@@ -425,30 +438,76 @@ export class DrawGL
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
     // Load the uniform for the view screen size + shift
-    var viewShiftLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewShift");
-    gl.uniform2fv(viewShiftLoc,[this.clientWidth/2,
+    this._viewShiftLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewShift");
+    gl.uniform2fv(this._viewShiftLoc,[this.clientWidth/2,
                                 this.clientHeight/2]);
 
     // The scale is in terms of actual image pixels so that inputs are in image
     // pixels not device pixels.
     var viewScale = [2/((this.clientWidth)),2/((this.clientHeight))];
     // This vector scales an image unit to a viewscale unit
-    var viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewScale");
-    gl.uniform2fv(viewScaleLoc,viewScale);
+    this._viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewScale");
+    gl.uniform2fv(this._viewScaleLoc,viewScale);
 
     var resolution = [this.clientWidth,this.clientHeight];
     // This vector scales an image unit to a viewscale unit
-    var viewScaleLoc = gl.getUniformLocation(this.imageShaderProg, "u_Resolution");
-    gl.uniform2fv(viewScaleLoc,resolution);
+    this._resolutionLoc = gl.getUniformLocation(this.imageShaderProg, "u_Resolution");
+    gl.uniform2fv(this._resolutionLoc,resolution);
 
     this.viewFlip=this.clientHeight;
-    var viewFlipLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewFlip");
-    gl.uniform1f(viewFlipLoc,this.viewFlip);
+    this._viewFlipLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewFlip");
+    gl.uniform1f(this._viewFlipLoc,this.viewFlip);
 
     // Image texture is in slot 0
-    var imageTexLoc = gl.getUniformLocation(this.imageShaderProg,
+    this._imageTexLoc = gl.getUniformLocation(this.imageShaderProg,
                                             "imageTexture");
-    gl.uniform1i(imageTexLoc, 0);
+    gl.uniform1i(this._imageTexLoc, 0);
+
+    this._csmEnableLoc = gl.getUniformLocation(this.imageShaderProg, "u_csmEnable");
+    gl.uniform1i(this._csmEnableLoc, 0);
+
+    this._csmLoc = gl.getUniformLocation(this.imageShaderProg, "u_csm");
+    this._csmOffsetLoc = gl.getUniformLocation(this.imageShaderProg, "u_csmOffset");
+  }
+
+  _decomposeFilterMatrix(filter)
+  {
+    let rgba=[];
+    let offset=[];
+    for (let i = 0; i < filter.length; i++)
+    {
+      if ((i+1) % 5 == 0)
+      {
+        offset.push(filter[i])
+      }
+      else
+      {
+        rgba.push(filter[i]);
+      }
+    }
+    return {'rgba': rgba, 'offset': offset};
+  }
+
+  // Set a color filter matrix for the video/image
+  // Layout:
+  // [
+  //  RedRed,     RedGreen,    RedBblue,   RedAlpha,     RedOffset,
+  //  GreenRed,   GreenGreen,  GreenBlue,  GreenAlpha,   GOffset,
+  //  BlueRed,    BlueGreen,   BlueBlue,   BlueAlpha,    BOffset,
+  //  AlphaRed,   AlphaGreen,  AlphaBlue,  AlphaAlpha,   AOffset,
+  // ]
+  setCFM(filter)
+  {
+    let temp = this._decomposeFilterMatrix(filter);
+    var gl=this.gl;
+    gl.uniform1i(this._csmEnableLoc, 1);
+    gl.uniformMatrix4fv(this._csmLoc, false, temp.rgba);
+    gl.uniform4fv(this._csmOffsetLoc, temp.offset);
+  }
+  disableCFM()
+  {
+    var gl=this.gl;
+    gl.uniform1i(this._csmEnableLoc, 0);
   }
 
   // Constructs the vertices into the viewport
@@ -582,7 +641,22 @@ export class DrawGL
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, frameInfo.tex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frameData);
+    if ('format' in frameData && !('returnFrame' in frameData))
+    {
+      // Convert to RGBA prior to push to GL
+      let newFrame = new VideoFrame(new Uint8Array(frameData), {'format': frameData.format,
+                                                'codedWidth': frameData.width,
+                                                'codedHeight': frameData.height,
+                                                'timestamp': frameData.timestamp});
+      this._formatCtx.drawImage(newFrame,0,0, this._formatCanvas.width, this._formatCanvas.height);
+      newFrame.close();
+      let bitmap = this._formatCanvas.transferToImageBitmap();
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+    }
+    else
+    {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frameData);
+    }
   };
 
   reloadQuadVertices(dWidth, dHeight, uv)
@@ -708,11 +782,9 @@ export class DrawGL
 
     if (this.lastDx != dx || this.lastDy != dy)
     {
-      var viewShiftLoc = gl.getUniformLocation(this.imageShaderProg, "u_ViewShift");
-
       var cHeight = this.clientHeight;
       var cWidth = this.clientWidth;
-      gl.uniform2fv(viewShiftLoc,[(cWidth/2)-dx,
+      gl.uniform2fv(this._viewShiftLoc,[(cWidth/2)-dx,
                                   (cHeight/2)-dy]);
       this.lastDx = dx;
       this.lastDy = dy;

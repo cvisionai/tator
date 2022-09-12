@@ -47,7 +47,7 @@ export class DownloadManager
         return;
       }
       msg.data["buffer"].fileStart = msg.data["startByte"];
-      console.info(`Converting ${msg.data["frameStart"]} to ${msg.data["frameStart"]/this._parent._fps}`);
+      //console.info(`Converting ${msg.data["frameStart"]} to ${msg.data["frameStart"]/this._parent._fps}`);
       msg.data["buffer"].frameStart = (msg.data["frameStart"]/this._parent._fps);
       this._parent._videoElement[this._parent._seek_idx].appendSeekBuffer(msg.data["buffer"], msg.data['time']);
       let seek_time = performance.now() - this._parent._seekStart;
@@ -196,6 +196,15 @@ export class DownloadManager
                                           {composed: true,
                                           detail: {"value" : msg.data.firstFrame}
                                           }));
+        }
+        // If the reported number of frames is different we have a problem to rectify
+        if (msg.data.numFrames != this._parent.length)
+        {
+          console.warn(`Video length was ${this._parent.length} but segment map reports ${msg.data.numFrames}.`);
+          this._parent._numFrames = msg.data.numFrames;
+          this._parent.dispatchEvent(new CustomEvent("videoLengthChanged",
+                                           {composed: true,
+                                            detail: {length:this._parent._numFrames}}));
         }
         this._parent._videoVersion = msg.data["version"];
         console.info(`Video buf${buf_idx} has start bias of ${this._startBias.get(buf_idx)} - buffer: ${this._parent._scrub_idx}`);

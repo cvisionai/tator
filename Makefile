@@ -148,8 +148,7 @@ dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 .PHONY: tator-image
-tator-image:
-	$(MAKE) webpack
+tator-image: webpack
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
@@ -223,11 +222,11 @@ USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/value
 ifeq ($(USE_MIN_JS),True)
 webpack:
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
-	cd ui && python3 make_index_files.py && npm run build
+	cd ui && npm install && python3 make_index_files.py && npm run build
 else
 webpack:
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
-	cd ui && python3 make_index_files.py && npm run buildDev
+	cd ui && npm install && python3 make_index_files.py && npm run buildDev
 endif
 
 .PHONY: migrate

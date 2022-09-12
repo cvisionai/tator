@@ -126,10 +126,9 @@ class TatorBackupManager:
         except:
             logger.error("Call to `RcloneRPC` failed")
             raise
-        else:
-            output = json.loads(resp.Output.value.decode("utf-8"))
-        finally:
-            TatorBackupManager.__rclone.RcloneFreeString(resp.Output)
+
+        output = json.loads(resp.Output.value.decode("utf-8"))
+        TatorBackupManager.__rclone.RcloneFreeString(resp.Output)
 
         status = resp.Status
         if status != 200:
@@ -230,7 +229,7 @@ class TatorBackupManager:
                     )
                 except:
                     logger.error(
-                        f"Failed to create remote config for bucket {bucket_name} in project "
+                        f"Failed to create remote config for bucket {bucket_info['bucket_name']} in project "
                         f"{project.id}",
                         exc_info=True,
                     )

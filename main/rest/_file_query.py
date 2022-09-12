@@ -18,7 +18,6 @@ def get_file_es_query(params):
     # Get parameters.
     file_id = params.get('file_id', None)
     file_id_put = params.get('ids', None) # PUT request only
-    project = params['project']
     filter_type = params.get('meta', None)
     start = params.get('start', None)
     stop = params.get('stop', None)
@@ -139,7 +138,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
     start = params.get('start')
     stop = params.get('stop')
 
-    qs = File.objects.filter(project=project)
+    qs = File.objects.filter(project=project, deleted=False)
 
     file_ids = []
     if file_id is not None:
