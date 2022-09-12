@@ -1,4 +1,4 @@
-FROM cvisionai/svt_encoder:v0.0.7 as builder
+FROM cvisionai/svt_encoder:v0.0.8 as builder
 ENV LANG C.UTF-8
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wget unzip \
