@@ -198,7 +198,9 @@ export class DownloadManager
                                           }));
         }
         // If the reported number of frames is different we have a problem to rectify
-        if (msg.data.numFrames != this._parent.length)
+        // Note: If .length is shorter than numFrames that might be intentional truncation
+        // only update the video length if the mp4 is shorter than expecations.
+        if (msg.data.numFrames < this._parent.length)
         {
           console.warn(`Video length was ${this._parent.length} but segment map reports ${msg.data.numFrames}.`);
           this._parent._numFrames = msg.data.numFrames;
