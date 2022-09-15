@@ -906,8 +906,11 @@ export class VideoCanvas extends AnnotationCanvas {
         detail: {rate: 4},
         composed: true
       }));
+
+      // Increase GPU buffer to ensure smoother playback
+      this._draw.jumboBufferMode();
     }
-    
+
     // Clear the buffer in case this is a hot-swap
     this._draw.clear();
 
@@ -1334,7 +1337,6 @@ export class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
-          that._effectManager.clear();
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime, null, video.named_idx);
@@ -1759,6 +1761,10 @@ export class VideoCanvas extends AnnotationCanvas {
   // as the argument
   playerThread(domtime)
   {
+    if (this._playEffect == true)
+    {
+      this._effectManager.clear();
+    }
     /// This is the notional scheduled diagnostic interval
     var schedDiagInterval=5000.0;
     //console.info(`PLAYER @ ${performance.now()}`);
@@ -1820,7 +1826,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
-      console.warn("Player Stalled.");
+      console.warn(`Player Stalled. BD=${this._draw.bufferDepth}`);
       // Done playing, clear playback.
       if (this._audioEligible && this._audioPlayer.paused)
       {
@@ -2736,6 +2742,8 @@ export class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
+    this._effectManager.grayOut(200);
+    this._playEffect = true;
     if (this._dispFrame >= (this._numFrames))
     {
       return false;

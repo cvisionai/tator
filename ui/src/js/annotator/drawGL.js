@@ -378,13 +378,26 @@ export class DrawGL
 
   prepBackward()
   {
-    this.bufferDepth = 16; //More in rewind mode is helpful
-    this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
+    if (this._jumbo == undefined)
+    {
+      this.bufferDepth = 16; //More in rewind mode is helpful
+      this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
+    }
   }
 
   prepForward()
   {
-    this.bufferDepth = 6; //More in rewind mode is helpful
+    if (this._jumbo == undefined)
+    {
+      this.bufferDepth = 6; //More in rewind mode is helpful
+      this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
+    }
+  }
+
+  jumboBufferMode()
+  {
+    this._jumbo = true;
+    this.bufferDepth = 128; //More for compatibility modes is nice.
     this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
   }
 
