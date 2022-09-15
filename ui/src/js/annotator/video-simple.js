@@ -39,7 +39,6 @@ class SimpleVideoWrapper {
       this._video.onloadeddata = null;
     };
     this._video.oncanplay = () => {
-      console.info(`${this._name} Underlying reports oncanplay, canplay is set: ${this.oncanplay!=undefined}`);
       if (this.oncanplay && this._mute == false)
       {
         this.oncanplay();
