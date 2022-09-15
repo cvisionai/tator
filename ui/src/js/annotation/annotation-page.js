@@ -91,7 +91,7 @@ export class AnnotationPage extends TatorPage {
 
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";
-      //window.alert("System error detected");
+      //window.alert(evt.message);
       Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
 

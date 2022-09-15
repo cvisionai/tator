@@ -203,6 +203,10 @@ export class AnnotationPlayer extends TatorElement {
       this._slider.onDemandLoaded(evt);
     });
 
+    this._video.addEventListener("maxPlaybackRate", evt => {
+      this._rateControl.max = evt.detail.rate;
+    });
+
     this._video.addEventListener("videoLengthChanged", evt =>
     {
       this._slider.setAttribute('max',evt.detail.length);

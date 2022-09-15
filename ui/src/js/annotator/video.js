@@ -497,6 +497,7 @@ export class VideoCanvas extends AnnotationCanvas {
                                                 detail: {"percent_complete":100.0}
                                               }));
       }
+      //window.alert(`VideoDecoder: ${'VideoDecoder' in window}; Secure Context: ${window.isSecureContext}`);
       return v;
     }
     else
@@ -898,6 +899,15 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement.push(this.construct_demuxer(idx, streaming_files[idx].resolution[0]));
       this._videoElement[idx].named_idx = idx;
     }
+
+    if (this._videoElement[0]._compat)
+    {
+      this.dispatchEvent(new CustomEvent("maxPlaybackRate", {
+        detail: {rate: 4},
+        composed: true
+      }));
+    }
+    
     // Clear the buffer in case this is a hot-swap
     this._draw.clear();
 
