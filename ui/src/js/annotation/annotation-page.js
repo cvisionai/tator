@@ -179,6 +179,12 @@ export class AnnotationPage extends TatorPage {
           } else if (data.media_files && 'streaming' in data.media_files) {
             data.media_files.streaming.sort((a, b) => {return b.resolution[0] - a.resolution[0];});
           }
+
+          // Update Title Bar to show media information
+          // Usability guidance from mozilla specifies order should go fine -> coarser
+          // e.g. filename | tool name | org name
+          // We have tator before tool name, but having file name first is probably helpful enough.
+          document.title = `${data.name} | ${document.title}`
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
