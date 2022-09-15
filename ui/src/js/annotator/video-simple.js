@@ -40,7 +40,7 @@ class SimpleVideoWrapper {
     };
     this._video.oncanplay = () => {
       console.info(`${this._name} Underlying reports oncanplay, canplay is set: ${this.oncanplay!=undefined}`);
-      if (this.oncanplay)
+      if (this.oncanplay && this._mute == false)
       {
         this.oncanplay();
       }
@@ -52,10 +52,6 @@ class SimpleVideoWrapper {
   set oncanplay(val)
   {
     this._oncanplay = val;
-    if (this.canplay)
-    {
-      this._oncanplay();
-    }
   }
 
   get oncanplay()
@@ -76,12 +72,7 @@ class SimpleVideoWrapper {
 
   set keyframeOnly(val)
   {
-    // Don't go into keyframe only if we are in summary mode (they conflict)
-    //if (this.summaryLevel > 0)
-    //{
-      //return;
-    //}
-    this._keyframeOnly = val;
+    // Simple mode doesn't support this
   }
 
   set frameIncrement(val)
@@ -96,7 +87,7 @@ class SimpleVideoWrapper {
 
   get keyframeOnly()
   {
-    return this._keyframeOnly;
+    return false;
   }
 
   clearPending()
@@ -231,7 +222,7 @@ class SimpleVideoWrapper {
       this._current_cursor = video_time+this._bias;
     }
     // If we didn't set up oncanplay, ignore the cursor change.
-    if (this.oncanplay != undefined)
+    if (this.oncanplay != undefined && this._mute == false)
     {
       this._video.currentTime = this._current_cursor;
     }
@@ -241,7 +232,7 @@ class SimpleVideoWrapper {
   /// video data.
   get buffered()
   {
-    return this._time_ranges;
+    return this._video.buffered;
   }
 
   // Returns the current video cursor position
@@ -295,6 +286,7 @@ class SimpleVideoWrapper {
 export class TatorSimpleVideo {
   constructor(id, path)
   {
+    this._named_idx = id;
     console.info("Created Simple Video Decoder");
     this._buffer = new SimpleVideoWrapper(this, `Simple Video Buffer ${id}`, path)
     this._buffer.init();
@@ -347,7 +339,14 @@ export class TatorSimpleVideo {
    */
   forTime(time, buffer, direction, maxTime)
   {
-    
+    for (let idx = 0; idx < this._buffer.buffered.length; idx++)
+    {
+      if (time >= this._buffer.buffered.start(idx) && time < this._buffer.buffered.end(idx))
+      {
+        return this._buffer;
+      }
+    }
+    return null;
   }
 
   // Returns the seek buffer if it is present, or
