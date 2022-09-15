@@ -1764,6 +1764,7 @@ export class VideoCanvas extends AnnotationCanvas {
     if (this._playEffect == true)
     {
       this._effectManager.clear();
+      document.body.style.cursor = null;
     }
     /// This is the notional scheduled diagnostic interval
     var schedDiagInterval=5000.0;
@@ -2742,8 +2743,9 @@ export class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    this._effectManager.grayOut(200);
+    this._effectManager.grayOut(500);
     this._playEffect = true;
+    document.body.style.cursor = "progress";
     if (this._dispFrame >= (this._numFrames))
     {
       return false;
