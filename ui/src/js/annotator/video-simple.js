@@ -17,6 +17,7 @@ class SimpleVideoWrapper {
     this._name = name;
     this._parent = parent;
     this._video = document.createElement("VIDEO");
+    this.use_codec_buffer = true;
     this._path = path;
     this._bias = 0;
     this._keyframeOnly = false;
@@ -25,19 +26,52 @@ class SimpleVideoWrapper {
     this._checked = false;
   }
 
+  // Simple pass through to the underlying video
+  get codec_image_buffer()
+  {
+    this._video.time = this._video.currentTime;
+    return this._video;
+  }
+
   init()
   {
     this._video.onloadeddata = () => {
       this._video.onloadeddata = null;
-      this._parent._loadedDataCallback();
     };
     this._video.oncanplay = () => {
-      if (this._parent.oncanplay)
+      console.info(`${this._name} Underlying reports oncanplay, canplay is set: ${this.oncanplay!=undefined}`);
+      if (this.oncanplay)
       {
-        this._parent.oncanplay();
+        this.oncanplay();
       }
     }
     this._video.src = this._path;
+    console.info(`${this._name} is initialized with ${this._path}`);
+  }
+
+  set oncanplay(val)
+  {
+    this._oncanplay = val;
+    if (this.canplay)
+    {
+      this._oncanplay();
+    }
+  }
+
+  get oncanplay()
+  {
+    return this._oncanplay;
+  }
+  get canplay()
+  {
+    for (let idx = 0; idx < this._video.buffered.length; idx++)
+    {
+      if (this._video.currentTime >= this._video.buffered.start(idx) && this._video.currentTime < this._video.buffered.end(idx))
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   set keyframeOnly(val)
@@ -90,58 +124,18 @@ class SimpleVideoWrapper {
 
   images_near_cursor(max_distance, limit)
   {
-    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
-    let matches=[];
-    for (let timestamp of timestamps)
-    {
-      let image_timescale = this._hot_frames.get(timestamp).timescale;
-      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
-      let cursor_in_ctx = this._current_cursor * image_timescale;
-      if (Math.abs(cursor_in_ctx - timestamp) <= (max_distance*frame_delta))
-      {
-        matches.push(timestamp);
-      }
-    }
-    return matches;
+    
   }
 
   get_image(timestamp)
   {
-    if (this._hot_frames.has(timestamp))
-    {
-      let sab = this._hot_frames.get(timestamp);
-      let image = new Uint8Array(sab, CTRL_SIZE);
-      // Todo function this
-      image.timescale = sab.timescale;
-      image.frameDelta = sab.frameDelta;
-      image.time = sab.timestamp / sab.timescale;
-      image.width = sab.width;
-      image.height = sab.height;
-      image.format = sab.format;
-      image.timestamp = sab.timestamp;
-      return image;
-    }
-    else
-    {
-      return null;
-    }
+    
   }
 
   // Returns true if the cursor is in the range of the hot frames
   time_is_hot(time)
   {
-    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
-    for (let timestamp of timestamps)
-    {
-      let image_timescale = this._hot_frames.get(timestamp).timescale;
-      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
-      let time_in_ctx = time * image_timescale;
-      if (time_in_ctx >= timestamp && time_in_ctx < timestamp+frame_delta)
-      {
-        return true;
-      }
-    }
-    return false;
+  
   }
 
   _returnFrame(frame)
@@ -236,7 +230,11 @@ class SimpleVideoWrapper {
       // Keep worker and manager up to date.
       this._current_cursor = video_time+this._bias;
     }
-    this._video.currentTime = this._current_cursor;
+    // If we didn't set up oncanplay, ignore the cursor change.
+    if (this.oncanplay != undefined)
+    {
+      this._video.currentTime = this._current_cursor;
+    }
   }
 
   /// Return a list of TimeRange objects representing the downloaded/playable regions of the
@@ -299,6 +297,7 @@ export class TatorSimpleVideo {
   {
     console.info("Created Simple Video Decoder");
     this._buffer = new SimpleVideoWrapper(this, `Simple Video Buffer ${id}`, path)
+    this._buffer.init();
     this._init = false;
     this._compat = true; // Set to tell higher level code this is the simple player.
   }
@@ -447,17 +446,8 @@ export class TatorSimpleVideo {
   loadedDataPromise(parent)
   {
     let p = new Promise((resolve, reject) => {
-      if (this._init)
-      {
         resolve();
-      }
-      else
-      {
-        this._loadedDataCallback = resolve;
-        this._loadedDataError = reject;
-      }
     });
-    this._buffer.init();
     return p;
   }
 

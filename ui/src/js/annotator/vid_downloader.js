@@ -596,6 +596,11 @@ export class VideoDownloader
 
   downloadForFrame(buf_idx, frame, time)
   {
+    // Skip seek requests in info only mode.
+    if (this._infoOnly == true)
+    {
+      return;
+    }
     var version = 1;
     try
     {
