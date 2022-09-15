@@ -7,10 +7,6 @@
 // @TODO: Supply a 'cv2.VideoDecode.read()' type interface for client-side decode
 //        operations.
 
-
-import { CTRL_SIZE } from "./video-buffer-manager";
-
-
 class SimpleVideoWrapper {
   constructor(parent, name, path)
   {

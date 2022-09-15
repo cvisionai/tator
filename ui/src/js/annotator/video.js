@@ -4,7 +4,6 @@ import { TatorVideoDecoder} from "./video-codec.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { getCookie } from "../util/get-cookie.js";
 import { PeriodicTaskProfiler } from "./periodic_task_profiler";
-import { VideoBufferDemux } from "./video_buffer_demux";
 import { MotionComp } from "./motion_comp";
 import { ConcatDownloadManager } from "./concat_download_manager.js";
 import { color } from "./drawGL_colors.js";
