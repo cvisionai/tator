@@ -1828,6 +1828,7 @@ export class VideoCanvas extends AnnotationCanvas {
     else
     {
       console.warn(`Player Stalled. BD=${this._draw.bufferDepth}`);
+      this._stallCount += 1;
       // Done playing, clear playback.
       if (this._audioEligible && this._audioPlayer.paused)
       {
@@ -2024,6 +2025,12 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     this._loaderBuffer = bufferName;
     let loader = () => {this.loaderThread(false, bufferName)};
+    let readyThreshold = this._draw.bufferDepth*0.75;
+    if (this._stallCount > 0)
+    {
+      readyThreshold = 4;
+    }
+
     // Loader thread that seeks to the current frame and continually kicks off seeking
     // to the next frame.
     //
@@ -2032,7 +2039,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       //console.info("Loader Full");
       this._loaderTimeout = setTimeout(loader, 0);
-      if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
+      if (this._playerTimeout == null && this._draw.canPlay() > readyThreshold)
       {
         this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
       }
@@ -2082,7 +2089,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this.seekFrame(this._loadFrame, pushAndGoToNextFrame, false, bufferName);
 
 
-    if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
+    if (this._playerTimeout == null && this._draw.canPlay() > readyThreshold)
     {
       this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
     }
@@ -2746,6 +2753,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._effectManager.grayOut(500);
     this._playEffect = true;
     document.body.style.cursor = "progress";
+    this._stallCount = 0;
     if (this._dispFrame >= (this._numFrames))
     {
       return false;
