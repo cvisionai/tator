@@ -56,7 +56,7 @@ class DownloadInfoSchema(AutoSchema):
     def get_responses(self, path, method):
         responses = error_responses()
         if method == 'POST':
-            responses['200'] = {
+            responses['201'] = {
                 'description': 'Information required for download.',
                 'content': {'application/json': {'schema': {
                     'type': 'array',
