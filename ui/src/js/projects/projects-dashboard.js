@@ -1,5 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { getCookie } from "../util/get-cookie.js";
+import { store, api } from "./store.js";
 
 export class ProjectsDashboard extends TatorPage {
   constructor() {
@@ -42,6 +43,10 @@ export class ProjectsDashboard extends TatorPage {
 
     this._modalNotify = document.createElement("modal-notify");
     main.appendChild(this._modalNotify);
+
+    // Create store subscriptions
+    store.subscribe(state => state.projects, this._updateProjects);
+    store.subscribe(state => state.organizations, this._updateOrganizations);
 
     this._removeCallback = evt => {
       deleteProject.setAttribute("project-id", evt.detail.projectId);
@@ -88,43 +93,9 @@ export class ProjectsDashboard extends TatorPage {
 
   connectedCallback() {
     TatorPage.prototype.connectedCallback.call(this);
-    // Get projects
-    fetch("/rest/Projects", {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      },
-    })
-    .then(response => response.json())
-    .then(projects => {
-      for (let project of projects) {
-        this._insertProjectSummary(project);
-      }
-      this._newProjectDialog.projects = projects;
-    })
-
-    // Get organizations
-    fetch("/rest/Organizations", {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
-    })
-    .then(response => response.json())
-    .then(organizations => {
-      const adminOrganizations = organizations.filter(org => org.permission == "Admin");
-      if (adminOrganizations.length > 0) {
-        this._newProjectDialog.organizations = adminOrganizations;
-        this._newProjectButton.style.display = "flex";
-        this._newProject.style.display = "block";
-      }
-    })
+    // Initialize store data
+    api.getProjectList().then(data => store.setState({projects: data}));
+    api.getOrganizationList().then(data => store.setState({organizations: data}));
   }
 
   static get observedAttributes() {
@@ -133,6 +104,24 @@ export class ProjectsDashboard extends TatorPage {
 
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+  }
+
+  _updateProjects(projects, prevProjects) {
+    for (let project of projects) {
+      if (prevProjects == null || !prevProjects.includes(project)) {
+        this._insertProjectSummary(project);
+      }
+    }
+    this._newProjectDialog.projects = projects;
+  }
+
+  _updateOrganizations(organizations, prevOrganizations) {
+    const adminOrganizations = organizations.filter(org => org.permission == "Admin");
+    if (adminOrganizations.length > 0) {
+      this._newProjectDialog.organizations = adminOrganizations;
+      this._newProjectButton.style.display = "flex";
+      this._newProject.style.display = "block";
+    }
   }
 
   _insertProjectSummary(project) {
