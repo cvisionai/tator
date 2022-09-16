@@ -59,13 +59,14 @@ export class Utilities
     }
   }
   // Get the download request object
-  static getDownloadRequest(media_element, session_headers)
+  static getDownloadInfo(media_element, session_headers)
   {
     // Download original file if available.
     let url;
     let http_authorization;
     let hostname;
     let path;
+    let size;
     var media_files = media_element.media_files;
     const byRes = (a, b) => {return b.resolution[0] - a.resolution[0];};
     if (media_files)
@@ -78,6 +79,7 @@ export class Utilities
       {
         media_files.image.sort(byRes);
         path = media_files.image[0].path;
+        size = media_files.image[0].size;
         http_authorization = media_files.image[0].http_auth;
         hostname = media_files.image[0].host;
       }
@@ -85,6 +87,7 @@ export class Utilities
       {
         media_files.archival.sort(byRes);
         path = media_files.archival[0].path;
+        size = media_files.archival[0].size;
         http_authorization = media_files.archival[0].http_auth;
         hostname = media_files.archival[0].host;
       }
@@ -92,6 +95,7 @@ export class Utilities
       {
         media_files.streaming.sort(byRes);
         path = media_files.streaming[0].path;
+        size = media_files.streaming[0].size;
         http_authorization = media_files.streaming[0].http_auth;
         hostname = media_files.streaming[0].host;
       }
@@ -116,7 +120,7 @@ export class Utilities
       }
     }
 
-    return request;
+    return {"request": request, "size": size};
   }
 
   // Returns a promise with the clients IP
