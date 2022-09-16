@@ -1,19 +1,8 @@
 <html>
     <head>
         <title>Embedded Tator Video Example</title>
-        <!-- Suggest copying these locally to avoid CORS. -->
-        <!-- As a benefit you might get some stability as you can -->
-        <!-- see changes as they come in via a merge. -->
-        <!--
-        <script src="/static/js/components/tator-element.js"></script>
-        <script src="/static/js/annotator/FrameBuffer.js"></script>
-        <script src="/static/js/annotator/drawGL_colors.js"></script>
-        <script src="/static/js/annotator/drawGL.js"></script>
-        <script src="/static/js/annotator/annotation.js"></script>
-        <script src="/static/js/annotator/video.js"></script>
-        <script src="/static/js/annotator/image.js"></script>
-        <script src="/static/js/components/canvas-ctxmenu.js"></script>
-        -->
+        <!-- NOTE: This needs a of work to have less tentacles !-->
+
         <script src="/static/components.js"></script>
         <script src="/static/util.js"></script>
         <script src="/static/annotation.js"></script>
@@ -184,13 +173,15 @@
                                             null,
                                             {height:0});
 
-            // Programatic controls presumable to hook into buttons:
+            // Programmatic controls presumable to hook into buttons:
             // video_element.play()
             // video_element.playBackwards();
             // video_element.pause()
             // video_element.advance(); //1-frame
             // video_element.back(); //1-frame back
             // video_element.gotoFrame(N, [bool: hq])
+            // Only "non-_" functions should be called from higher level code.
+            // See video.js for event listing + more functions.
          }
          async function load_video(host,media_id, offsite_config)
          {

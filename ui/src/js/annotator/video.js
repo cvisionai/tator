@@ -64,6 +64,30 @@ import { TatorSimpleVideo } from "./video-simple.js";
 ///   performance in the teens. On an XPS 15 (2008 era), Chrome performed
 ///   in the teens.
 
+// Events of interest to watch for with addEventListener():
+// 
+// - videoError : Emitted if there is an issue with system configuration
+//        detail : {videoDecoderPresent: <true if VideoDecoder API is available>,
+//                  forceCompat: <true if legacy decode mode is enabled>,
+//                  secureContext: <true if the window is a secure context>}
+// - codecNotSupported : emitted if the given codec will not play (FATAL)
+//        detail: {codec: <codec string>}
+// - frameChange : emitted when a frame changes
+//        detail : {frame: <displayed frame>}
+// - playbackReady : emitted when playback is ready to go
+// - bufferLoaded
+//        detail : {percent_complete: <0 to 1, representing percentage of scrub buffer loaded>}
+// - videoLengthChanged
+//        detail : {length: <true length of video>}
+// - onDemandDetail
+//        detail : {ranges: <list of start/stop times of buffered regions>}
+// - playbackEnded : emitted if the video reaches the end of the video
+// - temporarilyMaskEdits
+//        detail : {enabled: <true if edits are to be ENABLED>}
+// - rateChange : emitted when the video playback rate changes
+//        detail : {rate: <new_rate>}
+// - playbackStalled : emitted when playback stalls
+
 // Constrain the video display FPS to not allow dropped frames during playback
 //
 export var guiFPS = 30;
