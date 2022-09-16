@@ -31,11 +31,7 @@ export class DownloadButton extends TatorElement {
       {
         const fileSize = this.getAttribute("size");
         const name = this.getAttribute("name");
-        if (!this.hasAttribute("name")) {
-          console.log("WHFOIEWHFIOEWJFOIWNOINCOIUEF");
-        } else {
-          console.log(`also aoiejfihwojwiehowief: '${name}'`);
-        }
+
         console.log(`${name} is ${fileSize} bytes`);
         const fileStream = streamSaver.createWriteStream(name, {size: fileSize});
         fetch(this.request)
