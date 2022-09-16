@@ -356,7 +356,7 @@ export class AnnotationPage extends TatorPage {
               this._prev.disabled = true;
             }
             else {
-              this._prev.addEventListener("click", () => {
+              this._prev.addEventListener("click", (evt) => {
                 let url = baseUrl + prevData.prev;
                 var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
@@ -368,7 +368,18 @@ export class AnnotationPage extends TatorPage {
                 }
                 searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
-                window.location.href = url;
+                // If the control key is pressed jump to a new tab.
+                if (evt.ctrlKey)
+                {
+                  let a = document.createElement("a");
+                  a.target="_blank";
+                  a.href = url;
+                  a.click();
+                }
+                else
+                {
+                  window.location.href = url;
+                }
               });
               this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
               this._prev.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
@@ -378,7 +389,7 @@ export class AnnotationPage extends TatorPage {
               this._next.disabled = true;
             }
             else {
-              this._next.addEventListener("click", () => {
+              this._next.addEventListener("click", (evt) => {
                 let url = baseUrl + nextData.next;
                 var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
@@ -390,7 +401,18 @@ export class AnnotationPage extends TatorPage {
                 }
                 searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
-                window.location.href = url;
+                // If the control key is pressed jump to a new tab.
+                if (evt.ctrlKey)
+                {
+                  let a = document.createElement("a");
+                  a.target="_blank";
+                  a.href = url;
+                  a.click();
+                }
+                else
+                {
+                  window.location.href = url;
+                }
               });
               this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
               this._next.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
