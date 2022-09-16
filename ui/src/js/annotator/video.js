@@ -83,6 +83,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // Set global variable to find us
     window.tator_video = this;
     this._localMode = false;
+    this._forceCompat = false;
     this._ready = false;
     this._diagnosticMode = false;
     this._videoVersion = 1;
@@ -117,6 +118,10 @@ export class VideoCanvas extends AnnotationCanvas {
     if (searchParams.has("localMode"))
     {
       this._localMode = Number(searchParams.get("localMode"));
+    }
+    if (searchParams.has("forceCompat"))
+    {
+      this._forceCompat = Number(searchParams.get("forceCompat"));
     }
 
     this._networkSeekTimeout = 5000;
@@ -487,8 +492,13 @@ export class VideoCanvas extends AnnotationCanvas {
     let use_hls = (this._videoObject.media_files.streaming[0].hls ? true : false);
     let searchParams = new URLSearchParams(window.location.search);
     console.info(`VideoDecoder: ${'VideoDecoder' in window}; Secure Context: ${window.isSecureContext}`);
-    if ('VideoDecoder' in window == false || Number(searchParams.get('force_compat'))==1 || use_hls == true)
+    if ('VideoDecoder' in window == false || this._forceCompat == 1 || use_hls == true)
     {
+      this.dispatchEvent(new CustomEvent("videoError",
+                                              {detail: {"videoDecoderPresent":'VideoDecoder' in window == true,
+                                                        "forceCompat": this._forceCompat,
+                                                        "secureContext": window.isSecureContext}
+                                              }));
       let v = new TatorSimpleVideo(idx, this._videoObject.media_files.streaming[idx].path);
       if (idx == this._scrub_idx)
       {
