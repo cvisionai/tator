@@ -142,6 +142,9 @@ class TatorVideoManager {
     this._scrubbing = false;
     this._mute = false;
     this._checked = false;
+
+    this._videoChecker = new VideoDecoder({output: ()=>{},
+                                          error: ()=>{}});
   }
 
   set keyframeOnly(val)
@@ -186,16 +189,22 @@ class TatorVideoManager {
       if (this._checked == false)
       {
         this._checked = true;
-        VideoDecoder.isConfigSupported({'codec': this._codec_string, codedWidth: 1280,codedHeight: 720}).then(support =>
+        let supported = false;
+        try
         {
-          if (support.supported != true)
-          {
-            this._parent._canvas.dispatchEvent(new CustomEvent("codecNotSupported",
-                                    {composed: true,
-                                      detail: {"codec": this._codec_string}}));
-          }
-        } 
-      );
+          this._videoChecker.configure({'codec': this._codec_string, codedWidth: 1280,codedHeight: 720});
+          supported = true;
+        }
+        catch(e)
+        {
+          console.warn(e);
+        }
+        if (supported = false)
+        {
+          this._parent._canvas.dispatchEvent(new CustomEvent("codecNotSupported",
+                                  {composed: true,
+                                    detail: {"codec": this._codec_string}}));
+        }
       }
       this._timescaleMap.set(msg.data.timestampOffset,msg.data.data.tracks[0].timescale);
       if (this._parent.onReady)
