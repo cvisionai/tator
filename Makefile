@@ -181,9 +181,22 @@ experimental_docker:
 endif
 
 
+USE_VPL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("enableVpl","False"))')
+ifeq ($(USE_VPL),True)
+.PHONY: client-vpl
+client-vpl:
+	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION)
+else
+.PHONY: client-vpl
+client-vpl:
+	@echo "Skipping VPL Build"
+endif
+
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
 client-image: experimental_docker
+	make client-vpl
 	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 	docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
