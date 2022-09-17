@@ -215,6 +215,16 @@ class TatorVideoManager {
     else if (msg.data.type == "error")
     {
       console.warn(msg.data);
+      if (msg.data.message.toLocaleString().indexOf("Unsupported configuration") > 0)
+      {
+        if (this._alertSent == undefined)
+        {
+          this._alertSent = true;
+          this._parent._canvas.dispatchEvent(new CustomEvent("codecNotSupported",
+                                    {composed: true,
+                                      detail: {"codec": this._codec_string}}));
+        }
+      }
     }
     else if (msg.data.type == "frameDelta")
     {

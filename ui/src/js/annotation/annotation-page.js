@@ -91,7 +91,7 @@ export class AnnotationPage extends TatorPage {
 
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";
-      //window.alert("System error detected");
+      //window.alert(evt.message);
       Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
 
@@ -179,6 +179,12 @@ export class AnnotationPage extends TatorPage {
           } else if (data.media_files && 'streaming' in data.media_files) {
             data.media_files.streaming.sort((a, b) => {return b.resolution[0] - a.resolution[0];});
           }
+
+          // Update Title Bar to show media information
+          // Usability guidance from mozilla specifies order should go fine -> coarser
+          // e.g. filename | tool name | org name
+          // We have tator before tool name, but having file name first is probably helpful enough.
+          document.title = `${data.name} | ${document.title}`
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
@@ -350,7 +356,7 @@ export class AnnotationPage extends TatorPage {
               this._prev.disabled = true;
             }
             else {
-              this._prev.addEventListener("click", () => {
+              this._prev.addEventListener("click", (evt) => {
                 let url = baseUrl + prevData.prev;
                 var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
@@ -362,7 +368,18 @@ export class AnnotationPage extends TatorPage {
                 }
                 searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
-                window.location.href = url;
+                // If the control key is pressed jump to a new tab.
+                if (evt.ctrlKey)
+                {
+                  let a = document.createElement("a");
+                  a.target="_blank";
+                  a.href = url;
+                  a.click();
+                }
+                else
+                {
+                  window.location.href = url;
+                }
               });
               this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
               this._prev.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
@@ -372,7 +389,7 @@ export class AnnotationPage extends TatorPage {
               this._next.disabled = true;
             }
             else {
-              this._next.addEventListener("click", () => {
+              this._next.addEventListener("click", (evt) => {
                 let url = baseUrl + nextData.next;
                 var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
@@ -384,7 +401,18 @@ export class AnnotationPage extends TatorPage {
                 }
                 searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
-                window.location.href = url;
+                // If the control key is pressed jump to a new tab.
+                if (evt.ctrlKey)
+                {
+                  let a = document.createElement("a");
+                  a.target="_blank";
+                  a.href = url;
+                  a.click();
+                }
+                else
+                {
+                  window.location.href = url;
+                }
               });
               this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
               this._next.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));

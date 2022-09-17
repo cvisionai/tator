@@ -4,11 +4,11 @@ import { TatorVideoDecoder} from "./video-codec.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { getCookie } from "../util/get-cookie.js";
 import { PeriodicTaskProfiler } from "./periodic_task_profiler";
-import { VideoBufferDemux } from "./video_buffer_demux";
 import { MotionComp } from "./motion_comp";
 import { ConcatDownloadManager } from "./concat_download_manager.js";
 import { color } from "./drawGL_colors.js";
 import { EffectManager } from "./video-effects.js";
+import { TatorSimpleVideo } from "./video-simple.js";
 
 // Video export class handles interactions between HTML presentation layer and the
 // javascript application.
@@ -64,6 +64,30 @@ import { EffectManager } from "./video-effects.js";
 ///   performance in the teens. On an XPS 15 (2008 era), Chrome performed
 ///   in the teens.
 
+// Events of interest to watch for with addEventListener():
+// 
+// - videoError : Emitted if there is an issue with system configuration
+//        detail : {videoDecoderPresent: <true if VideoDecoder API is available>,
+//                  forceCompat: <true if legacy decode mode is enabled>,
+//                  secureContext: <true if the window is a secure context>}
+// - codecNotSupported : emitted if the given codec will not play (FATAL)
+//        detail: {codec: <codec string>}
+// - frameChange : emitted when a frame changes
+//        detail : {frame: <displayed frame>}
+// - playbackReady : emitted when playback is ready to go
+// - bufferLoaded
+//        detail : {percent_complete: <0 to 1, representing percentage of scrub buffer loaded>}
+// - videoLengthChanged
+//        detail : {length: <true length of video>}
+// - onDemandDetail
+//        detail : {ranges: <list of start/stop times of buffered regions>}
+// - playbackEnded : emitted if the video reaches the end of the video
+// - temporarilyMaskEdits
+//        detail : {enabled: <true if edits are to be ENABLED>}
+// - rateChange : emitted when the video playback rate changes
+//        detail : {rate: <new_rate>}
+// - playbackStalled : emitted when playback stalls
+
 // Constrain the video display FPS to not allow dropped frames during playback
 //
 export var guiFPS = 30;
@@ -83,6 +107,7 @@ export class VideoCanvas extends AnnotationCanvas {
     // Set global variable to find us
     window.tator_video = this;
     this._localMode = false;
+    this._forceCompat = false;
     this._ready = false;
     this._diagnosticMode = false;
     this._videoVersion = 1;
@@ -117,6 +142,10 @@ export class VideoCanvas extends AnnotationCanvas {
     if (searchParams.has("localMode"))
     {
       this._localMode = Number(searchParams.get("localMode"));
+    }
+    if (searchParams.has("forceCompat"))
+    {
+      this._forceCompat = Number(searchParams.get("forceCompat"));
     }
 
     this._networkSeekTimeout = 5000;
@@ -456,7 +485,7 @@ export class VideoCanvas extends AnnotationCanvas {
         if (new_play_idx != this._scrub_idx) {
           this.stopDownload();
           this._videoElement[this._scrub_idx].clearScrubBuffer();
-          this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig, false);
+          this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig, this._videoElement[0]._compat == true);
         }
         this._scrub_idx = new_play_idx;
       }
@@ -487,20 +516,23 @@ export class VideoCanvas extends AnnotationCanvas {
     let use_hls = (this._videoObject.media_files.streaming[0].hls ? true : false);
     let searchParams = new URLSearchParams(window.location.search);
     console.info(`VideoDecoder: ${'VideoDecoder' in window}; Secure Context: ${window.isSecureContext}`);
-    if ('VideoDecoder' in window == false || Number(searchParams.get('force_mse'))==1 || use_hls == true)
+    if ('VideoDecoder' in window == false || this._forceCompat == 1 || use_hls == true)
     {
-      // TODO: Can possibly make this a warning and fall back to compat mode.
-      // with some caveats on performance.
-      let decoder = 'VideoDecoder' in window;
-      if (Number(searchParams.get('force_mse'))==1)
-      {
-        decoder = false;
-      }
       this.dispatchEvent(new CustomEvent("videoError",
-                         {composed: true,
-                          detail: {"videoDecoderPresent": decoder,
-                                   "secureContext": window.isSecureContext}}));
-      return new VideoBufferDemux(); // TODO, per above, Turn this into simple demuxer
+                                              {detail: {"videoDecoderPresent":'VideoDecoder' in window == true,
+                                                        "forceCompat": this._forceCompat,
+                                                        "secureContext": window.isSecureContext}
+                                              }));
+      let v = new TatorSimpleVideo(idx, this._videoObject.media_files.streaming[idx].path);
+      if (idx == this._scrub_idx)
+      {
+        this.dispatchEvent(new CustomEvent("bufferLoaded",
+                                              {composed: true,
+                                                detail: {"percent_complete":100.0}
+                                              }));
+      }
+      //window.alert(`VideoDecoder: ${'VideoDecoder' in window}; Secure Context: ${window.isSecureContext}`);
+      return v;
     }
     else
     {
@@ -901,6 +933,18 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement.push(this.construct_demuxer(idx, streaming_files[idx].resolution[0]));
       this._videoElement[idx].named_idx = idx;
     }
+
+    if (this._videoElement[0]._compat)
+    {
+      this.dispatchEvent(new CustomEvent("maxPlaybackRate", {
+        detail: {rate: 4},
+        composed: true
+      }));
+
+      // Increase GPU buffer to ensure smoother playback
+      this._draw.jumboBufferMode();
+    }
+
     // Clear the buffer in case this is a hot-swap
     this._draw.clear();
 
@@ -917,7 +961,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this.stopDownload();
     var promise = this._videoElement[this._scrub_idx].loadedDataPromise(this);
 
-    this.startDownload(streaming_files, offsite_config, false);
+    this.startDownload(streaming_files, offsite_config, this._videoElement[0]._compat == true);
     if (fps < 20)
     {
       console.info("Disable safe mode for low FPS");
@@ -1327,7 +1371,6 @@ export class VideoCanvas extends AnnotationCanvas {
         // by waiting for a signal off the video + then scheduling an animation frame.
         video.oncanplay=function()
         {
-          that._effectManager.clear();
           if (video.summaryLevel)
           {
             frame = that.timeToFrame(video.currentTime, null, video.named_idx);
@@ -1633,7 +1676,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._draw.prepForward();
     }
 
-    if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
+    if (this._videoElement[this._scrub_idx] == false && this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
       // Cap effective decode rate around 240 fps 
       // This was emperically gathered as a good cut off for 5 15fps playing back at 16x
@@ -1655,7 +1698,14 @@ export class VideoCanvas extends AnnotationCanvas {
           this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
         }
       }
-      this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub-only");}, 0);
+      if (this._videoElement[this._scrub_idx]._compat == true)
+      {
+        this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub");}, 0);
+      }
+      else
+      {
+        this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub-only");}, 0);
+      }
     }
     this._sentPlaybackReady = false;
     // Kick off the loader
@@ -1745,6 +1795,11 @@ export class VideoCanvas extends AnnotationCanvas {
   // as the argument
   playerThread(domtime)
   {
+    if (this._playEffect == true)
+    {
+      this._effectManager.clear();
+      document.body.style.cursor = null;
+    }
     /// This is the notional scheduled diagnostic interval
     var schedDiagInterval=5000.0;
     //console.info(`PLAYER @ ${performance.now()}`);
@@ -1806,7 +1861,8 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else
     {
-      console.warn("Player Stalled.");
+      console.warn(`Player Stalled. BD=${this._draw.bufferDepth}`);
+      this._stallCount += 1;
       // Done playing, clear playback.
       if (this._audioEligible && this._audioPlayer.paused)
       {
@@ -2003,6 +2059,12 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     this._loaderBuffer = bufferName;
     let loader = () => {this.loaderThread(false, bufferName)};
+    let readyThreshold = this._draw.bufferDepth*0.75;
+    if (this._stallCount > 0)
+    {
+      readyThreshold = 4;
+    }
+
     // Loader thread that seeks to the current frame and continually kicks off seeking
     // to the next frame.
     //
@@ -2011,7 +2073,7 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       //console.info("Loader Full");
       this._loaderTimeout = setTimeout(loader, 0);
-      if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
+      if (this._playerTimeout == null && this._draw.canPlay() > readyThreshold)
       {
         this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
       }
@@ -2061,7 +2123,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this.seekFrame(this._loadFrame, pushAndGoToNextFrame, false, bufferName);
 
 
-    if (this._playerTimeout == null && this._draw.canPlay() > (this._draw.bufferDepth*0.75))
+    if (this._playerTimeout == null && this._draw.canPlay() > readyThreshold)
     {
       this._playerTimeout = setTimeout(()=>{this.playerThread();}, 250);
     }
@@ -2100,7 +2162,7 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     let appendThreshold = this._calculateReadyThreshold();
     let video = this.videoBuffer(frame, "play", true);
-    if (video == null)
+    if (video == null || this._videoElement[this._play_idx]._compat == true)
     {
       return false;
     }
@@ -2156,7 +2218,7 @@ export class VideoCanvas extends AnnotationCanvas {
   // Returns true if on-demand buffer check + delay is required based on current settings.
   bufferDelayRequired()
   {
-    return (this._playbackRate <= RATE_CUTOFF_FOR_ON_DEMAND && this._play_idx != this._scrub_idx);
+    return (this._playbackRate <= RATE_CUTOFF_FOR_ON_DEMAND && this._play_idx != this._scrub_idx && this._videoElement[0]._compat != true);
   }
 
   get length()
@@ -2722,6 +2784,10 @@ export class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
+    this._effectManager.grayOut(500);
+    this._playEffect = true;
+    document.body.style.cursor = "progress";
+    this._stallCount = 0;
     if (this._dispFrame >= (this._numFrames))
     {
       return false;
@@ -2735,7 +2801,7 @@ export class VideoCanvas extends AnnotationCanvas {
       }
       else
       {
-        if (this._play_idx == this._scrub_idx && this.videoBuffer(this.currentFrame(), "scrub") != null)
+        if (this._play_idx == this._scrub_idx && this.videoBuffer(this.currentFrame(), "scrub") != null || this._videoElement[this._play_idx]._compat == true)
         {
           this._playGenericScrub(Direction.FORWARD);
         }
