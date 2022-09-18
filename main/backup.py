@@ -261,25 +261,30 @@ class TatorBackupManager:
         """
         successful_backups = set()
         for resource in resource_qs.iterator():
+            needs_backup = True
             project = self.project_from_resource(resource)
             path = resource.path
             success, store_info = self.get_store_info(project)
             success = success and StoreType.BACKUP in store_info
 
             if success:
-                if store_info[StoreType.BACKUP]["store"].check_key(path):
-                    logger.info(f"Resource {path} already backed up")
-                    continue
+                backup_info = store_info[StoreType.BACKUP]
+                live_info = store_info[StoreType.LIVE]
 
+            if success and backup_info["store"].check_key(path):
+                logger.info(f"Resource {path} already backed up, updating its state.")
+                needs_backup = False
+
+            if success and needs_backup:
                 # Get presigned url from the live bucket, set to expire in 1h
-                download_url = store_info[StoreType.LIVE]["store"].get_download_url(path, 3600)
+                download_url = live_info["store"].get_download_url(path, 3600)
 
                 # Perform the actual copy operation directly from the presigned url
                 try:
                     self._rpc(
                         "operations/copyurl",
-                        fs=f"{store_info[StoreType.BACKUP]['remote_name']}:",
-                        remote=f"{store_info[StoreType.BACKUP]['bucket_name']}/{path}",
+                        fs=f"{backup_info['remote_name']}:",
+                        remote=f"{backup_info['bucket_name']}/{path}",
                         url=download_url,
                     )
                 except:
