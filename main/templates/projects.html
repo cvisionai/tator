@@ -8,6 +8,20 @@
 {% endblock head %}
 
 {% block body %}
+<template id=projects-dashboard>
+  <main class="layout-max py-4">
+    <div class="main__header d-flex flex-items-center flex-justify-between py-6">
+      <h1 class="h1">Projects</h1>
+      <a class="btn" id="new-project-button" style="display:none">New Project</a>
+      <div class="d-flex flex-column" id="projects">
+        <new-project style="display:none" id="new-project"></new-project>
+        <new-project-dialog id="new-project-dialog"></new-project-dialog>
+        <delete-project id="delete-project"></delete-project>
+      </div>
+    </div>
+    <modal-notify id="modal-notify"></modal-notify>
+  </main>
+</template>
 <projects-dashboard
   username="{{ user|stringformat:'s' }}"
   email="{{ user.email }}">

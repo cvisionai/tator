@@ -6,43 +6,15 @@ export class ProjectsDashboard extends TatorPage {
   constructor() {
     super();
 
-    const main = document.createElement("main");
-    main.setAttribute("class", "layout-max py-4");
-    this._shadow.appendChild(main);
+    const template = document.getElementById("projects-dashboard").content;
+    this._shadow.appendChild(template);
 
-    const header = document.createElement("div");
-    header.setAttribute("class", "main__header d-flex flex-items-center flex-justify-between py-6");
-    main.appendChild(header);
-    
-    const h1 = document.createElement("h1");
-    h1.setAttribute("class", "h1");
-    header.appendChild(h1);
-
-    const h1Text = document.createTextNode("Projects");
-    h1.appendChild(h1Text);
-
-    this._newProjectButton = document.createElement("a");
-    this._newProjectButton.setAttribute("class", "btn");
-    this._newProjectButton.textContent = "New Project";
-    header.appendChild(this._newProjectButton);
-    this._newProjectButton.style.display = "none"; // Hide until organizations are retrieved.
-
-    this._projects = document.createElement("div");
-    this._projects.setAttribute("class", "d-flex flex-column");
-    main.appendChild(this._projects);
-
-    this._newProject = document.createElement("new-project");
-    this._projects.appendChild(this._newProject);
-    this._newProject.style.display = "none"; // Hide until organizations are retrieved.
-
-    this._newProjectDialog = document.createElement("new-project-dialog");
-    this._projects.appendChild(this._newProjectDialog);
-
-    const deleteProject = document.createElement("delete-project");
-    this._projects.appendChild(deleteProject);
-
-    this._modalNotify = document.createElement("modal-notify");
-    main.appendChild(this._modalNotify);
+    this._newProjectButton = this._shadow.getElementById("new-project-button");
+    this._projects = this._shadow.getElementById("projects");
+    this._newProject = this._shadow.getElementById("new-project");
+    this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
+    const deleteProject = this._shadow.getElementById("delete-project");
+    this._modalNotify = this._shadow.getElementById("modal-notify");
 
     // Create store subscriptions
     store.subscribe(state => state.projects, this._updateProjects);
