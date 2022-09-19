@@ -566,6 +566,7 @@ class TatorVideoManager {
       this._current_cursor = video_time+this._bias;
     }
     const is_hot = this._cursor_is_hot();
+    this._clean_hot(); // clean hot prior to potentially getting more data back
     this._codec_worker.postMessage(
       {"type": "currentTime",
        "currentTime": this._current_cursor,
