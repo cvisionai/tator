@@ -104,10 +104,11 @@ class ProjectListAPI(BaseListView):
             permission=Permission.FULL_CONTROL,
         )
         member.save()
+        projects = Project.objects.filter(pk=project.id)
         return {
             'message': f"Project {params['name']} created!",
             'id': project.id,
-            'object': _serialize_projects([project])[0],
+            'object': _serialize_projects(projects, self.request.user.pk)[0],
         }
 
     def get_queryset(self):
@@ -209,9 +210,10 @@ class ProjectDetailAPI(BaseDetailView):
         else:
             raise ValueError(f"No recognized keys in request!")
 
+        projects = Project.objects.filter(pk=project.id)
         return {
             'message': f"Project {params['id']} updated successfully!",
-            'object': _serialize_projects([project])[0],
+            'object': _serialize_projects(projects, self.request.user.pk)[0],
         }
 
     def _delete(self, params):
