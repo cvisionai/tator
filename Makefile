@@ -149,6 +149,9 @@ dashboard-token:
 
 .PHONY: tator-image
 tator-image: webpack
+	if [ ! -f scripts/packages/tator-js/pkg/dist/tator.js ]; then
+		make js-bindings
+	fi
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
