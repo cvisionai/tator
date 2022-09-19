@@ -13,7 +13,7 @@ export class ProjectsDashboard extends TatorPage {
     this._projects = this._shadow.getElementById("projects");
     this._newProject = this._shadow.getElementById("new-project");
     this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
-    const deleteProject = this._shadow.getElementById("delete-project");
+    this._deleteProject = this._shadow.getElementById("delete-project");
     this._modalNotify = this._shadow.getElementById("modal-notify");
 
     // Create store subscriptions
@@ -21,13 +21,13 @@ export class ProjectsDashboard extends TatorPage {
     store.subscribe(state => state.organizations, this._updateOrganizations.bind(this));
 
     this._removeCallback = evt => {
-      deleteProject.setAttribute("project-id", evt.detail.projectId);
-      deleteProject.setAttribute("project-name", evt.detail.projectName);
-      deleteProject.setAttribute("is-open", "");
+      this._deleteProject.setAttribute("project-id", evt.detail.projectId);
+      this._deleteProject.setAttribute("project-name", evt.detail.projectName);
+      this._deleteProject.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     };
 
-    deleteProject.addEventListener("close", evt => {
+    this._deleteProject.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal", "");
     });
 
@@ -35,7 +35,8 @@ export class ProjectsDashboard extends TatorPage {
       this.removeAttribute("has-open-modal", "");
       if (this._newProjectDialog._confirm) {
         const projectSpec = this._newProjectDialog.getProjectSpec();
-        store.getState().addProject(projectSpec)
+        const preset = this._newProjectDialog.getProjectPreset();
+        store.getState().addProject(projectSpec, preset)
         .then(project => {
           this._projectCreationRedirect = `/${project.id}/project-settings`;
           this._modalNotify.init("Project created successfully!",
@@ -86,10 +87,10 @@ export class ProjectsDashboard extends TatorPage {
     // Remove any projects no longer present.
     for (let project of prevProjects) {
       if (!projects.includes(project)) {
-        const summary = document.getElementById(`project-summary-${project.id}`);
+        const summary = this._shadow.getElementById(`project-summary-${project.id}`);
         this._projects.removeChild(summary);
         this.removeAttribute("has-open-modal");
-        deleteProject.removeAttribute("is-open");
+        this._deleteProject.removeAttribute("is-open");
       }
     }
     this._newProjectDialog.projects = projects;

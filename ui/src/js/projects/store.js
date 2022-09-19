@@ -115,6 +115,7 @@ const store = create(subscribeWithSelector((set, get) => ({
   },
   addProject: async (projectSpec, preset) => {
     let response = await api.createProject(projectSpec);
+    const project = response.object;
     console.log(response.message);
     switch (preset) {
       case "imageClassification":
@@ -127,18 +128,19 @@ const store = create(subscribeWithSelector((set, get) => ({
         await configureMultiObjectTracking(project);
         break;
       case "activityRecognition":
-        promise = this._configureActivityRecognition(projectPromise);
+        await configureActivityRecognition(project);
         break;
       case "none":
         break;
       default:
         console.error(`Invalid preset: ${preset}`);
     }
-    set({ projects: get().projects.push(response.object) });
+    get().projects.push(project);
+    return project;
   },
   removeProject: async (id) => {
     const response = await api.deleteProject(id);
-    console.log(repsonse.message);
+    console.log(response.message);
     set({ projects: get().projects.filter(project => project.id != id) });
   }
 })));
