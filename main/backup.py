@@ -154,11 +154,16 @@ class TatorBackupManager:
 
         if project_id not in TatorBackupManager.__project_stores:
             TatorBackupManager.__project_stores[project_id] = {}
+
+            # Determine if the default bucket is being used for all StoreTypes or none
+            use_default_bucket = project.get_bucket() is None
+
             # Get the `TatorStore` object that connects to object storage for the given type
             for store_type in StoreType:
                 is_backup = store_type == StoreType.BACKUP
-                project_bucket = project.get_bucket(backup=is_backup)
-                use_default_bucket = project_bucket is None
+                project_bucket = (
+                    None if use_default_bucket else project.get_bucket(backup=is_backup)
+                )
                 try:
                     store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
                 except:
