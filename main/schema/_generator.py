@@ -190,7 +190,7 @@ class CustomGenerator(SchemaGenerator):
                 },
                 'CookieAuth': {
                     'type': 'apiKey',
-                    'in': 'cookie',
+                    'in': 'header',
                     'name': 'csrftoken',
                 },
             }
