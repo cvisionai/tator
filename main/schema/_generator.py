@@ -191,7 +191,7 @@ class CustomGenerator(SchemaGenerator):
                 'CookieAuth': {
                     'type': 'apiKey',
                     'in': 'header',
-                    'name': 'csrftoken',
+                    'name': 'X-CSRFToken',
                 },
             }
             schema['security'] = [
