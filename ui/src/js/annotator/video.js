@@ -472,10 +472,12 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       let new_play_idx = this.find_closest(this._videoObject, quality);
 
-      if (buffer == undefined) {
-        this._play_idx = new_play_idx;
-      }
-      else if (buffer == "play") {
+      if (buffer == undefined || buffer == "play") {
+        // If we are switching buffer clean up memory of old quality
+        if (new_play_idx != this._play_idx)
+        {
+          this._videoElement[this._play_idx].reset();
+        }
         this._play_idx = new_play_idx;
       }
       else if (buffer == "seek") {
@@ -552,29 +554,30 @@ export class VideoCanvas extends AnnotationCanvas {
           p.onReady = null;
         }
       }
-      if (idx == this._play_idx)
-      {
-        p.onBuffered = () => {
-          if (idx == this._scrub_idx)
+      p.onBuffered = () => {
+        if (idx == this._scrub_idx)
+        {
+          return;
+        }
+        if (idx != this._play_idx)
+        {
+          return;
+        }
+        const ranges = p.playBuffer().buffered;
+        let ranges_list = [];
+        for (let idx = 0; idx < ranges.length; idx++)
+        {
+          let startFrame = this.timeToFrame(ranges.start(idx), null, idx);
+          let endFrame = this.timeToFrame(ranges.end(idx), null, idx);
+          if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
           {
-            return;
+            ranges_list.push([startFrame, endFrame]);
           }
-          const ranges = p.playBuffer().buffered;
-          let ranges_list = [];
-          for (let idx = 0; idx < ranges.length; idx++)
-          {
-            let startFrame = this.timeToFrame(ranges.start(idx), null, idx);
-            let endFrame = this.timeToFrame(ranges.end(idx), null, idx);
-            if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
-            {
-              ranges_list.push([startFrame, endFrame]);
-            }
-          }
-          this.dispatchEvent(new CustomEvent("onDemandDetail",
-                                            {composed: true,
-                                             detail: {"ranges": ranges_list}}));
-        };
-      }
+        }
+        this.dispatchEvent(new CustomEvent("onDemandDetail",
+                                          {composed: true,
+                                            detail: {"ranges": ranges_list}}));
+      };
       return p;
     }
   }
