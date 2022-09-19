@@ -1,6 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { getCookie } from "../util/get-cookie.js";
-import { store, api } from "./store.js";
+import { store } from "./store.js";
 
 export class ProjectsDashboard extends TatorPage {
   constructor() {
@@ -17,8 +17,8 @@ export class ProjectsDashboard extends TatorPage {
     this._modalNotify = this._shadow.getElementById("modal-notify");
 
     // Create store subscriptions
-    store.subscribe(state => state.projects, this._updateProjects);
-    store.subscribe(state => state.organizations, this._updateOrganizations);
+    store.subscribe(state => state.projects, this._updateProjects.bind(this));
+    store.subscribe(state => state.organizations, this._updateOrganizations.bind(this));
 
     this._removeCallback = evt => {
       deleteProject.setAttribute("project-id", evt.detail.projectId);
@@ -66,8 +66,8 @@ export class ProjectsDashboard extends TatorPage {
   connectedCallback() {
     TatorPage.prototype.connectedCallback.call(this);
     // Initialize store data
-    api.getProjectList().then(data => store.setState({projects: data}));
-    api.getOrganizationList().then(data => store.setState({organizations: data}));
+    store.getState().fetchProjects();
+    store.getState().fetchOrganizations();
   }
 
   static get observedAttributes() {
