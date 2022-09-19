@@ -227,7 +227,7 @@ export class AttributesMain extends HTMLElement {
         this.loading.hideSpinner();
         this.boxHelper._modalSuccess(currentMessage);
       } else if(status == 400) {
-        iconWrap.appendChild(warningIcon);
+        // iconWrap.appendChild(warningIcon);
         this.loading.hideSpinner();
         this.boxHelper._modalError(`${currentMessage}`);
       }
