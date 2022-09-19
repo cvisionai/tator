@@ -2784,7 +2784,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    this._effectManager.grayOut(500);
+    this._effectManager.grayOut(1000);
     this._playEffect = true;
     document.body.style.cursor = "progress";
     this._stallCount = 0;

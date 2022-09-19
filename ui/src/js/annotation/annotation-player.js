@@ -1034,7 +1034,6 @@ export class AnnotationPlayer extends TatorElement {
     this.dispatchEvent(new Event("paused", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
-    this._rateControl.setValue(this._rate);
     this.enableRateChange();
 
     const paused = this.is_paused();
