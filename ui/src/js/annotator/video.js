@@ -491,6 +491,14 @@ export class VideoCanvas extends AnnotationCanvas {
         }
         this._scrub_idx = new_play_idx;
       }
+
+      // If we are going to scrub buffer, remove old on-demand buffer indication
+      if (this._play_idx == this._scrub_idx)
+      {
+        this.dispatchEvent(new CustomEvent("onDemandDetail",
+                                          {composed: true,
+                                            detail: {"ranges": []}}));
+      }
       console.log("Setting 1x-4x playback quality to: " + quality);
 
       // This try/catch exists only because setQuality is sometimes called and
