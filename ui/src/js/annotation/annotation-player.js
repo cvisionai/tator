@@ -1070,6 +1070,7 @@ export class AnnotationPlayer extends TatorElement {
       this.pause();
       this._video.setQuality(quality, buffer);
     }
+    this._playInteraction.disable();
     this._video.onDemandDownloadPrefetch(this._video.currentFrame());
     this._video.refresh(true);
   }
