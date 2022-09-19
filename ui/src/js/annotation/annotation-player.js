@@ -1034,7 +1034,6 @@ export class AnnotationPlayer extends TatorElement {
     this.dispatchEvent(new Event("paused", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
-    this._rateControl.setValue(this._rate);
     this.enableRateChange();
 
     const paused = this.is_paused();
@@ -1071,7 +1070,9 @@ export class AnnotationPlayer extends TatorElement {
       this.pause();
       this._video.setQuality(quality, buffer);
     }
+    this._playInteraction.disable();
     this._video.onDemandDownloadPrefetch(this._video.currentFrame());
+    this.checkReady();
     this._video.refresh(true);
   }
 

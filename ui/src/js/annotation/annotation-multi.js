@@ -1903,6 +1903,7 @@ export class AnnotationMulti extends TatorElement {
         this.setDefaultVideoSettings(0);
       }
     }
+    this._playInteraction.disable();
     this.forcePlaybackDownload();
     this.checkReady();
   }
