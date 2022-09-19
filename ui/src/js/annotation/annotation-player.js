@@ -1072,6 +1072,7 @@ export class AnnotationPlayer extends TatorElement {
     }
     this._playInteraction.disable();
     this._video.onDemandDownloadPrefetch(this._video.currentFrame());
+    this.checkReady();
     this._video.refresh(true);
   }
 
