@@ -135,7 +135,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       default:
         console.error(`Invalid preset: ${preset}`);
     }
-    get().projects.push(project);
+    set({projects: [...get().projects, project]}); // `push` doesn't trigger state update
     return project;
   },
   removeProject: async (id) => {
