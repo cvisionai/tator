@@ -58,7 +58,12 @@ class VersionListAPI(BaseListView):
             else:
                 obj.bases.set(qs)
 
-        return {'message': 'Created version successfully!', 'id': obj.id}
+        newVersion = Version.objects.get(pk=params[obj.id])
+        return {
+            'message': 'Created version successfully!',
+            'id': obj.id,
+            'object': VersionSerializer(newVersion).data
+        }
 
     def _get(self, params):
         media = params.get('media_id', None)
@@ -105,7 +110,12 @@ class VersionDetailAPI(BaseDetailView):
                 raise ObjectDoesNotExist
             else:
                 version.bases.set(qs)
-        return {'message': f'Version {params["id"]} updated successfully!'}
+        
+        newVersion = Version.objects.get(pk=params['id'])
+        return {
+            'message': f'Version {params["id"]} updated successfully!',
+            'object': VersionSerializer(newVersion).data
+        }
 
     def _delete(self, params):
         localization_count = Localization.objects.filter(version=params['id'], deleted=False).count()
