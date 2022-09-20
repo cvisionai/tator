@@ -29,8 +29,13 @@ export class ProjectSummary extends TatorElement {
       this._img.setAttribute("src", TatorSymbol);
       this._img.setAttribute("style", "object-fit:contain");
     }
+    
     const url = `/${val.id}/project-detail`;
     this._link.setAttribute("href", url);
+
+    const settingsUrl = `/${val.id}/project-settings`;
+    this._settingsButton.setAttribute("href", settingsUrl);
+
     this._name.textContent = val.name;
     this._makeAvatars(val.usernames);
     this._setNumFiles(val.num_files);
