@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 import requests
 
 from ..kube import TatorTranscode
+from ..kube import get_jobs
 from ..store import get_tator_store
 from ..cache import TatorCache
 from ..models import Project
@@ -126,6 +127,16 @@ class TranscodeAPI(BaseListView):
                          'uid': uid,
                          'gid': gid,
                          'media_id': media_id}
+
+        # Update Media object with workflow name
+        if media_id:
+            media = Media.objects.get(pk=media_id)
+            cache = TatorCache().get_jobs_by_uid(uid)
+            jobs = get_jobs(f'uid={uid}', cache)
+            workflow_names = media.attributes.get('_tator_import_workflow',[])
+            workflow_names.append(jobs[0]['metadata']['name'])
+            media.attributes['_tator_import_workflow'] = workflow_names
+            media.save()
 
         # Send notification that transcode started.
         logger.info(msg)
