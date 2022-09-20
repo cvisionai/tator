@@ -22,6 +22,36 @@
     <modal-notify id="modal-notify"></modal-notify>
   </main>
 </template>
+
+<template id=project-summary>
+  <div class="projects d-flex flex-items-center rounded-2">
+    <a class="projects__link d-flex flex-items-center text-white" id="project-link">
+      <img class="projects__image px-2 rounded-1" crossorigin="anonymous" style="object-fit:cover" id="thumbnail">
+      <div class="projects__text px-3">
+        <h2 class="text-semibold py-2" id="name"></h2>
+        <div class="projects__description d-flex py-2 f2 text-gray">
+          <span id="num-files"></span><span class="px-2">·</span><span id="duration"></span>
+          <div class="px-6 d-flex flex-items-center"></div>
+        </div>
+      </div>
+    </a>
+    <div class="projects__collaborators avatars d-flex flex-grow" id="avatars"></div>
+    <details class="px-4 position-relative" id="more-button">
+      <div class="projects__nav d-flex flex-items-center">
+        <a class="px-2 h3 text-gray hover-text-white" href="/450/project-settings" id="settings-button">
+          <i data-feather="settings"></i>
+        </a>
+        <button class="px-2 btn-clear h3 text-gray hover-text-white" id="remove-button">
+          <i data-feather="trash-2"></i>
+        </button>
+      </div>
+      <summary class="projects__more btn-clear h2 text-gray hover-text-white">
+        <i data-feather="more-horizontal"></i>
+      </summary>
+    </details>
+  </div>
+</template>
+
 <projects-dashboard
   username="{{ user|stringformat:'s' }}"
   email="{{ user.email }}">

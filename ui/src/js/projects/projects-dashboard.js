@@ -7,7 +7,7 @@ export class ProjectsDashboard extends TatorPage {
     super();
 
     const template = document.getElementById("projects-dashboard").content;
-    this._shadow.appendChild(template);
+    this._shadow.appendChild(template.cloneNode(true));
 
     this._newProjectButton = this._shadow.getElementById("new-project-button");
     this._projects = this._shadow.getElementById("projects");
