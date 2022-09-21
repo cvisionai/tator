@@ -13,6 +13,7 @@ class SimpleVideoWrapper {
     this._name = name;
     this._parent = parent;
     this._video = document.createElement("VIDEO");
+    this._video.setAttribute("crossorigin", "anonymous");
     this.use_codec_buffer = true;
     this._path = path;
     this._bias = 0;
