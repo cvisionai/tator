@@ -533,7 +533,12 @@ export class VideoCanvas extends AnnotationCanvas {
                                                         "forceCompat": this._forceCompat,
                                                         "secureContext": window.isSecureContext}
                                               }));
-      let v = new TatorSimpleVideo(idx, this._videoObject.media_files.streaming[idx].path);
+      let path = this._videoObject.media_files.streaming[idx].path;
+      if (use_hls)
+      {
+        path = null;
+      }
+      let v = new TatorSimpleVideo(idx, path);
       if (idx == this._scrub_idx)
       {
         this.dispatchEvent(new CustomEvent("bufferLoaded",
@@ -1247,13 +1252,22 @@ export class VideoCanvas extends AnnotationCanvas {
   frameToComps(frame, buf_idx)
   {
     const time = ((1/this._fps)*frame)+(1/(this._fps*4));
-    const bias = this._dlWorker.biasForTime(time, buf_idx);
+    let bias = 0.0;
+    if (this._dlWorker)
+    {
+      bias = this._dlWorker.biasForTime(time, buf_idx);
+    }
     return {'time': time, 'bias': bias};
   }
 
   timeToFrame(time, bias, buf_idx)
   {
-    let video_time = time - this._dlWorker.biasForTime(time, buf_idx);
+    let vid_bias = 0.0;
+    if (this._dlWorker)
+    {
+      vid_bias = this._dlWorker.biasForTime(time, buf_idx);
+    }
+    let video_time = time - vid_bias;
     if (bias)
     {
       video_time -= (1/(this._fps*4));

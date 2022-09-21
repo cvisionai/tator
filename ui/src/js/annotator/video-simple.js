@@ -7,6 +7,8 @@
 // @TODO: Supply a 'cv2.VideoDecode.read()' type interface for client-side decode
 //        operations.
 
+import Hls from "hls.js";
+
 class SimpleVideoWrapper {
   constructor(parent, name, path)
   {
@@ -41,8 +43,11 @@ class SimpleVideoWrapper {
         this.oncanplay();
       }
     }
-    this._video.src = this._path;
-    console.info(`${this._name} is initialized with ${this._path}`);
+    if (this._path)
+    {
+      this._video.src = this._path;
+      console.info(`${this._name} is initialized with ${this._path}`);
+    }
   }
 
   set oncanplay(val)
@@ -288,6 +293,21 @@ export class TatorSimpleVideo {
     this._buffer.init();
     this._init = false;
     this._compat = true; // Set to tell higher level code this is the simple player.
+  }
+
+  hls(playlistUrl) {
+    this._hls = new Hls();
+
+    return new Promise((resolve) => {
+      this._hls.on(Hls.Events.MANIFEST_LOADING, () => {
+        console.info(`Parsed ${playlistUrl}`);
+        resolve();
+      });
+      this._hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+        this._hls.loadSource(playlistUrl);
+      });
+      this._hls.attachMedia(this._buffer._video);
+    });
   }
 
   getMediaElementCount() {
