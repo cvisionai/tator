@@ -1470,7 +1470,7 @@ export class VideoCanvas extends AnnotationCanvas {
           }, that._networkSeekTimeout);
         }
 
-        if (downloadSeekFrame)
+        if (downloadSeekFrame && that._dlWorker)
         {
           that._dlWorker.postMessage(
             {"type": "seek",
