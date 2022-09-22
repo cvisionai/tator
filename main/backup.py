@@ -266,41 +266,53 @@ class TatorBackupManager:
         """
         successful_backups = set()
         for resource in resource_qs.iterator():
-            needs_backup = True
-            project = self.project_from_resource(resource)
+            success = True
             path = resource.path
-            success, store_info = self.get_store_info(project)
-            success = success and StoreType.BACKUP in store_info
+            try:
+                project = self.project_from_resource(resource)
+            except:
+                logger.warning(f"Could not get project from resource with path '{path}', skipping", exc_info=True)
+                success = False
+                project = None
+
+            if success:
+                success, store_info = self.get_store_info(project)
+                success = success and StoreType.BACKUP in store_info
 
             if success:
                 backup_info = store_info[StoreType.BACKUP]
+                backup_store = backup_info["store"]
                 live_info = store_info[StoreType.LIVE]
+                live_store = live_info["store"]
 
-            if success and backup_info["store"].check_key(path):
-                logger.info(f"Resource {path} already backed up, updating its state.")
-                needs_backup = False
+                backup_size = backup_store.get_size(path)
+                live_size = live_store.get_size(path)
+                if live_size < 0 or live_size == backup_size:
+                    # Get presigned url from the live bucket, set to expire in 1h
+                    download_url = live_store.get_download_url(path, 3600)
 
-            if success and needs_backup:
-                # Get presigned url from the live bucket, set to expire in 1h
-                download_url = live_info["store"].get_download_url(path, 3600)
+                    # Get the destination key
+                    key = backup_store.path_to_key(path)
 
-                # Perform the actual copy operation directly from the presigned url
-                try:
-                    self._rpc(
-                        "operations/copyurl",
-                        fs=f"{backup_info['remote_name']}:",
-                        remote=f"{backup_info['bucket_name']}/{path}",
-                        url=download_url,
-                    )
-                except:
-                    success = False
-                    logger.error(
-                        f"Backing up resource '{path}' with presigned url {download_url} failed",
-                        exc_info=True,
-                    )
+                    # Perform the actual copy operation directly from the presigned url
+                    try:
+                        self._rpc(
+                            "operations/copyurl",
+                            fs=f"{backup_info['remote_name']}:",
+                            remote=f"{backup_info['bucket_name']}/{key}",
+                            url=download_url,
+                        )
+                    except:
+                        success = False
+                        logger.error(
+                            f"Backing up resource '{path}' with presigned url {download_url} failed",
+                            exc_info=True,
+                        )
+                else:
+                    logger.info(f"Resource {path} already backed up, updating its state.")
 
-            if success:
-                successful_backups.add(resource.id)
+                if success:
+                    successful_backups.add(resource.id)
 
             yield success, resource
 
