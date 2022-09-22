@@ -94,12 +94,14 @@ export class FramePanel extends TatorElement {
       return;
     }
     if (data) {
+      this._count = data.length;
       if (data.length > 0) {
         this._blockingWrites = true;
         const values = this._getInterpolated(data);
         this._attributes.setValues(values);
         this._blockingWrites = false;
       }
+      this.dispatchEvent(new Event("dataUpdated"));
     }
   }
 
@@ -131,6 +133,10 @@ export class FramePanel extends TatorElement {
       //TODO: Implement other interpolation methods
     }
     return {attributes: attrs, id: id};
+  }
+
+  getEntityCount() {
+    return this._count;
   }
 }
 

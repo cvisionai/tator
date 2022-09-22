@@ -41,7 +41,14 @@ export class AnnotationBrowser extends TatorElement {
         entity.addEventListener("close", evt => {
           this._media.style.display = "block";
           for (const typeId in this._framePanels) {
-            this._framePanels[typeId].style.display = "block";
+
+            var count = this._framePanels[typeId].getEntityCount();
+            if (count == 0) {
+              this._framePanels[typeId].style.display = "none";
+            }
+            else {
+              this._framePanels[typeId].style.display = "block";
+            }
           }
         });
 
@@ -75,6 +82,18 @@ export class AnnotationBrowser extends TatorElement {
           }
           this._panels.appendChild(frame);
           this._framePanels[dataType.id] = frame;
+
+          frame.addEventListener("dataUpdated", () => {
+            if (frame.style.display != "none" || this._openedTypeId == dataType.id) {
+              var count = frame.getEntityCount();
+              if (count == 0) {
+                frame.style.display = "none";
+              }
+              else {
+                frame.style.display = "block";
+              }
+            }
+          });
         }
       }
     }
@@ -130,9 +149,15 @@ export class AnnotationBrowser extends TatorElement {
   }
 
   _openForTypeId(typeId) {
+    this._openedTypeId = typeId;
     for (const key in this._framePanels) {
       if (key == typeId) {
-        this._framePanels[key].style.display = "block";
+        if (this._framePanels[key].getEntityCount() > 0 ){
+          this._framePanels[key].style.display = "block";
+        }
+        else {
+          this._framePanels[key].style.display = "none";
+        }
       } else {
         this._framePanels[key].style.display = "none";
       }
