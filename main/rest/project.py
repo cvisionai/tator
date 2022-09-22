@@ -38,10 +38,25 @@ def _serialize_projects(projects, user_id):
             if bucket_id in stores:
                 thumb_store = stores[bucket_id]
             else:
-                thumb_store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
+                thumb_store = get_tator_store(
+                    project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1
+                )
                 stores[bucket_id] = thumb_store
 
-            project_data[idx]['thumb'] = thumb_store.get_download_url(project_data[idx]['thumb'], 28800)
+            try:
+                thumb = thumb_store.get_download_url(project_data[idx]["thumb"], 28800)
+            except:
+                logger.warning(
+                    f"Could not find thumbnail for project {project.id} in its bucket, looking in the default one"
+                )
+                try:
+                    thumb = stores[None].get_download_url(project_data[idx]["thumb"], 28800)
+                except:
+                    logger.warning(
+                        f"Could not find thumbnail for project {project.id} the default bucket either"
+                    )
+                    thumb = ""
+            project_data[idx]["thumb"] = thumb
     return project_data
 
 class ProjectListAPI(BaseListView):
