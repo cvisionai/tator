@@ -3,6 +3,7 @@ import os
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 
+from ..cache import TatorCache
 from ..models import Organization
 from ..models import Affiliation
 from ..models import database_qs
@@ -16,12 +17,18 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 
 def _serialize_organizations(organizations, user_id):
+    ttl = 28800
     organization_data = database_qs(organizations)
     store = get_tator_store()
     for idx, organization in enumerate(organizations):
         organization_data[idx]['permission'] = str(organization.user_permission(user_id))
-        if organization_data[idx]['thumb']:
-            organization_data[idx]['thumb'] = store.get_download_url(organization_data[idx]['thumb'], 28800)
+        thumb_path = organization_data[idx]['thumb']
+        if thumb_path:
+            url = cache.get_presigned(user_id, thumb_path)
+            if url is None:
+                url = store.get_download_url(thumb_path, ttl)
+                cache.set_presigned(user_id, thumb_path, url, ttl)
+            organization_data[idx]['thumb'] = url
     return organization_data
 
 class OrganizationListAPI(BaseListView):
