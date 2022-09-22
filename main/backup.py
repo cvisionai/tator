@@ -266,10 +266,18 @@ class TatorBackupManager:
         """
         successful_backups = set()
         for resource in resource_qs.iterator():
-            project = self.project_from_resource(resource)
+            success = True
             path = resource.path
-            success, store_info = self.get_store_info(project)
-            success = success and StoreType.BACKUP in store_info
+            try:
+                project = self.project_from_resource(resource)
+            except:
+                logger.warning(f"Could not get project from resource with path '{path}', skipping", exc_info=True)
+                success = False
+                project = None
+
+            if success:
+                success, store_info = self.get_store_info(project)
+                success = success and StoreType.BACKUP in store_info
 
             if success:
                 backup_info = store_info[StoreType.BACKUP]

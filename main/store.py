@@ -118,7 +118,7 @@ class TatorStorage(ABC):
     def check_key(self, path: str) -> bool:
         """Checks that at least one key matches the given path"""
 
-    def head_object(self, path: str) -> dict:
+    def head_object(self, path: str, quiet: Optional[bool]=False) -> dict:
         """
         Returns the object metadata for a given path using the concrete class implementation of
         `_head_object`. If the concrete implementation raises, this logs a warning and returns an
@@ -127,7 +127,11 @@ class TatorStorage(ABC):
         try:
             return self._head_object(path)
         except:
-            logger.warning(f"Failed to call `head_object` on path '{path}'", exc_info=True)
+            msg = f"Failed to call `head_object` on path '{path}'"
+            if quiet:
+                logger.debug(msg, exc_info=True)
+            else:
+                logger.warning(msg, exc_info=True)
 
         return {}
 
@@ -179,7 +183,7 @@ class TatorStorage(ABC):
         """
         Returns the size of an object for the given path, if it exists, otherwise returns -1.
         """
-        return self.head_object(path).get("ContentLength", -1)
+        return self.head_object(path, quiet=True).get("ContentLength", -1)
 
     def list_objects_v2(self, prefix: Optional[str] = None, **kwargs) -> list:
         """
