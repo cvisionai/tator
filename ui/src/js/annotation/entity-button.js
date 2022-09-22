@@ -60,6 +60,13 @@ export class EntityButton extends TatorElement {
         const name = this._dataType.name;
         const count = evt.detail.data.length;
         this._text.textContent = count + " " + name;
+
+        if (count == 0) {
+          this.style.display = "none";
+        }
+        else {
+          this.style.display = null;
+        }
       }
     });
   }
