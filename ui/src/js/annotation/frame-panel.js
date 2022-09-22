@@ -68,7 +68,22 @@ export class FramePanel extends TatorElement {
           this._undo.post("States", body, val);
         } else {
           const state = data[index];
-          this._undo.patch("State", state.id, {"attributes": values}, val);
+          if (this._data.getVersion().bases.indexOf(state.version) >= 0)
+          {
+            let newObject = {};
+            newObject.parent = state.id;
+            newObject = Object.assign(newObject, values);
+            newObject.version = this._data.getVersion().id;
+            newObject.type = Number(state.meta.split("_")[1]);
+            newObject.media_ids = state.media;
+            newObject.frame = state.frame;
+            console.info(JSON.stringify(newObject));
+            this._undo.post("States", newObject, val);
+          }
+          else
+          {
+            this._undo.patch("State", state.id, {"attributes": values}, val);
+          }
         }
       }
     });
