@@ -33,29 +33,34 @@ def _serialize_projects(projects, user_id):
         else:
             project_data[idx]['permission'] = str(project.user_permission(user_id))
         del project_data[idx]['attribute_type_uuids']
-        if project_data[idx]['thumb']:
-            bucket_id = project.bucket and project.bucket.id
-            if bucket_id in stores:
-                thumb_store = stores[bucket_id]
-            else:
-                thumb_store = get_tator_store(
-                    project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1
-                )
-                stores[bucket_id] = thumb_store
-
+        thumb = "" # TODO put default value here
+        thumb_path = project_data[idx]["thumb"]
+        if thumb_path:
             try:
-                thumb = thumb_store.get_download_url(project_data[idx]["thumb"], 28800)
+                thumb = stores[None].get_download_url(thumb_path, 28800)
             except:
-                logger.warning(
-                    f"Could not find thumbnail for project {project.id} in its bucket, looking in the default one"
-                )
-                try:
-                    thumb = stores[None].get_download_url(project_data[idx]["thumb"], 28800)
-                except:
+                bucket_id = project.bucket and project.bucket.id
+                if bucket_id:
                     logger.warning(
-                        f"Could not find thumbnail for project {project.id} the default bucket either"
+                        f"Could not find thumbnail for project {project.id} in the default bucket, "
+                        f"looking in the project-specific one (legacy behavior)..."
                     )
-                    thumb = ""
+                    if bucket_id in stores:
+                        project_store = stores[bucket_id]
+                    else:
+                        project_store = get_tator_store(
+                            project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1
+                        )
+                        stores[bucket_id] = project_store
+                    try:
+                        thumb = project_store.get_download_url(thumb_path, 28800)
+                    except:
+                        logger.warning(
+                            f"Could not find thumbnail for project {project.id} the "
+                            f"project-specific bucket either"
+                        )
+                else:
+                    logger.warning(f"Could not find thumbnail for project {project.id}")
             project_data[idx]["thumb"] = thumb
     return project_data
 
