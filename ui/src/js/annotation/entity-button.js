@@ -79,6 +79,13 @@ export class EntityButton extends TatorElement {
       }));
     });
     this._text.textContent = val.count + " " + val.name;
+
+    if (val.count == 0) {
+      this.style.display = "none";
+    }
+    else {
+      this.style.display = null;
+    }
   }
 }
 
