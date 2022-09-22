@@ -1,5 +1,6 @@
 import { TypeForm } from "./type-form.js";
 import { TypeNew } from "./type-new.js";
+import { store, getCompiledList } from "../store.js";
 
 export class MembershipEdit extends TypeForm {
   constructor() {
@@ -58,20 +59,16 @@ export class MembershipEdit extends TypeForm {
     this._form.appendChild( this._permissionSelect );
 
     // default version
-    this._data.getVersionsPromise()
-    .then(versions => {
-      const versionOptions = versions.map(version => {return {"label": version.name,
-                                                              "value": version.id}});
-      
-      this._versionSelect = document.createElement("enum-input");;
-      this._versionSelect.setAttribute("name", "Version");
-      this._versionSelect.choices = versionOptions;
-      this._versionSelect._select.required = true;
-      this._versionSelect.setValue(data.default_version_id);
-      this._versionSelect.default = data.default_version_id;
-      this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
-      this._form.appendChild(this._versionSelect);
-    });
+    const versionOptions = getCompiledList({ type: "Version", check: data.default_version_id });
+    
+    this._versionSelect = document.createElement("enum-input");;
+    this._versionSelect.setAttribute("name", "Version");
+    this._versionSelect.choices = versionOptions;
+    this._versionSelect._select.required = true;
+    this._versionSelect.setValue(data.default_version_id);
+    this._versionSelect.default = data.default_version_id;
+    this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
+    this._form.appendChild(this._versionSelect);
 
     current.appendChild(this._form);
 

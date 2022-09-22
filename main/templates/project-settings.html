@@ -8,11 +8,45 @@
 {% endblock head %}
 
 {% block body %}
-<project-settings
-  username="{{ user|stringformat:'s' }}"
-  email="{{ user.email }}"
-  project-id="{{ project.id }}"
-  is-staff="{{ user.is_staff }}"
-  >
+<project-settings username="{{ user|stringformat:'s' }}" email="{{ user.email }}" project-id="{{ project.id }}"
+  is-staff="{{ user.is_staff }}">
 </project-settings>
+
+
+<template id="versions-edit">
+  <div class="d-flex flex-row" id="versions-edit--div">
+    <div class="pl-md-6 col-12 px-6">
+      <!--<h1 class="h3 pb-3 edit-project__h1">
+        <span id="version-name"></span> <span class="px-2">|</span>
+        <span class="text-gray text-normal">Version</span>
+        <span class="text-gray text-normal"> (ID <span id="version-name"></span>)</span>
+      </h1>-->
+      <div>
+        <div class="py-3 rounded-2   edit-project__config ">
+          <form id="versions-edit--form">
+            <div id="versions-edit--name"></div>
+            <div id="versions-edit--description"></div>
+            <div id="versions-edit--show-empty"></div>
+            <div id="versions-edit--number"></div>
+            <div id="versions-edit--bases"></div>
+          </form>
+        </div>
+      </div>
+      <div class="d-flex flex-items-center flex-justify-center py-3">
+        <input id="versions-edit--save" type="submit" value="Save" class="btn btn-clear f1 text-semibold">
+        <a id="versions-edit--reset" href="#" class="px-5 f1 text-gray hover-text-white">Reset</a>
+      </div>
+      <div class="text-red py-3 rounded-2  edit-project__config" style="background-color: transparent;">
+        <div class="clearfix py-6">
+          <div class="py-md-5 float-left col-md-5 col-sm-5 text-right">
+            <button id="versions-edit--reset"
+              class="btn btn-small btn-charcoal float-right btn-outline text-gray"
+              style="margin-right: 10px;">Delete</button></div>
+          <div class="py-md-6 f1 text-gray float-left col-md-7 col-sm-7">Delete this Version and all its data?</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-4" hidden=""></div>
+  </div>
+</template>
 {% endblock body %}

@@ -5,6 +5,7 @@ import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
 import { TypeNew } from "./type-new.js";
 import { TypeDelete } from "./type-delete.js";
+import { store } from "../store.js";
 
 export class TypeForm extends TatorElement {
   constructor() {
@@ -45,7 +46,7 @@ export class TypeForm extends TatorElement {
     this.leafSection = null;
   }
 
-  _init({ data, modal, sidenav, versionListHandler, mediaListHandler, clusterListHandler, isStaff, projectName }) {
+  _init({ data, modal, sidenav, mediaListHandler, clusterListHandler, isStaff, projectName }) {
     // Log to verify init
     // console.log(`${this.readableTypeName} init.`);
     // console.log(data);
@@ -56,7 +57,6 @@ export class TypeForm extends TatorElement {
     this.projectId = this.data.project;
     this.typeId = this.data.id
     this.sideNav = sidenav;
-    this.versionListHandler = versionListHandler;
     this.mediaListHandler = mediaListHandler;
     this.clusterListHandler = clusterListHandler;
     this.isStaff = isStaff;
@@ -268,7 +268,6 @@ export class TypeForm extends TatorElement {
             modal: this.modal,
             sidenav: this.sideNav,
             mediaListHandler: this.mediaListHandler,
-            versionListHandler: this.versionListHandler,
             clusterListHandler: this.clusterListHandler,
             isStaff: this.isStaff
           });
@@ -757,10 +756,10 @@ export class TypeForm extends TatorElement {
       this.mediaListHandler._clear();
       this.mediaListHandler._setProjectMediaList("", true);
     }
-    if (this.typeName == "Version") {
-      this.versionListHandler._clear();
-      this.versionListHandler._setVersionList("", true);
-    }
+    // if (this.typeName == "Version") {
+    //   this.versionListHandler._clear();
+    //   this.versionListHandler._setVersionList("", true);
+    // }
   }
 
   _findDataById(allData) {
@@ -860,10 +859,12 @@ export class TypeForm extends TatorElement {
       if (this.typeName == "MediaType") {
         const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: updateTypeId } });
         this.mediaListHandler.el.dispatchEvent(deleteEvt);
-      } else if (this.typeName == "Version") {
-        const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: updateTypeId } });
-        this.versionListHandler.el.dispatchEvent(deleteEvt);
       }
+      
+      // else if (this.typeName == "Version") {
+      //   const deleteEvt = new CustomEvent("change", { detail: { changed: "remove", typeId: updateTypeId } });
+      //   this.versionListHandler.el.dispatchEvent(deleteEvt);
+      // }
 
     } else if (whatChanged == "rename") {
       // console.log("Rename event");
@@ -877,10 +878,12 @@ export class TypeForm extends TatorElement {
       if (this.typeName == "MediaType") {
         const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: updateTypeId, newName } });
         this.mediaListHandler.el.dispatchEvent(renameEvt);
-      } else if (this.typeName == "Version") {
-        const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: updateTypeId, newName } });
-        this.versionListHandler.el.dispatchEvent(renameEvt);
       }
+      
+      // else if (this.typeName == "Version") {
+      //   const renameEvt = new CustomEvent("change", { detail: { changed: "rename", typeId: updateTypeId, newName } });
+      //   this.versionListHandler.el.dispatchEvent(renameEvt);
+      // }
 
     } else if (whatChanged == "new") {
       let event = this.sideNav.newItemEvent(newId, this.typeName, newName);
@@ -891,10 +894,12 @@ export class TypeForm extends TatorElement {
       if (this.typeName == "MediaType") {
         const evt = new CustomEvent("change", { detail: { changed: "new", typeId: updateTypeId, newName } });
         this.mediaListHandler.el.dispatchEvent(evt);
-      } else if (this.typeName == "Version") {
-        const evt = new CustomEvent("change", { detail: { changed: "new", typeId: updateTypeId, newName } });
-        this.versionListHandler.el.dispatchEvent(evt);
-      } 
+      }
+      
+      // else if (this.typeName == "Version") {
+      //   const evt = new CustomEvent("change", { detail: { changed: "new", typeId: updateTypeId, newName } });
+      //   this.versionListHandler.el.dispatchEvent(evt);
+      // } 
     
     } else {
       // console.log("Need more information to update the sidenav.");
@@ -924,52 +929,20 @@ export class TypeForm extends TatorElement {
 
     }
   }
-
-  updateVersionList(detail) {
+  
+  _updateVersionList(versions, prevVersions) {
+  // updateVersionList(detail) {
     //Look for the input and remove specific checkbox, or rename the label   
-    if (typeof this._basesCheckbox !== "undefined") {
-      if (detail.changed == "rename") {
-        // console.log("Heard rename")
-        this._basesCheckbox.relabelInput({
-          value: detail.typeId,
-          newLabel: detail.newName
-        });
-      } else if (detail.changed == "remove") {
-        this._basesCheckbox.removeInput({
-          value: detail.typeId
-        });
-      } else if (detail.changed == "new") {
-        let item = {
-          id: detail.typeId,
-          name: detail.newName
-        };
-
-        this._basesCheckbox._newInput(item);
-      }
-
+    if (this.typeName == "Version" && typeof this._basesCheckbox !== "undefined") {
+      // Handles new/remove/rename
+      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.versionId, check: this.data.bases });
+      this._basesCheckbox.setValue(basesListWithChecked);
+      this._basesCheckbox.default = basesListWithChecked;
     } else if (typeof this._versionSelect !== "undefined") {
-      if (detail.changed == "rename") {
-        // console.log("Heard rename")
-        for (let option of this._versionSelect._select.options) {
-          if (option.value == detail.typeId) {
-            return option.innerText = detail.newName;
-          }
-        }
-      } else if (detail.changed == "remove") {
-        // console.log("Heard remove")
-        for (let i in this._versionSelect._select.options) {
-          let option = this._versionSelect._select.options[i];
-          if (option.value == detail.typeId) {
-            this._versionSelect._select.remove(i);
-          }
-        }
-      } else if (detail.changed == "new") {
-        const newOption = document.createElement("option");
-        newOption.value = detail.typeId,
-        newOption.innerText = detail.newName
-        this._versionSelect._select.appendChild(newOption);
-      }
-
+      const versionOptions = getCompiledList({ type: this.typeName, check: data.default_version_id });
+      this._versionSelect.choices = versionOptions;
+      this._versionSelect.setValue(this.data.default_version_id);
+      this._versionSelect.default = this.data.default_version_id;
     }
   }
 
