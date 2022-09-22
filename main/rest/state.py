@@ -241,7 +241,7 @@ class StateListAPI(BaseListView):
                 modified_by=self.request.user,
                 version=versions[state_spec.get("version", None)],
                 frame=state_spec.get("frame", None),
-                parent=Localization.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None,
+                parent=State.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None,
             )
             for state_spec, attrs in zip(state_specs, attr_specs)
         )
