@@ -77,6 +77,7 @@ export class FramePanel extends TatorElement {
             newObject.type = Number(state.meta.split("_")[1]);
             newObject.media_ids = state.media;
             newObject.frame = state.frame;
+            newObject.localization_ids = state.localizations;
             console.info(JSON.stringify(newObject));
             this._undo.post("States", newObject, val);
           }

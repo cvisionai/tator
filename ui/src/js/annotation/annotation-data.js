@@ -169,6 +169,14 @@ export class AnnotationData extends HTMLElement {
     }
   }
 
+  updateAllTypes(callback, search) {
+    for (const key in this._dataTypes)
+    {
+      let dataType = this._dataTypes[key];
+      this.updateType(dataType, callback, search);
+    }
+  }
+
   /**
    * #TODO Update this to allow states
    */
