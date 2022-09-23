@@ -100,9 +100,8 @@ export class AnnotationData extends HTMLElement {
       const mediaIds = dataType.dtype == "state" ? this._stateMediaIds : this._localizationMediaIds;
       let dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" +
         mediaIds.join(',') + "&type=" + dataType.id.split("_")[1];
-      if (dataEndpoint == "Localizations")
+      if (dataEndpoint == "Localizations" || dataEndpoint == "States")
       {
-        // TODO probably want this for States as well once it is supported there
         dataUrl += "&excludeParents=1";
       }
       return dataUrl;
@@ -167,6 +166,14 @@ export class AnnotationData extends HTMLElement {
       {
         this.updateType(dataType, callback, search);
       }
+    }
+  }
+
+  updateAllTypes(callback, search) {
+    for (const key in this._dataTypes)
+    {
+      let dataType = this._dataTypes[key];
+      this.updateType(dataType, callback, search);
     }
   }
 

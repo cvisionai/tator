@@ -166,9 +166,10 @@ export class EntitySelector extends TatorElement {
         this._canvas.deleteLocalization(this._data[index]);
       } else {
         endpoint = "State";
+        let had_parent = this._data[index].parent != null;
         this._undo.del(endpoint, this._data[index].id, this._dataType).then(() => {
-          if (this._dataType.delete_child_localizations) {
-            this._canvas.updateAllLocalizations();
+          if (this._dataType.delete_child_localizations || had_parent == true) {
+            this._canvas._data.updateAllTypes(this._canvas.refresh.bind(this._canvas), null);
           }
         });
       }
