@@ -141,14 +141,18 @@ export class FramePanel extends TatorElement {
     }
     let attrs;
     let id;
+    let version;
+    let created_by;
     switch (this._method) {
       case "latest":
         attrs = data[beforeIdx].attributes;
         id = data[beforeIdx].id;
+        version = data[beforeIdx].version;
+        created_by = data[beforeIdx].created_by;
         break;
       //TODO: Implement other interpolation methods
     }
-    return {attributes: attrs, id: id};
+    return {attributes: attrs, id: id, version: version,created_by:created_by};
   }
 
   getEntityCount() {
