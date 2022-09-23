@@ -20,6 +20,7 @@ def _serialize_organizations(organizations, user_id):
     ttl = 28800
     organization_data = database_qs(organizations)
     store = get_tator_store()
+    cache = TatorCache()
     for idx, organization in enumerate(organizations):
         organization_data[idx]['permission'] = str(organization.user_permission(user_id))
         thumb_path = organization_data[idx]['thumb']
