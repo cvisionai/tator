@@ -6,20 +6,14 @@ export class SettingsNav extends TatorElement {
   constructor() {
     super();
 
-    // Panels holder
-    this.div = document.createElement("div");
-    this.div.setAttribute("class", "py-6 clearfix position-relative px-md-6");
-    this._shadow.appendChild(this.div);
+    // Main Div wrapper
+    const template = document.getElementById("settings-nav").content;
+    this._shadow.appendChild(template.cloneNode(true));
 
-    // Left navigation structure
-    this.nav = document.createElement("nav");
-    this.nav.setAttribute("class", "SideNav rounded-2 float-left col-xl-2 col-md-3 col-xs-12");
-    this.div.appendChild(this.nav);
-
-    // Right side panel with contents
-    this.itemsContainer = document.createElement("div");
-    this.itemsContainer.setAttribute("class", "NavItem float-left col-md-9 col-xl-10 col-xs-12"); //offset-md-3 offset-xl-2 
-    this.div.appendChild(this.itemsContainer);
+    // Handlers
+    this.div = this._shadow.getElementById("settings-nav--div");
+    this.nav = this._shadow.getElementById("settings-nav--nav");
+    this.itemsContainer = this._shadow.getElementById("settings-nav--item-container");
 
     // Listen for changes
     this.addEventListener('settings-nav-new', this.newNavItem.bind(this));
@@ -119,7 +113,6 @@ export class SettingsNav extends TatorElement {
   _getItemDivId(typeName, typeId) {
     return `itemDivId-${typeName}-${typeId}`;
   }
-
 
   _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true, innerLinkText = ""}){
     if(subItemsOnly){

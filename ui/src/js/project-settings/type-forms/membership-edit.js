@@ -31,8 +31,8 @@ export class MembershipEdit extends TypeForm {
   }
 
   _getExistingForm(data) {
-    // console.log("Get existing form");
-    // console.log(data.id);
+    console.log("Get existing form");
+    console.log(data);
 
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
@@ -59,14 +59,14 @@ export class MembershipEdit extends TypeForm {
     this._form.appendChild( this._permissionSelect );
 
     // default version
-    const versionOptions = getCompiledList({ type: "Version", check: data.default_version_id });
+    const versionOptions = getCompiledList({ type: "Version", check: data.default_version });
     
     this._versionSelect = document.createElement("enum-input");;
     this._versionSelect.setAttribute("name", "Version");
     this._versionSelect.choices = versionOptions;
     this._versionSelect._select.required = true;
-    this._versionSelect.setValue(data.default_version_id);
-    this._versionSelect.default = data.default_version_id;
+    this._versionSelect.setValue(data.default_version);
+    this._versionSelect.default = data.default_version;
     this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
     this._form.appendChild(this._versionSelect);
 
@@ -77,6 +77,8 @@ export class MembershipEdit extends TypeForm {
 
   _getNewForm(data) {
     console.log("Get new form");
+    console.log(data);
+
     let current = this.boxHelper.boxWrapDefault( {
         "children" : ""
       } );
@@ -99,15 +101,17 @@ export class MembershipEdit extends TypeForm {
     ];
     this._form.appendChild(this._permission);
 
-    this._data.getVersionsPromise()
-    .then(versions => {
-      this._version = document.createElement("enum-input");
-      this._version.setAttribute("name", "Default version");
-      this._version.choices = versions.map(version => {return {value: version.id,
-                                                               label: version.name}});
-      this._form.appendChild(this._version);
-    });
-
+    // default version
+    const versionOptions = getCompiledList({ type: "Version", check: data.default_version });
+    this._versionSelect = document.createElement("enum-input");;
+    this._versionSelect.setAttribute("name", "Version");
+    this._versionSelect.choices = versionOptions;
+    this._versionSelect._select.required = true;
+    this._versionSelect.setValue(data.default_version);
+    this._versionSelect.default = data.default_version;
+    this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
+    this._form.appendChild(this._versionSelect);
+    
     current.appendChild(this._form);
     return current;
   }
@@ -131,8 +135,8 @@ export class MembershipEdit extends TypeForm {
           username: user.username, // ignored by BE, used by FE only
           project: this.projectId,
           permission: this._permission.getValue(),
-          default_version: Number(this._version.getValue()),
-          default_version_id: Number(this._version.getValue()) // ignored by BE, used by FE only
+          default_version: Number(this._versionSelect.getValue()),
+          default_version_id: Number(this._versionSelect.getValue()) // ignored by BE, used by FE only
         });
       }
     } else {
@@ -232,6 +236,15 @@ export class MembershipEdit extends TypeForm {
         return this._modalError(`Failed to create ${numFailed} memberships.\n${errorMessages}`);
       }
     });
+  }
+
+  _updateVersionList(versions, prevVersions) {
+    console.log("Membership-edit: UPDATE VERSIONS LIST!");
+    const versionOptions = getCompiledList({ type: this.typeName, check: data.default_version });
+    this._versionSelect.choices = versionOptions;
+    console.log(`this.data.default_version=${this.data.default_version}`);
+    this._versionSelect.setValue(this.data.default_version);
+    this._versionSelect.default = this.data.default_version;
   }
 }
 

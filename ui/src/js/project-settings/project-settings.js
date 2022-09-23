@@ -17,39 +17,20 @@ export class ProjectSettings extends TatorPage {
     this._shadow.appendChild(this.loading.getImg());
     this.loading.showSpinner();
 
-    // header
-    const header = document.createElement("div");
-    this._headerDiv = this._header._shadow.querySelector("header");
-    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-2 f3");
+    // This is adds the breadcrumb and successLight-spacer to the header
     const user = this._header._shadow.querySelector("header-user");
-    user.parentNode.insertBefore(header, user);
-
-    const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-items-center");
-    header.appendChild(div);
-    
-    this._breadcrumbs = document.createElement("settings-breadcrumbs");
-    div.appendChild(this._breadcrumbs);
-
-    const settingsDiv = document.createElement("div");
-    settingsDiv.setAttribute("class", "d-flex");
-    header.appendChild(settingsDiv);
-
-    this._lightSpacer = document.createElement("span");
-    this._lightSpacer.style.width = "32px";
-    settingsDiv.appendChild(this._lightSpacer);
-
-    this._success = document.createElement("success-light");
-    this._lightSpacer.appendChild(this._success);
+    const headerTemplate = document.getElementById("project-settings--header").content;
+    user.parentNode.insertBefore(headerTemplate.cloneNode(true), user);
 
     // main element
-    this.main = document.createElement("main");
-    this.main.setAttribute("class", "position-relative");
-    this._shadow.appendChild(this.main);
+    const template = document.getElementById("project-settings").content;
+    this._shadow.appendChild(template.cloneNode(true));
 
-    // Navigation panels main for item settings.
-    this.settingsNav = document.createElement("settings-nav");
-    this.main.appendChild(this.settingsNav);
+    // Page pieces
+    this.main = this._shadow.getElementById("project-settings--main");
+    this.settingsNav = this._shadow.getElementById("project-settings--nav");
+    this.modal = this._shadow.getElementById("project-settings--modal");
+    this.breadcrumbs = headerTemplate.getElementById("project-settings--breadcrumbs");
 
     // Web Components for this page
     this.settingsViewClasses = [
@@ -76,12 +57,7 @@ export class ProjectSettings extends TatorPage {
 
 
     this._userIsStaff = false;
-
-    // Modal parent - to pass to page components
-    this.modal = document.createElement("modal-dialog");
-    this._shadow.appendChild(this.modal);
-    this.modal.addEventListener("open", this.showDimmer.bind(this));
-    this.modal.addEventListener("close", this.hideDimmer.bind(this));
+    
 
     // Error catch all
     window.addEventListener("error", (evt) => {
@@ -119,17 +95,20 @@ export class ProjectSettings extends TatorPage {
     store.setState({ projectId: this.projectId });
     const objData = await store.getState().fetchProject();
 
+    // Setup global project name and breadcrumb
+    this.projectName = objData.name;
+    this.breadcrumbs.setAttribute("project-name", this.projectName);
+
+    // Setup project using data
     this.setupProjectSection(objData);
     this.loading.hideSpinner();
 
-    // Data Handlers for Media and Version initialized below
-    this._dataMediaList = new DataMediaList(this.projectId);
-    this._dataMediaList._clear();
-    // this._dataVersionList = new DataVersionList(this.projectId);
-    // this._dataVersionList._clear();
-    this._dataJobClusterList = new DataJobClusters(objData.organization);
-    this._dataJobClusterList._clear();
-    
+    // setup subscriptions
+    await store.getState().fetchVersions();
+    await store.getState().fetchMediaTypes();
+    await store.getState().fetchJobClusters();
+
+    // Initializes Add New forms for side nav
     await this.setupTypeSections();
     
     if (window.location.hash) {
@@ -181,121 +160,46 @@ export class ProjectSettings extends TatorPage {
   }
 
   setupProjectSection(objData) {
-    this.projectView = new ProjectMainEdit();
-    const formView = this.projectView;    
-    this.projectName = objData.name;
-    this._breadcrumbs.setAttribute("project-name", this.projectName);
+    //Get container and rename it to work with nav events...
+    const container = this.settingsNav._shadow.getElementById("current-project-itemDiv");
+    container.setAttribute("id", `itemDivId-Project-${objData.id}`);
 
-    // Make and fill a container on page
-    this.makeContainer({
-      objData,
-      classBase: formView,
-      hidden: false
-    });    
-    this.settingsNav.fillContainer({
-      type: formView.typeName,
-      id: objData.id,
-      itemContents: formView
-    });
+    
 
     // init form with the data
-    formView._init({
+    this.projectView = this.settingsNav._shadow.getElementById("current-project-form");
+    this.projectView._init({
       data: objData,
       modal: this.modal,
       sidenav: this.settingsNav
     });
-
-    // Add nav for container
-    this.settingsNav._addSimpleNav({
-      name: formView._getHeading(),
-      type: formView.typeName,
-      id: objData.id,
-      // selected: true
-    });
   }
 
+  /**
+   * Setup type sections - this adds the side nav and + Add New empty forms
+   */
   async setupTypeSections() {
-    for (let i in this.settingsViewClasses) {
-      // Add a navigation section
-      let tc = this.settingsViewClasses[i];
-      let typeClassView = document.createElement(tc);
+    for (const key of this.viewClassesByName.keys()) {
+      const emptyTypeView = this.settingsNav._shadow.getElementById(`itemDivId-${key}-New_form`);
+      const headingEl = this.settingsNav._shadow.getElementById(`toggle-subitems-${key}`);
 
-      // Init membership view before adding to container
-      if (typeClassView.typeName == "Membership") {
-        this.membershipData = new MembershipData(this.projectId);
-        typeClassView.init(this.membershipData);
-      }
-
-
-      // Add empty form container for + New
-      const emptyData = {
-        ...typeClassView._getEmptyData(),
-        name: "+ Add new",
-        project: this.projectId
-      };
-      this.makeContainer({
-        objData: emptyData,
-        classBase: typeClassView
-      });
-
-      // Get heading and fill container
-      const headingEl = this.settingsNav._addNav({
-        name: typeClassView._getHeading(),
-        type: typeClassView.typeName,
-        subItems: [emptyData]
-      });
-
-      this.settingsNav.fillContainer({
-        type: typeClassView.typeName,
-        id: emptyData.id,
-        itemContents: typeClassView
-      });
-
-      // List to relevant data handlers to show the correct list options
-      const usesMediaList = ["StateType", "LocalizationType"];
-      if (usesMediaList.includes(typeClassView.typeName)) {
-        this._dataMediaList.el.addEventListener("change", (e) => {
-          // console.log(e.detail);
-          typeClassView.updateMediaList(e.detail);
-        });
-      } else if (typeClassView.typeName == "Version" || typeClassView.typeName == "Membership") {
-        await store.getState().fetchVersions();
-        store.subscribe(state => state.versions, typeClassView.updateVersionList);
-      }
-
-      // Make media new list before we add an empty row
-      if (typeClassView.typeName == "MediaType") {
-        this._dataMediaList._setProjectMediaList("", true);
-      }
-
-      // Make versions new list before we add an empty row
-      // if (typeClassView.typeName == "Version" || typeClassView.typeName == "Membership") {
-      //   this._dataVersionList._setVersionList("", true);
-      // }
-
-      // Make Algorithm job cluster new list before we add an empty row
-      if (typeClassView.typeName == "Algorithm") {
-        this._dataJobClusterList._setList("", true);
-      }
-
-      // init the form with the data
-      typeClassView._init({
-        data: emptyData,
+      emptyTypeView._init({
+        data: {
+          ...emptyTypeView.getEmptyData(),
+          name: "+ Add new",
+          project: this.projectId
+        },
         modal: this.modal,
         sidenav: this.settingsNav,
-        // versionListHandler: this._dataVersionList,
-        mediaListHandler: this._dataMediaList,
-        clusterListHandler: this._dataJobClusterList,
         isStaff: this._userIsStaff,
         projectName: this.projectName
       });
 
-      headingEl.addEventListener("click", () => {
+      headingEl.addEventListener("click", async () => {
         // provide the class
-        this._sectionInit({ viewClass: tc }).then(() => {
-          headingEl.setAttribute("initialized", "true");
-          headingEl.dispatchEvent(new Event("initialized"));
-        });
+        await this._sectionInit({ viewClass: this.viewClassesByName.get(key) });
+        headingEl.setAttribute("initialized", "true");
+        headingEl.dispatchEvent(new Event("initialized"));
       }, { once: true }); // just run this once
     }
   }
@@ -306,13 +210,12 @@ export class ProjectSettings extends TatorPage {
     const formView = document.createElement(viewClass);
     let objData = store.getState().getType(formView.typeName);
     
-
     // then we have not fetched this type before, or it is empty? recheck
     // todo should initial value be null?
     if (objData.length === 0) {
       objData = await store.getState().fetchType(formView.typeName);
     }
-    console.log(objData);
+
     this.loading.hideSpinner();
 
     // Pass in data interface to memberships.
@@ -324,16 +227,6 @@ export class ProjectSettings extends TatorPage {
     if (formView.typeName == "MediaType") {
       this._dataMediaList._setProjectMediaList(objData, true);
     }
-
-    // // Make versions new list before we add an empty row
-    // if (formView.typeName == "Version" || formView.typeName == "Membership") {
-    //   // Versions number sort
-    //   if (typeof objData[0] !== "undefined" && typeof objData[0].number !== "undefined") {
-    //     objData = objData.sort((a, b) => a.number > b.number);
-    //   }
-    //   // const versionsList = new DataVersionList( this.projectId );
-    //   this._dataVersionList._setVersionList(objData, true);
-    // }
 
     // Make Algorithm job cluster new list before we add an empty row
     if (formView.typeName == "Algorithm") {
@@ -383,13 +276,14 @@ export class ProjectSettings extends TatorPage {
           // console.log(e.detail);
           form.updateMediaList(e.detail);
         });
-      } else if (form.typeName == "Version" || form.typeName == "Membership") {
-        // this._dataVersionList.el.addEventListener("change", (e) => {
-        //   // console.log(e.detail);
-        //   form.updateVersionList(e.detail);
-        // });
-        store.subscribe(state => state.versions, formView.updateVersionList);
       }
+
+      // Version and Membership have their own functions
+      store.subscribe(state => state.versions, () => {
+        console.log("Subscribe caught for new version");
+        formView.updateVersionList
+      
+      });
 
       // init form with the data
       form._init({

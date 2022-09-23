@@ -15,7 +15,13 @@ export class TypeForm extends TatorElement {
     this.typeName = "";
     this.readableTypeName = "";
 
-    // Main Div wrapper
+    // // Main Div wrapper
+    // const template = document.getElementById("type-form").content;
+    // this._shadow.appendChild(template.cloneNode(true));
+
+    // <div class="d-flex flex-row">
+    // <div class="pl-md-6 col-12 px-6">
+    // 
     this._formContainer = document.createElement("div");
     this._formContainer.setAttribute("class", "d-flex flex-row");
     this._shadow.appendChild(this._formContainer);
@@ -66,7 +72,12 @@ export class TypeForm extends TatorElement {
     this.boxHelper = new SettingsBox(this.modal);
 
     // Add form to page
-    this.setupFormPage(data)
+    this.setupFormPage(data);
+
+    //
+    store.subscribe(state => state.mediaTypes, this.updateMediaList.bind(this));
+    store.subscribe(state => state.versions, this.updateVersionList.bind(this));
+    store.subscribe(state => state.mediaTypes, this.updateJobClusters.bind(this));
   }
 
   async setupFormPage(data = this.data, isReset = false) {
@@ -80,7 +91,7 @@ export class TypeForm extends TatorElement {
     }
 
     // Create a form with values, or empty editable form
-    if (!this.data.form && !this.data.form != "empty") {
+    if (!this.data.form && !this.data.form !== "empty") {
       if (this.typeName == "Membership") {
         this.h1_name = document.createTextNode(`${this.data.username} `);
       } else {
@@ -186,22 +197,20 @@ export class TypeForm extends TatorElement {
         // New form wrapper element.
         this._formWrapper = document.createElement("div");
         this.typeFormDiv.appendChild(this._formWrapper);
+
+        const emptyData = this._getEmptyData();
+        const sectionForm = await this._getSectionForm(emptyData);
+        this._formWrapper.appendChild(sectionForm);
+
+        const submitNew = this._getSubmitNewDiv({ "id": this.data.id });
+        this.typeFormDiv.appendChild(submitNew);
       } else {
         this._formWrapper.innerHTML = "";
       }
+
       if (typeof this.mediaListHandler !== "undefined") {
         await this.mediaListHandler.getProjectMediaList(true);
-      }
-      const emptyData = this._getEmptyData();
-      const sectionForm = await this._getSectionForm(emptyData);
-      this._formWrapper.appendChild(sectionForm);
-      
-      // Add save button
-      if (!isReset) {
-        const submitNew = this._getSubmitNewDiv({ "id": this.data.id });
-        this.typeFormDiv.appendChild(submitNew);
-      }
-   
+      }   
 
       return this.typeFormDiv;
     }
@@ -929,23 +938,28 @@ export class TypeForm extends TatorElement {
 
     }
   }
-  
-  _updateVersionList(versions, prevVersions) {
-  // updateVersionList(detail) {
-    //Look for the input and remove specific checkbox, or rename the label   
-    if (this.typeName == "Version" && typeof this._basesCheckbox !== "undefined") {
-      // Handles new/remove/rename
-      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.versionId, check: this.data.bases });
-      this._basesCheckbox.setValue(basesListWithChecked);
-      this._basesCheckbox.default = basesListWithChecked;
-    } else if (typeof this._versionSelect !== "undefined") {
-      const versionOptions = getCompiledList({ type: this.typeName, check: data.default_version_id });
-      this._versionSelect.choices = versionOptions;
-      this._versionSelect.setValue(this.data.default_version_id);
-      this._versionSelect.default = this.data.default_version_id;
-    }
+
+
+  /** 
+   * Stubbed for handling subscription: Media List
+  */
+  updateMediaList() {
+    return true
   }
 
+  /** 
+   * Stubbed for handling subscription: Version List
+  */
+  updateVersionList() {
+    return true;
+  }
+
+  /** 
+   * Stubbed for handling subscription: Job Cluster List
+  */
+   updateJobClusterList() {
+      return true;
+    }
 }
 
 if (!customElements.get("type-form")) {

@@ -14,9 +14,9 @@ export class VersionsEdit extends TypeForm {
       const template = document.getElementById("versions-edit").content;
       this._shadow.appendChild(template.cloneNode(true));
   
-      this._form = this._shadow.getElementById("versions-edit--div");
-      
-
+      this._formDiv = this._shadow.getElementById("versions-edit--div");
+      this.saveButton = this._shadow.getElementById("versions-edit--save");
+      this.savePost = this._shadow.getElementById("versions-edit--save");
    }
 
    async _getSectionForm(data) {
@@ -24,43 +24,28 @@ export class VersionsEdit extends TypeForm {
       this.versionId = data.id;
 
       this._form = this._shadow.getElementById("versions-edit--form");
-      this._form.id = this.typeId;
+      // this._form.id = this.versionId; // todo still need this?
       
       // append input for name
-      this._editName = document.createElement("text-input");
-      this._editName.setAttribute("name", "Name");
-      this._editName.setAttribute("type", "string");
+      this._editName = this._shadow.getElementById("versions-edit--name");
       this._editName.setValue(this.data.name);
       this._editName.default = this.data.name;
       this._editName.addEventListener("change", this._formChanged.bind(this));
-      const editNameDiv = this._shadow.getElementById("versions-edit--name");
-      editNameDiv.appendChild(this._editName);
 
       // description
-      this._editDescription = document.createElement("text-input");
-      this._editDescription.setAttribute("name", "Description");
-      this._editDescription.setAttribute("type", "string");
+      this._editDescription = this._shadow.getElementById("versions-edit--description");
       this._editDescription.setValue(this.data.description);
       this._editDescription.default = this.data.description;
       this._editDescription.addEventListener("change", this._formChanged.bind(this));
-      const descDiv = this._shadow.getElementById("versions-edit--description");
-      descDiv.appendChild(this._editDescription);
 
       // Show Empty
-      this._showEmpty = document.createElement("bool-input");
-      this._showEmpty.setAttribute("name", "Show Empty");
-      this._showEmpty.setAttribute("on-text", "Yes");
-      this._showEmpty.setAttribute("off-text", "No");
+      this._showEmpty = this._shadow.getElementById("versions-edit--show-empty");
       this._showEmpty.setValue(this.data.show_empty);
       this._showEmpty.default = this.data.show_empty;
       this._showEmpty.addEventListener("change", this._formChanged.bind(this));
-      const showEmptyDiv = this._shadow.getElementById("versions-edit--show-empty");
-      showEmptyDiv.appendChild(this._showEmpty);
 
       // number
-      this._number = document.createElement("text-input");
-      this._number.setAttribute("name", "Number");
-      this._number.setAttribute("type", "int");
+      this._number = this._shadow.getElementById("versions-edit--number");
       if (typeof data.number === "undefined") {
          this._number.setValue("Created on Save");
          this._number.default = "";
@@ -71,22 +56,16 @@ export class VersionsEdit extends TypeForm {
       this._number._input.disabled = true;
       this._number._input.classList.add("disabled");
       this._number.addEventListener("change", this._formChanged.bind(this));
-      const numberDiv = this._shadow.getElementById("versions-edit--number");
-      numberDiv.appendChild(this._number);
 
       // Bases
       const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.versionId, check: this.data.bases});
 
-      this._basesCheckbox = document.createElement("checkbox-set");
-      this._basesCheckbox.setAttribute("name", "Bases");
-      this._basesCheckbox.setAttribute("type", "number");
+      this._basesCheckbox = this._shadow.getElementById("versions-edit--bases");
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
       this._basesCheckbox.addEventListener("change", this._formChanged.bind(this));
-      const basesDiv = this._shadow.getElementById("versions-edit--bases");
-      basesDiv.appendChild(this._basesCheckbox);
 
-      return this._form;
+      return this._formDiv;
    }
 
 
@@ -280,7 +259,12 @@ export class VersionsEdit extends TypeForm {
       });
    }
 
-   
+   _updateVersionList(versions, prevVersions) {
+      console.log("Version-edit: UPDATE VERSIONS LIST!");
+      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.versionId, check: this.data.bases });
+      this._basesCheckbox.setValue(basesListWithChecked);
+      this._basesCheckbox.default = basesListWithChecked;
+   }
 }
 
 customElements.define("versions-edit", VersionsEdit);

@@ -17,15 +17,25 @@ export const getCompiledList = ({type, skip = null, check = null}) => {
          console.error(`Invalid type: ${type}`);
    }
 
+   console.log(`${type}: check .${check}. typeof... ${typeof check}`)
+
+   const checkedExists = (check !== null && check !== "");
    // Use values if any, and the list of types to make a compiled list, a checkbox object
-   return list.map(item => {
-      if (skip !== null && skip == item.id) return;
+   const newList = list.filter(item => item.id !== skip).map(item => {
+      console.log(`checkedExists ${checkedExists} ... check ${check} === item.id ${item.id} `);
+      
       return {
          id: item.id,
+         value: item.id,
          name: item.name,
-         checked: (check !== null && (check === item.id || check.includes(item.id)) )
+         label: item.name,
+         checked: checkedExists && (check === item.id || (Array.isArray(check) && check.includes(item.id))),
+         selected: checkedExists && (check === item.id || (Array.isArray(check) && check.includes(item.id)))
       }
    });
+   console.log(newList);
+
+   return newList;
 }
 
 const store = create(subscribeWithSelector((set, get) => ({
@@ -40,6 +50,7 @@ const store = create(subscribeWithSelector((set, get) => ({
    memberships: [],
    alogrithms: [],
    applets: [],
+   jobClusters: [],
 
    /* project */
    fetchProject: async () => {
@@ -49,6 +60,13 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
    removeProject: async () => {
      // todo set({ project: await api.getProjectWithHttpInfo(get().projectId) });
+   },
+
+   /* job cluster (used in algo form) */
+   fetchJobClusters: async () => {
+      let object = await api.getJobClusterListWithHttpInfo(get().projectId);
+      set({ jobClusters: object.data });
+      return object.data;
    },
 
    /* media types */
@@ -94,11 +112,18 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
    addVersion: async (spec) => {
       let object = await api.createVersionWithHttpInfo(spec);
+      console.log("Add version!");
       const version = object.data.object;
+      const newVersions = [...get().versions, version];
+      console.log("NEW VERSIONS");
+      console.log(newVersions);
       set({ versions: [...get().versions, version] }); // `push` doesn't trigger state update
+      
       return object.data.object;
    },
    updateVersion: async (id, data) => {
+      console.log("Update version.....");
+      console.log(data);
       const object = await api.updateVersionWithHttpInfo(id, data);
       const newVersion = object.data.object;
       const tmpVersions = get().versions; //.filter(version => versionId != id)
@@ -114,10 +139,10 @@ const store = create(subscribeWithSelector((set, get) => ({
    getVersionContentCount: async (versionId) => {
       // Return some information for the confirmation
       // TODO add http info and error handling
-      const stateCount = await api.getStateCount(get().projectId, { version: versionId });
-      const localizationCount =  await api.getStateCount(get().projectId, { version: versionId });
+      // const stateCount = await api.getStateCount(get().projectId, { version: versionId });
+      // const localizationCount =  await api.getStateCount(get().projectId, { version: versionId });
       
-      return { stateCount, localizationCount};
+      return { stateCount: 5, localizationCount: 20};
    },
    removeVersion: async (versionId) => {
       const object = await api.deleteVersionWithHttpInfo(id);
