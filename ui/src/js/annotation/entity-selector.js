@@ -253,6 +253,7 @@ export class EntitySelector extends TatorElement {
 
   set dataType(val) {
     this._dataType = val;
+    this._delConfirm.objectName = val.name;
   }
 
   set undoBuffer(val) {

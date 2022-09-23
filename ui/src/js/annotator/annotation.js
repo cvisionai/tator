@@ -1976,6 +1976,7 @@ export class AnnotationCanvas extends TatorElement
     {
       if (event.code == 'Delete' && this._determineCanEdit(this.activeLocalization))
       {
+        this._delConfirm.objectName = this.getObjectDescription(this.activeLocalization).name;
         this._delConfirm.confirm()
       }
 
