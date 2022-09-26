@@ -397,6 +397,7 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     with page.expect_response(url) as response_info:
         page.set_input_files('#itemDivId-Algorithm-New input[type="file"]', yaml_file)
 
+    page.wait_for_timeout(5000)
     page.fill('#itemDivId-Algorithm-New text-input[name="Files Per Job"] input', '100')
     page.click('#itemDivId-Algorithm-New button[value="Save"]')
     page.wait_for_selector('text="Successfully registered algorithm argo workflow."')
@@ -416,9 +417,11 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     page.wait_for_selector('.heading-for-Applet .Nav-action')
     page.click('.heading-for-Applet .Nav-action')
     page.wait_for_selector('#itemDivId-Applet-New text-input[name="Name"]')
+    page.set_input_files('#itemDivId-Applet-New input[type="file"]', html_file)
+    page.wait_for_timeout(5000)
     page.fill('#itemDivId-Applet-New text-input[name="Name"] input', 'Test Applet')
     page.fill('#itemDivId-Applet-New text-input[name="Description"] input', 'Description for automated test.')
-    page.set_input_files('#itemDivId-Applet-New input[type="file"]', html_file)
+    
 
     # - Listen for applet id
     url = base_url + "/rest/Applets/" + str(project)
