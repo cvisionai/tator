@@ -901,11 +901,8 @@ export class AttributesForm extends TatorElement {
 
       // Default: Send if changed, or if dtype changed (so it can be set to correct type) or if this is a clone
       // Don't send if the value is null => invalid
-      // Don't send "" because it will fail as valid type for the default in some cases
-      // - String: can be ""
-      // - Int, or Float: Don't convert "" to Number or it will be 0; (see bug)
-      // - #TODO BUG backend for Int, or Float will not allow ""
-      // ------> Invalid attribute value for float attribute; Invalid attribute value for integer attribute
+      // String: can be ""
+      // - Int, or Float: If "" will be nulled out
       // 
       if (dtype !== "enum" && (this.isClone || this._dtype.changed() || this._default.changed())) {
         let defaultVal = this._default.getValue();
@@ -913,7 +910,12 @@ export class AttributesForm extends TatorElement {
         if (defaultVal !== null && defaultVal !== "null") {
           // backend does this but not when value is ""
           if ((dtype == "int" || dtype == "float")) {
-            formData["default"] = defaultVal;
+            if (String(defaultVal).trim() === "") {
+              delete formData["default"];
+            } else {
+              formData["default"] = defaultVal;
+            }
+            
           } else if (dtype == "datetime" && defaultVal != "" && this._useCurrent.getValue() != true) {
             formData["default"] = defaultVal;
           } else if (dtype == "geopos" && defaultVal != "") {
