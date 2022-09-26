@@ -58,16 +58,19 @@ class MediaUtil:
                 self._start_bias_frame = self._moof_data[0][1]["frame_start"]
 
         elif "image" in video.media_files:
-            if quality is None:
-                # Select highest quality if not specified
-                highest_res = -1
-                quality_idx = 0
-                for idx, media_info in enumerate(video.media_files["image"]):
-                    if media_info['resolution'][0] > highest_res:
-                        highest_res = media_info['resolution'][0]
-                        quality_idx = idx
+            # Select highest quality image that is non AVIF (no ffmpeg support)
+            highest_res = -1
+            quality_idx = 0
+            # only process non AVIF sources
+            images = video.media_files["image"]
+            images = [i for i in images if i['mime'] != 'image/avif']
+            logger.info(images)
+            for idx, media_info in enumerate(images):
+                if media_info['resolution'][0] > highest_res:
+                    highest_res = media_info['resolution'][0]
+                    quality_idx = idx
             # Image
-            self._video_file = video.media_files["image"][quality_idx]["path"]
+            self._video_file = images[quality_idx]["path"]
             self._storage = store_lookup[self._video_file]
             self._height = video.height
             self._width = video.width
@@ -267,6 +270,34 @@ class MediaUtil:
             logger.info(args)
             procs.append(subprocess.run(args, check=True, capture_output=True))
         return any([proc.returncode == 0 for proc in procs])
+
+    def get_image(self, roi=None, render_format="jpg", force_scale=None):
+        crop_filter = None
+        scale_filter = None
+        if roi:
+            w = max(0,min(round(roi[0]*self._width),self._width)) #pylint: disable=invalid-name
+            h = max(0,min(round(roi[1]*self._height),self._height)) #pylint: disable=invalid-name
+            x = max(0,min(round(roi[2]*self._width),self._width)) #pylint: disable=invalid-name
+            y = max(0,min(round(roi[3]*self._height),self._height)) #pylint: disable=invalid-name
+            crop_filter = f"crop={w}:{h}:{x}:{y}"
+        if force_scale:
+            scale_filter = f"scale={force_scale[0]}:{force_scale[1]}"
+
+        args = ["ffmpeg", "-i", self._storage.get_download_url(self._video_file,  3600)]
+        video_filters = []
+        if crop_filter:
+            video_filters.append(crop_filter)
+        if scale_filter:
+            video_filters.append(scale_filter)
+        if video_filters:
+            args.extend(["-vf", ",".join(video_filters)])
+        output = os.path.join(self._temp_dir, f"temp.{render_format}")
+        args.append(output)
+        proc = subprocess.run(args, check=True, capture_output=True)
+        if proc.returncode == 0:
+            return output
+        else:
+            return None
 
     def get_clip(self, frame_ranges):
         """ Given a list of frame ranges generate a temporary mp4

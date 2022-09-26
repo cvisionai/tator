@@ -125,9 +125,17 @@ class GetFrameAPI(BaseDetailView):
                     response_data = data_file.read()
             else:
                 logger.info(f"Accepted format = {self.request.accepted_renderer.format}")
-                tiled_fp = media_util.get_tile_image(frames, roi_arg, tile_size,
-                                                     render_format=self.request.accepted_renderer.format,
-                                                     force_scale=force_image_size)
-                with open(tiled_fp, 'rb') as data_file:
+                if video.meta.dtype == 'video':
+                    image_fp = media_util.get_tile_image(frames, roi_arg, tile_size,
+                                                        render_format=self.request.accepted_renderer.format,
+                                                        force_scale=force_image_size)
+                elif video.meta.dtype == 'image':
+                    roi = None
+                    if roi_arg:
+                        roi = roi_arg[0]
+                    image_fp = media_util.get_image(roi=roi,
+                                                    render_format=self.request.accepted_renderer.format,
+                                                    force_scale=force_image_size)
+                with open(image_fp, 'rb') as data_file:
                     response_data = data_file.read()
         return response_data
