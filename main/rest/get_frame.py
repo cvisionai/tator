@@ -65,9 +65,15 @@ class GetFrameAPI(BaseDetailView):
             assert requested_height > 0
             force_image_size = (requested_width, requested_height)
 
-        for frame in frames:
-            if int(frame) >= video.num_frames:
-                raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
+        if video.meta.dtype == 'video':
+            for frame in frames:
+                if int(frame) >= video.num_frames:
+                    raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
+        elif video.meta.dtype == 'image':
+            if len(frames) > 1:
+                raise Exception(f"Images can only supply 1 frame, asked for '{frames}'")
+        elif video.meta.dtype == 'live' or video.meta.dtype == 'multi':
+            raise Exception(f"GetFrame does not support '{video.meta.dtype}' objects.")
         tile_size = tile
 
         if tile and animate:
