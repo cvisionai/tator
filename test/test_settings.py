@@ -174,7 +174,6 @@ def test_settings_leafType(page_factory, project, base_url):
     # This element should have the draggable attribute value as true
     page.wait_for_timeout(5000)
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    print(leaf_elems)
     src_elem = leaf_elems[1]
     dest_elem = leaf_elems[0]
 
@@ -195,18 +194,19 @@ def test_settings_leafType(page_factory, project, base_url):
 
     page.wait_for_timeout(5000)
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
-
-    
-    assert len(leaf_elems) == 2
-    assert len(hidden_els) == 1
+    leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
+    hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
+    assert leaf_elems_count == 2
+    assert hidden_els_count == 1
     
     a = leaf_elems[0]
     a.click()
-    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
-    assert len(leaf_elems) == 2
-    assert len(hidden_els) == 0
+    page.wait_for_timeout(5000)
+
+    leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
+    hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
+    assert leaf_elems_count == 2
+    assert hidden_els_count == 0
 
     print(f'Successfully dragged leaf to change parent.')
 
@@ -222,10 +222,10 @@ def test_settings_leafType(page_factory, project, base_url):
     # page.click('modal-dialog modal-close .modal__close')
     # page.wait_for_timeout(5000)
     
-    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
-    assert len(leaf_elems) == 0
-    assert len(hidden_els) == 0
+    leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
+    hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
+    assert leaf_elems_count == 0
+    assert hidden_els_count == 0
     print(f'Successfully deleted leaf and child leaf.')
 
     page.close()
