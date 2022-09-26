@@ -376,7 +376,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement[0].hls(streaming_files[0].hls).then(() => {
         this.dispatchEvent(new CustomEvent("bufferLoaded",
                                             {composed: true,
-                                            detail: {"percent_complete":1.00}
+                                            detail: {"percent_complete":0.00}
                                             }));
         this.dispatchEvent(new CustomEvent("playbackReady",
                                           {composed: true,
