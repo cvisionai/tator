@@ -73,7 +73,7 @@ export class Utilities
     {
       if (media_files.layout)
       {
-        return null;
+        return {"request": null, "size": -1};
       }
       if (media_files.image)
       {

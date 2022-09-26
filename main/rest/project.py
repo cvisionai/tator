@@ -5,6 +5,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 
+from ..cache import TatorCache
 from ..models import Project
 from ..models import Membership
 from ..models import Organization
@@ -25,22 +26,52 @@ from ._permissions import ProjectFullControlPermission
 logger = logging.getLogger(__name__)
 
 def _serialize_projects(projects, user_id):
+    cache = TatorCache()
+    ttl = 28800
     project_data = database_qs(projects)
-    default_store = get_tator_store(None, connect_timeout=1, read_timeout=1, max_attempts=1)
+    stores = {None: get_tator_store(None, connect_timeout=1, read_timeout=1, max_attempts=1)}
     for idx, project in enumerate(projects):
         if project.creator.pk == user_id:
             project_data[idx]['permission'] = 'Creator'
         else:
             project_data[idx]['permission'] = str(project.user_permission(user_id))
         del project_data[idx]['attribute_type_uuids']
-        if project_data[idx]['thumb']:
-            thumb_store = default_store
-            if project.bucket:
-                # If this project has a separate bucket, the thumbnail may be there or on the
-                # main bucket
-                if not default_store.check_key(project_data[idx]['thumb']):
-                    thumb_store = get_tator_store(project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1)
-            project_data[idx]['thumb'] = thumb_store.get_download_url(project_data[idx]['thumb'], 28800)
+        thumb = "" # TODO put default value here
+        thumb_path = project_data[idx]["thumb"]
+        if thumb_path:
+            url = cache.get_presigned(user_id, thumb_path)
+            if url is None:
+                try:
+                    url = stores[None].get_download_url(thumb_path, ttl)
+                except:
+                    bucket_id = project.bucket and project.bucket.id
+                    if bucket_id:
+                        logger.warning(
+                            f"Could not find thumbnail for project {project.id} in the default bucket, "
+                            f"looking in the project-specific one (legacy behavior)..."
+                        )
+                        if bucket_id in stores:
+                            project_store = stores[bucket_id]
+                        else:
+                            project_store = get_tator_store(
+                                project.bucket, connect_timeout=1, read_timeout=1, max_attempts=1
+                            )
+                            stores[bucket_id] = project_store
+                        try:
+                            url = project_store.get_download_url(thumb_path, ttl)
+                        except:
+                            logger.warning(
+                                f"Could not find thumbnail for project {project.id} the "
+                                f"project-specific bucket either"
+                            )
+                    else:
+                        logger.warning(f"Could not find thumbnail for project {project.id}")
+                if url is not None:
+                    cache.set_presigned(user_id, thumb_path, url, ttl)
+
+            if url is not None:
+                thumb = url
+            project_data[idx]["thumb"] = thumb
     return project_data
 
 class ProjectListAPI(BaseListView):
