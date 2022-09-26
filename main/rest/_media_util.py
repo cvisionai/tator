@@ -43,19 +43,25 @@ class MediaUtil:
                     if delta < max_delta:
                         max_delta = delta
                         quality_idx = idx
-            self._video_file = video.media_files["streaming"][quality_idx]["path"]
-            self._storage = store_lookup[self._video_file]
-            self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
-            self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
-            segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
-            f_p = io.BytesIO()
-            self._storage.download_fileobj(segment_file, f_p)
-            self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
-            self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
-                                                          ['segments']) if x['name'] == 'moof']
-            self._start_bias_frame = 0
-            if self._moof_data[0][1]["frame_start"] > 0:
-                self._start_bias_frame = self._moof_data[0][1]["frame_start"]
+            if 'hls' in video.media_files["streaming"][quality_idx]:
+                self._external_fetch = 'hls'
+                self._video_file = video.media_files["streaming"][quality_idx]["hls"]
+                self._storage = None # no buckets here
+            else:
+                self._external_fetch = None
+                self._video_file = video.media_files["streaming"][quality_idx]["path"]
+                self._storage = store_lookup[self._video_file]
+                self._height = video.media_files["streaming"][quality_idx]["resolution"][0]
+                self._width = video.media_files["streaming"][quality_idx]["resolution"][1]
+                segment_file = video.media_files["streaming"][quality_idx]["segment_info"]
+                f_p = io.BytesIO()
+                self._storage.download_fileobj(segment_file, f_p)
+                self._segment_info = json.loads(f_p.getvalue().decode('utf-8'))
+                self._moof_data = [(i,x) for i,x in enumerate(self._segment_info
+                                                            ['segments']) if x['name'] == 'moof']
+                self._start_bias_frame = 0
+                if self._moof_data[0][1]["frame_start"] > 0:
+                    self._start_bias_frame = self._moof_data[0][1]["frame_start"]
 
         elif "image" in video.media_files:
             # Select highest quality image that is non AVIF (no ffmpeg support)
@@ -80,7 +86,7 @@ class MediaUtil:
 
     def _get_impacted_segments(self, frames):
         """ TODO: add documentation for this """
-        if self._segment_info is None:
+        if self._segment_info is None and self._external_fetch != None:
             return None
 
         segment_list = []
@@ -260,6 +266,10 @@ class MediaUtil:
                 if frame in lookup:
                     inputs.extend(["-ss", self._frame_to_time_str(frame, lookup[frame][0]),
                                                                   "-i", lookup[frame][1]])
+                elif self._external_fetch == 'hls':
+                     inputs.extend(["-ss", self._frame_to_time_str(frame, None),
+                                    "-f", "hls",
+                                    "-i", self._video_file])
                 else:
                     raise ValueError("Failed to find frame {frame} in segmented mp4!")
                 frame_idx += 1
