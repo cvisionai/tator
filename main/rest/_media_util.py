@@ -428,12 +428,13 @@ class MediaUtil:
             proc = subprocess.run(gif_args, check=True, capture_output=True)
             return os.path.join(self._temp_dir, "animation.gif")
 
-    def generate_error_image(self, code, message, img_format="png"):
+    def generate_error_image(code, message, img_format="png"):
         """ TODO: add documentation for this """
         font_bold = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
         font = ImageFont.truetype("DejaVuSans.ttf", 28)
         img = Image.open(os.path.join(settings.STATIC_ROOT,
                                       "images/computer.jpg"))
+        img = img.resize([1024,1024])
         draw = ImageDraw.Draw(img)
         W, H = img.size #pylint: disable=invalid-name
 
@@ -444,15 +445,15 @@ class MediaUtil:
         offset = font.getoffset(header)
         logger.info(f"Offset = {offset}")
 
-        draw.text((W/2-((w/2)+x_bias), 80), header, (255, 62, 29), font=font_bold)
+        draw.text((W/2-((w/2)+x_bias), 160), header, (255, 62, 29), font=font_bold)
 
 
         _, line_height = draw.textsize(message)
         line_height *= 3
-        start_height = 200-line_height
-        lines = textwrap.wrap(message, 17)
+        start_height = 300-line_height
+        lines = textwrap.wrap(message, 40)
         for line_idx, line in enumerate(lines):
-            draw.text((100, start_height+(line_height*line_idx)), line, (255, 62, 29), font=font)
+            draw.text((200, start_height+(line_height*line_idx)), line, (255, 62, 29), font=font)
 
         img_buf = io.BytesIO()
         if img_format == "jpg":
