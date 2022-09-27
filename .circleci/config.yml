@@ -39,7 +39,7 @@ jobs:
         name: Make version.py
         command: make main/version.py
     - run:
-        name: Make docker image
+        name: Make docker images
         command: make -j8 tator-image images
     - store_artifacts:
         path: doc/_build/schema.yaml
