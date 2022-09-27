@@ -159,7 +159,9 @@ dashboard-token:
 ifeq ($(shell git diff | wc -l), 0)
 .token/tator_backend_$(GIT_VERSION):
 	@echo "No git changes detected"
+	make tator-backend
 else
+.PHONY: .token/tator_backend_$(GIT_VERSION)
 .token/tator_backend_$(GIT_VERSION):
 	@echo "Git changes detected"
 	make tator-backend
@@ -168,7 +170,9 @@ endif
 ifeq ($(shell git diff | wc -l), 0)
 .token/tator_online_$(GIT_VERSION):
 	@echo "No git changes detected"
+	tator-image
 else
+.PHONY: .token/tator_online_$(GIT_VERSION)
 .token/tator_online_$(GIT_VERSION):
 	@echo "Git changes detected"
 	make tator-image
