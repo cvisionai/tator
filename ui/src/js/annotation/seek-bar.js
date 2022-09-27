@@ -132,7 +132,7 @@ export class SeekBar extends TatorElement {
                                         return;
                                       }
                                       //console.info(`Checking scrub bar @ ${this.value}`);
-                                      if (this._value == this._lastValue)
+                                      if (this._value == this._lastValue || this._loadedPercentage == 0.00)
                                       {
                                         return;
                                       }

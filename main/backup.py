@@ -287,7 +287,7 @@ class TatorBackupManager:
 
                 backup_size = backup_store.get_size(path)
                 live_size = live_store.get_size(path)
-                if live_size < 0 or live_size == backup_size:
+                if backup_size < 0 or live_size != backup_size:
                     # Get presigned url from the live bucket, set to expire in 1h
                     download_url = live_store.get_download_url(path, 3600)
 
