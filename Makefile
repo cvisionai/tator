@@ -151,6 +151,7 @@ dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 ifeq ($(shell git diff | wc -l), 0)
+.token/tator_online_$(GIT_VERSION):
 	@echo "No git changes detected"
 else
 .token/tator_online_$(GIT_VERSION):
