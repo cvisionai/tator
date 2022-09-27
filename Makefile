@@ -20,8 +20,8 @@ DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/v
 
 SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("systemImageRepo"))')
 
-TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = yaml.load(open("scripts/packages/tator-py/config.json", "r"),$(YAML_ARGS)); print(a.get("packageVersion"))')
-TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(WHEEL_VERSION)-py3-none-any.whl
+TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
+TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
@@ -225,26 +225,26 @@ endif
 USE_VPL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("enableVpl","False"))')
 ifeq ($(USE_VPL),True)
 .PHONY: client-vpl
-client-vpl:
+client-vpl: $(TATOR_PY_WHEEL_FILE)
 	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION)
 else
 .PHONY: client-vpl
-client-vpl:
+client-vpl: $(TATOR_PY_WHEEL_FILE)
 	@echo "Skipping VPL Build"
 endif
 
 .PHONY: client-amd64
-client-amd64:
+client-amd64: $(TATOR_PY_WHEEL_FILE)
 	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 
 .PHONY: client-aarch64
-client-aarch64:
+client-aarch64: $(TATOR_PY_WHEEL_FILE)
 		docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: experimental_docker $(TATOR_PY_WHEEL_FILE) client-vpl client-amd64 client-aarch64
+client-image: experimental_docker client-vpl client-amd64 client-aarch64
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
 	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
@@ -451,13 +451,13 @@ markdown-docs:
 doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_backend_$(GIT_VERSION)
 	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
+	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 # Hold over
 .PHONY: schema
 schema:
-	make doc/_build/schema.yaml
+	$(MAKE) doc/_build/schema.yaml
 
 .PHONY: check_schema
 check_schema:
