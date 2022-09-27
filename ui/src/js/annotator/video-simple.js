@@ -296,7 +296,8 @@ export class TatorSimpleVideo {
   }
 
   hls(playlistUrl) {
-    this._hls = new Hls();
+    let config = {maxBufferHole: 2.0, maxBufferSize: 200*1000*1000, maxBufferLength: 240, backBufferLength:2};
+    this._hls = new Hls(config);
 
     return new Promise((resolve) => {
       this._hls.on(Hls.Events.MANIFEST_LOADING, () => {
