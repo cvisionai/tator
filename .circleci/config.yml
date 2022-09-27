@@ -40,7 +40,7 @@ jobs:
         command: make main/version.py
     - run:
         name: Make docker images
-        command: make -j8 tator-image images
+        command: make -j$(nproc) tator-image images
     - store_artifacts:
         path: doc/_build/schema.yaml
         destination: docs/schema.yaml
