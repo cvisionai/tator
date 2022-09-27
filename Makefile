@@ -20,6 +20,9 @@ DOCKERHUB_USER=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/v
 
 SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("systemImageRepo"))')
 
+TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = yaml.load(open("scripts/packages/tator-py/config.json", "r"),$(YAML_ARGS)); print(a.get("packageVersion"))')
+TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(WHEEL_VERSION)-py3-none-any.whl
+
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
 SYSTEM_IMAGE_REGISTRY=cvisionai
@@ -147,10 +150,21 @@ clean: cluster-uninstall
 dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
+ifeq ($(shell git diff | wc -l), 0)
+	@echo "No git changes detected"
+else
+.token/tator_online_$(GIT_VERSION):
+	@echo "Git changes detected"
+	make tator-image
+endif
+
+
 .PHONY: tator-image
 tator-image: webpack
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
+	mkdir -p .token
+	touch .token/tator_online_$(GIT_VERSION)
 
 .PHONY: graphql-image
 graphql-image:
@@ -193,12 +207,17 @@ client-vpl:
 	@echo "Skipping VPL Build"
 endif
 
+.PHONY: client-amd64
+client-amd64:
+	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
+
+.PHONY: client-aarch64
+client-aarch64:
+		docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
+
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
-client-image: experimental_docker
-	make client-vpl
-	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
-	docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
+client-image: experimental_docker $(TATOR_PY_WHEEL_FILE) client-vpl client-amd64 client-aarch64
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
 	docker manifest create --insecure $(SYSTEM_IMAGE_REGISTRY)/tator_client:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) --amend $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION)
@@ -272,17 +291,13 @@ build-search-indices:
 	argo submit workflows/build-search-indices.yaml --parameter-file helm/tator/values.yaml -p version="$(GIT_VERSION)" -p dockerRegistry="$(DOCKERHUB_USER)" -p maxAgeDays="$(MAX_AGE_DAYS)" -p objectStorageHost="$(OBJECT_STORAGE_HOST)" -p objectStorageRegionName="$(OBJECT_STORAGE_REGION_NAME)" -p objectStorageBucketName="$(OBJECT_STORAGE_BUCKET_NAME)" -p objectStorageAccessKey="$(OBJECT_STORAGE_ACCESS_KEY)" -p objectStorageSecretKey="$(OBJECT_STORAGE_SECRET_KEY)"
 
 .PHONY: images
-images:
-	make ${IMAGES}
+images: ${IMAGES}
+	@echo "Built ${IMAGES}"
 
 lazyPush:
 	rsync -a -e ssh --exclude main/migrations --exclude main/__pycache__ main adamant:/home/brian/working/tator_online
 
-.PHONY: python-bindings-only
-python-bindings-only:
-	if [ ! -f doc/_build/schema.yaml ]; then
-		make schema
-	fi
+$(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-py/.
 	cd scripts/packages/tator-py
 	rm -rf dist
@@ -292,19 +307,15 @@ python-bindings-only:
 	fi
 	cd ../../..
 
+# Only remakes tator-image if it needs to
+.PHONY: python-bindings-only
+python-bindings-only:
+	make $(TATOR_PY_WHEEL_FILE)
+
+# Explicitly will remake tator-image
 .PHONY: python-bindings
 python-bindings: tator-image
-	if [ ! -f doc/_build/schema.yaml ]; then
-		make schema
-	fi
-	cp doc/_build/schema.yaml scripts/packages/tator-py/.
-	cd scripts/packages/tator-py
-	rm -rf dist
-	python3 setup.py sdist bdist_wheel
-	if [ ! -f dist/*.whl ]; then
-		exit 1
-	fi
-	cd ../../..
+	make $(TATOR_PY_WHEEL_FILE)
 
 .PHONY: js-bindings
 js-bindings:
@@ -402,11 +413,18 @@ markdown-docs:
 	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/models.md ./doc/_build/tator-py/models.md
 	python3 scripts/format_markdown.py ./doc/_build/markdown/tator-py/exceptions.md ./doc/_build/tator-py/exceptions.md
 
-.PHONY: schema
-schema:
+
+# Only run if schema changes
+doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
+	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
 	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
+
+# Hold over
+.PHONY: schema
+schema:
+	make doc/_build/schema.yaml
 
 .PHONY: check_schema
 check_schema:
