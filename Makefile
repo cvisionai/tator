@@ -194,10 +194,7 @@ tator-image: webpack .token/tator_backend_$(GIT_VERSION)
 	touch .token/tator_online_$(GIT_VERSION)
 
 .PHONY: graphql-image
-graphql-image:
-	if [ ! -f doc/_build/schema.yaml ]; then
-		make schema
-	fi
+graphql-image: doc/_build/schema.yaml
 	docker build --network host -t $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION) -f containers/tator_graphql/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION)
 
@@ -351,11 +348,8 @@ python-bindings: .token/tator_backend_$(GIT_VERSION)
 	make $(TATOR_PY_WHEEL_FILE)
 
 .PHONY: js-bindings
-js-bindings:
+js-bindings: doc/_build/schema.yaml
 	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
-	if [ ! -f doc/_build/schema.yaml ]; then
-		make schema
-	fi
 	cp doc/_build/schema.yaml scripts/packages/tator-js/.
 	cd scripts/packages/tator-js
 	rm -rf pkg
@@ -386,11 +380,8 @@ js-bindings:
 	cp scripts/packages/tator-js/pkg/dist/tator.js ui/dist/.
 
 .PHONY: r-docs
-r-docs:
+r-docs: doc/_build/schema.yaml
 	docker inspect --type=image $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) && \
-	if [ ! -f doc/_build/schema.yaml ]; then
-		make schema
-	fi
 	cp doc/_build/schema.yaml scripts/packages/tator-r/.
 	rm -rf scripts/packages/tator-r/tmp
 	mkdir -p scripts/packages/tator-r/tmp
