@@ -150,6 +150,17 @@ clean: cluster-uninstall
 dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
+# GIT-based diff for image generation
+# Available for both tator-backend and tator-image, change dep to ".token/tator_backend_$(GIT_VERSION)"
+ifeq ($(shell git diff | wc -l), 0)
+.token/tator_backend_$(GIT_VERSION):
+	@echo "No git changes detected"
+else
+.token/tator_backend_$(GIT_VERSION):
+	@echo "Git changes detected"
+	make tator-backend
+endif
+
 ifeq ($(shell git diff | wc -l), 0)
 .token/tator_online_$(GIT_VERSION):
 	@echo "No git changes detected"
@@ -160,9 +171,16 @@ else
 endif
 
 
+.PHONY: tator-backend
+tator-backend: 
+	docker build --network host -t $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION) -f containers/tator/backend.dockerfile . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION)
+	mkdir -p .token
+	touch .token/tator_backend_$(GIT_VERSION)
+
 .PHONY: tator-image
-tator-image: webpack
-	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
+tator-image: webpack .token/tator_backend_$(GIT_VERSION)
+	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/frontend.dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
 	touch .token/tator_online_$(GIT_VERSION)
@@ -416,10 +434,10 @@ markdown-docs:
 
 
 # Only run if schema changes
-doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
+doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_backend_$(GIT_VERSION)
 	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
+	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 # Hold over
