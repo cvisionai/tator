@@ -145,13 +145,17 @@ cluster-uninstall:
 	helm uninstall tator
 
 .PHONY: clean
-clean: cluster-uninstall
+clean: cluster-uninstall clean-tokens
+
+clean-tokens:
+	rm -fr .token
 
 dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 # GIT-based diff for image generation
 # Available for both tator-backend and tator-image, change dep to ".token/tator_backend_$(GIT_VERSION)"
+# Will cause a rebuild on any dirty working tree OR if the image has been built with a token generated
 ifeq ($(shell git diff | wc -l), 0)
 .token/tator_backend_$(GIT_VERSION):
 	@echo "No git changes detected"
@@ -256,10 +260,17 @@ braw-image:
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
 
+
+ifeq ($(shell cat main/version.py), $(shell ./scripts/version.sh))
+.PHONY: main/version.py
+main/version.py:
+	@echo "Version file already generated"
+else
 .PHONY: main/version.py
 main/version.py:
 	./scripts/version.sh > main/version.py
 	chmod +x main/version.py
+endif
 
 collect-static: webpack
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -rf /tator_online/main/static
@@ -326,14 +337,13 @@ $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 	fi
 	cd ../../..
 
-# Only remakes tator-image if it needs to
+# OBE with partial rebuilds working, here for backwards compatibility.
 .PHONY: python-bindings-only
 python-bindings-only:
-	make $(TATOR_PY_WHEEL_FILE)
+	make python-bindings
 
-# Explicitly will remake tator-image
 .PHONY: python-bindings
-python-bindings: tator-image
+python-bindings: .token/tator_backend_$(GIT_VERSION)
 	make $(TATOR_PY_WHEEL_FILE)
 
 .PHONY: js-bindings
