@@ -284,11 +284,11 @@ dev-push:
 
 USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
 ifeq ($(USE_MIN_JS),True)
-webpack: | $(TATOR_JS_MODULE_FILE)
+webpack: $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
 	cd ui && npm install && python3 make_index_files.py && npm run build
 else
-webpack: | $(TATOR_JS_MODULE_FILE)
+webpack: $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
 	cd ui && npm install && python3 make_index_files.py && npm run buildDev
 endif
@@ -349,7 +349,7 @@ python-bindings: .token/tator_backend_$(GIT_VERSION)
 	make $(TATOR_PY_WHEEL_FILE)
 
 
-$(TATOR_JS_MODULE_FILE): | doc/_build/schema.yaml
+$(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-js/.
 	cd scripts/packages/tator-js
