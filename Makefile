@@ -357,16 +357,18 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	mkdir pkg
 	mkdir pkg/src
 	./codegen.py tator-openapi-schema.yaml
-	docker run -it --rm \
+	docker run -it --rm --name=js_generator \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
 		openapitools/openapi-generator-cli:v6.1.0 \
 		generate -c /pwd/config.json \
 		-i /pwd/tator-openapi-schema.yaml \
 		-g javascript -o /pwd/pkg -t /pwd/templates
-	docker run -it --rm \
+	docker run -it --rm --name=chmodder \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
 		openapitools/openapi-generator-cli:v6.1.0 \
 		chmod -R 777 /pwd/pkg
+	docker wait js_generator
+	docker wait chmodder
 	cp -r examples pkg/examples
 	cp -r utils pkg/src/utils
 	cp webpack* pkg/.
