@@ -39,10 +39,16 @@ export const getCompiledList = ({type, skip = null, check = null}) => {
 }
 
 const store = create(subscribeWithSelector((set, get) => ({
-   projectId: null,
-   orgId: null,
+   status: { // page status
+      name: "idle",
+      msg: "" // if Error this could trigger "toast" with message
+   },
    project: {},
-   versions: [],
+   versions: {
+      initiliazed: false,
+      data: [],
+      inputHandles: [] // Form change and data can be computed value off inputHandles
+   }, 
    mediaTypes: [],
    localizationTypes: [],
    leafTypes: [],
@@ -53,61 +59,78 @@ const store = create(subscribeWithSelector((set, get) => ({
    jobClusters: [],
 
    /* project */
-   fetchProject: async () => {
-      const object = await api.getProjectWithHttpInfo(get().projectId);
-      set({ project: object.data });
-      return object.data;
+   fetchProject: async (id) => {
+      set({ status: {
+         name: "pending",
+         msg: "Fetching project data..."
+      } });
+      const object = await api.getProjectWithHttpInfo(id);
+
+      if (object.response.ok) {
+         set({ project: object.data });
+         set({ status: {
+            name: "idle",
+            msg: ""
+         }  });         
+      } else {
+         set({ project: {} });
+         set({ status: {
+            name: "error",
+            msg: object.response.message
+         }  });
+      }
+
    },
    removeProject: async () => {
-     // todo set({ project: await api.getProjectWithHttpInfo(get().projectId) });
+     // todo set({ project: await api.getProjectWithHttpInfo(get().project.id) });
    },
 
    /* job cluster (used in algo form) */
    fetchJobClusters: async () => {
-      let object = await api.getJobClusterListWithHttpInfo(get().projectId);
+      let object = await api.getJobClusterListWithHttpInfo(get().project.id);
       set({ jobClusters: object.data });
       return object.data;
    },
 
    /* media types */
    fetchMediaTypes: async () => {
-      let object = await api.getMediaTypeListWithHttpInfo(get().projectId);
+      let object = await api.getMediaTypeListWithHttpInfo(get().project.id);
       set({ mediaTypes: object.data });
       return object.data;
    },
 
    /* localization types */
    fetchLocalizationTypes: async () => {
-      let object = await api.getLocalizationTypeListWithHttpInfo(get().projectId);
+      let object = await api.getLocalizationTypeListWithHttpInfo(get().project.id);
       set({ localizationTypes: object.data });
       return object.data;
    },
 
    /* leaf types */
    fetchLeafTypes: async () => {
-      let object = await api.getLeafTypeListWithHttpInfo(get().projectId);
+      let object = await api.getLeafTypeListWithHttpInfo(get().project.id);
       set({ leafTypes: object.data });
       return object.data;
    },
 
    /* state types */
    fetchStateTypes: async () => {
-      let object = await api.getStateTypeListWithHttpInfo(get().projectId);
+      let object = await api.getStateTypeListWithHttpInfo(get().project.id);
       set({ stateTypes: object.data });
       return object.data;
    },
 
    /* memberships */
    fetchMemberships: async () => {
-      let object = await api.getMembershipListWithHttpInfo(get().projectId);
+      let object = await api.getMembershipListWithHttpInfo(get().project.id);
       set({ memberships: object.data });
       return object.data;
    },
 
    /* versions */
    fetchVersions: async () => {
-      let object = await await api.getVersionListWithHttpInfo(get().projectId);
-      set({ versions: object.data });
+      let object = await await api.getVersionListWithHttpInfo(get().project.id);
+      set({ versions: {...get().versions, data: object.data, initiliazed: true} });
       return object.data;
    },
    addVersion: async (spec) => {
@@ -117,7 +140,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       const newVersions = [...get().versions, version];
       console.log("NEW VERSIONS");
       console.log(newVersions);
-      set({ versions: [...get().versions, version] }); // `push` doesn't trigger state update
+      set({ versions: { ...get().versions, data: [...get().versions.data, version] } }); // `push` doesn't trigger state update
       
       return object.data.object;
    },
@@ -126,21 +149,16 @@ const store = create(subscribeWithSelector((set, get) => ({
       console.log(data);
       const object = await api.updateVersionWithHttpInfo(id, data);
       const newVersion = object.data.object;
-      const tmpVersions = get().versions; //.filter(version => versionId != id)
-      set({ versions: [...tmpVersions, newVersion] });
 
-      // TODO
-      // test spread operation or if I need to filter out first
-      console.log('test spread operation or if I need to filter out first... id='+id);
-      console.log(get().versions);
+      set({ versions: { ...get().versions, data: [...get().versions.data, newVersion] } }); // `push` doesn't trigger state update
 
       return object.data.object;
    },
    getVersionContentCount: async (versionId) => {
       // Return some information for the confirmation
       // TODO add http info and error handling
-      // const stateCount = await api.getStateCount(get().projectId, { version: versionId });
-      // const localizationCount =  await api.getStateCount(get().projectId, { version: versionId });
+      // const stateCount = await api.getStateCount(get().project.id, { version: versionId });
+      // const localizationCount =  await api.getStateCount(get().project.id, { version: versionId });
       
       return { stateCount: 5, localizationCount: 20};
    },
@@ -157,14 +175,14 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    /* algorithms */
    fetchAlgorithms: async () => {
-      let object = await api.getAlgorithmListWithHttpInfo(get().projectId);
+      let object = await api.getAlgorithmListWithHttpInfo(get().project.id);
       set({ alogrithms: object.data });
       return object.data;
    },
 
    /* applets */
    fetchApplets: async () => {
-      let object = await api.getAppletListWithHttpInfo(get().projectId);
+      let object = await api.getAppletListWithHttpInfo(get().project.id);
       set({ applets: object.data });
       return object.data;
    },

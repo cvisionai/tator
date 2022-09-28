@@ -1,6 +1,7 @@
 import { TatorElement } from "../../components/tator-element.js";
 import { Utilities } from "../../util/utilities.js";
 import Spinner from "../../../images/spinner-transparent.svg";
+import { store } from "../store.js";
 
 export class SettingsNav extends TatorElement {
   constructor() {
@@ -13,106 +14,104 @@ export class SettingsNav extends TatorElement {
     // Handlers
     this.div = this._shadow.getElementById("settings-nav--div");
     this.nav = this._shadow.getElementById("settings-nav--nav");
-    this.itemsContainer = this._shadow.getElementById("settings-nav--item-container");
-
-    // Listen for changes
-    this.addEventListener('settings-nav-new', this.newNavItem.bind(this));
-    this.addEventListener('settings-nav-rename', this.updateNavItem.bind(this))
-    this.addEventListener('settings-nav-remove', this.deleteNavItem.bind(this))
+   
   }
 
-  newItemEvent(typeId, typeName, newName){
-    let detail = {
-      "bubbles" : true,
-      "detail" : {
-        "typeId" : typeId,
-        "typeName" : typeName,
-        "newName" : newName
-      }
-    };
-    return new CustomEvent('settings-nav-new', detail);
-  }
 
-  renameItemEvent(typeId, typeName, newName) {
-    let detail = {
-      "bubbles" : true,
-      "detail" : {
-        "typeId" : typeId,
-        "typeName" : typeName,
-        "newName" : newName
-      }
-    };
-    return new CustomEvent('settings-nav-rename', detail);
-  }
 
-  removeItemEvent(typeId, typeName){
-    let detail = {
-      "bubbles" : true,
-      "detail" : {
-        "typeId" : typeId,
-        "typeName" : typeName
-      }
-    };
-    return new CustomEvent('settings-nav-remove', detail);
-  }
 
-  newNavItem(e){  
-    // Create the link.
-    let obj = {
-      "id" : e.detail.typeId,
-      "name" : e.detail.newName
-    }
-    let itemSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}`;
-    let subNavLink = this.getSubItem(obj, e.detail.typeName, itemSelector);
+  // newItemEvent(typeId, typeName, newName){
+  //   let detail = {
+  //     "bubbles" : true,
+  //     "detail" : {
+  //       "typeId" : typeId,
+  //       "typeName" : typeName,
+  //       "newName" : newName
+  //     }
+  //   };
+  //   return new CustomEvent('settings-nav-new', detail);
+  // }
+
+  // renameItemEvent(typeId, typeName, newName) {
+  //   let detail = {
+  //     "bubbles" : true,
+  //     "detail" : {
+  //       "typeId" : typeId,
+  //       "typeName" : typeName,
+  //       "newName" : newName
+  //     }
+  //   };
+  //   return new CustomEvent('settings-nav-rename', detail);
+  // }
+
+  // removeItemEvent(typeId, typeName){
+  //   let detail = {
+  //     "bubbles" : true,
+  //     "detail" : {
+  //       "typeId" : typeId,
+  //       "typeName" : typeName
+  //     }
+  //   };
+  //   return new CustomEvent('settings-nav-remove', detail);
+  // }
+
+  // newNavItem(e){  
+  //   // Create the link.
+  //   let obj = {
+  //     "id" : e.detail.typeId,
+  //     "name" : e.detail.newName
+  //   }
+  //   let itemSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}`;
+  //   let subNavLink = this.getSubItem(obj, e.detail.typeName, itemSelector);
     
-    // Find the end of the type's section.
-    let addNewNode = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-New']`);
-    //let parentNode = addNewNode.parentNode;
-    addNewNode.before(subNavLink);
+  //   // Find the end of the type's section.
+  //   let addNewNode = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-New']`);
+  //   //let parentNode = addNewNode.parentNode;
+  //   addNewNode.before(subNavLink);
 
-    if (e.detail.typeName == "LeafType") {
-      const subNavInnerLinkSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`;
-      const leafIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"/></g></svg>`;
-      let subNavInnerLink = this.getSubItem(obj, e.detail.typeName, subNavInnerLinkSelector, leafIcon+" Add/Edit Leaves");
-      addNewNode.before(subNavInnerLink);    
-    }
+  //   if (e.detail.typeName == "LeafType") {
+  //     const subNavInnerLinkSelector = `#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`;
+  //     const leafIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"/></g></svg>`;
+  //     let subNavInnerLink = this.getSubItem(obj, e.detail.typeName, subNavInnerLinkSelector, leafIcon+" Add/Edit Leaves");
+  //     addNewNode.before(subNavInnerLink);    
+  //   }
 
-    return subNavLink.click();
-  }
+  //   return subNavLink.click();
+  // }
 
-  updateNavItem(e) {
-    // console.log("Rename to......"+e.detail.newName);
-    let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
-    // console.log(navItem);
-    return navItem.innerHTML = e.detail.newName;
-  }
+  // updateNavItem(e) {
+  //   // console.log("Rename to......"+e.detail.newName);
+  //   let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
+  //   // console.log(navItem);
+  //   return navItem.innerHTML = e.detail.newName;
+  // }
 
-  deleteNavItem(e) {
-    // Delete the side nav item, and container
-    let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
-    let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}`);
+  // deleteNavItem(e) {
+  //   // Delete the side nav item, and container
+  //   let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}']`);
+  //   let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}`);
 
-    // Show something else...
-    navItem.parentNode.querySelectorAll('a')[0].click();
+  //   // Show something else...
+  //   navItem.parentNode.querySelectorAll('a')[0].click();
 
-    // remove the container and side nav link
-    container.remove();
-    navItem.remove()
+  //   // remove the container and side nav link
+  //   container.remove();
+  //   navItem.remove()
 
-    if (e.detail.typeName == "LeafType") {
-      // Delete the CHILD side nav item, and container
-      let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner']`);
-      let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`);
+  //   if (e.detail.typeName == "LeafType") {
+  //     // Delete the CHILD side nav item, and container
+  //     let navItem = this._shadow.querySelector(`a[href='#itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner']`);
+  //     let container = this._shadow.getElementById(`itemDivId-${e.detail.typeName}-${e.detail.typeId}_inner`);
 
-      // remove the container and side nav link
-      container.remove();
-      navItem.remove()      
-    }
-  }
+  //     // remove the container and side nav link
+  //     container.remove();
+  //     navItem.remove()      
+  //   }
+  // }
 
-  _getItemDivId(typeName, typeId) {
-    return `itemDivId-${typeName}-${typeId}`;
-  }
+  // _getItemDivId(typeName, typeId) {
+  //   return `itemDivId-${typeName}-${typeId}`;
+  // }
 
   _addNav({name, type, subItems, subItemsOnly = false, pendingSubItems=true, innerLinkText = ""}){
     if(subItemsOnly){
@@ -399,29 +398,7 @@ export class SettingsNav extends TatorElement {
     return itemDiv.appendChild(itemContents);
   }
 
-  // Hide and show to centralize where we are doing this action
-  hide(el) {
-    try {
-      if(el.nodeType == Node.ELEMENT_NODE){
-        return el.hidden = true;
-      } else {
-        let node = this._shadow.getElementById(el);
-        return node.hidden = true;
-      }
-    } catch (err) {
-      console.error("Error hiding element.")
-    }
 
-    
-  }
-  show(el){
-    if(el.nodeType == Node.ELEMENT_NODE){
-      return el.hidden = false;
-    } else {
-      let node = this._shadow.getElementById(el);
-      return node.hidden = false;
-    }
-  }
 
 }
 
