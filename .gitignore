@@ -33,6 +33,7 @@ containers/*.whl
 real-secrets.yaml
 helm/tator/values.yaml
 token.txt
+.token
 
 # Dev files
 tags*
