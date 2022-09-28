@@ -10,6 +10,8 @@ jobs:
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
+    - attach_workspace:
+        at: ~/
     - run:
         name: Copy helm config
         command: |
@@ -235,7 +237,6 @@ workflows:
             only: /.*/
     - install-tator:
         requires:
-        - setup-lightsail
         - build-docker-images
         context: cvisionai
         filters:
