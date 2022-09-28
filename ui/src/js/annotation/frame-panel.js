@@ -68,7 +68,23 @@ export class FramePanel extends TatorElement {
           this._undo.post("States", body, val);
         } else {
           const state = data[index];
-          this._undo.patch("State", state.id, {"attributes": values}, val);
+          if (this._data.getVersion().bases.indexOf(state.version) >= 0)
+          {
+            let newObject = {};
+            newObject.parent = state.id;
+            newObject = Object.assign(newObject, values);
+            newObject.version = this._data.getVersion().id;
+            newObject.type = Number(state.meta.split("_")[1]);
+            newObject.media_ids = state.media;
+            newObject.frame = state.frame;
+            newObject.localization_ids = state.localizations;
+            console.info(JSON.stringify(newObject));
+            this._undo.post("States", newObject, val);
+          }
+          else
+          {
+            this._undo.patch("State", state.id, {"attributes": values}, val);
+          }
         }
       }
     });
@@ -94,12 +110,14 @@ export class FramePanel extends TatorElement {
       return;
     }
     if (data) {
+      this._count = data.length;
       if (data.length > 0) {
         this._blockingWrites = true;
         const values = this._getInterpolated(data);
         this._attributes.setValues(values);
         this._blockingWrites = false;
       }
+      this.dispatchEvent(new Event("dataUpdated"));
     }
   }
 
@@ -123,14 +141,22 @@ export class FramePanel extends TatorElement {
     }
     let attrs;
     let id;
+    let version;
+    let created_by;
     switch (this._method) {
       case "latest":
         attrs = data[beforeIdx].attributes;
         id = data[beforeIdx].id;
+        version = data[beforeIdx].version;
+        created_by = data[beforeIdx].created_by;
         break;
       //TODO: Implement other interpolation methods
     }
-    return {attributes: attrs, id: id};
+    return {attributes: attrs, id: id, version: version,created_by:created_by};
+  }
+
+  getEntityCount() {
+    return this._count;
   }
 }
 

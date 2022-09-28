@@ -174,7 +174,6 @@ def test_settings_leafType(page_factory, project, base_url):
     # This element should have the draggable attribute value as true
     page.wait_for_timeout(5000)
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    print(leaf_elems)
     src_elem = leaf_elems[1]
     dest_elem = leaf_elems[0]
 
@@ -195,18 +194,19 @@ def test_settings_leafType(page_factory, project, base_url):
 
     page.wait_for_timeout(5000)
     leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
-
-    
-    assert len(leaf_elems) == 2
-    assert len(hidden_els) == 1
+    leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
+    hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
+    assert leaf_elems_count == 2
+    assert hidden_els_count == 1
     
     a = leaf_elems[0]
     a.click()
-    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
-    assert len(leaf_elems) == 2
-    assert len(hidden_els) == 0
+    page.wait_for_timeout(5000)
+
+    leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
+    hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
+    assert leaf_elems_count == 2
+    assert hidden_els_count == 0
 
     print(f'Successfully dragged leaf to change parent.')
 
@@ -222,10 +222,10 @@ def test_settings_leafType(page_factory, project, base_url):
     # page.click('modal-dialog modal-close .modal__close')
     # page.wait_for_timeout(5000)
     
-    leaf_elems = page.query_selector_all('.leaves-edit span[draggable="true"]')
-    hidden_els = page.query_selector_all('leaf-item[class="hidden"]')
-    assert len(leaf_elems) == 0
-    assert len(hidden_els) == 0
+    leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
+    hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
+    assert leaf_elems_count == 0
+    assert hidden_els_count == 0
     print(f'Successfully deleted leaf and child leaf.')
 
     page.close()
@@ -397,6 +397,7 @@ def test_settings_algorithmTests(page_factory, project, base_url, yaml_file):
     with page.expect_response(url) as response_info:
         page.set_input_files('#itemDivId-Algorithm-New input[type="file"]', yaml_file)
 
+    page.wait_for_timeout(5000)
     page.fill('#itemDivId-Algorithm-New text-input[name="Files Per Job"] input', '100')
     page.click('#itemDivId-Algorithm-New button[value="Save"]')
     page.wait_for_selector('text="Successfully registered algorithm argo workflow."')
@@ -416,9 +417,11 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     page.wait_for_selector('.heading-for-Applet .Nav-action')
     page.click('.heading-for-Applet .Nav-action')
     page.wait_for_selector('#itemDivId-Applet-New text-input[name="Name"]')
+    page.set_input_files('#itemDivId-Applet-New input[type="file"]', html_file)
+    page.wait_for_timeout(5000)
     page.fill('#itemDivId-Applet-New text-input[name="Name"] input', 'Test Applet')
     page.fill('#itemDivId-Applet-New text-input[name="Description"] input', 'Description for automated test.')
-    page.set_input_files('#itemDivId-Applet-New input[type="file"]', html_file)
+    
 
     # - Listen for applet id
     url = base_url + "/rest/Applets/" + str(project)

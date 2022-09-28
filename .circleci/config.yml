@@ -39,17 +39,11 @@ jobs:
         name: Make version.py
         command: make main/version.py
     - run:
-        name: Make backend image
-        command: make tator-image
-    - run:
-        name: Make OpenAPI schema
-        command: make schema
+        name: Make docker images
+        command: make -j$(nproc) tator-image images
     - store_artifacts:
         path: doc/_build/schema.yaml
         destination: docs/schema.yaml
-    - run:
-        name: Make python bindings
-        command: make python-bindings-only
     - run:
         name: Install python client
         command: pip3 install scripts/packages/tator-py/dist/*.whl
@@ -59,15 +53,6 @@ jobs:
     - store_artifacts:
         path: doc/_build/tator-py.tar
         destination: docs/tator-py.tar
-    - run:
-        name: Make graphql image
-        command: make graphql-image
-    - run:
-        name: Make postgis image
-        command: make postgis-image
-    - run:
-        name: Make client image
-        command: make client-image
     - run:
         name: Push client image to OCI
         command: |
@@ -116,12 +101,12 @@ jobs:
           ssh lightsail 'python3 get-pip.py';
           ssh lightsail '/home/ubuntu/.local/bin/pip3 install --upgrade awscli';
           echo 'Initiating lightsail self-destruct sequence...';
-          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sh -c "sleep 28800 && /home/ubuntu/.local/bin/aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION" >/dev/null 2>&1 &';
-          ssh lightsail 'echo "This lightsail instance will self-destruct in 8 hours."';
+          ssh lightsail 'export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export GIT_REVISION='"'$CIRCLE_SHA1'"';sh -c "sleep 10800 && /home/ubuntu/.local/bin/aws lightsail delete-instance --instance-name tator-ci-$GIT_REVISION" >/dev/null 2>&1 &';
+          ssh lightsail 'echo "This lightsail instance will self-destruct in 3 hours."';
     - run:
         name: Clone source on lightsail
         command: |
-          ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; git clone -b ${CIRCLE_BRANCH:-stable} --recurse-submodules https://github.com/cvisionai/tator';
+          ssh lightsail 'export CIRCLE_BRANCH='"'$CIRCLE_BRANCH'"'; rm -fr tator; git clone -b ${CIRCLE_BRANCH:-stable} --recurse-submodules https://github.com/cvisionai/tator';
     - persist_to_workspace:
         root: ~/
         paths:
@@ -287,7 +272,7 @@ workflows:
         filters:
           branches:
             only:
-            - master
+            - rc/0.2.21
     - cleanup-lightsail:
         requires:
         - rest-tests

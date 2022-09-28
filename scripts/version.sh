@@ -22,14 +22,10 @@ class Git:
 class BuildTime:
   user='$(whoami)'
   machine='$(hostname)'
-  time='$(date)'
-  utc='$(date -Iseconds --utc)'
 
 if __name__=='__main__':
    print('PRETTY={}'.format(Git.pretty))
    print('SHA={}'.format(Git.sha))
    print('USER={}'.format(BuildTime.user))
    print('MACHINE={}'.format(BuildTime.machine))
-   print('TIME={}'.format(BuildTime.time))
-   print('UTC={}'.format(BuildTime.utc))
 """

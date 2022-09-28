@@ -376,7 +376,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._videoElement[0].hls(streaming_files[0].hls).then(() => {
         this.dispatchEvent(new CustomEvent("bufferLoaded",
                                             {composed: true,
-                                            detail: {"percent_complete":1.00}
+                                            detail: {"percent_complete":0.00}
                                             }));
         this.dispatchEvent(new CustomEvent("playbackReady",
                                           {composed: true,
@@ -472,10 +472,12 @@ export class VideoCanvas extends AnnotationCanvas {
     {
       let new_play_idx = this.find_closest(this._videoObject, quality);
 
-      if (buffer == undefined) {
-        this._play_idx = new_play_idx;
-      }
-      else if (buffer == "play") {
+      if (buffer == undefined || buffer == "play") {
+        // If we are switching buffer clean up memory of old quality
+        if (new_play_idx != this._play_idx)
+        {
+          this._videoElement[this._play_idx].reset();
+        }
         this._play_idx = new_play_idx;
       }
       else if (buffer == "seek") {
@@ -488,6 +490,14 @@ export class VideoCanvas extends AnnotationCanvas {
           this.startDownload(this._videoObject.media_files["streaming"], this._offsiteConfig, this._videoElement[0]._compat == true);
         }
         this._scrub_idx = new_play_idx;
+      }
+
+      // If we are going to scrub buffer, remove old on-demand buffer indication
+      if (this._play_idx == this._scrub_idx)
+      {
+        this.dispatchEvent(new CustomEvent("onDemandDetail",
+                                          {composed: true,
+                                            detail: {"ranges": []}}));
       }
       console.log("Setting 1x-4x playback quality to: " + quality);
 
@@ -523,7 +533,12 @@ export class VideoCanvas extends AnnotationCanvas {
                                                         "forceCompat": this._forceCompat,
                                                         "secureContext": window.isSecureContext}
                                               }));
-      let v = new TatorSimpleVideo(idx, this._videoObject.media_files.streaming[idx].path);
+      let path = this._videoObject.media_files.streaming[idx].path;
+      if (use_hls)
+      {
+        path = null;
+      }
+      let v = new TatorSimpleVideo(idx, path);
       if (idx == this._scrub_idx)
       {
         this.dispatchEvent(new CustomEvent("bufferLoaded",
@@ -552,29 +567,30 @@ export class VideoCanvas extends AnnotationCanvas {
           p.onReady = null;
         }
       }
-      if (idx == this._play_idx)
-      {
-        p.onBuffered = () => {
-          if (idx == this._scrub_idx)
+      p.onBuffered = () => {
+        if (idx == this._scrub_idx)
+        {
+          return;
+        }
+        if (idx != this._play_idx)
+        {
+          return;
+        }
+        const ranges = p.playBuffer().buffered;
+        let ranges_list = [];
+        for (let idx = 0; idx < ranges.length; idx++)
+        {
+          let startFrame = this.timeToFrame(ranges.start(idx), null, idx);
+          let endFrame = this.timeToFrame(ranges.end(idx), null, idx);
+          if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
           {
-            return;
+            ranges_list.push([startFrame, endFrame]);
           }
-          const ranges = p.playBuffer().buffered;
-          let ranges_list = [];
-          for (let idx = 0; idx < ranges.length; idx++)
-          {
-            let startFrame = this.timeToFrame(ranges.start(idx), null, idx);
-            let endFrame = this.timeToFrame(ranges.end(idx), null, idx);
-            if (this.currentFrame() >= startFrame && this.currentFrame() <= endFrame)
-            {
-              ranges_list.push([startFrame, endFrame]);
-            }
-          }
-          this.dispatchEvent(new CustomEvent("onDemandDetail",
-                                            {composed: true,
-                                             detail: {"ranges": ranges_list}}));
-        };
-      }
+        }
+        this.dispatchEvent(new CustomEvent("onDemandDetail",
+                                          {composed: true,
+                                            detail: {"ranges": ranges_list}}));
+      };
       return p;
     }
   }
@@ -1236,13 +1252,22 @@ export class VideoCanvas extends AnnotationCanvas {
   frameToComps(frame, buf_idx)
   {
     const time = ((1/this._fps)*frame)+(1/(this._fps*4));
-    const bias = this._dlWorker.biasForTime(time, buf_idx);
+    let bias = 0.0;
+    if (this._dlWorker)
+    {
+      bias = this._dlWorker.biasForTime(time, buf_idx);
+    }
     return {'time': time, 'bias': bias};
   }
 
   timeToFrame(time, bias, buf_idx)
   {
-    let video_time = time - this._dlWorker.biasForTime(time, buf_idx);
+    let vid_bias = 0.0;
+    if (this._dlWorker)
+    {
+      vid_bias = this._dlWorker.biasForTime(time, buf_idx);
+    }
+    let video_time = time - vid_bias;
     if (bias)
     {
       video_time -= (1/(this._fps*4));
@@ -1445,7 +1470,7 @@ export class VideoCanvas extends AnnotationCanvas {
           }, that._networkSeekTimeout);
         }
 
-        if (downloadSeekFrame)
+        if (downloadSeekFrame && that._dlWorker)
         {
           that._dlWorker.postMessage(
             {"type": "seek",
@@ -2784,7 +2809,7 @@ export class VideoCanvas extends AnnotationCanvas {
 
   play()
   {
-    this._effectManager.grayOut(500);
+    this._effectManager.grayOut(1000);
     this._playEffect = true;
     document.body.style.cursor = "progress";
     this._stallCount = 0;

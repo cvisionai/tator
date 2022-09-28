@@ -65,9 +65,15 @@ class GetFrameAPI(BaseDetailView):
             assert requested_height > 0
             force_image_size = (requested_width, requested_height)
 
-        for frame in frames:
-            if int(frame) >= video.num_frames:
-                raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
+        if video.meta.dtype == 'video':
+            for frame in frames:
+                if int(frame) >= video.num_frames:
+                    raise Exception(f"Frame {frame} is invalid. Maximum frame is {video.num_frames-1}")
+        elif video.meta.dtype == 'image':
+            if len(frames) > 1:
+                raise Exception(f"Images can only supply 1 frame, asked for '{frames}'")
+        elif video.meta.dtype == 'live' or video.meta.dtype == 'multi':
+            raise Exception(f"GetFrame does not support '{video.meta.dtype}' objects.")
         tile_size = tile
 
         if tile and animate:
@@ -119,9 +125,17 @@ class GetFrameAPI(BaseDetailView):
                     response_data = data_file.read()
             else:
                 logger.info(f"Accepted format = {self.request.accepted_renderer.format}")
-                tiled_fp = media_util.get_tile_image(frames, roi_arg, tile_size,
-                                                     render_format=self.request.accepted_renderer.format,
-                                                     force_scale=force_image_size)
-                with open(tiled_fp, 'rb') as data_file:
+                if video.meta.dtype == 'video':
+                    image_fp = media_util.get_tile_image(frames, roi_arg, tile_size,
+                                                        render_format=self.request.accepted_renderer.format,
+                                                        force_scale=force_image_size)
+                elif video.meta.dtype == 'image':
+                    roi = None
+                    if roi_arg:
+                        roi = roi_arg[0]
+                    image_fp = media_util.get_image(roi=roi,
+                                                    render_format=self.request.accepted_renderer.format,
+                                                    force_scale=force_image_size)
+                with open(image_fp, 'rb') as data_file:
                     response_data = data_file.read()
         return response_data

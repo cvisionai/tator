@@ -2,6 +2,7 @@ export function handle_video_error(evt, root)
 {
   let msg_html = "";
   let errorType = "";
+  let exit = false;
 
   if (evt.detail.secureContext == false) {
     errorType = "secureContext";
@@ -37,6 +38,14 @@ export function handle_video_error(evt, root)
     msg_html += `<br>Not all video playback features will work optimally when bypassing the VideoDecoder API.`;
     msg_html += "</span>";
   } 
+  else
+  {
+    exit = true;
+  }
+  if (exit == true)
+  {
+    return;
+  }
 
 
   const secureContextShown = sessionStorage.getItem(`handle_error__secureContext_${document.location.pathname}`);

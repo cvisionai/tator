@@ -64,7 +64,7 @@ def create_test_bucket(organization):
         region='us-east-2',
     )
 
-def create_test_project(user, organization=None, backup_bucket=None):
+def create_test_project(user, organization=None, backup_bucket=None, bucket=None):
     kwargs = {
         "name": "asdf",
         "creator": user,
@@ -75,6 +75,9 @@ def create_test_project(user, organization=None, backup_bucket=None):
 
     if backup_bucket:
         kwargs["backup_bucket"] = backup_bucket
+
+    if bucket:
+        kwargs["bucket"] = bucket
 
     return Project.objects.create(**kwargs)
 
@@ -3398,43 +3401,33 @@ class ResourceTestCase(APITestCase):
 
 
 class ResourceWithBackupTestCase(ResourceTestCase):
-    """ This runs the same tests as `ResourceTestCase` but adds a project-specific backup bucket """
+    """ This runs the same tests as `ResourceTestCase` but adds project-specific buckets """
     def setUp(self):
-        super().setUp()
-        endpoint = os.getenv(f"OBJECT_STORAGE_HOST")
-        secure = "https" in endpoint
-        endpoint_stripped = re.sub("https?://", "", endpoint)
-        access_key = os.getenv(f"OBJECT_STORAGE_ACCESS_KEY")
-        secret_key = os.getenv(f"OBJECT_STORAGE_SECRET_KEY")
-        self.mc = Minio(
-            endpoint=endpoint_stripped, secure=secure, access_key=access_key, secret_key=secret_key
+        logging.disable(logging.CRITICAL)
+        self.user = create_test_user()
+        self.client.force_authenticate(self.user)
+        self.organization = create_test_organization()
+        self.affiliation = create_test_affiliation(self.user, self.organization)
+        self.store = get_tator_store()
+        self.backup_bucket = self.store.bucket
+        self.project = create_test_project(
+            self.user, self.organization, bucket=self.store.bucket, backup_bucket=self.store.bucket
         )
-        self.backup_bucket_name = f"tator-backup-{uuid1()}"
-        self.mc.make_bucket(self.backup_bucket_name)
-        self.backup_bucket = Bucket.objects.create(
-            name=self.backup_bucket_name,
-            organization=self.organization,
-            access_key=access_key,
-            secret_key=secret_key,
-            endpoint_url=endpoint,
-            region=os.getenv(f"OBJECT_STORAGE_REGION_NAME"),
+        self.membership = create_test_membership(self.user, self.project)
+        self.entity_type = MediaType.objects.create(
+            name="video",
+            dtype='video',
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
         )
-        self.project.backup_bucket = self.backup_bucket
-        self.project.save()
+        self.file_entity_type = FileType.objects.create(
+            name="TestFileType",
+            project=self.project,
+            attribute_types=create_test_attribute_types(),
+        )
 
     def tearDown(self):
-        # Delete objects from temporary backup bucket
-        objs_to_delete = [DeleteObject(x.object_name) for x in self.mc.list_objects(self.backup_bucket_name, "", recursive=True)]
-
-        # `remove_objects` returns a generator, iterate over it to evaluate
-        _ = list(self.mc.remove_objects(self.backup_bucket_name, objs_to_delete))
-
-        # Delete temporary backup bucket
-        self.mc.remove_bucket(self.backup_bucket_name)
-
-        # Clean up project
         self.project.delete()
-        self.backup_bucket.delete()
         self.organization.delete()
 
 class AttributeTestCase(APITestCase):

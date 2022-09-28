@@ -3,6 +3,11 @@ state_properties = {
         'description': 'Frame number this state applies to.',
         'type': 'integer',
     },
+    'parent': {
+        'description': 'If a clone, the pk of the parent.',
+        'type': 'number',
+        'nullable': True,
+    }
 }
 
 version_properties = {

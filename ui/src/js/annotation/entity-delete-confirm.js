@@ -36,7 +36,7 @@ export class EntityDeleteConfirm extends ModalDialog {
 
     cancel.addEventListener("click", this._closeCallback);
 
-    this._title.nodeValue = "Delete Localization?";
+    this._title.nodeValue = "Delete Object?";
 
     this._accept.addEventListener("click", () => {
       // when they accept only, save their preference to storage
@@ -50,6 +50,11 @@ export class EntityDeleteConfirm extends ModalDialog {
       this._closeCallback();
       this.dispatchEvent(new Event("confirmDelete"));
     });
+  }
+
+  set objectName(val)
+  {
+    this._title.nodeValue = `Delete '${val}'?`;
   }
 
   confirm() {
