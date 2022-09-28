@@ -19,7 +19,7 @@ jobs:
     - run:
         name: Replace registry
         command: |
-          ssh lightsail 'sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" tator/helm/tator/values.yaml';
+          ssh lightsail 'export DOCKER_REGISTRY='"'$DOCKER_REGISTRY'"';sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" tator/helm/tator/values.yaml';
     - run:
         name: Display values.yaml
         command: |
