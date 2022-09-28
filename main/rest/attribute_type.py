@@ -89,14 +89,12 @@ class AttributeTypeListAPI(BaseListView):
         return entity_type, obj_qs
 
     @staticmethod
-    def _get_related_objects(target_entity_type, attribute_name):
+    def _has_related_objects(target_entity_type, attribute_name):
         """
         Used by _patch in conjunction with _get_objects to find all types and instances of said
         types that have an attribute with the given name for bulk mutation.
         """
         project = target_entity_type.project
-        id_set = {target_entity_type.id}
-        objects = []
         for entity_type, entity in ENTITY_TYPES.values():
             for instance in entity_type.objects.filter(project=project):
                 if not instance.attribute_types:
@@ -108,11 +106,9 @@ class AttributeTypeListAPI(BaseListView):
                     )
                     and instance.id not in id_set
                 ):
-                    id_set.add(instance.id)
-                    objects.append((instance, entity.objects.select_for_update(nowait=True)\
-                                                            .filter(meta=instance.id)))
+                    return True
 
-        return objects
+        return False
 
     @classmethod
     def _modify_attribute_type(cls, params: Dict, mod_type: str) -> Dict:
@@ -133,11 +129,11 @@ class AttributeTypeListAPI(BaseListView):
         # Get the old and new dtypes
         with transaction.atomic():
             entity_type, obj_qs = cls._get_objects(params)
-            related_objects = cls._get_related_objects(entity_type, old_name)
-            if related_objects and global_operation == "false":
+            has_related_objects = cls._has_related_objects(entity_type, old_name)
+            if has_related_objects:
                 raise ValueError(
-                    f"Attempted to mutate attribute '{old_name}' without the global flag set to "
-                    f"'true', but it exists on other types."
+                    f"Attempted to mutate attribute '{old_name}', but it exists on other types."
+                    f"Currently, this is not allowed from the UI."
                 )
 
             for attribute_type in entity_type.attribute_types:
@@ -175,13 +171,9 @@ class AttributeTypeListAPI(BaseListView):
             # problem that would cause either a rename or a mutation to fail.
             if attribute_renamed:
                 ts.check_rename(entity_type, old_name, new_name)
-                for instance, _ in related_objects:
-                    ts.check_rename(instance, old_name, new_name)
             if attribute_mutated:
                 cls._check_attribute_type(new_attribute_type)
                 ts.check_mutation(entity_type, old_name, new_attribute_type)
-                for instance, _ in related_objects:
-                    ts.check_mutation(instance, old_name, new_attribute_type)
 
             # List of success messages to return
             messages = []
@@ -189,29 +181,22 @@ class AttributeTypeListAPI(BaseListView):
             # Renames the attribute alias for the entity type in PSQL and ES
             if attribute_renamed:
                 # Update entity type alias
-                updated_types = ts.rename_alias(entity_type, related_objects, old_name, new_name)
-                for instance in updated_types:
-                    instance.save()
+                ts.rename_alias(entity_type, old_name, new_name)
+                entity_type.save()
                 entity_type.project.save()
 
                 # Update entity alias
                 if obj_qs.exists():
                     bulk_rename_attributes({old_name: new_name}, obj_qs)
-                for _, qs in related_objects:
-                    if qs.exists():
-                        bulk_rename_attributes({old_name: new_name}, qs)
 
                 messages.append(f"Attribute '{old_name}' renamed to '{new_name}'.")
 
                 # refresh entity_type and queryset after a rename
                 entity_type, obj_qs = cls._get_objects(params)
-                related_objects = cls._get_related_objects(entity_type, new_name)
 
             if attribute_mutated:
                 # Update entity type attribute type
                 ts.mutate_alias(entity_type, new_name, new_attribute_type, mod_type).save()
-                for instance, _ in related_objects:
-                    ts.mutate_alias(instance, new_name, new_attribute_type, mod_type).save()
 
                 # Convert entity values
                 if dtype_mutated:
@@ -225,18 +210,6 @@ class AttributeTypeListAPI(BaseListView):
 
                         # Mutate the entity attribute values
                         bulk_mutate_attributes(new_attribute, obj_qs)
-
-                    for _, qs in related_objects:
-                        if qs.exists():
-                            # Get the new attribute type to convert the existing value
-                            new_attribute = None
-                            for attribute_type in entity_type.attribute_types:
-                                if attribute_type["name"] == new_name:
-                                    new_attribute = attribute_type
-                                    break
-
-                            # Mutate the entity attribute values
-                            bulk_mutate_attributes(new_attribute, qs)
 
                 if mod_type == "update":
                     # An update is a combination of the new and old states
