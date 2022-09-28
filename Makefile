@@ -4,7 +4,7 @@ CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=python-bindings graphql-image postgis-image client-image
+IMAGES=graphql-image postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -187,7 +187,7 @@ tator-backend:
 	touch .token/tator_backend_$(GIT_VERSION)
 
 .PHONY: tator-image
-tator-image: webpack .token/tator_backend_$(GIT_VERSION)
+tator-image: js-bindings webpack .token/tator_backend_$(GIT_VERSION)
 	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/frontend.dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
