@@ -97,14 +97,12 @@ class AttributeTypeListAPI(BaseListView):
         project = target_entity_type.project
         for entity_type, entity in ENTITY_TYPES.values():
             for instance in entity_type.objects.filter(project=project):
-                if not instance.attribute_types:
+                # Ignore the given entity type
+                if instance.id == target_entity_type.id:
                     continue
-                if (
-                    any(
-                        attribute_name == attribute["name"]
-                        for attribute in instance.attribute_types
-                    )
-                    and instance.id not in id_set
+
+                if instance.attribute_types and any(
+                    attribute_name == attribute["name"] for attribute in instance.attribute_types
                 ):
                     return True
 
@@ -130,11 +128,6 @@ class AttributeTypeListAPI(BaseListView):
         with transaction.atomic():
             entity_type, obj_qs = cls._get_objects(params)
             has_related_objects = cls._has_related_objects(entity_type, old_name)
-            if has_related_objects:
-                raise ValueError(
-                    f"Attempted to mutate attribute '{old_name}', but it exists on other types."
-                    f"Currently, this is not allowed from the UI."
-                )
 
             for attribute_type in entity_type.attribute_types:
                 if attribute_type["name"] == old_name:
@@ -170,8 +163,20 @@ class AttributeTypeListAPI(BaseListView):
             # Atomic validation of all changes; TatorSearch.check_* methods raise if there is a
             # problem that would cause either a rename or a mutation to fail.
             if attribute_renamed:
+                # TODO Update this check once ES has been removed
+                if has_related_objects:
+                    raise ValueError(
+                        f"Attempted to rename attribute '{old_name}', but it exists on other types. "
+                        f"Currently, this is not allowed from the UI."
+                    )
                 ts.check_rename(entity_type, old_name, new_name)
             if attribute_mutated:
+                # TODO Update this check once ES has been removed
+                if dtype_mutated and has_related_objects:
+                    raise ValueError(
+                        f"Attempted to mutate '{old_name}'s dtype, but it exists on other types. "
+                        f"Currently, this is not allowed from the UI."
+                    )
                 cls._check_attribute_type(new_attribute_type)
                 ts.check_mutation(entity_type, old_name, new_attribute_type)
 
