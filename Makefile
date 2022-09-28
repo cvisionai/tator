@@ -161,12 +161,12 @@ dashboard-token:
 ifeq ($(shell git diff main | wc -l), 0)
 .token/tator_backend_$(GIT_VERSION):
 	@echo "No git changes detected"
-	make tator-backend
+	$(MAKE) tator-backend
 else
 .PHONY: .token/tator_backend_$(GIT_VERSION)
 .token/tator_backend_$(GIT_VERSION):
 	@echo "Git changes detected"
-	make tator-backend
+	$(MAKE) tator-backend
 endif
 
 ifeq ($(shell git diff | wc -l), 0)
@@ -177,7 +177,7 @@ else
 .PHONY: .token/tator_online_$(GIT_VERSION)
 .token/tator_online_$(GIT_VERSION):
 	@echo "Git changes detected"
-	make tator-image
+	$(MAKE) tator-image
 endif
 
 .PHONY: tator-backend
@@ -188,7 +188,7 @@ tator-backend:
 	touch .token/tator_backend_$(GIT_VERSION)
 
 .PHONY: tator-image
-tator-image: webpack .token/tator_backend_$(GIT_VERSION)
+tator-image: webpack
 	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/frontend.dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
@@ -342,11 +342,11 @@ $(TATOR_PY_WHEEL_FILE): doc/_build/schema.yaml
 # OBE with partial rebuilds working, here for backwards compatibility.
 .PHONY: python-bindings-only
 python-bindings-only:
-	make python-bindings
+	$(MAKE) python-bindings
 
 .PHONY: python-bindings
 python-bindings: .token/tator_backend_$(GIT_VERSION)
-	make $(TATOR_PY_WHEEL_FILE)
+	$(MAKE) $(TATOR_PY_WHEEL_FILE)
 
 
 $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
@@ -382,7 +382,7 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 
 .PHONY: js-bindings
 js-bindings: .token/tator_backend_$(GIT_VERSION)
-	make $(TATOR_JS_MODULE_FILE)
+	$(MAKE) $(TATOR_JS_MODULE_FILE)
 
 .PHONY: r-docs
 r-docs: doc/_build/schema.yaml
