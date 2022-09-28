@@ -23,6 +23,8 @@ SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 
+TATOR_JS_MODULE_FILE=scripts/packages/tator-js/pkg/dist/tator.js
+
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
 SYSTEM_IMAGE_REGISTRY=cvisionai
@@ -178,7 +180,6 @@ else
 	make tator-image
 endif
 
-
 .PHONY: tator-backend
 tator-backend: 
 	docker build --network host -t $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION) -f containers/tator/backend.dockerfile . || exit 255
@@ -187,7 +188,7 @@ tator-backend:
 	touch .token/tator_backend_$(GIT_VERSION)
 
 .PHONY: tator-image
-tator-image: js-bindings webpack .token/tator_backend_$(GIT_VERSION)
+tator-image: webpack .token/tator_backend_$(GIT_VERSION)
 	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/frontend.dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
@@ -283,11 +284,11 @@ dev-push:
 
 USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("useMinJs","True"))')
 ifeq ($(USE_MIN_JS),True)
-webpack:
+webpack: | $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
 	cd ui && npm install && python3 make_index_files.py && npm run build
 else
-webpack:
+webpack: | $(TATOR_JS_MODULE_FILE)
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
 	cd ui && npm install && python3 make_index_files.py && npm run buildDev
 endif
@@ -347,8 +348,8 @@ python-bindings-only:
 python-bindings: .token/tator_backend_$(GIT_VERSION)
 	make $(TATOR_PY_WHEEL_FILE)
 
-.PHONY: js-bindings
-js-bindings: doc/_build/schema.yaml
+
+$(TATOR_JS_MODULE_FILE): | doc/_build/schema.yaml
 	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-js/.
 	cd scripts/packages/tator-js
@@ -378,6 +379,10 @@ js-bindings: doc/_build/schema.yaml
 	cd ../../../..
 	cp scripts/packages/tator-js/pkg/dist/tator.min.js ui/dist/.
 	cp scripts/packages/tator-js/pkg/dist/tator.js ui/dist/.
+
+.PHONY: js-bindings
+js-bindings: .token/tator_backend_$(GIT_VERSION)
+	make $(TATOR_JS_MODULE_FILE)
 
 .PHONY: r-docs
 r-docs: doc/_build/schema.yaml
