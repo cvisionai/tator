@@ -10,69 +10,65 @@ jobs:
     environment:
       DOCKER_REGISTRY: cvisionai
     steps:
-    - checkout
-    - run:
-        name: Clone submodules
-        command: git submodule update --init
     - run:
         name: Copy helm config
-        command: cp helm/tator/values-microk8s.yaml helm/tator/values.yaml
+        command: |
+          ssh lightsail 'cp helm/tator/values-microk8s.yaml helm/tator/values.yaml';
     - run:
         name: Replace registry
-        command: sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml
+        command: |
+          ssh lightsail 'sed -i "s/localhost:32000/$DOCKER_REGISTRY/g" helm/tator/values.yaml';
     - run:
         name: Display values.yaml
-        command: cat helm/tator/values.yaml
+        command: |
+          ssh lightsail 'cat helm/tator/values.yaml';
     - run:
         name: Log into Docker Hub
-        command: echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
+        command: |
+          ssh lightsail 'echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin';
     - run:
         name: Install packages from apt for build deps (Python3, etc.)
-        command: sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential qemu-user-static binfmt-support
+        command: |
+          ssh lightsail 'sudo apt-get update && sudo apt-get -y install python3 python3-pip build-essential qemu-user-static binfmt-support';
     - run:
         name: Install pip packages
-        command: pip3 install setuptools wheel sphinx-markdown-builder progressbar2 pyyaml
+        command: |
+          ssh lightsail 'pip3 install setuptools wheel sphinx-markdown-builder progressbar2 pyyaml';
     - run:
         name: Install node packages
-        command: cd ui && npm install && cd ..
+        command: |
+          ssh lightsail 'cd ui && npm install && cd ..';
     - run:
         name: Make version.py
-        command: make main/version.py
+        command: |
+          ssh lightsail 'make main/version.py';
     - run:
         name: Make docker images
-        command: make -j$(nproc) tator-image images
+        command: |
+          ssh lightsail 'make -j$(nproc) tator-image images';
     - store_artifacts:
         path: doc/_build/schema.yaml
         destination: docs/schema.yaml
     - run:
         name: Install python client
-        command: pip3 install scripts/packages/tator-py/dist/*.whl
+        command: |
+          ssh lightsail 'pip3 install scripts/packages/tator-py/dist/*.whl';
     - run:
         name: Generate Markdown Docs
-        command: make markdown-docs && tar cf doc/_build/tator-py.tar doc/_build/tator-py
+        command: |
+          ssh lightsail 'make markdown-docs && tar cf doc/_build/tator-py.tar doc/_build/tator-py';
+          scp lightsail:/home/ubuntu/tator/doc/_build/tator-py.tar /tmp/tator-py.tar;
     - store_artifacts:
-        path: doc/_build/tator-py.tar
+        path: /tmp/tator-py.tar
         destination: docs/tator-py.tar
     - run:
         name: Push client image to OCI
         command: |
-          echo "$OCIR_PASSWORD" | docker login "$OCIR_HOST" --username "$OCIR_USERNAME" --password-stdin
-          docker tag cvisionai/tator_client_amd64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
-          docker tag cvisionai/tator_client_aarch64:$CIRCLE_SHA1 $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
-          docker push $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1
-          docker push $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
-          docker manifest create --insecure $OCI_REGISTRY/tator_client:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
-          docker manifest create --insecure $OCI_REGISTRY/tator_client:latest --amend $OCI_REGISTRY/tator_client_amd64:$CIRCLE_SHA1 --amend $OCI_REGISTRY/tator_client_aarch64:$CIRCLE_SHA1
-          docker manifest push $OCI_REGISTRY/tator_client:$CIRCLE_SHA1
-          docker manifest push $OCI_REGISTRY/tator_client:latest
+          ssh lightsail 'export OCIR_REGISTRY='"'$OCIR_REGISTRY'"';export OCIR_PASSWORD='"'$OCIR_PASSWORD'"';export OCIR_HOST='"'$OCIR_HOST'"';export OCIR_USERNAME='"'$OCIR_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';/home/ubuntu/tator/.circleci/push_oci.sh';
     - run:
         name: Push backend images to AWS
         command: |
-          echo $(aws ecr get-login-password) | docker login "$AWS_REGISTRY" --username AWS --password-stdin
-          docker tag cvisionai/tator_online:$CIRCLE_SHA1 $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
-          docker push $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
-          docker tag cvisionai/tator_graphql:$CIRCLE_SHA1 $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
-          docker push $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
+          ssh lightsail 'export AWS_REGISTRY='"'$AWS_REGISTRY'"';export AWS_SECRET_ACCESS_KEY='"'$AWS_SECRET_ACCESS_KEY'"';export AWS_ACCESS_KEY_ID='"'$AWS_ACCESS_KEY_ID'"';export AWS_DEFAULT_REGION='"'$AWS_DEFAULT_REGION'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';/home/ubuntu/tator/.circleci/push_aws.sh';
   update-earlyaccess:
     machine:
       image: ubuntu-2004:202010-01
