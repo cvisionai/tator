@@ -30,6 +30,7 @@ jobs:
           ssh lightsail 'wget -O get_docker.sh https://get.docker.com';
           ssh lightsail 'chmod +x get_docker.sh';
           ssh lightsail './get_docker.sh';
+          ssh lightsail 'sudo usermod -aG docker ubuntu';
     - run:
         name: Add Node repo
         command: |
@@ -37,7 +38,7 @@ jobs:
     - run:
         name: Log into Docker Hub
         command: |
-          ssh lightsail 'echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin';
+          ssh lightsail 'export DOCKER_PASSWORD='"'$DOCKER_PASSWORD'"';export DOCKER_USERNAME='"'$DOCKER_USERNAME'"';echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin';
     - run:
         name: Install packages from apt for build deps (Python3, etc.)
         command: |
