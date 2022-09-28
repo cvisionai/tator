@@ -221,13 +221,15 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-    - build-docker-images:
-        context: cd
+    - setup-lightsail:
+        context: cvisionai
         filters:
           tags:
             only: /.*/
-    - setup-lightsail:
-        context: cvisionai
+    - build-docker-images:
+        requires:
+        - setup-lightsail
+        context: cd
         filters:
           tags:
             only: /.*/
