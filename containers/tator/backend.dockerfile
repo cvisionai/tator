@@ -75,10 +75,14 @@ RUN wget https://storage.googleapis.com/kubernetes-release/release/v1.16.9/bin/l
 RUN chmod +x kubectl
 RUN mv kubectl /usr/local/bin/.
 
+WORKDIR /tator_online
 # Copy over the project
-COPY . /tator_online
+COPY main /tator_online/main
+COPY scripts /tator_online/scripts
+COPY tator_online /tator_online/tator_online
+COPY workflows /tator_online/workflows
+COPY manage.py /tator_online/manage.py
 
 # Delete front end unit tests
 RUN rm -fr /tator_online/test
-WORKDIR /tator_online
 RUN rm -rf helm
