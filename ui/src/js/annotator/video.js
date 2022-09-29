@@ -373,7 +373,16 @@ export class VideoCanvas extends AnnotationCanvas {
     }
     else if (streaming_files[0].hls)
     {
-      this._videoElement[0].hls(streaming_files[0].hls).then(() => {
+      let promises=[];
+      for (let idx = 0; idx < streaming_files.length; idx++)
+      {
+        if (streaming_files[idx].hls == undefined)
+        {
+          console.error("If HLS is used, all sources must be HLS.");
+        }
+        promises.push(this._videoElement[idx].hls(streaming_files[idx].hls));
+      }
+      Promise.all(promises).then(() => {
         this.dispatchEvent(new CustomEvent("bufferLoaded",
                                             {composed: true,
                                             detail: {"percent_complete":0.00}
