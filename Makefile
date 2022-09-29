@@ -124,7 +124,7 @@ check-migration:
 	scripts/check-migration.sh $(pwd)
 
 cluster: main/version.py clean_schema
-	$(MAKE) images cluster-deps cluster-install
+	$(MAKE) images .token/tator_online_$(GIT_VERSION) cluster-deps cluster-install
 
 cluster-deps:
 	helm dependency update helm/tator
@@ -133,7 +133,7 @@ cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
-cluster-upgrade: check-migration main/version.py clean_schema images
+cluster-upgrade: check-migration main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
 
 cluster-update: 
@@ -170,7 +170,7 @@ endif
 ifeq ($(shell git diff | wc -l), 0)
 .token/tator_online_$(GIT_VERSION):
 	@echo "No git changes detected"
-	tator-image
+	make tator-image
 else
 .PHONY: .token/tator_online_$(GIT_VERSION)
 .token/tator_online_$(GIT_VERSION):
@@ -344,7 +344,7 @@ python-bindings-only:
 	make python-bindings
 
 .PHONY: python-bindings
-python-bindings: .token/tator_backend_$(GIT_VERSION)
+python-bindings:
 	make $(TATOR_PY_WHEEL_FILE)
 
 .PHONY: js-bindings
