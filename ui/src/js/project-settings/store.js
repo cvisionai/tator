@@ -11,7 +11,7 @@ export const getCompiledList = ({type, skip = null, check = null}) => {
    let list = [];
    switch (type) {
       case "Version":
-         list = store.getState().versions;
+         list = store.getState().versions.data;
          break;
       default:
          console.error(`Invalid type: ${type}`);
@@ -45,7 +45,7 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
    project: {},
    versions: {
-      initiliazed: false,
+      init: false,
       data: [],
       inputHandles: [] // Form change and data can be computed value off inputHandles
    }, 
@@ -129,12 +129,12 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    /* versions */
    fetchVersions: async () => {
-      let object = await await api.getVersionListWithHttpInfo(get().project.id);
-      set({ versions: {...get().versions, data: object.data, initiliazed: true} });
+      let object = await api.getVersionListWithHttpInfo(get().project.id);
+      set({ versions: {...get().versions, data: object.data, init: true} });
       return object.data;
    },
    addVersion: async (spec) => {
-      let object = await api.createVersionWithHttpInfo(spec);
+      const object = await api.createVersionWithHttpInfo(spec);
       console.log("Add version!");
       const version = object.data.object;
       const newVersions = [...get().versions, version];
@@ -148,11 +148,12 @@ const store = create(subscribeWithSelector((set, get) => ({
       console.log("Update version.....");
       console.log(data);
       const object = await api.updateVersionWithHttpInfo(id, data);
+      console.log(object);
       const newVersion = object.data.object;
 
       set({ versions: { ...get().versions, data: [...get().versions.data, newVersion] } }); // `push` doesn't trigger state update
 
-      return object.data.object;
+      return object;
    },
    getVersionContentCount: async (versionId) => {
       // Return some information for the confirmation
@@ -259,18 +260,19 @@ const store = create(subscribeWithSelector((set, get) => ({
 
       return object;
    },
-   updateType: ({type, id, data}) => {
+   updateType: async ({type, id, data}) => {
       let object = {};
 
       switch (type) {
          case "Version":
-            object = get().updateVersion(id, data);
+            object = await get().updateVersion(id, data);
+            
             break;
          default:
             console.error(`Invalid type: ${type}`);
       }
 
-      return object;   
+      return object;
    }
  })));
  

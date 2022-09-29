@@ -17,9 +17,6 @@ export class SettingsNav extends TatorElement {
    
   }
 
-
-
-
   // newItemEvent(typeId, typeName, newName){
   //   let detail = {
   //     "bubbles" : true,

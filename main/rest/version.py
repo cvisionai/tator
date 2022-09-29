@@ -111,7 +111,7 @@ class VersionDetailAPI(BaseDetailView):
             else:
                 version.bases.set(qs)
         
-        newVersion = Version.objects.get(pk=obj.id)
+        newVersion = Version.objects.get(pk=params["id"])
         return {
             'message': f'Version {params["id"]} updated successfully!',
             'object': VersionSerializer(newVersion).data

@@ -1,4 +1,4 @@
-import { TypeFormOld } from "./type-form.js";
+import { TypeFormOld } from "./type-form-old.js";
 import { hasPermission } from "../../util/has-permission.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { SettingsBox } from "../settings-box-helpers.js";

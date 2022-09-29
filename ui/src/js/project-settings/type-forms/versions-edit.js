@@ -9,8 +9,12 @@ export class VersionsEdit extends TypeForm {
       this._typeName = "Version";
       this.readableTypeName = "Version";
       
-      const template = document.getElementById("versions-edit").content;
-      this.typeFormDiv.appendChild(template.cloneNode(true));
+      // const templateInner = document.getElementById("versions-edit").content;
+      
+
+      var templateInner = document.getElementById("versions-edit");
+      var innerClone = document.importNode(templateInner.content, true);
+      this.typeFormDiv.appendChild(innerClone);
 
       this._form = this._shadow.getElementById("versions-edit--form");
       this._editName = this._shadow.getElementById("versions-edit--name");
@@ -18,10 +22,16 @@ export class VersionsEdit extends TypeForm {
       this._showEmpty = this._shadow.getElementById("versions-edit--show-empty");
       this._number = this._shadow.getElementById("versions-edit--number");
       this._basesCheckbox = this._shadow.getElementById("versions-edit--bases");
+   
+      console.log("Created version edit....");
+      console.log(this._editName);
    }
 
    async setupForm(data) {
       this.data = data;
+
+      console.log("Setting up version edit form....");
+      console.log(this._editName);
 
       // Setup view
       this._typeId = data.id;
@@ -41,6 +51,7 @@ export class VersionsEdit extends TypeForm {
       this._showEmpty.default = this.data.show_empty;
 
       // number
+      this._number.permission = "View Only";
       if (typeof data.number === "undefined") {
          this._number.setValue("Created on Save");
          this._number.default = "";

@@ -15,7 +15,7 @@ export class ProjectSettings extends TatorPage {
     // // loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
-    
+
 
     // Header: This is adds the breadcrumb and successLight-spacer to the header
     const user = this._header._shadow.querySelector("header-user");
@@ -34,11 +34,11 @@ export class ProjectSettings extends TatorPage {
     // this.settingsNav = this._shadow.getElementById("project-settings--nav");
     this.modal = this._shadow.getElementById("project-settings--modal");
     this.itemsContainer = this._shadow.getElementById("settings-nav--item-container");
-    
+
     /* For all the sidebar toggles */
     // Version
     this.versionLink = this._shadow.getElementById("SideNav--toggle-Version");
-    this.versionLink.addEventListener("click", this.openVersions.bind(this));
+    this.versionLink.addEventListener("click", this.toggleVersions.bind(this));
     this.versionPlusLink = this._shadow.querySelector(".heading-for-Version .Nav-action");
     this.versionPlusLink.addEventListener("click", this.addNew.bind(this));
     this.sidebarVersions = this._shadow.getElementById("SideNav--Versions");
@@ -49,14 +49,14 @@ export class ProjectSettings extends TatorPage {
     this.membershipsLink.addEventListener("click", this.initMemberships.bind(this));
     store.subscribe(state => state.versions, this.updateMembershipVersions.bind(this));
     store.subscribe(state => state.memberships, this.updateMemberships.bind(this));
-   
+
     // if the new data has the ID, update the form
     // if not will need to remove the container so needs access to both...
     // Container outside of form bc used to be part of nav-to-container
     // this could possibly just be the form
     this.allContainers = new Map();
     this.versionForms = new Map();
-    
+
 
     // Used in logic for job cluster / algorithm registration and gotten from django template
     this._userIsStaff = false;
@@ -96,7 +96,7 @@ export class ProjectSettings extends TatorPage {
     // await store.getState().fetchVersions();
     // await store.getState().fetchMediaTypes();
     // await store.getState().fetchJobClusters();
-    
+
     if (window.location.hash) {
       this.moveToCurrentHash();
     }
@@ -108,7 +108,7 @@ export class ProjectSettings extends TatorPage {
 
   /* Get personlized information when we have project-id, and fill page. */
   static get observedAttributes() {
-    return ["project-id","is-staff"].concat(TatorPage.observedAttributes);
+    return ["project-id", "is-staff"].concat(TatorPage.observedAttributes);
   }
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
@@ -122,7 +122,7 @@ export class ProjectSettings extends TatorPage {
         } else if (newValue == "False") {
           this._userIsStaff = false;
         }
-        
+
         break;
     }
   }
@@ -131,10 +131,10 @@ export class ProjectSettings extends TatorPage {
   //
   async moveToCurrentHash() {
     const hash = window.location.hash;
-    const toType = hash.split("-")[1];
-    console.log(`Hash to ${toType}: ${hash}`);
 
-    
+    if (document.getElementById(hash)) {
+      this.selectNavAndItem(hash);
+    }
   }
 
   setupProjectSection(project, prevProject) {
@@ -161,46 +161,63 @@ export class ProjectSettings extends TatorPage {
     // init the section
   }
 
-  accordianShut() {
-    let currentSelected = this._shadow.querySelector('.item-box:not([hidden])');
-    this.hide(currentSelected);
+  accordianShutOthers(type) {
+    const currentOpen = this._shadow.querySelectorAll('.SubItems:not([hidden]');
+    for (let el of currentOpen) {
+      el.hidden = true;
+    }
+    const currentSelected = this._shadow.querySelectorAll('[selected="true"]')
+    for (let el of currentSelected) {
+      el.setAttribute("selected", "false");
+    }
+    this._shadow.querySelector(`.heading-for-${type}`).setAttribute("selected", "true");;
+  }
+
+  selectNavAndItem(hash) {
+    console.log(hash);
+    const type = hash.split("-")[1];
+    const itemDiv = this._shadow.querySelector(hash);
+    console.log(itemDiv);
+    let currentSelected = this._shadow.querySelectorAll('[selected="true"]')
+    for (let el of currentSelected) {
+      el.setAttribute("selected", "false");
+    }
+    const selectedHeading = this._shadow.querySelector(`a[href="${hash}"]`);
+    console.log(selectedHeading);
+    if (selectedHeading) selectedHeading.setAttribute("selected", "true");
+    this._shadow.querySelector(`.heading-for-${type}`).setAttribute("selected", "true");
+
+    // Hide all other item containers
+    const currentSelectedItem = this._shadow.querySelector('.item-box:not([hidden])');
+    this.hide(currentSelectedItem);
+    this.show(itemDiv);
   }
 
   makeItemActive(e) {
-    // Navbar link active status
-    let currentSelected = this._shadow.querySelectorAll('[selected="true"]')
-    for(let el of currentSelected){
-      el.setAttribute("selected", "false");
-    }
-
-    const target = e.target;
-    target.setAttribute("selected", "true");
-    this._shadow.querySelector(`.heading-for-${type}`).setAttribute("selected", "true");
-
-    // Item container
-    const itemIdSelector = target.getAttribute("href");
-    const item = this._shadow.querySelector(itemIdSelector);
-    if (item) {
-      // Hide all other item containers
-      let currentSelected = this._shadow.querySelector('.item-box:not([hidden])');
-      this.hide(currentSelected);
-      window.history.pushState({}, '', itemIdSelector);
-      return this.show(item);
-    }
+    console.log(e.target);
+    const hash = e.target.getAttribute("href");
+    this.selectNavAndItem(hash);
   }
 
   async addNew() {
-    await this.openVersions();
+    if (this.sidebarVersions.hidden === true) {
+      this.accordianShutOthers();
+      this.sidebarVersions.hidden = false;
+    }
     this._shadow.querySelector(`a[href="#itemDivId-StateType-New"]`).click();
   }
 
-  async openVersions(e) {
+  async toggleVersions(e) {
+    // toggles
     if (this.sidebarVersions.hidden === true) {
-      this.accordianShut();
-      this.sidebarVersions.hidden = false;   
+      this.accordianShutOthers("Version");
+      this.sidebarVersions.hidden = false;
+    } else {
+      this.sidebarVersions.hidden = true;
     }
-
-    if (store.getState().versions.initialized === false) {
+    //
+    console.log("Initialized yet?" + store.getState().versions.init);
+    if (store.getState().versions.init === false) {
       console.log("Init versions.....");
       const versions = await store.getState().fetchVersions();
 
@@ -208,31 +225,44 @@ export class ProjectSettings extends TatorPage {
       for (let data of versions) {
         //clone a typeform, and insert the versions-edit form element
         const form = document.createElement("versions-edit");
-        form.init();
+        form.init(this.modal);
         form.setupForm(data);
         this.versionForms.set(data.id, form);
 
-        const itemDiv = this.addItemContainer({
-           id: data.id, itemContents: form, type: "Version", hidden: true
+        const itemDiv = this.addItem({
+          id: data.id, itemContents: form, name: data.name, type: "Version", hidden: true
         });
-        this.versionContainers.set("Version_"+data.id, itemDiv);
+
       }
 
       // Do the same thing for the bottom new form
       const newForm = document.createElement("versions-edit");
       newForm.init();
-      newForm.setupForm(newForm.emptyData());
-      this.versionForms.set("New", form);
+      newForm.setupForm(newForm._getEmptyData());
+      this.versionForms.set("New", newForm);
 
-      const newDiv = this.addItemContainer({
-        id: "New", itemContents: newForm, type: "Version", hidden: true
+      const newDiv = this.addItem({
+        id: "New", itemContents: newForm, name: "+ Add new", type: "Version", hidden: true
       });
-      this.versionContainers.set("Version_New", newDiv);    
+   
     }
   }
 
-  updateVersions() {
+  updateVersions(newVersions, oldVersions) {
+    console.log("New data == updateVersions");
 
+    // loop new versions
+    // we could check - was name changed or is this new
+    // or we can just update everything
+    for(let v of newVersions.data){
+      // so we need to check each sidebar <a>
+      // does this exist?
+      // use HREF
+
+      // then do the same for the item boxes...
+      // if it exists, set it up again
+      // if not create it and set it up
+    }
   }
 
   async initMemberships() {
@@ -253,7 +283,7 @@ export class ProjectSettings extends TatorPage {
 
   }
 
-  addItemContainer({ id = -1, itemContents = "", type = "", hidden = true, innerLinkText = ""}){
+  addItem({ id = -1, itemContents = "", name = "", type = "", hidden = true, innerLinkText = "" }) {
     const itemDiv = document.createElement("div");
     const itemIdSelector = `itemDivId-${type}-${id}`
     itemDiv.id = itemIdSelector; //ie. #itemDivId-MediaType-72
@@ -277,7 +307,8 @@ export class ProjectSettings extends TatorPage {
     const section = this._shadow.querySelector(`.subitems-${type}`);
     const subNavLink = document.createElement("a");
     subNavLink.setAttribute("class", `SideNav-subItem ${(id == "New") ? "text-italic" : ""}`);
-    subNavLink.href = itemIdSelector;
+    subNavLink.href = `#${itemIdSelector}`;
+    subNavLink.textContent = name;
     section.appendChild(subNavLink);
 
     subNavLink.addEventListener("click", this.makeItemActive.bind(this));
@@ -293,7 +324,7 @@ export class ProjectSettings extends TatorPage {
 
     return itemDiv;
   }
-  
+
   // Modal for this page, and handlers
   showDimmer() {
     return this.setAttribute("has-open-modal", "");
@@ -306,25 +337,40 @@ export class ProjectSettings extends TatorPage {
 
   // Hide and show to centralize where we are doing this action
   hide(el) {
+    console.log("Hide el.........");
+    console.log(el);
     try {
-      if(el.nodeType == Node.ELEMENT_NODE){
+      if (el && el.nodeType == Node.ELEMENT_NODE) {
         return el.hidden = true;
-      } else {
-        let node = this._shadow.getElementById(el);
-        return node.hidden = true;
+      } else if (el !== null) {
+        try {
+          let node = this._shadow.getElementById(el);
+          return node.hidden = true;
+        } catch (err) {
+          console.error("Error hiding element.", err)
+        }
+
       }
     } catch (err) {
-      console.error("Error hiding element.")
+      console.error("Error hiding element.", err)
     }
 
-    
+
   }
-  show(el){
-    if(el.nodeType == Node.ELEMENT_NODE){
-      return el.hidden = false;
-    } else {
-      let node = this._shadow.getElementById(el);
-      return node.hidden = false;
+  show(el) {
+    try {
+      if (el && el.nodeType == Node.ELEMENT_NODE) {
+        return el.hidden = false;
+      } else if (el !== null) {
+        try {
+          let node = this._shadow.getElementById(el);
+          return node.hidden = false;
+        } catch (err) {
+          console.error("Error showing element.", err)
+        }
+      }
+    } catch (err) {
+      console.error("Error showing element.", err)
     }
   }
 
