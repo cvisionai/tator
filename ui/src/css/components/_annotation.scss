@@ -124,7 +124,7 @@
 save-dialog {
   box-sizing: border-box;
   box-shadow: rgb(0 0 0 / 70%) 3px 3px 15px 5px;
-  width: 334px;
+  width: 600px;
   opacity: 0;
   overflow: initial;
   pointer-events: none;
@@ -355,7 +355,7 @@ annotation-player {
   padding-bottom: 16px;
 }
 
-.video__rewind { 
+.video__rewind {
   &:hover,
   &:focus {
     color: $color-purple;
@@ -473,5 +473,49 @@ annotation-player {
   grid-template-columns: 60% 40%;
   grid-template-rows: auto;
   border-bottom: 1px solid $color-charcoal--light;
+  border-top: 1px solid $color-charcoal--light;
+}
+
+.video-timeline-control {
+  box-sizing: border-box;
+  width: 250px;
+  overflow: initial;
+  position: absolute;
+  z-index: 10;
+  border: 2px solid black;
+  background-color: rgba(0,0,0,0.9);
+  padding: 2px;
+}
+
+.annotation-canvas-overlay-menu {
+  box-sizing: border-box;
+  overflow: initial;
+  position: absolute;
+  z-index: 10;
+  border: 2px solid black;
+  background-color: rgba(0,0,0,0.9);
+  padding: 2px;
+}
+
+.annotation-canvas-overlay-menu-back {
+  padding: 8px;
+  border-bottom: 1px solid $color-charcoal--light;
+}
+
+.annotation-canvas-overlay-menu-option {
+  cursor: pointer;
+  transition-duration: 0.25s;
+  transition-property: background-color, color;
+  &:focus {
+    outline: none;
+  }
+  &:hover,
+  &:focus {
+    color: $color-white;
+    background-color: $color-purple50;
+  }
+}
+
+.top-border {
   border-top: 1px solid $color-charcoal--light;
 }

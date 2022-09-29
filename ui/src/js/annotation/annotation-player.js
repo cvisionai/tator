@@ -3,6 +3,7 @@ import { Utilities } from "../util/utilities.js";
 import { guiFPS } from "../annotator/video.js";
 import { RATE_CUTOFF_FOR_ON_DEMAND } from "../annotator/video.js";
 import { frameToTime, handle_video_error, handle_decoder_error, PlayInteraction } from "./annotation-common.js";
+import { TimeStore } from "./time-store.js"
 
 export class AnnotationPlayer extends TatorElement {
   constructor() {
@@ -59,12 +60,273 @@ export class AnnotationPlayer extends TatorElement {
     settingsDiv.setAttribute("class", "d-flex flex-items-center");
     div.appendChild(settingsDiv);
 
+    this._timelineZoomMenu = document.createElement("div");
+    this._timelineZoomMenu.setAttribute("class", "annotation-canvas-overlay-menu d-flex flex-row flex-items-center flex-justify-between rounded-1");
+    this._timelineZoomMenu.style.display = "none";
+    this._shadow.appendChild(this._timelineZoomMenu);
+
+    this._timelineZoomButtons = {
+      panLeft: null,
+      panRight: null,
+      zoomIn: null,
+      zoomOut: null,
+      reset: null
+    }
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><polyline points="15 18 9 12 15 6"></polyline></svg>`,
+      "Pan Timeline Left",
+      "pan-timeline-left-btn"
+    );
+    this._timelineZoomMenu.appendChild(btn);
+    this._timelineZoomButtons.panLeft = btn;
+    btn.addEventListener("click", () => {
+      if (this._videoMode == "play") {
+        this._videoTimeline.panLeft();
+      }
+    });
+
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><polyline points="9 18 15 12 9 6"></polyline></svg>`,
+      "Pan Timeline Right",
+      "pan-timeline-right-btn"
+    );
+    this._timelineZoomMenu.appendChild(btn);
+    this._timelineZoomButtons.panRight = btn;
+    btn.addEventListener("click", () => {
+      if (this._videoMode == "play") {
+        this._videoTimeline.panRight();
+      }
+    });
+
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>`,
+      "Zoom Timeline In",
+      "zoom-timeline-in-btn"
+    );
+    this._timelineZoomMenu.appendChild(btn);
+    this._timelineZoomButtons.zoomIn = btn;
+    btn.addEventListener("click", () => {
+      if (this._videoMode == "play") {
+        this._videoTimeline.zoomIn();
+      }
+    });
+
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>`,
+      "Zoom Timeline Out",
+      "zoom-timeline-out-btn"
+    );
+    this._timelineZoomMenu.appendChild(btn);
+    this._timelineZoomButtons.zoomOut = btn;
+    btn.addEventListener("click", () => {
+      if (this._videoMode == "play") {
+        this._videoTimeline.zoomOut();
+      }
+    });
+
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>`,
+      "Reset Timeline",
+      "reset-timeline-btn"
+    );
+    this._timelineZoomMenu.appendChild(btn);
+    this._timelineZoomButtons.reset = btn;
+    btn.addEventListener("click", () => {
+      if (this._videoMode == "play") {
+        this._videoTimeline.resetZoom();
+      }
+    });
+
     this._rateControl = document.createElement("rate-control");
     settingsDiv.appendChild(this._rateControl);
 
-    this._qualityControl = document.createElement("quality-control");
-    settingsDiv.appendChild(this._qualityControl);
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>`,
+      "Zoom Timeline Controls",
+      "zoom-timeline-controls-btn"
+    );
+    btn._button.classList.remove("px-2");
+    settingsDiv.appendChild(btn);
+    this._videoTimelineControlsBtn = btn;
+    btn.addEventListener("click", () => {
+      btn.blur();
+      var pos = this._videoTimelineControlsBtn.getBoundingClientRect();
+      this._timelineZoomMenu.style.top = `${pos.top - 60}px`;
+      this._timelineZoomMenu.style.left = `${pos.left - 115}px`;
+      if (this._timelineZoomMenu.style.display == "flex") {
+        this._hideCanvasMenus();
+      }
+      else {
+        this._hideCanvasMenus();
+        this._timelineZoomMenu.style.display = "flex";
+      }
+    });
 
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`,
+      "Entity Timeline Info",
+      "entity-timeline-expand-btn"
+    );
+    btn._button.classList.remove("px-2");
+    settingsDiv.appendChild(btn);
+    this._timelineMore = btn;
+
+    //
+    // Player settings menu:
+    //   Timeline Units >
+    //   Quality >
+    //   Playback Settings
+    //
+    this._playerSettingsMenu = document.createElement("div");
+    this._playerSettingsMenu.setAttribute("class", "annotation-canvas-overlay-menu d-flex flex-column rounded-1");
+    this._playerSettingsMenu.style.display = "none";
+    this._shadow.appendChild(this._playerSettingsMenu);
+
+    this._timelineUnitsMenu = document.createElement("div");
+    this._timelineUnitsMenu.setAttribute("class", "annotation-canvas-overlay-menu d-flex flex-column rounded-1");
+    this._timelineUnitsMenu.style.display = "none";
+    this._shadow.appendChild(this._timelineUnitsMenu);
+
+    this._videoQualityMenu = document.createElement("div");
+    this._videoQualityMenu.setAttribute("class", "annotation-canvas-overlay-menu d-flex flex-column rounded-1");
+    this._videoQualityMenu.style.display = "none";
+    this._shadow.appendChild(this._videoQualityMenu);
+
+    // Video settings menu
+    this._playerTimelineUnits = document.createElement("div");
+    this._playerTimelineUnits.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    this._playerTimelineUnits.textContent = "Timeline Units";
+    this._playerSettingsMenu.appendChild(this._playerTimelineUnits);
+
+    this._playerTimelineUnits.addEventListener("click", () => {
+      this._displayTimelineUnitsMenu();
+    });
+
+    this._playerTimelineUnitsContent = document.createElement("div");
+    this._playerTimelineUnitsContent.setAttribute("class", "f3 text-purple text-semibold text-uppercase d-flex flex-grow px-2 flex-justify-right");
+    this._playerTimelineUnitsContent.textContent = "";
+    this._playerTimelineUnits.appendChild(this._playerTimelineUnitsContent);
+
+    var rightArrow = document.createElement("div");
+    rightArrow.textContent = ">"
+    this._playerTimelineUnits.appendChild(rightArrow);
+
+    this._playerQuality = document.createElement("div");
+    this._playerQuality.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    this._playerQuality.textContent = "Quality";
+    this._playerSettingsMenu.appendChild(this._playerQuality);
+
+    this._playerQuality.addEventListener("click", () => {
+      this._displayQualityMenu();
+    });
+
+    this._playerQualityContent  = document.createElement("div");
+    this._playerQualityContent.setAttribute("class", "f3 text-purple text-semibold text-uppercase d-flex flex-grow px-2 flex-justify-right");
+    this._playerQualityContent.textContent = "";
+    this._playerQuality.appendChild(this._playerQualityContent);
+
+    var rightArrow = document.createElement("div");
+    rightArrow.textContent = ">"
+    this._playerQuality.appendChild(rightArrow);
+
+    this._playerPlaybackSettings = document.createElement("div");
+    this._playerPlaybackSettings.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2");
+    this._playerPlaybackSettings.textContent = "Playback Settings";
+    this._playerSettingsMenu.appendChild(this._playerPlaybackSettings);
+
+    this._playerPlaybackSettings.addEventListener("click", () => {
+      this._hideCanvasMenus();
+      this.dispatchEvent(new CustomEvent("openVideoSettings", {
+        composed: true
+      }));
+    });
+
+    // Timeline units menu
+    var backOption = document.createElement("div");
+    backOption.setAttribute("class", "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    backOption.textContent = "< Back";
+    this._timelineUnitsMenu.appendChild(backOption);
+    backOption.addEventListener("click", () => {
+      this._displayPlayerSettingsMenu();
+    });
+
+    this._timelineUnitsFrame = document.createElement("div");
+    this._timelineUnitsFrame.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    this._timelineUnitsFrame.textContent = "Frame";
+    this._timelineUnitsMenu.appendChild(this._timelineUnitsFrame);
+
+    this._timelineUnitsFrame.addEventListener("click", () => {
+      this._setTimelineDisplayMode("frame");
+    });
+
+    this._timelineUnitsRelativeTime = document.createElement("div");
+    this._timelineUnitsRelativeTime.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    this._timelineUnitsRelativeTime.textContent = "Relative Time";
+    this._timelineUnitsMenu.appendChild(this._timelineUnitsRelativeTime);
+
+    this._timelineUnitsRelativeTime.addEventListener("click", () => {
+      this._setTimelineDisplayMode("relativeTime");
+    });
+
+    this._timelineUnitsUTC = document.createElement("div");
+    this._timelineUnitsUTC.setAttribute("class", "annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    this._timelineUnitsUTC.textContent = "UTC Time";
+    this._timelineUnitsMenu.appendChild(this._timelineUnitsUTC);
+
+    this._timelineUnitsUTC.addEventListener("click", () => {
+      this._setTimelineDisplayMode("utc");
+    });
+
+    // Video quality menu
+    var backOption = document.createElement("div");
+    backOption.setAttribute("class", "annotation-canvas-overlay-menu-back annotation-canvas-overlay-menu-option f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    backOption.textContent = "< Back";
+    this._videoQualityMenu.appendChild(backOption);
+    backOption.addEventListener("click", () => {
+      this._displayPlayerSettingsMenu();
+    });
+
+    var wrapper = document.createElement("div");
+    wrapper.setAttribute("class", "f3 text-gray text-semibold text-uppercase d-flex flex-grow px-2 py-2 flex-items-center");
+    wrapper.textContent = "Playback Quality";
+    this._videoQualityMenu.appendChild(wrapper);
+
+    this._qualityControl = document.createElement("quality-control");
+    this._qualityControl._advancedSettings.style.display = "none";
+    this._qualityControl.setAttribute("class", "px-2");
+    wrapper.appendChild(this._qualityControl);
+
+    // Main button
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`,
+      "Player Settings",
+      "player-settings-btn"
+    );
+    btn._button.classList.remove("px-2");
+    settingsDiv.appendChild(btn);
+    this._playerSettingsBtn = btn;
+
+    this._playerSettingsBtn.addEventListener("click", () => {
+      this._playerSettingsBtn.blur();
+      if (this._playerSettingsMenu.style.display == "flex") {
+        this._hideCanvasMenus();
+      }
+      else {
+        this._displayPlayerSettingsMenu();
+      }
+    });
+
+    //
+    // Timeline div
+    //
     this._timelineDiv = document.createElement("div");
     this._timelineDiv.setAttribute("class", "scrub__bar d-flex flex-items-center flex-grow px-4");
     playerDiv.appendChild(this._timelineDiv);
@@ -90,33 +352,22 @@ export class AnnotationPlayer extends TatorElement {
     this._totalTime.textContent = "/ 0:00";
     playButtons.appendChild(this._totalTime);
 
-    this._timelineMore = document.createElement("entity-more");
-    this._timelineMore.style.display = "block";
-    this._timelineDiv.appendChild(this._timelineMore);
-    this._displayTimelineLabels = false;
-
     var outerDiv = document.createElement("div");
-    outerDiv.style.width="100%";
+    outerDiv.style.width = "100%";
     var seekDiv = document.createElement("div");
     this._slider = document.createElement("seek-bar");
     seekDiv.appendChild(this._slider);
     outerDiv.appendChild(seekDiv);
 
-    this._zoomSliderDiv = document.createElement("div");
-    this._zoomSliderDiv.style.marginTop = "10px";
-    outerDiv.appendChild(this._zoomSliderDiv);
-
-    this._zoomSlider = document.createElement("seek-bar");
-    this._zoomSlider.changeVisualType("zoom");
-    this._zoomSliderDiv.hidden = true;
-    this._zoomSliderDiv.appendChild(this._zoomSlider);
-
-    this._slider.setPair(this._zoomSlider);
+    var innerDiv = document.createElement("div");
+    this._videoTimeline = document.createElement("video-timeline");
+    innerDiv.appendChild(this._videoTimeline);
+    outerDiv.appendChild(innerDiv);
+    this._timelineDiv.appendChild(outerDiv);
 
     var innerDiv = document.createElement("div");
-    this._timelineD3 = document.createElement("timeline-d3");
-    this._timelineD3.rangeInput = this._slider;
-    innerDiv.appendChild(this._timelineD3);
+    this._entityTimeline = document.createElement("entity-timeline");
+    innerDiv.appendChild(this._entityTimeline);
     outerDiv.appendChild(innerDiv);
     this._timelineDiv.appendChild(outerDiv);
 
@@ -148,6 +399,51 @@ export class AnnotationPlayer extends TatorElement {
     const frameNext = document.createElement("frame-next");
     frameDiv.appendChild(frameNext);
 
+    this._utcBtn = document.createElement("button");
+    this._utcBtn.setAttribute("class", "btn btn-small-height btn-fit-content btn-clear btn-outline text-gray f3 text-semibold px-2");
+    this._utcBtn.textContent = "UTC";
+    this._utcBtn.style.marginLeft = "10px";
+    playButtons.appendChild(this._utcBtn);
+
+    this._utcDiv = document.createElement("div");
+    this._utcDiv.setAttribute("class", "annotation-canvas-overlay-menu d-flex flex-row flex-items-center flex-justify-between rounded-1");
+    this._utcDiv.style.display = "none";
+    this._shadow.appendChild(this._utcDiv);
+
+    this._utcLabel = document.createElement("span");
+    this._utcLabel.setAttribute("class", "f2 text-center text-semibold text-gray px-2");
+    this._utcLabel.textContent = "N/A";
+    this._utcDiv.appendChild(this._utcLabel);
+
+    var btn = document.createElement("small-svg-button");
+    btn.init(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
+      "Copy UTC",
+      "copy-utc-btn"
+    );
+    btn._button.classList.remove("px-2");
+    this._utcDiv.appendChild(btn);
+    btn.addEventListener("click", () => {
+      btn.blur();
+      navigator.clipboard.writeText(this._utcLabel.textContent).then(() => {
+        Utilities.showSuccessIcon("Copied UTC time to clipboard!")
+      });
+    });
+
+    this._utcBtn.addEventListener("click", () => {
+      this._utcBtn.blur();
+      var pos = this._utcBtn.getBoundingClientRect();
+      this._utcDiv.style.top = `${pos.top - 60}px`;
+      this._utcDiv.style.left = `${pos.left - 20}px`;
+      if (this._utcDiv.style.display == "flex") {
+        this._hideCanvasMenus();
+      }
+      else {
+        this._hideCanvasMenus();
+        this._utcDiv.style.display = "flex";
+      }
+    });
+
     this._volume_control = document.createElement("volume-control");
     settingsDiv.appendChild(this._volume_control);
     this._volume_control.addEventListener("volumeChange", (evt) => {
@@ -161,6 +457,10 @@ export class AnnotationPlayer extends TatorElement {
     this._scrubInterval = 16;
     this._lastScrub = Date.now();
     this._rate = 1;
+    this._setTimelineDisplayMode("frame");
+    this._videoMode = "play"; // Future growth (e.g. play | summary)
+
+    this._shortcutsDisabled = false;
 
      // Magic number matching standard header + footer
      // #TODO This should be re-thought and more flexible initially
@@ -187,15 +487,12 @@ export class AnnotationPlayer extends TatorElement {
 
     this._timelineMore.addEventListener("click", () => {
       this._displayTimelineLabels = !this._displayTimelineLabels;
-      this._timelineD3.showFocus(this._displayTimelineLabels);
+      this._entityTimeline.showFocus(this._displayTimelineLabels);
       this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
       window.dispatchEvent(new Event("resize"));
     });
 
     this._video.addEventListener("bufferLoaded", evt => {
-
-      let frame = Math.round(evt.detail.percent_complete * Number(this._mediaInfo.num_frames)-1);
-      this._zoomSlider.setLoadProgress(frame);
       this._slider.onBufferLoaded(evt);
     });
 
@@ -232,16 +529,6 @@ export class AnnotationPlayer extends TatorElement {
         this._video.onDemandDownloadPrefetch();
         this.checkReady();
       }
-    });
-
-    // #TODO Combine with this._slider.addEventListener
-    this._zoomSlider.addEventListener("input", evt => {
-      this.handleSliderInput(evt);
-    });
-
-    // #TODO Combine with this._slider.addEventListener
-    this._zoomSlider.addEventListener("change", evt => {
-      this.handleSliderChange(evt);
     });
 
     this._slider.addEventListener("input", evt => {
@@ -310,19 +597,23 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._video.addEventListener("canvasResized", () => {
-      this._timelineD3.redraw();
+      this._videoTimeline.redraw();
+      this._entityTimeline.redraw();
     });
 
     this._video.addEventListener("frameChange", evt => {
       const frame = evt.detail.frame;
-      
-      this._slider.value = frame;
-      this._zoomSlider.value = frame;
+
       const time = frameToTime(frame, this._mediaInfo.fps);
       this._currentTimeText.textContent = time;
       this._currentFrameText.textContent = frame;
       this._currentTimeText.style.width = 10 * (time.length - 1) + 5 + "px";
       this._currentFrameText.style.width = (15 * String(frame).length) + "px";
+
+      if (this._timeStore != null) {
+        this._utcLabel.textContent = this._timeStore.getAbsoluteTimeFromFrame(frame);
+      }
+      this._slider.value = frame;
     });
 
     this._video.addEventListener("playbackEnded", evt => {
@@ -338,54 +629,6 @@ export class AnnotationPlayer extends TatorElement {
         this._playInteraction.enable();
       }
     });
-
-    this._timelineD3.addEventListener("zoomedTimeline", evt => {
-      if (evt.detail.minFrame < 1 || evt.detail.maxFrame < 1) {
-        // Reset the slider
-        this._zoomSliderDiv.hidden = true;
-        this._zoomSlider.setAttribute("min", 0);
-        this._zoomSlider.setAttribute("max", Number(this._mediaInfo.num_frames)-1);
-      }
-      else {
-        this._zoomSliderDiv.hidden = false;
-        this._zoomSlider.setAttribute("min", evt.detail.minFrame);
-        this._zoomSlider.setAttribute("max", evt.detail.maxFrame);
-        this._zoomSlider.value = this._slider.value;
-      }
-    });
-
-    this._timelineD3.addEventListener("graphData", evt => {
-      if (evt.detail.numericalData.length > 0 || evt.detail.stateData.length > 0) {
-        this._timelineMore.style.display = "block";
-      }
-      else {
-        this._timelineMore.style.display = "none";
-      }
-      const newHeight = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
-      if (newHeight != this._videoHeightPadObject.height)
-      {
-        this._videoHeightPadObject.height = newHeight;
-        window.dispatchEvent(new Event("resize"));
-      }
-    });
-
-    this._timelineD3.addEventListener("select", evt => {
-      this.goToFrame(evt.detail.frame);
-    });
-
-    fullscreen.addEventListener("click", evt => {
-      if (fullscreen.hasAttribute("is-maximized")) {
-        fullscreen.removeAttribute("is-maximized");
-        playerDiv.classList.remove("is-full-screen");
-        this.dispatchEvent(new Event("minimize", {composed: true}));
-      } else {
-        fullscreen.setAttribute("is-maximized", "");
-        playerDiv.classList.add("is-full-screen");
-        this.dispatchEvent(new Event("maximize", {composed: true}));
-      }
-      window.dispatchEvent(new Event("resize"));
-    });
-
     this._currentFrameInput.addEventListener("focus", () => {
       document.body.classList.add("shortcuts-disabled");
     });
@@ -426,6 +669,47 @@ export class AnnotationPlayer extends TatorElement {
       this._currentTimeInput.style.display = "block";
       this._currentTimeInput.focus();
       this._currentTimeText.style.display = "none";
+    });
+
+    /**
+     * Seek/timeline event listeners
+     */
+    this._videoTimeline.addEventListener("input", evt => {
+      this.handleSliderInput(evt);
+    });
+
+    this._videoTimeline.addEventListener("newFrameRange", evt => {
+      this._slider.setAttribute("min", evt.detail.start);
+      this._slider.setAttribute("max", evt.detail.end);
+    });
+
+    this._entityTimeline.addEventListener("selectFrame", evt => {
+      this._slider.value = evt.detail.frame;
+      this.handleSliderChange(evt);
+    });
+
+    this._entityTimeline.addEventListener("graphData", evt => {
+      if (evt.detail.numericalData.length > 0 || evt.detail.stateData.length > 0) {
+        this._timelineMore.style.display = "block";
+      }
+      else {
+        this._timelineMore.style.display = "none";
+      }
+      this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    fullscreen.addEventListener("click", evt => {
+      if (fullscreen.hasAttribute("is-maximized")) {
+        fullscreen.removeAttribute("is-maximized");
+        playerDiv.classList.remove("is-full-screen");
+        this.dispatchEvent(new Event("minimize", {composed: true}));
+      } else {
+        fullscreen.setAttribute("is-maximized", "");
+        playerDiv.classList.add("is-full-screen");
+        this.dispatchEvent(new Event("maximize", {composed: true}));
+      }
+      window.dispatchEvent(new Event("resize"));
     });
 
     this._qualityControl.addEventListener("setQuality", (evt) => {
@@ -538,6 +822,32 @@ export class AnnotationPlayer extends TatorElement {
         }
         break;
     }
+  }
+
+  _setToPlayMode() {
+    this._videoMode = "play";
+
+    this._videoTimeline.style.display = "block";
+
+    this._videoTimeline.init(0, this._timeStore.getLastGlobalFrame());
+    this._entityTimeline.init(0, this._timeStore.getLastGlobalFrame());
+
+    this._slider.setAttribute("min", 0);
+    this._slider.setAttribute("max", this._timeStore.getLastGlobalFrame());
+
+    this._qualityControl.removeAttribute("disabled");
+    this._rateControl.removeAttribute("disabled");
+
+    this._resizeWindow();
+  }
+
+  _resizeWindow() {
+    this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
+    window.dispatchEvent(new Event("resize"));
+  }
+
+  _resizeHandler() {
+    this._hideCanvasMenus();
   }
 
   disableAutoDownloads() {
@@ -752,7 +1062,6 @@ export class AnnotationPlayer extends TatorElement {
     // Max value on slider is 1 less the frame count.
     this._slider.setAttribute("max", Number(val.num_frames)-1);
     this._slider.fps = val.fps;
-    this._zoomSlider.fps = val.fps;
     this._fps = val.fps;
     this._totalTime.textContent = "/ " + frameToTime(val.num_frames, this._mediaInfo.fps);
     this._totalTime.style.width = 10 * (this._totalTime.textContent.length - 1) + 5 + "px";
@@ -768,6 +1077,14 @@ export class AnnotationPlayer extends TatorElement {
         const scrubInfo = this._video.getQuality("scrub");
         const playInfo = this._video.getQuality("play");
         this.checkReady();
+
+        this._timeStore = new TimeStore(this._mediaInfo, this.mediaType);
+        this._videoTimeline.timeStore = this._timeStore;
+        this._entityTimeline.timeStore = this._timeStore;
+        this._videoTimeline.timeStoreInitialized();
+        this._entityTimeline.timeStoreInitialized();
+
+        this._setToPlayMode();
 
         this.dispatchEvent(new CustomEvent("defaultVideoSettings", {
           composed: true,
@@ -790,7 +1107,8 @@ export class AnnotationPlayer extends TatorElement {
           composed: true
         }));
       })
-      .catch(() => {
+      .catch((exc) => {
+        console.error(exc);
         this._video.displayErrorMessage(`Error occurred. Could not load media: ${val.id}`);
         this.dispatchEvent(new Event("videoInitError", {
           composed: true
@@ -820,7 +1138,60 @@ export class AnnotationPlayer extends TatorElement {
 
   set annotationData(val) {
     this._video.annotationData = val;
-    this._timelineD3.annotationData = val;
+    this._entityTimeline.annotationData = val;
+  }
+
+  _displayPlayerSettingsMenu() {
+    this._hideCanvasMenus();
+
+    var pos = this._playerSettingsBtn.getBoundingClientRect();
+    this._playerSettingsMenu.style.top = `${pos.top - 120}px`;
+    this._playerSettingsMenu.style.left = `${pos.left - 180}px`;
+
+    this._playerTimelineUnitsContent.textContent = this._displayMode;
+    this._playerQualityContent.textContent = this._qualityControl._quality;
+    this._playerSettingsMenu.style.display = "flex";
+  }
+
+  _displayTimelineUnitsMenu() {
+    this._hideCanvasMenus();
+
+    var pos = this._playerSettingsBtn.getBoundingClientRect();
+    this._timelineUnitsMenu.style.top = `${pos.top - 150}px`;
+    this._timelineUnitsMenu.style.left = `${pos.left - 180}px`;
+
+    this._timelineUnitsMenu.style.display = "flex";
+  }
+
+  _displayQualityMenu() {
+    this._hideCanvasMenus();
+
+    var pos = this._playerSettingsBtn.getBoundingClientRect();
+    this._videoQualityMenu.style.top = `${pos.top - 120}px`;
+    this._videoQualityMenu.style.left = `${pos.left - 180}px`;
+
+    this._videoQualityMenu.style.display = "flex";
+  }
+
+  /**
+   * Hides all the annotator canvas overlay menus
+   */
+  _hideCanvasMenus() {
+    this._playerSettingsMenu.style.display = "none";
+    this._timelineUnitsMenu.style.display = "none";
+    this._videoQualityMenu.style.display = "none";
+    this._timelineZoomMenu.style.display = "none";
+    this._utcDiv.style.display = "none";
+  }
+
+  /**
+   * Sets display mode to be used for the timelines
+   * @param {string} mode "frame"|"relativeTime"|"utc"
+   */
+  _setTimelineDisplayMode(mode) {
+    this._displayMode = mode;
+    this._videoTimeline.setDisplayMode(this._displayMode);
+    this._entityTimeline.setDisplayMode(this._displayMode);
   }
 
   newMetadataItem(dtype, metaMode, objId) {
@@ -897,7 +1268,7 @@ export class AnnotationPlayer extends TatorElement {
       console.info(`${now}: Timeout Counter ${timeoutCounter} LAST=${last_check}`);
       last_check = now;
 
-      
+
       let not_ready = false;
       if (checkFrame != this._video.currentFrame()) {
         console.log(`check_ready frame ${checkFrame} and current frame ${this._video.currentFrame()} do not match. restarting check_ready`)
@@ -924,7 +1295,7 @@ export class AnnotationPlayer extends TatorElement {
         // Heal the buffer state if duration increases since the last time we looked
         if (this._video.playBufferDuration() > this._last_duration)
         {
-          timeoutCounter = 0; //truncate 
+          timeoutCounter = 0; //truncate
           timeoutIndex = 0;
         }
         this._last_duration = this._video.playBufferDuration();
@@ -1177,7 +1548,7 @@ export class AnnotationPlayer extends TatorElement {
   }
 
   selectTimelineData(data) {
-    this._timelineD3.selectData(data);
+    //this._entityTimeline.selectEntity(data); #TODO
   }
 
   _timeToFrame(minutes, seconds) {

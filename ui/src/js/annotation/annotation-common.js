@@ -10,7 +10,7 @@ export function handle_video_error(evt, root)
     const tutorial_link=`<span class='text-gray'><a class='nav__link' target='_new' href='https://www.tator.io/blog/secure-context-for-local-deployments'>secure origin</a></span>`;
     msg_html += "<span class='text-normal' style='line-height:1.7rem'>";
     msg_html += `<span class='text-semibold'>Your connection to <span class='text-purple'>${window.location.host}</span> is not secure context.</span><br>In this state, components required by Tator are disabled by your browser security settings.`
-    msg_html += `<br><br/>To proceed, add <span class='text-purple'>${window.location.host}</span> as a ${tutorial_link}`; 
+    msg_html += `<br><br/>To proceed, add <span class='text-purple'>${window.location.host}</span> as a ${tutorial_link}`;
     msg_html += ` or contact your system administrator to ${tator_link} to your Tator deployment.`;
     msg_html += "</span>"
   } else if (evt.detail.videoDecoderPresent == false) {
@@ -37,7 +37,7 @@ export function handle_video_error(evt, root)
     msg_html += `Compatibility mode is enabled. `
     msg_html += `<br>Not all video playback features will work optimally when bypassing the VideoDecoder API.`;
     msg_html += "</span>";
-  } 
+  }
   else
   {
     exit = true;
@@ -86,6 +86,63 @@ export function handle_decoder_error(evt, root)
   modalError.setAttribute("is-open", "");
   sessionStorage.setItem(`handle_error__${errorType}_${document.location.pathname}`, 'true');
 }
+
+/**
+ * Parse the provided isoformat string and returns time since epoch
+ * @param {String} val - Time string to parse. Expected to be in isoformat.
+ * @returns {Date} Date object associated with the provided time. If val is invalid, the
+ *                 returned object is null.
+ *
+ * If val contains "_" instead of ":", that will be replaced to create the Date object.
+ */
+export function parseTimeString(val)
+{
+  var parsedDate = new Date(val);
+  if (parsedDate == "Invalid Date") {
+    parsedDate = new Date(val.replace("_", ":"));
+    if (parsedDate == "Invalid Date") {
+      return null;
+    }
+    else {
+      return parsedDate;
+    }
+  }
+  else {
+    return parsedDate;
+  }
+}
+
+/**
+ * Gets the date associated with the start of the provided Tator.Media object.
+ * @param {Tator.Media} media - Media to process.
+ *                              The media name should have the datetime string in isoformat.
+ *                              ":" can be "_" instead for the hh:mm:ss portion.
+ *                              The media name can have ID_ prefix that will be trimmed off.
+ *                              If no timezone is explicitly provided, the datetime is assumed to
+ *                              be UTC.
+ * @returns {Date} Date object associated with the provided media start. If the media does not
+ *                 have start time information, the returned object is null.
+ */
+export function getMediaStartDatetime(media) {
+
+  let name = media.name;
+
+  // Trim off ID if it is there
+  if (name[1] == '_') {
+    name = name.substr(2);
+  }
+
+  // Apply timezone if it's not there.
+  let startTime8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+  let timeZoneIncluded = startTime8601.lastIndexOf('-') > 7 || startTime8601[-1] == "Z";
+  if (timeZoneIncluded != true) {
+    startTime8601 += '-00:00'; // Assume zulu time
+  }
+
+  // Return either null or corresponding Date object
+  return parseTimeString(startTime8601);
+}
+
 
 export function frameToTime(frame, fps)
 {
