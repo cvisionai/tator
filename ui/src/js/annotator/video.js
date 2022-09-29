@@ -1701,7 +1701,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._draw.prepForward();
     }
 
-    if (this._videoElement[this._scrub_idx] == false && this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
+    if (this._videoElement[this._scrub_idx]._compat != true && this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
       // Cap effective decode rate around 240 fps 
       // This was emperically gathered as a good cut off for 5 15fps playing back at 16x
