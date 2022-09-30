@@ -169,8 +169,12 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     var btn = document.createElement("small-svg-button");
-    btn.init(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`,
+    btn.init(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"  stroke-linecap="round" stroke-linejoin="round" class="no-fill">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <line x1="4" y1="19" x2="20" y2="19" />
+        <polyline points="4 15 8 9 12 11 16 6 20 10" />
+      </svg>`,
       "Entity Timeline Info",
       "entity-timeline-expand-btn"
     );
@@ -434,7 +438,7 @@ export class AnnotationPlayer extends TatorElement {
       this._utcBtn.blur();
       var pos = this._utcBtn.getBoundingClientRect();
       this._utcDiv.style.top = `${pos.top - 60}px`;
-      this._utcDiv.style.left = `${pos.left - 20}px`;
+      this._utcDiv.style.left = `${pos.left - 60}px`;
       if (this._utcDiv.style.display == "flex") {
         this._hideCanvasMenus();
       }
@@ -486,8 +490,9 @@ export class AnnotationPlayer extends TatorElement {
     }
 
     this._timelineMore.addEventListener("click", () => {
+      this._hideCanvasMenus();
       this._displayTimelineLabels = !this._displayTimelineLabels;
-      this._entityTimeline.showFocus(this._displayTimelineLabels);
+      this._entityTimeline.showFocus(this._displayTimelineLabels, this._video.currentFrame());
       this._videoHeightPadObject.height = this._headerFooterPad + this._controls.offsetHeight + this._timelineDiv.offsetHeight;
       window.dispatchEvent(new Event("resize"));
     });
@@ -540,6 +545,7 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     play.addEventListener("click", () => {
+      this._hideCanvasMenus();
       if (this.is_paused())
       {
         this.play();
@@ -551,10 +557,12 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     rewind.addEventListener("click", () => {
+      this._hideCanvasMenus();
       this.playBackwards();
     });
 
     fastForward.addEventListener("click", () => {
+      this._hideCanvasMenus();
       this._video.pause();
       this._video.rateChange(2 * this._rate);
       if (this._video.play())
@@ -565,6 +573,7 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     framePrev.addEventListener("click", () => {
+      this._hideCanvasMenus();
       if (this.is_paused() == false)
       {
         this.dispatchEvent(new Event("paused", {composed: true}));
@@ -581,6 +590,7 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     frameNext.addEventListener("click", () => {
+      this._hideCanvasMenus();
       if (this.is_paused() == false)
       {
         this.dispatchEvent(new Event("paused", {composed: true}));
@@ -645,6 +655,7 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._currentFrameText.addEventListener("click", () => {
+      this._hideCanvasMenus();
       this._currentFrameInput.style.display = "block";
       this._currentFrameInput.focus();
       this._currentFrameText.style.display = "none";
@@ -666,6 +677,7 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     this._currentTimeText.addEventListener("click", () => {
+      this._hideCanvasMenus();
       this._currentTimeInput.style.display = "block";
       this._currentTimeInput.focus();
       this._currentTimeText.style.display = "none";
@@ -681,6 +693,7 @@ export class AnnotationPlayer extends TatorElement {
     this._videoTimeline.addEventListener("newFrameRange", evt => {
       this._slider.setAttribute("min", evt.detail.start);
       this._slider.setAttribute("max", evt.detail.end);
+      this._entityTimeline.init(evt.detail.start, evt.detail.end);
     });
 
     this._entityTimeline.addEventListener("selectFrame", evt => {
@@ -700,6 +713,7 @@ export class AnnotationPlayer extends TatorElement {
     });
 
     fullscreen.addEventListener("click", evt => {
+      this._hideCanvasMenus();
       if (fullscreen.hasAttribute("is-maximized")) {
         fullscreen.removeAttribute("is-maximized");
         playerDiv.classList.remove("is-full-screen");

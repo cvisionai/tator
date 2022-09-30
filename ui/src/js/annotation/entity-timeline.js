@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-import { mode } from "d3";
 import { v1 as uuidv1 } from "uuid";
 import { BaseTimeline } from "../annotation/base-timeline.js";
 
@@ -26,7 +25,7 @@ export class EntityTimeline extends BaseTimeline {
       .append("svg")
       .attr("preserveAspectRatio", "xMidYMid meet")
       .style("font", "12px sans-serif")
-      .style("color", "#a2afcd");
+      .style("color", "#6d7a96");
 
     this._focusLine = this._focusSvg.append("g").attr("display", "none");
 
@@ -421,7 +420,7 @@ export class EntityTimeline extends BaseTimeline {
               graphData[graphData.length - 1].frame = this._maxFrame;
 
               this._numericalData.push({
-                name: `${attrType.name} (Max: ${maxValue.toFixed(2)})`,
+                name: `${attrType.name}`,
                 graphData: graphData
               });
             }
@@ -547,10 +546,6 @@ export class EntityTimeline extends BaseTimeline {
     var that = this;
     if (isNaN(this._maxFrame)) {
       return;
-    }
-
-    if (this._selectedDataId != null) {
-
     }
 
     this._mainLineHeight = 30;
@@ -768,15 +763,12 @@ export class EntityTimeline extends BaseTimeline {
     if (this._focusTimelineDiv.style.display != "none") {
       this._mainBrush = d3.brushX()
         .extent([[this._mainMargin.left, 0.5], [this._mainWidth - this._mainMargin.right, this._mainHeight - this._mainMargin.bottom + 0.5]])
-        .on("end", this._mainBrushEnded.bind(this))
         .on("brush", this._mainBrushed.bind(this));
 
-      // The brush will default to nothing being selected
       this._mainBrushG = this._mainSvg.append("g")
         .call(this._mainBrush);
 
-      this._mainBrushG
-        .call(this._mainBrush.move, null);
+      this._mainBrushG.transition().call(this._mainBrush.move, this._mainBrushWindow);
     }
   }
 
@@ -1009,9 +1001,11 @@ export class EntityTimeline extends BaseTimeline {
 
     focusGLine.selectAll("rect")
       .on("mouseover", function(event, d) {
+        d3.select(this).style("cursor", "pointer");
         that._highlightMainLine(d.name);
       })
       .on("mouseout", function(event, d) {
+        d3.select(this).style("cursor", "default");
         that._unhighlightMainLines();
       });
 
@@ -1084,6 +1078,8 @@ export class EntityTimeline extends BaseTimeline {
         if (displayXAxis) {
           focusFrameTextBackground.attr("opacity", "0");
           focusFrameText.attr("opacity", "0");
+          focusLineValues.attr("opacity", "0");
+          focusStateValues.attr("opacity", "0");
         }
     });
     this._focusSvg.on("mousemove", function(event, d) {
@@ -1129,8 +1125,7 @@ export class EntityTimeline extends BaseTimeline {
 
         let idx;
 
-        //focusLineValues.attr("x", d3.pointer(event)[0]);
-        focusLineValues.attr("opactiy", "1.0");
+        focusLineValues.attr("opacity", "1.0");
         focusLineValues.text(function(d) {
           for (idx = 0; idx < d.graphData.length; idx++) {
             if (d.graphData[idx].frame > currentFrame) {
@@ -1142,8 +1137,7 @@ export class EntityTimeline extends BaseTimeline {
           return "";
         });
 
-        //focusStateValues.attr("x", d3.pointer(event)[0]);
-        focusStateValues.attr("opactiy", "1.0");
+        focusStateValues.attr("opacity", "1.0");
         focusStateValues.text(function(d) {
           for (idx = 0; idx < d.graphData.length; idx++) {
             if (d.graphData[idx].frame > currentFrame) {
@@ -1156,17 +1150,6 @@ export class EntityTimeline extends BaseTimeline {
         });
     });
   }
-
-  /**
-   * Callback for "end" with d3.brushX
-   * @param {array} selection Mouse pointer event
-   */
-  _mainBrushEnded ({selection}) {
-    if (!selection) {
-      this._mainBrushG.call(this._mainBrush.move, [-1, -1]);
-    }
-  }
-
 
   /**
    * Call this to initialize the timeline.
@@ -1205,8 +1188,25 @@ export class EntityTimeline extends BaseTimeline {
    *
    * @param {bool} display True if the focus timeline should be displayed. False otherwise.
    */
-  showFocus(display) {
+  showFocus(display, currentFrame) {
     if (display) {
+
+      if (currentFrame != null) {
+        var timelineSpan = this._maxFrame - this._minFrame;
+        var window = Math.floor(timelineSpan * 0.1);
+        if (window < 25) {
+          window = 25;
+        }
+        var minFrame = currentFrame - window;
+        if (minFrame < this._minFrame) { minFrame = this._minFrame; }
+        var maxFrame = currentFrame + window;
+        if (maxFrame > this._maxFrame) { maxFrame = this._maxFrame; }
+        var startX = this._mainX(minFrame);
+        var endX = this._mainX(maxFrame);
+
+        this._mainBrushWindow = [startX, endX];
+      }
+
       this._focusTimelineDiv.style.display = "block";
     }
     else {
