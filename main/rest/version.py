@@ -112,8 +112,10 @@ class VersionDetailAPI(BaseDetailView):
                 version.bases.set(qs)
         
         newVersion = Version.objects.get(pk=params["id"])
+        newId = params["id"]
         return {
-            'message': f'Version {params["id"]} updated successfully!',
+            'message': f'Version {newId} updated successfully!',
+            'id': newId,
             'object': VersionSerializer(newVersion).data
         }
 
@@ -124,7 +126,10 @@ class VersionDetailAPI(BaseDetailView):
             raise Exception(f"Cannot delete version with annotations! Found "
                             f"{localization_count} localizations, {state_count} states!")
         Version.objects.get(pk=params['id']).delete()
-        return {'message': f'Version {params["id"]} deleted successfully!'}
+        return {
+            'message': f'Version {params["id"]} deleted successfully!',
+            'id': params['id']
+            }
 
     def get_queryset(self):
         return Version.objects.all()

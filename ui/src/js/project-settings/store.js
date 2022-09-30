@@ -143,27 +143,35 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ status: {...get.status, name: "pending", msg: "Adding version..."} });
       const object = await api.createVersionWithHttpInfo(get().project.id, spec);
       
-      const setList = get().versions.setList;
-      setList.add(object.data.id);
+      console.log("THIS WAS THE OBJ RETURNED");
+      console.log(object);
 
-      const map = get().versions.map;
-      map.set(object.data.id, object.data.object);
+      if (object.data &&                               object.data.object) {
+         const setList = get().versions.setList;
+         setList.add(object.data.id);
 
-      set({ versions: { ...get().versions, map, setList } }); // `push` doesn't trigger state update
-      set({ status: {...get.status, name: "idle", msg: ""} });
+         const map = get().versions.map;
+         map.set(object.data.id, object.data.object);
+
+         set({ versions: { ...get().versions, map, setList } }); // `push` doesn't trigger state update
+      } else {
+         await get().fetchVersions();
+      }
+      
+      set({ status: { ...get.status, name: "idle", msg: "" } });
       
       return object;
    },
    updateVersion: async (id, data) => {
       set({ status: {...get.status, name: "pending", msg: "Adding version..."} });
       const object = await api.updateVersionWithHttpInfo(id, data);
+      console.log("THIS WAS THE OBJ RETURNED");
+      console.log(object);
 
-      if (object.data.object) {
+      if (object.data && object.data.object) {
          const map = get().versions.map;
          map.set(object.data.id, object.data.object);
-         console.log("THIS WAS THE OBJ RETURNED");
-         console.log(object);
-   
+
          set({ versions: { ...get().versions, map } }); // `push` doesn't trigger state update    
       } else {
          await get().fetchVersions();
