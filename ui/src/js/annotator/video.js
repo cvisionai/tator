@@ -1108,8 +1108,6 @@ export class VideoCanvas extends AnnotationCanvas {
       composed: true
     }));
 
-    this.updateVideoDiagnosticOverlay(null, this._dispFrame);
-
     let ended = false;
     if (this._direction == Direction.FORWARD &&
         this._dispFrame >= (this._numFrames - 1))
@@ -2948,6 +2946,7 @@ export class VideoCanvas extends AnnotationCanvas {
       this._pauseCb.forEach(cb => {cb();}); 
       this._videoElement[this._play_idx].pause(this.frameToTime(this._dispFrame, this._play_idx));
       this._videoElement[this._scrub_idx].pause(this.frameToTime(this._dispFrame, this._scrub_idx));
+      this.updateVideoDiagnosticOverlay(null, this._dispFrame);
 
       // Reclaim memory from any pending frames
       let pendingFrame = null;
