@@ -194,7 +194,7 @@ export class MembershipEdit extends TypeForm {
     });
   }
 
-  _updateVersionList(versions, prevVersions) {
+  _updateVersionList() {
     console.log("Membership-edit: UPDATE VERSIONS LIST!");
     const versionOptions = getCompiledList({ type: this.typeName, check: data.default_version });
     this._versionSelect.choices = versionOptions;

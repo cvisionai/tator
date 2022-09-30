@@ -11,29 +11,28 @@ export const getCompiledList = ({type, skip = null, check = null}) => {
    let list = [];
    switch (type) {
       case "Version":
-         list = store.getState().versions.data;
+         list = store.getState().versions;
          break;
       default:
          console.error(`Invalid type: ${type}`);
    }
-
-   console.log(`${type}: check .${check}. typeof... ${typeof check}`)
-
-   const checkedExists = (check !== null && check !== "");
+   
    // Use values if any, and the list of types to make a compiled list, a checkbox object
-   const newList = list.filter(item => item.id !== skip).map(item => {
-      console.log(`checkedExists ${checkedExists} ... check ${check} === item.id ${item.id} `);
-      
-      return {
-         id: item.id,
-         value: item.id,
-         name: item.name,
-         label: item.name,
-         checked: checkedExists && (check === item.id || (Array.isArray(check) && check.includes(item.id))),
-         selected: checkedExists && (check === item.id || (Array.isArray(check) && check.includes(item.id)))
+   const newList = [];
+   
+   for (let id of list.setList) {
+      const item = store.getState().versions.map.get(id);
+      if (typeof item !== "undefined" && id !== skip) {
+         newList.push({
+            id: item.id,
+            value: item.id,
+            name: item.name,
+            label: item.name,
+            checked: (check === item.id || (Array.isArray(check) && check.includes(item.id))),
+            selected: (check === item.id || (Array.isArray(check) && check.includes(item.id)))
+         });
       }
-   });
-   console.log(newList);
+   }
 
    return newList;
 }
@@ -46,7 +45,8 @@ const store = create(subscribeWithSelector((set, get) => ({
    project: {},
    versions: {
       init: false,
-      data: [],
+      setList: new Set(),
+      map: new Map(),
       inputHandles: [] // Form change and data can be computed value off inputHandles
    }, 
    mediaTypes: [],
@@ -129,30 +129,46 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    /* versions */
    fetchVersions: async () => {
-      let object = await api.getVersionListWithHttpInfo(get().project.id);
-      set({ versions: {...get().versions, data: object.data, init: true} });
+      const object = await api.getVersionListWithHttpInfo(get().project.id);
+      const setList = get().versions.setList;
+      const map = get().versions.map;
+      for (let item of object.data) {
+         setList.add(item.id);
+         map.set(item.id, item);
+      }
+      set({ versions: {...get().versions, setList, map, init: true} });
       return object.data;
    },
    addVersion: async (spec) => {
-      const object = await api.createVersionWithHttpInfo(spec);
-      console.log("Add version!");
-      const version = object.data.object;
-      const newVersions = [...get().versions, version];
-      console.log("NEW VERSIONS");
-      console.log(newVersions);
-      set({ versions: { ...get().versions, data: [...get().versions.data, version] } }); // `push` doesn't trigger state update
+      set({ status: {...get.status, name: "pending", msg: "Adding version..."} });
+      const object = await api.createVersionWithHttpInfo(get().project.id, spec);
       
-      return object.data.object;
+      const setList = get().versions.setList;
+      setList.add(object.data.id);
+
+      const map = get().versions.map;
+      map.set(object.data.id, object.data.object);
+
+      set({ versions: { ...get().versions, map, setList } }); // `push` doesn't trigger state update
+      set({ status: {...get.status, name: "idle", msg: ""} });
+      
+      return object;
    },
    updateVersion: async (id, data) => {
-      console.log("Update version.....");
-      console.log(data);
+      set({ status: {...get.status, name: "pending", msg: "Adding version..."} });
       const object = await api.updateVersionWithHttpInfo(id, data);
-      console.log(object);
-      const newVersion = object.data.object;
 
-      set({ versions: { ...get().versions, data: [...get().versions.data, newVersion] } }); // `push` doesn't trigger state update
-
+      if (object.data.object) {
+         const map = get().versions.map;
+         map.set(object.data.id, object.data.object);
+         console.log("THIS WAS THE OBJ RETURNED");
+         console.log(object);
+   
+         set({ versions: { ...get().versions, map } }); // `push` doesn't trigger state update    
+      } else {
+         await get().fetchVersions();
+      }
+      set({ status: {...get.status, name: "idle", msg: ""} });
       return object;
    },
    getVersionContentCount: async (versionId) => {
@@ -163,15 +179,16 @@ const store = create(subscribeWithSelector((set, get) => ({
       
       return { stateCount: 5, localizationCount: 20};
    },
-   removeVersion: async (versionId) => {
+   removeVersion: async (id) => {
+      set({ status: {...get.status, name: "pending", msg: "Removing version..."} });
       const object = await api.deleteVersionWithHttpInfo(id);
-      if (object.response.ok) {
-         set({ versions: get().versions.filter(version => versionId != version.id) });
-         return true;
-      } else {
-         console.error("Error deleting version.", object.response);
-         return false;
-      }
+      const versionSet = get().versions.setList;
+      versionSet.delete(id);
+      const versionMap = get().versions.map;
+      versionMap.delete(id);
+
+      set({ versions: {...get().versions, map: versionMap, setList: versionSet } });
+      set({ status: {...get.status, name: "idle", msg: ""} });      
    },
 
    /* algorithms */
@@ -247,7 +264,7 @@ const store = create(subscribeWithSelector((set, get) => ({
 
       return object;
    },
-   addType: (type, data) => {
+   addType:  ({type, data}) => {
       let object = {};
 
       switch (type) {
@@ -260,12 +277,12 @@ const store = create(subscribeWithSelector((set, get) => ({
 
       return object;
    },
-   updateType: async ({type, id, data}) => {
+   updateType:  ({type, id, data}) => {
       let object = {};
 
       switch (type) {
          case "Version":
-            object = await get().updateVersion(id, data);
+            object =  get().updateVersion(id, data);
             
             break;
          default:

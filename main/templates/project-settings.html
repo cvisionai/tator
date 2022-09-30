@@ -98,6 +98,7 @@
           </div>
           <nav class="SideNav SubItems  subitems-LeafType" hidden="">
             <img src="/static/96a33e84f1f5146b9f08.svg">
+
           </nav>
         </div>
 
@@ -151,7 +152,15 @@
               class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav id="SideNav--Versions" class="SideNav SubItems  subitems-Version" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
+            <!-- <img src="/static/96a33e84f1f5146b9f08.svg"> -->
+            <div class="placeholder-glow">
+              <a class="SideNav-subItem placeholder bg-charcoal-medium"> &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp;  </a>
+              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; </a>
+              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; </a>
+              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  </a>
+              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; </a>
+              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; </a>
+            </div>
           </nav>
         </div>
 
@@ -222,7 +231,7 @@
 <template id="type-form">
   <div class="d-flex flex-row">
     <div class="pl-md-6 col-12 px-6">
-      <h1 class="h3 pb-3 edit-project__h1">
+      <h1 class="h3 pb-3 edit-project__h1" id="type-form--edit-h1">
         <span id="type-form-objectName">
           <!--OBJECT NAME GOES HERE-->
         </span>
@@ -234,7 +243,7 @@
             <!--ID GOES HERE-->
           </span>)</span>
       </h1>
-      <h1 class="h3 pb-3 edit-project__h1" hidden>Add new <span class="type-form-typeName">
+      <h1 id="type-form--new-h1" class="h3 pb-3 edit-project__h1" hidden>Add new <span class="type-form-typeName">
           <!--TYPE NAME GOES HERE-->
         </span></h1>
       <div>

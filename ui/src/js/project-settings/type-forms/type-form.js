@@ -18,6 +18,8 @@ export class TypeForm extends TatorElement {
     this._shadow.appendChild(typeFormTemplate.cloneNode(true));
 
     // Main parts of page
+    this.editH1 = this._shadow.getElementById("type-form--edit-h1");
+    this.newH1 = this._shadow.getElementById("type-form--new-h1");
     this.typeNameSet = this._shadow.querySelectorAll(".type-form-typeName");
     this.objectNameDisplay = this._shadow.getElementById("type-form-objectName");
     this.idDisplay = this._shadow.getElementById("type-form-id");
@@ -61,27 +63,33 @@ export class TypeForm extends TatorElement {
     /**
    * @param {int} val
    */
-    set _objectName(val) {
+  set _objectName(val) {
+    if (val === "+ Add New") {
+      this.editH1.hidden = true;
+      this.newH1.hidden = false;
+    } else {
       this.objectName= val;
-      this.objectNameDisplay.textContent = val;
+      this.objectNameDisplay.textContent = val;      
     }
-  
-    /**
-     * @param {int} val
-     */
-    set attributeTypes(val) {
-      this._attributeTypes = val;
 
-      // create attribute form and append to container
-      const section = this._getAttributeSection();
-      this._attributeContainer.appendChild(section);
-    }
+  }
+  
+  /**
+   * @param {int} val
+   */
+  set attributeTypes(val) {
+    this._attributeTypes = val;
+
+    // create attribute form and append to container
+    const section = this._getAttributeSection();
+    this._attributeContainer.appendChild(section);
+  }
 
   init(modal) {
     this.modal = modal;
     this.save.addEventListener("click", this._saveData.bind(this));
-    // this.reset.addEventListener("click", this._save.bind(this));
-    // this.delete.addEventListener("click", this._save.bind(this));
+    this.reset.addEventListener("click", this._resetForm.bind(this));
+    this.delete.addEventListener("click", this._deleteType.bind(this));
   }
 
   async _saveData() {
@@ -97,18 +105,33 @@ export class TypeForm extends TatorElement {
 
   }
 
+  warningFlow(todo) {
+    // if they confirm --> post / patch
+    // if they confirm --> delete
+    this.modal._confirm("Do you want to save?", "Custom body text...", todo);
+  }
+
   doSaveAction(formData) {
+    const info = { type: this.typeName, id: this.typeId, data: formData };
     if (this.typeId == "New") {
-      return store.getState().addType(this.typeName, formData) ;
+      return store.getState().addType(info) ;
     } else {
-      return store.getState().updateType({ type: this.typeName, id: this.typeId, data: formData });
+      return store.getState().updateType(info);
     }
   }
 
   handleResponse(data) {
-    console.log(data);
+    // console.log(data);
     if (data.response.ok) {
       return this.modal._success(data.data.message);
+    } else {
+      console.log(data.response.message);
+
+      let message = data.response.message;
+      if (data.response.message === "name 'ObjectDoesNotExist' is not defined") {
+        message = "You must choose a base.";
+      }
+
     }
   }
   
@@ -122,12 +145,20 @@ export class TypeForm extends TatorElement {
   
       return this.attributeSection;
     }
-  
-    _getEmptyData() {
 
+  _resetForm() {
+    // Use the most recently set data to update the values of form
+    this.setupForm(this.data);
+  }
+
+  _deleteType() {
+    return this.handleResponse(store.getState().removeVersion(this.data.id));
+  }
+  
+  _getEmptyData() {
       return {
         id: `New`,
-        name: "",
+        name: "+ Add New",
         project: this.projectId,
         description: "",
         visible: false,

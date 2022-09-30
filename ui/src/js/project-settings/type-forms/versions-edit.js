@@ -10,8 +10,6 @@ export class VersionsEdit extends TypeForm {
       this.readableTypeName = "Version";
       
       // const templateInner = document.getElementById("versions-edit").content;
-      
-
       var templateInner = document.getElementById("versions-edit");
       var innerClone = document.importNode(templateInner.content, true);
       this.typeFormDiv.appendChild(innerClone);
@@ -30,17 +28,16 @@ export class VersionsEdit extends TypeForm {
    async setupForm(data) {
       this.data = data;
 
-      console.log("Setting up version edit form....");
-      console.log(this._editName);
-
       // Setup view
       this._typeId = data.id;
       this._objectName = data.name;
       this._projectId = data.project;
 
       // name
-      this._editName.setValue(this.data.name);
-      this._editName.default = this.data.name;
+      let  name  = ""
+      if(data.id !== "New") name = this.data.name
+      this._editName.setValue(name);
+      this._editName.default = name;
 
       // description
       this._editDescription.setValue(this.data.description);
@@ -61,7 +58,9 @@ export class VersionsEdit extends TypeForm {
       }
 
       // Bases
-      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.versionId, check: this.data.bases});
+      
+      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: data.id, check: this.data.bases});
+      // console.log("Set value in checkbox set..."+basesListWithChecked.length);
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
 
@@ -204,9 +203,9 @@ export class VersionsEdit extends TypeForm {
       });
    }
 
-   _updateVersionList(versions, prevVersions) {
+   _updateVersionList() {
       console.log("Version-edit: UPDATE VERSIONS LIST!");
-      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.versionId, check: this.data.bases });
+      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.data.id, check: this.data.bases });
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
    }

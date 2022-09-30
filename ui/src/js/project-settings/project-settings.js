@@ -44,11 +44,11 @@ export class ProjectSettings extends TatorPage {
     this.sidebarVersions = this._shadow.getElementById("SideNav--Versions");
     store.subscribe(state => state.versions, this.updateVersions.bind(this));
 
-    // Membership
-    this.membershipsLink = this._shadow.getElementById("SideNav--toggle-Membership");
-    this.membershipsLink.addEventListener("click", this.initMemberships.bind(this));
-    store.subscribe(state => state.versions, this.updateMembershipVersions.bind(this));
-    store.subscribe(state => state.memberships, this.updateMemberships.bind(this));
+    // // Membership
+    // this.membershipsLink = this._shadow.getElementById("SideNav--toggle-Membership");
+    // this.membershipsLink.addEventListener("click", this.initMemberships.bind(this));
+    // store.subscribe(state => state.versions, this.updateMembershipVersions.bind(this));
+    // store.subscribe(state => state.memberships, this.updateMemberships.bind(this));
 
     // if the new data has the ID, update the form
     // if not will need to remove the container so needs access to both...
@@ -56,6 +56,7 @@ export class ProjectSettings extends TatorPage {
     // this could possibly just be the form
     this.allContainers = new Map();
     this.versionForms = new Map();
+    this.versionSidebar = new Map();
 
 
     // Used in logic for job cluster / algorithm registration and gotten from django template
@@ -66,22 +67,37 @@ export class ProjectSettings extends TatorPage {
     store.subscribe(state => state.status, this.handleStatusChange.bind(this));
     // store.subscribe(state => state.versions, this.updateVersions.bind(this));
 
+
+
+    // Web Components for this page by name
+    this.viewClassesByName = new Map();
+    this.viewClassesByName.set("MediaType", "media-type-main-edit")
+      .set("LocalizationType", "localization-edit")
+      .set("LeafType", "leaf-type-edit")
+      .set("StateType", "state-type-edit")
+      .set("Membership", "membership-edit")
+      .set("Version", "versions-edit")
+      .set("Algorithm", "algorithm-edit")
+      .set("Applet", "applet-edit");
+
     // Error catch all
-    window.addEventListener("error", (evt) => {
-      //
-    });
+    // window.addEventListener("error", (evt) => {
+    //   //
+    // });
   }
 
   handleStatusChange(status, prevStatus) {
     console.log("Status was changed..." + JSON.stringify(status));
-    if (status.name !== prevStatus.name) {
+    // if (status.name !== prevStatus.name) {
       if (status.name == "idle") {
         this.loading.hideSpinner();
+      } else if (status.name == "error") {
+        this.loading.hideSpinner();
+        this.modal._error(status.msg);
       } else {
         this.loading.showSpinner(status.msg);
       }
-    }
-
+    // }
   }
 
   /* 
@@ -174,7 +190,6 @@ export class ProjectSettings extends TatorPage {
   }
 
   selectNavAndItem(hash) {
-    console.log(hash);
     const type = hash.split("-")[1];
     const itemDiv = this._shadow.querySelector(hash);
     console.log(itemDiv);
@@ -207,7 +222,7 @@ export class ProjectSettings extends TatorPage {
     this._shadow.querySelector(`a[href="#itemDivId-StateType-New"]`).click();
   }
 
-  async toggleVersions(e) {
+  toggleVersions() {
     // toggles
     if (this.sidebarVersions.hidden === true) {
       this.accordianShutOthers("Version");
@@ -215,75 +230,125 @@ export class ProjectSettings extends TatorPage {
     } else {
       this.sidebarVersions.hidden = true;
     }
+
     //
-    console.log("Initialized yet?" + store.getState().versions.init);
     if (store.getState().versions.init === false) {
       console.log("Init versions.....");
-      const versions = await store.getState().fetchVersions();
+      store.getState().fetchVersions();
+    }
+  }
 
-      // Setup form and add it to sidebar and page for each version
-      for (let data of versions) {
-        //clone a typeform, and insert the versions-edit form element
-        const form = document.createElement("versions-edit");
-        form.init(this.modal);
-        form.setupForm(data);
-        this.versionForms.set(data.id, form);
+  async updateVersions(oldVersions, newVersions) {
+    // console.log("updateVersions");
+    console.log(newVersions);
+    console.log(store.getState().versions);
 
-        const itemDiv = this.addItem({
-          id: data.id, itemContents: form, name: data.name, type: "Version", hidden: true
-        });
+    if (newVersions.init === true) {
+      this.sidebarVersions.querySelector(`.placeholder-glow`).hidden = true;
+    }
 
+    // What is in newArray but not in forms
+    const newArray = Array.from(newVersions.setList);
+    const currentFormKeys = Array.from(this.versionForms.keys());
+    const diff = newArray.filter(x => !currentFormKeys.includes(x));
+    const diffB = currentFormKeys.filter(x => !newArray.includes(x) && x !== "New");
+    console.log(diffB);
+
+    if (diffB.length === 1) {
+      const removedId = diffB[0];
+
+      this.versionForms.get(removedId).remove();    
+      this.versionSidebar.get(removedId).remove();
+
+      this.versionForms.delete(removedId);    
+      this.versionSidebar.delete(removedId);
+    }
+
+    
+    if (diff.length > 1 && this.versionForms.size === 0) {
+      console.log("All new!");
+      // First time initializing this section possibly, loop all
+      for (let id of newVersions.setList) {
+        const addData = newVersions.map.get(id);
+        this.addSection({type: "Version", data: addData});       
       }
+    } else {
+      console.log("We're just updating existing forms");
+      // No diff in ids, there is an update
+      for (let [id, form] of this.versionForms) {
+        if (id !== "New") {
+          const updatedData = newVersions.map.get(id);
+          form.setupForm(updatedData);
+          if (id == 856) console.log(updatedData.name);
+          const sideBarLink = this.versionSidebar.get(id);
+          sideBarLink.textContent = updatedData.name;          
+        } else {
+          const updatedData = form._getEmptyData();
+          form.setupForm(updatedData);
+        }
+      }
+    }
 
-      // Do the same thing for the bottom new form
-      const newForm = document.createElement("versions-edit");
-      newForm.init();
-      newForm.setupForm(newForm._getEmptyData());
-      this.versionForms.set("New", newForm);
+    if (diff.length === 1) {
+      console.log("One new!" + diff[0]);
+      const id = diff[0];
+      const addData = newVersions.map.get(id);
+      console.log(addData);
+      const hashId = `itemDivId-Version-${id}`;
 
-      const newDiv = this.addItem({
-        id: "New", itemContents: newForm, name: "+ Add new", type: "Version", hidden: true
-      });
-   
+      this.addSection({type: "Version", data: addData, hidden: false});
+      this.selectNavAndItem(hashId);
+    }
+
+    // For all updates
+    if (!this.versionForms.has("New")) {
+      // make it
+      this.addSection({type:"Version", data:null, isEmpty: true});
+    }
+
+    // then for each membership form (if those are init)
+    // run the update versions function
+    if (store.getState().memberships.init) {
+      for (let m of store.getState().memberships.data) {
+        const form = this.membershipForms.get(m.id);
+        form._updateVersionList();
+      }
     }
   }
 
-  updateVersions(newVersions, oldVersions) {
-    console.log("New data == updateVersions");
 
-    // loop new versions
-    // we could check - was name changed or is this new
-    // or we can just update everything
-    for(let v of newVersions.data){
-      // so we need to check each sidebar <a>
-      // does this exist?
-      // use HREF
-
-      // then do the same for the item boxes...
-      // if it exists, set it up again
-      // if not create it and set it up
-    }
+  /**
+   * This is the membership specific init that ties into other fns
+   */
+   async initMemberships() {
+    console.log("#TODO ---- initMemberships.....")
   }
 
-  async initMemberships() {
-    console.log("Init versions.....");
+  /**
+   * Creates the form and fills it with data
+   * Adds item to the page, and sidebarLink
+   * 
+   * @param {string} type 
+   * @param {object} data 
+   * @param {boolean} isEmpty 
+   */
+  addSection({type, data, isEmpty = false, innerLinkText = "", hidden = true}) {
+    console.log(data);
 
-    if (store.getState().versions.initialized === false) {
-      await store.getState().fetchVersions();
-    }
+    // Create and init the form element
+    const elementName = this.viewClassesByName.get(type);
+    const form = document.createElement(elementName);
+    if (data === null || isEmpty === true) data = form._getEmptyData();
+    
+    // Init and add data
+    form.init(this.modal);
+    form.setupForm(data);
 
-    this.updateMemberships();
-  }
-
-  updateMembershipVersions() {
-
-  }
-
-  updateMemberships() {
-
-  }
-
-  addItem({ id = -1, itemContents = "", name = "", type = "", hidden = true, innerLinkText = "" }) {
+    // Save reference for later
+    this.versionForms.set(data.id, form);
+    
+    //
+    const id = data.id;
     const itemDiv = document.createElement("div");
     const itemIdSelector = `itemDivId-${type}-${id}`
     itemDiv.id = itemIdSelector; //ie. #itemDivId-MediaType-72
@@ -291,7 +356,7 @@ export class ProjectSettings extends TatorPage {
     itemDiv.hidden = hidden;
 
     // Append to container
-    if (itemContents != "") itemDiv.appendChild(itemContents);
+    itemDiv.appendChild(form);
     this.itemsContainer.appendChild(itemDiv);
 
     // This is for LEAF TYPE only (sub container)
@@ -308,10 +373,18 @@ export class ProjectSettings extends TatorPage {
     const subNavLink = document.createElement("a");
     subNavLink.setAttribute("class", `SideNav-subItem ${(id == "New") ? "text-italic" : ""}`);
     subNavLink.href = `#${itemIdSelector}`;
-    subNavLink.textContent = name;
-    section.appendChild(subNavLink);
-
+    subNavLink.textContent = data.name;
     subNavLink.addEventListener("click", this.makeItemActive.bind(this));
+    this.versionSidebar.set(id, subNavLink);
+    console.log(subNavLink);
+
+    // Add link to sidebar
+    const newLink = this._shadow.querySelector(`a[href="#itemDivId-Version-New"]`)
+    if (newLink) {
+      newLink.before(subNavLink);
+    } else {
+      section.appendChild(subNavLink);
+    }
 
     // This is for LEAF TYPE only (sub container)
     if (innerLinkText !== "") {
@@ -320,12 +393,13 @@ export class ProjectSettings extends TatorPage {
       subNavLink.after(innerSubNavLink);
     }
 
-    section.querySelector(`img`).hidden = true; // hide loading
-
     return itemDiv;
   }
 
-  // Modal for this page, and handlers
+  /**
+   * Modal for this page, and handler
+   * @returns sets page attribute that changes dimmer
+   */
   showDimmer() {
     return this.setAttribute("has-open-modal", "");
   }
