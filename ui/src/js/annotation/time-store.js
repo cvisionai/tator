@@ -3,7 +3,7 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
 /**
  * This store contains information about the annotator's time domain.
  * It's a utility library used to get the bounds of the media's time.
- * 
+ *
  * There are 4 time domains:
  * - media frame: Frame relative to a particular media
  * - global frame: 0-based frame index of stitched media
@@ -28,14 +28,20 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
     if (mediaType.dtype == "video") {
       this._globalFPS = media.fps;
       this._lastGlobalFrame = media.num_frames - 1;
-      this._minSecondsFromEpoch = this._startGlobalDate.getTime() / 1000;
-      
+
+      if (this._utcEnabled) {
+        this._minSecondsFromEpoch = this._startGlobalDate.getTime() / 1000;
+      }
+      else {
+        this._minSecondsFromEpoch = 0;
+      }
+
       var mediaInfo = {
         startSecondsFromEpoch: this._minSecondsFromEpoch,
         media: media,
         channelIndex: 0,
         globalStartFrame: 0,
-        globalEndFrame: media.num_frames - 1 
+        globalEndFrame: media.num_frames - 1
       };
       this._mediaMap[media.id] = mediaInfo;
     }
@@ -80,7 +86,7 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
     else if (mode == "utc") {
 
       if (!this.utcEnabled()) {
-        throw "getGlobalFrame(): UTC is not enabled."; 
+        throw "getGlobalFrame(): UTC is not enabled.";
       }
 
       let secondsSinceEpoch = Date.parse(time) / 1000.0;
@@ -119,7 +125,7 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
   getAbsoluteTimeFromFrame(globalFrame) {
 
     if (!this.utcEnabled()) {
-      throw "getAbsoluteTimeFromFrame(): UTC is not enabled."; 
+      throw "getAbsoluteTimeFromFrame(): UTC is not enabled.";
     }
 
     // Convert globalFrame into global seconds

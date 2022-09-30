@@ -88,31 +88,6 @@ export function handle_decoder_error(evt, root)
 }
 
 /**
- * Parse the provided isoformat string and returns time since epoch
- * @param {String} val - Time string to parse. Expected to be in isoformat.
- * @returns {Date} Date object associated with the provided time. If val is invalid, the
- *                 returned object is null.
- *
- * If val contains "_" instead of ":", that will be replaced to create the Date object.
- */
-export function parseTimeString(val)
-{
-  var parsedDate = new Date(val);
-  if (parsedDate == "Invalid Date") {
-    parsedDate = new Date(val.replace("_", ":"));
-    if (parsedDate == "Invalid Date") {
-      return null;
-    }
-    else {
-      return parsedDate;
-    }
-  }
-  else {
-    return parsedDate;
-  }
-}
-
-/**
  * Gets the date associated with the start of the provided Tator.Media object.
  * @param {Tator.Media} media - Media to process.
  *                              The media name should have the datetime string in isoformat.
@@ -134,13 +109,25 @@ export function getMediaStartDatetime(media) {
 
   // Apply timezone if it's not there.
   let startTime8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+  const userKeyRegExp = /^([0-9]{4}-[0-9]{2}-[0-9]{2}.[0-9]{2}.[0-9]{2}.[0-9]{2}.+)$/;
+  const valid = userKeyRegExp.test(startTime8601);
+  if (!valid) {
+    return null;
+  }
+
   let timeZoneIncluded = startTime8601.lastIndexOf('-') > 7 || startTime8601[-1] == "Z";
   if (timeZoneIncluded != true) {
     startTime8601 += '-00:00'; // Assume zulu time
   }
 
   // Return either null or corresponding Date object
-  return parseTimeString(startTime8601);
+  var datetime = new Date(startTime8601);
+  if (datetime == "Invalid Date") {
+    return null;
+  }
+  else {
+    return datetime;
+  }
 }
 
 

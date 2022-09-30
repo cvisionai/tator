@@ -768,7 +768,9 @@ export class EntityTimeline extends BaseTimeline {
       this._mainBrushG = this._mainSvg.append("g")
         .call(this._mainBrush);
 
-      this._mainBrushG.transition().call(this._mainBrush.move, this._mainBrushWindow);
+      var startX = this._mainX(this._mainBrushWindow[0]);
+      var endX = this._mainX(this._mainBrushWindow[1]);
+      this._mainBrushG.transition().call(this._mainBrush.move, [startX, endX]);
     }
   }
 
@@ -1001,11 +1003,9 @@ export class EntityTimeline extends BaseTimeline {
 
     focusGLine.selectAll("rect")
       .on("mouseover", function(event, d) {
-        d3.select(this).style("cursor", "pointer");
         that._highlightMainLine(d.name);
       })
       .on("mouseout", function(event, d) {
-        d3.select(this).style("cursor", "default");
         that._unhighlightMainLines();
       });
 
@@ -1069,10 +1069,12 @@ export class EntityTimeline extends BaseTimeline {
       }
     });
     this._focusSvg.on("mouseover", function() {
+        d3.select(this).style("cursor", "pointer");
         mouseLine.attr("opacity", "0.5");
         that._mainFrameLine.attr("opacity", "0.5");
     });
     this._focusSvg.on("mouseout", function() {
+        d3.select(this).style("cursor", "default");
         mouseLine.attr("opacity", "0");
         that._mainFrameLine.attr("opacity", "0");
         if (displayXAxis) {
@@ -1201,10 +1203,7 @@ export class EntityTimeline extends BaseTimeline {
         if (minFrame < this._minFrame) { minFrame = this._minFrame; }
         var maxFrame = currentFrame + window;
         if (maxFrame > this._maxFrame) { maxFrame = this._maxFrame; }
-        var startX = this._mainX(minFrame);
-        var endX = this._mainX(maxFrame);
-
-        this._mainBrushWindow = [startX, endX];
+        this._mainBrushWindow = [minFrame, maxFrame];
       }
 
       this._focusTimelineDiv.style.display = "block";
