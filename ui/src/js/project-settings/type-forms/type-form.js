@@ -31,6 +31,8 @@ export class TypeForm extends TatorElement {
 
     console.log("Created type form....");
 
+    this.saveWarningFlow = false;
+
     // for use by form
     this.formDiv = this._shadow.getElementById("type-form-div");
   }
@@ -92,7 +94,15 @@ export class TypeForm extends TatorElement {
     this.delete.addEventListener("click", this._deleteType.bind(this));
   }
 
-  async _saveData() {
+  _saveData() {
+    if (this.saveWarningFlow == true) {
+      this.warningFlow(this.saveDataFunction);
+    } else {
+      this.saveDataFunction();
+    }
+  }
+
+  async saveDataFunction() {
     const formData = this._getFormData();
     console.log(Object.entries(formData).length);
     if (Object.entries(formData).length !== 0) {
@@ -102,13 +112,26 @@ export class TypeForm extends TatorElement {
       console.log();
       this.modal._success("Nothing new to save!");
     }
-
   }
 
   warningFlow(todo) {
-    // if they confirm --> post / patch
-    // if they confirm --> delete
-    this.modal._confirm("Do you want to save?", "Custom body text...", todo);
+    const button = document.createElement("button");
+    button.setAttribute("class", "btn f1 text-semibold text-red");
+
+    let confirmText= document.createTextNode("Confirm")
+    button.appendChild(confirmText);
+
+    button.addEventListener("click", () => {
+      todo();
+      this.modal._modalCloseAndClear();
+    });
+
+    
+    this.modal._confirm({
+      titleText: `Confirm {action}`,
+      mainText: `{actionWarning} #Todo`,
+      buttonSave: button
+    });
   }
 
   doSaveAction(formData) {
@@ -121,7 +144,7 @@ export class TypeForm extends TatorElement {
   }
 
   handleResponse(data) {
-    // console.log(data);
+    console.log(data);
     if (data.response.ok) {
       return this.modal._success(data.data.message);
     } else {
@@ -152,7 +175,22 @@ export class TypeForm extends TatorElement {
   }
 
   _deleteType() {
-    return this.handleResponse(store.getState().removeVersion(this.data.id));
+    const button = document.createElement("button");
+    button.setAttribute("class", "btn f1 text-semibold text-red");
+
+    let confirmText= document.createTextNode("Delete")
+    button.appendChild(confirmText);
+
+    button.addEventListener("click", async () => {
+      this.modal._modalCloseAndClear();
+      this.handleResponse(await store.getState().removeVersion(this.data.id));
+    });
+
+    this.modal._confirm({
+      titleText: `Delete "${this.objectName} (ID: ${this.data.id}?)`,
+      mainText: `This cannot be undone.`,
+      buttonSave: button
+    });
   }
   
   _getEmptyData() {

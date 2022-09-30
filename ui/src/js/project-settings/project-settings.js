@@ -38,9 +38,9 @@ export class ProjectSettings extends TatorPage {
     /* For all the sidebar toggles */
     // Version
     this.versionLink = this._shadow.getElementById("SideNav--toggle-Version");
-    this.versionLink.addEventListener("click", this.toggleVersions.bind(this));
+    
     this.versionPlusLink = this._shadow.querySelector(".heading-for-Version .Nav-action");
-    this.versionPlusLink.addEventListener("click", this.addNew.bind(this));
+
     this.sidebarVersions = this._shadow.getElementById("SideNav--Versions");
     store.subscribe(state => state.versions, this.updateVersions.bind(this));
 
@@ -107,6 +107,10 @@ export class ProjectSettings extends TatorPage {
     // Project data
     this.projectId = this.getAttribute("project-id");
     await store.getState().fetchProject(this.projectId);
+
+    // Wait until we have project
+    this.versionLink.addEventListener("click", this.toggleVersions.bind(this));
+    this.versionPlusLink.addEventListener("click", this.addNew.bind(this));
 
     // //initialize these before??
     // await store.getState().fetchVersions();
@@ -262,6 +266,12 @@ export class ProjectSettings extends TatorPage {
 
       this.versionForms.delete(removedId);    
       this.versionSidebar.delete(removedId);
+      
+      if (this.versionSidebar.size !== 0) {
+        const [firstObject] = this.versionSidebar;
+        // console.log(firstObject);
+        firstObject[1].click();
+      }
     }
     
     if (diff.length > 1 && this.versionForms.size === 0) {
@@ -269,7 +279,7 @@ export class ProjectSettings extends TatorPage {
       // First time initializing this section possibly, loop all
       for (let id of newVersions.setList) {
         const addData = newVersions.map.get(id);
-        this.addSection({type: "Version", data: addData});       
+        this.addSection({type: "Version", data: addData, hidden: true});       
       }
     } else {
       console.log("We're just updating existing forms");
@@ -293,16 +303,20 @@ export class ProjectSettings extends TatorPage {
       const id = diff[0];
       const addData = newVersions.map.get(id);
       console.log(addData);
-      const hashId = `itemDivId-Version-${id}`;
-
+     
+      let currentSelected = this._shadow.querySelectorAll('[selected="true"]')
+      for (let el of currentSelected) {
+        el.setAttribute("selected", "false");
+      }
+      const currentSelectedItem = this._shadow.querySelector('.item-box:not([hidden])');
+      this.hide(currentSelectedItem);
       this.addSection({type: "Version", data: addData, hidden: false});
-      this.selectNavAndItem(hashId);
     }
 
     // For all updates
     if (!this.versionForms.has("New")) {
       // make it
-      this.addSection({type:"Version", data:null, isEmpty: true});
+      this.addSection({type:"Version", data:null, isEmpty: true, hidden: true});
     }
 
     // then for each membership form (if those are init)
@@ -375,7 +389,7 @@ export class ProjectSettings extends TatorPage {
     subNavLink.textContent = data.name;
     subNavLink.addEventListener("click", this.makeItemActive.bind(this));
     this.versionSidebar.set(id, subNavLink);
-    console.log(subNavLink);
+    if (!hidden) subNavLink.setAttribute("selected", "true");
 
     // Add link to sidebar
     const newLink = this._shadow.querySelector(`a[href="#itemDivId-Version-New"]`)

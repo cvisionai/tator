@@ -196,7 +196,8 @@ const store = create(subscribeWithSelector((set, get) => ({
       versionMap.delete(id);
 
       set({ versions: {...get().versions, map: versionMap, setList: versionSet } });
-      set({ status: {...get.status, name: "idle", msg: ""} });      
+      set({ status: { ...get.status, name: "idle", msg: "" } });
+      return object;
    },
 
    /* algorithms */
