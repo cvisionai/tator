@@ -1552,7 +1552,12 @@ export class VideoCanvas extends AnnotationCanvas {
       this._calculateAudioEligibility();
       // If we are playing trim the frame buffer to a quarter second to make the rate change
       // feel responsive.
-      this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+      let effectiveRate = this._playbackRate;
+      if (this._videoElement[this._play_idx].playBuffer().keyframeOnly == true)
+      {
+        effectiveRate = 1;
+      }
+      this._motionComp.computePlaybackSchedule(this._fps,effectiveRate);
       const oldLoad = this._loadFrame;
       this._loadFrame = this._draw.trimBuffer(Math.round(this._fps*0.5));
       //console.info(`Load: ${oldLoad} to ${this._loadFrame}, dispFrame = ${this._dispFrame}`);
@@ -1684,9 +1689,6 @@ export class VideoCanvas extends AnnotationCanvas {
     this._networkUpdate = 0;
     this._audioCheck = 0;
 
-    this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
-
-
     this._lastTime = performance.now();
     this._animationIdx = 0;
 
@@ -1701,6 +1703,13 @@ export class VideoCanvas extends AnnotationCanvas {
 
     if (this._videoElement[this._scrub_idx].playBuffer().use_codec_buffer && this._videoElement[this._scrub_idx]._compat != true && direction == Direction.FORWARD)
     {
+      let effectiveRate = this._playbackRate;
+      if (this._videoElement[this._scrub_idx].playBuffer().keyframeOnly == true)
+      {
+        effectiveRate = 1;
+      }
+
+      this._motionComp.computePlaybackSchedule(this._fps,effectiveRate);
       // Cap effective decode rate around 240 fps 
       // This was emperically gathered as a good cut off for 5 15fps playing back at 16x
       // Can fine tune this more if required
@@ -1721,6 +1730,23 @@ export class VideoCanvas extends AnnotationCanvas {
           this._videoElement[this._scrub_idx].playBuffer().keyframeOnly = true;
         }
       }
+
+      let effectiveRate = this._playbackRate;
+      if (this._videoElement[this._scrub_idx].playBuffer().keyframeOnly == true)
+      {
+        effectiveRate = 1;
+      }
+
+      // If we are in multi and going backwards cap rewind at 10hz
+      if (this._direction == Direction.BACKWARDS && this._renderer)
+      {
+        this._motionComp.computePlaybackSchedule(Math.min(10,this._fps),effectiveRate);
+      }
+      else
+      {
+        this._motionComp.computePlaybackSchedule(this._fps,effectiveRate);
+      }
+
       if (this._videoElement[this._scrub_idx]._compat == true)
       {
         this._loaderTimeout=setTimeout(()=>{this.loaderThread(true, "scrub");}, 0);
@@ -1808,7 +1834,12 @@ export class VideoCanvas extends AnnotationCanvas {
     this._lastTime = null;
     this._animationIdx = 0;
 
-    this._motionComp.computePlaybackSchedule(this._fps,this._playbackRate);
+    let effectiveRate = this._playbackRate;
+    if (this._videoElement[this._play_idx].playBuffer().keyframeOnly == true)
+    {
+      effectiveRate = 1;
+    }
+    this._motionComp.computePlaybackSchedule(this._fps,effectiveRate);
     // Kick off the onDemand thread immediately
     this._onDemandDownloadTimeout = setTimeout(() => {this.onDemandDownload();}, 0);
 
