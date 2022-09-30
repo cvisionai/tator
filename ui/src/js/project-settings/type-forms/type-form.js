@@ -99,8 +99,8 @@ export class TypeForm extends TatorElement {
       let respData = await this.doSaveAction(formData);
       this.handleResponse(respData);
     } else {
-      //
-      console.log("nothing new to save");
+      console.log();
+      this.modal._success("Nothing new to save!");
     }
 
   }

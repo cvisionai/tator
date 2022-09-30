@@ -136,7 +136,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          setList.add(item.id);
          map.set(item.id, item);
       }
-      set({ versions: {...get().versions, setList, map, init: true} });
+      set({ versions: {...get().versions, setList, map, init: true } });
       return object.data;
    },
    addVersion: async (spec) => {

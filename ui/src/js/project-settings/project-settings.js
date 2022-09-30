@@ -16,14 +16,14 @@ export class ProjectSettings extends TatorPage {
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
 
-
-    // Header: This is adds the breadcrumb and successLight-spacer to the header
+    // // Header: This is adds the breadcrumb and successLight-spacer to the header
     const user = this._header._shadow.querySelector("header-user");
     const headerTemplate = document.getElementById("project-settings--header").content;
     user.parentNode.insertBefore(headerTemplate.cloneNode(true), user);
 
     // Header: pieces
-    this.breadcrumbs = headerTemplate.getElementById("project-settings--breadcrumbs");
+    this._breadcrumbs = this._header._shadow.getElementById("project-settings--breadcrumbs");
+
 
     // Page: main element
     const template = document.getElementById("project-settings").content;
@@ -156,7 +156,7 @@ export class ProjectSettings extends TatorPage {
   setupProjectSection(project, prevProject) {
     console.log(project);
     this.projectData = project;
-    this.breadcrumbs.setAttribute("project-name", this.projectData.name);
+    this._breadcrumbs.setAttribute("project-name", this.projectData.name);
 
     //Get container and rename it to work with nav events...
     const container = this._shadow.getElementById("current-project-itemDiv");
@@ -238,21 +238,21 @@ export class ProjectSettings extends TatorPage {
     }
   }
 
-  async updateVersions(oldVersions, newVersions) {
+  async updateVersions(newVersions, oldVersions) {
     // console.log("updateVersions");
-    console.log(newVersions);
-    console.log(store.getState().versions);
+    // console.log(newVersions);
+    // console.log(oldVersions);
+    // console.log(store.getState().versions);
 
-    if (newVersions.init === true) {
+    // if (newVersions.init === true) {
       this.sidebarVersions.querySelector(`.placeholder-glow`).hidden = true;
-    }
+    // }
 
     // What is in newArray but not in forms
     const newArray = Array.from(newVersions.setList);
     const currentFormKeys = Array.from(this.versionForms.keys());
     const diff = newArray.filter(x => !currentFormKeys.includes(x));
     const diffB = currentFormKeys.filter(x => !newArray.includes(x) && x !== "New");
-    console.log(diffB);
 
     if (diffB.length === 1) {
       const removedId = diffB[0];
@@ -263,10 +263,9 @@ export class ProjectSettings extends TatorPage {
       this.versionForms.delete(removedId);    
       this.versionSidebar.delete(removedId);
     }
-
     
     if (diff.length > 1 && this.versionForms.size === 0) {
-      console.log("All new!");
+      console.log("All new!"); // assumption, this should prob run off of diffA
       // First time initializing this section possibly, loop all
       for (let id of newVersions.setList) {
         const addData = newVersions.map.get(id);
