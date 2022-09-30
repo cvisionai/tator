@@ -677,7 +677,14 @@ class TatorVideoBuffer {
   {
     this._framesOut = 0;
     this._pendingEncodedFrames = [];
-    this._videoDecoder.reset();
+    try
+    {
+      this._videoDecoder.reset();
+    }
+    catch
+    {
+      console.warn("Attempted to reset a closed codec.");
+    }
   }
 
   _frameReady(frame)
