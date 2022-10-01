@@ -23,6 +23,8 @@ export class SaveDialog extends TatorElement {
 
     this._attributes = document.createElement("attribute-panel");
     this._div.appendChild(this._attributes);
+    this._attributes._idWidget.style.display = "none";
+    this._attributes._createdByWidget.style.display = "none";
 
     const favesDiv = document.createElement("div");
     favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
@@ -86,6 +88,8 @@ export class SaveDialog extends TatorElement {
   }
 
   init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
+
+    this._attributes._versionWidget.setValue(version.name);
 
     this._projectId = projectId;
     this._mediaId = mediaId;
