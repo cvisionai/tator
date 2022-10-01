@@ -160,7 +160,7 @@ export class VideoCanvas extends AnnotationCanvas {
     this._fpsLoadDiag=0;
 
     this._playCb = [this.onPlay.bind(this)];
-    this._pauseCb = [this.onPause.bind(this), this.onDemandDownloadPrefetch.bind(this)];
+    this._pauseCb = [this.onPause.bind(this), this.onDemandDownloadPrefetch.bind(this), this.videoOnPause.bind(this)];
 
     // This flag is used to force a vertex reload
     this._dirty = true;
@@ -2287,6 +2287,16 @@ export class VideoCanvas extends AnnotationCanvas {
   get length()
   {
     return this._numFrames;
+  }
+
+  videoOnPause()
+  {
+    var search_params = new URLSearchParams(window.location.search);
+    search_params.set("frame", this._dispFrame);
+    const path = document.location.pathname;
+    const searchArgs = search_params.toString();
+    var newUrl = path + "?" + searchArgs;
+    window.history.replaceState({}, "", newUrl);
   }
 
   onDemandDownloadPrefetch(reqFrame)
