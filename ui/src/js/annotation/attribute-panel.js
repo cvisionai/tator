@@ -536,8 +536,6 @@ export class AttributePanel extends TatorElement {
 
       if (column.dtype == "bool") {
         widget = document.createElement("bool-input");
-        widget._controls.classList.remove("col-8");
-        widget._controls.classList.add("col-6");
         widget.setAttribute("name", column.name);
         widget.setAttribute("on-text", "Yes");
         widget.setAttribute("off-text", "No");
@@ -577,10 +575,6 @@ export class AttributePanel extends TatorElement {
           console.log(e.description);
         }
 
-        widget._innerLabel.classList.remove("col-3");
-        widget._innerLabel.classList.add("col-6");
-        widget._input.classList.remove("col-12");
-        widget._input.classList.add("col-6");
 
         if ((widget && widget._input && widget._input.type == "text") || !widget._input) {
           console.log("No browser support for datetime, or error. Degrading to text-input.");

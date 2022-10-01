@@ -86,6 +86,14 @@
   border-radius: 50%;
 }
 
+// Border utilities
+.bottom-border {
+  border-bottom: 1px solid $color-charcoal--light;
+}
+.top-border {
+  border-top: 1px solid $color-charcoal--light;
+}
+
 /*
 * Padding
 */

@@ -1225,6 +1225,13 @@ export class AnnotationPlayer extends TatorElement {
     this._displayMode = mode;
     this._videoTimeline.setDisplayMode(this._displayMode);
     this._entityTimeline.setDisplayMode(this._displayMode);
+
+    if (mode == "utc") {
+      this._slider.useUtcTime(this._timeStore);
+    }
+    else {
+      this._slider.useRelativeTime();
+    }
   }
 
   newMetadataItem(dtype, metaMode, objId) {

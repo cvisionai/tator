@@ -27,7 +27,7 @@ export class SaveDialog extends TatorElement {
     this._attributes._createdByWidget.style.display = "none";
 
     const favesDiv = document.createElement("div");
-    favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2");
+    favesDiv.setAttribute("class", "annotation__panel-group py-2 text-gray f2 top-border mt-3");
     this._div.appendChild(favesDiv);
 
     this._favorites = document.createElement("favorites-panel");
@@ -89,8 +89,6 @@ export class SaveDialog extends TatorElement {
 
   init(projectId, mediaId, dataTypes, defaultType, undo, version, favorites) {
 
-    this._attributes._versionWidget.setValue(version.name);
-
     this._projectId = projectId;
     this._mediaId = mediaId;
     this._undo = undo;
@@ -102,6 +100,7 @@ export class SaveDialog extends TatorElement {
     this._attributes.displaySlider(false);
     this._attributes.displayGoToLocalization(false);
     this._attributes.displayGoToTrack(false);
+    this._attributes._versionWidget.setValue(this._version.name);
 
     // Set choices on type selector.
     this._type.choices = dataTypes.map(type => {return {label: type.name,
@@ -202,6 +201,7 @@ export class SaveDialog extends TatorElement {
 
   set version(val) {
     this._version = val;
+    this._attributes._versionWidget.setValue(this._version.name);
   }
 
   set canvasPosition(val) {
