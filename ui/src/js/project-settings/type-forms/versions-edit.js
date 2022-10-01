@@ -20,9 +20,6 @@ export class VersionsEdit extends TypeForm {
       this._showEmpty = this._shadow.getElementById("versions-edit--show-empty");
       this._number = this._shadow.getElementById("versions-edit--number");
       this._basesCheckbox = this._shadow.getElementById("versions-edit--bases");
-   
-      console.log("Created version edit....");
-      console.log(this._editName);
    }
 
    async setupForm(data) {

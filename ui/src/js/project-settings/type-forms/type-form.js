@@ -29,7 +29,7 @@ export class TypeForm extends TatorElement {
     this.typeFormDiv = this._shadow.getElementById("type-form-div");
     this._attributeContainer =  this._shadow.getElementById("type-form-attr-column");
 
-    console.log("Created type form....");
+    // console.log("Created type form....");
 
     this.saveWarningFlow = false;
 
@@ -104,12 +104,12 @@ export class TypeForm extends TatorElement {
 
   async saveDataFunction() {
     const formData = this._getFormData();
-    console.log(Object.entries(formData).length);
+    // console.log(Object.entries(formData).length);
     if (Object.entries(formData).length !== 0) {
       let respData = await this.doSaveAction(formData);
       this.handleResponse(respData);
     } else {
-      console.log();
+      // console.log();
       this.modal._success("Nothing new to save!");
     }
   }

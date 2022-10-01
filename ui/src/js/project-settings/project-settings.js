@@ -8,6 +8,7 @@ import { DataJobClusters } from "./data/data-clusters.js";
 import { MembershipData } from "./data/data-memberships.js";
 import { store } from "./store.js";
 
+
 export class ProjectSettings extends TatorPage {
   constructor() {
     super();
@@ -31,23 +32,22 @@ export class ProjectSettings extends TatorPage {
 
     // Page: pieces
     this.main = this._shadow.getElementById("project-settings--main");
-    // this.settingsNav = this._shadow.getElementById("project-settings--nav");
+    this.settingsNav = this._shadow.getElementById("settings-nav--nav");
     this.modal = this._shadow.getElementById("project-settings--modal");
-    this.itemsContainer = this._shadow.getElementById("settings-nav--item-container");
+    this.itemsContainer = this._shadow.getElementById("settings-nav--item-container"); 
+
 
     /* For all the sidebar toggles */
     // Version
     this.versionLink = this._shadow.getElementById("SideNav--toggle-Version");
-    
     this.versionPlusLink = this._shadow.querySelector(".heading-for-Version .Nav-action");
-
     this.sidebarVersions = this._shadow.getElementById("SideNav--Versions");
-    store.subscribe(state => state.versions, this.updateVersions.bind(this));
+    store.subscribe(state => state.Version, this.updateVersions.bind(this));
 
     // // Membership
     // this.membershipsLink = this._shadow.getElementById("SideNav--toggle-Membership");
     // this.membershipsLink.addEventListener("click", this.initMemberships.bind(this));
-    // store.subscribe(state => state.versions, this.updateMembershipVersions.bind(this));
+    // store.subscribe(state => state.Version, this.updateMembershipVersions.bind(this));
     // store.subscribe(state => state.memberships, this.updateMemberships.bind(this));
 
     // if the new data has the ID, update the form
@@ -63,9 +63,9 @@ export class ProjectSettings extends TatorPage {
     this._userIsStaff = false;
 
     // Create store subscriptions
-    store.subscribe(state => state.project, this.setupProjectSection.bind(this));
+    store.subscribe(state => state.Project, this.setupProjectSection.bind(this));
     store.subscribe(state => state.status, this.handleStatusChange.bind(this));
-    // store.subscribe(state => state.versions, this.updateVersions.bind(this));
+    // store.subscribe(state => state.Version, this.updateVersions.bind(this));
 
 
 
@@ -85,6 +85,8 @@ export class ProjectSettings extends TatorPage {
     //   //
     // });
   }
+
+
 
   handleStatusChange(status, prevStatus) {
     console.log("Status was changed..." + JSON.stringify(status));
@@ -110,7 +112,7 @@ export class ProjectSettings extends TatorPage {
 
     // Wait until we have project
     this.versionLink.addEventListener("click", this.toggleVersions.bind(this));
-    this.versionPlusLink.addEventListener("click", this.addNew.bind(this));
+    this.versionPlusLink.addEventListener("click", this.addNewVersion.bind(this));
 
     // //initialize these before??
     // await store.getState().fetchVersions();
@@ -151,15 +153,20 @@ export class ProjectSettings extends TatorPage {
   //
   async moveToCurrentHash() {
     const hash = window.location.hash;
-
-    if (document.getElementById(hash)) {
-      this.selectNavAndItem(hash);
+    console.log(hash);
+    if (this.itemsContainer.querySelector(hash)) {
+      this.selectedHash = hash;
     }
   }
 
+  /**
+   * 
+   * @param {object} project 
+   * @param {object} prevProject 
+   */
   setupProjectSection(project, prevProject) {
-    console.log(project);
-    this.projectData = project;
+    // console.log(project);
+    this.projectData = project.data;
     this._breadcrumbs.setAttribute("project-name", this.projectData.name);
 
     //Get container and rename it to work with nav events...
@@ -177,7 +184,7 @@ export class ProjectSettings extends TatorPage {
 
   openAndInit() {
     // toggle open
-    // spinner dependent on store.getState().versions.initialized
+    // spinner dependent on store.getState().Version.initialized
     // init the section
   }
 
@@ -193,40 +200,127 @@ export class ProjectSettings extends TatorPage {
     this._shadow.querySelector(`.heading-for-${type}`).setAttribute("selected", "true");;
   }
 
-  selectNavAndItem(hash) {
-    const type = hash.split("-")[1];
-    const itemDiv = this._shadow.querySelector(hash);
-    console.log(itemDiv);
-    let currentSelected = this._shadow.querySelectorAll('[selected="true"]')
-    for (let el of currentSelected) {
-      el.setAttribute("selected", "false");
-    }
-    const selectedHeading = this._shadow.querySelector(`a[href="${hash}"]`);
-    console.log(selectedHeading);
-    if (selectedHeading) selectedHeading.setAttribute("selected", "true");
-    this._shadow.querySelector(`.heading-for-${type}`).setAttribute("selected", "true");
+  /**
+   * @param {string} val
+   */
+  set selectedHash(val) {
+    console.log(`new hash ${val}`);
+    if (!this._selectedHash || (this._selectedHash && val !== this._selectedHash)) {
+      this._selectedHash = val;
+      console.log(this._selectedHash);
 
-    // Hide all other item containers
-    const currentSelectedItem = this._shadow.querySelector('.item-box:not([hidden])');
-    this.hide(currentSelectedItem);
-    this.show(itemDiv);
+      if (val.split("-").length === 3) {
+        // We have a valid hash 🤘
+        // Set type and obeject using hash
+        this.selectedType = val.split("-")[1];
+        this.selectedObject = val.split("-")[2];
+        this.showSelectedItemDiv();
+      } else {
+        // Error handle
+        console.warning("Hash set is invalid: " + val);
+      }     
+    }
+    
+  }
+
+  /**
+   * @param {string} val
+   */
+  set selectedType(val) {
+    console.log(`selectedType ${val} !== ${this._selectedType} ${val !== this._selectedType}`);
+    if (typeof this._selectedType === "undefined" ||
+        (typeof this._selectedType !== "undefined" && val !== this._selectedType)) {
+      // if type has changed or first set
+      this._selectedType = val;
+
+      store.getState().initType(val)
+      
+      // Change section highlight, and open nav
+      this.handleSelectedNav('SideNav-heading[selected="true"]', false);
+      this.handleSelectedNav(`.heading-for-${val}`, true);
+      this.handleSectionVisible();
+    }
+
+    // This allows user to toggle shut if desired without changing seletion
+    // #todo with click handler elsewhere
+  }
+
+  /**
+   * @param {string} val
+   */
+  set selectedObjectId(val) {
+    if (typeof this._selectedObjectId == "undefined" || (typeof this._selectedObjectId !== "undefined" && val !== this._selectedObjectId)) {
+      // if type has  changed
+      this._selectedObjectId = val;
+      
+      // Change object highlight, and show itemDiv
+      this.handleSelectedNav('.SideNav-subItem[selected="true"]', false);
+      this.handleSelectedNav(`.SideNav-subItem[href="${this._selectedHash}"]`, true);      
+    }
+  }
+
+  /**
+   * Uses the selected hash to determine which item should be live
+   */
+  showSelectedItemDiv() {
+    const selectedItemDiv = this.itemsContainer.querySelector('.item-box:not([hidden])');
+    if (selectedItemDiv) selectedItemDiv.hidden = true;
+
+    const newSelection = this.itemsContainer.querySelector(this._selectedHash)
+    if (newSelection) {
+      newSelection.hidden = false;
+    } else {
+      console.warning("Couldn't find the new selected hash: " + this._selectedHash);
+    }
+  }
+
+  /**
+   * Removes or adds the selected attribute on a heading / object link
+   * @param {string} selector 
+   */
+  handleSelectedNav(selector, value) {
+    let currentSelected = this.settingsNav.querySelector(selector);
+    if (currentSelected) {
+      if (value) currentSelected.setAttribute("selected", "true");
+      if (!value) currentSelected.removeAttribute("selected");
+    }      
+  }
+
+  /**
+   * Finds the section and opens or closes it
+   * @param {string} type (OPTIONAL)
+   * if supplied it will close visible and open type section
+   */
+  handleSectionVisible() {
+    if (this.selectedType !== null) {
+      // Open section
+      const toOpen = this.settingsNav.querySelector(`.subitems-${this.selectedType}`);
+
+      if (toOpen && toOpen.hidden === false) {
+        // We selected this type, but it is already open (toggle shut)
+        toOpen.hidden = true;
+      } else {
+        // Shut other open items first
+        const toShut = this.settingsNav.querySelector('.SubItems:not[hidden]');
+        if (toShut) return toShut.hidden = true;
+
+        // Show the section
+        if(toOpen) toOpen.hidden = false;
+      }
+    }
   }
 
   makeItemActive(e) {
-    console.log(e.target);
-    const hash = e.target.getAttribute("href");
-    this.selectNavAndItem(hash);
+    e.preventDefault();
+    this.selectedHash = e.target.getAttribute("href");
   }
 
-  async addNew() {
-    if (this.sidebarVersions.hidden === true) {
-      this.accordianShutOthers();
-      this.sidebarVersions.hidden = false;
-    }
-    this._shadow.querySelector(`a[href="#itemDivId-StateType-New"]`).click();
+  addNewVersion() {
+    const newHash = `#itemDivId-${this.selectedType}-New`;
+    this.selectedHash = newHash;
   }
 
-  toggleVersions() {
+  async toggleVersions() {
     // toggles
     if (this.sidebarVersions.hidden === true) {
       this.accordianShutOthers("Version");
@@ -236,21 +330,17 @@ export class ProjectSettings extends TatorPage {
     }
 
     //
-    if (store.getState().versions.init === false) {
+    if (store.getState().Version.init === false) {
       console.log("Init versions.....");
-      store.getState().fetchVersions();
+      await store.getState().fetchVersions();
     }
   }
 
   async updateVersions(newVersions, oldVersions) {
-    // console.log("updateVersions");
-    // console.log(newVersions);
-    // console.log(oldVersions);
-    // console.log(store.getState().versions);
-
-    // if (newVersions.init === true) {
+    // When we first update, remove placeholder
+    if (newVersions.init !== oldVersions.init) {
       this.sidebarVersions.querySelector(`.placeholder-glow`).hidden = true;
-    // }
+    }
 
     // What is in newArray but not in forms
     const newArray = Array.from(newVersions.setList);
@@ -279,7 +369,7 @@ export class ProjectSettings extends TatorPage {
       // First time initializing this section possibly, loop all
       for (let id of newVersions.setList) {
         const addData = newVersions.map.get(id);
-        this.addSection({type: "Version", data: addData, hidden: true});       
+        this.addSection({type: "Version", data: addData});       
       }
     } else {
       console.log("We're just updating existing forms");
@@ -302,31 +392,37 @@ export class ProjectSettings extends TatorPage {
       console.log("One new!" + diff[0]);
       const id = diff[0];
       const addData = newVersions.map.get(id);
-      console.log(addData);
      
-      let currentSelected = this._shadow.querySelectorAll('[selected="true"]')
-      for (let el of currentSelected) {
-        el.setAttribute("selected", "false");
-      }
-      const currentSelectedItem = this._shadow.querySelector('.item-box:not([hidden])');
-      this.hide(currentSelectedItem);
-      this.addSection({type: "Version", data: addData, hidden: false});
+      this.addSection({ type: "Version", data: addData });
+      
+      // Highlight the new object
+      const newHash = `itemDivId-${this._selectedType}-${id}`;
+      this.selectedHash = newHash;
     }
 
     // For all updates
     if (!this.versionForms.has("New")) {
       // make it
-      this.addSection({type:"Version", data:null, isEmpty: true, hidden: true});
+      this.addSection({type:"Version", data:null, isEmpty: true});
     }
 
     // then for each membership form (if those are init)
     // run the update versions function
-    if (store.getState().memberships.init) {
-      for (let m of store.getState().memberships.data) {
+    if (store.getState().Membership.init) {
+      for (let m of store.getState().Membership.data) {
         const form = this.membershipForms.get(m.id);
         form._updateVersionList();
       }
     }
+
+    
+    // The "+" to new form may happen before form is made
+    // This catches and re-applies any selection
+    console.log(this._selectedHash);
+    if (this.itemsContainer.querySelector(this._selectedHash).hidden == true) {
+      this.selectedHash = this._selectedHash;
+    }
+    
   }
 
 
@@ -345,8 +441,8 @@ export class ProjectSettings extends TatorPage {
    * @param {object} data 
    * @param {boolean} isEmpty 
    */
-  addSection({type, data, isEmpty = false, innerLinkText = "", hidden = true}) {
-    console.log(data);
+  addSection({type, data, isEmpty = false, innerLinkText = ""}) {
+    // console.log(data);
 
     // Create and init the form element
     const elementName = this.viewClassesByName.get(type);
@@ -362,11 +458,13 @@ export class ProjectSettings extends TatorPage {
     
     //
     const id = data.id;
-    const itemDiv = document.createElement("div");
     const itemIdSelector = `itemDivId-${type}-${id}`
+
+    //
+    const itemDiv = document.createElement("div");
     itemDiv.id = itemIdSelector; //ie. #itemDivId-MediaType-72
     itemDiv.setAttribute("class", `item-box item-group-${id}`);
-    itemDiv.hidden = hidden;
+    itemDiv.hidden = true;
 
     // Append to container
     itemDiv.appendChild(form);
@@ -377,7 +475,6 @@ export class ProjectSettings extends TatorPage {
       let itemInnerDiv = document.createElement("div");
       itemInnerDiv.id = `${itemIdSelector}_inner`; //ie. #itemDivId-MediaType-72_inner
       itemInnerDiv.setAttribute("class", `item-box item-group-${id}_inner`);
-      itemInnerDiv.hidden = true; //always hide on creation
       this.itemsContainer.appendChild(itemInnerDiv);
     }
 
@@ -387,12 +484,13 @@ export class ProjectSettings extends TatorPage {
     subNavLink.setAttribute("class", `SideNav-subItem ${(id == "New") ? "text-italic" : ""}`);
     subNavLink.href = `#${itemIdSelector}`;
     subNavLink.textContent = data.name;
-    subNavLink.addEventListener("click", this.makeItemActive.bind(this));
+    subNavLink.addEventListener("click", () => {
+      this.selectedHash = `#${itemIdSelector}`;
+    });
     this.versionSidebar.set(id, subNavLink);
-    if (!hidden) subNavLink.setAttribute("selected", "true");
 
     // Add link to sidebar
-    const newLink = this._shadow.querySelector(`a[href="#itemDivId-Version-New"]`)
+    const newLink = this._shadow.querySelector(`a[href="#itemDivId-${type}-New"]`)
     if (newLink) {
       newLink.before(subNavLink);
     } else {
@@ -420,45 +518,6 @@ export class ProjectSettings extends TatorPage {
   hideDimmer() {
     this.modal._div.classList.remove("modal-wide"); // reset width
     return this.removeAttribute("has-open-modal");
-  }
-
-  // Hide and show to centralize where we are doing this action
-  hide(el) {
-    console.log("Hide el.........");
-    console.log(el);
-    try {
-      if (el && el.nodeType == Node.ELEMENT_NODE) {
-        return el.hidden = true;
-      } else if (el !== null) {
-        try {
-          let node = this._shadow.getElementById(el);
-          return node.hidden = true;
-        } catch (err) {
-          console.error("Error hiding element.", err)
-        }
-
-      }
-    } catch (err) {
-      console.error("Error hiding element.", err)
-    }
-
-
-  }
-  show(el) {
-    try {
-      if (el && el.nodeType == Node.ELEMENT_NODE) {
-        return el.hidden = false;
-      } else if (el !== null) {
-        try {
-          let node = this._shadow.getElementById(el);
-          return node.hidden = false;
-        } catch (err) {
-          console.error("Error showing element.", err)
-        }
-      }
-    } catch (err) {
-      console.error("Error showing element.", err)
-    }
   }
 
 }
