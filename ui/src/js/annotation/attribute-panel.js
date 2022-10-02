@@ -673,6 +673,10 @@ export class AttributePanel extends TatorElement {
         }
       });
 
+      if (column.visible == false) {
+        widget.style.display = "none";
+      }
+
       this._widgets.push(widget);
     }
 
