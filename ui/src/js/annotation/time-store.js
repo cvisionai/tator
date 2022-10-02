@@ -14,6 +14,9 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
 
   /**
    * @param {Tator.Media} media - Top level media to base the entire timeline based on
+   *    If mediaType is multi, then the provided media is expected to be a multi.
+   *    setPrimaryMedia() and addChannelMedia() must then be used
+   *
    * @param {Tator.MediaType} mediaType - Media type associated with media param
    */
   constructor(media, mediaType) {
@@ -22,9 +25,8 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
     this._startGlobalDate = getMediaStartDatetime(media=media)
     this._utcEnabled = this._startGlobalDate != null;
 
-    // #TODO Support .multi data type
     this._mediaMap = {};
-
+    this._mediaType = mediaType;
     if (mediaType.dtype == "video") {
       this._globalFPS = media.fps;
       this._lastGlobalFrame = media.num_frames - 1;
@@ -45,6 +47,49 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
       };
       this._mediaMap[media.id] = mediaInfo;
     }
+    else if (mediaType.dtype == "multi") {
+      this._multiMedia = media;
+    }
+
+  }
+
+  /**
+   * @param {Tator.Media} media - Media to set the timeline (uses last frame and fps)
+   * Does not add to the internal mediaMap
+   */
+  setPrimaryMedia(media) {
+    this._globalFPS = media.fps;
+    this._lastGlobalFrame = media.num_frames - 1;
+
+    if (this._utcEnabled) {
+      this._minSecondsFromEpoch = this._startGlobalDate.getTime() / 1000;
+    }
+    else {
+      this._minSecondsFromEpoch = 0;
+    }
+  }
+
+  /**
+   * @param {Tator.Media} media - Media to add to the internal map when retrieving time info
+   * @param {integer} channelIndex - Associated channel index
+   */
+  addChannelMedia(media, channelIndex) {
+
+    if (this._utcEnabled) {
+      var startSecondsFromEpoch = this._startGlobalDate.getTime() / 1000;
+    }
+    else {
+      var startSecondsFromEpoch = 0;
+    }
+
+    var mediaInfo = {
+      startSecondsFromEpoch: startSecondsFromEpoch,
+      media: media,
+      channelIndex: channelIndex,
+      globalStartFrame: 0,
+      globalEndFrame: media.num_frames - 1
+    };
+    this._mediaMap[media.id] = mediaInfo;
 
   }
 
