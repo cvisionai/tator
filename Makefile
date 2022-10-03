@@ -356,13 +356,13 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	mkdir pkg
 	mkdir pkg/src
 	./codegen.py tator-openapi-schema.yaml
-	docker run -it --rm --name=js_generator \
+	docker run --rm --name=js_generator \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
 		openapitools/openapi-generator-cli:v6.1.0 \
 		generate -c /pwd/config.json \
 		-i /pwd/tator-openapi-schema.yaml \
 		-g javascript -o /pwd/pkg -t /pwd/templates
-	docker run -it --rm --name=chmodder \
+	docker run --rm --name=chmodder \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
 		openapitools/openapi-generator-cli:v6.1.0 \
 		chmod -R 777 /pwd/pkg
@@ -392,20 +392,20 @@ r-docs: doc/_build/schema.yaml
 	rm -rf scripts/packages/tator-r/tmp
 	mkdir -p scripts/packages/tator-r/tmp
 	./scripts/packages/tator-r/codegen.py $(shell pwd)/scripts/packages/tator-r/schema.yaml
-	docker run -it --rm \
+	docker run --rm \
 		-v $(shell pwd)/scripts/packages/tator-r:/pwd \
 		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
 		generate -c /pwd/config.json \
 		-i /pwd/schema.yaml \
 		-g r -o /out/tator-r-new-bindings -t /pwd/templates
-	docker run -it --rm \
+	docker run --rm \
 		-v $(shell pwd)/scripts/packages/tator-r/tmp:/out openapitools/openapi-generator-cli:v5.0.0-beta \
 		/bin/sh -c "chown -R nobody:nogroup /out"
 	rm -f scripts/packages/tator-r/R/generated_*
 	rm scripts/packages/tator-r/schema.yaml
 	cd $(shell pwd)/scripts/packages/tator-r/tmp/tator-r-new-bindings/R && \
 		for f in $$(ls -l | awk -F':[0-9]* ' '/:/{print $$2}'); do cp -- "$$f" "../../../R/generated_$$f"; done
-	docker run -it --rm \
+	docker run --rm \
 		-v $(shell pwd)/scripts/packages/tator-r:/tator \
 		rocker/tidyverse:latest \
 		/bin/sh -c "R --slave -e \"devtools::install_deps('/tator')\"; \
@@ -458,7 +458,7 @@ schema:
 
 .PHONY: check_schema
 check_schema:
-	docker run -it --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
+	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema
 
 .PHONY: clean_schema
 clean_schema:
