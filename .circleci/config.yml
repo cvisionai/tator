@@ -69,7 +69,7 @@ jobs:
     - run:
         name: Generate Markdown Docs
         command: |
-          ssh lightsail 'make markdown-docs && tar cf /tmp/tator-py.tar doc/_build/tator-py';
+          ssh lightsail 'cd tator && make markdown-docs && tar cf /tmp/tator-py.tar doc/_build/tator-py';
           scp lightsail:/tmp/tator-py.tar /tmp/tator-py.tar;
     - store_artifacts:
         path: /tmp/tator-py.tar
