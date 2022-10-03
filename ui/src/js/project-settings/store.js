@@ -43,6 +43,7 @@ deleteMap.set("Project", api.deleteVersionWithHttpInfo.bind(api))
  * This is state of all Types below for init
  */
 const initialState = {
+   name: '',
    init: false,
    setList: new Set(),
    map: new Map(),
@@ -54,18 +55,19 @@ const store = create(subscribeWithSelector((set, get) => ({
       msg: "" // if Error this could trigger "toast" with message
    },
    Project: {
+      name: "Project",
       init: false,
       data: {},
    },
-   Version: {...initialState}, 
-   MediaType: {...initialState}, 
-   LocalizationType: {...initialState}, 
-   LeafType: {...initialState}, 
-   StateType: {...initialState}, 
-   Membership: {...initialState}, 
-   Alogrithm: {...initialState}, 
-   Applet: {...initialState}, 
-   JobCluster: {...initialState}, 
+   Version: {...initialState, name: "Version"}, 
+   MediaType: {...initialState, name: "MediaType"}, 
+   LocalizationType: {...initialState, name: "LocalizationType"}, 
+   LeafType: {...initialState, name: "LeafType"}, 
+   StateType: {...initialState, name: "StateType"}, 
+   Membership: {...initialState, name: "Membership"}, 
+   Alogrithm: {...initialState, name: "Alogrithm"}, 
+   Applet: {...initialState, name: "Applet"}, 
+   JobCluster: {...initialState, name: "JobCluster"}, 
 
    /* project */
    fetchProject: async (id) => {
@@ -200,7 +202,8 @@ const store = create(subscribeWithSelector((set, get) => ({
       }
 
       // set({ status: {...get.status, name: "idle", msg: ""} });
-      set({[type] : { ...get[type], setList, map, init: true }});
+      console.log("FETCH TYPE....");
+      set({[type] : { ...get()[type], setList, map, init: true }});
    
       return object.data;
    },
