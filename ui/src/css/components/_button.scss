@@ -50,6 +50,16 @@
   }
 }
 
+.btn-purple50 {
+  background-color: $color-purple50;
+  color: $color-white;
+  &:hover,
+  &:focus {
+    background-color: $color-charcoal--light;
+    color: $color-white;
+  }
+}
+
 .btn-red {
   background-color: $color-red;
   &:hover,
@@ -108,6 +118,10 @@
 .btn-small {
   height: 32px;
   width: 85px;
+}
+
+.btn-small-height {
+  height: 22px;
 }
 
 .btn-width {

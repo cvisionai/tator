@@ -12,6 +12,7 @@ export class DateTimeInput extends TatorElement {
 
       const labelInner = document.createElement("span");
       labelInner.setAttribute("class", "col-3");
+      this._innerLabel = labelInner;
       this.label.appendChild(labelInner);
 
       this._name = document.createTextNode("");
