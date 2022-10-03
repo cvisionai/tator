@@ -6,69 +6,47 @@ const api = Utils.getApi();
 // console.log(api);
 
 const getMap = new Map();
-getMap.set("Project", api.getProjectWithHttpInfo)
-   .set("MediaType", api.getMediaTypeListWithHttpInfo)
-   .set("LocalizationType", api.getLocalizationTypeListWithHttpInfo)
-   .set("LeafType",)
-   .set("StateType",)
-   .set("Membership",)
+getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
+   .set("MediaType", api.getMediaTypeListWithHttpInfo.bind(api))
+   .set("LocalizationType", api.getLocalizationTypeListWithHttpInfo.bind(api))
+   .set("LeafType", api.getLeafTypeListWithHttpInfo.bind(api))
+   .set("StateType", api.getStateTypeListWithHttpInfo.bind(api))
+   .set("Membership", api.getMembershipListWithHttpInfo.bind(api))
    .set("Version", api.getVersionListWithHttpInfo.bind(api))
-   .set("Algorithm",)
-   .set("Applet",);
+   .set("Algorithm", api.getAlgorithmListWithHttpInfo.bind(api))
+   .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
+   .set("Applet", api.getAppletListWithHttpInfo.bind(api));
 
 const patchMap = new Map();
-patchMap.set("Project", api.getProjectWithHttpInfo)
-   .set("MediaType", api.getMediaTypeListWithHttpInfo)
-   .set("LocalizationType", api.getVersionListWithHttpInfo)
-   .set("LeafType",)
-   .set("StateType",)
-   .set("Membership",)
-   .set("Version",)
-   .set("Algorithm",)
-   .set("Applet",);
+patchMap.set("Project", api.updateProjectWithHttpInfo.bind(api))
+   .set("MediaType", api.updateMediaTypeWithHttpInfo.bind(api))
+   .set("LocalizationType", api.updateLocalizationTypeWithHttpInfo.bind(api))
+   .set("LeafType", api.updateLeafTypeWithHttpInfo.bind(api))
+   .set("StateType", api.updateStateTypeWithHttpInfo.bind(api))
+   .set("Membership", api.updateMembershipWithHttpInfo.bind(api))
+   .set("Version", api.updateVersionWithHttpInfo.bind(api))
+   .set("Algorithm", api.updateAlgorithmWithHttpInfo.bind(api))
+   .set("Applet", api.updateAppletWithHttpInfo.bind(api));
 
 const deleteMap = new Map();
-deleteMap.set("Project", api.getProjectWithHttpInfo)
-   .set("MediaType", api.getMediaTypeListWithHttpInfo)
-   .set("LocalizationType", api.getVersionListWithHttpInfo)
-   .set("LeafType", )
-   .set("StateType", )
-   .set("Membership", )
-   .set("Version", )
-   .set("Algorithm", )
-   .set("Applet", )
+deleteMap.set("Project", api.deleteVersionWithHttpInfo.bind(api))
+   .set("MediaType", api.deleteVersionWithHttpInfo.bind(api))
+   .set("LocalizationType", api.deleteVersionWithHttpInfo.bind(api))
+   .set("LeafType", api.deleteVersionWithHttpInfo.bind(api))
+   .set("StateType", api.deleteVersionWithHttpInfo.bind(api))
+   .set("Membership", api.deleteVersionWithHttpInfo.bind(api))
+   .set("Version", api.deleteVersionWithHttpInfo.bind(api))
+   .set("Algorithm", api.deleteVersionWithHttpInfo.bind(api))
+   .set("Applet", api.deleteVersionWithHttpInfo.bind(api));
 
-export const getCompiledList = ({type, skip = null, check = null}) => {
-   // this gets the versions again, sets them
-   // but it returns a list usable for settings page (checkbox set)
-   let list = [];
-   switch (type) {
-      case "Version":
-         list = store.getState().Version;
-         break;
-      default:
-         console.error(`Invalid type: ${type}`);
-   }
-   
-   // Use values if any, and the list of types to make a compiled list, a checkbox object
-   const newList = [];
-   
-   for (let id of list.setList) {
-      const item = store.getState().Version.map.get(id);
-      if (typeof item !== "undefined" && id !== skip) {
-         newList.push({
-            id: item.id,
-            value: item.id,
-            name: item.name,
-            label: item.name,
-            checked: (check === item.id || (Array.isArray(check) && check.includes(item.id))),
-            selected: (check === item.id || (Array.isArray(check) && check.includes(item.id)))
-         });
-      }
-   }
-
-   return newList;
-}
+/** 
+ * This is state of all Types below for init
+ */
+const initialState = {
+   init: false,
+   setList: new Set(),
+   map: new Map(),
+};
 
 const store = create(subscribeWithSelector((set, get) => ({
    status: { // page status
@@ -79,51 +57,15 @@ const store = create(subscribeWithSelector((set, get) => ({
       init: false,
       data: {},
    },
-   Version: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   }, 
-   MediaType: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
-   LocalizationType: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
-   LeafType: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
-   StateType: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
-   Membership: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
-   Alogrithm: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
-   Applet: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
-   JobCluster: {
-      init: false,
-      setList: new Set(),
-      map: new Map(),
-   },
+   Version: {...initialState}, 
+   MediaType: {...initialState}, 
+   LocalizationType: {...initialState}, 
+   LeafType: {...initialState}, 
+   StateType: {...initialState}, 
+   Membership: {...initialState}, 
+   Alogrithm: {...initialState}, 
+   Applet: {...initialState}, 
+   JobCluster: {...initialState}, 
 
    /* project */
    fetchProject: async (id) => {
@@ -145,47 +87,7 @@ const store = create(subscribeWithSelector((set, get) => ({
      // todo set({ project: await api.getProjectWithHttpInfo(get().Project.data.id) });
    },
 
-   /* job cluster (used in algo form) */
-   fetchJobClusters: async () => {
-      let object = await api.getJobClusterListWithHttpInfo(get().Project.data.id);
-      set({ JobCluster: object.data });
-      return object.data;
-   },
 
-   /* media types */
-   fetchMediaTypes: async () => {
-      let object = await api.getMediaTypeListWithHttpInfo(get().Project.data.id);
-      set({ MediaType: object.data });
-      return object.data;
-   },
-
-   /* localization types */
-   fetchLocalizationTypes: async () => {
-      let object = await api.getLocalizationTypeListWithHttpInfo(get().Project.data.id);
-      set({ LocalizationType: object.data });
-      return object.data;
-   },
-
-   /* leaf types */
-   fetchLeafTypes: async () => {
-      let object = await api.getLeafTypeListWithHttpInfo(get().Project.data.id);
-      set({ LeafType: object.data });
-      return object.data;
-   },
-
-   /* state types */
-   fetchStateTypes: async () => {
-      let object = await api.getStateTypeListWithHttpInfo(get().Project.data.id);
-      set({ StateTypes: object.data });
-      return object.data;
-   },
-
-   /* memberships */
-   fetchMemberships: async () => {
-      let object = await api.getMembershipListWithHttpInfo(get().Project.data.id);
-      set({ memberships: object.data });
-      return object.data;
-   },
 
    /* versions */
    fetchVersions: async () => {
@@ -270,88 +172,38 @@ const store = create(subscribeWithSelector((set, get) => ({
       return object;
    },
 
-   /* algorithms */
-   fetchAlgorithms: async () => {
-      let object = await api.getAlgorithmListWithHttpInfo(get().Project.data.id);
-      set({ alogrithms: object.data });
-      return object.data;
-   },
-
-   /* applets */
-   fetchApplets: async () => {
-      let object = await api.getAppletListWithHttpInfo(get().Project.data.id);
-      set({ applets: object.data });
-      return object.data;
-   },
-
-   getType: (type) => {
-      switch (type) {
-         case "MediaType":
-            return get().mediaTypes;
-         case "LocalizationType":
-            return get().localizationTypes;
-         case "LeafType":
-            return get().leafTypes;;
-         case "StateType":
-            return get().stateTypes;
-         case "Membership":
-            return get().memberships;
-         case "Version":
-            return get().Version;
-         case "Algorithm":
-            return get().alogrithms;
-         case "Applet":
-            return get().applets;
-         default:
-            console.error(`Invalid type: ${type}`);
-      }
-   },
-
-
    /* Generic to allow for loop calls */
    initType: (type) => {
       const s = store.getState();
       let init = s[type].init;
-      console.log(val);
+      // console.log(s);
+      console.log(type);
 
-      // if (!get()[type].init) {
-      //    return set().fetchType(type);
-      // }
+      if (!init) {
+         return get().fetchType(type);
+      }
    },
-   fetchType: (type) => {
-      let object = {};
-      
+   fetchType: async (type) => {
+      // const object = await api.getVersionListWithHttpInfo(get().Project.data.id);
+      const getFn = getMap.get(type);
+      const projectId = get().Project.data.id;   
+      const object = await getFn(projectId);
 
-      switch (type) {
-         case "MediaType":
-            object = get().fetchMediaTypes();
-            break;
-         case "LocalizationType":
-            object = get().fetchLocalizationTypes();
-            break;
-         case "LeafType":
-            object = get().fetchLeafTypes();
-            break;
-         case "StateType":
-            object = get().fetchStateTypes();
-            break;
-         case "Membership":
-            object = get().fetchMemberships();
-            break;
-         case "Version":
-            object = get().fetchVersions();
-            break;
-         case "Algorithm":
-            object = get().fetchAlgorithms();
-            break;
-         case "Applet":
-            object = get().fetchApplets();
-            break;
-         default:
-            console.error(`Invalid type: ${type}`);
+      console.log("THIS WAS THE OBJ RETURNED");
+      console.log(object);
+
+      const setList = get()[type].setList;
+      const map = get()[type].map;
+
+      for (let item of object.data) {
+         setList.add(item.id);
+         map.set(item.id, item);
       }
 
-      return object;
+      // set({ status: {...get.status, name: "idle", msg: ""} });
+      set({[type] : { ...get[type], setList, map, init: true }});
+   
+      return object.data;
    },
    addType:  ({type, data}) => {
       let object = {};
@@ -380,6 +232,35 @@ const store = create(subscribeWithSelector((set, get) => ({
 
       return object;
    }
- })));
+})));
+
+
+/**
+ * Returns a list usable for settings page's checkbox set
+ * @param {Object} args 
+ * @returns 
+ */
+export const getCompiledList = ({type, skip = null, check = null}) => {
+   const state = store.getState()[type];
+   const newList = [];
+   
+   if (state) {
+      for (let id of state.setList) {
+         const item = store.getState().Version.map.get(id);
+         if (typeof item !== "undefined" && id !== skip) {
+            newList.push({
+               id: item.id,
+               value: item.id,
+               name: item.name,
+               label: item.name,
+               checked: (check === item.id || (Array.isArray(check) && check.includes(item.id))),
+               selected: (check === item.id || (Array.isArray(check) && check.includes(item.id)))
+            });
+         }
+      }  
+   }
+
+   return newList;
+}
  
- export { store };
+export { store };

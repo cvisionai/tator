@@ -203,7 +203,7 @@ export class ProjectSettings extends TatorPage {
   /**
    * @param {string} val
    */
-  set selectedHash(val) {
+   set selectedHash (val) {
     console.log(`new hash ${val}`);
     if (!this._selectedHash || (this._selectedHash && val !== this._selectedHash)) {
       this._selectedHash = val;
@@ -211,13 +211,17 @@ export class ProjectSettings extends TatorPage {
 
       if (val.split("-").length === 3) {
         // We have a valid hash 🤘
+        const type = val.split("-")[1];
+        
+        store.getState().initType(type)
+
         // Set type and obeject using hash
-        this.selectedType = val.split("-")[1];
+        this.selectedType = type;
         this.selectedObject = val.split("-")[2];
         this.showSelectedItemDiv();
       } else {
         // Error handle
-        console.warning("Hash set is invalid: " + val);
+        console.warn("Hash set is invalid: " + val);
       }     
     }
     
@@ -233,7 +237,7 @@ export class ProjectSettings extends TatorPage {
       // if type has changed or first set
       this._selectedType = val;
 
-      store.getState().initType(val)
+
       
       // Change section highlight, and open nav
       this.handleSelectedNav('SideNav-heading[selected="true"]', false);
@@ -270,7 +274,7 @@ export class ProjectSettings extends TatorPage {
     if (newSelection) {
       newSelection.hidden = false;
     } else {
-      console.warning("Couldn't find the new selected hash: " + this._selectedHash);
+      console.warn("Couldn't find the new selected hash: " + this._selectedHash);
     }
   }
 
@@ -301,7 +305,7 @@ export class ProjectSettings extends TatorPage {
         toOpen.hidden = true;
       } else {
         // Shut other open items first
-        const toShut = this.settingsNav.querySelector('.SubItems:not[hidden]');
+        const toShut = this.settingsNav.querySelector('.SubItems:not([hidden])');
         if (toShut) return toShut.hidden = true;
 
         // Show the section
@@ -315,8 +319,9 @@ export class ProjectSettings extends TatorPage {
     this.selectedHash = e.target.getAttribute("href");
   }
 
-  addNewVersion() {
-    const newHash = `#itemDivId-${this.selectedType}-New`;
+  addNewVersion(e) {
+    // todo ${this.selectedType}
+    const newHash = `#itemDivId-Version-New`;
     this.selectedHash = newHash;
   }
 
@@ -332,7 +337,8 @@ export class ProjectSettings extends TatorPage {
     //
     if (store.getState().Version.init === false) {
       console.log("Init versions.....");
-      await store.getState().fetchVersions();
+      //await store.getState().fetchVersions();
+      await store.getState().fetchType("Version");
     }
   }
 
@@ -418,10 +424,10 @@ export class ProjectSettings extends TatorPage {
     
     // The "+" to new form may happen before form is made
     // This catches and re-applies any selection
-    console.log(this._selectedHash);
-    if (this.itemsContainer.querySelector(this._selectedHash).hidden == true) {
-      this.selectedHash = this._selectedHash;
-    }
+    // console.log(this._selectedHash);
+    // if (this.itemsContainer.querySelector(this._selectedHash).hidden == true) {
+    //   this.selectedHash = this._selectedHash;
+    // }
     
   }
 
@@ -458,13 +464,14 @@ export class ProjectSettings extends TatorPage {
     
     //
     const id = data.id;
-    const itemIdSelector = `itemDivId-${type}-${id}`
+    const itemIdSelector = `itemDivId-${type}-${id}`;
+    const hidden = this._selectedObjectId !== id;
 
     //
     const itemDiv = document.createElement("div");
     itemDiv.id = itemIdSelector; //ie. #itemDivId-MediaType-72
     itemDiv.setAttribute("class", `item-box item-group-${id}`);
-    itemDiv.hidden = true;
+    itemDiv.hidden = hidden;
 
     // Append to container
     itemDiv.appendChild(form);
@@ -484,6 +491,7 @@ export class ProjectSettings extends TatorPage {
     subNavLink.setAttribute("class", `SideNav-subItem ${(id == "New") ? "text-italic" : ""}`);
     subNavLink.href = `#${itemIdSelector}`;
     subNavLink.textContent = data.name;
+    if (!hidden) subNavLink.setAttribute("selected", "true");
     subNavLink.addEventListener("click", () => {
       this.selectedHash = `#${itemIdSelector}`;
     });
