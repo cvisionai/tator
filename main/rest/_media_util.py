@@ -317,10 +317,23 @@ class MediaUtil:
         """
         if isinstance(frame_ranges, tuple):
             frame_ranges = [frame_ranges]
-
-        impacted_segments = self._get_impacted_segments_from_ranges(frame_ranges)
-        assert not impacted_segments is None, "Unable to calculate impacted video segments"
-        lookup, segment_info = self.make_temporary_videos(impacted_segments)
+        if self._external_fetch == 'hls':
+            lookup ={}
+            segment_info=[] # There are no segment
+            for idx,frange in enumerate(frame_ranges):
+                temp_out=os.path.join(self._temp_dir, f"{frange[0]}_{frange[1]}.mp4")
+                ffmpeg_args = ["ffmpeg",
+                               "-f", "hls",
+                               "-i", self._video_file,
+                               "-ss", self._frame_to_time_str(frange[0], None),
+                               "-frames:v", str(frange[1]-frange[0]),
+                               temp_out]
+                proc = subprocess.run(ffmpeg_args, check=True, capture_output=True)
+                lookup = {"{frange[0]}_{frange[1]}.mp4": (None,temp_out)}
+        else:
+            impacted_segments = self._get_impacted_segments_from_ranges(frame_ranges)
+            assert not impacted_segments is None, "Unable to calculate impacted video segments"
+            lookup, segment_info = self.make_temporary_videos(impacted_segments)
 
         logger.info(f"Lookup = {lookup}")
         with open(os.path.join(self._temp_dir, "vid_list.txt"), "w") as vid_list:
