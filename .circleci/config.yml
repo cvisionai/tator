@@ -58,7 +58,7 @@ jobs:
     - run:
         name: Make docker images
         command: |
-          ssh lightsail 'cd tator && make -j$(nproc) tator-image images';
+          ssh lightsail 'cd tator && make tator-image images';
     - store_artifacts:
         path: doc/_build/schema.yaml
         destination: docs/schema.yaml
