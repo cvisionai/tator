@@ -1,6 +1,6 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.js';
+import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.min.js';
 
 const api = Utils.getApi();
 
