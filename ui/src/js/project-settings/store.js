@@ -174,10 +174,9 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    /* Generic to allow for loop calls */
    initType: (type) => {
-      const s = store.getState();
-      let init = s[type].init;
+      let init = get()[type].init;
       // console.log(s);
-      console.log(type);
+      console.log(`IF ${type} is init? ${init}`);
 
       if (!init) {
          return get().fetchType(type);

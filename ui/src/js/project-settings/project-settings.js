@@ -17,14 +17,13 @@ export class ProjectSettings extends TatorPage {
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg());
 
-    // // Header: This is adds the breadcrumb and successLight-spacer to the header
+    // Header: This is adds the breadcrumb and successLight-spacer to the header
     const user = this._header._shadow.querySelector("header-user");
     const headerTemplate = document.getElementById("project-settings--header").content;
     user.parentNode.insertBefore(headerTemplate.cloneNode(true), user);
 
     // Header: pieces
     this._breadcrumbs = this._header._shadow.getElementById("project-settings--breadcrumbs");
-
 
     // Page: main element
     const template = document.getElementById("project-settings").content;
@@ -85,7 +84,6 @@ export class ProjectSettings extends TatorPage {
     //   //
     // });
   }
-
 
 
   handleStatusChange(status, prevStatus) {
@@ -236,8 +234,6 @@ export class ProjectSettings extends TatorPage {
         (typeof this._selectedType !== "undefined" && val !== this._selectedType)) {
       // if type has changed or first set
       this._selectedType = val;
-
-
       
       // Change section highlight, and open nav
       this.handleSelectedNav('SideNav-heading[selected="true"]', false);
@@ -296,9 +292,10 @@ export class ProjectSettings extends TatorPage {
    * if supplied it will close visible and open type section
    */
   handleSectionVisible() {
-    if (this.selectedType !== null) {
+    console.log("handleSectionVisible");
+    if (this._selectedType !== null) {
       // Open section
-      const toOpen = this.settingsNav.querySelector(`.subitems-${this.selectedType}`);
+      const toOpen = this.settingsNav.querySelector(`.subitems-${this._selectedType}`);
 
       if (toOpen && toOpen.hidden === false) {
         // We selected this type, but it is already open (toggle shut)
@@ -319,27 +316,20 @@ export class ProjectSettings extends TatorPage {
     this.selectedHash = e.target.getAttribute("href");
   }
 
-  addNewVersion(e) {
-    // todo ${this.selectedType}
+  async addNewVersion(e) {
     const newHash = `#itemDivId-Version-New`;
+    const newSelection = this.itemsContainer.querySelector(newHash)
+    if (!newSelection) {
+      await this.toggleVersions();
+    }
+     
     this.selectedHash = newHash;
   }
 
   async toggleVersions() {
-    // toggles
-    if (this.sidebarVersions.hidden === true) {
-      this.accordianShutOthers("Version");
-      this.sidebarVersions.hidden = false;
-    } else {
-      this.sidebarVersions.hidden = true;
-    }
-
-    //
-    if (store.getState().Version.init === false) {
-      console.log("Init versions.....");
-      //await store.getState().fetchVersions();
-      await store.getState().fetchType("Version");
-    }
+    // // toggles
+    this.selectedType = "Version";
+    await store.getState().initType("Version");
   }
 
   async updateVersions(newVersions, oldVersions) {
@@ -399,10 +389,13 @@ export class ProjectSettings extends TatorPage {
       const id = diff[0];
       const addData = newVersions.map.get(id);
      
+      // Add new section
+      console.log("// Add new section");
       this.addSection({ type: "Version", data: addData });
       
       // Highlight the new object
-      const newHash = `itemDivId-${this._selectedType}-${id}`;
+      console.log("// Highlight the new object");
+      const newHash = `#itemDivId-${this._selectedType}-${id}`;
       this.selectedHash = newHash;
     }
 
