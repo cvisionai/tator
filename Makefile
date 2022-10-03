@@ -383,7 +383,7 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 
 .PHONY: js-bindings
 js-bindings: .token/tator_backend_$(GIT_VERSION)
-	$(MAKE) $(TATOR_JS_MODULE_FILE)
+	make $(TATOR_JS_MODULE_FILE)
 
 .PHONY: r-docs
 r-docs: doc/_build/schema.yaml
