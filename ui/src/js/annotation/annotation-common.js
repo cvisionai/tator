@@ -109,15 +109,15 @@ export function getMediaStartDatetime(media) {
 
   // Apply timezone if it's not there.
   let startTime8601 = name.substr(0,name.lastIndexOf('.')).replaceAll("_",':');
+  let timeZoneIncluded = startTime8601.lastIndexOf('-') > 7 || startTime8601[-1] == "Z";
+  if (timeZoneIncluded != true) {
+    startTime8601 += '-00:00'; // Assume zulu time
+  }
+
   const userKeyRegExp = /^([0-9]{4}-[0-9]{2}-[0-9]{2}.[0-9]{2}.[0-9]{2}.[0-9]{2}.+)$/;
   const valid = userKeyRegExp.test(startTime8601);
   if (!valid) {
     return null;
-  }
-
-  let timeZoneIncluded = startTime8601.lastIndexOf('-') > 7 || startTime8601[-1] == "Z";
-  if (timeZoneIncluded != true) {
-    startTime8601 += '-00:00'; // Assume zulu time
   }
 
   // Return either null or corresponding Date object
