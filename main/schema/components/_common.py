@@ -9,6 +9,11 @@ create_response = {
             'type': 'integer',
             'description': 'Unique integer identifying the created object.',
         },
+        'object': {
+            'type': 'object',
+            'description': 'The created objects.',
+            'additionalProperties': True,
+        },
     },
 }
 

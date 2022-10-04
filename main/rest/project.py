@@ -135,7 +135,12 @@ class ProjectListAPI(BaseListView):
             permission=Permission.FULL_CONTROL,
         )
         member.save()
-        return {'message': f"Project {params['name']} created!", 'id': project.id}
+        projects = Project.objects.filter(pk=project.id)
+        return {
+            'message': f"Project {params['name']} created!",
+            'id': project.id,
+            'object': _serialize_projects(projects, self.request.user.pk)[0],
+        }
 
     def get_queryset(self):
         memberships = Membership.objects.filter(user=self.request.user)
@@ -236,7 +241,11 @@ class ProjectDetailAPI(BaseDetailView):
         else:
             raise ValueError(f"No recognized keys in request!")
 
-        return {'message': f"Project {params['id']} updated successfully!"}
+        projects = Project.objects.filter(pk=project.id)
+        return {
+            'message': f"Project {params['id']} updated successfully!",
+            'object': _serialize_projects(projects, self.request.user.pk)[0],
+        }
 
     def _delete(self, params):
         # Check for permission to delete first.

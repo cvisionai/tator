@@ -18,8 +18,8 @@
     "sass": "1.49.0",
     "sass-loader": "12.4.0",
     "style-loader": "3.3.1",
-    "webpack": "5.67.0",
-    "webpack-cli": "4.9.2",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
     "webpack-merge": "5.8.0",
     "webpack-shell-plugin-next": "2.2.2"
   },
@@ -35,8 +35,9 @@
     "marked": "4.0.12",
     "mp4box": "0.4.9",
     "spark-md5": "3.0.2",
+    "underwater-image-color-correction": "1.0.3",
     "uuid": "8.3.2",
     "webrtc-streamer": "0.6.5-9-g0031565",
-    "underwater-image-color-correction": "1.0.3"
+    "zustand": "^4.1.1"
   }
 }
