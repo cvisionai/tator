@@ -5,86 +5,75 @@ export class StateTypeEdit extends TypeForm {
     super();
     this.typeName = "StateType";
     this.readableTypeName = "State Type";
-    this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>';
+    
+    // 
+    var templateInner = document.getElementById("state-type-edit");
+    var innerClone = document.importNode(templateInner.content, true);
+    this.typeFormDiv.appendChild(innerClone);
 
+    this._form = this._shadow.getElementById("state-type-edit--form");
+    this._editName = this._shadow.getElementById("state-type-edit--name");
+    this._editDescription = this._shadow.getElementById("state-type-edit--description");
+    this.dtypeSelect = this._shadow.getElementById("state-type-edit--data-type");
+    this._visibleBool = this._shadow.getElementById("state-type-edit--visible");
+    this._groupingDefault = this._shadow.getElementById("state-type-edit--grouping-default");
+    this._mediaCheckboxes = this._shadow.getElementById("state-type-edit--media");
+    this._association = this._shadow.getElementById("state-type-edit--association");
+    this._interpolation = this._shadow.getElementById("state-type-edit--interpolation");
+    this._deleteChildLoc = this._shadow.getElementById("state-type-edit--delete-child");
   }
 
-  async _getSectionForm(data){
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+  async setupForm(data) {
+    this.data = data;
 
-    //
-    this._setForm();
+    // Setup view
+    this._typeId = data.id;
+    this._objectName = data.name;
+    this._projectId = data.project;
 
-    // append input for name
-    this._editName = document.createElement("text-input");
-    this._editName.setAttribute("name", "Name");
-    this._editName.setAttribute("type", "string");
-    this._editName.setValue(this.data.name);
-    this._editName.default = this.data.name;
-    this._editName.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._editName);
+    // name
+    let name = ""
+    if (data.id !== "New") name = this.data.name
+    this._editName.setValue(name);
+    this._editName.default = name;
 
     // dtype
     const dTypeOptions = [
       { "label": "State", "value": "state" }
     ];
     // Emptyform uses "" for dtype value
-    this.dtypeSelect = document.createElement("enum-input");
-    this.dtypeSelect.setAttribute("name", "Data Type");
     this.dtypeSelect.choices = dTypeOptions;
     if (!data.dtype) {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
-      this.dtypeSelect.addEventListener("change", this._formChanged.bind(this));
     } else {
       this.dtypeSelect.setValue(data.dtype);
       this.dtypeSelect.default = data.dtype;
       this.dtypeSelect._select.disabled = true;
     }
-    this._form.appendChild( this.dtypeSelect );
 
     // description
-    this._editDescription = document.createElement("text-input");
-    this._editDescription.setAttribute("name", "Description");
-    this._editDescription.setAttribute("type", "string");
     this._editDescription.setValue(this.data.description);
     this._editDescription.default = this.data.description;
-    this._editDescription.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._editDescription);
 
     // visible
-    this._visibleBool = document.createElement("bool-input");
-    this._visibleBool.setAttribute("name", "Visible");
-    this._visibleBool.setAttribute("on-text", "Yes");
-    this._visibleBool.setAttribute("off-text", "No");
     this._visibleBool.setValue(this.data.visible);
     this._visibleBool.default = this.data.visible;
-    this._visibleBool.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._visibleBool);
 
     // grouping default
-    this._groupingDefault = document.createElement("bool-input");
-    this._groupingDefault.setAttribute("name", "Grouping Default");
-    this._groupingDefault.setAttribute("on-text", "Yes");
-    this._groupingDefault.setAttribute("off-text", "No");
     this._groupingDefault.setValue(this.data.grouping_default);
     this._groupingDefault.default = this.data.grouping_default;
-    this._groupingDefault.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._groupingDefault);
 
     // const MEDIA = "Media"; 
     if (typeof data.media !== "undefined") {
       try {
-        const mediaListWithChecked = await this.mediaListHandler.getCompiledMediaList( data.media );
-        this._mediaCheckboxes = document.createElement("checkbox-set");
-        this._mediaCheckboxes.setAttribute("name", "Media");
-        this._mediaCheckboxes.setAttribute("type", "number");
+        const mediaListWithChecked = await getCompiledList({
+          type: this.typeName,
+          skip: data.id,
+          check: this.data.media
+        });
         this._mediaCheckboxes.setValue( mediaListWithChecked );
-        this._mediaCheckboxes.default = mediaListWithChecked;
-        this._mediaCheckboxes.addEventListener("change", this._formChanged.bind(this));
-        this._form.appendChild(this._mediaCheckboxes);   
+        this._mediaCheckboxes.default = mediaListWithChecked; 
       } catch (err) {
         console.error("Error populating media list.", err);
       }
@@ -97,8 +86,6 @@ export class StateTypeEdit extends TypeForm {
       { "value": "Frame" },
       { "value": "Localization" }
     ];
-    this._association = document.createElement("enum-input");
-    this._association.setAttribute("name", "Association");
     this._association.choices = assocOptions;
     if (!data.association) {
       this._association.default = ""; 
@@ -106,8 +93,6 @@ export class StateTypeEdit extends TypeForm {
       this._association.setValue(data.association);
       this._association.default = data.association;
     }
-    this._association.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild( this._association );
 
     // Interpolation
     const interpOptions = [
@@ -116,8 +101,6 @@ export class StateTypeEdit extends TypeForm {
       { "label": "Latest", "value": "latest" },
       { "label": "Attr Style Range", "value": "attr_style_range" }
     ];
-    this._interpolation = document.createElement("enum-input");
-    this._interpolation.setAttribute("name", "Interpolation");
     this._interpolation.choices = interpOptions;
     if (!data.interpolation) {
       this._interpolation.default = ""; 
@@ -125,22 +108,11 @@ export class StateTypeEdit extends TypeForm {
       this._interpolation.setValue(data.interpolation);
       this._interpolation.default = data.interpolation;
     }
-    this._interpolation.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild( this._interpolation );
 
     // Child Localizations
-    this._deleteChildLoc = document.createElement("bool-input");
-    this._deleteChildLoc.setAttribute("name", "Delete Child Localizations");
-    this._deleteChildLoc.setAttribute("on-text", "Yes");
-    this._deleteChildLoc.setAttribute("off-text", "No");
     this._deleteChildLoc.setValue(this.data.delete_child_localizations);
     this._deleteChildLoc.default = this.data.delete_child_localizations;
-    this._deleteChildLoc.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild(this._deleteChildLoc);
 
-    current.appendChild( this._form );
-
-    return current;
   }
 
   _getFormData(){

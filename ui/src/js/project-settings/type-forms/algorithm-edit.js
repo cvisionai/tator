@@ -13,15 +13,30 @@ export class AlgorithmEdit extends TypeForm {
 
       // To show who algo is registered to
       this._userData = document.createElement("user-data");
+
+      // 
+      var templateInner = document.getElementById("algorithm-edit");
+      var innerClone = document.importNode(templateInner.content, true);
+      this.typeFormDiv.appendChild(innerClone);
+
+      this._form = this._shadow.getElementById("algorithm-edit--form");
+      this._editName = this._shadow.getElementById("algorithm-edit--name");
+      this._editDescription = this._shadow.getElementById("algorithm-edit--description");
+      this._userEditVisible = this._shadow.getElementById("algorithm-edit--registering-user");
+      this._manifestPath = this._shadow.getElementById("algorithm-edit--manifest");
+      this._clusterEnumInput = this._shadow.getElementById("algorithm-edit--job-cluster");
+      this._filesPerJob = this._shadow.getElementById("algorithm-edit--files");
+      this._categoriesList = this._shadow.getElementById("algorithm-edit--categories");
+      this._parametersList = this._shadow.getElementById("algorithm-edit--parameters");
    }
 
-   async _getSectionForm(data) {
+   async setupForm(data) {
       this.data = data;
-      this.algorithmId = data.id;
-      this._setForm();
-      let current = this.boxHelper.boxWrapDefault({
-         "children": ""
-      });
+
+      // Setup view
+      this._typeId = data.id;
+      this._objectName = data.name;
+      this._projectId = data.project;
 
       // Before we setup the form, check if the user will be able to do things
       const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
@@ -58,26 +73,16 @@ export class AlgorithmEdit extends TypeForm {
          }
       }
 
-      // append input for name
-      this._editName = document.createElement("text-input");
-      this._editName.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._editName.setAttribute("name", "Name");
-      this._editName.setAttribute("type", "string");
-      this._editName.setValue(this.data.name);
-      this._editName.default = this.data.name;
-      this._editName.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._editName);
+      // name
+      let  name  = ""
+      if(data.id !== "New") name = this.data.name
+      this._editName.setValue(name);
+      this._editName.default = name;
 
       // description
-      this._editDescription = document.createElement("text-input");
       this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._editDescription.setAttribute("name", "Description");
-      this._editDescription.setAttribute("type", "string");
       this._editDescription.setValue(this.data.description);
       this._editDescription.default = this.data.description;
-      this._editDescription.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._editDescription);
-
 
       // User
       this._registeredUserName = "";
@@ -100,29 +105,17 @@ export class AlgorithmEdit extends TypeForm {
       }
 
       // Visible input with readable name
-      this._userEditVisible = document.createElement("text-input");
       this._userEditVisible.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._userEditVisible.setAttribute("name", "Registering User");
       this._userEditVisible.setValue(this._registeredUserName);
       this._userEditVisible.default = this._registeredUserName;
-      this._userEditVisible.permission = null;
-      this._userEditVisible.addEventListener("change", this._formChanged.bind(this));
-      // this._userEditVisible.setAttribute("tooltip", "User registering algorithm cannot be edited.")
-      this._form.appendChild(this._userEditVisible);
+      // this._userEditVisible.permission = null;
 
       // Note: HIDDEN input for formValue of ID; Name is for user only
-      this._userEdit = document.createElement("text-input");
-      this._userEdit.setValue(this._registeredUserId);
       this._userEdit.default = this._registeredUserId;
       this._userEdit.permission = null;
-      this._userEdit.addEventListener("change", this._formChanged.bind(this));
 
       // Path to manifest
-      this._manifestPath = document.createElement("file-input");
       this._manifestPath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._manifestPath.setAttribute("name", "Manifest");
-      this._manifestPath.setAttribute("for", "manifest");
-      this._manifestPath.setAttribute("type", "yaml");
       this._manifestPath.projectId = this.projectId;
 
       if (this.data.manifest) {
@@ -155,71 +148,40 @@ export class AlgorithmEdit extends TypeForm {
          );
       };
 
-      this._manifestPath.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._manifestPath);
-
       // Cluster
       if (!this.userCantSeeCluster) {
          // if they aren't a non auth user
          // Check if there are going to be enum values first, show input with NULL
          if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
-            this._clusterEnumInput = document.createElement("text-input");
             this._clusterEnumInput.disabled = true;
-            this._clusterEnumInput.setAttribute("name", "Job Cluster");
             this._clusterEnumInput.setValue("Null");
-            this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
          } else {
-            this._clusterEnumInput = document.createElement("enum-input");
             this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-            this._clusterEnumInput.setAttribute("name", "Job Cluster");
             this._clusterEnumInput.choices = jobClusterWithChecked;
             this._clusterEnumInput.default = this.data.cluster;
-            this._clusterEnumInput.addEventListener("change", this._formChanged.bind(this));
          }
-
-         this._form.appendChild(this._clusterEnumInput);
       } else {
-         this._clusterEnumInput = document.createElement("text-input");
          this._clusterEnumInput.default = this.data.cluster;
       }
 
       // Files per job
-      this._filesPerJob = document.createElement("text-input");
       this._filesPerJob.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._filesPerJob.setAttribute("name", "Files Per Job");
-      this._filesPerJob.setAttribute("type", "int");
       this._filesPerJob.setValue(this.data.files_per_job);
       this._filesPerJob.default = this.data.files_per_job;
-      this._filesPerJob.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._filesPerJob);
 
       // Categories
-      this._categoriesList = document.createElement("array-input");
       this._categoriesList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._categoriesList.setAttribute("name", "Categories");
       this._categoriesList.setValue(this.data.categories);
       this._categoriesList.default = this.data.categories;
-      this._categoriesList.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._categoriesList);
 
       // Parameters
-      let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
-      let paramInputTemplate = JSON.stringify({ name: '', value: '' });
-
-      this._parametersList = document.createElement("array-object-input");
+      // let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
+      // let paramInputTemplate = JSON.stringify({ name: '', value: '' });
       this._parametersList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._parametersList.setAttribute("name", "Parameters");
-      this._parametersList.setAttribute("properties", paramInputTypes);
-      this._parametersList.setAttribute("empty-row", paramInputTemplate);
+      // this._parametersList.setAttribute("properties", paramInputTypes);
+      // this._parametersList.setAttribute("empty-row", paramInputTemplate);
       this._parametersList.setValue(this.data.parameters);
       this._parametersList.default = this.data.parameters;
-      this._parametersList.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._parametersList);
-
-
-      current.appendChild(this._form);
-
-      return current;
    }
 
 

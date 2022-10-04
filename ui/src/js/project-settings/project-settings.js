@@ -123,7 +123,6 @@ export class ProjectSettings extends TatorPage {
 
     // Wait until we have project
     this._shadow.querySelectorAll('button[id^="SideNav--toggle-"]').forEach(el => {
-      console.log(el);
       el.addEventListener("click", this.toggle.bind(this))
     });
 

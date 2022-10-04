@@ -7,42 +7,28 @@ export class MembershipEdit extends TypeForm {
     super();
     this.typeName = "Membership";
     this.readableTypeName = "Membership";
-    this.icon = '<svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>';
+    
+    // TODO
     this._hideAttributes = true;
 
-    //
-    const template = document.getElementById("memberships-edit").content;
-    this._shadow.appendChild(template.cloneNode(true));
+    // 
+    var templateInner = document.getElementById("membership-edit");
+    var innerClone = document.importNode(templateInner.content, true);
+    this.typeFormDiv.appendChild(innerClone);
+
+    this._form = this._shadow.getElementById("membership-edit--form");
+    this._userInput = this._shadow.getElementById("membership-edit--search-users");
+    this._editDescription = this._shadow.getElementById("membership-edit--permission");
+    this._showEmpty = this._shadow.getElementById("membership-edit--default-version");
   }
 
-  init(data) {
-    this._data = data;
-  }
 
-  _getEmptyData() {
-    return {
-      "id" : `New`,
-      "user" : "",
-      "permission": "",
-      "default_version": null,
-      "project" : this.projectId,
-      "form" : "empty"
-    };
-  }
-
-  _getAttributeSection() {
-    return document.createElement("div");
-  }
-
-  _getSectionForm(data) {
-    this._form = this._shadow.getElementById("memberships-edit--form");
+  async setupForm(data) {
+    const formData = {};
 
     if (data.id == "New") {
       this._userData = document.createElement("user-data");
-      this._userInput = document.createElement("user-input");
-      this._userInput.setAttribute("name", "Search users");
       this._userInput.init(this._userData);
-      this._form.appendChild(this._userInput);
     }
 
     // permission
@@ -53,28 +39,17 @@ export class MembershipEdit extends TypeForm {
       { "label": "Can Execute", "value": "Can Execute" },
       { "label": "Full Control", "value": "Full Control" },
     ];
-    this._permissionSelect = document.createElement("enum-input");
-    this._permissionSelect.setAttribute("name", "Permission");
     this._permissionSelect.choices = permissionOptions;
     this._permissionSelect._select.required = true;
     this._permissionSelect.setValue(data.permission);
     this._permissionSelect.default = data.permission;
-    this._permissionSelect.addEventListener("change", this._formChanged.bind(this));
-    this._form.appendChild( this._permissionSelect );
 
     // default version
     const versionOptions = getCompiledList({ type: "Version", check: data.default_version });
-    
-    this._versionSelect = document.createElement("enum-input");;
-    this._versionSelect.setAttribute("name", "Version");
     this._versionSelect.choices = versionOptions;
     this._versionSelect._select.required = true;
     this._versionSelect.setValue(data.default_version);
     this._versionSelect.default = data.default_version;
-    this._versionSelect.addEventListener("change", this._formChanged.bind(this));     
-    this._form.appendChild(this._versionSelect);
-
-    return current;
   }
 
   _getFormData(id) {
@@ -108,6 +83,22 @@ export class MembershipEdit extends TypeForm {
     }
 
     return formData;
+  }
+
+
+  _getEmptyData() {
+    return {
+      "id" : `New`,
+      "user" : "",
+      "permission": "",
+      "default_version": null,
+      "project" : this.projectId,
+      "form" : "empty"
+    };
+  }
+
+  _getAttributeSection() {
+    return document.createElement("div");
   }
 
   _savePost() {

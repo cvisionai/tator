@@ -7,57 +7,48 @@ export class AppletEdit extends TypeForm {
       super();
       this.typeName = "Applet";
       this.readableTypeName = "Applet";
-      this.icon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="SideNav-icon icon-cpu no-fill"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>`;
+      
       this._hideAttributes = true;
-      this.versionId = null;
 
-      // To show who algo is registered to
-      // this._userData = document.createElement("user-data");
+      // 
+      var templateInner = document.getElementById("applet-edit");
+      var innerClone = document.importNode(templateInner.content, true);
+      this.typeFormDiv.appendChild(innerClone);
+
+      this._form = this._shadow.getElementById("applet-edit--form");
+      this._editName = this._shadow.getElementById("applet-edit--name");
+      this._linkToDashboard = this._shadow.getElementById("applet-edit--link");
+      this._editDescription = this._shadow.getElementById("applet-edit--description");
+      this._htmlFilePath = this._shadow.getElementById("applet-edit--html-file");
+      this._categoriesList = this._shadow.getElementById("applet-edit--categories");
    }
 
-   async _getSectionForm(data) {
+   async setupForm(data) {
       this.data = data;
-      this.appletId = data.id;
-      this._setForm();
-      let current = this.boxHelper.boxWrapDefault({
-         "children": ""
-      });
-
-
-      // append input for name
-      this._editName = document.createElement("text-input");
-      this._editName.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._editName.setAttribute("name", "Name");
-      this._editName.setAttribute("type", "string");
-      this._editName.setValue(this.data.name);
-      this._editName.default = this.data.name;
-      this._editName.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._editName);
+  
+      // Setup view
+      this._typeId = data.id;
+      this._objectName = data.name;
+      this._projectId = data.project;
+  
+      // name
+      let name = ""
+      if (data.id !== "New") name = this.data.name
+      this._editName.setValue(name);
+      this._editName.default = name;
 
       // append link
-      if (this.appletId && this.appletId !== "New") {
-         this._linkToDashboard = document.createElement("link-input");
-         this._linkToDashboard.setAttribute("name", "Link");
+      if (this.data.id && this.data.id !== "New") {
          this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this.projectId}/dashboards/${this.appletId}`);
-         this._form.appendChild(this._linkToDashboard); 
+      } else {
+         this._linkToDashboard.hidden = true;
       }
 
       // description
-      this._editDescription = document.createElement("text-input");
-      this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._editDescription.setAttribute("name", "Description");
-      this._editDescription.setAttribute("type", "string");
       this._editDescription.setValue(this.data.description);
       this._editDescription.default = this.data.description;
-      this._editDescription.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._editDescription);
 
       // Path to html file
-      this._htmlFilePath = document.createElement("file-input");
-      // this._htmlFilePath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._htmlFilePath.setAttribute("name", "HTML File");
-      this._htmlFilePath.setAttribute("for", "applet");
-      this._htmlFilePath.setAttribute("type", "html");
       this._htmlFilePath.projectId = this.projectId;
 
       if (typeof this.data.html_file == "undefined") {
@@ -90,21 +81,9 @@ export class AppletEdit extends TypeForm {
          });
       };
 
-      this._htmlFilePath.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._htmlFilePath);
-
       // Categories
-      this._categoriesList = document.createElement("array-input");
-      // this._categoriesList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._categoriesList.setAttribute("name", "Categories");
       this._categoriesList.setValue(this.data.categories);
       this._categoriesList.default = this.data.categories;
-      this._categoriesList.addEventListener("change", this._formChanged.bind(this));
-      this._form.appendChild(this._categoriesList);
-
-      current.appendChild(this._form);
-
-      return current;
    }
 
 

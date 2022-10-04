@@ -17,6 +17,17 @@ getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
    .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
    .set("Applet", api.getAppletListWithHttpInfo.bind(api));
 
+const postMap = new Map();
+postMap
+   .set("MediaType", api.createMediaTypeWithHttpInfo.bind(api))
+   .set("LocalizationType", api.createLocalizationTypeWithHttpInfo.bind(api))
+   .set("LeafType", api.createLeafTypeWithHttpInfo.bind(api))
+   .set("StateType", api.createStateTypeWithHttpInfo.bind(api))
+   .set("Membership", api.createMembershipWithHttpInfo.bind(api))
+   .set("Version", api.createVersionWithHttpInfo.bind(api));
+   // .set("Algorithm", api.createAlgorithmWithHttpInfo.bind(api))
+   // .set("Applet", api.createAppletWithHttpInfo.bind(api));
+
 const patchMap = new Map();
 patchMap.set("Project", api.updateProjectWithHttpInfo.bind(api))
    .set("MediaType", api.updateMediaTypeWithHttpInfo.bind(api))
@@ -92,29 +103,29 @@ const store = create(subscribeWithSelector((set, get) => ({
 
 
    /* versions */
-   fetchVersions: async () => {
-      // const object = await api.getVersionListWithHttpInfo(get().Project.data.id);
-      const getFn = getMap.get("Version");
-      const projectId = get().Project.data.id;
+   // fetchVersions: async () => {
+   //    // const object = await api.getVersionListWithHttpInfo(get().Project.data.id);
+   //    const getFn = getMap.get("Version");
+   //    const projectId = get().Project.data.id;
       
-      const object = await getFn(projectId);
+   //    const object = await getFn(projectId);
 
-      console.log("THIS WAS THE OBJ RETURNED");
-      console.log(object);
+   //    console.log("THIS WAS THE OBJ RETURNED");
+   //    console.log(object);
 
-      const setList = get().Version.setList;
-      const map = get().Version.map;
+   //    const setList = get().Version.setList;
+   //    const map = get().Version.map;
 
-      for (let item of object.data) {
-         setList.add(item.id);
-         map.set(item.id, item);
-      }
+   //    for (let item of object.data) {
+   //       setList.add(item.id);
+   //       map.set(item.id, item);
+   //    }
 
-      set({ Version: {...get().Version, setList, map, init: true } });
-      return object.data;
-   },
+   //    set({ Version: {...get().Version, setList, map, init: true } });
+   //    return object.data;
+   // },
    addVersion: async (spec) => {
-      set({ status: {...get.status, name: "pending", msg: "Adding version..."} });
+      set({ status: {...get().status, name: "pending", msg: "Adding version..."} });
       const object = await api.createVersionWithHttpInfo(get().Project.data.id, spec);
       
       console.log("THIS WAS THE OBJ RETURNED");
@@ -132,12 +143,12 @@ const store = create(subscribeWithSelector((set, get) => ({
          await get().fetchVersions();
       }
       
-      set({ status: { ...get.status, name: "idle", msg: "" } });
+      set({ status: { ...get().status, name: "idle", msg: "" } });
       
       return object;
    },
    updateVersion: async (id, data) => {
-      set({ status: {...get.status, name: "pending", msg: "Adding version..."} });
+      set({ status: {...get().status, name: "pending", msg: "Adding version..."} });
       const object = await api.updateVersionWithHttpInfo(id, data);
       console.log("THIS WAS THE OBJ RETURNED");
       console.log(object);
@@ -150,7 +161,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       } else {
          await get().fetchVersions();
       }
-      set({ status: {...get.status, name: "idle", msg: ""} });
+      set({ status: {...get().status, name: "idle", msg: ""} });
       return object;
    },
    getVersionContentCount: async (versionId) => {
@@ -162,7 +173,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       return { stateCount: 5, localizationCount: 20};
    },
    removeVersion: async (id) => {
-      set({ status: {...get.status, name: "pending", msg: "Removing version..."} });
+      set({ status: {...get().status, name: "pending", msg: "Removing version..."} });
       const object = await api.deleteVersionWithHttpInfo(id);
       const versionSet = get().Version.setList;
       versionSet.delete(id);
@@ -170,7 +181,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       versionMap.delete(id);
 
       set({ Version: {...get().Version, map: versionMap, setList: versionSet } });
-      set({ status: { ...get.status, name: "idle", msg: "" } });
+      set({ status: { ...get().status, name: "idle", msg: "" } });
       return object;
    },
 
@@ -186,9 +197,9 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
    fetchType: async (type) => {
       // const object = await api.getVersionListWithHttpInfo(get().Project.data.id);
-      const getFn = getMap.get(type);
+      const fn = getMap.get(type);
       const projectId = get().Project.data.id;   
-      const object = await getFn(projectId);
+      const object = await fn(projectId);
 
       console.log("THIS WAS THE OBJ RETURNED");
       console.log(object);
@@ -201,37 +212,80 @@ const store = create(subscribeWithSelector((set, get) => ({
          map.set(item.id, item);
       }
 
-      // set({ status: {...get.status, name: "idle", msg: ""} });
+      // set({ status: {...get().status, name: "idle", msg: ""} });
       console.log("FETCH TYPE....");
       set({[type] : { ...get()[type], setList, map, init: true }});
    
       return object.data;
    },
-   addType:  ({type, data}) => {
-      let object = {};
+   addType:  async ({type, typeData}) => {
+      set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
+      const fn = postMap.get(type);
+      const projectId = get().Project.data.id;
+      const object = await api.fn(projectId, typeData);
+      
+      console.log("THIS WAS THE OBJ RETURNED");
+      console.log(object);
 
-      switch (type) {
-         case "Version":
-            object = get().addVersion(data);
-            break;
-         default:
-            console.error(`Invalid type: ${type}`);
+      if (object.data && object.data.object) {
+         const setList = get()[type].setList;
+         setList.add(object.data.id);
+
+         const map = get()[type].map;
+         map.set(object.data.id, object.data.object);
+
+         set({ [type] : { ...get()[type], setList, map} }); // `push` doesn't trigger state update
+      } else {
+         // If object isn't returned, refetch type
+         await get().fetchType(type);
       }
-
+      
+      set({ status: { ...get().status, name: "idle", msg: "" } });
+      
+      // This includes the reponse so error handling can happen in ui
       return object;
    },
-   updateType:  ({type, id, data}) => {
-      let object = {};
+   updateType: async ({type, id, data}) => {
+      set({ status: { ...get().status, name: "pending", msg: "Updating version..." } });
+      const fn = patchMap.get(type);
+      const object = await fn(id, data);
 
-      switch (type) {
-         case "Version":
-            object =  get().updateVersion(id, data);
-            
-            break;
-         default:
-            console.error(`Invalid type: ${type}`);
+      console.log("THIS WAS THE OBJ RETURNED");
+      console.log(object);
+
+      if (object.data && object.data.object) {
+         const map = get()[type].map;
+         map.set(object.data.id, object.data.object);
+
+         set({ [type] : { ...get()[type], map} }); // `push` doesn't trigger state update    
+      } else {
+         // If object isn't returned, refetch type
+         await get().fetchType(type);
       }
+      set({ status: {...get().status, name: "idle", msg: ""} });
+      return object;
+   },
+   removeType: async ({type, id, data}) => {
+      set({ status: { ...get().status, name: "pending", msg: "Updating version..." } });
+      const fn = deleteMap.get(type);
+      const object = await fn(id, data);
 
+      console.log("THIS WAS THE OBJ RETURNED");
+      console.log(object);
+
+      if (object.data && object.data.object) {
+         const setList = get()[type].setList;
+         setList.delete(id);
+
+         const map = get()[type].map;
+         map.delete(id);
+
+         set({ [type] : { ...get()[type], map, setList} }); // `push` doesn't trigger state update    
+      } else {
+         // If object isn't returned, refetch type
+         await get().fetchType(type);
+      }
+      set({ status: {...get().status, name: "idle", msg: ""} });
       return object;
    }
 })));
