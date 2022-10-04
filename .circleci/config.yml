@@ -77,7 +77,7 @@ jobs:
     - run:
         name: Push client image to OCI
         command: |
-          ssh lightsail 'export OCIR_REGISTRY='"'$OCIR_REGISTRY'"';export OCIR_PASSWORD='"'$OCIR_PASSWORD'"';export OCIR_HOST='"'$OCIR_HOST'"';export OCIR_USERNAME='"'$OCIR_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_oci.sh';
+          ssh lightsail 'export OCI_REGISTRY='"'$OCI_REGISTRY'"';export OCIR_PASSWORD='"'$OCIR_PASSWORD'"';export OCIR_HOST='"'$OCIR_HOST'"';export OCIR_USERNAME='"'$OCIR_USERNAME'"';export CIRCLE_SHA1='"'$CIRCLE_SHA1'"';tator/.circleci/push_oci.sh';
     - run:
         name: Push backend images to AWS
         command: |
