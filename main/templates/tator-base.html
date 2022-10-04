@@ -1,5 +1,4 @@
 {% load static %}
-{% load settings_value %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,12 +6,6 @@
     <link rel="stylesheet" type="text/css" href={% static "components.css" %} />
     <script src={% static "components.js" %}></script>
     <script src={% static "util.js" %}></script>
-    {% settings_value "USE_MIN_JS" as settings_min_js %}
-    {% if settings_min_js %}
-    <script type="module" src={% static "tator.min.js" %}></script>
-    {% else %}
-    <script type="module" src={% static "tator.js" %}></script>
-    {% endif %}
     {% block head %}
     {% endblock head %}
   </head>

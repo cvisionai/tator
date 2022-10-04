@@ -378,7 +378,7 @@ export class DrawGL
 
   prepBackward()
   {
-    if (this._jumbo == undefined)
+    if (this._jumbo == undefined && this.bufferDepth != 16)
     {
       this.bufferDepth = 16; //More in rewind mode is helpful
       this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
@@ -387,7 +387,7 @@ export class DrawGL
 
   prepForward()
   {
-    if (this._jumbo == undefined)
+    if (this._jumbo == undefined && this.bufferDepth != 6)
     {
       this.bufferDepth = 6; //More in rewind mode is helpful
       this.frameBuffer = new FrameBuffer(this.bufferDepth, this._initTexture);
@@ -663,8 +663,7 @@ export class DrawGL
                                                 'timestamp': frameData.timestamp});
       this._formatCtx.drawImage(newFrame,0,0, this._formatCanvas.width, this._formatCanvas.height);
       newFrame.close();
-      let bitmap = this._formatCanvas.transferToImageBitmap();
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._formatCanvas);
     }
     else
     {

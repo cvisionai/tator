@@ -2806,7 +2806,7 @@ export class AnnotationCanvas extends TatorElement
       else
       {
         // Check to see if we are nearby are in the localization
-        if (localization && localization.id == this.activeLocalization.id)
+        if (localization && this.activeLocalization && localization.id == this.activeLocalization.id)
         {
           // If we tripped in during a select, don't override the pointer
           if (mouseEvent.buttons == 0)
