@@ -5,6 +5,8 @@ import { ProjectTypesData } from "../data/data-project-types.js";
 import { AttributesClone } from "./attributes-clone.js";
 import { AttributesData } from "../data/data-attributes-clone.js";
 import { AttributesDelete } from "./attributes-delete.js";
+import { store } from "../store.js";
+
 /**
  * Main Attribute section for type forms
  * 
@@ -28,8 +30,10 @@ export class AttributesMain extends HTMLElement {
     this.hasChanges = false;
   }
 
-  _init(typeName, fromId, fromName, projectId, data, modal){
-    //console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
+  _init(typeName, fromId, fromName, projectId, data, modal) {
+    console.log("Attribute main init.............................")
+    console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
+    console.log(data);
 
     // Init object global vars
     this.fromId = fromId;
@@ -59,8 +63,6 @@ export class AttributesMain extends HTMLElement {
     this.attributeBox = this.boxHelper.boxWrapDefault( {"children" : ""} );
     this.attributeDiv.appendChild(this.attributeBox);
 
- 
-
     // this.separate_span = document.createElement("span");
     // this.separate_span.setAttribute("class", "px-2");
     // h2.appendChild(this.separate_span);
@@ -82,9 +84,6 @@ export class AttributesMain extends HTMLElement {
     // span2.setAttribute("class", "text-gray text-normal")
     // span2.appendChild( document.createTextNode(`${this.typeName} (ID ${this.fromId})`) );
     // h2.appendChild(span2);
-
-    
-
 
     // Add the form and +Add links
     this.attributeBox.appendChild( this._getAttributesSection(data) );
@@ -218,14 +217,18 @@ export class AttributesMain extends HTMLElement {
     .then(data => {
       let currentMessage = data.message;
 
-      this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
-        once : true
-      });
+      // this.boxHelper.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
+      //   once : true
+      // });
 
       if (status == 201) {
         // iconWrap.appendChild(succussIcon);
         this.loading.hideSpinner();
         this.boxHelper._modalSuccess(currentMessage);
+
+        // Replaces dispatchRefresh
+        store.getState().fetchType(this.typeName);
+
       } else if(status == 400) {
         // iconWrap.appendChild(warningIcon);
         this.loading.hideSpinner();
@@ -237,10 +240,10 @@ export class AttributesMain extends HTMLElement {
     });
   }
 
-  _dispatchRefresh(e){
-    //console.log("modal complete closed");
-    this.dispatchEvent(this.refreshTypeEvent);   
-  }
+  // _dispatchRefresh(e){
+  //   //console.log("modal complete closed");
+  //   this.dispatchEvent(this.refreshTypeEvent);   
+  // }
 
   // Clone Attribute
   _getCopyAttributesTrigger(){

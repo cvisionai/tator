@@ -5,6 +5,7 @@ export class LeafTypeEdit extends TypeForm {
     super();
     this.typeName = "LeafType";
     this.readableTypeName = "Leaf Type";
+    this._hideAttributes = false;
 
     // 
     var templateInner = document.getElementById("leaf-type-edit");
@@ -17,20 +18,7 @@ export class LeafTypeEdit extends TypeForm {
     this.dtypeSelect = this._shadow.getElementById("leaf-type-edit--data-type");
   }
 
-  async setupForm(data) {
-    this.data = data;
-
-    // Setup view
-    this._typeId = data.id;
-    this._objectName = data.name;
-    this._projectId = data.project;
-
-    // name
-    let name = ""
-    if (data.id !== "New") name = this.data.name
-    this._editName.setValue(name);
-    this._editName.default = name;
-
+  async _setupFormUnique(data) {
 
     // dtype  
     const dTypeOptions = [

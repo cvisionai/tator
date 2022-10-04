@@ -40,15 +40,15 @@ patchMap.set("Project", api.updateProjectWithHttpInfo.bind(api))
    .set("Applet", api.updateAppletWithHttpInfo.bind(api));
 
 const deleteMap = new Map();
-deleteMap.set("Project", api.deleteVersionWithHttpInfo.bind(api))
-   .set("MediaType", api.deleteVersionWithHttpInfo.bind(api))
-   .set("LocalizationType", api.deleteVersionWithHttpInfo.bind(api))
-   .set("LeafType", api.deleteVersionWithHttpInfo.bind(api))
-   .set("StateType", api.deleteVersionWithHttpInfo.bind(api))
-   .set("Membership", api.deleteVersionWithHttpInfo.bind(api))
+deleteMap.set("Project", api.deleteProjectWithHttpInfo.bind(api))
+   .set("MediaType", api.deleteMediaTypeWithHttpInfo.bind(api))
+   .set("LocalizationType", api.deleteLocalizationTypeWithHttpInfo.bind(api))
+   .set("LeafType", api.deleteLeafTypeWithHttpInfo.bind(api))
+   .set("StateType", api.deleteStateTypeWithHttpInfo.bind(api))
+   .set("Membership", api.deleteMembershipWithHttpInfo.bind(api))
    .set("Version", api.deleteVersionWithHttpInfo.bind(api))
-   .set("Algorithm", api.deleteVersionWithHttpInfo.bind(api))
-   .set("Applet", api.deleteVersionWithHttpInfo.bind(api));
+   .set("Algorithm", api.deleteAlgorithmWithHttpInfo.bind(api))
+   .set("Applet", api.deleteAppletWithHttpInfo.bind(api));
 
 /** 
  * This is state of all Types below for init
@@ -70,12 +70,12 @@ const store = create(subscribeWithSelector((set, get) => ({
       init: false,
       data: {},
    },
+   MediaType: { ...initialState, name: "MediaType", attribute_types: {} }, 
+   LocalizationType: {...initialState, name: "LocalizationType", attribute_types: {} }, 
+   LeafType: {...initialState, name: "LeafType", attribute_types: {} }, 
+   StateType: {...initialState, name: "StateType", attribute_types: {} }, 
+   Membership: { ...initialState, name: "Membership" },
    Version: {...initialState, name: "Version"}, 
-   MediaType: {...initialState, name: "MediaType"}, 
-   LocalizationType: {...initialState, name: "LocalizationType"}, 
-   LeafType: {...initialState, name: "LeafType"}, 
-   StateType: {...initialState, name: "StateType"}, 
-   Membership: {...initialState, name: "Membership"}, 
    Alogrithm: {...initialState, name: "Alogrithm"}, 
    Applet: {...initialState, name: "Applet"}, 
    JobCluster: {...initialState, name: "JobCluster"}, 
@@ -218,11 +218,11 @@ const store = create(subscribeWithSelector((set, get) => ({
    
       return object.data;
    },
-   addType:  async ({type, typeData}) => {
+   addType:  async ({type, data}) => {
       set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
-      const fn = postMap.get(type);
+      const fn = postMap.get(type, data);
       const projectId = get().Project.data.id;
-      const object = await api.fn(projectId, typeData);
+      const object = await fn(projectId, data);
       
       console.log("THIS WAS THE OBJ RETURNED");
       console.log(object);
@@ -265,10 +265,11 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ status: {...get().status, name: "idle", msg: ""} });
       return object;
    },
-   removeType: async ({type, id, data}) => {
+   removeType: async ({type, id}) => {
       set({ status: { ...get().status, name: "pending", msg: "Updating version..." } });
       const fn = deleteMap.get(type);
-      const object = await fn(id, data);
+      console.log(fn);
+      const object = await fn(id);
 
       console.log("THIS WAS THE OBJ RETURNED");
       console.log(object);

@@ -6,6 +6,7 @@ export class LocalizationEdit extends TypeForm {
     super();
     this.typeName = "LocalizationType";
     this.readableTypeName = "Localization Type";
+    this._hideAttributes = false;
 
     // 
     var templateInner = document.getElementById("localization-type-edit");
@@ -28,21 +29,7 @@ export class LocalizationEdit extends TypeForm {
     this._mediaCheckboxes = this._shadow.getElementById("localization-type-edit--media");
   }
 
-  async setupForm(data) {
-    this.data = data;
-
-    // Setup view
-    this._typeId = data.id;
-    this._objectName = data.name;
-    this._projectId = data.project;
-
-    // name
-    let  name  = ""
-    if (data.id !== "New") name = this.data.name
-    
-    // append input for name
-    this._editName.setValue(name);
-    this._editName.default = name;
+  async _setupFormUnique(data) {
 
     // dtype
     const dTypeOptions = [

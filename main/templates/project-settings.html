@@ -27,7 +27,7 @@
       <div id="settings-nav--nav" class="SideNav rounded-2 float-left col-xl-2 col-md-3 col-xs-12">
 
         <!-- Projects sidebar item -->
-        <a id="SideNav--toggle-Project" class="SideNav-item" href="#current-project-itemDiv" title="Project"
+        <a id="SideNav--toggle-Project" class="SideNav-item" href="#itemDivId-Project-Current" title="Project"
           selected="false"><svg class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16"
             height="16">
             <path fill-rule="evenodd"
@@ -54,7 +54,7 @@
             <span class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav class="SideNav SubItems  subitems-MediaType" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
 
@@ -78,7 +78,7 @@
             <span class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav class="SideNav SubItems  subitems-LocalizationType" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
 
@@ -97,8 +97,7 @@
               class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav class="SideNav SubItems  subitems-LeafType" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
-
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
 
@@ -115,7 +114,7 @@
               class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav class="SideNav SubItems  subitems-StateType" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
 
@@ -134,7 +133,7 @@
               class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav class="SideNav SubItems  subitems-Membership" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
 
@@ -148,19 +147,13 @@
                   <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                   <polyline points="2 17 12 22 22 17"></polyline>
                   <polyline points="2 12 12 17 22 12"></polyline>
-                </svg><span class="item-label">Versions</span></span></button><span
-              class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
+                </svg><span class="item-label">Versions</span></span></button>
+
+            <a href="#itemDivId-Version-New"
+              class="text-white float-right Nav-action col-2 f1 text-bold clickable ">+</a>
           </div>
           <nav id="SideNav--Versions" class="SideNav SubItems  subitems-Version" hidden="">
-            <!-- <img src="/static/96a33e84f1f5146b9f08.svg"> -->
-            <div class="placeholder-glow">
-              <a class="SideNav-subItem placeholder bg-charcoal-medium"> &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp;  </a>
-              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; </a>
-              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; </a>
-              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  </a>
-              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; </a>
-              <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; </a>
-            </div>
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
 
@@ -185,7 +178,7 @@
               class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav class="SideNav SubItems  subitems-Algorithm" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
 
@@ -211,7 +204,7 @@
             <span class="float-right Nav-action col-2 f1 text-bold clickable ">+</span>
           </div>
           <nav class="SideNav SubItems  subitems-Applet" hidden="">
-            <img src="/static/96a33e84f1f5146b9f08.svg">
+            <placeholder-glow rows="6" className="SideNav-subItem"></placeholder-glow>
           </nav>
         </div>
       </div>
@@ -219,7 +212,7 @@
 
       <!-- Main page container -->
       <div id="settings-nav--item-container" class="NavItem float-left col-md-9 col-xl-10 col-xs-12">
-        <div id="current-project-itemDiv" class="item-box">
+        <div id="itemDivId-Project-Current" class="item-box">
           <project-main-edit id="current-project-form"></project-main-edit>
         </div>
       </div>
@@ -252,25 +245,87 @@
         </div>
       </div>
       <div class="d-flex flex-items-center flex-justify-center py-3">
-        <input id="type-form-save"  type="submit" value="Save" class="btn btn-clear f1 text-semibold">
+        <input id="type-form-save" type="submit" value="Save" class="btn btn-clear f1 text-semibold">
         <a href="#" id="type-form-reset" class="px-5 f1 text-gray hover-text-white">Reset</a>
       </div>
       <div class="text-red py-3 rounded-2  edit-project__config" style="background-color: transparent;">
         <div class="clearfix py-6">
           <div class="py-md-5 float-left col-md-5 col-sm-5 text-right">
-            <button id="type-form-delete"
-              class="btn btn-small btn-charcoal float-right btn-outline text-gray"
-              style="margin-right: 10px;">Delete</button></div>
+            <button id="type-form-delete" class="btn btn-small btn-charcoal float-right btn-outline text-gray"
+              style="margin-right: 10px;">Delete</button>
+          </div>
           <div class="py-md-6 f1 text-gray float-left col-md-7 col-sm-7">
-            Delete this <span class="type-form-typeName"><!--TYPE NAME GOES HERE--></span> and all its data?
+            Delete this <span class="type-form-typeName">
+              <!--TYPE NAME GOES HERE-->
+            </span> and all its data?
           </div>
         </div>
       </div>
     </div>
-    <div id="type-form-attr-column" class="col-4" hidden=""></div>
+    <div id="type-form-attr-column" class="col-4" hidden="">
+      <attributes-main id="type-form-attr-main"></attributes-main>
+    </div>
   </div>
 </template>
 
+<template id="media-type-edit">
+  <form id="media-type-edit--form">
+    <text-input id="media-type-edit--name" name="Name" type="string"></text-input>
+    <enum-input id="media-type-edit--data-type" name="Data Type"></enum-input>
+    <text-input id="media-type-edit--description" name="Description" type="string"></text-input>
+    <div id="media-type-edit--volume-div" hidden="">
+      <text-input id="media-type-edit--volume" name="Default volume" type="number"></text-input>
+      <div class="col-8 float-right f3 text-gray">Note: Range from 0 (no sound) to 100.</div>
+    </div>
+    <bool-input id="media-type-edit--visible" name="Visible" on-text="Yes" off-text="No"></bool-input>
+  </form>
+</template>
+
+<template id="localization-type-edit">
+  <form id="localization-type-edit--form">
+    <text-input id="localization-type-edit--name" name="Name" type="string"></text-input>
+    <enum-input id="localization-type-edit--data-type" name="Data Type"></enum-input>
+    <text-input id="localization-type-edit--description" name="Description" type="string"></text-input>
+    <color-inputs id="localization-type-edit--color-map" name="Color Map"></color-inputs>
+    <bool-input id="localization-type-edit--visible" name="Visible" on-text="Yes" off-text="No"></bool-input>
+    <bool-input id="localization-type-edit--drawable" name="Drawable" on-text="Yes" off-text="No"></bool-input>
+    <text-input id="localization-type-edit--line-width" name="Line Width" type="int"></text-input>
+    <bool-input id="localization-type-edit--grouping-default" name="Grouping Default" on-text="Yes" off-text="No">
+    </bool-input>
+    <checkbox-set id="localization-type-edit--media" name="Media" type="number"></checkbox-set>
+  </form>
+</template>
+
+<template id="leaf-type-edit">
+  <form id="leaf-type-edit--form">
+    <text-input id="leaf-type-edit--name" name="Name" type="string"></text-input>
+    <enum-input id="leaf-type-edit--data-type" name="Data Type"></enum-input>
+    <text-input id="leaf-type-edit--description" name="Description" type="string"></text-input>
+  </form>
+</template>
+
+<template id="state-type-edit">
+  <form id="state-type-edit--form">
+    <text-input id="state-type-edit--name" name="Name" type="string"></text-input>
+    <enum-input id="state-type-edit--data-type" name="Data Type"></enum-input>
+    <text-input id="state-type-edit--description" name="Description" type="string"></text-input>
+    <bool-input id="state-type-edit--visible" name="Visible" on-text="Yes" off-text="No"></bool-input>
+    <bool-input id="state-type-edit--grouping-default" name="Grouping Default" on-text="Yes" off-text="No"></bool-input>
+    <checkbox-set id="state-type-edit--media" name="Media" type="number"></checkbox-set>
+    <enum-input id="state-type-edit--association" name="Association"></enum-input>
+    <enum-input id="state-type-edit--interpolation" name="Interpolation"></enum-input>
+    <bool-input id="state-type-edit--delete-child" name="Delete Child Localizations" on-text="Yes" off-text="No">
+    </bool-input>
+  </form>
+</template>
+
+<template id="membership-edit">
+  <form id="membership-edit--form">
+    <user-input id="membership-edit--search-users" name="Search users"></user-input>
+    <enum-input id="membership-edit--permission" name="Permission"></enum-input>
+    <enum-input id="membership-edit--default-version" name="Default version"></enum-input>
+  </form>
+</template>
 
 <template id="versions-edit">
   <form id="versions-edit--form">
@@ -282,23 +337,35 @@
   </form>
 </template>
 
-<template id="memberships-edit">
-  <form id="memberships-edit--form">
-    <user-input id="memberships-edit--user" name="Search Users" type="string">
-      </text-input>
-      <text-input id="memberships-edit--description" name="Description" type="string"></text-input>
-      <bool-input id="memberships-edit--show-empty" name="Show Empty" onText="Yes" offText="No"></bool-input>
-      <text-input id="memberships-edit--number" name="Number" type="int"></text-input>
-      <checkbox-set id="memberships-edit--bases" name="Bases" type="number"></checkbox-set>
+<template id="algorithm-edit">
+  <form id="algorithm-edit--form">
+    <text-input id="algorithm-edit--name" name="Name" type="string"></text-input>
+    <text-input id="algorithm-edit--description" name="Description" type="string"></text-input>
+    <text-input id="algorithm-edit--registering-user" name="Registering User"></text-input>
+    <file-input id="algorithm-edit--manifest" name="Manifest" for="manifest" type="yaml"></file-input>
+    <text-input id="algorithm-edit--job-cluster" name="Job Cluster"
+      tooltip="No Job Clusters associated to this Organization"></text-input>
+    <text-input id="algorithm-edit--files" name="Files Per Job" type="int"></text-input>
+    <array-input id="algorithm-edit--categories" name="Categories"></array-input>
+    <array-object-input id="algorithm-edit--parameters" name="Parameters"
+      properties="{&quot;name&quot;:&quot;text-input&quot;,&quot;value&quot;:&quot;text-input&quot;}"
+      empty-row="{&quot;name&quot;:&quot;&quot;,&quot;value&quot;:&quot;&quot;}"></array-object-input>
   </form>
 </template>
 
-<project-settings
-  username="{{ user|stringformat:'s' }}"
-  email="{{ user.email }}"
-  project-id="{{ project.id }}"
-  is-staff="{{ user.is_staff }}"
-  >
+
+<template id="applet-edit">
+  <form id="applet-edit--form">
+    <text-input id="applet-edit--name" name="Name" type="string"></text-input>
+    <link-input id="applet-edit--link" name="Link" type="string"></link-input>
+    <text-input id="applet-edit--description" name="Description" type="string"></text-input>
+    <file-input id="applet-edit--html-file" name="HTML File" for="applet" type="html"></file-input>
+    <array-input id="applet-edit--categories" name="Categories"></array-input>
+  </form>
+</template>
+
+<project-settings username="{{ user|stringformat:'s' }}" email="{{ user.email }}" project-id="{{ project.id }}"
+  is-staff="{{ user.is_staff }}">
 </project-settings>
 
 

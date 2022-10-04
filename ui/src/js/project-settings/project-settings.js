@@ -159,6 +159,7 @@ export class ProjectSettings extends TatorPage {
         console.warn("Hash set is invalid: " + val);
       }
     } else if (val == "reset") {
+      console.log("RESETTING HASH")
       this._selectedHash = val;
       this._selectedType = val;
       this._selectedObject = val;

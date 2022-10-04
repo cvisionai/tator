@@ -23,19 +23,7 @@ export class AppletEdit extends TypeForm {
       this._categoriesList = this._shadow.getElementById("applet-edit--categories");
    }
 
-   async setupForm(data) {
-      this.data = data;
-  
-      // Setup view
-      this._typeId = data.id;
-      this._objectName = data.name;
-      this._projectId = data.project;
-  
-      // name
-      let name = ""
-      if (data.id !== "New") name = this.data.name
-      this._editName.setValue(name);
-      this._editName.default = name;
+   async _setupFormUnique(data) {
 
       // append link
       if (this.data.id && this.data.id !== "New") {

@@ -423,6 +423,9 @@ export class LeafMain extends HTMLElement {
           // iconWrap.appendChild(succussIcon);
           this.loading.hideSpinner();
           this.boxHelper._modalSuccess(currentMessage);
+          
+          // Replaces dispatchRefresh #TODO
+          // store.getState().fetchType(this.typeName);
         } else if(status == 400) {
           iconWrap.appendChild(warningIcon);
           this.loading.hideSpinner();

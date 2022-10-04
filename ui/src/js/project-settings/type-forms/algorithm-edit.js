@@ -30,13 +30,7 @@ export class AlgorithmEdit extends TypeForm {
       this._parametersList = this._shadow.getElementById("algorithm-edit--parameters");
    }
 
-   async setupForm(data) {
-      this.data = data;
-
-      // Setup view
-      this._typeId = data.id;
-      this._objectName = data.name;
-      this._projectId = data.project;
+   async _setupFormUnique(data) {
 
       // Before we setup the form, check if the user will be able to do things
       const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
@@ -72,12 +66,6 @@ export class AlgorithmEdit extends TypeForm {
             }
          }
       }
-
-      // name
-      let  name  = ""
-      if(data.id !== "New") name = this.data.name
-      this._editName.setValue(name);
-      this._editName.default = name;
 
       // description
       this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";

@@ -5,6 +5,7 @@ export class MediaTypeMainEdit extends TypeForm {
     super();
     this.typeName = "MediaType";
     this.readableTypeName = "Media Type";
+    this._hideAttributes = false;
     
     // 
     var templateInner = document.getElementById("media-type-edit");
@@ -20,21 +21,7 @@ export class MediaTypeMainEdit extends TypeForm {
     this._visibleBool = this._shadow.getElementById("media-type-edit--visible");    
   }
 
-  async setupForm(data) {
-    this.data = data;
-
-    // Setup view
-    this._typeId = data.id;
-    this._objectName = data.name;
-    this._projectId = data.project;
-
-    // name
-    let  name  = ""
-    if (data.id !== "New") name = this.data.name
-    
-    // append input for name
-    this._editName.setValue(name);
-    this._editName.default = name;
+  async _setupFormUnique(data) {
 
     // dtype
     const dTypeOptions = [

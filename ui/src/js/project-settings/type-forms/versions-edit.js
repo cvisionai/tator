@@ -8,6 +8,8 @@ export class VersionsEdit extends TypeForm {
 
       this._typeName = "Version";
       this.readableTypeName = "Version";
+      this._hideAttributes = false;
+      this.saveWarningFlow = true;
       
       // 
       var templateInner = document.getElementById("versions-edit");
@@ -22,20 +24,7 @@ export class VersionsEdit extends TypeForm {
       this._basesCheckbox = this._shadow.getElementById("versions-edit--bases");
    }
 
-   async setupForm(data) {
-      this.data = data;
-
-      // Setup view
-      this._typeId = data.id;
-      this._objectName = data.name;
-      this._projectId = data.project;
-
-      // name
-      let  name  = ""
-      if(data.id !== "New") name = this.data.name
-      this._editName.setValue(name);
-      this._editName.default = name;
-
+   async setupFormUnique(data) {
       // description
       this._editDescription.setValue(this.data.description);
       this._editDescription.default = this.data.description;
@@ -63,32 +52,32 @@ export class VersionsEdit extends TypeForm {
    }
 
 
-   // _getFormData() {
-   //    const formData = {};
+   _getFormData() {
+      const formData = {};
 
-   //    // console.log(`Data ID: ${this.data.id}`);
-   //    const isNew = this.data.id == "New" ? true : false;
+      // console.log(`Data ID: ${this.data.id}`);
+      const isNew = this.data.id == "New" ? true : false;
 
-   //    if (this._editName.changed() || isNew) {
-   //       formData.name = this._editName.getValue();
-   //    }
+      if (this._editName.changed() || isNew) {
+         formData.name = this._editName.getValue();
+      }
 
-   //    if (this._editDescription.changed() || isNew) {
-   //       formData.description = this._editDescription.getValue();
-   //    }
+      if (this._editDescription.changed() || isNew) {
+         formData.description = this._editDescription.getValue();
+      }
 
-   //    if (this._showEmpty.changed() || isNew) {
-   //       formData.show_empty = this._showEmpty.getValue();
-   //    }
+      if (this._showEmpty.changed() || isNew) {
+         formData.show_empty = this._showEmpty.getValue();
+      }
 
-   //    // SKIP this._number: Number is set on save, it is for display only
+      // SKIP this._number: Number is set on save, it is for display only
 
-   //    if (this._basesCheckbox.changed() || isNew) {
-   //       formData.bases = this._basesCheckbox.getValue();
-   //    }
+      if (this._basesCheckbox.changed() || isNew) {
+         formData.bases = this._basesCheckbox.getValue();
+      }
 
-   //    return formData;
-   // }
+      return formData;
+   }
 
    // /* This overrides the main type form */
    // // TODO some complexity can be removed because attr forms are

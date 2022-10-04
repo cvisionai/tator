@@ -5,6 +5,7 @@ export class StateTypeEdit extends TypeForm {
     super();
     this.typeName = "StateType";
     this.readableTypeName = "State Type";
+    this._hideAttributes = false;
     
     // 
     var templateInner = document.getElementById("state-type-edit");
@@ -23,7 +24,7 @@ export class StateTypeEdit extends TypeForm {
     this._deleteChildLoc = this._shadow.getElementById("state-type-edit--delete-child");
   }
 
-  async setupForm(data) {
+  async _setupFormUnique(data) {
     this.data = data;
 
     // Setup view

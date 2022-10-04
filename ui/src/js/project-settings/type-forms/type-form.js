@@ -1,13 +1,5 @@
 import { TatorElement } from "../../components/tator-element.js";
-import { getCookie } from "../../util/get-cookie.js";
-import { Utilities } from "../../util/utilities.js";
-import { LoadingSpinner } from "../../components/loading-spinner.js";
-import { SettingsBox } from "../settings-box-helpers.js";
-import { TypeNew } from "./type-new.js";
-import { TypeDelete } from "./type-delete.js";
 import { store } from "../store.js";
-
-
 
 export class TypeForm extends TatorElement {
   constructor() {
@@ -27,10 +19,11 @@ export class TypeForm extends TatorElement {
     this.reset = this._shadow.getElementById("type-form-reset");
     this.delete = this._shadow.getElementById("type-form-delete");
     this.typeFormDiv = this._shadow.getElementById("type-form-div");
-    this._attributeContainer =  this._shadow.getElementById("type-form-attr-column");
+    this._attributeContainer = this._shadow.getElementById("type-form-attr-column");
+    // this.attributeSection = this._shadow.getElementById("type-form-attr-main");
 
     // console.log("Created type form....");
-
+    this._hideAttributes = true;
     this.saveWarningFlow = false;
 
     // for use by form
@@ -82,9 +75,14 @@ export class TypeForm extends TatorElement {
   set attributeTypes(val) {
     this._attributeTypes = val;
 
-    // create attribute form and append to container
-    const section = this._getAttributeSection();
-    this._attributeContainer.appendChild(section);
+    // Shows container
+    this._attributeContainer.hidden = false;
+
+    // Clears any content (Covers a reset scenario)
+    if (this.attributeSection) this.attributeSection.remove();
+
+    // Creates/Re-creates this.attributeSection & appends it
+    this._getAttributeSection();
   }
 
   init(modal) {
@@ -92,6 +90,60 @@ export class TypeForm extends TatorElement {
     this.save.addEventListener("click", this._saveData.bind(this));
     this.reset.addEventListener("click", this._resetForm.bind(this));
     this.delete.addEventListener("click", this._deleteType.bind(this));
+  }
+
+  async setupForm(data) {
+    this.data = data;
+
+    // Setup view
+    this._typeId = data.id;
+    this._objectName = data.name;
+    this._projectId = data.project;
+
+    // name
+    if (this.typeName !== "Membership") {
+      let  name  = ""
+      if(data.id !== "New") name = this.data.name
+      this._editName.setValue(name);
+      this._editName.default = name;      
+    }
+
+    await this._setupFormUnique(data);
+
+    // attribute section
+    if (data.id !== "New" && this._hideAttributes == false && typeof this.data.attribute_types !== "undefined") {
+      this.attributeTypes = this.data.attribute_types;
+    }
+  }
+
+  _getAttributeSection() {
+    console.log(this.data.attribute_types);
+    this.attributeSection = document.createElement("attributes-main");
+    this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
+    this.attributeSection._init(this.typeName, this.data.id, this.data.name, this.projectId, this.data.attribute_types, this.modal);
+    this._attributeContainer.appendChild(this.attributeSection);
+
+    return this.attributeSection;
+  }
+
+  _getLeafSection() {
+    this.leafSection = document.createElement("leaf-main");
+    this.leafSection.setAttribute("data-from-id", `${this.typeId}`);
+    this.leafSection.setAttribute("data-project-id", `${this.projectId}`)
+    this.leafSection._init({
+      typeName: this.typeName,
+      fromId: this.typeId,
+      fromName: this.data.name,
+      projectId: this.projectId,
+      attributeTypes: this.data.attribute_types,
+      modal: this.modal,
+      projectName: this.projectName
+    });
+
+    // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
+    this.leafSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
+
+    return this.leafSection;
   }
 
   _saveData() {
@@ -157,17 +209,6 @@ export class TypeForm extends TatorElement {
 
     }
   }
-  
-    _getAttributeSection() {
-      this.attributeSection = document.createElement("attributes-main");
-      this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
-      // this.attributeSection._init(this.typeName, this.typeId, this.data.name, this.projectId, this._attributeTypes, this.modal);
-  
-      // // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
-      // this.attributeSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
-  
-      return this.attributeSection;
-    }
 
   _resetForm() {
     // Use the most recently set data to update the values of form
@@ -183,12 +224,12 @@ export class TypeForm extends TatorElement {
 
     button.addEventListener("click", async () => {
       this.modal._modalCloseAndClear();
-      this.handleResponse(await store.getState().removeVersion(this.data.id));
+      this.handleResponse(await store.getState().removeType(this.typeName, this.data.id));
     });
 
     this.modal._confirm({
-      titleText: `Delete "${this.objectName} (ID: ${this.data.id}?)`,
-      mainText: `This cannot be undone.`,
+      titleText: `Confirm Delete`,
+      mainText: `Delete "${this.objectName}" (ID: ${this.data.id})? This cannot be undone.`,
       buttonSave: button
     });
   }

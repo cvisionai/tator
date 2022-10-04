@@ -23,7 +23,7 @@ export class MembershipEdit extends TypeForm {
   }
 
 
-  async setupForm(data) {
+  async _setupFormUnique(data) {
     const formData = {};
 
     if (data.id == "New") {
