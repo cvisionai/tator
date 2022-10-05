@@ -116,7 +116,6 @@ class AttributeTypeListAPI(BaseListView):
             raise ValueError(f"Expected `mod_type` in {valid_mod_types}, received '{mod_type}'")
 
         ts = TatorSearch()
-        global_operation = params.get("global", "false").lower()
         old_name = params["old_attribute_type_name"]
         old_dtype = None
         old_attribute_type = None

@@ -192,7 +192,7 @@ export class VersionsEdit extends TypeForm {
       return this.saveButton;
     }
 
-   async _saveWithConfirm({ id = -1, globalAttribute = false } = {}) {
+   async _saveWithConfirm({ id = -1 } = {}) {
       this.loading.showSpinner();
 
       // Overriding save to show prompt
