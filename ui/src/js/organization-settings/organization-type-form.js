@@ -439,7 +439,7 @@ export class OrganizationTypeForm extends TatorElement {
 
 
 
-  _save({ id = -1, globalAttribute = false } = {}) {
+  _save({ id = -1 } = {}) {
     // @TODO add back inline error messaging
     // If any fields still have errors don't submit the form.
     // const errorList = this._shadow.querySelectorAll(`.errored`);
@@ -531,33 +531,19 @@ export class OrganizationTypeForm extends TatorElement {
               error = true;
             }
 
-            if (messageObj.requiresConfirmation) {
-              let buttonSave = this._getAttrGlobalTrigger(id);
-              let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-              let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
+            let mainText = `${message}`;
+            this.loading.hideSpinner();
 
-              let mainText = `${message}${confirmHeading}${subText}${messageObj.messageConfirm}`;
-              this.loading.hideSpinner();
-              this._modalConfirm({
-                "titleText": "Complete",
-                mainText,
-                buttonSave
-              });
-            } else {
-              let mainText = `${message}`;
-              this.loading.hideSpinner();
-
-              if (messageObj.messageError && !messageObj.messageSuccess) {
-                this._modalError(mainText);
-              } else if (messageObj.messageError && messageObj.messageSuccess) {
-                this._modalComplete(mainText);
-              } else if (!messageObj.messageError && messageObj.messageSuccess){
-                this._modalSuccess(mainText);
-              }
-
-              // Reset forms to the saved data from model
-              this.resetHard();
+            if (messageObj.messageError && !messageObj.messageSuccess) {
+              this._modalError(mainText);
+            } else if (messageObj.messageError && messageObj.messageSuccess) {
+              this._modalComplete(mainText);
+            } else if (!messageObj.messageError && messageObj.messageSuccess){
+              this._modalSuccess(mainText);
             }
+
+            // Reset forms to the saved data from model
+            this.resetHard();
           }).then(() => {
             // Reset changed flag
             this.changed = false;
@@ -647,12 +633,6 @@ export class OrganizationTypeForm extends TatorElement {
           iconWrap.appendChild(warningIcon);
           //console.log("Return Message - It's a 400 response for main form.");
           messageError += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-        } else if (hasAttributeChanges && currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-          //console.log("Return Message - It's a 400 response for attr form.");
-          let input = `<input type="checkbox" checked name="global" data-old-name="${formReadable}" class="checkbox"/>`;
-          let newName = formReadable == formReadable2 ? "" : ` new name "${formReadable2}"`
-          messageConfirm += `<div class="py-2">${input} Attribute "${formReadable}" ${newName}</div>`
-          requiresConfirmation = true;
         } else {
           iconWrap.appendChild(warningIcon);
           messageError += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${formReadable} not saved.</span></div>`
@@ -662,43 +642,6 @@ export class OrganizationTypeForm extends TatorElement {
     });
 
     return { requiresConfirmation, messageSuccess, messageConfirm, messageError };
-  }
-
-  _getAttrGlobalTrigger(id) {
-    let buttonSave = document.createElement("button")
-    buttonSave.setAttribute("class", "btn btn-clear f1 text-semibold");
-    buttonSave.innerHTML = "Confirm";
-
-    buttonSave.addEventListener("click", (e) => {
-      e.preventDefault();
-      let confirmCheckboxes = this.modal._shadow.querySelectorAll('[name="global"]');
-      this._modalCloseCallback();
-
-      for (let check of confirmCheckboxes) {
-        //add and changed flag back to this one
-        let name = check.dataset.oldName;
-        let formId = `${name.replace(/[^\w]|_/g, "").toLowerCase()}_${id}`;
-
-        if (check.checked == true) {
-          console.log("User marked as global: " + name);
-          for (let form of this.attributeSection.attrForms) {
-            if (form.id == formId) {
-              // add back changed flag
-              form.changed = true;
-              form.global = true;
-              console.log("set data set global to true");
-            }
-          }
-        } else {
-          console.log("User marked NOT global, do not resend: " + name);
-        }
-      }
-
-      //run the _save method again with global true
-      this._save({ "id": id, "globalAttribute": true })
-    });
-
-    return buttonSave;
   }
 
   _toggleChevron(e) {

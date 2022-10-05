@@ -579,7 +579,7 @@ export class AttributesMain extends HTMLElement {
     }
   }
 
-  _fetchAttributePutPromise(parentTypeId, dataObject, global = false) {
+  _fetchAttributePutPromise(parentTypeId, dataObject) {
     let promise = Promise.resolve();
     this.successMessages = "";
     this.failedMessages = "";
@@ -589,10 +589,6 @@ export class AttributesMain extends HTMLElement {
     const formData = dataObject.formData;
     const attributeNewName = dataObject.newName;
     const attributeOldName = dataObject.oldName;
-
-    if (global === "true") {
-      formData.global = "true";
-    }
 
     promise = promise.then(() => {
       return fetch("/rest/AttributeType/" + parentTypeId, {
@@ -623,18 +619,10 @@ export class AttributesMain extends HTMLElement {
         iconWrap.appendChild(succussIcon);
         this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
       } else if (response.status != 200) {
-        if (currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-          //console.log("Return Message - It's a 400 response for attr form.");
-          let input = `<input type="checkbox" checked name="global" data-old-name="${attributeOldName}" class="checkbox"/>`;
-          let newNameText = (attributeOldName == attributeNewName) ? "" : ` new name "${attributeNewName}"`
-          this.confirmMessages += `<div class="py-2">${input} Attribute "${attributeOldName}" ${newNameText}</div>`
-          this.requiresConfirmation = true;
-        } else {
-          iconWrap.appendChild(warningIcon);
-          //console.log("Return Message - It's a 400 response for main form.");
-          // this.failedMessages += `<div class="py-2"><span class="v-align-top">${currentMessage}</span></div>`;
-          this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
-        }
+        iconWrap.appendChild(warningIcon);
+        //console.log("Return Message - It's a 400 response for main form.");
+        // this.failedMessages += `<div class="py-2"><span class="v-align-top">${currentMessage}</span></div>`;
+        this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
       }
     }).then(() => {
       if (this.successMessages !== "") {
@@ -646,29 +634,15 @@ export class AttributesMain extends HTMLElement {
         this.saveModalMessage += heading + this.failedMessages;
       }
 
-      if (this.requiresConfirmation) {
-        let buttonSave = this._getAttrGlobalTrigger(dataObject);
-        let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-        let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-        let mainText = `${this.saveModalMessage}${confirmHeading}${subText}${this.confirmMessages}`;
-        this.loading.hideSpinner();
-        this.boxHelper._modalConfirm({
-          "titleText": "Confirm Edit",
-          mainText,
-          buttonSave
-        });
+      let mainText = `${this.saveModalMessage}`;     
+      
+      if (this.failedMessages !== "") {
+        this.boxHelper._modalComplete(mainText);
       } else {
-        let mainText = `${this.saveModalMessage}`;     
-        
-        if (this.failedMessages !== "") {
-          this.boxHelper._modalComplete(mainText);
-        } else {
-          this.boxHelper._modalSuccess(mainText);
-        }
-        // Reset forms to the saved data from model
-        return this.dispatchEvent(this.refreshTypeEvent);
+        this.boxHelper._modalSuccess(mainText);
       }
+      // Reset forms to the saved data from model
+      return this.dispatchEvent(this.refreshTypeEvent);
     }).then(() => {
       this.loading.hideSpinner();
     }).catch(err => {
@@ -678,17 +652,6 @@ export class AttributesMain extends HTMLElement {
     return promise;
   }
 
-  _getAttrGlobalTrigger(formData) {
-    let buttonSave = document.createElement("button")
-    buttonSave.setAttribute("class", "btn btn-clear f1 text-semibold");
-    buttonSave.innerHTML = "Confirm";
-
-    buttonSave.addEventListener("click", (e) => {
-      return this._fetchAttributePutPromise(this.typeId, formData, "true");
-    });
-
-    return buttonSave;
-  }
 }
 
 customElements.define("attributes-main", AttributesMain);
