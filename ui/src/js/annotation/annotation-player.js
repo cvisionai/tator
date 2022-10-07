@@ -272,7 +272,7 @@ export class AnnotationPlayer extends TatorElement {
     this._timelineUnitsMenu.appendChild(this._timelineUnitsFrame);
 
     this._timelineUnitsFrame.addEventListener("click", () => {
-      this._setTimelineDisplayMode("frame");
+      this.setTimelineDisplayMode("frame");
     });
 
     this._timelineUnitsRelativeTime = document.createElement("div");
@@ -281,7 +281,7 @@ export class AnnotationPlayer extends TatorElement {
     this._timelineUnitsMenu.appendChild(this._timelineUnitsRelativeTime);
 
     this._timelineUnitsRelativeTime.addEventListener("click", () => {
-      this._setTimelineDisplayMode("relativeTime");
+      this.setTimelineDisplayMode("relativeTime");
     });
 
     this._timelineUnitsUTC = document.createElement("div");
@@ -290,7 +290,7 @@ export class AnnotationPlayer extends TatorElement {
     this._timelineUnitsMenu.appendChild(this._timelineUnitsUTC);
 
     this._timelineUnitsUTC.addEventListener("click", () => {
-      this._setTimelineDisplayMode("utc");
+      this.setTimelineDisplayMode("utc");
     });
 
     // Video quality menu
@@ -468,7 +468,7 @@ export class AnnotationPlayer extends TatorElement {
     this._scrubInterval = 16;
     this._lastScrub = Date.now();
     this._rate = 1;
-    this._setTimelineDisplayMode("frame");
+    this.setTimelineDisplayMode("frame");
     this._videoMode = "play"; // Future growth (e.g. play | summary)
 
     this._shortcutsDisabled = false;
@@ -1187,7 +1187,7 @@ export class AnnotationPlayer extends TatorElement {
 
     if (this._timelineUnitsUTC.style.display == "none") {
       this._timelineUnitsMenu.style.top = `${pos.top - 120}px`;
-      this._timelineUnitsMenu.style.left = `${pos.left - 100}px`;  
+      this._timelineUnitsMenu.style.left = `${pos.left - 100}px`;
     }
     else {
       this._timelineUnitsMenu.style.top = `${pos.top - 150}px`;
@@ -1221,17 +1221,36 @@ export class AnnotationPlayer extends TatorElement {
    * Sets display mode to be used for the timelines
    * @param {string} mode "frame"|"relativeTime"|"utc"
    */
-  _setTimelineDisplayMode(mode) {
+  setTimelineDisplayMode(mode) {
+
     this._displayMode = mode;
+    if (this._timeStore != null) {
+      if (!this._timeStore.utcEnabled() && mode == "utc") {
+        this._displayMode = "frame";
+      }
+    }
+
+    if (["frame", "relativeTime", "utc"].indexOf(mode) < 0) {
+      this._displayMode = "frame";
+      console.warn(`Invalid timeline display mode: ${mode}`);
+    }
+
     this._videoTimeline.setDisplayMode(this._displayMode);
     this._entityTimeline.setDisplayMode(this._displayMode);
 
-    if (mode == "utc") {
+    if (this._displayMode == "utc") {
       this._slider.useUtcTime(this._timeStore);
     }
     else {
       this._slider.useRelativeTime();
     }
+
+    this.dispatchEvent(new CustomEvent("setTimelineDisplayMode", {
+      composed: true,
+      detail: {
+        mode: this._displayMode
+      }
+    }));
   }
 
   newMetadataItem(dtype, metaMode, objId) {

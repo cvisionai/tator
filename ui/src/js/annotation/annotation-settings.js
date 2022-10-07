@@ -96,6 +96,9 @@ export class AnnotationSettings extends TatorElement {
     } else {
       params.set("toggle_text", 0);
     }
+    if (this.hasAttribute("timeline-display")) {
+      params.set("timeline-display", this.getAttribute("timeline-display"));
+    }
     return params;
   }
 }

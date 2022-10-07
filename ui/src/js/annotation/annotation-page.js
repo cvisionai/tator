@@ -522,6 +522,7 @@ export class AnnotationPage extends TatorPage {
         const haveLock = searchParams.has("lock");
         const haveFillBoxes = searchParams.has("fill_boxes");
         const haveToggleText = searchParams.has("toggle_text");
+        const haveTimelineDisplayMode = searchParams.has("timeline-display");
         if (haveEntity && haveType) {
           const typeId = searchParams.get("selected_type");
           const entityId = Number(searchParams.get("selected_entity"));
@@ -569,6 +570,9 @@ export class AnnotationPage extends TatorPage {
             this._settings._toggle_text.toggle = false
           }
           canvas.toggleTextOverlays(this._settings._toggle_text.get_toggle_status());
+        }
+        if (haveTimelineDisplayMode) {
+          this._player.setTimelineDisplayMode(searchParams.get("timeline-display"));
         }
       }
     }
@@ -769,6 +773,10 @@ export class AnnotationPage extends TatorPage {
 
     this._videoSettingsDialog.addEventListener("allowSafeMode", evt => {
       canvas.allowSafeMode(evt.detail.allowSafeMode);
+    });
+
+    this._player.addEventListener("setTimelineDisplayMode", (evt) => {
+      this._settings.setAttribute("timeline-display", evt.detail.mode);
     });
 
     this._player.addEventListener("setPlayQuality", (evt) => {
