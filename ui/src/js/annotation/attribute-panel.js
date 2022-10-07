@@ -905,7 +905,7 @@ export class AttributePanel extends TatorElement {
     let version = null;
     let foundVersion = false;
     for (let index = 0; index < this._versionList.length; index++) {
-      if (this._versionList[index].result.id == values.modified_by) {
+      if (this._versionList[index].result.id == values.version) {
         foundVersion = true;
         version = this._versionList[index].result.name;
         break;
