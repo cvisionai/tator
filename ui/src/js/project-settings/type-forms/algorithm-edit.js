@@ -1,8 +1,9 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
+import { getCompiledList } from "../store.js";
 
-export class AlgorithmEdit extends TypeForm {
+export class AlgorithmEdit extends TypeFormTemplate {
    constructor() {
       super();
       this.typeName = "Algorithm";
@@ -17,7 +18,7 @@ export class AlgorithmEdit extends TypeForm {
       // 
       var templateInner = document.getElementById("algorithm-edit");
       var innerClone = document.importNode(templateInner.content, true);
-      this.typeFormDiv.appendChild(innerClone);
+      this._shadow.appendChild(innerClone);
 
       this._form = this._shadow.getElementById("algorithm-edit--form");
       this._editName = this._shadow.getElementById("algorithm-edit--name");
@@ -31,9 +32,8 @@ export class AlgorithmEdit extends TypeForm {
    }
 
    async _setupFormUnique(data) {
-
       // Before we setup the form, check if the user will be able to do things
-      const jobClusterWithChecked = await this.clusterListHandler.getCompiledList(this.data.cluster);
+      const jobClusterWithChecked = await getCompiledList({ type: "JobCluster", check: this._data.cluster });
       this.userCantSaveCluster = !this.isStaff && (jobClusterWithChecked == null || jobClusterWithChecked.length == 0);
       this.userCantSeeCluster = (jobClusterWithChecked === 403); // Non Auth user
 
@@ -42,7 +42,7 @@ export class AlgorithmEdit extends TypeForm {
          this._cannotEdit.setAttribute("class", "text-gray pb-3");
          this._form.appendChild(this._cannotEdit);
       
-         if (this.data.id == "New") {
+         if (this._data.id == "New") {
             // Wihtout authorization to see clusters, or if there are none
             if (this.userCantSeeCluster) {
                this._cannotEdit.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
@@ -69,21 +69,21 @@ export class AlgorithmEdit extends TypeForm {
 
       // description
       this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._editDescription.setValue(this.data.description);
-      this._editDescription.default = this.data.description;
+      this._editDescription.setValue(this._data.description);
+      this._editDescription.default = this._data.description;
 
       // User
       this._registeredUserName = "";
       this._registeredUserId = "";
       try {
-         if (this.data.id == "New") {
+         if (this._data.id == "New") {
             //use current user
             let userData = await this._userData.getCurrentUser();
             // console.log(userData);
             this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
             this._registeredUserId = userData.id;
          } else {
-            let userData = await this._userData.getUserById(this.data.user);
+            let userData = await this._userData.getUserById(this._data.user);
             // console.log(userData);
             this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
             this._registeredUserId = userData.id;
@@ -106,9 +106,9 @@ export class AlgorithmEdit extends TypeForm {
       this._manifestPath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._manifestPath.projectId = this.projectId;
 
-      if (this.data.manifest) {
-         this._manifestPath.setValue(`/media/${this.data.manifest}`);
-         this._manifestPath.default = `/media/${this.data.manifest}`;       
+      if (this._data.manifest) {
+         this._manifestPath.setValue(`/media/${this._data.manifest}`);
+         this._manifestPath.default = `/media/${this._data.manifest}`;       
       } else {
          this._manifestPath.default = null;
       }
@@ -146,21 +146,21 @@ export class AlgorithmEdit extends TypeForm {
          } else {
             this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
             this._clusterEnumInput.choices = jobClusterWithChecked;
-            this._clusterEnumInput.default = this.data.cluster;
+            this._clusterEnumInput.default = this._data.cluster;
          }
       } else {
-         this._clusterEnumInput.default = this.data.cluster;
+         this._clusterEnumInput.default = this._data.cluster;
       }
 
       // Files per job
       this._filesPerJob.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._filesPerJob.setValue(this.data.files_per_job);
-      this._filesPerJob.default = this.data.files_per_job;
+      this._filesPerJob.setValue(this._data.files_per_job);
+      this._filesPerJob.default = this._data.files_per_job;
 
       // Categories
       this._categoriesList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      this._categoriesList.setValue(this.data.categories);
-      this._categoriesList.default = this.data.categories;
+      this._categoriesList.setValue(this._data.categories);
+      this._categoriesList.default = this._data.categories;
 
       // Parameters
       // let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
@@ -168,16 +168,16 @@ export class AlgorithmEdit extends TypeForm {
       this._parametersList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       // this._parametersList.setAttribute("properties", paramInputTypes);
       // this._parametersList.setAttribute("empty-row", paramInputTemplate);
-      this._parametersList.setValue(this.data.parameters);
-      this._parametersList.default = this.data.parameters;
+      this._parametersList.setValue(this._data.parameters);
+      this._parametersList.default = this._data.parameters;
    }
 
 
    _getFormData() {
       const formData = {};
 
-      // console.log(`Data ID: ${this.data.id}`);
-      // const isNew = this.data.id == "New" ? true : false;
+      // console.log(`Data ID: ${this._data.id}`);
+      // const isNew = this._data.id == "New" ? true : false;
       const isNew = true;
 
       if (this._editName.changed() || isNew) {

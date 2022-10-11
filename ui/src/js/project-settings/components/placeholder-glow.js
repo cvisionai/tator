@@ -9,7 +9,8 @@ export class PlaceholderGlow extends TatorElement {
       this._shadow.appendChild(this.div);
 
       this._row = document.createElement("span");
-      this._row.setAttribute("class", "placeholder");
+      this._row.setAttribute("class", "placeholder SideNav-subItem");
+      this._row.style = `width: ${String((Math.random() * (110 - 80) + 80).toFixed(0))}px`;
 
       //    <div class="placeholder-glow">
       //    <a class="SideNav-subItem placeholder bg-charcoal-medium"> &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp;  </a>
@@ -33,16 +34,18 @@ export class PlaceholderGlow extends TatorElement {
             
             for (let x = 0; x <= newValue; x++) {
                const cloneRow = this._row.cloneNode();
+               console.log("clone row.......");
+               console.log(cloneRow);
                this.div.appendChild(cloneRow);
             }
             break;
          case "className":
             this._className = newValue;
-            this._row.classList.add(this._className);
+            console.log("Add className newValue="+newValue);
             for (let row of this.div.children) {
                row.classList.add(newValue);
             }
-
+            this._row.classList.add(this._className);
             break;
       }
    }

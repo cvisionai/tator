@@ -1,8 +1,8 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
 
-export class AppletEdit extends TypeForm {
+export class AppletEdit extends TypeFormTemplate {
    constructor() {
       super();
       this.typeName = "Applet";
@@ -13,7 +13,7 @@ export class AppletEdit extends TypeForm {
       // 
       var templateInner = document.getElementById("applet-edit");
       var innerClone = document.importNode(templateInner.content, true);
-      this.typeFormDiv.appendChild(innerClone);
+      this._shadow.appendChild(innerClone);
 
       this._form = this._shadow.getElementById("applet-edit--form");
       this._editName = this._shadow.getElementById("applet-edit--name");
@@ -25,29 +25,30 @@ export class AppletEdit extends TypeForm {
 
    async _setupFormUnique(data) {
 
+
       // append link
-      if (this.data.id && this.data.id !== "New") {
-         this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this.projectId}/dashboards/${this.appletId}`);
+      if (this._data.id && this._data.id !== "New") {
+         this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this._projectId}/dashboards/${this.appletId}`);
       } else {
          this._linkToDashboard.hidden = true;
       }
 
       // description
-      this._editDescription.setValue(this.data.description);
-      this._editDescription.default = this.data.description;
+      this._editDescription.setValue(this._data.description);
+      this._editDescription.default = this._data.description;
 
       // Path to html file
-      this._htmlFilePath.projectId = this.projectId;
+      this._htmlFilePath.projectId = this._projectId;
 
-      if (typeof this.data.html_file == "undefined") {
-         this.data.html_file = [];
+      if (typeof this._data.html_file == "undefined") {
+         this._data.html_file = [];
       }
 
-      this._htmlFilePath.setValue(this.data.html_file);
-      this._htmlFilePath.default = this.data.html_file;
+      this._htmlFilePath.setValue(this._data.html_file);
+      this._htmlFilePath.default = this._data.html_file;
 
       this._htmlFilePath._fetchCall = (bodyData) => {
-         fetch(`/rest/SaveGenericFile/${this.projectId}`,
+         fetch(`/rest/SaveGenericFile/${this._projectId}`,
             {
                method: "POST",
                credentials: "same-origin",
@@ -70,16 +71,16 @@ export class AppletEdit extends TypeForm {
       };
 
       // Categories
-      this._categoriesList.setValue(this.data.categories);
-      this._categoriesList.default = this.data.categories;
+      this._categoriesList.setValue(this._data.categories);
+      this._categoriesList.default = this._data.categories;
    }
 
 
    _getFormData() {
       const formData = {};
 
-      // console.log(`Data ID: ${this.data.id}`);
-      const isNew = this.data.id == "New" ? true : false;
+      // console.log(`Data ID: ${this._data.id}`);
+      const isNew = this._data.id == "New" ? true : false;
       // const isNew = true;
 
       if (this._editName.changed() || isNew) {

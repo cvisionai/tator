@@ -1,7 +1,7 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 import { getCompiledList } from "../store.js";
 
-export class LocalizationEdit extends TypeForm {
+export class LocalizationEdit extends TypeFormTemplate {
   constructor() {
     super();
     this.typeName = "LocalizationType";
@@ -11,7 +11,7 @@ export class LocalizationEdit extends TypeForm {
     // 
     var templateInner = document.getElementById("localization-type-edit");
     var innerClone = document.importNode(templateInner.content, true);
-    this.typeFormDiv.appendChild(innerClone);
+    this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("localization-type-edit--form");
     this._editName = this._shadow.getElementById("localization-type-edit--name");
@@ -50,39 +50,39 @@ export class LocalizationEdit extends TypeForm {
     }
 
     // description
-    this._editDescription.setValue(this.data.description);
-    this._editDescription.default = this.data.description;
+    this._editDescription.setValue(this._data.description);
+    this._editDescription.default = this._data.description;
 
     // color map
-    if (this.data.colorMap && this.data.colorMap.default) {
-      this._colorMap.setValue(this.data.colorMap.default);
-      this._colorMap.default = this.data.colorMap.default;
+    if (this._data.colorMap && this._data.colorMap.default) {
+      this._colorMap.setValue(this._data.colorMap.default);
+      this._colorMap.default = this._data.colorMap.default;
     } else {
       this._colorMap.setValue(null);
       this._colorMap.default = null;
     }
 
     // visible
-    this._visibleBool.setValue(this.data.visible);
-    this._visibleBool.default = this.data.visible;
+    this._visibleBool.setValue(this._data.visible);
+    this._visibleBool.default = this._data.visible;
 
     // drawable
-    this._drawableBool.setValue(this.data.drawable);
-    this._drawableBool.default = this.data.drawable;
+    this._drawableBool.setValue(this._data.drawable);
+    this._drawableBool.default = this._data.drawable;
 
     // line_width
-    this._lineWidth.setValue(this.data.line_width);
-    this._lineWidth.default = this.data.line_width;
+    this._lineWidth.setValue(this._data.line_width);
+    this._lineWidth.default = this._data.line_width;
 
 
     // grouping default
-    this._groupingDefault.setValue(this.data.grouping_default);
-    this._groupingDefault.default = this.data.grouping_default;
+    this._groupingDefault.setValue(this._data.grouping_default);
+    this._groupingDefault.default = this._data.grouping_default;
 
     // const MEDIA = "Media"; 
     if (typeof data.media !== "undefined") {
       try {
-        const mediaListWithChecked = getCompiledList({ type: this.typeName, skip: data.id, check: this.data.media});
+        const mediaListWithChecked = getCompiledList({ type: this.typeName, skip: data.id, check: this._data.media});
         this._mediaCheckboxes.setValue( mediaListWithChecked );
         this._mediaCheckboxes.default = mediaListWithChecked;
       } catch (err) {
@@ -94,8 +94,8 @@ export class LocalizationEdit extends TypeForm {
   _getFormData(){
     const formData = {};
     
-    // console.log(`Data ID: ${this.data.id}`);
-    const isNew = this.data.id == "New" ? true : false;
+    // console.log(`Data ID: ${this._data.id}`);
+    const isNew = this._data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();

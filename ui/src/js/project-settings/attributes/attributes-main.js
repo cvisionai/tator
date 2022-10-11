@@ -31,9 +31,9 @@ export class AttributesMain extends HTMLElement {
   }
 
   _init(typeName, fromId, fromName, projectId, data, modal) {
-    console.log("Attribute main init.............................")
-    console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
-    console.log(data);
+    // console.log("Attribute main init.............................")
+    // console.log(typeName.toLowerCase() + `__${this.tagName} init.`);
+    // console.log(data);
 
     // Init object global vars
     this.fromId = fromId;

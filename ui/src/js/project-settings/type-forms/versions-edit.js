@@ -1,8 +1,7 @@
-import { TypeForm } from "./type-form.js";
-// import { getCookie } from "../../util/get-cookie.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 import { getCompiledList } from "../store.js";
 
-export class VersionsEdit extends TypeForm {
+export class VersionsEdit extends TypeFormTemplate {
    constructor() {
       super();
 
@@ -14,7 +13,7 @@ export class VersionsEdit extends TypeForm {
       // 
       var templateInner = document.getElementById("versions-edit");
       var innerClone = document.importNode(templateInner.content, true);
-      this.typeFormDiv.appendChild(innerClone);
+      this._shadow.appendChild(innerClone);
 
       this._form = this._shadow.getElementById("versions-edit--form");
       this._editName = this._shadow.getElementById("versions-edit--name");
@@ -24,14 +23,14 @@ export class VersionsEdit extends TypeForm {
       this._basesCheckbox = this._shadow.getElementById("versions-edit--bases");
    }
 
-   async setupFormUnique(data) {
+   async _setupFormUnique(data) {
       // description
-      this._editDescription.setValue(this.data.description);
-      this._editDescription.default = this.data.description;
+      this._editDescription.setValue(this._data.description);
+      this._editDescription.default = this._data.description;
 
       // Show Empty
-      this._showEmpty.setValue(this.data.show_empty);
-      this._showEmpty.default = this.data.show_empty;
+      this._showEmpty.setValue(this._data.show_empty);
+      this._showEmpty.default = this._data.show_empty;
 
       // number
       this._number.permission = "View Only";
@@ -39,13 +38,12 @@ export class VersionsEdit extends TypeForm {
          this._number.setValue("Created on Save");
          this._number.default = "";
       } else {
-         this._number.setValue(this.data.number);
-         this._number.default = this.data.number;
+         this._number.setValue(this._data.number);
+         this._number.default = this._data.number;
       }
 
-      // Bases
-      
-      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: data.id, check: this.data.bases});
+      // Bases   
+      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: data.id, check: this._data.bases});
       // console.log("Set value in checkbox set..."+basesListWithChecked.length);
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
@@ -55,8 +53,8 @@ export class VersionsEdit extends TypeForm {
    _getFormData() {
       const formData = {};
 
-      // console.log(`Data ID: ${this.data.id}`);
-      const isNew = this.data.id == "New" ? true : false;
+      // console.log(`Data ID: ${this._data.id}`);
+      const isNew = this._data.id == "New" ? true : false;
 
       if (this._editName.changed() || isNew) {
          formData.name = this._editName.getValue();
@@ -189,7 +187,7 @@ export class VersionsEdit extends TypeForm {
 
    // _updateVersionList() {
    //    console.log("Version-edit: UPDATE VERSIONS LIST!");
-   //    const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this.data.id, check: this.data.bases });
+   //    const basesListWithChecked = getCompiledList({ type: this.typeName, skip: this._data.id, check: this._data.bases });
    //    this._basesCheckbox.setValue(basesListWithChecked);
    //    this._basesCheckbox.default = basesListWithChecked;
    // }

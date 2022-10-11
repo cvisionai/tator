@@ -1,6 +1,7 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
+import { getCompiledList } from "../store.js";
 
-export class StateTypeEdit extends TypeForm {
+export class StateTypeEdit extends TypeFormTemplate {
   constructor() {
     super();
     this.typeName = "StateType";
@@ -10,7 +11,7 @@ export class StateTypeEdit extends TypeForm {
     // 
     var templateInner = document.getElementById("state-type-edit");
     var innerClone = document.importNode(templateInner.content, true);
-    this.typeFormDiv.appendChild(innerClone);
+    this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("state-type-edit--form");
     this._editName = this._shadow.getElementById("state-type-edit--name");
@@ -25,7 +26,7 @@ export class StateTypeEdit extends TypeForm {
   }
 
   async _setupFormUnique(data) {
-    this.data = data;
+    this._data = data;
 
     // Setup view
     this._typeId = data.id;
@@ -34,7 +35,7 @@ export class StateTypeEdit extends TypeForm {
 
     // name
     let name = ""
-    if (data.id !== "New") name = this.data.name
+    if (data.id !== "New") name = this._data.name
     this._editName.setValue(name);
     this._editName.default = name;
 
@@ -54,16 +55,16 @@ export class StateTypeEdit extends TypeForm {
     }
 
     // description
-    this._editDescription.setValue(this.data.description);
-    this._editDescription.default = this.data.description;
+    this._editDescription.setValue(this._data.description);
+    this._editDescription.default = this._data.description;
 
     // visible
-    this._visibleBool.setValue(this.data.visible);
-    this._visibleBool.default = this.data.visible;
+    this._visibleBool.setValue(this._data.visible);
+    this._visibleBool.default = this._data.visible;
 
     // grouping default
-    this._groupingDefault.setValue(this.data.grouping_default);
-    this._groupingDefault.default = this.data.grouping_default;
+    this._groupingDefault.setValue(this._data.grouping_default);
+    this._groupingDefault.default = this._data.grouping_default;
 
     // const MEDIA = "Media"; 
     if (typeof data.media !== "undefined") {
@@ -71,7 +72,7 @@ export class StateTypeEdit extends TypeForm {
         const mediaListWithChecked = await getCompiledList({
           type: this.typeName,
           skip: data.id,
-          check: this.data.media
+          check: this._data.media
         });
         this._mediaCheckboxes.setValue( mediaListWithChecked );
         this._mediaCheckboxes.default = mediaListWithChecked; 
@@ -111,16 +112,16 @@ export class StateTypeEdit extends TypeForm {
     }
 
     // Child Localizations
-    this._deleteChildLoc.setValue(this.data.delete_child_localizations);
-    this._deleteChildLoc.default = this.data.delete_child_localizations;
+    this._deleteChildLoc.setValue(this._data.delete_child_localizations);
+    this._deleteChildLoc.default = this._data.delete_child_localizations;
 
   }
 
   _getFormData(){
     const formData = {};
 
-    // console.log(`Data ID: ${this.data.id}`);
-    const isNew = this.data.id == "New" ? true : false;
+    // console.log(`Data ID: ${this._data.id}`);
+    const isNew = this._data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();

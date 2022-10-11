@@ -1,5 +1,5 @@
 import create from 'zustand/vanilla';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, devtools } from 'zustand/middleware';
 import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.js';
 
 const api = Utils.getApi();
@@ -10,6 +10,7 @@ getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
    .set("MediaType", api.getMediaTypeListWithHttpInfo.bind(api))
    .set("LocalizationType", api.getLocalizationTypeListWithHttpInfo.bind(api))
    .set("LeafType", api.getLeafTypeListWithHttpInfo.bind(api))
+   .set("Leaf", api.getLeafListWithHttpInfo.bind(api))
    .set("StateType", api.getStateTypeListWithHttpInfo.bind(api))
    .set("Membership", api.getMembershipListWithHttpInfo.bind(api))
    .set("Version", api.getVersionListWithHttpInfo.bind(api))
@@ -22,17 +23,19 @@ postMap
    .set("MediaType", api.createMediaTypeWithHttpInfo.bind(api))
    .set("LocalizationType", api.createLocalizationTypeWithHttpInfo.bind(api))
    .set("LeafType", api.createLeafTypeWithHttpInfo.bind(api))
+   .set("Leaf", api.createLeafListWithHttpInfo.bind(api))
    .set("StateType", api.createStateTypeWithHttpInfo.bind(api))
    .set("Membership", api.createMembershipWithHttpInfo.bind(api))
-   .set("Version", api.createVersionWithHttpInfo.bind(api));
-   // .set("Algorithm", api.createAlgorithmWithHttpInfo.bind(api))
-   // .set("Applet", api.createAppletWithHttpInfo.bind(api));
+   .set("Version", api.createVersionWithHttpInfo.bind(api))
+   .set("Algorithm", api.registerAlgorithmWithHttpInfo.bind(api))
+   .set("Applet", api.registerAppletWithHttpInfo.bind(api));
 
 const patchMap = new Map();
 patchMap.set("Project", api.updateProjectWithHttpInfo.bind(api))
    .set("MediaType", api.updateMediaTypeWithHttpInfo.bind(api))
    .set("LocalizationType", api.updateLocalizationTypeWithHttpInfo.bind(api))
    .set("LeafType", api.updateLeafTypeWithHttpInfo.bind(api))
+   .set("Leaf", api.updateLeafListWithHttpInfo.bind(api))
    .set("StateType", api.updateStateTypeWithHttpInfo.bind(api))
    .set("Membership", api.updateMembershipWithHttpInfo.bind(api))
    .set("Version", api.updateVersionWithHttpInfo.bind(api))
@@ -44,6 +47,7 @@ deleteMap.set("Project", api.deleteProjectWithHttpInfo.bind(api))
    .set("MediaType", api.deleteMediaTypeWithHttpInfo.bind(api))
    .set("LocalizationType", api.deleteLocalizationTypeWithHttpInfo.bind(api))
    .set("LeafType", api.deleteLeafTypeWithHttpInfo.bind(api))
+   .set("Leaf", api.deleteLeafListWithHttpInfo.bind(api))
    .set("StateType", api.deleteStateTypeWithHttpInfo.bind(api))
    .set("Membership", api.deleteMembershipWithHttpInfo.bind(api))
    .set("Version", api.deleteVersionWithHttpInfo.bind(api))
@@ -60,15 +64,14 @@ const initialState = {
    map: new Map(),
 };
 
-const store = create(subscribeWithSelector((set, get) => ({
+const store = create(devtools(subscribeWithSelector((set, get) => ({
    status: { // page status
       name: "idle",
       msg: "" // if Error this could trigger "toast" with message
    },
    Project: {
-      name: "Project",
-      init: false,
-      data: {},
+      ...initialState,
+      name: "Project"
    },
    MediaType: { ...initialState, name: "MediaType", attribute_types: {} }, 
    LocalizationType: {...initialState, name: "LocalizationType", attribute_types: {} }, 
@@ -76,7 +79,7 @@ const store = create(subscribeWithSelector((set, get) => ({
    StateType: {...initialState, name: "StateType", attribute_types: {} }, 
    Membership: { ...initialState, name: "Membership" },
    Version: {...initialState, name: "Version"}, 
-   Alogrithm: {...initialState, name: "Alogrithm"}, 
+   Algorithm: {...initialState, name: "Algorithm"}, 
    Applet: {...initialState, name: "Applet"}, 
    JobCluster: {...initialState, name: "JobCluster"}, 
 
@@ -88,8 +91,15 @@ const store = create(subscribeWithSelector((set, get) => ({
       }});
       
       const object = await api.getProjectWithHttpInfo(id);
+      const setList = get()["Project"].setList;
+      const map = get()["Project"].map;
 
-      set({ Project: { ...get().Project, init: true, data: object.data } });
+      // for (let item of object.data) {
+         setList.add(object.data.id);
+         map.set(object.data.id, object.data);
+      // }
+
+      set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
       set({ status: {
          name: "idle",
          msg: ""
@@ -186,13 +196,12 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    /* Generic to allow for loop calls */
-   initType: (type) => {
+   initType: async (type) => {
+      console.log("Init type: " + type);
       let init = get()[type].init;
-      // console.log(s);
-      console.log(`IF ${type} is init? ${init}`);
 
       if (!init) {
-         return get().fetchType(type);
+         await get().fetchType(type);
       }
    },
    fetchType: async (type) => {
@@ -200,9 +209,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       const fn = getMap.get(type);
       const projectId = get().Project.data.id;   
       const object = await fn(projectId);
-
-      console.log("THIS WAS THE OBJ RETURNED");
-      console.log(object);
 
       const setList = get()[type].setList;
       const map = get()[type].map;
@@ -212,8 +218,12 @@ const store = create(subscribeWithSelector((set, get) => ({
          map.set(item.id, item);
       }
 
+      if (type == "LeafType") {
+         // Set up the leaf data so inner links can be added
+         await this.get().fetchType("Leaves");
+      }
+
       // set({ status: {...get().status, name: "idle", msg: ""} });
-      console.log("FETCH TYPE....");
       set({[type] : { ...get()[type], setList, map, init: true }});
    
       return object.data;
@@ -223,9 +233,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       const fn = postMap.get(type, data);
       const projectId = get().Project.data.id;
       const object = await fn(projectId, data);
-      
-      console.log("THIS WAS THE OBJ RETURNED");
-      console.log(object);
 
       if (object.data && object.data.object) {
          const setList = get()[type].setList;
@@ -249,9 +256,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ status: { ...get().status, name: "pending", msg: "Updating version..." } });
       const fn = patchMap.get(type);
       const object = await fn(id, data);
-
-      console.log("THIS WAS THE OBJ RETURNED");
-      console.log(object);
 
       if (object.data && object.data.object) {
          const map = get()[type].map;
@@ -289,7 +293,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ status: {...get().status, name: "idle", msg: ""} });
       return object;
    }
-})));
+}))));
 
 
 /**

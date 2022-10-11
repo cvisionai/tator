@@ -1,6 +1,6 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 
-export class MediaTypeMainEdit extends TypeForm {
+export class MediaTypeEdit extends TypeFormTemplate {
   constructor() {
     super();
     this.typeName = "MediaType";
@@ -10,7 +10,7 @@ export class MediaTypeMainEdit extends TypeForm {
     // 
     var templateInner = document.getElementById("media-type-edit");
     var innerClone = document.importNode(templateInner.content, true);
-    this.typeFormDiv.appendChild(innerClone);
+    this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("media-type-edit--form");
     this._editName = this._shadow.getElementById("media-type-edit--name");
@@ -42,18 +42,18 @@ export class MediaTypeMainEdit extends TypeForm {
     }
     
     // description
-    this._editDescription.setValue(this.data.description);
-    this._editDescription.default = this.data.description;
+    this._editDescription.setValue(this._data.description);
+    this._editDescription.default = this._data.description;
 
     // default volume (video, multi)
     this._volumeDiv.hidden = (typeof data.dtype !== "undefined" && data.dtype === "image") || data.dtype == "";
-    const defaultVol = typeof this.data.default_volume !== "undefined" ? this.data.default_volume : 0;
+    const defaultVol = typeof this._data.default_volume !== "undefined" ? this._data.default_volume : 0;
     this._defaultVolume.setValue(defaultVol);
     this._defaultVolume.default = defaultVol;
 
     // visible
-    this._visibleBool.setValue(this.data.visible);
-    this._visibleBool.default = this.data.visible;
+    this._visibleBool.setValue(this._data.visible);
+    this._visibleBool.default = this._data.visible;
   }
 
   _showHideVolume(evt) {
@@ -63,7 +63,7 @@ export class MediaTypeMainEdit extends TypeForm {
 
   _getFormData() {
     const formData = {};
-    const isNew = this.data.id == "New" ? true : false;
+    const isNew = this._data.id == "New" ? true : false;
     
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
@@ -91,4 +91,4 @@ export class MediaTypeMainEdit extends TypeForm {
 
 }
 
-customElements.define("media-type-main-edit", MediaTypeMainEdit);
+customElements.define("media-type-edit", MediaTypeEdit);

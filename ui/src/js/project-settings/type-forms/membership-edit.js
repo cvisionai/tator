@@ -1,8 +1,8 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 import { TypeNew } from "./type-new.js";
-import { store, getCompiledList } from "../store.js";
+import { getCompiledList } from "../store.js";
 
-export class MembershipEdit extends TypeForm {
+export class MembershipEdit extends TypeFormTemplate {
   constructor() {
     super();
     this.typeName = "Membership";
@@ -14,12 +14,12 @@ export class MembershipEdit extends TypeForm {
     // 
     var templateInner = document.getElementById("membership-edit");
     var innerClone = document.importNode(templateInner.content, true);
-    this.typeFormDiv.appendChild(innerClone);
+    this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("membership-edit--form");
     this._userInput = this._shadow.getElementById("membership-edit--search-users");
-    this._editDescription = this._shadow.getElementById("membership-edit--permission");
-    this._showEmpty = this._shadow.getElementById("membership-edit--default-version");
+    this._permissionSelect = this._shadow.getElementById("membership-edit--permission");
+    this._versionSelect = this._shadow.getElementById("membership-edit--default-version");
   }
 
 
@@ -189,9 +189,9 @@ export class MembershipEdit extends TypeForm {
     console.log("Membership-edit: UPDATE VERSIONS LIST!");
     const versionOptions = getCompiledList({ type: this.typeName, check: data.default_version });
     this._versionSelect.choices = versionOptions;
-    console.log(`this.data.default_version=${this.data.default_version}`);
-    this._versionSelect.setValue(this.data.default_version);
-    this._versionSelect.default = this.data.default_version;
+    console.log(`this._data.default_version=${this._data.default_version}`);
+    this._versionSelect.setValue(this._data.default_version);
+    this._versionSelect.default = this._data.default_version;
   }
 }
 

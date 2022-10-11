@@ -1,6 +1,6 @@
-import { TypeForm } from "./type-form.js";
+import { TypeFormTemplate } from "./type-form-template.js";
 
-export class LeafTypeEdit extends TypeForm {
+export class LeafTypeEdit extends TypeFormTemplate {
   constructor() {
     super();
     this.typeName = "LeafType";
@@ -10,7 +10,7 @@ export class LeafTypeEdit extends TypeForm {
     // 
     var templateInner = document.getElementById("leaf-type-edit");
     var innerClone = document.importNode(templateInner.content, true);
-    this.typeFormDiv.appendChild(innerClone);
+    this._shadow.appendChild(innerClone);
 
     this._form = this._shadow.getElementById("leaf-type-edit--form");
     this._editName = this._shadow.getElementById("leaf-type-edit--name");
@@ -36,8 +36,8 @@ export class LeafTypeEdit extends TypeForm {
     }
 
     // description
-    this._editDescription.setValue(this.data.description);
-    this._editDescription.default = this.data.description;
+    this._editDescription.setValue(this._data.description);
+    this._editDescription.default = this._data.description;
 
     // visible
     // @TODO won't be in use until we have a leaf tree editor
@@ -45,8 +45,8 @@ export class LeafTypeEdit extends TypeForm {
     // this._visibleBool.setAttribute("name", "Visible");
     // this._visibleBool.setAttribute("on-text", "Yes");
     // this._visibleBool.setAttribute("off-text", "No");
-    // this._visibleBool.setValue(this.data.visible);
-    // this._visibleBool.default = this.data.visible;
+    // this._visibleBool.setValue(this._data.visible);
+    // this._visibleBool.default = this._data.visible;
     // this._visibleBool.addEventListener("change", this._formChanged.bind(this));
     // this._form.appendChild(this._visibleBool);
   }
@@ -54,8 +54,8 @@ export class LeafTypeEdit extends TypeForm {
   _getFormData() {
     const formData = {};
 
-    // console.log(`Data ID: ${this.data.id}`);
-    const isNew = this.data.id == "New" ? true : false;
+    // console.log(`Data ID: ${this._data.id}`);
+    const isNew = this._data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
