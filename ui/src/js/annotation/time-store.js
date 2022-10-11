@@ -170,7 +170,8 @@ import { frameToTime, getMediaStartDatetime } from "./annotation-common.js"
   getAbsoluteTimeFromFrame(globalFrame) {
 
     if (!this.utcEnabled()) {
-      throw "getAbsoluteTimeFromFrame(): UTC is not enabled.";
+      console.error("getAbsoluteTimeFromFrame(): UTC is not enabled.");
+      return;
     }
 
     // Convert globalFrame into global seconds

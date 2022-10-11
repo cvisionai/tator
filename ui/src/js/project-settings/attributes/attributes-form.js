@@ -6,7 +6,6 @@ export class AttributesForm extends TatorElement {
 
     // Flag values
     this._changed = false;
-    this._global = false;
 
     // 
     this._data = null;
@@ -18,24 +17,12 @@ export class AttributesForm extends TatorElement {
     return this._changed = val;
   }
 
-  set global(val) {
-    return this._global = val;
-  }
-
   isChanged() {
     return this._changed;
   }
 
-  isGlobal() {
-    return this._global;
-  }
-
   changeReset() {
     return this._changed = false;
-  }
-
-  globalReset() {
-    return this._global = false;
   }
 
   _initEmptyForm() {
@@ -1051,11 +1038,9 @@ export class AttributesForm extends TatorElement {
 
   _attributeFormData({ form = this.form, id = -1, entityType = null } = {}) {
     const data = {};
-    const global = this.isGlobal() ? "true" : "false";
     const attrFormObj = this._getAttributeFormData();
     const formData = {
       "entity_type": entityType,
-      "global": global,
       "old_attribute_type_name": this.dataset.oldName,
       "new_attribute_type": attrFormObj.formData
     };
@@ -1070,10 +1055,8 @@ export class AttributesForm extends TatorElement {
 
   async _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
     const promiseInfo = {};
-    const global = this.isGlobal() ? "true" : "false";
     const formData = {
       "entity_type": entityType,
-      "global": global,
       "old_attribute_type_name": this.dataset.oldName,
       "new_attribute_type": {}
     };

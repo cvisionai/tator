@@ -139,11 +139,11 @@ export class GalleryPanelLocalization extends TatorElement {
     // Annotation data acquires the localization slightly differently.
     // Retrieve the localization from this buffer because the annotator assumes
     // the localization is in that format.
-    var locDataType;
+    this._locDataType = null;
     for (let dataType of dataTypes) {
       if (this._localization != null && dataType.id.split("_")[1] == this._localization.meta) {
         this._localization.meta = dataType.id;
-        locDataType = dataType;
+        this._locDataType = dataType;
         break;
       }
     }
@@ -164,7 +164,7 @@ export class GalleryPanelLocalization extends TatorElement {
         this._player.annotationData = this._data;
 
         if (this._localization != null) {
-          this._data.updateTypeWithData(locDataType, this._localization)
+          this._data.updateTypeWithData(this._locDataType, this._localization)
           this._player.selectLocalization(this._localization);
         }
     });

@@ -120,10 +120,6 @@ attribute_type_update = {
             "type": "string",
             "description": "The entity type containing the attribute to rename.",
         },
-        "global": {
-            "type": "string",
-            "description": "If 'true', applies dtype mutation to all attributes with the same name."
-        },
         "old_attribute_type_name": {
             "type": "string",
             "description": "The attribute to rename.",

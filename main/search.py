@@ -291,6 +291,13 @@ class TatorSearch:
         if old_name == new_name:
             return None, None, None
 
+        # Check that the new name isn't already in use
+        if entity_type.project.attribute_type_uuids.get(new_name, None) is not None:
+            raise ValueError(
+                f"New attribute name {new_name} already in use in this project, please choose a "
+                f"different one."
+            )
+
         # Retrieve UUID, raise error if it doesn't exist.
         uuid = entity_type.project.attribute_type_uuids.get(old_name)
         if uuid is None:
@@ -321,7 +328,7 @@ class TatorSearch:
         return uuid, replace_idx, new_attribute_type
 
 
-    def rename_alias(self, entity_type, related_objects, old_name, new_name):
+    def rename_alias(self, entity_type, old_name, new_name):
         """
         Adds an alias corresponding to an attribute type rename. Note that the old alias will still
         exist but can be excluded by specifying fields parameter in query_string queries. Entity
@@ -330,20 +337,15 @@ class TatorSearch:
         :param entity_type: *Type object. Should be passed in before updating attribute_type json.
                             Fields attribute_types and attribute_type_uuids will be updated with new
                             name. Entity type will NOT be saved.
-        :param related_objects: The list of pairs of entity types and querysets that also have an
-                                attribute to be renamed.
         :param old_name: Name of attribute type being mutated.
         :param new_name: New name for the attribute type.
-        :returns: Entity types with updated attribute_type_uuids.
         """
         # If no name change is happening, there is nothing to do
         if old_name == new_name:
-            return [entity_type]
-
-        uuid, replace_idx, new_attribute_type = self.check_rename(entity_type, old_name, new_name)
-        updated_types = []
+            return
 
         # Create new alias definition.
+        uuid, replace_idx, new_attribute_type = self.check_rename(entity_type, old_name, new_name)
         alias_type = _get_alias_type(new_attribute_type)
         alias = {new_name: {"type": "alias", "path": f"{uuid}_{alias_type}"}}
         self.es.indices.put_mapping(
@@ -352,18 +354,9 @@ class TatorSearch:
         )
 
         # Update entity type object with new values.
-        entity_type.project.attribute_type_uuids[
-            new_name
-        ] = entity_type.project.attribute_type_uuids.pop(old_name)
+        attribute_type_uuids = entity_type.project.attribute_type_uuids
+        attribute_type_uuids[new_name] = attribute_type_uuids.pop(old_name)
         entity_type.attribute_types[replace_idx] = new_attribute_type
-        updated_types.append(entity_type)
-
-        # Update related objects with new values.
-        for instance, _ in related_objects:
-            _, replace_idx, _ = self.check_rename(instance, old_name, new_name)
-            instance.attribute_types[replace_idx] = new_attribute_type
-            updated_types.append(instance)
-        return updated_types
 
     def check_mutation(self, entity_type, name, new_attribute_type):
         """
