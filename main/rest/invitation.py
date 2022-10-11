@@ -66,10 +66,9 @@ class InvitationListAPI(BaseListView):
                 if affiliations.count() > 0:
                     raise RuntimeError(f"Affiliation already exists for email {email}!")
 
-            url = (
-                f"{settings.PROTO}://{os.getenv('MAIN_HOST')}/accept?"
-                f"registration_token={invite.registration_token}"
-            )
+            proto = settings.PROTO
+            domain = self.request.get_host()
+            url = f"{proto}://{domain}/accept?registration_token={invite.registration_token}"
             text = (
                 f"You have been invited to collaborate with {organization} using Tator. "
                 f"To accept this invitation, please visit: \n\n{url}"
