@@ -93,7 +93,6 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
 def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
     """ Builds search index for a project.
         section must be one of:
-        'index' - create the index for the project if it does not exist
         'mappings' - create mappings for the project if they do not exist
         'media' - create documents for media
         'states' - create documents for states
@@ -103,13 +102,6 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None, max_ag
     """
     project_name = Project.objects.get(pk=project_number).name
     logger.info(f"Building search indices for project {project_number}: {project_name}")
-
-    if section == 'index':
-        # Create indices
-        logger.info("Building index...")
-        TatorSearch().create_index(project_number)
-        logger.info("Build index complete!")
-        return
 
     if section == 'mappings':
         # Create mappings

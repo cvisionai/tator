@@ -29,7 +29,6 @@ from ..schema.components import state as state_schema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -314,8 +313,6 @@ class StateListAPI(BaseListView):
         if count > 0:
             # Delete states.
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_annotation_es_query(params['project'], params, 'state')
-            TatorSearch().delete(self.kwargs['project'], query)
 
         return {'message': f'Successfully deleted {count} states!'}
 
@@ -327,9 +324,6 @@ class StateListAPI(BaseListView):
             bulk_update_and_log_changes(
                 qs, params["project"], self.request.user, new_attributes=new_attrs
             )
-
-            query = get_annotation_es_query(params['project'], params, 'state')
-            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
 
         return {'message': f'Successfully updated {count} states!'}
 

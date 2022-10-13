@@ -276,7 +276,6 @@ class AttributeTypeListAPI(BaseListView):
             # Check that the attribute type is valid and it is valid to add it to the desired entity
             # type
             self._check_attribute_type(new_attribute_type)
-            ts.check_addition(entity_type, new_attribute_type)
 
             # Add the attribute to the desired entity type
             if entity_type.attribute_types:

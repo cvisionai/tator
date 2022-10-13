@@ -24,29 +24,13 @@ class TatorSearch:
         There is one index per attribute type.
     """
   
-    def create_index(self, project):
-       pass
-
     def delete_index(self, project):
-      pass
-    def check_addition(self, entity_type, new_attribute_type):
-        """
-        Checks that the new attribute type does not collide with existing attributes on the target
-        entity type or other entity types.
-        """
         pass
 
     def create_mapping(self, entity_type):
         pass
 
-    def check_rename(self, entity_type, old_name, new_name):
-        """
-        Checks rename operation and raises if it is invalid. See `rename_alias` for argument
-        description.
-        """
-        pass
-
-    def rename_alias(self, entity_type, old_name, new_name):
+    def rename_alias(self, entity_type, related_objects, old_name, new_name):
         """
         Adds an alias corresponding to an attribute type rename. Note that the old alias will still
         exist but can be excluded by specifying fields parameter in query_string queries. Entity
@@ -107,14 +91,7 @@ class TatorSearch:
                           string attributes should be indexed as keyword or text.
         :returns: Entity type with updated attribute_types.
         """
-        pass
-
-    def check_deletion(self, entity_type, name):
-        """
-        Checks deletion operation and raises if it is invalid. See `delete_alias` for argument
-        description.
-        """
-        pass
+        return entity_type
 
     def delete_alias(self, entity_type, name):
         """
@@ -124,4 +101,4 @@ class TatorSearch:
         :param name: Name of attribute type being deleted.
         :returns: Entity type with updated attribute_types.
         """
-        pass
+        return entity_type

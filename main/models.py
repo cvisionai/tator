@@ -587,7 +587,6 @@ def add_org_users(project):
 
 @receiver(post_save, sender=Project)
 def project_save(sender, instance, created, **kwargs):
-    TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
         add_org_users(instance)

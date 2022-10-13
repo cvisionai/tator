@@ -25,7 +25,6 @@ from ..schema.components import localization as localization_schema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._annotation_query import get_annotation_queryset
-from ._annotation_query import get_annotation_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -214,8 +213,6 @@ class LocalizationListAPI(BaseListView):
         if count > 0:
             # Delete the localizations.
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_annotation_es_query(params['project'], params, 'localization')
-            TatorSearch().delete(self.kwargs['project'], query)
 
         return {'message': f'Successfully deleted {count} localizations!'}
 
@@ -240,9 +237,6 @@ class LocalizationListAPI(BaseListView):
                 update_kwargs=update_kwargs,
                 new_attributes=new_attrs,
             )
-
-            query = get_annotation_es_query(params['project'], params, 'localization')
-            TatorSearch().update(self.kwargs['project'], entity_type, query, new_attrs)
 
         return {'message': f'Successfully updated {count} localizations!'}
 
