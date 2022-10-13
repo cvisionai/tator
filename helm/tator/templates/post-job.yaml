@@ -8,6 +8,12 @@
 {{- $makePostgisSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-postgis-extension" "app" "make-postgis-extension" "selector" "webServer: \"yes\"" "command" "[psql]" "args" "[\"-U\", \"$(POSTGRES_USERNAME)\", \"-h\", \"$(POSTGRES_HOST)\", \"-p\", \"5432\", \"-d\", \"tator_online\", \"-c\", \"CREATE EXTENSION IF NOT EXISTS POSTGIS;\"]" "hookWeight" "-1" "hook" "post-install" }}
 {{ include "dbjob.template" $makePostgisSettings }}
 ---
+{{- $makeVectorSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-vector-extension" "app" "make-vector-extension" "selector" "webServer: \"yes\"" "command" "[psql]" "args" "[\"-U\", \"$(POSTGRES_USERNAME)\", \"-h\", \"$(POSTGRES_HOST)\", \"-p\", \"5432\", \"-d\", \"tator_online\", \"-c\", \"CREATE EXTENSION IF NOT EXISTS vector;\"]" "hookWeight" "-1" "hook" "post-install" }}
+{{ include "dbjob.template" $makeVectorSettings }}
+---
+{{- $makePgTgrmSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-pgtgrm-extension" "app" "make-pgtgrm-extension" "selector" "webServer: \"yes\"" "command" "[psql]" "args" "[\"-U\", \"$(POSTGRES_USERNAME)\", \"-h\", \"$(POSTGRES_HOST)\", \"-p\", \"5432\", \"-d\", \"tator_online\", \"-c\", \"CREATE EXTENSION IF NOT EXISTS pg_tgrm;\"]" "hookWeight" "-1" "hook" "post-install" }}
+{{ include "dbjob.template" $makePgTgrmSettings }}
+---
 {{- if .Values.migrations.enabled }}
 {{- $makeMigrationsSettings := dict "Values" .Values "Release" .Release "Chart" .Chart "name" "make-migrations" "app" "make-migrations" "selector" "webServer: \"yes\""  "command" "[python3]" "args" "[\"manage.py\", \"makemigrations\"]" "hookWeight" "0" "hook" "post-install,post-upgrade" }}
 {{ include "postjob.template" $makeMigrationsSettings }}
