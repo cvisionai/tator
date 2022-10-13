@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 # Indicates what types can mutate into. Maps from type -> to type.
 ALLOWED_MUTATIONS = {
     'bool': ['bool', 'enum', 'string'],
-    'int': ['int', 'float', 'enum', 'string'],
-    'float': ['int', 'float', 'enum', 'string'],
+    'int': ['int', 'float'],
+    'float': ['int', 'float'],
     'enum': ['enum', 'string'],
     'string': ['enum', 'string'],
-    'datetime': ['enum', 'string', 'datetime'],
-    'geopos': ['enum', 'string', 'geopos'],
+    'datetime': [ 'string', 'datetime'],
+    'geopos': ['geopos'],
     'float_array': ['float_array'],
 }
 
