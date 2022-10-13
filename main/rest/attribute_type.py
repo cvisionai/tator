@@ -95,7 +95,7 @@ class AttributeTypeListAPI(BaseListView):
         types that have an attribute with the given name for bulk mutation.
         """
         project = target_entity_type.project
-        for entity_type, entity in ENTITY_TYPES.values():
+        for entity_type, _ in ENTITY_TYPES.values():
             for instance in entity_type.objects.filter(project=project):
                 # Ignore the given entity type
                 if instance.id == target_entity_type.id:
@@ -120,6 +120,9 @@ class AttributeTypeListAPI(BaseListView):
         old_dtype = None
         old_attribute_type = None
         new_attribute_type = params["new_attribute_type"]
+
+        # This is a temporary limit until ES is removed
+        max_instances = params.get("max_instances", 100000)
         new_name = new_attribute_type["name"]
         attribute_renamed = old_name != new_name
 
@@ -177,7 +180,7 @@ class AttributeTypeListAPI(BaseListView):
                         f"Currently, this is not allowed from the UI."
                     )
                 cls._check_attribute_type(new_attribute_type)
-                ts.check_mutation(entity_type, old_name, new_attribute_type)
+                ts.check_mutation(entity_type, old_name, new_attribute_type, max_instances)
 
             # List of success messages to return
             messages = []
