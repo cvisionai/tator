@@ -27,7 +27,33 @@
       <settings-nav id="settings-nav--nav"></settings-nav>
       <!-- Main page container -->
       <div id="settings-nav--item-container" class="NavItem float-left col-md-9 col-xl-10 col-xs-12">
-        <type-form id="type-form"></type-form>
+        <type-form>
+          <project-main-edit slot="form"></project-main-edit>
+        </type-form>
+        <type-form>
+          <media-type-edit slot="form"></project-main-edit>
+        </type-form>
+        <type-form>
+          <localization-type-edit slot="form"></project-main-edit>
+        </type-form>
+        <type-form>
+          <leaf-type-edit slot="form"></project-main-edit>
+        </type-form>
+        <type-form>
+          <state-type-edit slot="form"></project-main-edit>
+        </type-form>
+        <type-form>
+          <membership-edit slot="form"></membership-edit>
+        </type-form>
+        <type-form>
+          <version-edit slot="form"></version-edit>
+        </type-form>
+        <type-form>
+          <algorithm-edit slot="form"></version-edit>
+        </type-form>
+        <type-form>
+          <applet-edit slot="form"></version-edit>
+        </type-form>
       </div>
     </div>
   </main>
@@ -189,6 +215,7 @@
         <div>
           <div id="type-form-div" class="py-3 rounded-2   edit-project__config ">
             <!-- form goes here -->
+            <slot id="form-element" name="form"></slot>
           </div>
         </div>
         <div class="d-flex flex-items-center flex-justify-center py-3">
