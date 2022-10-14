@@ -600,7 +600,7 @@ def project_delete(sender, instance, **kwargs):
 
 @receiver(pre_delete, sender=Project)
 def delete_index_project(sender, instance, **kwargs):
-    TatorSearch().delete_index(instance.pk)
+    TatorSearch().delete_project_indices(instance.pk)
 
 class Membership(Model):
     """Stores a user and their access level for a project.
