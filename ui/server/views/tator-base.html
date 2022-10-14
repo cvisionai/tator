@@ -1,0 +1,17 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" type="text/css" href={% static "components.css" %} />
+    <script src={% static "components.js" %}></script>
+    <script src={% static "util.js" %}></script>
+    {% block head %}
+    {% endblock head %}
+  </head>
+<body>
+  {% block body %}
+  {% endblock body %}
+</body>
+
+</html>
