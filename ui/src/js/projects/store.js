@@ -106,13 +106,25 @@ async function configureActivityRecognition(project) {
 }
 
 const store = create(subscribeWithSelector((set, get) => ({
+  user: null,
+  announcements: [],
   projects: [],
   organizations: [],
-  fetchProjects: async () => {
-    set({ projects: await api.getProjectList() });
-  },
-  fetchOrganizations: async () => {
-    set({ organizations: await api.getOrganizationList() });
+  init: async () => {
+    Promise.all([
+      api.whoAmI(),
+      api.getAnnouncementsList(),
+      api.getProjectList(),
+      api.getOrganizationList(),
+    ])
+    .then((values) => {
+      set({
+        user: values[0],
+        announcements: values[1],
+        projects: values[2],
+        organizations: values[3],
+      });
+    });
   },
   addProject: async (projectSpec, preset) => {
     let response = await api.createProject(projectSpec);
