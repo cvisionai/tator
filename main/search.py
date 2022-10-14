@@ -23,9 +23,10 @@ ALLOWED_MUTATIONS = {
 
 def _get_unique_index_name(entity_type, attribute):
     """ Get a unique index name based on an entity type and supplied attribute """
+    type_name_sanitized=entity_type.__class__.__name__.lower()
     entity_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",entity_type.name).lower()
     attribute_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",attribute['name']).lower()
-    index_name=f"tator_proj_{entity_type.project.id}_{entity_type.__class__.__name__}_{entity_name_sanitized}_{attribute_name_sanitized}"
+    index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_{entity_name_sanitized}_{attribute_name_sanitized}"
     return index_name
 
 def make_btree_index(entity_type, attribute, psql_type):
@@ -92,13 +93,13 @@ class TatorSearch:
         proj_indices = self.list_indices(project)
         with connection.cursor() as cursor:
             for _,index_name,_ in proj_indices:
-                cursor.execute("DROP INDEX CONCURRENTLY %s".format(index_name))
+                cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
 
     def delete_index(self, entity_type, attribute):
         """ Delete the index for a given entity type """
         index_name = _get_unique_index_name(entity_type, attribute)
         with connection.cursor() as cursor:
-            cursor.execute("DROP INDEX CONCURRENTLY %s IF EXISTS".format(index_name))
+            cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
 
     def is_index_present(self, entity_type, attribute):
         """ Returns true if the index exists for this attribute """
