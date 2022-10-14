@@ -112,8 +112,8 @@ const store = create(subscribeWithSelector((set, get) => ({
   organizations: [],
   init: async () => {
     Promise.all([
-      api.whoAmI(),
-      api.getAnnouncementsList(),
+      api.whoami(),
+      api.getAnnouncementList(),
       api.getProjectList(),
       api.getOrganizationList(),
     ])
