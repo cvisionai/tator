@@ -358,7 +358,7 @@ class TatorSearch:
         attribute_type_uuids[new_name] = attribute_type_uuids.pop(old_name)
         entity_type.attribute_types[replace_idx] = new_attribute_type
 
-    def check_mutation(self, entity_type, name, new_attribute_type, max_instances=None):
+    def check_mutation(self, entity_type, name, new_attribute_type):
         """
         Checks mutation operation and raises if it is invalid. See `mutate_alias` for argument
         description.
@@ -385,15 +385,6 @@ class TatorSearch:
         if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
             raise RuntimeError(f"Attempted mutation of {name} from {old_dtype} to {new_dtype} is "
                                 "not allowed!")
-
-        # Check that there are not too many documents
-        if max_instances:
-            query = {"query": {"exists": {"field": old_mapping_name}}}
-            if self.count(entity_type.project.pk, query) > max_instances:
-                raise RuntimeError(
-                    f"Cannot mutate {type(entity_type).__name__} ID {entity_type.id} via the web "
-                    f"UI, it has too many instances. Contact your Tator admin for assistance."
-                )
 
         return uuid, replace_idx, old_mapping_name
 
