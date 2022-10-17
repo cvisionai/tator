@@ -24,15 +24,15 @@ class SessionSchema(AutoSchema):
 
             This method accepts login credentials and returns an CSRF token that
             can be used with the Tator REST API or tator-js. To use in a browser
-            application, the client should set a cookie named csrftoken to the 
-            value returned in the response to this method.
+            application, the client should set the `X-CSRFToken` header to the 
+            `token` value returned in this response.
             """)
         elif method == 'GET':
             return dedent("""\
             Check if a session exists.
 
             This method will return a 200 status code if a session exists, 
-            otherwise a 400 status code will be returned.
+            otherwise a 204 status code will be returned.
             """)
         elif method == 'DELETE':
             return dedent("""\

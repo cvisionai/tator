@@ -1,5 +1,7 @@
 from django.middleware.csrf import get_token
 from django.contrib.auth import authenticate, login, logout
+from rest_framework import status
+from rest_framework.response import Response
 
 from ..schema import SessionSchema
 
@@ -23,10 +25,14 @@ class SessionAPI(BaseListView):
         login(self.request, user)
         return {'message': f"User {username} logged in successfully!"}
 
-    def _get(self, params):
-        if not self.request.user.is_authenticated:
-            raise ValueError("User is not logged in.")
-        return {'message': f"User is logged in."}
+    def get(self, request, format=None, **kwargs):
+        if request.user.is_authenticated:
+            resp = Response({'message': "User is logged in."},
+                            status = status.HTTP_201_OK)
+        else:   
+            resp = Response({'message': "User is not logged in."},
+                            status = status.HTTP_204_NO_CONTENT)
+        return resp
 
     def _delete(self, params):
         if not self.request.user.is_authenticated:
