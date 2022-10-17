@@ -1,8 +1,18 @@
 const express = require('express');
+const nunjucks = require('nunjucks');
 const app = express();
 const port = 3000;
 
-app.set('view engine', 'nunjucks');
+nunjucks.configure('server/views', {
+  express: app,
+  autoescape: true
+});
+app.set('view engine', 'html');
+app.use('/static', express.static('./dist'));
+
+app.get('/', (req, res) => {
+  res.redirect('/projects');
+});
 
 app.get('/accounts/account-profile', (req, res) => {
 });
