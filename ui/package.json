@@ -43,6 +43,7 @@
     "underwater-image-color-correction": "1.0.3",
     "uuid": "8.3.2",
     "webrtc-streamer": "0.6.5-9-g0031565",
+    "yargs": "^17.6.0",
     "zustand": "^4.1.1"
   }
 }
