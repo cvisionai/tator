@@ -39,10 +39,12 @@ export class LocalizationEdit extends TypeFormTemplate {
       { "label": "Dot", "value": "dot" },
       { "label": "Poly", "value": "poly" }
     ];
-    this.dtypeSelect.choices = dTypeOptions;
-    if (!data.dtype) {
+    if(typeof this.dtypeSelect._choices == "undefined") this.dtypeSelect.choices = dTypeOptions;
+    if (!data.dtype || data.dtype === "") {
       this.dtypeSelect._select.required = true;
+      this.dtypeSelect.setValue("");
       this.dtypeSelect.default = "";
+      this.dtypeSelect._select.disabled = false;
     } else {
       this.dtypeSelect.setValue(data.dtype);
       this.dtypeSelect.default = data.dtype;
@@ -82,8 +84,9 @@ export class LocalizationEdit extends TypeFormTemplate {
     // const MEDIA = "Media"; 
     if (typeof data.media !== "undefined") {
       try {
-        const mediaListWithChecked = getCompiledList({ type: this.typeName, skip: data.id, check: this._data.media});
-        this._mediaCheckboxes.setValue( mediaListWithChecked );
+        const mediaListWithChecked = await getCompiledList({ type: "MediaType", skip: null, check: this._data.media});
+        console.log("mediaListWithChecked", mediaListWithChecked);
+        this._mediaCheckboxes.setValue(mediaListWithChecked);
         this._mediaCheckboxes.default = mediaListWithChecked;
       } catch (err) {
         console.error("Error populating media list.", err);

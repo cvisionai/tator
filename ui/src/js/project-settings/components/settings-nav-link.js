@@ -1,11 +1,11 @@
 import { TatorElement } from "../../components/tator-element.js";
+import { store } from "../store.js";
 
 export class SettingsNavLink extends TatorElement {
    constructor() {
       super();
 
       // Main Div wrapper
-      //  this._shadow = this.attachShadow({mode: "open"});
       const template = document.getElementById("settings-nav-link").content;
       this._shadow.appendChild(template.cloneNode(true));
 
@@ -20,11 +20,14 @@ export class SettingsNavLink extends TatorElement {
 
       this.linkMap = new Map();
       this.innerLinkMap = new Map();
+      this._typeId = null;
+
    }
 
    static get observedAttributes() {
       return ["type"];
    }
+
    attributeChangedCallback(prop, oldValue, newValue) {
       if (prop === "type") {
          this._type = newValue;
@@ -33,27 +36,175 @@ export class SettingsNavLink extends TatorElement {
       }
    }
 
-   renderSubNav(data) {
+   connectedCallback() {
+      this._headingButton.addEventListener("click", this.toggle.bind(this));
+      
+      const removeAdd = this.getAttribute("add");
+      if (removeAdd === "false") {
+         this._subNavPlus.classList.add("hidden");
+      } else {
+         this._subNavPlus.addEventListener("click", this.setTypeOpen_New.bind(this));
+      }
+
+      store.subscribe(state => state.selection, this.showSelection.bind(this));
+      store.subscribe(state => state[this._type], this.renderSubNav.bind(this));
+   }
+
+  /**
+   * 
+   * @param {*} newSelection 
+   * @param {*} oldSelection 
+   */
+   async showSelection(newSelection, oldSelection) {
+      const newType = newSelection.typeName;
+      const oldType = oldSelection.typeName;
+
+      if (![newType, oldType].includes(this._type)) {
+         // Nothing applies to me, do nothing
+         return true;
+      }
+
+      console.log("Show selection heard that.... (new and old)");
+      console.log(newSelection);
+      console.log(oldSelection);
+
+      const myTypeIsNew = this._type === newType;
+      const selectedTypeIsNew = newType !== oldType;
+
+      const newId = newSelection.typeId;
+      const oldId = oldSelection.typeId;
+      const selectedIdIsNew = newId !== oldId;
+      
+      const newInner = newSelection.inner;
+      const oldInner = oldSelection.inner;
+      const innerChanged = newInner !== oldInner;
+  
+      if (selectedTypeIsNew || selectedIdIsNew || innerChanged) {
+        // IF: Something changed...........................
+        // Check HEADING
+         if (myTypeIsNew && selectedTypeIsNew) {
+            this.highlightHeading();
+            this.open(); // duped by toggle on click, but missed if onload, only open if we're starting from scratch
+           
+         } else if (!myTypeIsNew && selectedTypeIsNew) {
+            this.unhighlightHeading();
+            this.shut(); 
+         }
+
+         if (selectedIdIsNew) {
+            this.highlightLink(newId, newInner);
+            this.unhighlightLink(oldId, oldInner);
+            this._typeId = newId;
+         }
+      }
+    }
+  
+    highlightHeading() {
+      if (this._headingGroup) {
+        this._headingGroup.setAttribute("selected", "true");
+      } else {
+        console.warn("No nav heading found to higlight in settings nav.")
+      }
+    }
+  
+    unhighlightHeading() {
+      if (this._headingGroup) {
+        this._headingGroup.setAttribute("selected", "false");
+      } else {
+        console.warn("No nav heading found to unhiglight in settings nav.")
+      }
+    }
+  
+   highlightLink(id, inner = false) {
+      const selectMe = this.linkMap.get(id);
+      if (selectMe) {
+         selectMe.setAttribute("selected", "true");
+      } else {
+        console.warn("No nav found to higlight in settings nav.")
+      }
+    }
+  
+   unhighlightLink(id, inner = false) {
+      const deselectMe = this.linkMap.get(id)
+      if (deselectMe) {
+        deselectMe.setAttribute("selected", "false");
+      } else {
+        console.warn("No nav found to unhiglight in settings nav.")
+      }
+    }
+  
+    hidePlaceHolder() {
+      if (this._placeholderGlow) {
+        this._placeholderGlow.hidden = true;
+      } else {
+        console.warn("No placeholder found to hide in settings nav.")
+      }
+    }
+
+   setTypeOpen_New(evt) {
+      evt.preventDefault();
+      const newHash = `#${this._type}-New`;
+      window.history.pushState({}, "", newHash);
+   }
+
+   toggle() {
+      const isHidden = this._subNavSection.hidden;
+      if (isHidden) {
+         this.open();
+      } else {
+         this.shut();
+      }
+   }
+
+   async open() {
+      if (this._subNavSection) {
+         this._subNavSection.hidden = false;
+         if (store.getState()[this._type].init === false) {
+            await store.getState().fetchType(this._type);
+            this.hidePlaceHolder();
+         }
+      } else {
+         console.warn("No nav found to open in settings nav.")
+      }
+   }
+
+   shut() {
+      if (this._subNavSection) {
+         this._subNavSection.hidden = true;        
+      } else {
+         console.warn("No nav was open before, or could not be found to shut in settings nav.")
+      }
+   }
+
+   renderSubNav(newData, oldData) {
       // This just clears and re-adds
       this._subNavSection.innerHTML = "";
       this.linkMap.clear();
       this.innerLinkMap.clear();
 
-      for (const id of data.setList) {
-         const typeData = data.map.get(id);
+      console.log(newData.setList);
 
-         const link = this.getLink(data.name, id, typeData.name);
+      for (const id of newData.setList) {
+         const currentData = newData.map.get(id);
+         const typeName = newData.name;
+
+         const link = this.getLink(typeName, currentData.id, currentData.name);
+         // console.log(`value: ${this._typeId == id}  ((of  ${this._typeId} == ${id}))`);
+         if (this._typeId !== null && this._typeId == id) link.setAttribute("selected", "true");
          this._subNavSection.append(link);
-         this.linkMap.set(id, link);
+         this.linkMap.set(String(currentData.id), link);
 
-         if (data.name == "LeafType") {
-            const innerLink = this.getInnerLink(data.name, id);
+         if (typeName == "LeafType") {
+            const innerLink = this.getInnerLink(currentData.name, currentData.id);
+            if (this._typeId !== null && this._typeId == id) innerLink.setAttribute("selected", "true");
             this._subNavSection.append(innerLink);
-            this.innerLinkMap.set(id, innerLink);
+            this.innerLinkMap.set(String(id), innerLink);
          }
       }
-      if (data.name !== "Project") {
-         const link = this.getLink(data.name, "New", "+ Add new");
+
+      if (newData.name !== "Project") {
+         const link = this.getLink(newData.name, "New", "+ Add new");
+         if (this._typeId !== null && this._typeId == "New") link.setAttribute("selected", "true");
          this._subNavSection.append(link);
          this.linkMap.set("New", link);
       }
@@ -64,23 +215,17 @@ export class SettingsNavLink extends TatorElement {
       const subNavLink = document.createElement("a");
       subNavLink.setAttribute("class", `SideNav-subItem ${(typeDataId == "New") ? "text-italic" : ""}`);
       subNavLink.href = `#${selector}`;
-      subNavLink.textContent = objectName;
-  
-      // // Add link to sidebar
-      // const newLink = this._shadow.querySelector(`a.SideNav-subItem[href="#${type}-New"]`)
-      // if (newLink) {
-      //   newLink.before(subNavLink);
-      // } else {
-      //   section.appendChild(subNavLink);
-      // }
+      subNavLink.innerHTML = objectName;
+
       return subNavLink;
    }
    
    getInnerLink(type, typeDataId) {
       // This is for LEAF TYPE only (sub container)
-      let innerSelector = `#${type}-${typeDataId}_inner`
-      let innerSubNavLink = this.getLink(type, typeDataId, "[+] Add/Edit Leaves", innerSelector);
-      subNavLink.after(innerSubNavLink);
+      let innerSelector = `#${type}-${typeDataId}_inner`;
+      const icon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"></path></g></svg>`;
+      let innerSubNavLink = this.getLink(type, typeDataId, `${icon} Add/Edit Leaves`, innerSelector);
+      return innerSubNavLink;
    }
 }
 

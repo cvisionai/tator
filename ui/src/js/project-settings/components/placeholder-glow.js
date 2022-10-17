@@ -10,16 +10,8 @@ export class PlaceholderGlow extends TatorElement {
 
       this._row = document.createElement("span");
       this._row.setAttribute("class", "placeholder SideNav-subItem");
-      this._row.style = `width: ${String((Math.random() * (110 - 80) + 80).toFixed(0))}px`;
+      this._row.style = `width: ${String((Math.random() * (110 - 80) + 80).toFixed(0))}px`;      
 
-      //    <div class="placeholder-glow">
-      //    <a class="SideNav-subItem placeholder bg-charcoal-medium"> &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp;  </a>
-      //    <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; </a>
-      //    <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; </a>
-      //    <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  </a>
-      //    <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; </a>
-      //    <a class="SideNav-subItem placeholder bg-gray-light"> &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp; &nbsp; </a>
-      //  </div>
       this._className = "";
 
    }
@@ -33,9 +25,8 @@ export class PlaceholderGlow extends TatorElement {
          case "rows":
             
             for (let x = 0; x <= newValue; x++) {
+               this._row.style = `width: ${String((Math.random() * (110 - 80) + 80).toFixed(0))}px`;
                const cloneRow = this._row.cloneNode();
-               console.log("clone row.......");
-               console.log(cloneRow);
                this.div.appendChild(cloneRow);
             }
             break;

@@ -85,7 +85,7 @@ export class EnumInput extends TatorElement {
 
   set choices(val) {
     let selectedDefault = null;
-    
+    this._choices = val;
     // Add attribute type choices.
     for (const choice of val) {
       const option = document.createElement("option");

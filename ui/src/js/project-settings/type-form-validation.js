@@ -1,5 +1,3 @@
-import { TypeForm } from "./type-forms/type-form.js";
-
 export class TypeFormValidation{
     constructor(){
 

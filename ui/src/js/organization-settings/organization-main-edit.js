@@ -1,9 +1,11 @@
-import { TypeForm } from "../project-settings/type-forms/type-form.js";
+// import { TypeForm } from "../project-settings/type-forms/type-form.js";
+import { OrganizationTypeForm } from "./organization-type-form.js";
+
 import { hasPermission } from "../util/has-permission.js";
 import { getCookie } from "../util/get-cookie.js";
 import { SettingsBox } from "../project-settings/settings-box-helpers.js";
 
-export class OrganizationMainEdit extends TypeForm {
+export class OrganizationMainEdit extends OrganizationTypeForm {
   constructor() {
     super();
 

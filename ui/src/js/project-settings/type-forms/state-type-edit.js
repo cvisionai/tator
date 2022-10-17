@@ -28,16 +28,16 @@ export class StateTypeEdit extends TypeFormTemplate {
   async _setupFormUnique(data) {
     this._data = data;
 
-    // Setup view
-    this._typeId = data.id;
-    this._objectName = data.name;
-    this._projectId = data.project;
+    // // Setup view
+    // this._typeId = data.id;
+    // this._objectName = data.name;
+    // this._projectId = data.project;
 
-    // name
-    let name = ""
-    if (data.id !== "New") name = this._data.name
-    this._editName.setValue(name);
-    this._editName.default = name;
+    // // name
+    // let name = ""
+    // if (data.id !== "New") name = this._data.name
+    // this._editName.setValue(name);
+    // this._editName.default = name;
 
     // dtype
     const dTypeOptions = [

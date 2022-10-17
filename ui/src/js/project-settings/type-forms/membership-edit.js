@@ -1,6 +1,6 @@
 import { TypeFormTemplate } from "./type-form-template.js";
 import { TypeNew } from "./type-new.js";
-import { getCompiledList } from "../store.js";
+import { getCompiledList, store } from "../store.js";
 
 export class MembershipEdit extends TypeFormTemplate {
   constructor() {
@@ -108,6 +108,8 @@ export class MembershipEdit extends TypeFormTemplate {
       "projectId" : this.projectId
     });
 
+    store.getState().addType({ type: this.typeName, })
+
     let formDataList = this._getFormData("New", true);
 
     let numSucceeded = 0;
@@ -117,6 +119,9 @@ export class MembershipEdit extends TypeFormTemplate {
     for (const formData of formDataList) {
       const username = formData.username;
       //delete formData.username;
+
+      // TODO
+      // const data = await store.getState().addType({ type: this.typeName, data: formData });
       const promise = addNew.saveFetch(formData).then(([data, status]) => {
         this.loading.hideSpinner();
 

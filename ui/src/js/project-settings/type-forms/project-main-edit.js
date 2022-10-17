@@ -15,9 +15,9 @@ export class ProjectMainEdit extends TypeFormTemplate {
 
     this._form = this._shadow.getElementById("project-edit--form");
     this._editName = this._shadow.getElementById("project-edit--name");
-    this._editDescription = this._shadow.getElementById("project-edit--summary");
-    this._showEmpty = this._shadow.getElementById("project-edit--thumb");
-    this._number = this._shadow.getElementById("project-edit--downloads");
+    this._editSummary = this._shadow.getElementById("project-edit--summary");
+    this._thumbUpload = this._shadow.getElementById("project-edit--thumb");
+    this._enableDownloads = this._shadow.getElementById("project-edit--downloads");
   }
 
   async _setupFormUnique(data) {

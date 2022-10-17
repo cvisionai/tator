@@ -5,143 +5,38 @@ export class TypeFormTemplate extends TatorElement {
   constructor() {
     super();
 
-    // Header: This is adds the breadcrumb and successLight-spacer to the header
-    const typeFormTemplate = document.getElementById("type-form-template").content;
-    this._shadow.appendChild(typeFormTemplate.cloneNode(true));
-
-    // Main parts of page
-    this.editH1 = this._shadow.getElementById("type-form--edit-h1");
-    this.newH1 = this._shadow.getElementById("type-form--new-h1");
-    this.typeNameSet = this._shadow.querySelectorAll(".type-form-typeName");
-    this.objectNameDisplay = this._shadow.getElementById("type-form-objectName");
-    this.idDisplay = this._shadow.getElementById("type-form-id");
-    this.save = this._shadow.getElementById("type-form-save");
-    this.reset = this._shadow.getElementById("type-form-reset");
-    this.delete = this._shadow.getElementById("type-form-delete");
-    this.typeFormDiv = this._shadow.getElementById("type-form-div");
-    this._attributeContainer = this._shadow.getElementById("type-form-attr-column");
     // this.attributeSection = this._shadow.getElementById("type-form-attr-main");
     
     // console.log("Created type form....");
     this._hideAttributes = true;
     this.saveWarningFlow = false;
-
   }
-
+     
   /**
-   * @param {string} val
+   * @param {{ map?: any; id?: string; name?: string; project?: any; description?: string; visible?: boolean; grouping_default?: boolean; media?: never[]; dtype?: string; colorMap?: null; interpolation?: string; association?: string; line_width?: number; delete_child_localizations?: boolean; cluster?: null; manifest?: null; files_per_job?: null; parameters?: never[]; categories?: string; form?: string; } | null} val
    */
-   set typeName(val) {
-    this._typeName = val;
-    for (let span of this.typeNameSet) {
-      span.textContent = val;
-    }
-  }
-
-  /**
-   * @param {int} val
-   */
-  set typeId(val) {
-    this._typeId = val;
-    this.idDisplay.textContent = val;
-  }
-
-  /**
- * @param {int} val
- */
-  set objectName(val) {
-    this._objectName = val;
-    if (val === "+ Add New") {
-      this.editH1.hidden = true;
-      this.newH1.hidden = false;
-    } else {
-      this.objectNameDisplay.textContent = val;
-    }
-  }
-   
-   init(parent, modal, isStaff, canDeleteProject) {
-      this.parent = parent;
-      this.modal = modal;
-      this.isStaff = isStaff;
-
-      this.save.addEventListener("click", this._saveData.bind(this));
-      this.reset.addEventListener("click", this._resetForm.bind(this));
-      if (this._typeName == "Project" && !canDeleteProject) {
-        this.delete.hidden();
-      } else {
-        this.delete.addEventListener("click", this._deleteType.bind(this));
-      }
-   }
-
-  /**
-   * @param {int} val
-   */
-  set attributeTypes(val) {
-    this._attributeTypes = val;
-
-    // Shows container
-    this._attributeContainer.hidden = false;
-
-    // Clears any content (Covers a reset scenario)
-    if (this.attributeSection) this.attributeSection.remove();
-
-    // Creates/Re-creates this.attributeSection & appends it
-    this._getAttributeSection();
-  }
-
-   
   set data(val) {
-   this._data = val;
-
-    // Setup view
-    this.typeId = data.id;
-    this.objectName = data.name;
-    this.projectId = data.project;
-
-    // name
-    if (this._typeName !== "Membership") {
-      let name = ""
-      if (data.id !== "New") name = this._data.name
-      this._editName.setValue(name);
-      this._editName.default = name;
+    console.log(val);
+    if(val && val !== null){
+      this._data = val;
+    } else {
+      this._data = this._getEmptyData();
     }
 
-    this._setupFormUnique(data);
+    this.typeId = this._data.id;
+      this.objectName = this._data.name;
+      this.projectId = this._data.project;
 
-    // attribute section
-    if (data.id !== "New" && this._hideAttributes == false && typeof this._data.attribute_types !== "undefined") {
-      this.attributeTypes = this._data.attribute_types;
-    }
-  }
+      // name
+      if (this.typeName !== "Membership") {
+        let name = (this._data.id === "New") ? "" : this._data.name
+        this._editName.setValue(name);
+        this._editName.default = name;
+      }
 
-  _getAttributeSection() {
-    // console.log(this._data.attribute_types);
-    this.attributeSection = document.createElement("attributes-main");
-    this.attributeSection.setAttribute("data-from-id", `${this.typeId}`)
-    this.attributeSection._init(this.typeName, this._data.id, this._data.name, this.projectId, this._data.attribute_types, this.modal);
-    this._attributeContainer.appendChild(this.attributeSection);
+      this._setupFormUnique(this._data);
 
-    return this.attributeSection;
-  }
 
-  _getLeafSection() {
-    this.leafSection = document.createElement("leaf-main");
-    this.leafSection.setAttribute("data-from-id", `${this.typeId}`);
-    this.leafSection.setAttribute("data-project-id", `${this.projectId}`)
-    this.leafSection._init({
-      typeName: this.typeName,
-      fromId: this.typeId,
-      fromName: this._data.name,
-      projectId: this.projectId,
-      attributeTypes: this._data.attribute_types,
-      modal: this.modal,
-      projectName: this.projectName
-    });
-
-    // Register the update event - If attribute list name changes, or it is to be added/deleted listeners refresh data
-    this.leafSection.addEventListener('settings-refresh', this._attRefreshListener.bind(this));
-
-    return this.leafSection;
   }
 
   _saveData() {
@@ -156,8 +51,12 @@ export class TypeFormTemplate extends TatorElement {
     const formData = this._getFormData();
     // console.log(Object.entries(formData).length);
     if (Object.entries(formData).length !== 0) {
-      let respData = await this.doSaveAction(formData);
-      this.handleResponse(respData);
+      try {
+        let respData = await this.doSaveAction(formData);
+        this.handleResponse(respData);
+      } catch (err) {
+        this.modal._error(err)
+      }
     } else {
       // console.log();
       this.modal._success("Nothing new to save!");
@@ -199,12 +98,7 @@ export class TypeFormTemplate extends TatorElement {
       return this.modal._success(data.data.message);
     } else {
       console.log(data.response.message);
-
-      let message = data.response.message;
-      if (data.response.message === "name 'ObjectDoesNotExist' is not defined") {
-        message = "You must choose a base.";
-      }
-
+      return this.modal._error(data.data.message);
     }
   }
 
@@ -233,6 +127,8 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   _getEmptyData() {
+    this.typeId = "New";
+    this.objectName = "";
     return {
       id: `New`,
       name: "+ Add New",

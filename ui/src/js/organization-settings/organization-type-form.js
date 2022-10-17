@@ -1,9 +1,8 @@
 import { TatorElement } from "../components/tator-element.js";
-import { TypeForm } from "../project-settings/type-forms/type-form.js";
 import { TypeNew } from "../project-settings/type-forms/type-new.js";
 import { TypeDelete } from "../project-settings/type-forms/type-delete.js";
 import { getCookie } from "../util/get-cookie.js";
-import { Utilities } from "../util/utilities.js";
+// import { Utilities } from "../util/utilities.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
 import { SettingsBox } from "../project-settings/settings-box-helpers.js";
 
