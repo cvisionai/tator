@@ -3,6 +3,7 @@ from textwrap import dedent
 from rest_framework.schemas.openapi import AutoSchema
 
 from ._errors import error_responses
+from ._message import message_schema
 
 class SessionSchema(AutoSchema):
     def get_operation(self, path, method):

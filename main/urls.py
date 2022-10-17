@@ -420,6 +420,10 @@ urlpatterns += [
         name='SectionAnalysis',
     ),
     path(
+        'rest/Session',
+        SessionAPI.as_view(),
+    ),
+    path(
         'rest/States/<int:project>',
         StateListAPI.as_view(),
         name='States'
