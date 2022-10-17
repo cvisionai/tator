@@ -77,6 +77,7 @@ from .save_generic_file import SaveGenericFileSchema
 from .section import SectionListSchema
 from .section import SectionDetailSchema
 from .section_analysis import SectionAnalysisSchema
+from .session import SessionSchema
 from .state import StateListSchema
 from .state import StateDetailSchema
 from .state import StateGraphicSchema
