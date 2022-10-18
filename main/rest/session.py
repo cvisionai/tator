@@ -24,10 +24,13 @@ class SessionAPI(BaseListView):
 
         # We have a valid user, log them in.
         login(self.request, user)
-        return {'message': f"User {username} logged in successfully!"}
+        return {
+          'message': f"User {username} logged in successfully!",
+          'token': get_token(self.request)
+        }
 
     def _get(self, params):
-        if not request.user.is_authenticated:
+        if not self.request.user.is_authenticated:
             raise Http404
         return {'message': "User is logged in."}
 
