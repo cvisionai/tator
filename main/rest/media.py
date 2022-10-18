@@ -252,12 +252,12 @@ def _create_media(params, user):
             ext = os.path.splitext(name)[1].lower()
             if ext in [".dng"]:
                 # Digital Negative files need conversion
-                temp_image = tempfile.NamedTemporaryFile(delete=False)
+                temp_image = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                 temp_dng = tempfile.NamedTemporaryFile(delete=False, suffix=".dng")
                 download_file(url, temp_dng.name, 5)
                 with rawpy.imread(temp_dng.name) as raw:
                     rgb = raw.postprocess()
-                imageio.imwrite(temp_image.name, rgb, format_hint=".png")
+                imageio.imwrite(temp_image.name, rgb)
                 os.remove(temp_dng.name)
             else:
                 temp_image = tempfile.NamedTemporaryFile(delete=False)
