@@ -16,7 +16,7 @@ fetch(`${backend}/rest/Session`, {
   }
 })
 .then(response => {
-  if (response.status == 204) {
+  if (response.status == 204 && window.location.pathname != "/accounts/login") {
     window.location.href = `/accounts/login?next=${window.location.pathname}`;
   }
 });
