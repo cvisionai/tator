@@ -25,7 +25,6 @@ from ..models import (
 
 from ..schema import PermalinkSchema, parse
 from ..schema.components import media as media_schema
-from ..download import download_file
 from ..store import get_tator_store, get_storage_lookup
 
 from ._base_views import process_exception
