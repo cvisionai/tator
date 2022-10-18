@@ -2,6 +2,7 @@
 
 const express = require('express');
 const nunjucks = require('nunjucks');
+const favicon = require('serve-favicon');
 const yargs = require('yargs/yargs');
 const app = express();
 const port = 3000;
@@ -22,6 +23,7 @@ nunjucks.configure('server/views', {
 app.set('view engine', 'html');
 app.use('/static', express.static('./dist'));
 app.use('/static', express.static('./server/static'));
+app.use(favicon('./server/static/images/favicon.ico'));
 
 
 app.get('/', (req, res) => {
