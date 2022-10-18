@@ -77,18 +77,18 @@ server {
     add_header Cross-Origin-Embedder-Policy require-corp;
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin *;
-    add_header Access-Control-Allow-Methods *;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-    add_header Access-Control-Allow-Credentials true;
+    add_header Access-Control-Allow-Origin * always;
+    add_header Access-Control-Allow-Methods * always;
+    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+    add_header Access-Control-Allow-Credentials true always;
     if ($request_method = OPTIONS)
     {
       add_header Content-Length 0;
       add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin *;
-      add_header Access-Control-Allow-Methods *;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-      add_header Access-Control-Allow-Credentials true;
+      add_header Access-Control-Allow-Origin * always;
+      add_header Access-Control-Allow-Methods * always;
+      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+      add_header Access-Control-Allow-Credentials true always;
       return 200;
     }
     {{- end }}
@@ -101,24 +101,24 @@ server {
     alias /media/;
     autoindex off;
     add_header Cache-Control "max-age=3600, must-revalidate";
-    add_header 'Access-Control-Allow-Headers' 'Authorization' 'X-CSRFToken' always;
+    add_header 'Access-Control-Allow-Headers' 'Authorization,X-CSRFToken' always;
     add_header Cross-Origin-Opener-Policy same-origin;
     add_header Cross-Origin-Embedder-Policy require-corp;
     
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin *;
-    add_header Access-Control-Allow-Methods *;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-    add_header Access-Control-Allow-Credentials true;
+    add_header Access-Control-Allow-Origin * always;
+    add_header Access-Control-Allow-Methods * always;
+    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+    add_header Access-Control-Allow-Credentials true always;
     if ($request_method = OPTIONS)
     {
       add_header Content-Length 0;
       add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin *;
-      add_header Access-Control-Allow-Methods *;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-      add_header Access-Control-Allow-Credentials true;
+      add_header Access-Control-Allow-Origin * always;
+      add_header Access-Control-Allow-Methods * always;
+      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+      add_header Access-Control-Allow-Credentials true always;
       return 200;
     }
     {{- end }}
@@ -151,18 +151,18 @@ server {
     proxy_pass http://tator-minio:9000/;
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin *;
-    add_header Access-Control-Allow-Methods *;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-    add_header Access-Control-Allow-Credentials true;
+    add_header Access-Control-Allow-Origin * always;
+    add_header Access-Control-Allow-Methods * always;
+    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+    add_header Access-Control-Allow-Credentials true always;
     if ($request_method = OPTIONS)
     {
       add_header Content-Length 0;
       add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin *;
-      add_header Access-Control-Allow-Methods *;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-      add_header Access-Control-Allow-Credentials true;
+      add_header Access-Control-Allow-Origin * always;
+      add_header Access-Control-Allow-Methods * always;
+      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+      add_header Access-Control-Allow-Credentials true always;
       return 200;
     }
     {{- end }}
@@ -243,18 +243,18 @@ server {
     add_header Cache-Control "max-age=0, must-revalidate";
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin *;
-    add_header Access-Control-Allow-Methods *;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-    add_header Access-Control-Allow-Credentials true;
+    add_header Access-Control-Allow-Origin * always;
+    add_header Access-Control-Allow-Methods * always;
+    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+    add_header Access-Control-Allow-Credentials true always;
     if ($request_method = OPTIONS)
     {
       add_header Content-Length 0;
       add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin *;
-      add_header Access-Control-Allow-Methods *;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-      add_header Access-Control-Allow-Credentials true;
+      add_header Access-Control-Allow-Origin * always;
+      add_header Access-Control-Allow-Methods * always;
+      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+      add_header Access-Control-Allow-Credentials true always;
       return 200;
     }
     {{- end }}
@@ -314,18 +314,18 @@ server {
     add_header Cache-Control "max-age=0, must-revalidate";
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin *;
-    add_header Access-Control-Allow-Methods *;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-    add_header Access-Control-Allow-Credentials true;
+    add_header Access-Control-Allow-Origin * always;
+    add_header Access-Control-Allow-Methods * always;
+    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+    add_header Access-Control-Allow-Credentials true always;
     if ($request_method = OPTIONS)
     {
       add_header Content-Length 0;
       add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin *;
-      add_header Access-Control-Allow-Methods *;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken";
-      add_header Access-Control-Allow-Credentials true;
+      add_header Access-Control-Allow-Origin * always;
+      add_header Access-Control-Allow-Methods * always;
+      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+      add_header Access-Control-Allow-Credentials true always;
       return 200;
     }
     {{- end }}
