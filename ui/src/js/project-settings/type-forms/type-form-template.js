@@ -41,22 +41,32 @@ export class TypeFormTemplate extends TatorElement {
 
   _saveData() {
     if (this.saveWarningFlow == true) {
-      this.warningFlow(this.saveDataFunction);
+      this.warningFlow(this.saveDataFunction.bind(this));
     } else {
       this.saveDataFunction();
     }
   }
 
   async saveDataFunction() {
+    console.log("saveDataFunction........");
     const formData = this._getFormData();
     // console.log(Object.entries(formData).length);
-    if (Object.entries(formData).length !== 0) {
+    if (Object.entries(formData).length !== 0 && !Array.isArray(formData)) {
       try {
-        let respData = await this.doSaveAction(formData);
+        const respData = await this.doSaveAction(formData);
         this.handleResponse(respData);
       } catch (err) {
         this.modal._error(err)
       }
+    } else if (!Array.isArray(formData)) {
+      const responses = [];
+      for (let d of formData) {
+        const respData = await this.doSaveAction(d);
+        responses.push(respData);
+        this.handleResponseList(responses);
+      }
+      
+      this.handleResponse(respData);
     } else {
       // console.log();
       this.modal._success("Nothing new to save!");
@@ -71,6 +81,7 @@ export class TypeFormTemplate extends TatorElement {
     button.appendChild(confirmText);
 
     button.addEventListener("click", () => {
+      console.log("TEST");
       todo();
       this.modal._modalCloseAndClear();
     });
@@ -100,6 +111,29 @@ export class TypeFormTemplate extends TatorElement {
       console.log(data.response.message);
       return this.modal._error(data.data.message);
     }
+  }
+
+  handleResponseList(responses) {
+    let sCount = 0;
+    let eCount = 0;
+    let errors = "";
+
+    for (let r of responses) {
+      if (r.response.ok) {
+        sCount++;
+      } else {
+        eCount++;
+        errors += `Error: ${r.data.message} \n`;
+      }
+    }
+
+    if (sCount > 0 && eCount === 0) {
+      return this.modal._success(`Successfully added ${sCount} ${this.typeName}s.`);
+    } else if (sCount > 0 && eCount > 0) {
+      return this.modal._complete(`Successfully added ${sCount} ${this.typeName}s.\n Error adding ${eCount} ${this.typeName}s.\n Error message${(eCount == 1 ? '' :'s')}: ${errors}`);
+    } else {
+      return this.modal._error(`Error adding ${eCount} ${this.typeName}s.\n Error message${(eCount == 1 ? '' :'s')}: ${errors}`);
+    }    
   }
 
   _resetForm() {

@@ -187,8 +187,8 @@ export class SettingsNavLink extends TatorElement {
       for (const id of newData.setList) {
          const currentData = newData.map.get(id);
          const typeName = newData.name;
-
-         const link = this.getLink(typeName, currentData.id, currentData.name);
+         const objectName = (typeName === "Membership") ? currentData.username : currentData.name;
+         const link = this.getLink(typeName, currentData.id, objectName);
          // console.log(`value: ${this._typeId == id}  ((of  ${this._typeId} == ${id}))`);
          if (this._typeId !== null && this._typeId == id) link.setAttribute("selected", "true");
          this._subNavSection.append(link);

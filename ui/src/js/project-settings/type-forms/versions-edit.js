@@ -43,7 +43,7 @@ export class VersionsEdit extends TypeFormTemplate {
       }
 
       // Bases   
-      const basesListWithChecked = getCompiledList({ type: this.typeName, skip: data.id, check: this._data.bases});
+      const basesListWithChecked = await getCompiledList({ type: this.typeName, skip: data.id, check: this._data.bases});
       // console.log("Set value in checkbox set..."+basesListWithChecked.length);
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;

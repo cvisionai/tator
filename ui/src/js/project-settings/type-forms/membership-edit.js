@@ -22,6 +22,11 @@ export class MembershipEdit extends TypeFormTemplate {
     this._versionSelect = this._shadow.getElementById("membership-edit--default-version");
   }
 
+  // async connectedCallback() {
+  //   await store.getState().fetchType("User");
+  //   this._users = store.getState()[User].map;
+  // }
+
 
   async _setupFormUnique(data) {
     const formData = {};
@@ -29,6 +34,9 @@ export class MembershipEdit extends TypeFormTemplate {
     if (data.id == "New") {
       this._userData = document.createElement("user-data");
       this._userInput.init(this._userData);
+      this._userInput.hidden = false;
+    } else {
+      this._userInput.hidden = true;
     }
 
     // permission
@@ -39,27 +47,28 @@ export class MembershipEdit extends TypeFormTemplate {
       { "label": "Can Execute", "value": "Can Execute" },
       { "label": "Full Control", "value": "Full Control" },
     ];
-    this._permissionSelect.choices = permissionOptions;
+    if(typeof this._permissionSelect._choices == "undefined") this._permissionSelect.choices = permissionOptions;
     this._permissionSelect._select.required = true;
     this._permissionSelect.setValue(data.permission);
     this._permissionSelect.default = data.permission;
 
     // default version
-    const versionOptions = getCompiledList({ type: "Version", check: data.default_version });
+    const versionOptions = await getCompiledList({ type: "Version", check: data.default_version });
+    this._versionSelect.resetChoices();
     this._versionSelect.choices = versionOptions;
     this._versionSelect._select.required = true;
     this._versionSelect.setValue(data.default_version);
     this._versionSelect.default = data.default_version;
   }
 
-  _getFormData(id) {
+  _getFormData() {
     let formData;
 
     // New we can be adding multiple memberships
-    if (id == "New") {
+    if (this._typeId == "New") {
       formData = [];
       const users = this._userData.getUsers();
-      for (const user of users.values()) {
+      for (const user of users) {
         formData.push({
           user: user.id,
           username: user.username, // ignored by BE, used by FE only
@@ -97,107 +106,6 @@ export class MembershipEdit extends TypeFormTemplate {
     };
   }
 
-  _getAttributeSection() {
-    return document.createElement("div");
-  }
-
-  _savePost() {
-    this.loading.showSpinner();
-    let addNew = new TypeNew({
-      "type" : this.typeName,
-      "projectId" : this.projectId
-    });
-
-    store.getState().addType({ type: this.typeName, })
-
-    let formDataList = this._getFormData("New", true);
-
-    let numSucceeded = 0;
-    let numFailed = 0;
-    let errorMessages = "";
-    const promises = [];
-    for (const formData of formDataList) {
-      const username = formData.username;
-      //delete formData.username;
-
-      // TODO
-      // const data = await store.getState().addType({ type: this.typeName, data: formData });
-      const promise = addNew.saveFetch(formData).then(([data, status]) => {
-        this.loading.hideSpinner();
-
-        if(status != 400){
-          
-          // Hide the add new form
-          this.sideNav.hide(`itemDivId-${this.typeName}-New`);
-
-          // Create and show the container with new type
-          this.sideNav.addItemContainer({
-            "type" : this.typeName,
-            "id" : data.id,
-            "hidden" : false
-          });
-
-          let form = document.createElement( this._getTypeClass() );
-          form.init(this._data);
-
-          this.sideNav.fillContainer({
-            "type" : this.typeName,
-            "id" : data.id,
-            "itemContents" : form
-          });
-
-          // init form with the data
-          formData.id = data.id;
-          formData.project = this.projectId;
-          if(this.typeName == "LocalizationType" || this.typeName == "StateType") formData.media = formData.media_types;
-          form._init({ 
-            "data": formData, 
-            "modal" : this.modal, 
-            "sidenav" : this.sideNav
-          });
-
-          // Add the item to navigation
-          this._updateNavEvent("new", username, data.id);
-
-          // Increment succeeded.
-          numSucceeded++;
-        } else {
-          errorMessages = `${errorMessages}\n${data.message}`;
-          numFailed++;
-        }
-      }).catch((err) => {
-        console.error(err);
-        errorMessages = `${errorMessages}\n${err}`;
-        numFailed++;
-      });
-      promises.push(promise);
-    }
-
-    // Let user know everything's all set!
-    Promise.all(promises).then(() => {
-      this.loading.hideSpinner();
-      this._userData.reset();
-      let message;
-      if (numSucceeded > 0) {
-        message = `Successfully created ${numSucceeded} memberships.`;
-        if (numFailed > 0) {
-          message = `${message} Failed to create ${numFailed}.\n${errorMessages}`;
-        }
-        return this._modalSuccess(message);
-      } else {
-        return this._modalError(`Failed to create ${numFailed} memberships.\n${errorMessages}`);
-      }
-    });
-  }
-
-  _updateVersionList() {
-    console.log("Membership-edit: UPDATE VERSIONS LIST!");
-    const versionOptions = getCompiledList({ type: this.typeName, check: data.default_version });
-    this._versionSelect.choices = versionOptions;
-    console.log(`this._data.default_version=${this._data.default_version}`);
-    this._versionSelect.setValue(this._data.default_version);
-    this._versionSelect.default = this._data.default_version;
-  }
 }
 
 customElements.define("membership-edit", MembershipEdit);

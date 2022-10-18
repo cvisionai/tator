@@ -16,7 +16,8 @@ getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
    .set("Version", api.getVersionListWithHttpInfo.bind(api))
    .set("Algorithm", api.getAlgorithmListWithHttpInfo.bind(api))
    .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
-   .set("Applet", api.getAppletListWithHttpInfo.bind(api));
+   .set("Applet", api.getAppletListWithHttpInfo.bind(api))
+   .set("User", api.getUserListWithHttpInfo.bind(api));
 
 const postMap = new Map();
 postMap
@@ -144,6 +145,12 @@ const store = create(subscribeWithSelector((set, get) => ({
       map: new Map(),
       name: "JobCluster"
    },
+   // User: {
+   //    init: false,
+   //    setList: new Set(),
+   //    map: new Map(),
+   //    name: "User"      
+   // },
 
    /* */
    setSelection: (newSelection) => {
