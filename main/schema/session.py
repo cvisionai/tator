@@ -29,10 +29,10 @@ class SessionSchema(AutoSchema):
             """)
         elif method == 'GET':
             return dedent("""\
-            Check if a session exists.
+            Check if a session exists for the current user.
 
             This method will return a 200 status code if a session exists, 
-            otherwise a 204 status code will be returned.
+            otherwise a 404 status code will be returned.
             """)
         elif method == 'DELETE':
             return dedent("""\
