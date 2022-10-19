@@ -74,7 +74,6 @@ from .save_generic_file import SaveGenericFileAPI
 from .section import SectionListAPI
 from .section import SectionDetailAPI
 from .section_analysis import SectionAnalysisAPI
-from .session import SessionAPI
 from .state import StateListAPI
 from .state import StateDetailAPI
 from .state_count import StateCountAPI
