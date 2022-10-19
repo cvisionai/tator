@@ -33,9 +33,9 @@ def make_btree_index(entity_type, attribute, psql_type):
     table_name = entity_type._meta.db_table.replace('type','')
     index_name = _get_unique_index_name(entity_type, attribute)
     with connection.cursor() as cursor:
-        sql_str=f"""CREATE INDEX {index_name} ON {table_name}
+        sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING btree (CAST(attributes->>'{attribute['name']}' AS {psql_type}))
-                                 WHERE project={entity_type.project.id}"""
+                                 WHERE project={entity_type.project.id} and meta={entity_type.id}"""
         cursor.execute(sql_str)
         logger.info(sql_str)
 def make_bool_index(entity_type, attribute):
@@ -52,14 +52,25 @@ def make_string_index(entity_type, attribute, method='GIN'):
     table_name = entity_type._meta.db_table.replace('type','')
     index_name = _get_unique_index_name(entity_type, attribute)
     with connection.cursor() as cursor:
-        sql_str=f"""CREATE INDEX {index_name} ON {table_name}
+        sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING {method} (CAST(attributes->>'{attribute['name']}' AS text) {method.lower()}_trgm_ops)
-                                 WHERE project={entity_type.project.id}"""
+                                 WHERE project={entity_type.project.id} and meta={entity_type.id}"""
         cursor.execute(sql_str)
         logger.info(sql_str)
 
 def make_datetime_index(entity_type, attribute):
-    pass
+    func_str=f"""CREATE OR REPLACE FUNCTION to_timestamp(text)
+                 RETURNS timestamp AS
+                $func$
+                SELECT CAST($1 as timestamp)
+                $func$ LANGUAGE sql IMMUTABLE;"""
+    sql_str=f"""CREATE INDEX CONCURRENTLY test ON main_State USING btree (to_timestamp(attributes->>'{attribute['name']}')) WHERE project={entity_type.project.id} AND meta={entity_type.id};"""
+    with connection.cursor() as cursor:
+        cursor.execute(func_str)
+        cursor.execute(sql_str)
+        logger.info(sql_str)
+
+
 
 def make_geopos_index(entity_type, attribute):
     pass
