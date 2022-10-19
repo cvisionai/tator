@@ -197,6 +197,8 @@ def _create_media(params, user):
                 ext = os.path.splitext(name)[1].lower()
                 if ext in ['.mts', '.m2ts']:
                     mime = 'video/MP2T'
+                elif ext in [".dng"]:
+                    mime = "image/dng"
             if mime.startswith('image'):
                 for media_type in media_types:
                     if media_type.dtype == 'image':
