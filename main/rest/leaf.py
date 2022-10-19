@@ -20,7 +20,6 @@ from ..schema.components import leaf as leaf_schema
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._leaf_query import get_leaf_queryset
-from ._leaf_query import get_leaf_es_query
 from ._attributes import patch_attributes
 from ._attributes import bulk_patch_attributes
 from ._attributes import validate_attributes
@@ -187,8 +186,6 @@ class LeafListAPI(BaseListView):
         count = qs.count()
         if count > 0:
             bulk_delete_and_log_changes(qs, params["project"], self.request.user)
-            query = get_leaf_es_query(params)
-            TatorSearch().delete(self.kwargs['project'], query)
             
         if count == 1:
             return {'message': f'Successfully deleted {count} leaf!'}
@@ -204,9 +201,6 @@ class LeafListAPI(BaseListView):
                 qs, params["project"], self.request.user, new_attributes=new_attrs
             )
             bulk_patch_attributes(new_attrs, qs)
-
-            query = get_leaf_es_query(params)
-            TatorSearch().update(self.kwargs['project'], qs[0].meta, query, new_attrs)
 
         if count == 1:
             return {'message': f'Successfully updated {count} leaf!'}
