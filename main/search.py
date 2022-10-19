@@ -3,7 +3,7 @@ import os
 import datetime
 from copy import deepcopy
 from uuid import uuid1
-from django.db import connection
+from django.db import connection, transaction
 import re
 import time
 
@@ -36,7 +36,9 @@ def make_btree_index(entity_type, attribute, psql_type):
         sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING btree (CAST(attributes->>'{attribute['name']}' AS {psql_type}))
                                  WHERE project={entity_type.project.id} and meta={entity_type.id}"""
+        transaction.set_autocommit(False)
         cursor.execute(sql_str)
+        transaction.set_autocommit(True)
         logger.info(sql_str)
 def make_bool_index(entity_type, attribute):
     make_btree_index(entity_type, attribute, 'boolean')
@@ -55,7 +57,9 @@ def make_string_index(entity_type, attribute, method='GIN'):
         sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING {method} (CAST(attributes->>'{attribute['name']}' AS text) {method.lower()}_trgm_ops)
                                  WHERE project={entity_type.project.id} and meta={entity_type.id}"""
+        transaction.set_autocommit(False)
         cursor.execute(sql_str)
+        transaction.set_autocommit(True)
         logger.info(sql_str)
 
 def make_datetime_index(entity_type, attribute):
@@ -68,8 +72,10 @@ def make_datetime_index(entity_type, attribute):
                 $func$ LANGUAGE sql IMMUTABLE;"""
     sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} USING btree (to_timestamp(attributes->>'{attribute['name']}')) WHERE project={entity_type.project.id} AND meta={entity_type.id};"""
     with connection.cursor() as cursor:
+        transaction.set_autocommit(False)
         cursor.execute(func_str)
         cursor.execute(sql_str)
+        transaction.set_autocommit(True)
         logger.info(sql_str)
 
 
@@ -79,7 +85,9 @@ def make_geopos_index(entity_type, attribute):
     index_name = _get_unique_index_name(entity_type, attribute)
     sql_str = f"""CREATE INDEX {index_name} ON {table_name} using gist(ST_MakePoint((attributes -> '{attribute['name']}' -> 1)::float, (attributes -> '{attribute['name']}' -> 0)::float)) WHERE project={entity_type.project.id} and meta={entity_type.id};"""
     with connection.cursor() as cursor:
+        transaction.set_autocommit(False)
         cursor.execute(sql_str)
+        transaction.set_autocommit(True)
         logger.info(sql_str)
 
 def make_vector_index(entity_type, attribute):
@@ -89,7 +97,9 @@ def make_vector_index(entity_type, attribute):
         # Create an index method for each access type
         for method in ['l2', 'ip', 'cosine']:
             sql_str = f"""CREATE INDEX {index_name}_{method} ON {table_name} using ivfflat(CAST(attributes -> '{attribute['name']}' AS vector({attribute['size']})) vector_{method}_ops) WHERE project={entity_type.project.id} and meta={entity_type.id};"""
+            transaction.set_autocommit(False)
             cursor.execute(sql_str)
+            transaction.set_autocommit(True)
             logger.info(sql_str)
 
 class TatorSearch:
