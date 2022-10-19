@@ -7,8 +7,10 @@ from dateutil.parser import parse as dateutil_parse
 
 from ..models import LocalizationType
 from ..models import StateType
+from ..models import MediaType
+from ..models import LeafType
+from ..models import FileType
 from ..models import Section
-from ..search import TatorSearch
 
 from ._attributes import KV_SEPARATOR
 from ._float_array_query import get_float_array_query
@@ -240,15 +242,35 @@ def _convert_boolean(value):
         value = bool(value)
     return value
 
-def _convert_attribute_filter_value(pair, mappings, operation):
+def _get_dtype_for_attribute(project, annotation_type, key):
+    """ Returns the first matching dtype with a matching key """
+    types=[]
+    if annotation_type in ['localization', 'all']:
+        types.extend(LocalizationType.objects.filter(project=project))
+    elif annotation_type in ['media', 'all']:
+        types.extend(MediaType.objects.filter(project=project))
+    elif annotation_type in ['state', 'all']:
+        types.extend(StateType.objects.filter(project=project))
+    elif annotation_type in ['leaf', 'all']:
+        types.extend(LeafType.objects.filter(project=project))
+    elif annotation_type in ['file', 'all']:
+        types.extend(FileType.objects.filter(project=project))
+    else:
+        logger.error(f"Unknown annotation_type '{annotation_type}'")
+    
+    for type_info in types:
+        for attribute_info in type_info.attribute_types:
+            if attribute_info['name'] == key:
+                return attribute_info['dtype']
+    
+    logger.error(f"Couldn't find dtype for {key} of {annotation_type} in {project}")
+    return None
+
+def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     kv = pair.split(KV_SEPARATOR, 1)
     key, value = kv
-    if key not in mappings:
-        raise ValueError(f"Attribute '{key}' could not be found in project!")
-    if 'path' in mappings[key]:
-        dtype = mappings[key]['path'].split('_', 1)[1]
-    else:
-        dtype = mappings[key]['type']
+    dtype = _get_dtype_for_attribute(project, annotation_type, key)
+    
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
     if dtype == 'boolean':
@@ -261,30 +283,15 @@ def _convert_attribute_filter_value(pair, mappings, operation):
         value = dateutil_parse(value)
     return key, value, dtype
 
-def get_attribute_filter_ops(project, params):
+def get_attribute_filter_ops(project, params, data_type):
     filter_ops = []
-    use_es = False
     if any([(filt in params) for filt in ALLOWED_TYPES.keys()]):
-        search = TatorSearch()
-        index_name = search.index_name(project)
-        mappings = TatorSearch().es.indices.get_mapping(index=index_name)
-        mappings = mappings[index_name]['mappings']['properties']
-
         for op in ALLOWED_TYPES.keys():
             if op in params:
                 for kv in params[op]:
-                    key, value, dtype = _convert_attribute_filter_value(kv, mappings, op)
-                    # Don't deal with type conversions required for date and geo_point filtering
-                    # in PSQL
-                    if (dtype in ['date', 'geo_point']) or (op == 'attribute_distance'):
-                        use_es = True
+                    key, value, dtype = _convert_attribute_filter_value(kv, project, data_type, op)
                     filter_ops.append((key, value, op))
-    force_es = params.get('force_es')
-    if force_es:
-        use_es = True
-    if 'float_array' in params:
-        use_es = True
-    return use_es, filter_ops
+    return filter_ops
 
 def get_attribute_psql_queryset(qs, params, filter_ops):
     attribute_null = params.get('attribute_null')

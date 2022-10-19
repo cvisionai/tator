@@ -232,13 +232,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
 
     return qs
 
-def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'annotation_search', 'after_id']
-    use_es = False
-    for es_param in ES_ONLY_PARAMS:
-        if es_param in params:
-            use_es = True
-            break
+def _get_section_and_params(project, params):
     section_uuid = None
     if 'section' in params:
         section = Section.objects.get(pk=params['section'])
@@ -248,40 +242,21 @@ def _use_es(project, params):
             use_es = True
         section_uuid = section.tator_user_sections
 
-    # Look up attribute dtypes if necessary.
-    use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
-    use_es = use_es or use_es_for_attributes
+    filter_ops = get_attribute_filter_ops(project, params, 'media')
 
-    return use_es, section_uuid, filter_ops
+    return section_uuid, filter_ops
 
 def get_media_queryset(project, params):
     # Determine whether to use ES or not.
-    use_es, section_uuid, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and construct the queryset.
-        query = get_media_es_query(project, params)
-        media_ids, _  = TatorSearch().search(project, query)
-        qs = Media.objects.filter(pk__in=media_ids, deleted=False).order_by('name', 'id')
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
+    section_uuid, filter_ops = _get_section_and_params(project, params)
+    # If using PSQL, construct the queryset.
+    qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
     return qs
 
 def get_media_count(project, params):
     # Determine whether to use ES or not.
-    use_es, section_uuid, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and get the count.
-        query = get_media_es_query(project, params)
-        media_ids, _  = TatorSearch().search(project, query)
-        count = len(media_ids)
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
-        count = qs.count()
-    return count
+    qs = get_media_queryset(project, params)
+    return qs.count()
 
 def query_string_to_media_ids(project_id, url):
     """ TODO: add documentation for this """

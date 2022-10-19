@@ -171,50 +171,12 @@ def _get_file_psql_queryset(project, filter_ops, params):
         qs = qs[:stop]
 
     return qs
-  
-def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'after']
-    use_es = False
-    for es_param in ES_ONLY_PARAMS:
-        if es_param in params:
-            use_es = True
-            break
-
-    # Look up attribute dtypes if necessary.
-    use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
-    use_es = use_es or use_es_for_attributes
-
-    force_es = params.get('force_es')
-    if force_es:
-        use_es = True
-
-    return use_es, filter_ops
 
 def get_file_queryset(project, params):
     # Determine whether to use ES or not.
-    use_es, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and construct the queryset.
-        query = get_file_es_query(params)
-        file_ids, _  = TatorSearch().search(project, query)
-        qs = File.objects.filter(pk__in=file_ids).order_by('id')
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_file_psql_queryset(project, filter_ops, params)
+    filter_ops = get_attribute_filter_ops(project, params, 'file')
+    qs = _get_file_psql_queryset(project, filter_ops, params)
     return qs
 
 def get_file_count(project, params):
-    # Determine whether to use ES or not.
-    use_es, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and get the count.
-        query = get_file_es_query(params)
-        file_ids, _  = TatorSearch().search(project, query)
-        count = len(file_ids)
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_file_psql_queryset(project, filter_ops, params)
-        count = qs.count()
-    return count
+    return get_file_queryset(project,params).count()

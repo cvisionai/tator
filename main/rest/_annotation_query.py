@@ -19,109 +19,6 @@ logger = logging.getLogger(__name__)
 ANNOTATION_LOOKUP = {'localization': Localization,
                      'state': State}
 
-def get_annotation_es_query(project, params, annotation_type):
-    """Converts annotation query string into a list of IDs and a count.
-       annotation_type: Should be one of `localization` or `state`.
-    """
-    media_id = params.get('media_id')
-    media_id_put = params.get('media_ids') # PUT request only
-    media_query = params.get('media_query') # PUT request only
-    if annotation_type == 'localization':
-        localization_ids = params.get('ids') # PUT request only
-        state_ids = params.get('state_ids') # PUT request only
-    elif annotation_type == 'state':
-        localization_ids = params.get('localization_ids') # PUT request only
-        state_ids = params.get('ids') # PUT request only
-    filter_type = params.get('type')
-    version = params.get('version')
-    frame = params.get('frame')
-    exclude_parents = params.get('excludeParents')
-    start = params.get('start')
-    stop = params.get('stop')
-    after = params.get('after')
-
-    if exclude_parents and (start or stop):
-        raise Exception("Elasticsearch based queries with pagination are incompatible with "
-                        "'excludeParents'!")
-
-    if state_ids and (annotation_type == 'localization'):
-        raise Exception("Elasticsearch based localization queries do not support 'state_ids'!")
-
-    if localization_ids and (annotation_type == 'state'):
-        raise Exception("Elasticsearch based state queries do not support 'localization_ids'!")
-
-    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort']['_postgres_id'] = 'asc'
-    media_bools = []
-    annotation_types = ["box", "line", "dot", "poly"]
-    if annotation_type == 'localization':
-        annotation_bools = [{'bool': {
-            "should": [{"match": {"_dtype": type_}} for type_ in annotation_types],
-            'minimum_should_match': 1,
-        }}]
-    elif annotation_type == 'state':
-        annotation_bools = [{'match': {'_dtype': 'state'}}]
-    else:
-        raise ValueError(f"Programming error: invalid annotation type {annotation_type}")
-
-    media_ids = []
-    media_types = ["image", "video", "multi"]
-    if media_id_put is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id_put)
-
-    if media_query is not None:
-        media_query_ids = query_string_to_media_ids(project, media_query)
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_query_ids)
-
-    if media_id is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id)
-    if media_ids:
-        media_bools.append({'ids': {'values': media_ids}})
-
-    annotation_ids = []
-    if localization_ids is not None:
-        annotation_ids.extend(
-            f"{type_}_{id_}" for type_ in annotation_types for id_ in localization_ids
-        )
-    if state_ids is not None:
-        annotation_ids.extend(f"state_{id_}" for id_ in state_ids)
-    if annotation_ids:
-        annotation_bools.append({'ids': {'values': annotation_ids}})
-
-    if filter_type is not None:
-        annotation_bools.append({'match': {'_meta': {'query': int(filter_type)}}})
-
-    if version is not None:
-        annotation_bools.append({'terms': {'_annotation_version': version}})
-
-    if frame is not None:
-        annotation_bools.append({'match': {'_frame': {'query': int(frame)}}})
-
-    if start is not None:
-        query['from'] = int(start)
-        if start > 10000:
-            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after'.")
-
-    if start is None and stop is not None:
-        query['size'] = int(stop)
-        if stop > 10000:
-            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after'.")
-
-    if start is not None and stop is not None:
-        query['size'] = int(stop) - int(start)
-        if start + stop > 10000:
-            raise ValueError("Parameter 'start' plus 'stop' must be less than 10000! Try using "
-                             "'after'.")
-
-    if after is not None:
-        annotation_bools.append({'range': {'_postgres_id': {'gt': after}}})
-
-    # TODO: Remove modified parameter.
-    query = get_attribute_es_query(params, query, media_bools, project, False,
-                                   annotation_bools, True)
-
-    return query
-
 def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     """ Constructs a psql queryset.
     """
@@ -207,64 +104,13 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs[:stop]
 
     return qs
-
-def _use_es(project, params):
-    ES_ONLY_PARAMS = ['search', 'media_search', 'section']
-    use_es = False
-    for es_param in ES_ONLY_PARAMS:
-        if es_param in params:
-            use_es = True
-            break
-
-    # Look up attribute dtypes if necessary.
-    use_es_for_attributes, filter_ops = get_attribute_filter_ops(project, params)
-    use_es = use_es or use_es_for_attributes
-
-    return use_es, filter_ops
         
 def get_annotation_queryset(project, params, annotation_type):
-    # Determine whether to use ES or not.
-    use_es, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and construct the queryset.
-        query = get_annotation_es_query(project, params, annotation_type)
-        annotation_ids, _  = TatorSearch().search(project, query)
-        qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
-
-        # Apply excludeParents if no pagination.
-        exclude_parents = params.get('excludeParents')
-        if exclude_parents:
-            parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
-            qs = qs.difference(parent_set)
-
-        qs = qs.order_by('id')
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
+    # annotation_type is either localization or state
+    filter_ops = get_attribute_filter_ops(project, params, annotation_type)
+    qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
     return qs
 
 def get_annotation_count(project, params, annotation_type):
-    # Determine whether to use ES or not.
-    use_es, filter_ops = _use_es(project, params)
-
-    if use_es:
-        # If using ES, do the search and get the count.
-        query = get_annotation_es_query(project, params, annotation_type)
-        annotation_ids, _  = TatorSearch().search(project, query)
-
-        # Apply excludeParents if no pagination.
-        exclude_parents = params.get('excludeParents')
-        if exclude_parents:
-            qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=annotation_ids)
-            parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
-            qs = qs.difference(parent_set)
-            count = qs.count()
-        else:
-            count = len(annotation_ids)
-    else:
-        # If using PSQL, construct the queryset.
-        qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
-        count = qs.count()
-    return count
+    return get_annotation_queryset(project,params,annotation_type).count()
 
