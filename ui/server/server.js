@@ -8,13 +8,23 @@ const app = express();
 const port = 3000;
 
 const argv = yargs(process.argv.slice(2))
-  .usage('Usage: $0 -b https://cloud.tator.io')
+  .usage('Usage: $0 -b https://cloud.tator.io -o -e')
   .alias('b', 'backend')
+  .alias('e', 'email_enabled')
+  .alias('o', 'okta_enabled')
+  .boolean('e')
+  .boolean('o')
   .describe('b', 'Backend host, including protocol. Default is same origin (blank).')
+  .describe('e', 'Include this argument if email is enabled in the backend.')
+  .describe('o', 'Include this argument if Okta is enabled for authentication.')
   .default('b', '')
   .argv
 
-const params = { backend: argv.backend };
+const params = { 
+  backend: argv.backend,
+  email_enabled: argv.email_enabled,
+  okta_enabled: argv.okta_enabled
+};
 
 nunjucks.configure('server/views', {
   express: app,
