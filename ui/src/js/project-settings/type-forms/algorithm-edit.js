@@ -23,6 +23,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       this._form = this._shadow.getElementById("algorithm-edit--form");
       this._editName = this._shadow.getElementById("algorithm-edit--name");
       this._editDescription = this._shadow.getElementById("algorithm-edit--description");
+      this._userEdit = this._shadow.getElementById("algorithm-edit--user");
       this._userEditVisible = this._shadow.getElementById("algorithm-edit--registering-user");
       this._manifestPath = this._shadow.getElementById("algorithm-edit--manifest");
       this._clusterEnumInput = this._shadow.getElementById("algorithm-edit--job-cluster");
@@ -32,38 +33,40 @@ export class AlgorithmEdit extends TypeFormTemplate {
    }
 
    async _setupFormUnique(data) {
+      this._data = data;
+      console.log("ALGO _setupFormUnique",data);
       // Before we setup the form, check if the user will be able to do things
       const jobClusterWithChecked = await getCompiledList({ type: "JobCluster", check: this._data.cluster });
       this.userCantSaveCluster = !this.isStaff && (jobClusterWithChecked == null || jobClusterWithChecked.length == 0);
       this.userCantSeeCluster = (jobClusterWithChecked === 403); // Non Auth user
 
       if (this.userCantSaveCluster || this.userCantSeeCluster) {
-         this._cannotEdit = document.createElement("p");
-         this._cannotEdit.setAttribute("class", "text-gray pb-3");
-         this._form.appendChild(this._cannotEdit);
+         // this._cannotEdit = document.createElement("p");
+         // this._cannotEdit.setAttribute("class", "text-gray pb-3");
+         // this._form.appendChild(this._cannotEdit);
       
          if (this._data.id == "New") {
-            // Wihtout authorization to see clusters, or if there are none
-            if (this.userCantSeeCluster) {
-               this._cannotEdit.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
-            } else {
-               this._cannotEdit.innerHTML = `Required: Add a Job Cluster via <a href="/${this.clusterListHandler.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
-            }
+            // // Wihtout authorization to see clusters, or if there are none
+            // if (this.userCantSeeCluster) {
+            //    this._cannotEdit.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
+            // } else {
+            //    this._cannotEdit.innerHTML = `Required: Add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
+            // }
             
-            this._form.appendChild(this._cannotEdit);
-            this.savePost.disabled = true;
-            this.savePost.hidden = true;
-            current.appendChild(this._form);
+            // this._form.appendChild(this._cannotEdit);
+            // this.savePost.disabled = true;
+            // this.savePost.hidden = true;
+            // current.appendChild(this._form);
 
-            return current;
+            // return current;
          } else {
-            if (this.userCantSeeCluster) {
-               this._cannotEdit.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
-               this.userCantSaveCluster = false;
-            } else if (this.userCantSaveCluster) {
-               this.saveButton.disabled = true;
-               this._cannotEdit.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.clusterListHandler.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
-            }
+            // if (this.userCantSeeCluster) {
+            //    this._cannotEdit.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
+            //    this.userCantSaveCluster = false;
+            // } else if (this.userCantSaveCluster) {
+            //    this.saveButton.disabled = true;
+            //    this._cannotEdit.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
+            // }
          }
       }
 
@@ -93,7 +96,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       }
 
       // Visible input with readable name
-      this._userEditVisible.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+      this._userEditVisible.permission = "View Only";//!this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._userEditVisible.setValue(this._registeredUserName);
       this._userEditVisible.default = this._registeredUserName;
       // this._userEditVisible.permission = null;
@@ -104,7 +107,11 @@ export class AlgorithmEdit extends TypeFormTemplate {
 
       // Path to manifest
       this._manifestPath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+
+      console.log("What is data.project? +" + data.project);
       this._manifestPath.projectId = this.projectId;
+      this._manifestPath.organizationId = this.organizationId;
+      console.log("ALGO !!!!!!!!!" + this.organizationId);
 
       if (this._data.manifest) {
          this._manifestPath.setValue(`/media/${this._data.manifest}`);

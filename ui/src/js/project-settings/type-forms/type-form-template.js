@@ -11,6 +11,25 @@ export class TypeFormTemplate extends TatorElement {
     this._hideAttributes = true;
     this.saveWarningFlow = false;
   }
+
+  connectedCallback() {
+    store.subscribe(state => state.projectId, this.setProjectId.bind(this));
+    store.subscribe(state => state.organizationId, this.setOrganizationId.bind(this));
+    store.subscribe(state => state.isStaff, this.setIsStaff.bind(this));
+  }
+
+  setProjectId(newId, oldId) {
+    this.projectId = newId;
+  }
+
+  setOrganizationId(newId, oldId) {
+    console.log("setOrganizationId"+newId);
+    this.organizationId = newId;
+  }
+
+  setIsStaff(newIS, oldIS) {
+    this.isStaff = newIS;
+  }
      
   /**
    * @param {{ map?: any; id?: string; name?: string; project?: any; description?: string; visible?: boolean; grouping_default?: boolean; media?: never[]; dtype?: string; colorMap?: null; interpolation?: string; association?: string; line_width?: number; delete_child_localizations?: boolean; cluster?: null; manifest?: null; files_per_job?: null; parameters?: never[]; categories?: string; form?: string; } | null} val
@@ -24,19 +43,16 @@ export class TypeFormTemplate extends TatorElement {
     }
 
     this.typeId = this._data.id;
-      this.objectName = this._data.name;
-      this.projectId = this._data.project;
+    this.objectName = this._data.name;
 
-      // name
-      if (this.typeName !== "Membership") {
-        let name = (this._data.id === "New") ? "" : this._data.name
-        this._editName.setValue(name);
-        this._editName.default = name;
-      }
+    // name
+    if (this.typeName !== "Membership") {
+      let name = (this._data.id === "New") ? "" : this._data.name;
+      this._editName.setValue(name);
+      this._editName.default = name;
+    }
 
-      this._setupFormUnique(this._data);
-
-
+    this._setupFormUnique(this._data);
   }
 
   _saveData() {
@@ -50,7 +66,7 @@ export class TypeFormTemplate extends TatorElement {
   async saveDataFunction() {
     console.log("saveDataFunction........");
     const formData = this._getFormData();
-    // console.log(Object.entries(formData).length);
+
     if (Object.entries(formData).length !== 0 && !Array.isArray(formData)) {
       try {
         const respData = await this.doSaveAction(formData);
@@ -58,7 +74,7 @@ export class TypeFormTemplate extends TatorElement {
       } catch (err) {
         this.modal._error(err)
       }
-    } else if (!Array.isArray(formData)) {
+    } else if (Array.isArray(formData)) {
       const responses = [];
       for (let d of formData) {
         const respData = await this.doSaveAction(d);
@@ -148,16 +164,25 @@ export class TypeFormTemplate extends TatorElement {
     let confirmText = document.createTextNode("Delete")
     button.appendChild(confirmText);
 
-    button.addEventListener("click", async () => {
-      this.modal._modalCloseAndClear();
-      this.handleResponse(await store.getState().removeType(this.typeName, this._data.id));
-    });
+    button.addEventListener("click", this.asyncDelete.bind(this));
 
     this.modal._confirm({
       titleText: `Confirm Delete`,
       mainText: `Delete "${this.objectName}" (ID: ${this._data.id})? This cannot be undone.`,
       buttonSave: button
     });
+  }
+
+  async asyncDelete() {
+    this.modal._modalCloseAndClear();
+    try {
+      const respData = await store.getState().removeType({ type: this.typeName, id: this._data.id });
+      console.log("Delete response", respData);
+      this.handleResponse(respData);
+      window.location.replace(`${window.location.origin}${window.location.pathname}#${this.typeName}-New`);
+    } catch (err) {
+      this.modal._error(err)
+    }
   }
 
   _getEmptyData() {

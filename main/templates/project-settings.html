@@ -33,6 +33,7 @@
         <type-form-container form="media-type-edit" hidden></type-form-container>
         <type-form-container form="localization-edit" hidden></type-form-container>
         <type-form-container form="leaf-type-edit" hidden></type-form-container>
+        <type-form-container form="leaf-main" hidden></type-form-container>
         <type-form-container form="state-type-edit" hidden></type-form-container>
         <type-form-container form="membership-edit" hidden></type-form-container>
         <type-form-container form="versions-edit" hidden></type-form-container>
@@ -46,8 +47,8 @@
 
 <template id="settings-nav-link">
   <div id="sub-nav" class="SubNav">
-    <div id="sub-nav--heading-group" class="SideNav-heading f1 clearfix heading-for-MediaType">
-      <button id="sub-nav--heading-button" class="toggle-subitems-MediaType col-10 float-left" selected="false">
+    <div id="sub-nav--heading-group" class="SideNav-heading f1 clearfix">
+      <button id="sub-nav--heading-button" class="col-10 float-left" selected="false">
         <span>
           <slot id="sub-nav--icon" name="icon"></slot>
           <slot id="sub-nav--label" class="item-label" name="label"></slot>
@@ -56,7 +57,7 @@
       </button>
       <a id="sub-nav--plus-link" href="" class="text-white float-right Nav-action col-2 f1 text-bold clickable ">+</a>
     </div>
-    <nav id="sub-nav--section" class="SideNav SubItems subitems-MediaType" hidden="">
+    <nav id="sub-nav--section" class="SideNav SubItems" hidden="">
       <placeholder-glow id="placeholder-glow" rows="6" className="SideNav-subItem"></placeholder-glow>
     </nav>
   </div>
@@ -192,6 +193,15 @@
           <span class="text-gray text-normal"> (ID <span id="type-form-id">
               <!--ID GOES HERE-->
             </span>)</span>
+            <span id="type-form--add-edit-leaves" hidden>
+              <span class="px-2">|</span> &nbsp;
+              <a class="text-normal text-purple">Add/Edit Leaves</a>
+            </span>
+            <span id="type-form--leaves-active" hidden>
+              <span class="px-2">|</span> &nbsp;
+              <span class="h3 pb-3 edit-project__h1 text-normal text-gray">Leaves</span>
+            </span>
+            
         </h1>
         <h1 id="type-form--new-h1" class="h3 pb-3 edit-project__h1" hidden>Add new <span class="type-form-typeName">
             <!--TYPE NAME GOES HERE-->
@@ -308,6 +318,7 @@
   <form id="algorithm-edit--form">
     <text-input id="algorithm-edit--name" name="Name" type="string"></text-input>
     <text-input id="algorithm-edit--description" name="Description" type="string"></text-input>
+    <text-input id="algorithm-edit--user" name="User" hidden></text-input>
     <text-input id="algorithm-edit--registering-user" name="Registering User"></text-input>
     <file-input id="algorithm-edit--manifest" name="Manifest" for="manifest" type="yaml"></file-input>
     <text-input id="algorithm-edit--job-cluster" name="Job Cluster"

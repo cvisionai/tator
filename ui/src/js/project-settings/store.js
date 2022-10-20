@@ -69,6 +69,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       //
    },
    projectId: null,
+   organizationId: null,
    deletePermission: false,
    isStaff: false,
 
@@ -202,6 +203,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       console.log(map);
 
       set({ projectId: id });
+      set({ organizationId: object.data.organization });
       // set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
       set({
          status: {
@@ -330,19 +332,15 @@ const store = create(subscribeWithSelector((set, get) => ({
          console.log("THIS WAS THE OBJ RETURNED");
          console.log(object);
 
-         if (object.data && object.data.object) {
-            const setList = get()[type].setList;
-            setList.delete(id);
+         const setList = get()[type].setList;
+         setList.delete(id);
 
-            const map = get()[type].map;
-            map.delete(id);
+         const map = get()[type].map;
+         map.delete(id);
 
-            set({ [type]: { ...get()[type], map, setList } }); // `push` doesn't trigger state update    
-         } else {
-            // If object isn't returned, refetch type
-            await get().fetchType(type);
-         }
+         set({ [type]: { ...get()[type], map, setList } }); // `push` doesn't trigger state update    
          set({ status: { ...get().status, name: "idle", msg: "" } });
+
          return object;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });

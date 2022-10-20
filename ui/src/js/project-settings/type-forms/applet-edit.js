@@ -24,8 +24,7 @@ export class AppletEdit extends TypeFormTemplate {
    }
 
    async _setupFormUnique(data) {
-
-
+      this._data = data;
       // append link
       if (this._data.id && this._data.id !== "New") {
          this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this._projectId}/dashboards/${this.appletId}`);
@@ -38,7 +37,8 @@ export class AppletEdit extends TypeFormTemplate {
       this._editDescription.default = this._data.description;
 
       // Path to html file
-      this._htmlFilePath.projectId = this._projectId;
+      this._htmlFilePath.projectId = this.projectId;
+      this._htmlFilePath.organizationId = this.organizationId;
 
       if (typeof this._data.html_file == "undefined") {
          this._data.html_file = [];
@@ -48,7 +48,7 @@ export class AppletEdit extends TypeFormTemplate {
       this._htmlFilePath.default = this._data.html_file;
 
       this._htmlFilePath._fetchCall = (bodyData) => {
-         fetch(`/rest/SaveGenericFile/${this._projectId}`,
+         fetch(`/rest/SaveGenericFile/${this.projectId}`,
             {
                method: "POST",
                credentials: "same-origin",

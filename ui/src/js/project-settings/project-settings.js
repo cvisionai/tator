@@ -92,7 +92,7 @@ export class ProjectSettings extends TatorPage {
     // this is its own state so project display doesn't update here
     // this just happens once
     await store.getState().setProjectId(this.projectId);
-    this.selectedHash = `#Project-${this.projectId}`;
+    // this.selectedHash = `#Project-${this.projectId}`;
     
     // Set to project
     // then Figure out if something else needs to be shown
@@ -154,7 +154,8 @@ export class ProjectSettings extends TatorPage {
 
   checkHash(newSelect, oldSelect) {
     if (this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName) {
-      window.history.pushState({}, '', `#${newSelect.typeName}-${newSelect.typeId}`)
+      console.log("Hash doesn't match up with selected item?");
+      // window.history.pushState({}, '', `#${newSelect.typeName}-${newSelect.typeId}`)
     }
   }
 

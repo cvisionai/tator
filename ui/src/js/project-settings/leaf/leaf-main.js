@@ -28,6 +28,8 @@ export class LeafMain extends HTMLElement {
     this.leafForms = [];
     this.hasChanges = false;
 
+    this.typeName = "Leaf";
+
     this.movingEl = null;
   }
 
