@@ -996,7 +996,7 @@ class Media(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     gid = CharField(max_length=36, null=True, blank=True)
     """ Group ID for the upload that created this media. Note we intentionally do
@@ -1186,7 +1186,7 @@ class File(Model, ModelDiffMixin):
     """ Project associated with the file """
     meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Type associated with file """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     deleted = BooleanField(default=False)
 
@@ -1298,7 +1298,6 @@ class Resource(Model):
 
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
     if instance.media_files and created:
         for path in instance.path_iterator():
             Resource.add_resource(path, instance)
@@ -1336,11 +1335,6 @@ def drop_media_from_resource(path, media):
     except:
         logger.warning(f"Could not remove {media} from {path}", exc_info=True)
 
-@receiver(pre_delete, sender=Media)
-def media_delete(sender, instance, **kwargs):
-    if instance.project:
-        TatorSearch().delete_document(instance)
-
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
     # Delete all the files referenced in media_files
@@ -1350,13 +1344,8 @@ def media_post_delete(sender, instance, **kwargs):
 
 @receiver(post_save, sender=File)
 def file_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
     if instance.path and created:
         Resource.add_resource(instance.path, None, instance)
-
-@receiver(pre_delete, sender=File)
-def file_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
 
 @receiver(post_delete, sender=File)
 def file_post_delete(sender, instance, **kwargs):
@@ -1371,7 +1360,7 @@ class Localization(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1414,16 +1403,8 @@ class Localization(Model, ModelDiffMixin):
     variant_deleted = BooleanField(default=False, null=True, blank=True)
     """ Indicates this is a variant that is deleted """
 
-@receiver(post_save, sender=Localization)
-def localization_save(sender, instance, created, **kwargs):
-    if getattr(instance,'_inhibit', False) == False:
-        TatorSearch().create_document(instance)
-    else:
-        pass
-
 @receiver(pre_delete, sender=Localization)
 def localization_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
     if instance.thumbnail_image:
         instance.thumbnail_image.delete()
 
@@ -1439,7 +1420,7 @@ class State(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1473,14 +1454,6 @@ class State(Model, ModelDiffMixin):
     """ Indicates this is a variant that is deleted """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
-
-@receiver(post_save, sender=State)
-def state_save(sender, instance, created, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=State)
-def state_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
 
 @receiver(m2m_changed, sender=State.localizations.through)
 def calc_segments(sender, **kwargs):
@@ -1517,7 +1490,7 @@ class Leaf(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1554,14 +1527,6 @@ class Leaf(Model, ModelDiffMixin):
             projName=self.project.name.replace(" ","_").replace("-","_").replace("(","_").replace(")","_")
             pathStr=projName+"."+pathStr
         return pathStr
-
-@receiver(post_save, sender=Leaf)
-def leaf_save(sender, instance, **kwargs):
-    TatorSearch().create_document(instance)
-
-@receiver(pre_delete, sender=Leaf)
-def leaf_delete(sender, instance, **kwargs):
-    TatorSearch().delete_document(instance)
 
 class Analysis(Model):
     project = ForeignKey(Project, on_delete=CASCADE, db_column='project')
