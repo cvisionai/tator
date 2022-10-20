@@ -293,16 +293,6 @@ class StateListAPI(BaseListView):
                 state.segments = [[int(segment[0]), int(segment[-1])] for segment in segments]
         State.objects.bulk_update(states, ['segments'])
 
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for state in states:
-            documents += ts.build_document(state)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
         ids = bulk_log_creation(states, project, self.request.user)
 
         return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
@@ -431,12 +421,9 @@ class StateDetailAPI(BaseDetailView):
                     delete_localizations.append(loc.id)
 
         delete_and_log_changes(state, project, self.request.user)
-        TatorSearch().delete_document(state)
 
         qs = Localization.objects.filter(pk__in=delete_localizations)
         bulk_delete_and_log_changes(qs, project, self.request.user)
-        for loc in qs.iterator():
-            TatorSearch().delete_document(loc)
 
         return {'message': f'State {params["id"]} successfully deleted!'}
 

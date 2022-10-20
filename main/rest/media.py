@@ -588,7 +588,6 @@ class MediaListAPI(BaseListView):
                     documents = []
                     for entity in archive_qs:
                         documents += ts.build_document(entity)
-                    ts.bulk_add_documents(documents)
 
                 count = max(count, archive_count)
 
@@ -761,7 +760,6 @@ class MediaDetailAPI(BaseDetailView):
                     )
 
         obj = Media.objects.get(pk=params['id'], deleted=False)
-        TatorSearch().create_document(obj)
         if 'attributes' in params:
             if obj.meta.dtype == 'image':
                 for localization in obj.localization_thumbnail_image.all():
@@ -781,7 +779,6 @@ class MediaDetailAPI(BaseDetailView):
         project = media.project
         modified_datetime = datetime.datetime.now(datetime.timezone.utc)
         delete_and_log_changes(media, project, self.request.user)
-        TatorSearch().delete_document(media)
 
         # Any states that are only associated to deleted media should also be marked 
         # for deletion.
@@ -796,27 +793,6 @@ class MediaDetailAPI(BaseDetailView):
         # Delete any localizations associated to this media
         loc_qs = Localization.objects.filter(project=project, media__in=[media.id])
         bulk_delete_and_log_changes(loc_qs, project, self.request.user)
-
-        # Clear elasticsearch entries for both media and its children.
-        # Note that clearing children cannot be done using has_parent because it does
-        # not accept queries with size, and has_parent also does not accept ids queries.
-        loc_types = ["box", "line", "dot"]
-        loc_id_iterator = chain(
-            *([f"{loc_type}_{val.id}" for loc_type in loc_types] for val in loc_qs.iterator())
-        )
-        loc_ids = list(loc_id_iterator)
-        TatorSearch().delete(project.id, {'query': {'ids': {'values': loc_ids}}})
-        state_ids = [val.id for val in state_qs.iterator()]
-        TatorSearch().delete(project.id, {
-            'query': {
-                'bool': {
-                    'should': {'match': {'_dtype': 'state'}},
-                    'filter': {
-                        'terms': {'_postgres_id': state_ids},
-                    },
-                }
-            },
-        })
 
         return {'message': f'Media {params["id"]} successfully deleted!'}
 

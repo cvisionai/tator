@@ -90,13 +90,6 @@ class CloneMediaListAPI(BaseListView):
                         if key == 'streaming':
                             Resource.add_resource(f['segment_info'], media)
 
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for media in medias:
-            documents += ts.build_document(media)
-        ts.bulk_add_documents(documents)
-
         # Return created IDs.
         ids = [media.id for media in medias]
         return {'message': f'Successfully cloned {len(ids)} medias!', 'id': ids}

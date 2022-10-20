@@ -192,16 +192,6 @@ class LocalizationListAPI(BaseListView):
         )
         localizations = bulk_create_from_generator(objs, Localization)
 
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for loc in localizations:
-            documents += ts.build_document(loc)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
         ids = bulk_log_creation(localizations, project, self.request.user)
 
         # Return created IDs.
@@ -352,7 +342,6 @@ class LocalizationDetailAPI(BaseDetailView):
             raise Http404
         obj = qs[0]
         delete_and_log_changes(obj, obj.project, self.request.user)
-        TatorSearch().delete_document(obj)
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

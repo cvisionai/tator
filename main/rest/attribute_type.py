@@ -267,7 +267,6 @@ class AttributeTypeListAPI(BaseListView):
 
     def _post(self, params: Dict) -> Dict:
         """Adds an attribute to a type."""
-        ts = TatorSearch()
         new_attribute_type = params["addition"]
         new_name = new_attribute_type["name"]
         with transaction.atomic():
@@ -291,10 +290,6 @@ class AttributeTypeListAPI(BaseListView):
 
             # Add default value to PSQL
             bulk_patch_attributes(new_attr, obj_qs)
-
-            # Add default value to ES
-            query = {"query": {"match": {"_meta": {"query": int(entity_type.id)}}}}
-            ts.update(entity_type.project.pk, entity_type, query, new_attr)
 
         return {"message": f"New attribute type '{new_name}' added"}
 

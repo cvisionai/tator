@@ -163,16 +163,6 @@ class LeafListAPI(BaseListView):
         leaves = bulk_create_from_generator(objs, Leaf)
         create_buffer = []
 
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for leaf in leaves:
-            documents += ts.build_document(leaf)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
         ids = bulk_log_creation(leaves, project, self.request.user)
 
         # Return created IDs.
@@ -272,7 +262,6 @@ class LeafDetailAPI(BaseDetailView):
 
         for i in ids:
             inner_leaf = Leaf.objects.get(pk=i, deleted=False)
-            TatorSearch().delete_document(inner_leaf)
                 
         bulk_delete_and_log_changes(queryset, project, self.request.user)
 
