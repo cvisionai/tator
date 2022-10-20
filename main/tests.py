@@ -647,7 +647,7 @@ class AttributeTestMixin:
                                          {'attributes': {'Bool Test': test_val}},
                                          format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?format=json'
@@ -696,7 +696,7 @@ class AttributeTestMixin:
                 f'/rest/{self.detail_uri}/{obj_id}',
                 {'attributes': {'String Test': 'DELETE ME!!!'}},
                 format='json')
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.delete(
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}'
@@ -717,7 +717,7 @@ class AttributeTestMixin:
                                          {'attributes': {'Bool Test': test_val}},
                                          format='json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_null=Bool Test::false'
             f'&type={self.entity_type.pk}', # needed for localizations
@@ -766,7 +766,7 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['Bool Test'], test_val)
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::true&type={self.entity_type.pk}&format=json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), sum(test_vals))
@@ -814,7 +814,7 @@ class AttributeTestMixin:
                                          {'attributes': {'Int Test': -100000}},
                                          format='json')
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        TatorSearch().refresh(self.project.pk)
+
         for test_val in test_vals:
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=Int Test::{test_val}&type={self.entity_type.pk}&format=json')
             self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -859,7 +859,7 @@ class AttributeTestMixin:
                                          {'attributes': {'Float Test': -100000}},
                                          format='json')
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        TatorSearch().refresh(self.project.pk)
+
         # Equality on float not recommended but is allowed.
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=Float Test::{test_val}&type={self.entity_type.pk}&format=json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -894,7 +894,7 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['Enum Test'], test_val)
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Enum Test::0&type={self.entity_type.pk}&format=json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Enum Test::0&type={self.entity_type.pk}&format=json')
@@ -923,7 +923,7 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['String Test'], test_val)
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=String Test::0&type={self.entity_type.pk}&format=json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=String Test::0&type={self.entity_type.pk}&format=json')
@@ -967,7 +967,7 @@ class AttributeTestMixin:
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(dateutil_parse(response.data['attributes']['Datetime Test']), test_val)
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute=Datetime Test::{to_string(test_val)}&'
             f'type={self.entity_type.pk}&format=json'
@@ -1041,7 +1041,7 @@ class AttributeTestMixin:
             self.assertEqual(response.data['id'], pk)
             attrs = response.data['attributes']['Geoposition Test']
             self.assertEqual(response.data['attributes']['Geoposition Test'], [lon, lat])
-        TatorSearch().refresh(self.project.pk)
+
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute=Geoposition Test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
@@ -1244,7 +1244,7 @@ class VideoTestCase(
             create_test_video, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
-        TatorSearch().refresh(self.project.pk)
+
 
     def tearDown(self):
         self.project.delete()
@@ -1362,7 +1362,7 @@ class ImageTestCase(
             create_test_image, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'image1'}
-        TatorSearch().refresh(self.project.pk)
+
 
     def tearDown(self):
         self.project.delete()
@@ -1426,7 +1426,7 @@ class LocalizationBoxTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'box1'}
-        TatorSearch().refresh(self.project.pk)
+
 
     def tearDown(self):
         self.project.delete()
@@ -1490,7 +1490,7 @@ class LocalizationLineTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'line1'}
-        TatorSearch().refresh(self.project.pk)
+
 
     def tearDown(self):
         self.project.delete()
@@ -1552,7 +1552,7 @@ class LocalizationDotTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'dot1'}
-        TatorSearch().refresh(self.project.pk)
+
 
     def tearDown(self):
         self.project.delete()
@@ -1613,7 +1613,7 @@ class LocalizationPolyTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'box1'}
-        TatorSearch().refresh(self.project.pk)
+
 
     def tearDown(self):
         self.project.delete()
@@ -1682,7 +1682,7 @@ class StateTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
-        TatorSearch().refresh(self.project.pk)
+
 
 
     def test_frame_association(self):
@@ -2122,7 +2122,7 @@ class LeafTestCase(
         }]
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {'name': 'leaf1'}
-        TatorSearch().refresh(self.project.pk)
+
 
     def tearDown(self):
         self.project.delete()
@@ -3177,7 +3177,7 @@ class ResourceTestCase(APITestCase):
 
     def test_clones(self):
         media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
-        TatorSearch().refresh(self.project.pk)
+
 
         # Post one file of each role.
         keys, segment_key = self._generate_keys(media)
@@ -3195,7 +3195,7 @@ class ResourceTestCase(APITestCase):
                                     body, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         clone_id = response.data['id'][0]
-        TatorSearch().refresh(self.project.pk)
+
 
         # Check the list of clones matches
         response = self.client.get(f"/rest/GetClonedMedia/{media.id}")
@@ -3226,7 +3226,7 @@ class ResourceTestCase(APITestCase):
                                     body, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         clone_id = response.data['id'][0]
-        TatorSearch().refresh(self.project.pk)
+
 
         # Delete the original.
         response = self.client.delete(f"/rest/Media/{media.id}", format='json')
@@ -3235,7 +3235,7 @@ class ResourceTestCase(APITestCase):
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertTrue(self._store_obj_exists(keys[role]))
 
-        TatorSearch().refresh(self.project.pk)
+
 
         # Clone the clone.
         body = {'dest_project': self.project.pk,
@@ -3245,7 +3245,7 @@ class ResourceTestCase(APITestCase):
                                     body, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         new_clone_id = response.data['id'][0]
-        TatorSearch().refresh(self.project.pk)
+
 
         # Delete the first clone.
         response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
@@ -3578,7 +3578,7 @@ class AttributeTestCase(APITestCase):
             "entity_type": "LocalizationType",
             "attribute_to_delete": 'Int Test',
         }
-        TatorSearch().refresh(self.project.pk)
+
 
     def test_patch_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
