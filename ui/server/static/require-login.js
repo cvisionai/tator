@@ -6,18 +6,20 @@ function getCookie(name) {
   }
 }
 const backend = window.localStorage.getItem("backend");
-fetch(`${backend}/rest/Session`, {
-  method: "GET",
-  credentials: "same-origin",
-  headers: {
-    "X-CSRFToken": getCookie("csrftoken"),
-    "Accept": "application/json",
-    "Content-Type": "application/json"
-  }
-})
-.then(response => {
-  if (response.status == 204 && window.location.pathname != "/accounts/login") {
-    window.location.href = `/accounts/login?next=${window.location.pathname}`;
-  }
-});
+if (window.location.pathname != "/accounts/login") {
+  fetch(`${backend}/rest/Session`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "X-CSRFToken": getCookie("csrftoken"),
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    }
+  })
+  .then(response => {
+    if (response.status == 404) {
+      window.location.href = `/accounts/login?next=${window.location.pathname}`;
+    }
+  });
+}
   
