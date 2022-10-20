@@ -235,6 +235,7 @@ class TwoDPlotType(Enum):
 class Organization(Model):
     name = CharField(max_length=128)
     thumb = CharField(max_length=1024, null=True, blank=True)
+    default_membership_permission = EnumField(Permission, max_length=1, null=True, blank=True)
     def user_permission(self, user_id):
         permission = None
         qs = self.affiliation_set.filter(user_id=user_id)
@@ -389,6 +390,15 @@ def affiliation_save(sender, instance, created, **kwargs):
                       "No action is required.",
                 )
             logger.info(f"Sent email to {recipients} indicating {user} added to {organization}.")
+
+        default_permission = organization.default_membership_permission
+        if default_permission:
+            p_qs = Project.objects.filter(organization=organization)
+            for project in p_qs:
+                membership = Membership.objects.create(
+                    project=project, user=user, permission=default_permission, default_version=None
+                )
+                membership.save()
 
 
 class Bucket(Model):
@@ -566,6 +576,23 @@ def project_save(sender, instance, created, **kwargs):
     TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
+
+        default_permission = (
+            instance.organization and instance.organization.default_membership_permission
+        )
+        if default_permission:
+            users = list(
+                Affiliation.objects.filter(
+                    organization=instance.organization
+                ).values_list("user", flat=True).distinct()
+            )
+            for user in users:
+                if instance.creator.id == user:
+                    pass
+
+                membership = Membership.objects.create(
+                    project=instance, user=user, permission=default_permission
+                )
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 
