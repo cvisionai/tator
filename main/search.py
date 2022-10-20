@@ -3,9 +3,9 @@ import os
 import datetime
 from copy import deepcopy
 from uuid import uuid1
-from django.db import connection, transaction
 import re
 import time
+import psycopg2
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,15 @@ ALLOWED_MUTATIONS = {
     'float_array': ['float_array'],
 }
 
+def get_connection():
+    conn = psycopg2.connect(database="tator_online",
+                         host=os.getenv('POSTGRES_HOST'),
+                         user=os.getenv('POSTGRES_USERNAME'),
+                         password=os.getenv('POSTGRES_PASSWORD'))
+
+    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    return conn
+
 def _get_unique_index_name(entity_type, attribute):
     """ Get a unique index name based on an entity type and supplied attribute """
     type_name_sanitized=entity_type.__class__.__name__.lower()
@@ -32,13 +41,11 @@ def _get_unique_index_name(entity_type, attribute):
 def make_btree_index(entity_type, attribute, psql_type):
     table_name = entity_type._meta.db_table.replace('type','')
     index_name = _get_unique_index_name(entity_type, attribute)
-    with connection.cursor() as cursor:
+    with get_connection().cursor() as cursor:
         sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING btree (CAST(attributes->>'{attribute['name']}' AS {psql_type}))
                                  WHERE project={entity_type.project.id} and meta={entity_type.id}"""
-        transaction.set_autocommit(False)
         cursor.execute(sql_str)
-        transaction.set_autocommit(True)
         logger.info(sql_str)
 def make_bool_index(entity_type, attribute):
     make_btree_index(entity_type, attribute, 'boolean')
@@ -53,13 +60,11 @@ def make_float_index(entity_type, attribute):
 def make_string_index(entity_type, attribute, method='GIN'):
     table_name = entity_type._meta.db_table.replace('type','')
     index_name = _get_unique_index_name(entity_type, attribute)
-    with connection.cursor() as cursor:
+    with get_connection().cursor() as cursor:
         sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING {method} (CAST(attributes->>'{attribute['name']}' AS text) {method.lower()}_trgm_ops)
                                  WHERE project={entity_type.project.id} and meta={entity_type.id}"""
-        transaction.set_autocommit(False)
         cursor.execute(sql_str)
-        transaction.set_autocommit(True)
         logger.info(sql_str)
 
 def make_datetime_index(entity_type, attribute):
@@ -71,11 +76,9 @@ def make_datetime_index(entity_type, attribute):
                 SELECT CAST($1 as timestamp)
                 $func$ LANGUAGE sql IMMUTABLE;"""
     sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} USING btree (to_timestamp(attributes->>'{attribute['name']}')) WHERE project={entity_type.project.id} AND meta={entity_type.id};"""
-    with connection.cursor() as cursor:
-        transaction.set_autocommit(False)
+    with get_connection().cursor() as cursor:
         cursor.execute(func_str)
         cursor.execute(sql_str)
-        transaction.set_autocommit(True)
         logger.info(sql_str)
 
 
@@ -84,22 +87,18 @@ def make_geopos_index(entity_type, attribute):
     table_name = entity_type._meta.db_table.replace('type','')
     index_name = _get_unique_index_name(entity_type, attribute)
     sql_str = f"""CREATE INDEX {index_name} ON {table_name} using gist(ST_MakePoint((attributes -> '{attribute['name']}' -> 1)::float, (attributes -> '{attribute['name']}' -> 0)::float)) WHERE project={entity_type.project.id} and meta={entity_type.id};"""
-    with connection.cursor() as cursor:
-        transaction.set_autocommit(False)
+    with get_connection().cursor() as cursor:
         cursor.execute(sql_str)
-        transaction.set_autocommit(True)
         logger.info(sql_str)
 
 def make_vector_index(entity_type, attribute):
     table_name = entity_type._meta.db_table.replace('type','')
     index_name = _get_unique_index_name(entity_type, attribute)
-    with connection.cursor() as cursor:
+    with get_connection().cursor() as cursor:
         # Create an index method for each access type
         for method in ['l2', 'ip', 'cosine']:
             sql_str = f"""CREATE INDEX {index_name}_{method} ON {table_name} using ivfflat(CAST(attributes -> '{attribute['name']}' AS vector({attribute['size']})) vector_{method}_ops) WHERE project={entity_type.project.id} and meta={entity_type.id};"""
-            transaction.set_autocommit(False)
             cursor.execute(sql_str)
-            transaction.set_autocommit(True)
             logger.info(sql_str)
 
 class TatorSearch:
@@ -120,26 +119,26 @@ class TatorSearch:
 
     def list_indices(self, project):
         """ Based on a project id, list all known indices """
-        with connection.cursor() as cursor:
+        with get_connection().cursor() as cursor:
             cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname LIKE '{}'".format(f"tator_proj_{project}_%"))
             return cursor.fetchall()
 
     def delete_project_indices(self, project):
         proj_indices = self.list_indices(project)
-        with connection.cursor() as cursor:
+        with get_connection().cursor() as cursor:
             for _,index_name,_ in proj_indices:
                 cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
 
     def delete_index(self, entity_type, attribute):
         """ Delete the index for a given entity type """
         index_name = _get_unique_index_name(entity_type, attribute)
-        with connection.cursor() as cursor:
+        with get_connection().cursor() as cursor:
             cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
 
     def is_index_present(self, entity_type, attribute):
         """ Returns true if the index exists for this attribute """
         index_name = _get_unique_index_name(entity_type, attribute)
-        with connection.cursor() as cursor:
+        with get_connection().cursor() as cursor:
             cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
             return bool(cursor.fetchall())
 
@@ -179,6 +178,51 @@ class TatorSearch:
         :param new_name: New name for the attribute type.
         """
         pass
+
+    def check_rename(self, entity_type, old_name, new_name):
+        """
+        Checks rename operation and raises if it is invalid. See `rename_alias` for argument
+        description.
+        """
+        # If no name change is happening, there is nothing to check
+        if old_name == new_name:
+            return None, None, None
+
+        # Check that the new name isn't already in use
+        if entity_type.project.attribute_type_uuids.get(new_name, None) is not None:
+            raise ValueError(
+                f"New attribute name {new_name} already in use in this project, please choose a "
+                f"different one."
+            )
+
+        # Retrieve UUID, raise error if it doesn't exist.
+        uuid = entity_type.project.attribute_type_uuids.get(old_name)
+        if uuid is None:
+            raise ValueError(f"Could not find attribute name {old_name} in entity type "
+                             f"{type(entity_type).__name__} ID {entity_type.id}")
+
+        # Find old attribute type and create new attribute type.
+        new_attribute_type = None
+        for idx, attribute_type in enumerate(entity_type.attribute_types):
+            name = attribute_type['name']
+            if name == old_name:
+                replace_idx = idx
+                new_attribute_type = dict(attribute_type)
+                new_attribute_type['name'] = new_name
+            elif name == new_name:
+                raise ValueError(
+                    f"Could not rename attribute '{old_name}' to '{new_name}' because an attribute "
+                    f"with that name already exists in entity type {type(entity_type).__name__} ID "
+                    f"{entity_type.id}"
+                )
+
+        if new_attribute_type is None:
+            raise ValueError(
+                f"Could not find attribute name {old_name} in entity type "
+                f"{type(entity_type).__name__} ID {entity_type.id}"
+            )
+
+        return uuid, replace_idx, new_attribute_type
 
     def check_mutation(self, entity_type, name, new_attribute_type):
         """
