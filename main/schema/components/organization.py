@@ -3,6 +3,15 @@ organization_properties = {
         'description': 'Name of the organization.',
         'type': 'string',
     },
+    "default_membership_permission": {
+        "description": (
+            "Default user permission level for all projects in this organization. If specified, "
+            "users in this organizaiton will be automatically added to all projects in this "
+            "organization with at least this permission level."
+        ),
+        "type": "string",
+        "enum": ["View Only", "Can Edit", "Can Transfer", "Can Execute", "Full Control"],
+    },
 }
 
 organization_spec = {
