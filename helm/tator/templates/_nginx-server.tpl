@@ -147,7 +147,8 @@ server {
     proxy_http_version 1.1;
   }
   {{- if .Values.minio.enabled }}
-  location /objects/ {
+  location /objects {
+	  alias /objects/;
     proxy_pass http://tator-minio:9000/;
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
@@ -181,7 +182,8 @@ server {
     proxy_set_header Proxy-Connection "Keep-Alive";
   }
   {{- end }}
-  location /argo/ {
+  location /argo {
+	  alias /argo/;
     auth_request /auth-admin;
     proxy_pass http://argo-server.argo.svc.cluster.local:2746/;
     proxy_redirect off;
@@ -216,7 +218,7 @@ server {
     proxy_set_header X-Original-URI $request_uri;
     proxy_pass_header Authorization;
   }
-  location / {
+  location ~ ^/(rest|accounts)/ {
     # Allow for big REST responses.
     proxy_connect_timeout 1200;
     proxy_send_timeout 1200;
@@ -300,6 +302,49 @@ server {
     add_header Cross-Origin-Opener-Policy same-origin;
     add_header Cross-Origin-Embedder-Policy require-corp;
     proxy_pass http://graphql-svc:3000;
+
+    proxy_redirect off;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Host $server_name;
+    {{- if .Values.requireHttps }}
+    proxy_set_header X-Forwarded-Proto https;
+    {{- end }}
+    add_header Cache-Control "max-age=0, must-revalidate";
+    {{- if hasKey .Values "allowCors" }}
+    {{- if $.Values.allowCors }}
+    add_header Access-Control-Allow-Origin * always;
+    add_header Access-Control-Allow-Methods * always;
+    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+    add_header Access-Control-Allow-Credentials true always;
+    if ($request_method = OPTIONS)
+    {
+      add_header Content-Length 0;
+      add_header Content-Type text/plain;
+      add_header Access-Control-Allow-Origin * always;
+      add_header Access-Control-Allow-Methods * always;
+      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+      add_header Access-Control-Allow-Credentials true always;
+      return 200;
+    }
+    {{- end }}
+    {{- end }}
+
+    gzip on;
+    gzip_types application/json;
+    gzip_min_length 1024;
+  }
+
+	location / {
+    {{- if .Values.maintenance }}
+    return 503;
+    {{- end }}
+    add_header Cross-Origin-Opener-Policy same-origin;
+    add_header Cross-Origin-Embedder-Policy require-corp;
+    proxy_pass http://ui-svc:3000;
 
     proxy_redirect off;
     proxy_http_version 1.1;
