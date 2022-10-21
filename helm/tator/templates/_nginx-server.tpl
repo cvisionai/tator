@@ -216,7 +216,7 @@ server {
     proxy_set_header X-Original-URI $request_uri;
     proxy_pass_header Authorization;
   }
-  location ~ ^/(rest|accounts)/ {
+  location ~ ^/(rest|accounts|stream-saver)/ {
     # Allow for big REST responses.
     proxy_connect_timeout 1200;
     proxy_send_timeout 1200;

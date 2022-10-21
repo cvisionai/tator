@@ -40,14 +40,6 @@ app.get('/', (req, res) => {
   res.redirect('/projects');
 });
 
-app.get('/accounts/login', (req, res) => {
-  res.render('registration/login', params);
-});
-
-app.get('/accounts/account-profile', (req, res) => {
-  res.status(404).end();
-});
-
 app.get('/:projectId/analytics', (req, res) => {
   res.status(404).end();
 });
