@@ -4,10 +4,14 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 
 from ..cache import TatorCache
-from ..models import Organization
-from ..models import Affiliation
-from ..models import database_qs
-from ..models import safe_delete
+from ..models import (
+    add_org_users,
+    Affiliation,
+    database_qs,
+    Organization,
+    Project,
+    safe_delete,
+)
 from ..schema import OrganizationListSchema
 from ..schema import OrganizationDetailSchema
 from ..store import get_tator_store
@@ -101,6 +105,12 @@ class OrganizationDetailAPI(BaseDetailView):
             organization.thumb = params['thumb']
         if "default_membership_permission" in params:
             new_default_permission = params["default_membership_permission"]
+            old_default_permission = organization.default_membership_permission
+
+            if old_default_permission != new_default_permission and old_default_permission is None:
+                for project in Project.objects.filter(organization=organization):
+                    add_org_users(project, new_default_permission)
+
             organization.default_membership_permission = new_default_permission
         organization.save()
         return {'message': f"Organization {params['id']} updated successfully!"}

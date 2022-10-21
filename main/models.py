@@ -573,6 +573,19 @@ def make_default_version(instance):
         show_empty=True,
     )
 
+def add_org_users(project, permission):
+    users = list(
+        Affiliation.objects.filter(
+            organization=project.organization
+        ).values_list("user", flat=True).distinct()
+    )
+    user_qs = User.objects.filter(pk__in=users)
+    for user in user_qs:
+        if Membership.objects.filter(project=project, user=user).exists():
+            pass
+
+        Membership.objects.create(project=project, user=user, permission=permission).save()
+
 @receiver(post_save, sender=Project)
 def project_save(sender, instance, created, **kwargs):
     TatorSearch().create_index(instance.pk)
@@ -583,19 +596,7 @@ def project_save(sender, instance, created, **kwargs):
             instance.organization and instance.organization.default_membership_permission
         )
         if default_permission:
-            users = list(
-                Affiliation.objects.filter(
-                    organization=instance.organization
-                ).values_list("user", flat=True).distinct()
-            )
-            user_qs = User.objects.filter(pk__in=users)
-            for user in user_qs:
-                if Membership.objects.filter(project=instance, user=user).exists():
-                    pass
-
-                membership = Membership.objects.create(
-                    project=instance, user=user, permission=default_permission
-                )
+            add_org_users(instance, permission)
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 
