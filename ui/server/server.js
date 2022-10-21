@@ -45,33 +45,43 @@ app.get('/accounts/login', (req, res) => {
 });
 
 app.get('/accounts/account-profile', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/analytics', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/analytics/localizations', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/analytics/collections', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/analytics/corrections', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/analytics/files', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/dashboards', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/dashboards/:id', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/organizations', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:organizationId/organization-settings', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/projects', (req, res) => {
@@ -79,27 +89,31 @@ app.get('/projects', (req, res) => {
 });
 
 app.get('/:projectId/project-detail', (req, res) => {
-});
-
-app.get('/:projectId/project-detail', (req, res) => {
-});
-
-app.get('/:projectId/project-detail', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/project-settings', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/:projectId/annotation/:id', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/registration', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/accept', (req, res) => {
+  res.status(404).end();
 });
 
 app.get('/token', (req, res) => {
+  res.status(404).end();
+});
+
+app.use((req, res, next) => {
+  res.status(404).end();
 });
 
 /*

@@ -66,7 +66,7 @@ export class TatorPage extends TatorElement {
   }
 
   _setUser(user) {
-    this._header.setAttribute("username", user.name);
+    this._header.setAttribute("username", `${user.first_name} ${user.last_name}`);
     if (user.name == 'Guest Account') {
       this._nav.disableAccountSettings();
     }

@@ -147,8 +147,7 @@ server {
     proxy_http_version 1.1;
   }
   {{- if .Values.minio.enabled }}
-  location /objects {
-	  alias /objects/;
+  location /objects/ {
     proxy_pass http://tator-minio:9000/;
     {{- if hasKey .Values "allowCors" }}
     {{- if $.Values.allowCors }}
@@ -182,8 +181,7 @@ server {
     proxy_set_header Proxy-Connection "Keep-Alive";
   }
   {{- end }}
-  location /argo {
-	  alias /argo/;
+  location /argo/ {
     auth_request /auth-admin;
     proxy_pass http://argo-server.argo.svc.cluster.local:2746/;
     proxy_redirect off;

@@ -7,7 +7,7 @@ function getCookie(name) {
 }
 const backend = window.localStorage.getItem("backend");
 if (window.location.pathname != "/accounts/login") {
-  fetch(`${backend}/rest/Session`, {
+  fetch(`${backend}/accounts/account-profile`, {
     method: "GET",
     credentials: "include",
     headers: {
@@ -17,7 +17,7 @@ if (window.location.pathname != "/accounts/login") {
     }
   })
   .then(response => {
-    if (response.status == 404) {
+    if (response.status == 301) {
       window.location.href = `/accounts/login?next=${window.location.pathname}`;
     }
   });

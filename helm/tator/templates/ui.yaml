@@ -30,7 +30,11 @@ spec:
           - run
           - serve
           - --
-          - --backend=http://gunicorn-svc
+          {{- if .Values.requireHttps }}
+          - --backend=https://{{ .Values.domain }}
+          {{- else }}
+          - --backend=http://{{ .Values.domain }}
+          {{- end }}
           {{- if .Values.email.enabled }}
           - --email_enabled
           {{- end }}
