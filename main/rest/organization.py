@@ -101,16 +101,6 @@ class OrganizationDetailAPI(BaseDetailView):
             organization.thumb = params['thumb']
         if "default_membership_permission" in params:
             new_default_permission = params["default_membership_permission"]
-            # old_default_permission = organization.default_membership_permission
-            # if new_default_permission != old_default_permission:
-            #     if old_default_permission is None:
-            #         users = list(
-            #             Affiliation.objects.filter(
-            #                 organization=instance.organization
-            #             ).values_list("user", flat=True).distinct()
-            #         )
-            #     else:
-            #         for membership in Membership.objects.filter(project__organization=organization):
             organization.default_membership_permission = new_default_permission
         organization.save()
         return {'message': f"Organization {params['id']} updated successfully!"}
