@@ -188,21 +188,15 @@ class CustomGenerator(SchemaGenerator):
                     'in': 'header',
                     'name': 'Authorization',
                 },
-                'OAuth2': {
-                    'type': 'oauth2',
-                    'flows': {
-                        'authorizationCode': {
-                            'authorizeUrl': '/auth/authorize',
-                            'tokenUrl': '/auth/token',
-                            'refreshUrl': '/auth/refresh',
-                            'scopes': {},
-                        }
-                    },
+                'SessionAuth': {
+                    'type': 'apiKey',
+                    'in': 'header',
+                    'name': 'X-CSRFToken',
                 },
             }
             schema['security'] = [
                 {'TokenAuth': []},
-                {'OAuth2': []},
+                {'SessionAuth': []},
             ]
 
             # Set server entry.
