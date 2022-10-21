@@ -101,7 +101,7 @@ app.get('/accept', (req, res) => {
 });
 
 app.get('/token', (req, res) => {
-  res.status(404).end();
+  res.render('token', params);
 });
 
 app.use((req, res, next) => {

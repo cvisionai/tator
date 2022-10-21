@@ -35,11 +35,9 @@ from .views import (
     PasswordResetView,
     ProjectDetailView,
     ProjectSettingsView,
-    ProjectsView,
     RegistrationView,
     StreamSaverMITMLocal,
     StreamSaverSWLocal,
-    TokenView,
 )
 
 from .schema import NoAliasRenderer
@@ -77,7 +75,6 @@ urlpatterns = [
     path('organizations/', OrganizationsView.as_view(), name='organizations'),
     path('<int:organization_id>/organization-settings', OrganizationSettingsView.as_view(),
          name='organization-settings'),
-    path('projects/', ProjectsView.as_view(), name='projects'),
     path('<int:project_id>/project-detail', ProjectDetailView.as_view(), name='project-detail'),
     path('stream-saver/sw.js', StreamSaverSWLocal.as_view(), name='sw'),
     path('stream-saver/mitm.html', StreamSaverMITMLocal.as_view(), name='mitm'),
@@ -89,7 +86,6 @@ urlpatterns = [
          name='anonymous-gateway'),
     path('registration', RegistrationView.as_view(), name='registration'),
     path('accept', AcceptView.as_view(), name='accept'),
-    path('token', TokenView.as_view(), name='token'),
     path('accounts/password_change/', PasswordChangeView.as_view()),
     path('accounts/password_change/done/', PasswordChangeDoneView.as_view(),
          name='password_change_done'),

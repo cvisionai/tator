@@ -105,14 +105,8 @@ class PasswordResetView(TemplateView):
 class OrganizationsView(LoginRequiredMixin, TemplateView):
     template_name = 'organizations.html'
 
-class ProjectsView(LoginRequiredMixin, TemplateView):
-    template_name = 'projects.html'
-
 class AccountProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'account-profile/account-profile.html'
-
-class TokenView(LoginRequiredMixin, TemplateView):
-    template_name = 'token.html'
 
 class ProjectBase(LoginRequiredMixin):
 
