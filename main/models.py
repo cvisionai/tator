@@ -596,7 +596,7 @@ def project_save(sender, instance, created, **kwargs):
             instance.organization and instance.organization.default_membership_permission
         )
         if default_permission:
-            add_org_users(instance, permission)
+            add_org_users(instance, default_permission)
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 
