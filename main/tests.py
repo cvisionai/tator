@@ -2757,6 +2757,49 @@ class OrganizationTestCase(
         response = self.client.post(endpoint, self.create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_default_membership(self):
+        other_user = create_test_user(is_staff=False)
+        other_affiliation = create_test_affiliation(other_user, self.organization)
+
+        proj_spec = {
+            "name": "Org test",
+            "summary": "Auto project membership test",
+            "organization": self.organization.pk,
+        }
+        response = self.client.post("/rest/Projects", proj_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        project_id = response.data["id"]
+
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        self.assertEqual(
+            Membership.objects.filter(project=project_id, user=other_user).count(), 0
+        )
+        Project.objects.get(pk=project_id).delete()
+
+        patch_default_membership = dict(self.patch_json)
+        patch_default_membership["default_membership_permission"] = "Can Execute"
+        endpoint = f"/rest/{self.detail_uri}/{self.organization.pk}"
+        response = self.client.patch(endpoint, patch_default_membership, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.post("/rest/Projects", proj_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        project_id = response.data["id"]
+
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=other_user).permission,
+            Permission.CAN_EXECUTE,
+        )
+        Project.objects.get(pk=project_id).delete()
+
     def tearDown(self):
         self.project.delete()
 

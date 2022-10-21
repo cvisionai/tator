@@ -395,8 +395,10 @@ def affiliation_save(sender, instance, created, **kwargs):
         if default_permission:
             p_qs = Project.objects.filter(organization=organization)
             for project in p_qs:
+                if Membership.objects.filter(project=instance, user=user).exists():
+                    pass
                 membership = Membership.objects.create(
-                    project=project, user=user, permission=default_permission, default_version=None
+                    project=project, user=user, permission=default_permission
                 )
                 membership.save()
 
@@ -586,8 +588,9 @@ def project_save(sender, instance, created, **kwargs):
                     organization=instance.organization
                 ).values_list("user", flat=True).distinct()
             )
-            for user in users:
-                if instance.creator.id == user:
+            user_qs = User.objects.filter(pk__in=users)
+            for user in user_qs:
+                if Membership.objects.filter(project=instance, user=user).exists():
                     pass
 
                 membership = Membership.objects.create(
