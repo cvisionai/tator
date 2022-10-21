@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [[ $EUID == 0 ]]
+then
+    echo "Do not run as root, please change users and run again."
+    exit
+fi
+
 # Exit on error.
 set -e
 
