@@ -214,13 +214,13 @@ def get_attribute_es_query(query_params, query, bools, project,
     return query
 
 ALLOWED_TYPES = {
-    'attribute': ('boolean', 'long', 'double', 'date', 'keyword', 'text'),
-    'attribute_lt': ('long', 'double', 'date'),
-    'attribute_lte': ('long', 'double', 'date'),
-    'attribute_gt': ('long', 'double', 'date'),
-    'attribute_gte': ('long', 'double', 'date'),
+    'attribute': ('bool', 'float', 'datetime', 'keyword', 'text', 'int'),
+    'attribute_lt': ('float', 'datetime', 'int'),
+    'attribute_lte': ('float', 'datetime', 'int'),
+    'attribute_gt': ('float', 'datetime', 'int'),
+    'attribute_gte': ('float', 'datetime', 'int'),
     'attribute_contains': ('keyword', 'text'),
-    'attribute_distance': ('geo_point',),
+    'attribute_distance': ('geopos',),
 }
 
 OPERATOR_SUFFIXES = {
