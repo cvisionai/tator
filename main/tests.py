@@ -30,6 +30,12 @@ logger = logging.getLogger(__name__)
 
 TEST_IMAGE = 'https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png'
 
+
+def assertResponse(self, response, expected_code):
+    if response.status_code != expected_code:
+        print(response.data)
+    assertResponse(self, response, expected_code)
+
 def create_test_user(is_staff=False):
     return User.objects.create(
         username=random.choices(string.ascii_lowercase, k=10),
@@ -369,11 +375,11 @@ class DefaultCreateTestMixin:
             create_json = [clear_attributes(obj) for obj in self.create_json]
         # Post the json with no attribute values.
         response = self.client.post(endpoint, create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self._check_object(response, True)
         # Post the json with attribute values.
         response = self.client.post(endpoint, self.create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self._check_object(response, False)
 
 class PermissionCreateTestMixin:
@@ -388,7 +394,7 @@ class PermissionCreateTestMixin:
                 expected_status = status.HTTP_403_FORBIDDEN
             endpoint = f'/rest/{self.list_uri}/{self.project.pk}'
             response = self.client.post(endpoint, self.create_json, format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
             if hasattr(self, 'entities'):
                 obj_type = type(self.entities[0])
             if expected_status == status.HTTP_201_CREATED:
@@ -398,7 +404,7 @@ class PermissionCreateTestMixin:
                     else:
                         created_id = response.data['id']
                     response = self.client.delete(f'/rest/{self.detail_uri}/{created_id}')
-                    self.assertEqual(response.status_code, status.HTTP_200_OK)
+                    assertResponse(self, response, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -418,7 +424,7 @@ class PermissionListTestMixin:
                 f'?type={self.entity_type.pk}',
                 {'attributes': {'Bool Test': test_val}},
                 format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -436,7 +442,7 @@ class PermissionListTestMixin:
             response = self.client.delete(
                 f'/rest/{self.list_uri}/{self.project.pk}'
                 f'?type={self.entity_type.pk}')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -456,7 +462,7 @@ class PermissionDetailTestMixin:
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
                 format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -473,7 +479,7 @@ class PermissionDetailTestMixin:
             response = self.client.delete(
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
             if expected_status == status.HTTP_200_OK:
                 del self.entities[0]
         self.membership.permission = Permission.FULL_CONTROL
@@ -486,7 +492,7 @@ class PermissionListMembershipTestMixin:
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.membership.save()
 
     def test_list_is_a_member_permissions(self):
@@ -496,7 +502,7 @@ class PermissionListMembershipTestMixin:
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -507,7 +513,7 @@ class PermissionDetailMembershipTestMixin:
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.membership.save()
 
     def test_detail_is_a_member_permissions(self):
@@ -517,7 +523,7 @@ class PermissionDetailMembershipTestMixin:
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -529,7 +535,7 @@ class PermissionListAffiliationTestMixin:
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.save()
 
     def test_list_is_a_member_permissions(self):
@@ -545,7 +551,7 @@ class PermissionListAffiliationTestMixin:
             if hasattr(self, 'entity_type'):
                 url += f'?type={self.entity_type.pk}'
             response = self.client.get(url)
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
         affiliation.permission = 'Admin'
         affiliation.save()
 
@@ -557,7 +563,7 @@ class PermissionDetailAffiliationTestMixin:
         if hasattr(self, 'entity_type'):
             url += f'?type={self.entity_type.pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.save()
 
     def test_detail_is_a_member_permissions(self):
@@ -573,7 +579,7 @@ class PermissionDetailAffiliationTestMixin:
             if hasattr(self, 'entity_type'):
                 url += f'?type={self.entity_type.pk}'
             response = self.client.get(url)
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
         affiliation.permission = 'Admin'
         affiliation.save()
 
@@ -592,7 +598,7 @@ class PermissionDetailAffiliationTestMixin:
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
                 format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
 
     def test_detail_delete_permissions(self):
         permission_index = affiliation_levels.index(self.edit_permission)
@@ -609,7 +615,7 @@ class PermissionDetailAffiliationTestMixin:
             response = self.client.delete(
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
             if expected_status == status.HTTP_200_OK:
                 del self.entities[0]
 
@@ -619,7 +625,7 @@ class AttributeMediaTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}?media_id={self.media_entities[0].pk}'
             f'&type={self.entity_type.pk}&attribute=Bool Test::true'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
 class AttributeTestMixin:
     def test_query_no_attributes(self):
@@ -637,7 +643,7 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}&attribute=Bool Test::true&attribute=Int Test::0'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
     def test_pagination(self):
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
@@ -646,7 +652,7 @@ class AttributeTestMixin:
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Bool Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}'
@@ -656,7 +662,7 @@ class AttributeTestMixin:
             f'&start=0'
             f'&stop=2'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), max(0, min(sum(test_vals), 2)))
         response1 = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}'
@@ -678,10 +684,10 @@ class AttributeTestMixin:
             f'?type={self.entity_type.pk}',
             {'attributes': {'Bool Test': test_val}},
             format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         for entity in self.entities:
             response = self.client.get(f'/rest/{self.detail_uri}/{entity.pk}')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(response.data['attributes']['Bool Test'], test_val)
 
     def test_list_delete(self):
@@ -690,7 +696,7 @@ class AttributeTestMixin:
         obj_ids = list(map(lambda x: str(x.pk), to_delete))
         for obj_id in obj_ids:
             response = self.client.get(f'/rest/{self.detail_uri}/{obj_id}')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             # Update objects with a string so we know which to delete
             response = self.client.patch(
                 f'/rest/{self.detail_uri}/{obj_id}',
@@ -701,13 +707,13 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}'
             f'?type={self.entity_type.pk}'
             f'&attribute=String Test::DELETE ME!!!')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         for obj_id in obj_ids:
             response = self.client.get(f'/rest/{self.detail_uri}/{obj_id}')
-            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+            assertResponse(self, response, status.HTTP_404_NOT_FOUND)
         for entity in self.entities:
             response = self.client.get(f'/rest/{self.detail_uri}/{entity.pk}')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
 
     def test_null_attr(self):
         test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
@@ -716,7 +722,7 @@ class AttributeTestMixin:
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Bool Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_null=Bool Test::false'
@@ -751,40 +757,40 @@ class AttributeTestMixin:
             {'attributes': {'Bool Test': 'asdfasdf'}},
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Bool Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             # Do this again to test after the attribute object has been created.
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Bool Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['Bool Test'], test_val)
 
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::true&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), sum(test_vals))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(test_vals) - sum(test_vals))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Bool Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Bool Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_lt=Bool Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_lte=Bool Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Bool Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Bool Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_int_attr(self):
         test_vals = [random.randint(-1000, 1000) for _ in range(len(self.entities))]
@@ -794,13 +800,13 @@ class AttributeTestMixin:
             {'attributes': {'Int Test': 'asdfasdf'}},
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Int Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['Int Test'], test_val)
@@ -808,28 +814,28 @@ class AttributeTestMixin:
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Int Test': 100000}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
             # Test that attribute minimum is working.
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Int Test': -100000}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         for test_val in test_vals:
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=Int Test::{test_val}&type={self.entity_type.pk}&format=json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([t == test_val for t in test_vals]))
         for lbound, ubound in [(-1000, 1000), (-500, 500), (-500, 0), (0, 500)]:
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Int Test::{lbound}&attribute_lt=Int Test::{ubound}&type={self.entity_type.pk}&format=json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals]))
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Int Test::{lbound}&attribute_lte=Int Test::{ubound}&type={self.entity_type.pk}&format=json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals]))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Int Test::1&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Int Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_float_attr(self):
         test_vals = [random.uniform(-1000.0, 1000.0) for _ in range(len(self.entities))]
@@ -839,13 +845,13 @@ class AttributeTestMixin:
             {'attributes': {'Float Test': 'asdfasdf'}},
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Float Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['Float Test'], test_val)
@@ -853,28 +859,28 @@ class AttributeTestMixin:
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Float Test': 100000}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
             # Test that attribute minimum is working.
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Float Test': -100000}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         # Equality on float not recommended but is allowed.
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute=Float Test::{test_val}&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         for lbound, ubound in [(-1000.0, 1000.0), (-500.0, 500.0), (-500.0, 0.0), (0.0, 500.0)]:
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Float Test::{lbound}&attribute_lt=Float Test::{ubound}&type={self.entity_type.pk}&format=json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals]))
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Float Test::{lbound}&attribute_lte=Float Test::{ubound}&type={self.entity_type.pk}&format=json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals]))
         # Contains on float not recommended but is allowed.
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Float Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Float Test::false&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_enum_attr(self):
         test_vals = [random.choice(['enum_val1', 'enum_val2', 'enum_val3']) for _ in range(len(self.entities))]
@@ -884,32 +890,32 @@ class AttributeTestMixin:
             {'attributes': {'Enum Test': 'asdfasdf'}},
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'Enum Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['Enum Test'], test_val)
 
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Enum Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Enum Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_lt=Enum Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_lte=Enum Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for _ in range(10):
             subs = ''.join(random.choices(string.ascii_lowercase, k=2))
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Enum Test::{subs}&type={self.entity_type.pk}&format=json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([subs.lower() in t.lower() for t in test_vals]))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Enum Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_string_attr(self):
         test_vals = [''.join(random.choices(string.ascii_uppercase + string.digits, k=random.randint(1, 64)))
@@ -919,26 +925,26 @@ class AttributeTestMixin:
             response = self.client.patch(f'/rest/{self.detail_uri}/{pk}',
                                          {'attributes': {'String Test': test_val}},
                                          format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(response.data['attributes']['String Test'], test_val)
 
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=String Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=String Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_lt=String Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_lte=String Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for _ in range(10):
             subs = ''.join(random.choices(string.ascii_lowercase, k=2))
             response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=String Test::{subs}&type={self.entity_type.pk}&format=json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([subs.lower() in t.lower() for t in test_vals]))
         response = self.client.get(f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=String Test::0&type={self.entity_type.pk}&format=json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_datetime_attr(self):
         def to_string(dt):
@@ -955,7 +961,7 @@ class AttributeTestMixin:
             {'attributes': {'Datetime Test': 'asdfasdf'}},
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             response = self.client.patch(
@@ -963,7 +969,7 @@ class AttributeTestMixin:
                 {'attributes': {'Datetime Test': to_string(test_val)}},
                 format='json'
             )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             self.assertEqual(dateutil_parse(response.data['attributes']['Datetime Test']), test_val)
@@ -972,7 +978,7 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}?attribute=Datetime Test::{to_string(test_val)}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         delta_dt = datetime.timedelta(days=365)
         for lbound, ubound in [
                 (start_dt, end_dt),
@@ -987,7 +993,7 @@ class AttributeTestMixin:
                 f'attribute_lt=Datetime Test::{ubound_iso}&type={self.entity_type.pk}&'
                 f'format=json'
             )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data),
                 sum([(t > lbound) and (t < ubound) for t in test_vals])
@@ -997,7 +1003,7 @@ class AttributeTestMixin:
                 f'attribute_lte=Datetime Test::{ubound_iso}&type={self.entity_type.pk}&'
                 f'format=json'
             )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data),
                 sum([(t >= lbound) and (t <= ubound) for t in test_vals])
@@ -1006,12 +1012,12 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Datetime Test::asdf&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Datetime Test::asdf&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_geoposition_attr(self):
         test_vals = [random_latlon() for _ in range(len(self.entities))]
@@ -1021,13 +1027,13 @@ class AttributeTestMixin:
             {'attributes': {'Geoposition Test': [0.0, -91.0]}},
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.patch(
             f'/rest/{self.detail_uri}/{self.entities[0].pk}',
             {'attributes': {'Geoposition Test': [-181.0, 0.0]}},
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             lat, lon = test_val
@@ -1036,7 +1042,7 @@ class AttributeTestMixin:
                 {'attributes': {'Geoposition Test': [lon, lat]}},
                 format='json',
             )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             response = self.client.get(f'/rest/{self.detail_uri}/{pk}?format=json')
             self.assertEqual(response.data['id'], pk)
             attrs = response.data['attributes']['Geoposition Test']
@@ -1046,32 +1052,32 @@ class AttributeTestMixin:
             f'/rest/{self.list_uri}/{self.project.pk}?attribute=Geoposition Test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_lt=Geoposition Test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_lte=Geoposition Test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Geoposition Test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Geoposition Test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f'/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Geoposition Test::10::{lat}::{lon}&'
             f'type={self.entity_type.pk}&format=json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         test_lat, test_lon = random_latlon()
         for dist in [1.0, 100.0, 1000.0, 5000.0, 10000.0, 43000.0]:
             response = self.client.get(
@@ -1079,7 +1085,7 @@ class AttributeTestMixin:
                 f'{dist}::{test_lat}::{test_lon}&'
                 f'type={self.entity_type.pk}&format=json'
             )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([
                 latlon_distance(test_lat, test_lon, lat, lon) < dist
                 for lat, lon in test_vals
@@ -1093,32 +1099,32 @@ class FileMixin:
         # Create media definition.
         response = self.client.post(f'{list_endpoint}?role={role}',
                                     self.create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
         # Patch the media definition.
         response = self.client.patch(f'{detail_endpoint}?role={role}&index=0',
                                      self.patch_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         # Get media definition list.
         response = self.client.get(f'{list_endpoint}?role={role}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         for key in self.patch_json:
             self.assertEqual(response.data[0][key], self.patch_json[key])
 
         # Get media definition detail.
         response = self.client.get(f'{detail_endpoint}?role={role}&index=0')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         for key in self.patch_json:
             self.assertEqual(response.data[key], self.patch_json[key])
 
         # Delete media definition.
         response = self.client.delete(f'{detail_endpoint}?role={role}&index=0')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         # Check we have nothing.
         response = self.client.get(f'{list_endpoint}?role={role}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
     def _generate_key(self):
@@ -1129,7 +1135,7 @@ class CurrentUserTestCase(APITestCase):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         response = self.client.get('/rest/User/GetCurrent')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.user.id)
 
 class ProjectDeleteTestCase(APITestCase):
@@ -1276,7 +1282,7 @@ class VideoTestCase(
                 'localization_ids': [loc.id for loc in locs],
             })
         response = self.client.post(f'/rest/States/{self.project.pk}', state_specs, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         # Test detail delete
         response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[1].id}')
         self.assertNotEqual(response.data, 0)
@@ -1284,20 +1290,20 @@ class VideoTestCase(
         self.assertNotEqual(response.data, 0)
         num_states = response.data
         response = self.client.delete(f'/rest/Media/{medias[1].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
         response = self.client.get(f'/rest/StateCount/{self.project.pk}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, num_states)
         response = self.client.delete(f'/rest/Media/{medias[0].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
         response = self.client.get(f'/rest/StateCount/{self.project.pk}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
         locs = [create_test_box(self.user, loc_type, self.project, medias[2], 0)
                 for _ in range(random.randint(2, 5))]
@@ -1311,7 +1317,7 @@ class VideoTestCase(
                 'localization_ids': [loc.id for loc in locs],
             })
         response = self.client.post(f'/rest/States/{self.project.pk}', state_specs, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         # Test list delete
         response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}?media_id={medias[2].id}')
         self.assertNotEqual(response.data, 0)
@@ -1319,17 +1325,17 @@ class VideoTestCase(
         self.assertNotEqual(response.data, 0)
         num_states = response.data
         response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[2].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f'/rest/LocalizationCount/{self.project.pk}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
         response = self.client.get(f'/rest/StateCount/{self.project.pk}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, num_states)
         response = self.client.delete(f'/rest/Medias/{self.project.pk}?media_id={medias[3].id}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f'/rest/StateCount/{self.project.pk}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
 
 class ImageTestCase(
@@ -1776,53 +1782,53 @@ class LocalizationMediaDeleteCase(APITestCase):
             'Geoposition Test': [0.0, 0.0],
         }]
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.line_type.pk
         create_json[0]["media_id"] = media_id2
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.line_type.pk
         create_json[0]["media_id"] = media_id4
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.dot_type.pk
         create_json[0]["media_id"] = media_id3
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.dot_type.pk
         create_json[0]["media_id"] = media_id4
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         response = self.client.delete(f"/rest/Media/{media_id1}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 4)
 
         response = self.client.delete(f"/rest/Media/{media_id2}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(f"/rest/Media/{media_id3}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 2)
 
         response = self.client.delete(f"/rest/Media/{media_id4}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 0)
@@ -1863,35 +1869,35 @@ class LocalizationMediaDeleteCase(APITestCase):
             'Geoposition Test': [0.0, 0.0],
         }]
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.line_type.pk
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.dot_type.pk
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.box_type.pk
         create_json[0]["media_id"] = media_id2
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.line_type.pk
         create_json[0]["media_id"] = media_id2
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         create_json[0]["type"] = self.dot_type.pk
         create_json[0]["media_id"] = media_id2
         response = self.client.post(f"/rest/Localizations/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val1}%22")
@@ -1901,7 +1907,7 @@ class LocalizationMediaDeleteCase(APITestCase):
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val1}%22", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val1}%22")
         self.assertEqual(len(response.data), 0)
@@ -1910,7 +1916,7 @@ class LocalizationMediaDeleteCase(APITestCase):
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val2}%22", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val2}%22")
         self.assertEqual(len(response.data), 0)
@@ -1972,14 +1978,14 @@ class StateMediaDeleteCase(APITestCase):
             'Geoposition Test': [0.0, 0.0],
         }]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 1)
 
         response = self.client.delete(f"/rest/Media/{media_id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 0)
@@ -2042,7 +2048,7 @@ class StateMediaDeleteCase(APITestCase):
             'Geoposition Test': [0.0, 0.0],
         }]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 2)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22")
@@ -2057,7 +2063,7 @@ class StateMediaDeleteCase(APITestCase):
                                 .values_list('id', flat=True)
 
         response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
         self.assertEqual(len(response.data), 0)
@@ -2343,7 +2349,7 @@ class ProjectTestCase(APITestCase):
         endpoint = f'/rest/{self.list_uri}'
         self.affiliation.delete()
         response = self.client.post(endpoint, self.create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.affiliation.save()
 
     def test_create_permissions(self):
@@ -2355,7 +2361,7 @@ class ProjectTestCase(APITestCase):
             expected_status = status.HTTP_201_CREATED if index >= permission_index \
                               else status.HTTP_403_FORBIDDEN
             response = self.client.post(endpoint, self.create_json, format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
 
     def test_detail_patch_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
@@ -2372,7 +2378,7 @@ class ProjectTestCase(APITestCase):
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 self.patch_json,
                 format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
 
     def test_detail_delete_permissions(self):
         permission_index = permission_levels.index(self.edit_permission)
@@ -2389,7 +2395,7 @@ class ProjectTestCase(APITestCase):
             response = self.client.delete(
                 f'/rest/{self.detail_uri}/{self.entities[0].pk}',
                 format='json')
-            self.assertEqual(response.status_code, expected_status)
+            assertResponse(self, response, expected_status)
             if expected_status == status.HTTP_200_OK:
                 del self.entities[0]
 
@@ -2409,7 +2415,7 @@ class ProjectTestCase(APITestCase):
             f'/rest/{self.detail_uri}/{self.entities[0].pk}',
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
 
     def tearDown(self):
         for project in self.entities:
@@ -2579,14 +2585,14 @@ class SectionTestCase(
     def test_lucene_search(self):
         url = f'/rest/Medias/{self.project.pk}?section={self.sections[0].pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.medias[0].pk)
 
     def test_media_bools(self):
         url = f'/rest/Medias/{self.project.pk}?section={self.sections[1].pk}'
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['id'], self.medias[1].pk)
 
@@ -2783,7 +2789,7 @@ class OrganizationTestCase(
     def test_create(self):
         endpoint = f'/rest/{self.list_uri}'
         response = self.client.post(endpoint, self.create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
 
     def test_default_membership(self):
         other_user = create_test_user(is_staff=False)
@@ -2889,7 +2895,7 @@ class BucketTestCase(
         endpoint = f'/rest/{self.list_uri}/{self.organization.pk}'
         self.affiliation.delete()
         response = self.client.post(endpoint, self.create_json, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.affiliation.save()
 
 class ImageFileTestCase(APITestCase, FileMixin):
@@ -3115,7 +3121,7 @@ class ResourceTestCase(APITestCase):
             "path": key1
         }
         response = self.client.patch(f"/rest/File/{file1.id}", file_patch_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file1.id}")
         self.assertTrue(self._store_obj_exists(response.data["path"]))
 
@@ -3124,7 +3130,7 @@ class ResourceTestCase(APITestCase):
             "path": key2
         }
         response = self.client.patch(f"/rest/File/{file2.id}", file_patch_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file2.id}")
         self.assertTrue(self._store_obj_exists(response.data["path"]))
 
@@ -3133,18 +3139,18 @@ class ResourceTestCase(APITestCase):
             "path": key3
         }
         response = self.client.patch(f"/rest/File/{file1.id}", file_patch_spec, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         response = self.client.get(f"/rest/File/{file1.id}")
         self.assertEqual(key3, response.data["path"])
         self.assertTrue(self._store_obj_exists(response.data["path"]))
         self.assertFalse(self._store_obj_exists(key1))
 
         response = self.client.delete(f"/rest/File/{file1.id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertFalse(self._store_obj_exists(key3))
 
         response = self.client.delete(f"/rest/File/{file2.id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self.assertFalse(self._store_obj_exists(key2))
 
     def test_files(self):
@@ -3155,14 +3161,14 @@ class ResourceTestCase(APITestCase):
         for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             media_def = self._get_media_def(role, keys, segment_key)
             response = self.client.post(f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json')
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            assertResponse(self, response, status.HTTP_201_CREATED)
 
         # Patch in a new value for each role.
         patch_keys, patch_segment_key = self._generate_keys(media)
         for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             media_def = self._get_media_def(role, patch_keys, patch_segment_key)
             response = self.client.patch(f"/rest/{endpoint[:-1]}/{media.id}?index=0&role={role}", media_def, format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertFalse(self._store_obj_exists(keys[role]))
             self.assertTrue(self._store_obj_exists(patch_keys[role]))
         self.assertFalse(self._store_obj_exists(segment_key))
@@ -3171,7 +3177,7 @@ class ResourceTestCase(APITestCase):
         # Delete the files.
         for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
             response = self.client.delete(f"/rest/{endpoint[:-1]}/{media.id}?index=0&role={role}", format='json')
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            assertResponse(self, response, status.HTTP_200_OK)
             self.assertFalse(self._store_obj_exists(patch_keys[role]))
         self.assertFalse(self._store_obj_exists(patch_segment_key))
 
@@ -3185,7 +3191,7 @@ class ResourceTestCase(APITestCase):
             endpoint = ResourceTestCase.MEDIA_ROLES[role]
             media_def = self._get_media_def(role, keys, segment_key)
             response = self.client.post(f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json')
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            assertResponse(self, response, status.HTTP_201_CREATED)
 
         # Clone the media.
         body = {'dest_project': self.project.pk,
@@ -3193,7 +3199,7 @@ class ResourceTestCase(APITestCase):
                 'dest_section': 'asdf'}
         response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={media.id}",
                                     body, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         clone_id = response.data['id'][0]
 
 
@@ -3206,7 +3212,7 @@ class ResourceTestCase(APITestCase):
 
         # Delete the clone.
         response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertTrue(self._store_obj_exists(keys[role]))
@@ -3224,13 +3230,13 @@ class ResourceTestCase(APITestCase):
                 'dest_section': 'asdf1'}
         response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={media.id}",
                                     body, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         clone_id = response.data['id'][0]
 
 
         # Delete the original.
         response = self.client.delete(f"/rest/Media/{media.id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertTrue(self._store_obj_exists(keys[role]))
@@ -3243,20 +3249,20 @@ class ResourceTestCase(APITestCase):
                 'dest_section': 'asdf2'}
         response = self.client.post(f"/rest/CloneMedia/{self.project.pk}?media_id={clone_id}",
                                     body, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         new_clone_id = response.data['id'][0]
 
 
         # Delete the first clone.
         response = self.client.delete(f"/rest/Media/{clone_id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertTrue(self._store_obj_exists(keys[role]))
 
         # Delete the second clone.
         response = self.client.delete(f"/rest/Media/{new_clone_id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self._prune_media()
         for role in ResourceTestCase.MEDIA_ROLES:
             self.assertFalse(self._store_obj_exists(keys[role]))
@@ -3275,7 +3281,7 @@ class ResourceTestCase(APITestCase):
                 'name': 'asdf',
                 'md5': 'asdf'}
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         image_id = response.data['id']
 
         # Make sure we have an image and thumbnail key.
@@ -3289,7 +3295,7 @@ class ResourceTestCase(APITestCase):
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{image_id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self._prune_media()
         self.assertFalse(self._store_obj_exists(image_key))
         self.assertFalse(self._store_obj_exists(thumb_key))
@@ -3302,7 +3308,7 @@ class ResourceTestCase(APITestCase):
                 'name': 'asdf',
                 'md5': 'asdf'}
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         image_id = response.data['id']
 
         # Make sure we have an image and thumbnail key.
@@ -3316,7 +3322,7 @@ class ResourceTestCase(APITestCase):
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{image_id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self._prune_media()
         self.assertFalse(self._store_obj_exists(image_key))
         self.assertFalse(self._store_obj_exists(thumb_key))
@@ -3329,7 +3335,7 @@ class ResourceTestCase(APITestCase):
                 'name': 'asdf',
                 'md5': 'asdf'}
         response = self.client.post(f"/rest/Medias/{self.project.pk}", body, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        assertResponse(self, response, status.HTTP_201_CREATED)
         video_id = response.data['id']
 
         # Make sure we have an video and thumbnail key.
@@ -3343,7 +3349,7 @@ class ResourceTestCase(APITestCase):
 
         # Delete the media and verify the files are gone.
         response = self.client.delete(f"/rest/Media/{video_id}", format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         self._prune_media()
         self.assertFalse(self._store_obj_exists(thumb_key))
         self.assertFalse(self._store_obj_exists(gif_key))
@@ -3358,7 +3364,7 @@ class ResourceTestCase(APITestCase):
             response = self.client.post(
                 f"/rest/{endpoint}/{media.id}?role={role}", media_def, format='json'
             )
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            assertResponse(self, response, status.HTTP_201_CREATED)
 
         # Check the value of each resource's `backed_up` flag
         for role, endpoint in ResourceTestCase.MEDIA_ROLES.items():
@@ -3377,7 +3383,7 @@ class ResourceTestCase(APITestCase):
             response = self.client.post(
                 f"/rest/{endpoint}/{media_id}?role={role}", media_def, format='json'
             )
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            assertResponse(self, response, status.HTTP_201_CREATED)
 
         if self.project.backup_bucket:
             # Back up the resource
@@ -3401,7 +3407,7 @@ class ResourceTestCase(APITestCase):
         response = self.client.patch(
             f"/rest/Media/{media_id}", {"archive_state": "to_archive"}, format="json"
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         media = Media.objects.get(pk=media_id)
         self.assertEqual(media.archive_state, "to_archive")
 
@@ -3418,7 +3424,7 @@ class ResourceTestCase(APITestCase):
         response = self.client.patch(
             f"/rest/Media/{media_id}", {"archive_state": "to_live"}, format="json"
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
         media = Media.objects.get(pk=media_id)
         self.assertEqual(media.archive_state, "to_live")
 
@@ -3459,7 +3465,7 @@ class ResourceTestCase(APITestCase):
             response = self.client.post(
                 f"/rest/{endpoint}/{media_id}?role={role}", media_def, format='json'
             )
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            assertResponse(self, response, status.HTTP_201_CREATED)
 
         # Check the value of each resource's `backed_up` flag is `False`
         resource_qs = Resource.objects.filter(path__in=all_keys, backed_up=False)
@@ -3594,7 +3600,7 @@ class AttributeTestCase(APITestCase):
                 self.patch_json,
                 format='json')
             with self.subTest(i=index):
-                self.assertEqual(response.status_code, expected_status)
+                assertResponse(self, response, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -3612,7 +3618,7 @@ class AttributeTestCase(APITestCase):
                 self.post_json,
                 format='json')
             with self.subTest(i=index):
-                self.assertEqual(response.status_code, expected_status)
+                assertResponse(self, response, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -3630,7 +3636,7 @@ class AttributeTestCase(APITestCase):
                 self.delete_json,
                 format='json')
             with self.subTest(i=index):
-                self.assertEqual(response.status_code, expected_status)
+                assertResponse(self, response, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
 
@@ -3819,14 +3825,14 @@ class JobClusterTestCase(APITestCase):
     def test_list_is_an_admin_permissions(self):
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
     def test_list_no_affiliation_permissions(self):
         affiliation = self.get_affiliation(self.organization, self.user)
         affiliation.delete()
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.save()
 
     def test_list_is_a_member_permissions(self):
@@ -3836,21 +3842,21 @@ class JobClusterTestCase(APITestCase):
         affiliation.save()
         url = f"/rest/{self.list_uri}/{self.organization.pk}"
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.permission = old_permission
         affiliation.save()
 
     def test_detail_is_an_admin_permissions(self):
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assertResponse(self, response, status.HTTP_200_OK)
 
     def test_detail_no_affiliation_permissions(self):
         affiliation = self.get_affiliation(self.organization, self.user)
         affiliation.delete()
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.save()
 
     def test_detail_is_a_member_permissions(self):
@@ -3860,7 +3866,7 @@ class JobClusterTestCase(APITestCase):
         affiliation.save()
         url = f"/rest/{self.detail_uri}/{self.entity.pk}"
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.permission = old_permission
         affiliation.save()
 
