@@ -155,7 +155,6 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    /* */
    setSelection: (newSelection) => {
-      console.log("!#&*@(37182937128937128371982379838)::store:: setSelection");
       set({
          selection: {
             ...get().selection,
@@ -225,6 +224,8 @@ const store = create(subscribeWithSelector((set, get) => ({
       if (!init) {
          await get().fetchType(type);
       }
+
+      return get()[type];
    },
    fetchType: async (type) => {
       set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
@@ -378,5 +379,24 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
 
    return newList;
 }
+
+export const getAttributeDataByType = async () => {
+   const attributeDataByType = {
+     MediaType: {},
+     LocalizationType: {},
+     LeafType: {},
+     StateType: {}
+   };
+
+   for (let type of Object.keys(attributeDataByType)) {
+      const data = await store.getState().initType(type);
+      for (let [key, entity] of data.map.entries()) {
+         console.log(entity);
+         attributeDataByType[type][entity.name] = entity.attribute_types;
+      }
+   }
+
+   return attributeDataByType;
+ }
 
 export { store };

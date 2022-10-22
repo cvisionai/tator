@@ -5,6 +5,7 @@ export class AttributesClone {
   constructor(attributeDataByType) {
     // Feature-related class(es) to customize form element. Applies to all elements.
     this.attributeDataByType = attributeDataByType;
+    console.log(this.attributeDataByType);
     this.attributeFormHelper = new AttributesForm();
   }
 
@@ -27,8 +28,6 @@ export class AttributesClone {
     this.form.appendChild(this._typeSelect);
 
     this.submitForm = null;
-    
-
 
     this._typeSelect.addEventListener("change",  (event) => {
       let type = this._typeSelect.getValue();
@@ -119,6 +118,7 @@ export class AttributesClone {
   _getEntitiesForType(type) {
     let entityOptions = [{"label":"Select", "value": ""}];
     this.entities = this.attributeDataByType[type];
+    console.log(" _getEntitiesForType(type) {",this.entities);
 
     if (this.entities) {
       for (let o in this.entities) {

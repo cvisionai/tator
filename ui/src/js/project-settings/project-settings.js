@@ -138,7 +138,6 @@ export class ProjectSettings extends TatorPage {
       typeId: this._selectedObjectId,
       inner: this._innerSelection
     });
-
   }
 
   //
@@ -153,6 +152,9 @@ export class ProjectSettings extends TatorPage {
   }
 
   checkHash(newSelect, oldSelect) {
+    console.log("CHECK HASH",newSelect);
+    console.log(`this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName ${this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName}`);
+    console.log(`checkHash breakdown: curSel=${this._selectedObjectId}, newSel=${newSelect.typeId}, selType=${this._selectedType} and newType=${newSelect.typeName}`);
     if (this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName) {
       console.log("Hash doesn't match up with selected item?");
       // window.history.pushState({}, '', `#${newSelect.typeName}-${newSelect.typeId}`)

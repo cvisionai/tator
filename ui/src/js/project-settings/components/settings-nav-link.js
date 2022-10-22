@@ -42,9 +42,11 @@ export class SettingsNavLink extends TatorElement {
       const removeAdd = this.getAttribute("add");
       if (removeAdd === "false") {
          this._subNavPlus.classList.add("hidden");
-      } else {
-         this._subNavPlus.addEventListener("click", this.setTypeOpen_New.bind(this));
       }
+      
+      this._subNavPlus.setAttribute("href", `#${this._type}-New`);
+      this._subNavPlus.addEventListener("click", this.setTypeOpen_New.bind(this));
+      
 
       store.subscribe(state => state.selection, this.showSelection.bind(this));
       store.subscribe(state => state[this._type], this.renderSubNav.bind(this));
@@ -64,7 +66,7 @@ export class SettingsNavLink extends TatorElement {
          return true;
       }
 
-      console.log("Show selection heard that.... (new and old)");
+      
       console.log(newSelection);
       console.log(oldSelection);
 
@@ -74,6 +76,7 @@ export class SettingsNavLink extends TatorElement {
       const newId = newSelection.typeId;
       const oldId = oldSelection.typeId;
       const selectedIdIsNew = newId !== oldId;
+      console.log("Show selection heard that.... newId "+newId);
       
       const newInner = newSelection.inner;
       const oldInner = oldSelection.inner;
@@ -143,8 +146,6 @@ export class SettingsNavLink extends TatorElement {
 
    setTypeOpen_New(evt) {
       evt.preventDefault();
-      const newHash = `#${this._type}-New`;
-      window.history.pushState({}, "", newHash);
    }
 
    toggle() {
@@ -196,15 +197,16 @@ export class SettingsNavLink extends TatorElement {
 
          if (typeName == "LeafType") {
             const innerLink = this.getInnerLink(currentData.name, currentData.id);
-            if (this._typeId !== null && this._typeId == id) innerLink.setAttribute("selected", "true");
+            if (this._typeId !== null && this._typeId == id && this._inner == true) innerLink.setAttribute("selected", "true");
             this._subNavSection.append(innerLink);
             this.innerLinkMap.set(String(id), innerLink);
          }
       }
 
       if (newData.name !== "Project") {
+         console.log("Add new link!");
          const link = this.getLink(newData.name, "New", "+ Add new", );
-         if (this._typeId !== null && this._typeId == id && this._inner == true) link.setAttribute("selected", "true");
+         if (this._typeId !== null && this._typeId == id ) link.setAttribute("selected", "true");
          this._subNavSection.append(link);
          this.linkMap.set("New", link);
       }

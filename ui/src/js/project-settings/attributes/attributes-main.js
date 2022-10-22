@@ -1,11 +1,10 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
-import { ProjectTypesData } from "../data/data-project-types.js";
 import { AttributesClone } from "./attributes-clone.js";
 import { AttributesData } from "../data/data-attributes-clone.js";
 import { AttributesDelete } from "./attributes-delete.js";
-import { store } from "../store.js";
+import { store, getAttributeDataByType } from "../store.js";
 
 /**
  * Main Attribute section for type forms
@@ -276,58 +275,54 @@ export class AttributesMain extends HTMLElement {
     return newCopyTrigger;
   }
 
-  _getCloneModal(){
+  async _getCloneModal() {
     this.loading.showSpinner();
-    let typesData = new ProjectTypesData(this.projectId);
 
-    typesData._getAttributeDataByType().then((attributeDataByType) => {
-      // console.log("did it come back from typesData ok? ");
-      // console.log(attributeDataByType);
+    const attributeDataByType = await getAttributeDataByType();
+    this.clone = new AttributesClone(attributeDataByType);
+    const cloneForm = this.clone._init();
+
+    const cloneSave = document.createElement("input");
+    cloneSave.setAttribute("type", "submit");
+    cloneSave.setAttribute("value", "Save");
+    cloneSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
       
-      const clone = new AttributesClone( attributeDataByType );
-      const cloneForm = clone._init();
+    cloneSave.addEventListener("click", this._saveClone.bind(this)); 
 
-      const cloneSave = document.createElement("input");
-      cloneSave.setAttribute("type", "submit");
-      cloneSave.setAttribute("value", "Save");
-      cloneSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
-      
-      cloneSave.addEventListener("click", (e) => {
-        e.preventDefault();
-        const selectedData = clone.getInputData();
-        //console.log(selectedData);
-        
-        let cloneData = new AttributesData({
-          projectId: this.projectId,
-          typeId: this.fromId,
-          typeName: this.typeName,
-          selectedData
-        });
-        return cloneData.createClones().then((resp) => {
-          if(resp.ok){
-            this.boxHelper._modalSuccess(resp.message);
-          } else {
-            this.boxHelper._modalComplete(resp.message);
-          }
-          this.dispatchEvent(this.refreshTypeEvent);
-          
-        });               
-      });
-
-      this.loading.hideSpinner();
-      this.boxHelper.modal._div.classList.add("modal-wide");
-      return this.boxHelper._modalConfirm({
-        "titleText" : "Clone Attribute(s)",
-        "mainText" : cloneForm,
-        "buttonSave" : cloneSave,
-        "scroll" : true
-      });
-    }).catch((error) => {
-      this.loading.hideSpinner();
-      this.boxHelper._modalError(`Error: ${error}`);
-    });
-    
+    this.loading.hideSpinner();
+    this.boxHelper.modal._div.classList.add("modal-wide");
+    return this.boxHelper._modalConfirm({
+      "titleText": "Clone Attribute(s)",
+      "mainText": cloneForm,
+      "buttonSave": cloneSave,
+      "scroll": true
+    });  
   }
+
+  async _saveClone(evt) {
+    evt.preventDefault();
+    const selectedData = this.clone.getInputData();
+    //console.log(selectedData);
+      
+    let cloneData = new AttributesData({
+      projectId: this.projectId,
+      typeId: this.fromId,
+      typeName: this.typeName,
+      selectedData
+    });
+
+    const resp = await cloneData.createClones();
+    if (resp.ok) {
+      this.boxHelper._modalSuccess(resp.message);
+    } else {
+      this.boxHelper._modalComplete(resp.message);
+    }
+
+    // Refetch the type is a refresh event
+    store.getState().fetchType( this.typeName );
+  }
+
+  
 
   _toggleAttributes(el){
     let hidden = el.hidden
@@ -545,13 +540,16 @@ export class AttributesMain extends HTMLElement {
     if(name != "undefined"){
       deleteAttribute.deleteFetch().then((data) => {
         this.loading.hideSpinner();
-        this.dispatchEvent(this.refreshTypeEvent);
+        // this.dispatchEvent(this.refreshTypeEvent);
         
         if (data.status == 200) {
           this.boxHelper._modalSuccess(data.message);
         } else {
           this.boxHelper._modalError(data.message);
         }
+        
+        // Refetch the type is a refresh event
+        store.getState().fetchType( this.typeName );
       }).catch((err) => {
         console.error(err);
         this.loading.hideSpinner();
@@ -645,7 +643,9 @@ export class AttributesMain extends HTMLElement {
         this.boxHelper._modalSuccess(mainText);
       }
       // Reset forms to the saved data from model
-      return this.dispatchEvent(this.refreshTypeEvent);
+      // return this.dispatchEvent(this.refreshTypeEvent);
+      // Refetch the type is a refresh event
+      store.getState().fetchType( this.typeName );
     }).then(() => {
       this.loading.hideSpinner();
     }).catch(err => {

@@ -1,9 +1,6 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { SettingsBox } from "../settings-box-helpers.js";
-import { ProjectTypesData } from "../data/data-project-types.js";
-import { LeafClone } from "./leaf-clone.js";
-import { LeafData } from "../data/data-leaves-clone.js";
 import { LeafDelete } from "./leaf-delete.js";
 
 /**
