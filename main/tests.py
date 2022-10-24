@@ -2793,10 +2793,9 @@ class OrganizationTestCase(
             Permission.FULL_CONTROL,
         )
 
-        # Confirm `other_user` now has `CAN_EXECUTE` permission
+        # Confirm `other_user` still has no membership
         self.assertEqual(
-            Membership.objects.get(project=project_id, user=other_user).permission,
-            Permission.CAN_EXECUTE,
+            Membership.objects.filter(project=project_id, user=other_user).count(), 0
         )
 
         # Delete the test project to start over
