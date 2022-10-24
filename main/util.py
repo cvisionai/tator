@@ -371,7 +371,7 @@ def set_default_versions():
     logger.info(f"Set all default versions!")
 
 def move_backups_to_s3():
-    store = get_tator_store().store
+    store = get_tator_store().client
     transfer = S3Transfer(store)
     bucket_name = os.getenv('BUCKET_NAME')
     num_moved = 0
