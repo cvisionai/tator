@@ -51,14 +51,59 @@
 </template>
 
 <template id="leaf-type-edit">
-   <form id="leaf-type-edit--form">
-     <text-input id="leaf-type-edit--name" name="Name" type="string"></text-input>
-     <enum-input id="leaf-type-edit--data-type" name="Data Type"></enum-input>
-     <text-input id="leaf-type-edit--description" name="Description" type="string"></text-input>
-   </form>
- </template>
+  <form id="leaf-type-edit--form">
+    <text-input id="leaf-type-edit--name" name="Name" type="string"></text-input>
+    <enum-input id="leaf-type-edit--data-type" name="Data Type"></enum-input>
+    <text-input id="leaf-type-edit--description" name="Description" type="string"></text-input>
+  </form>
+</template>
 
- <template id="membership-edit">
+<template id="leaf-main">
+  <div id="leaf-main--container">
+    <div class="px-6">
+      <!-- Heading -->
+      <a id="leaf-main--back" href="" class="h3 pb-3 edit-project__h1 clickable text-white">
+        <span id="leaf-main--type-name"></span>
+        <span class="px-2"> | </span>
+        <span class="text-gray text-normal"> LeafType</span>
+        <span class="text-gray text-normal"> (ID <span id="leaf-main--type-id"></span>)</span>
+        <span class="px-2">|</span>
+        <span class="h3 pb-3 edit-project__h1 text-normal text-gray">Leaves</span>
+      </a>
+
+       <!-- box -->
+      <div id="leaf-main--box" class="py-3 rounded-2   edit-project__config ">
+        <a id="leaf-main--add-trigger" class="btn btn-default float-right clickable  d-flex flex-items-center px-3 rounded-2">
+          <span class="d-flex flex-items-center flex-justify-center">+</span>
+          <span class="px-3"> New Leaf</span>
+        </a>
+        <div id="leaf-main--box-inner" hidden style="min-height: 150px;">
+          <h3 class="f2 text-gray pb-3"><span class="text-white f1">
+            <span id="leaf-main--count"></span> Leaves</span>
+          </h3>
+          <div class="f2 text-gray pb-3 edit-project__h1 text-normal text-gray">
+            <div class="py-1">Quick tips: Drag and drop to organize leaves into a heirarchy.</div>
+            <div class="py-1">To make a leaf top level, drag to container's edge.</div>
+            <div class="py-1">Edit details using the edit icon.</div>
+          </div>
+          <p class="f2 text-gray pb-3 text-normal text-gray py-3">
+            <a class="text-purple text-underline" href="#" id="leaf-main--expand">
+              Expand all
+            </a>
+            <span class="px-3">|</span>
+            <a class="text-purple text-underline" href="#" id="leaf-main--minimize">Minimize all</a>
+          </p>
+          <div id="leaf-main--item-container" class="leaves-edit--list">
+            <!-- Leaf items go here -->
+          </div>
+        </div>
+      </div>
+    </div><img class="loading" rel="preload" src="https://cloud.tator.io/static/33e4a5c934209387e1cd.gif"
+      style="display: none;">
+  </div>
+</template>
+
+<template id="membership-edit">
   <form id="membership-edit--form">
     <user-input id="membership-edit--search-users" name="Search users"></user-input>
     <enum-input id="membership-edit--permission" name="Permission"></enum-input>
