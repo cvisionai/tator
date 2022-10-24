@@ -1,5 +1,4 @@
 import { TatorElement } from "../../components/tator-element.js";
-import { LeafData } from "../data/data-leaves-clone.js";
 
 export class LeafForm extends TatorElement {
   constructor() {

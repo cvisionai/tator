@@ -16,11 +16,12 @@ export class TypeFormContainer extends TatorElement {
     this.objectNameDisplay = this._shadow.getElementById("type-form-objectName");
     this.idDisplay = this._shadow.getElementById("type-form-id");
     this.save = this._shadow.getElementById("type-form-save");
-    this.reset = this._shadow.getElementById("type-form-reset");
+    this.resetLink = this._shadow.getElementById("type-form-reset");
     this.delete = this._shadow.getElementById("type-form-delete");
     this.typeFormDiv = this._shadow.getElementById("type-form-div");
     this._attributeContainer = this._shadow.getElementById("type-form-attr-column");
-    this._addLeavesLink = this._shadow.getElementById("type-form--add-edit-leaves");
+    this._addLeaves = this._shadow.getElementById("type-form--add-edit-leaves");
+    this._addLeavesLink = this._shadow.getElementById("type-form--add-edit-leaves_link");
     this._leavesFormHeading = this._shadow.getElementById("type-form--leaves-active");
     // this._attrMain = this._shadow.getElementById("type-form-attr-main");
 
@@ -29,32 +30,28 @@ export class TypeFormContainer extends TatorElement {
   }
 
   connectedCallback() {
+    // Subscribe to selection and projectId
     store.subscribe((state) => state.selection, this._updateForm.bind(this));
     store.subscribe(state => state.projectId, this.setProjectId.bind(this));
     
+    // Create in the inner form handles
     const formName = this.getAttribute("form");
     this._form = document.createElement(formName);
     this._form.modal = this.modal;
+    this.typeFormDiv.appendChild(this._form);
+
+    // Once we know what type, listen to changes
     store.subscribe(state => state[this._form.typeName], this._newData.bind(this));
     
     const canDeleteProject = store.getState().deletePermission;
     this.typeName = this._form.typeName;
-    
-    if (this._typeName == "LeafType") {
-      this._addLeavesLink.hidden = false;
-    }
+    this._addLeaves.hidden = !(this._typeName == "LeafType");
 
-    if (this._typeName == "Leaf") {
-      this._leavesFormHeading.hidden = false;
-      // this._getLeafSection();
-    } else {
-      this.typeFormDiv.appendChild(this._form);
-      this.save.addEventListener("click", this._form._saveData.bind(this._form));
-      this.reset.addEventListener("click", this._form._resetForm.bind(this._form));
-      this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
-      this.delete.hidden = (this._typeName === "Project" && !canDeleteProject);
-    }
-           
+    // Event listeners for container actions
+    this.save.addEventListener("click", this._form._saveData.bind(this._form));
+    this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
+    this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
+    this.delete.hidden = (this._typeName === "Project" && !canDeleteProject);
   }
 
   setProjectId(newId, oldId) {
@@ -79,8 +76,8 @@ export class TypeFormContainer extends TatorElement {
     set typeId(val) {
       this._typeId = val;
       this.idDisplay.textContent = val;
-      if (!this._addLeavesLink.hidden) {
-        this._addLeavesLink.setAttribute("href", `#LeafType-${this._typeId}_inner`)
+      if (!this._addLeaves.hidden) {
+        this._addLeavesLink.setAttribute("href", `#Leaf-${this._typeId}`)
       }   
     }
   
@@ -114,59 +111,30 @@ export class TypeFormContainer extends TatorElement {
 
   _newData(newData, oldData) {
     // Nothing new or deleted
-    console.log("newData... ", newData);
-    console.log("oldData... ", oldData);
-    console.log(this._typeId,newData.setList.has(Number(this._typeId)));
-    if (newData.setList.has(Number(this._typeId))) {
-      // Refresh the view
-      console.log("SET THIS DATA!!", newData.map.get(Number(this._typeId)));
-      this._form.data = newData.map.get(Number(this._typeId));
-    } else if (this._typeId == "New") {
-      this._form.data = null;
-    } else if(this.typeName == store.getState().selection.typeName) {
-      const selectType = (newData.setList[0]) ? newData.setList[0] : "New";
-      window.history.pushState({},"",`#${this.typeName}-${selectType}`)
-      // Just select something and let the subscribers take it from there....
-      store.setState({ selection: { ...store.getState().selection, typeId: selectType } });
+    if (this.typeName == store.getState().selection.typeName) {
+      console.log("newData... ", newData);
+      console.log("oldData... ", oldData);
+
+      if (newData.setList.has(Number(this._typeId))) {
+        // Refresh the view
+        console.log("SET THIS DATA!!", newData.map.get(Number(this._typeId)));
+        this._form.data = newData.map.get(Number(this._typeId));
+      } else if (this._typeId == "New") {
+        this._form.data = null;
+      } else {
+        const selectType = (newData.setList[0]) ? newData.setList[0] : "New";
+        window.history.pushState({}, "", `#${this.typeName}-${selectType}`)
+        // Just select something and let the subscribers take it from there....
+        store.setState({ selection: { ...store.getState().selection, typeId: selectType } });
+      }
+
+      // attribute section
+      if (!this._hideAttributes && typeof this._form._data.attribute_types !== "undefined") {
+        this.attributeTypes = this._form._data.attribute_types;
+      } else {
+        this.removeAttributeSection();
+      }
     }
-
-              // attribute section
-              if (!this._hideAttributes && typeof this._form._data.attribute_types !== "undefined") {
-                this.attributeTypes = this._form._data.attribute_types;
-              } else {
-                this.removeAttributeSection();
-              }
-    
-    // // If something is New or Deleted
-    // // What is in newArray but not in forms
-    // const newArray = Array.from(newData.setList);
-    // const oldArray = Array.from(oldData.setList);
-    // const diff = newArray.filter(x => !oldArray.includes(x));
-    // const diffB = oldArray.filter(x => !newArray.includes(x));
-
-    // console.log(`newArray ${newArray.length} == oldArray ${oldArray.length}`);
-    // console.log("diff", diff);
-    // console.log("diffB", diffB);
-
-    // /* We have a form id that doesn't exist in new data */
-    // if (diffB.length === 1) {
-    //   // Object was deleted
-    //   console.log(`${diffB[0]} deleted........`);
-    //   const newHash = `#${type}-${newArray[0]}`;
-    //   // window.history.pushState({}, "", newHash);
-    //   window.location.replace(`${window.location.href}#${newHash}`);
-    // }
-
-    // console.log(`diff.length !== newArray.length ${diff.length !== newArray.length}`)
-    // if (diff.length === 1) {
-    // /* We have a form id that doesn't exist in old data */
-    //   const id = diff[0];
-    //   // Object was added!
-    //   console.log(`${id} added........`);
-    //   const newHash = `#${type}-${id}`;
-    //   // window.history.pushState({}, "", newHash);
-    //   window.location.replace(`${window.location.href}#${newHash}`);
-    // }
   }
 
   async _updateForm(newSelection, oldSelection) {
@@ -192,7 +160,7 @@ export class TypeFormContainer extends TatorElement {
       // Add data
       this.typeId = newId;
       if (newId !== "New") {
-        console.log(`this._typeName ${this._typeName}, this._typeId ${this._typeId}`);
+        console.log(`this._typeName ${this._typeName}, this._typeId ${this._typeId}`);       
         const data = await store.getState().getData(this._typeName, this._typeId);
         
         if (data) {
@@ -208,20 +176,11 @@ export class TypeFormContainer extends TatorElement {
           } else {
             this.removeAttributeSection();
           }
-
-          // #TODO -- 
-          if (this._typeName === "Leaf" || this._typeName === "LeafType") {
-            if (data.leaves) {
-              this._getLeafSection()
-            } else {
-              this.removeLeafSection();
-            }          
-          }
-
         } 
       } else {
         this._form.data = null;
         this.objectName = "";
+        this.removeAttributeSection();
       }
     }
   }
@@ -240,29 +199,6 @@ export class TypeFormContainer extends TatorElement {
     this._attributeContainer.hidden = false;
   }
 
-  removeLeafSection() {
-    if (this.leafSection) this.leafSection.remove();
-    // this._leafContainer.hidden = true;
-  }
-
-  _getLeafSection() {
-    this.projectName = "REFACTOR TODO";
-    this.removeLeafSection();
-    this.leafSection = document.createElement("leaf-main");
-    this.leafSection.setAttribute("data-from-id", `${this._typeId}`);
-    this.leafSection.setAttribute("data-project-id", `${this.projectId}`)
-    this.leafSection._init({
-      typeName: this._typeName,
-      fromId: this._typeId,
-      fromName: this._form._data.name,
-      projectId: this.projectId,
-      attributeTypes: this._form._data.attribute_types,
-      modal: this.modal,
-      projectName: this.projectName
-    });
-    this._shadow.appendChild(this.leafSection);
-    // this._leafContainer.hidden = false;
-  }
 
   reset() {
     this.hidden = true;

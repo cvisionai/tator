@@ -58,8 +58,7 @@ deleteMap.set("Project", api.deleteProjectWithHttpInfo.bind(api))
 const store = create(subscribeWithSelector((set, get) => ({
    selection: {
       typeName: "",
-      typeId: -1,
-      inner: false
+      typeId: -1
    },
    status: { // page status
       name: "idle",
@@ -97,7 +96,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       setList: new Set(),
       map: new Map(),
       name: "Leaf",
-      leafType: null
+      mapMeta: new Map()
    },
    LeafType: {
       init: false,
@@ -164,18 +163,13 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    getData: async (type, id) => {
-      console.log(`XXX getData: async (type, id ${id} type ${typeof id}) => {`);
       const info = get()[type];
-      console.log("Is it init? " + info.init);
+
       if (info.init !== true) {
          await get().fetchType(type);
       }
-      console.log("Getting data after init check.........");
-      if (id !== null && info.map && info.map.get(Number(id))) {
-         const typeData = info.map.get(Number(id));
-         return typeData;
-      }
 
+      return info.map.get(Number(id));
    },
 
    /* project */
@@ -233,30 +227,27 @@ const store = create(subscribeWithSelector((set, get) => ({
          const fn = getMap.get(type);
          const projectId = get().projectId;
          const object = await fn(projectId);
-         console.log("FETCH TYPE " + type, object);
-
          const setList = get()[type].setList;
          const map = get()[type].map;
 
-         if (get()[type].name == "Project") {
+         /* Add the data via loop to: setList and map */
+         if (type == "Project") {
             setList.add(object.data.id);
             map.set(object.data.id, object.data);
+
+            /* Project set like this to include a "data" attr */
             set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
-         } else if (get()[type].name == "LeafType") {
+         } else if (type == "Leaf") {
+            const leafTypes =  await get().initType("LeafType");
             for (let item of object.data) {
-               setList.add(item.id);
-               map.set(item.id, item);
+               const parent = leafTypes.map.get(item.meta);
+               console.log("LEAF PARENT", parent);
+               if (parent) {
+                  item.parent = parent;
+                  map.set(item.meta, item);
+               }
             }
-
-            // Set up the leaf data so inner links can be added
-            const leavesData = await get().fetchType("Leaf");
-            console.log(leavesData);
-            const leavesMap = new Map();
-            for (let group of leavesData) {
-               console.log(group);
-            }
-
-            set({ [type]: { ...get()[type], setList, map, init: true, leaves: leavesData } });
+            set({ [type]: { ...get()[type], setList, map, init: true } });
          } else {
             for (let item of object.data) {
                setList.add(item.id);
@@ -264,10 +255,15 @@ const store = create(subscribeWithSelector((set, get) => ({
             }
             set({ [type]: { ...get()[type], setList, map, init: true } });
          }
+
+         // Success: Return status to idle (handles page spinner)
          set({ status: { ...get().status, name: "idle", msg: "" } });
          return object.data;
       } catch (err) {
+         // Error: Return status to idle (handles page spinner)
+         console.error("Fetch type hit an issue.", err);
          set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
       }
    },
    addType: async ({ type, data }) => {
@@ -279,7 +275,6 @@ const store = create(subscribeWithSelector((set, get) => ({
          const object = await fn(projectId, data);
 
          if (object.data && object.data.object) {
-            console.log("Using object to update type......");
             const setList = get()[type].setList;
             setList.add(object.data.id);
 
@@ -288,7 +283,6 @@ const store = create(subscribeWithSelector((set, get) => ({
 
             set({ [type]: { ...get()[type], setList, map } }); // `push` doesn't trigger state update
          } else {
-            console.log("Refetch type......");
             // If object isn't returned, refetch type
             await get().fetchType(type);
          }
@@ -300,6 +294,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          return object;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
       }
    },
    updateType: async ({ type, id, data }) => {
@@ -321,6 +316,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          return object;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
       }
    },
    removeType: async ({ type, id }) => {
@@ -329,9 +325,6 @@ const store = create(subscribeWithSelector((set, get) => ({
          const fn = deleteMap.get(type);
          console.log(fn);
          const object = await fn(id);
-
-         console.log("THIS WAS THE OBJ RETURNED");
-         console.log(object);
 
          const setList = get()[type].setList;
          setList.delete(id);
@@ -345,6 +338,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          return object;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
       }
 
    }
@@ -380,23 +374,26 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
    return newList;
 }
 
+/**
+ * Returns a list usable for attribute clone selection sets
+ * @returns 
+ */
 export const getAttributeDataByType = async () => {
    const attributeDataByType = {
-     MediaType: {},
-     LocalizationType: {},
-     LeafType: {},
-     StateType: {}
+      MediaType: {},
+      LocalizationType: {},
+      LeafType: {},
+      StateType: {}
    };
 
    for (let type of Object.keys(attributeDataByType)) {
       const data = await store.getState().initType(type);
       for (let [key, entity] of data.map.entries()) {
-         console.log(entity);
          attributeDataByType[type][entity.name] = entity.attribute_types;
       }
    }
 
    return attributeDataByType;
- }
+}
 
 export { store };

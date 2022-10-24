@@ -1,10 +1,9 @@
 import { TatorElement } from "../components/tator-element.js";
-import { TypeNew } from "../project-settings/type-forms/type-new.js";
-import { TypeDelete } from "../project-settings/type-forms/type-delete.js";
+import { TypeNew } from "./components/type-new.js";
+import { TypeDelete } from "./components/type-delete.js";
 import { getCookie } from "../util/get-cookie.js";
 // import { Utilities } from "../util/utilities.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
-import { SettingsBox } from "../project-settings/settings-box-helpers.js";
 
 export class OrganizationTypeForm extends TatorElement {
   constructor() {
@@ -42,8 +41,6 @@ export class OrganizationTypeForm extends TatorElement {
     this.typeId = this.data.id
     this.sideNav = sidenav;
 
-    // Pass modal to helper
-    this.boxHelper = new SettingsBox(this.modal);
     // console.log(this.organizationId);
     this._addNew = new TypeNew({
       "type": this.typeName,
@@ -320,9 +317,10 @@ export class OrganizationTypeForm extends TatorElement {
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
-    this.deleteBox = this.boxHelper.boxWrapDelete({
-      "children": headingDiv
-    });
+    this.deleteBox = document.createElement("div");
+    this.deleteBox.setAttribute("class", `text-red py-3 rounded-2 edit-project__config`);
+    this.deleteBox.style.border = "1px solid $color-charcoal--light";
+    this.deleteBox.append( headingDiv );
 
     this.deleteBox.style.backgroundColor = "transparent";
 

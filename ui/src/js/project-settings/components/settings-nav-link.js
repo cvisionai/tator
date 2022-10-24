@@ -21,6 +21,7 @@ export class SettingsNavLink extends TatorElement {
       this.linkMap = new Map();
       this.innerLinkMap = new Map();
       this._typeId = null;
+      this._inner = false;
 
    }
 
@@ -33,6 +34,11 @@ export class SettingsNavLink extends TatorElement {
          this._type = newValue;
          this.setAttribute("id", `nav-for-${this._type}`);
          this._headingButton.setAttribute("type", this._type);
+         
+         if (newValue == "Leaf") {
+            this._type = "LeafType";
+            this._inner = true;
+         }
       }
    }
 
@@ -45,7 +51,7 @@ export class SettingsNavLink extends TatorElement {
       }
       
       this._subNavPlus.setAttribute("href", `#${this._type}-New`);
-      this._subNavPlus.addEventListener("click", this.setTypeOpen_New.bind(this));
+      // this._subNavPlus.addEventListener("click", this.setTypeOpen_New.bind(this));
       
 
       store.subscribe(state => state.selection, this.showSelection.bind(this));
@@ -61,17 +67,17 @@ export class SettingsNavLink extends TatorElement {
       const newType = newSelection.typeName;
       const oldType = oldSelection.typeName;
 
-      if (![newType, oldType].includes(this._type)) {
+      if (![newType, oldType].includes(this._type) && ![newType, oldType].includes(this._typeInner) ) {
          // Nothing applies to me, do nothing
          return true;
       }
-
-      
+ 
       console.log(newSelection);
       console.log(oldSelection);
 
       const myTypeIsNew = this._type === newType;
-      const selectedTypeIsNew = newType !== oldType;
+      const myInnerTypeIsNew = this._typeInner === newType;
+      const selectedTypeIsNew = newType !== oldType && this._typeInner !== oldType;
 
       const newId = newSelection.typeId;
       const oldId = oldSelection.typeId;
@@ -82,22 +88,21 @@ export class SettingsNavLink extends TatorElement {
       const oldInner = oldSelection.inner;
       const innerChanged = newInner !== oldInner;
   
-      if (selectedTypeIsNew || selectedIdIsNew || innerChanged) {
+      if (selectedTypeIsNew || selectedIdIsNew || selectedIdIsNew) {
         // IF: Something changed...........................
         // Check HEADING
-         if (myTypeIsNew && selectedTypeIsNew) {
+         if ((myTypeIsNew || myInnerTypeIsNew) && myInnerTypeIsNew) {
             this.highlightHeading();
             this.open(); // duped by toggle on click, but missed if onload, only open if we're starting from scratch
-           
-         } else if (!myTypeIsNew && selectedTypeIsNew) {
+         } else if (!(myTypeIsNew || myInnerTypeIsNew) && selectedTypeIsNew) {
             this.unhighlightHeading();
             this.shut(); 
          }
 
          if (selectedIdIsNew) {
-            this.highlightLink(newId, newInner);
-            this.unhighlightLink(oldId, oldInner);
             this._typeId = newId;
+            this.highlightLink(newId, this._inner);
+            this.unhighlightLink(oldId, this._inner);
          }
       }
     }
@@ -186,6 +191,7 @@ export class SettingsNavLink extends TatorElement {
       console.log(newData.setList);
 
       for (const id of newData.setList) {
+         console.log(id);
          const currentData = newData.map.get(id);
          const typeName = newData.name;
          const objectName = (typeName === "Membership") ? currentData.username : currentData.name;
@@ -194,19 +200,22 @@ export class SettingsNavLink extends TatorElement {
          if (this._typeId !== null && this._typeId == id) link.setAttribute("selected", "true");
          this._subNavSection.append(link);
          this.linkMap.set(String(currentData.id), link);
-
+         
          if (typeName == "LeafType") {
+            this._typeInner = "Leaf";
             const innerLink = this.getInnerLink(currentData.name, currentData.id);
             if (this._typeId !== null && this._typeId == id && this._inner == true) innerLink.setAttribute("selected", "true");
             this._subNavSection.append(innerLink);
             this.innerLinkMap.set(String(id), innerLink);
+         } else {
+            this._typeInner = "None";
          }
       }
 
       if (newData.name !== "Project") {
          console.log("Add new link!");
          const link = this.getLink(newData.name, "New", "+ Add new", );
-         if (this._typeId !== null && this._typeId == id ) link.setAttribute("selected", "true");
+         if (this._typeId !== null && this._typeId == "New" ) link.setAttribute("selected", "true");
          this._subNavSection.append(link);
          this.linkMap.set("New", link);
       }
@@ -224,7 +233,7 @@ export class SettingsNavLink extends TatorElement {
    
    getInnerLink(type, typeDataId) {
       // This is for LEAF TYPE only (sub container)
-      let innerSelector = `LeafType-${typeDataId}_inner`;
+      let innerSelector = `Leaf-${typeDataId}`;
       const icon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 32 25" data-tags="site map,tree,map"><g transform="scale(0.03125 0.03125)"><path d="M767.104 862.88h-95.68c-17.6 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.304-31.872 31.904-31.872h63.776v-159.488h-223.264v159.488h31.872c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.68c-17.6 0-31.872-14.24-31.872-31.872v-63.808c0-17.568 14.272-31.872 31.872-31.872h31.936v-159.488h-223.296v159.488h63.776c17.632 0 31.904 14.304 31.904 31.872v63.808c0 17.632-14.272 31.872-31.904 31.872h-95.648c-17.632 0-31.904-14.24-31.904-31.872v-63.808c0-17.568 14.272-31.872 31.904-31.872v-159.488-31.872h255.168v-127.584h-95.68c-17.632 0-31.904-14.272-31.904-31.904l0-159.488c0-17.6 14.272-31.904 31.904-31.904h223.264c17.632 0 31.872 14.272 31.872 31.904v159.456c0 17.6-14.24 31.904-31.872 31.904h-95.68v127.584h255.168v31.872 159.488c17.6 0 31.904 14.304 31.904 31.872v63.808c-0.032 17.664-14.368 31.904-31.936 31.904zM224.896 767.2v63.808h95.648v-63.808h-95.648zM607.616 384.48v-159.488h-223.264v159.456h223.264zM448.128 767.2v63.808h95.68v-63.808h-95.68zM767.104 767.2h-95.68v63.808h95.68v-63.808z"></path></g></svg>`;
       let innerSubNavLink = this.getLink(type, typeDataId, `${icon} Add/Edit Leaves`, innerSelector);
       return innerSubNavLink;
