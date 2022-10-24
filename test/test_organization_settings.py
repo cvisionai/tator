@@ -55,11 +55,6 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     print("Invitation sent successful!")
 
     # Note: Existing user gets redirected to /organization, but new user gets form.
-    if(base_url.find("https:") > -1):
-        protocol = "https://"
-    else:
-        protocol = "http://"
-    registration_link = protocol + registration_link
     print(registration_link)
     if registration_link.find('accept') != -1:
         print(f"Accepting invitation at: {registration_link}")

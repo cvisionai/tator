@@ -2757,6 +2757,67 @@ class OrganizationTestCase(
         response = self.client.post(endpoint, self.create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_default_membership(self):
+        other_user = create_test_user(is_staff=False)
+        other_affiliation = create_test_affiliation(other_user, self.organization)
+
+        proj_spec = {
+            "name": "Org test",
+            "summary": "Auto project membership test",
+            "organization": self.organization.pk,
+        }
+        response = self.client.post("/rest/Projects", proj_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        project_id = response.data["id"]
+
+        # Confirm project creator has full control
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        # Confirm `other_user` has no membership
+        self.assertEqual(
+            Membership.objects.filter(project=project_id, user=other_user).count(), 0
+        )
+
+        # Update default membership permission to `CAN_EXECUTE`
+        patch_default_membership = {"default_membership_permission": "Can Execute"}
+        endpoint = f"/rest/{self.detail_uri}/{self.organization.pk}"
+        response = self.client.patch(endpoint, patch_default_membership, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Confirm project creator still has full control
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        # Confirm `other_user` still has no membership
+        self.assertEqual(
+            Membership.objects.filter(project=project_id, user=other_user).count(), 0
+        )
+
+        # Delete the test project to start over
+        Project.objects.get(pk=project_id).delete()
+
+        # Confirm project creator has full control
+        response = self.client.post("/rest/Projects", proj_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        project_id = response.data["id"]
+
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        # Confirm `other_user` has `CAN_EXECUTE` permission
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=other_user).permission,
+            Permission.CAN_EXECUTE,
+        )
+        Project.objects.get(pk=project_id).delete()
+
     def tearDown(self):
         self.project.delete()
 
