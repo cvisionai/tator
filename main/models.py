@@ -582,7 +582,7 @@ def add_org_users(project, permission):
     user_qs = User.objects.filter(pk__in=users)
     for user in user_qs:
         if Membership.objects.filter(project=project, user=user).exists():
-            pass
+            continue
 
         Membership.objects.create(project=project, user=user, permission=permission).save()
 

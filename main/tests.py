@@ -2770,21 +2770,39 @@ class OrganizationTestCase(
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         project_id = response.data["id"]
 
+        # Confirm project creator has full control
         self.assertEqual(
             Membership.objects.get(project=project_id, user=self.user).permission,
             Permission.FULL_CONTROL,
         )
 
+        # Confirm `other_user` has no membership
         self.assertEqual(
             Membership.objects.filter(project=project_id, user=other_user).count(), 0
         )
-        Project.objects.get(pk=project_id).delete()
 
-        patch_default_membership = dict(self.patch_json)
-        patch_default_membership["default_membership_permission"] = "Can Execute"
+        # Update default membership permission to `CAN_EXECUTE`
+        patch_default_membership = {"default_membership_permission": "Can Execute"}
         endpoint = f"/rest/{self.detail_uri}/{self.organization.pk}"
         response = self.client.patch(endpoint, patch_default_membership, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Confirm project creator still has full control
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        # Confirm `other_user` now has `CAN_EXECUTE` permission
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=other_user).permission,
+            Permission.CAN_EXECUTE,
+        )
+
+        # Delete the test project to start over
+        Project.objects.get(pk=project_id).delete()
+
+        # Confirm project creator has full control
         response = self.client.post("/rest/Projects", proj_spec, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         project_id = response.data["id"]
@@ -2794,6 +2812,7 @@ class OrganizationTestCase(
             Permission.FULL_CONTROL,
         )
 
+        # Confirm `other_user` has `CAN_EXECUTE` permission
         self.assertEqual(
             Membership.objects.get(project=project_id, user=other_user).permission,
             Permission.CAN_EXECUTE,
