@@ -27,7 +27,7 @@ export class AppletEdit extends TypeFormTemplate {
       this._data = data;
       // append link
       if (this._data.id && this._data.id !== "New") {
-         this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this._projectId}/dashboards/${this.appletId}`);
+         this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this.projectId}/dashboards/${this._data.id}`);
       } else {
          this._linkToDashboard.hidden = true;
       }

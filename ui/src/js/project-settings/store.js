@@ -173,7 +173,7 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    /* project */
-   setProjectId: async (id) => {
+   setProjectData: async (id) => {
       set({
          status: {
             name: "pending",
@@ -185,19 +185,13 @@ const store = create(subscribeWithSelector((set, get) => ({
       const setList = get()["Project"].setList;
       const map = get()["Project"].map;
 
-      console.log("FETCHING PROJECT DATA......");
-      console.log(object);
-
-      // for (let item of object.data) {
       setList.add(object.data.id);
       map.set(object.data.id, object.data);
-      // }
-
-      console.log(map);
 
       set({ projectId: id });
       set({ organizationId: object.data.organization });
-      // set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
+      set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
+      
       set({
          status: {
             name: "idle",

@@ -95,6 +95,7 @@ export class LeafMain extends TatorElement {
    * @param {string} val
    */
   set fromName(val) {
+    consol.log("SET FROM NAME TO " + val);
     this._leafTypeName.innerHTML = val;
   }
 

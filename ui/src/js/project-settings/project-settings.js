@@ -34,17 +34,8 @@ export class ProjectSettings extends TatorPage {
 
   connectedCallback() {
     /* Update display for any change in data (#todo Project is different) */
-    store.subscribe(state => state.Project, this.updateDisplay.bind(this));
+    store.subscribe(state => state.Project, this.updateProject.bind(this));
     store.subscribe(state => state.selection, this.checkHash.bind(this));
-    // store.subscribe(state => state.MediaType, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.LocalizationType, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.LeafType, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.StateType, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.Membership, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.Version, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.Algorithm, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.Applet, this.updateDisplay.bind(this));
-    // store.subscribe(state => state.status, this.handleStatusChange.bind(this));
 
     // Init
     this._init();
@@ -89,14 +80,11 @@ export class ProjectSettings extends TatorPage {
     // Project id
     this.projectId = this.getAttribute("project-id");
   
-    // this is its own state so project display doesn't update here
-    // this just happens once
-    await store.getState().setProjectId(this.projectId);
-    // this.selectedHash = `#Project-${this.projectId}`;
+    // This just happens once and unlike getType, it also sets project info
+    await store.getState().setProjectData(this.projectId);
     
-    // Set to project
-    // then Figure out if something else needs to be shown
-    this.hashOnLoad();
+    // Figure out if something else needs to be shown
+    this.moveToCurrentHash();
 
     // this handles back button, and some pushes to this to trigger selection change
     window.addEventListener("hashchange", this.moveToCurrentHash.bind(this));
@@ -113,23 +101,21 @@ export class ProjectSettings extends TatorPage {
       this._selectedType = split[0].replace("#","");
       this._selectedObjectId = split[1];
       this._innerSelection = typeof split[2] !== "undefined";
-    } else if (val === "reset") {
-      this._selectedHash = null;
-      this._selectedType = null;
-      this._selectedObjectId = null;
-      this._innerSelection = null;
     } else if (val === "") {
+      // No hash is home for project-settings
       this._selectedHash = `#Project-${this.projectId}`;
       this._selectedType = "Project";
       this._selectedObjectId = this.projectId;
       this._innerSelection = false;
-    } else {
+    } else { 
       // Error handle
       this._selectedHash = null;
       this._selectedType = null;
       this._selectedObjectId = null;
       this._innerSelection = null;
-      console.warn("Hash set is invalid: " + val);
+
+      // Invalid, or val === "reset"
+      console.warn("Hash set to null, value:" + val);
     }
 
     console.log("Hash setup.... "+ this._selectedHash)
@@ -140,34 +126,33 @@ export class ProjectSettings extends TatorPage {
     });
   }
 
-  //
-  hashOnLoad() {
-    // This sets appropriate typeForm and links values
-    this.selectedHash = window.location.hash;
-  } 
-
-  //
+  /* Sets the selection based on a hash change, or hash on load */
   moveToCurrentHash() {
     this.selectedHash = window.location.hash;
   }
 
-  checkHash(newSelect, oldSelect) {
-    console.log("CHECK HASH",newSelect);
-    console.log(`this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName ${this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName}`);
-    console.log(`checkHash breakdown: curSel=${this._selectedObjectId}, newSel=${newSelect.typeId}, selType=${this._selectedType} and newType=${newSelect.typeName}`);
+  /* This is currently just a debug output, but could potentially handle mismatching */
+  checkHash(newSelect) {
     if (this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName) {
-      console.log("Hash doesn't match up with selected item?");
-      // window.history.pushState({}, '', `#${newSelect.typeName}-${newSelect.typeId}`)
+      console.warn(`Hash "${this._selectedHash}" doesn't match up with selected item?`, newSelect);
     }
   }
 
-  async updateDisplay(newType, oldType) {
-    const type = newType.name;
+  /* Project data required for settings page components are updated */
+  updateProject(newType) {
+    console.log("Project data set!", newType);
+    this._breadcrumbs.setAttribute("project-name", newType.data.name);
+    this.setProjectPermission(newType.data.permission);
+  }
 
-    if (type === "Project" && newType.init !== oldType.init) {
-      this._breadcrumbs.setAttribute("project-name", newType.data.name);
-      this.setProjectPermission(newType.data.permission);
-    }
+  /**
+   * Callback for permission to be set from Project Data
+   * Child components listen for this state update
+   * @param {String} permission 
+   */
+  setProjectPermission(permission) {;
+    const value = hasPermission(permission);
+    store.setState({ deletePermission: value });
   }
 
 
@@ -184,10 +169,7 @@ export class ProjectSettings extends TatorPage {
     return this.removeAttribute("has-open-modal");
   }
 
-  setProjectPermission(permission) {;
-    const value = hasPermission(permission);
-    store.setState({ deletePermission: value });
-  }
+
 
 
 }
