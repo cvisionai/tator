@@ -1635,7 +1635,7 @@ class StateTestCase(
         self.project = create_test_project(self.user)
         self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = MediaType.objects.create(
+        self.media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
             project=self.project,
@@ -1646,9 +1646,9 @@ class StateTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        self.entity_type.media.add(media_entity_type)
+        self.entity_type.media.add(self.media_entity_type)
         self.media_entities = [
-            create_test_video(self.user, f'asdf', media_entity_type, self.project)
+            create_test_video(self.user, f"asdf", self.media_entity_type, self.project)
             for idx in range(random.randint(3, 10))
         ]
         self.entities = []
@@ -1683,6 +1683,34 @@ class StateTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
         TatorSearch().refresh(self.project.pk)
+
+
+    def test_frame_association(self):
+        media = self.media_entities[0]
+        endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+        create_json = [{"type": self.entity_type.pk, "name": "asdf", "media_ids": [media.id]}]
+
+        # Test default state type with no frame association
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Test state type with frame association
+        entity_type = StateType.objects.create(
+            name="frame states",
+            project=self.project,
+            association="Frame",
+        )
+        entity_type.media.add(self.media_entity_type)
+        create_json[0]["type"] = entity_type.pk
+
+        # No frame value in `create_json` should return 400
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Frame value added, should return 201
+        create_json[0]["frame"] = 1
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def tearDown(self):
         self.project.delete()
