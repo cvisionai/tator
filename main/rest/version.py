@@ -58,12 +58,7 @@ class VersionListAPI(BaseListView):
             else:
                 obj.bases.set(qs)
 
-        newVersion = Version.objects.get(pk=obj.id)
-        return {
-            'message': 'Created version successfully!',
-            'id': obj.id,
-            'object': VersionSerializer(newVersion).data
-        }
+        return {'message': 'Created version successfully!', 'id': obj.id}
 
     def _get(self, params):
         media = params.get('media_id', None)
@@ -110,14 +105,7 @@ class VersionDetailAPI(BaseDetailView):
                 raise ObjectDoesNotExist
             else:
                 version.bases.set(qs)
-        
-        newVersion = Version.objects.get(pk=params["id"])
-        newId = params["id"]
-        return {
-            'message': f'Version {newId} updated successfully!',
-            'id': newId,
-            'object': VersionSerializer(newVersion).data
-        }
+        return {'message': f'Version {params["id"]} updated successfully!'}
 
     def _delete(self, params):
         localization_count = Localization.objects.filter(version=params['id'], deleted=False).count()
@@ -126,10 +114,7 @@ class VersionDetailAPI(BaseDetailView):
             raise Exception(f"Cannot delete version with annotations! Found "
                             f"{localization_count} localizations, {state_count} states!")
         Version.objects.get(pk=params['id']).delete()
-        return {
-            'message': f'Version {params["id"]} deleted successfully!',
-            'id': params['id']
-            }
+        return {'message': f'Version {params["id"]} deleted successfully!'}
 
     def get_queryset(self):
         return Version.objects.all()
