@@ -39,7 +39,7 @@ export class ModalDialog extends TatorElement {
       this.removeAttribute("is-open");
     };
 
-    close.addEventListener("click", this._closeCallback);
+    close.addEventListener("click", this._closeCallback.bind(this));
   }
 
   static get observedAttributes() {
@@ -141,7 +141,7 @@ export class ModalDialog extends TatorElement {
     buttonContinue.appendChild(confirmTextContinue);
 
     this._footer.appendChild(buttonContinue);
-    buttonContinue.addEventListener("click", this._closeCallback);
+    buttonContinue.addEventListener("click", this._closeCallback.bind(this));
 
     return this.setAttribute("is-open", "true")
   }
@@ -195,7 +195,7 @@ export class ModalDialog extends TatorElement {
     let buttonClose = document.createElement("button")
     buttonClose.setAttribute("class", "btn btn-clear btn-charcoal f1 text-semibold");
     buttonClose.innerHTML = "Cancel";
-    buttonClose.addEventListener("click", this._modalCloseAndClear);
+    buttonClose.addEventListener("click", this._modalCloseAndClear.bind(this));
 
     this._footer.appendChild(buttonSave);
     this._footer.appendChild(buttonClose);
@@ -221,7 +221,7 @@ export class ModalDialog extends TatorElement {
     let confirmTextContinue = document.createTextNode("OK")
     buttonContinue.appendChild(confirmTextContinue);
     this._footer.appendChild(buttonContinue);
-    buttonContinue.addEventListener("click", this._closeCallback);
+    buttonContinue.addEventListener("click", this._closeCallback.bind(this));
 
     this.setAttribute("is-open", "true");
     // this.fadeOut();

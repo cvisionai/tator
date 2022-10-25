@@ -168,7 +168,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       if (info.init !== true) {
          await get().fetchType(type);
       }
-
+      console.log("GET DATA... map:", info.map);
       return info.map.get(Number(id));
    },
 
@@ -238,22 +238,20 @@ const store = create(subscribeWithSelector((set, get) => ({
             /* Project set like this to include a "data" attr */
             set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
          } else if (type == "Leaf") {
-            const leafTypes =  await get().initType("LeafType");
-            for (let item of object.data) {
-               const parent = leafTypes.map.get(item.meta);
-               console.log("LEAF PARENT", parent);
-               if (parent) {
-                  item.parent = parent;
-                  map.set(item.meta, item);
-               }
-            }
-            set({ [type]: { ...get()[type], setList, map, init: true } });
+            const leafTypes = await get().initType("LeafType");
+            const metaMap = getLeavesByParent({leafTypes,object, currentMap: map});
+            set({ [type]: { ...get()[type], setList, map: metaMap, init: true } });
          } else {
             for (let item of object.data) {
                setList.add(item.id);
                map.set(item.id, item);
             }
             set({ [type]: { ...get()[type], setList, map, init: true } });
+         }
+
+         // After LeafType is init, init Leaf (Keep here to avoid loop)
+         if (type == "LeafType") {
+            await get().initType("Leaf");
          }
 
          // Success: Return status to idle (handles page spinner)
@@ -378,7 +376,7 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
  * Returns a list usable for attribute clone selection sets
  * @returns 
  */
-export const getAttributeDataByType = async () => {
+ export const getAttributeDataByType = async () => {
    const attributeDataByType = {
       MediaType: {},
       LocalizationType: {},
@@ -394,6 +392,21 @@ export const getAttributeDataByType = async () => {
    }
 
    return attributeDataByType;
+}
+
+export const getLeavesByParent = ({ leafTypes, object, currentMap }) => {
+   const newMap = new Map();
+   const leaves = object.data;
+
+   for (let item of leaves) {
+      const parentId = item.meta;
+      item.parent = leafTypes.map.get(parentId);
+      const leaves = newMap.has(parentId) ? newMap.get(parentId) : [];
+      leaves.push(item);
+      newMap.set(parentId, leaves);
+   }
+
+   return newMap;
 }
 
 export { store };

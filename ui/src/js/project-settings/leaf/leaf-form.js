@@ -6,7 +6,6 @@ export class LeafForm extends TatorElement {
 
     // Flag values
     this._changed = false;
-    this._global = false;
     this._fromType = null;
 
     //
@@ -23,24 +22,12 @@ export class LeafForm extends TatorElement {
     return this._changed = val;
   }
 
-  set global(val) {
-    return this._global = val;
-  }
-
   isChanged() {
     return this._changed;
   }
 
-  isGlobal() {
-    return this._global;
-  }
-
   changeReset() {
     return this._changed = false;
-  }
-
-  globalReset() {
-    return this._global = false;
   }
 
   _initEmptyForm(leaves, name, attributeTypes, deleteIcon) {
@@ -94,13 +81,12 @@ export class LeafForm extends TatorElement {
     this.form.appendChild(this._parentLeaf);
 
     // Custom attribute panel
-    this._attributePanel = document.createElement("attribute-panel");
     const sorted = attributeTypes.sort((a, b) => {
       return a.order - b.order || a.name - b.name;
     });
 
     for (let column of sorted) {
-      let widget = this._attributePanel._getUserDefinedWidget(column);
+      let widget = this._getUserDefinedWidget(column);
       this.widgets.push(widget);
       this.form.appendChild(widget);
     }
@@ -109,6 +95,110 @@ export class LeafForm extends TatorElement {
 
     return this.form;
   }
+
+  _getUserDefinedWidget(column) {
+    var ignorePermission = false;
+    let widget;
+    if (column.dtype == "bool") {
+      widget = document.createElement("bool-input");
+      widget.setAttribute("name", column.name);
+      widget.setAttribute("on-text", "Yes");
+      widget.setAttribute("off-text", "No");
+    } else if (column.dtype == "enum") {
+      widget = document.createElement("enum-input");
+      widget.setAttribute("name", column.name);
+      let choices = [];
+      for (let idx = 0; idx < column.choices.length; idx++) {
+        let choice = { 'value': column.choices[idx] };
+        if (column.labels) {
+          choice.label = column.labels[idx];
+        }
+        choices.push(choice);
+      }
+      widget.choices = choices;
+    } else if (column.dtype == "datetime") {
+      try {
+        widget = document.createElement("datetime-input");
+        widget.setAttribute("name", column.name);
+      } catch (e) {
+        console.log(e.description);
+      }
+
+      if ((widget && widget._input && widget._input.type == "text") || !widget._input) {
+        console.log("No browser support for datetime, or error. Degrading to text-input.");
+        widget = document.createElement("text-input");
+        widget.setAttribute("name", column.name);
+        widget.setAttribute("type", column.dtype);
+        widget.autocomplete = column.autocomplete;
+      }
+      //widget.autocomplete = column.autocomplete; #TODO can this use autocomplete?
+      if (column.style) {
+        const style_options = column.style.split(' ');
+        if (style_options.includes("disabled")) {
+          widget.permission = "View Only";
+          widget.disabled = true;
+          ignorePermission = true;
+        }
+      }
+
+    } else if (column.style) {
+      const style_options = column.style.split(' ');
+      if (column.dtype == "string" && style_options.includes("long_string")) {
+        widget = document.createElement("text-area");
+        widget.setAttribute("name", column.name);
+        widget.setAttribute("type", column.dtype);
+      } else {
+        widget = document.createElement("text-input");
+        widget.setAttribute("name", column.name);
+        widget.setAttribute("type", column.dtype);
+        widget.autocomplete = column.autocomplete;
+      }
+
+      if (style_options.includes("disabled")) {
+        widget.permission = "View Only";
+        widget.disabled = true;
+        ignorePermission = true;
+      }
+    }
+    else {
+      // TODO: Implement a better geopos widget
+      widget = document.createElement("text-input");
+      widget.setAttribute("name", column.name);
+      widget.setAttribute("type", column.dtype);
+      widget.autocomplete = column.autocomplete;
+    }
+
+    // Set whether this widget is required
+    if (typeof column.required === "undefined") {
+      widget.required = false;
+    } else {
+      widget.required = column.required;
+    }
+
+    // Show description hover text (if existing)
+    if (typeof column.description !== "undefined" && column.description !== "") {
+      widget.setAttribute("title", column.description);
+    } //else {
+    //widget.setAttribute("title", `Accepts "${column.dtype}" data input`);
+    //}
+
+    if (typeof this._permission !== "undefined" && !ignorePermission) {
+      widget.permission = this._permission;
+    }
+
+    if (column.default) {
+      widget.default = column.default;
+    }
+    widget.reset();
+
+    widget.addEventListener("change", () => {
+      if (this._emitChanges) {
+        this.dispatchEvent(new Event("change"));
+      }
+    });
+  
+  return widget;
+}
 
   _formChanged() {
     console.log("Leaf form changed");
@@ -215,9 +305,8 @@ export class LeafForm extends TatorElement {
     return values;
   }
 
-  _leafFormData({ form = this.form, id = -1, entityType = null } = {}) {
+  _leafFormData({ form = this.form } = {}) {
     const data = {};
-    const global = this.isGlobal() ? "true" : "false";
     const formData = this._getLeafFormData(form);
 
     data.newName = this._name.getValue();
@@ -226,32 +315,6 @@ export class LeafForm extends TatorElement {
     data.id = this._data.id;
 
     return data;
-  }
-
-  async _getPromise({ form = this.form, id = -1, entityType = null } = {}) {
-    const promiseInfo = {};
-    const global = this.isGlobal() ? "true" : "false";
-    const formData = {
-      "entity_type": entityType,
-      "global": global,
-      "old_leaf_type_name": this.dataset.oldName,
-      "new_leaf_type": {}
-    };
-
-    promiseInfo.newName = this._name.getValue();
-    promiseInfo.oldName = this.dataset.oldName;
-
-    // console.log("formData");
-    // console.log(formData);
-
-    // Hand of the data, and call this form unchanged
-    formData.new_leaf_type = this._getLeafFormData(form);
-    this.form.classList.remove("changed");
-    this.changeReset();
-
-    promiseInfo.promise = await this._fetchLeafPatchPromise(id, formData);
-
-    return promiseInfo;
   }
 
 }

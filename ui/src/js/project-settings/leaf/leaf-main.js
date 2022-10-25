@@ -1,6 +1,5 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
-import { LeafDelete } from "./leaf-delete.js";
 import { store } from "../store.js";
 import { TatorElement } from "../../components/tator-element.js";
 
@@ -17,6 +16,7 @@ export class LeafMain extends TatorElement {
     var clone = document.importNode(template.content, true);
     this._shadow.appendChild(clone);
 
+    this._leafMainBack = this._shadow.getElementById("leaf-main--back");
     this._leafTypeName = this._shadow.getElementById("leaf-main--type-name");
     this._leafTypeId = this._shadow.getElementById("leaf-main--type-id");
     this._leafBox = this._shadow.getElementById("leaf-main--box");
@@ -37,15 +37,25 @@ export class LeafMain extends TatorElement {
     this.hasChanges = false;
 
     //
+    this.projectId = null;
     this.typeName = "Leaf";
     this._hideAttributes = true;
 
     this.movingEl = null;
+    this._modal = document.createElement("modal-dialog");
+    this._shadow.appendChild(this._modal);
   }
 
-  resetChanges() {
-    this.hasChanges = false;
+  connectedCallback() {
+    store.subscribe((state) => state.selection, this._updateForm.bind(this));
+    store.subscribe(state => state.Leaf, this._newData.bind(this));
+
+    // Listener to helper links
+    this.minAll.addEventListener('click', this.minimizeAll.bind(this));
+    this.expandAll.addEventListener('click', this.maximizeAll.bind(this));
+    this._addLeafTrigger.addEventListener("click", this._newLeafEvent.bind(this));
   }
+
 
   /**
    * @param {any[] | null} val
@@ -53,26 +63,33 @@ export class LeafMain extends TatorElement {
   set data(val) {
     console.log("DATA SET FOR LEAF MAIN", val);
 
-    if (val === null) {
+    if (typeof val == "undefined" || val === null) {
       //EMPTY this...
-      this._leaves = [];
+      this.leaves = [];
       this.fromId = null;
       this.fromName = null;
       this.attributeTypes = [];
     } else {
-      this._leaves = val;
-      this.fromId = this._leaves.parent.id;
-      this.fromName = this._leaves.parent.name;
-      this.attributeTypes = this._leaves.parent.attribute_types;
+      this.leaves = val;
+      if (val && val.parent) {
+        this.fromId = val.parent.id;
+        this.fromName = val.parent.name;
+        this.attributeTypes = val.parent.attribute_types;        
+      } else {
+        this.fromId = null;
+        this.fromName = null;
+        this.attributeTypes = [];
+      }
+
     }
   }
 
-  /**
-   * @param {TatorElement} val
-   */
-  set modal(val) {
-    this._modal = val;
-  }
+  // /**
+  //  * @param {TatorElement} val
+  //  */
+  // set modal(val) {
+  //   this._modal = val;
+  // }
 
   /**
    * @param {string} val
@@ -87,6 +104,7 @@ export class LeafMain extends TatorElement {
   set fromId(val) {
     this._leafTypeId.innerHTML = val;
     this._fromId = val;
+    this._leafMainBack.setAttribute("href", `#LeafType-${val}`)
   }
 
     /**
@@ -96,47 +114,30 @@ export class LeafMain extends TatorElement {
     this._attributeTypes = val;
   }
 
-  connectedCallback() {
-    store.subscribe(state => state.project, this.setProjectInfo.bind(this));
-    store.subscribe((state) => state.selection, this._updateForm.bind(this));
-    store.subscribe(state => state.Leaf, this._newData.bind(this));
-
-    // Listener to helper links
-    this.minAll.addEventListener('click', this.minimizeAll.bind(this));
-    this.expandAll.addEventListener('click', this.maximizeAll.bind(this));
-    this._addLeafTrigger.addEventListener("click", this._newLeafEvent.bind(this));
-  }
-
-  setProjectInfo(newProject) {
-    this.projectId = newProject.data.id;
-    this.projectName = newProject.data.name;
-    this.projectNameClean = String(projectName).replace(/[^a-z0-9]/gi, '').replace(" ", "_");
-  }
-
-  async _init() {
-    console.log("INIT!! <<< >>> LEAF MAIN" + fromName, attributeTypes);
-    // Init object global vars
-
-    // add main div
+  /**
+   * @param {any[]} val
+   */
+  set leaves(val) {
+    this._leaves = val;
     this._leavesContainer.innerHTML = "";
 
     if (this._leaves && this._leaves.length > 0) {
-      this.leafDiv.appendChild(this._getLeavesSection(this._leaves));
       this._leafBoxShowHide.hidden = false;
+      this._leavesContainer.appendChild(this._getLeavesSection());
     } else {
       this._leafBoxShowHide.hidden = true;
     }
-
-    return this.leafDiv;
   }
 
-  _getLeavesSection(leaves = []) {
+
+
+  _getLeavesSection(leaves = this._leaves) {
     let leavesSection = document.createElement("div");
     leavesSection.style.minHeight = "150px";
 
     if (leaves && leaves.length > 0) {
       // Sets variable for output order, and levels
-      this._getOrganizedLeaves(leaves);
+      this._getOrganizedLeaves();
       const highestLevel = this._levels.size - 1;
 
       // Loop through and output leaf forms
@@ -149,17 +150,15 @@ export class LeafMain extends TatorElement {
           leafId: a
         });
 
-        this._leafContainer.appendChild(leafContent);
+        this._leavesContainer.appendChild(leafContent);
       }
 
-
-
       // Add drop listener on outer box once
-      this._leafBox.addEventListener('dragleave', this._leafBoxStart.bind(this));
-      this._leafBox.addEventListener('dragleave', this._leafBoxLeave.bind(this));
-      this._leafBox.addEventListener("dragover", this._leafBoxEnter.bind(this));
-      this._leafBox.addEventListener("dragenter", this._leafBoxEnter.bind(this));
-      this._leafBox.addEventListener("drop", this._leafBoxDrop.bind(this));
+      this._leafBox.addEventListener('dragleave', this.leafBoxStart.bind(this));
+      this._leafBox.addEventListener('dragleave', this.leafBoxLeave.bind(this));
+      this._leafBox.addEventListener("dragover", this.leafBoxEnter.bind(this));
+      this._leafBox.addEventListener("dragenter", this.leafBoxEnter.bind(this));
+      this._leafBox.addEventListener("drop", this.leafBoxDrop.bind(this));
     }
 
     return leavesSection;
@@ -203,7 +202,7 @@ export class LeafMain extends TatorElement {
     }
   }
 
-  _getOrganizedLeaves(leaves) {
+  _getOrganizedLeaves(leaves = this._leaves) {
     // Reset variables for leaf main
     this._parents = new Map();
     this._levels = new Map();
@@ -301,7 +300,7 @@ export class LeafMain extends TatorElement {
     return newArray;
   }
 
-  _newLeafEvent(e, leafId = null) {
+  _newLeafEvent(e, leafId = this._fromId) {
     e.preventDefault();
     let afObj = this._getAddForm(leafId);
 
@@ -325,9 +324,9 @@ export class LeafMain extends TatorElement {
 
   _getAddForm(parentLeafId) {
     let form = document.createElement("leaf-form");
-    const leaves = this._leaves && this._leaves.length > 1 ? this._getOrganizedLeaves(this._leaves) : this._leaves;
+    const leaves = this._leaves && this._leaves.length > 1 ? this._getOrganizedLeaves() : this._leaves;
 
-    form._initEmptyForm(leaves, this.projectNameClean, this.attributeTypes);
+    form._initEmptyForm(leaves, this.projectNameClean, this._attributeTypes);
     form.fromType = this._fromId;
 
     if (parentLeafId !== null) {
@@ -345,7 +344,7 @@ export class LeafMain extends TatorElement {
     return { form, submitLeaf };
   }
 
-  _postLeaf(formObj) {
+  async _postLeaf(formObj) {
     this._modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = formObj._getLeafFormData();
@@ -360,35 +359,25 @@ export class LeafMain extends TatorElement {
     delete formJSON["attributes"];
 
     let status = 0;
-    this._fetchPostPromise({ "formData": [formJSON] })
-      .then(response => {
-        status = response.status;
-        return response.json()
-      })
-      .then(data => {
-        let currentMessage = data.message;
+    
+    try {
+      const info = await store.getState().addType({ type: "Leaf", data: [formJSON]});
+      let currentMessage = info.data.message;
 
-        this._modal.addEventListener("close", this._dispatchRefresh.bind(this), {
-          once: true
-        });
-
-        if (status == 201) {
-          // iconWrap.appendChild(succussIcon);
-          this.loading.hideSpinner();
-          this._modal._success(currentMessage);
-
-          // Replaces dispatchRefresh #TODO
-          // store.getState().fetchType(this.typeName);
-        } else if (status == 400) {
-          iconWrap.appendChild(warningIcon);
-          this.loading.hideSpinner();
-          this._modal._error(`${currentMessage}`);
-        }
-
-      }).catch((error) => {
+      if (info.response.ok) {
+        // iconWrap.appendChild(succussIcon);
         this.loading.hideSpinner();
-        this._modal._error(`Error: ${error}`);
-      });
+        this._modal._success(currentMessage);
+      } else if (status == 400) {
+        iconWrap.appendChild(warningIcon);
+        this.loading.hideSpinner();
+        this._modal._error(`${currentMessage}`);
+      }
+
+    } catch(error) {
+      this.loading.hideSpinner();
+      this._modal._error(`Error: ${error}`);
+    };
   }
 
   _dispatchRefresh(e) {
@@ -412,6 +401,7 @@ export class LeafMain extends TatorElement {
     leaf = {},
     leafId = undefined
   } = {}) {
+
     const leafItem = document.createElement("leaf-item");
     leafItem._init(leaf, this);
     this._leafBox.appendChild(leafItem);
@@ -482,7 +472,7 @@ export class LeafMain extends TatorElement {
         data.formData = { id: forLeaf, parent: newParent, type: this._fromId };
         data.id = forLeaf;
 
-        return this._fetchLeafPatchPromise(this._fromId, data);
+        this._updateLeaf(data);
       }, { once: true });
 
       let message = "";
@@ -584,7 +574,7 @@ export class LeafMain extends TatorElement {
     leafForm.fromType = this._fromId;
 
     // create form and attach to the el
-    leafForm._getFormWithValues(leaves, leaf, this.attributeTypes);
+    leafForm._getFormWithValues(leaves, leaf, this._attributeTypes);
     leafForm.form.setAttribute("class", "leaf-form px-4");
     leafForm.setAttribute("data-old-name", leaf.name);
     leafForm.setAttribute("leafid", leaf.id);
@@ -602,13 +592,8 @@ export class LeafMain extends TatorElement {
       const data = {};
       const leafFormData = leafForm._leafFormData({ entityType: this.typeName, id: this._fromId });
 
-      return this._fetchLeafPatchPromise(this._fromId, leafFormData);
+      return this._updateLeaf(leafFormData);
     });
-
-    // form export class listener
-    // leafForm.addEventListener("change", () => {
-    //   this.hasChanges = true;
-    // });
 
     // this.leafForms.push(leafForm);
     this._modal._confirm({
@@ -682,28 +667,26 @@ export class LeafMain extends TatorElement {
     });
   }
 
-  _deleteLeaf(id) {
+  async _deleteLeaf(id) {
     this._modal._closeCallback();;
     this.loading.showSpinner();
 
-    let deleteLeaf = new LeafDelete({
-      "leafId": id
-    });
-
-    if (name != "undefined") {
-      deleteLeaf.deleteFetch().then((data) => {
-        this.loading.hideSpinner();
-        this.dispatchEvent(this.refreshTypeEvent);
-        if (data.status == 200) {
-          this._modal._success(data.message);
+    if (typeof id != "undefined") {
+      const info = await store.getState().removeType({ type: "Leaf", id: id });
+      
+      try{
+        if(info.response.ok) {
+          this.loading.hideSpinner();
+          this._modal._success(info.data.message);
         } else {
-          this._modal._error(data.message);
+          this._modal._error(info.data.message);
         }
-      }).catch((err) => {
+      } catch(err) {
         console.error(err);
+        this._modal._error(err);
         this.loading.hideSpinner();
         return this._modal._error("Error with delete.");
-      });
+      };
     } else {
       this.loading.hideSpinner();
       return this._modal._error("Error with delete.");
@@ -711,125 +694,29 @@ export class LeafMain extends TatorElement {
 
   }
 
-  _fetchPostPromise({ formData = null } = {}) {
-    if (formData != null) {
-      return fetch(`/rest/Leaves/${this.projectId}`, {
-        method: "POST",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: [JSON.stringify(formData)]
-      });
-    } else {
-      console.error("Problem with new leaf form data.");
-    }
-  }
-
-  _fetchLeafPatchPromise(parentTypeId, dataObject, global = false) {
-    let promise = Promise.resolve();
+  async _updateLeaf(dataObject) {
+    try{
     this.successMessages = "";
     this.failedMessages = "";
     this.confirmMessages = "";
     this.saveModalMessage = "";
     this.requiresConfirmation = false;
     let formData = dataObject.formData;
-    let leafNewName = dataObject.newName;
-    let leafOldName = dataObject.oldName;
 
-    if (global === "true") {
-      formData.global = "true";
+    const obj = await store.getState().updateType({ type: "Leaf", id: dataObject.id, data: formData })
+    let currentMessage = obj.data.message;
+    let response = obj.response;
+
+    if (response.status == 200) {
+      this._modal._error(currentMessage);
+    } else {
+      this._modal._success(currentMessage);
     }
-    // TODO - need to get leaf ID
-    // This was carried over from leaf which use the media type, not own ID
-    const leafId = parentTypeId;
 
-    promise = promise.then(() => {
-      return fetch("/rest/Leaf/" + dataObject.id, {
-        method: "PATCH",
-        mode: "cors",
-        credentials: "include",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
-    }).then(response => {
-      return response.json().then(data => ({ response: response, data: data }));
-    })
-      .then(obj => {
-        let currentMessage = obj.data.message;
-        let response = obj.response;
-        let succussIcon = document.createElement("modal-success");
-        let iconWrap = document.createElement("span");
-        let warningIcon = document.createElement("modal-warning");
-
-        // console.log(`currentMessage::::: ${currentMessage}`);
-
-        if (response.status == 200) {
-          //console.log("Return Message - It's a 200 response.");
-          iconWrap.appendChild(succussIcon);
-          this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
-        } else if (response.status != 200) {
-          if (currentMessage.indexOf("without the global flag set") > 0 && currentMessage.indexOf("ValidationError") < 0) {
-            //console.log("Return Message - It's a 400 response for leaf form.");
-            let input = `<input type="checkbox" checked name="global" data-old-name="${leafOldName}" class="checkbox"/>`;
-            let newNameText = (leafOldName == leafNewName) ? "" : ` new name "${leafNewName}"`
-            this.confirmMessages += `<div class="py-2">${input} Leaf "${leafOldName}" ${newNameText}</div>`
-            this.requiresConfirmation = true;
-          } else {
-            iconWrap.appendChild(warningIcon);
-            //console.log("Return Message - It's a 400 response for main form.");
-            // this.failedMessages += `<div class="py-2"><span class="v-align-top">${currentMessage}</span></div>`;
-            this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${leafOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
-          }
-        }
-      }).then(() => {
-        if (this.successMessages !== "") {
-          let heading = `<div class=" pt-4 h3 pt-4">Success</div>`;
-          this.saveModalMessage += heading + this.successMessages;
-        }
-        if (this.failedMessages !== "") {
-          let heading = `<div class=" pt-4 h3 pt-4">Error</div>`;
-          this.saveModalMessage += heading + this.failedMessages;
-        }
-
-        if (this.requiresConfirmation) {
-          let buttonSave = this._getAttrGlobalTrigger(dataObject);
-          let confirmHeading = `<div class=" pt-4 h3 pt-4">Global Change(s) Found</div>`
-          let subText = `<div class="f1 py-2">Confirm to update across all types. Uncheck and confirm, or cancel to discard.</div>`
-
-          let mainText = `${this.saveModalMessage}${confirmHeading}${subText}${this.confirmMessages}`;
-          this.loading.hideSpinner();
-          this._modal._confirm({
-            "titleText": "Confirm Edit",
-            mainText,
-            buttonSave
-          });
-        } else {
-          let mainText = `${this.saveModalMessage}`;
-
-          if (this.failedMessages !== "") {
-            this._modal._complete(mainText);
-          } else {
-            this._modal._success(mainText);
-          }
-
-          // Reset forms to the saved data from model
-          return this.dispatchEvent(this.refreshTypeEvent);
-        }
-      }).then(() => {
-        this.loading.hideSpinner();
-      }).catch(err => {
-        return console.error("Problem patching leaf...", err);
-      });
-
-    return promise;
+    this.loading.hideSpinner();
+  } catch(err) {
+    return console.error("Problem patching leaf...", err);
+  }
   }
 
   _newData(newData, oldData) {
@@ -838,49 +725,36 @@ export class LeafMain extends TatorElement {
       console.log("newData... ", newData);
       console.log("oldData... ", oldData);
 
-      if (newData.setList.has(Number(this._typeId))) {
+      if (newData.setList.has(Number(this._fromId))) {
         // Refresh the view
-        console.log("SET THIS DATA!!", newData.map.get(Number(this._typeId)));
-        this.data = newData.map.get(Number(this._typeId));
-      } else if (this._typeId == "New") {
-        this.data = null;
-      } else {
-        const selectType = (newData.setList[0]) ? newData.setList[0] : "New";
-        window.history.pushState({}, "", `#${this.typeName}-${selectType}`)
-        // Just select something and let the subscribers take it from there....
-        store.setState({ selection: { ...store.getState().selection, typeId: selectType } });
+        console.log("SET THIS DATA!!", newData.map.get(Number(this._fromId)));
+        this.data = newData.map.get(Number(this._fromId));
       }
     }
   }
 
   async _updateForm(newSelection, oldSelection) {
+    const newType = newSelection.typeName;
+    const oldType = oldSelection.typeName;
+
     console.log("Leaf form... newSelection", newSelection)
-    const affectsMe = (this._typeName == newSelection.typeName || this._typeName == oldSelection.typeName);
+    const affectsMe = (this.typeName == newType || this.typeName == oldType);
     
     if (affectsMe) {
-      const newType = newSelection.typeName;
-      const oldType = oldSelection.typeName;
-
-      if (oldType === this._typeName && oldType !== newType) {
-        this.hidden = true; //return this.reset();
+      if (oldType === this.typeName && oldType !== newType) {
+        this.hidden = true; 
         return;
+      } else {
+        console.log(this.typeName+" is new: unhiding this")
+        this.hidden = false;
       }
 
-      console.log(this._typeName+" is new: unhiding this")
-      this.hidden = false;
-      
-      const newId = newSelection.typeId;
-      const oldId = oldSelection.typeId;
-
       // Add data
+      const newId = newSelection.typeId;
       if (newId !== "New") {
-        console.log(`this._typeName ${this._typeName}, this._typeId ${this._typeId}`);       
-        const data = await store.getState().getData(this._typeName, this._typeId);
-        
-        if (data) {
-          console.log("Data is:::::", data);
-          this.data = data;
-        } 
+        const data = await store.getState().getData("Leaf", newId);
+        console.log(data);
+        this.data = data;
       } else {
         this.data = null;
       }

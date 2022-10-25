@@ -22,12 +22,6 @@ export class LeafItem extends TatorElement {
       this.leafPathName.setAttribute("style", "margin-left: 25px;");
       this.addChildLeafIndent.appendChild(this.leafPathName);
 
-      // this.addChildLeaf = document.createElement("div");
-      // this.addChildLeaf.setAttribute("class", "btn btn-small btn-outline f3 mr-3 py-1 px-1");
-      // this.addChildLeaf.setAttribute("style", "width: fit-content; height: fit-content; margin-left: 25px;");
-      // this.addChildLeaf.textContent = "Add Child"
-      // this.addChildLeafIndent.appendChild(this.addChildLeaf);
-
       // Current leaf: LEFT content
       this.innerLeafBox = document.createElement("div");
       this.innerLeafBox.setAttribute("class", "px-3 d-flex flex-align-center");

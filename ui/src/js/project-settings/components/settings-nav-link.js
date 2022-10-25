@@ -34,11 +34,6 @@ export class SettingsNavLink extends TatorElement {
          this._type = newValue;
          this.setAttribute("id", `nav-for-${this._type}`);
          this._headingButton.setAttribute("type", this._type);
-         
-         if (newValue == "Leaf") {
-            this._type = "LeafType";
-            this._inner = true;
-         }
       }
    }
 
@@ -64,45 +59,38 @@ export class SettingsNavLink extends TatorElement {
    * @param {*} oldSelection 
    */
    async showSelection(newSelection, oldSelection) {
-      const newType = newSelection.typeName;
-      const oldType = oldSelection.typeName;
+      this._inner = (newSelection.typeName == "Leaf");
+      const newType = (newSelection.typeName == "Leaf") ? "LeafType" : newSelection.typeName;
+      const oldType = (oldSelection.typeName == "Leaf") ? "LeafType" : oldSelection.typeName;
 
-      if (![newType, oldType].includes(this._type) && ![newType, oldType].includes(this._typeInner) ) {
+      if (![newType, oldType].includes(this._type)) {
          // Nothing applies to me, do nothing
          return true;
       }
- 
-      console.log(newSelection);
-      console.log(oldSelection);
 
       const myTypeIsNew = this._type === newType;
-      const myInnerTypeIsNew = this._typeInner === newType;
-      const selectedTypeIsNew = newType !== oldType && this._typeInner !== oldType;
+      const selectedTypeIsNew = newType !== oldType;
 
       const newId = newSelection.typeId;
       const oldId = oldSelection.typeId;
       const selectedIdIsNew = newId !== oldId;
       console.log("Show selection heard that.... newId "+newId);
-      
-      const newInner = newSelection.inner;
-      const oldInner = oldSelection.inner;
-      const innerChanged = newInner !== oldInner;
   
       if (selectedTypeIsNew || selectedIdIsNew || selectedIdIsNew) {
         // IF: Something changed...........................
         // Check HEADING
-         if ((myTypeIsNew || myInnerTypeIsNew) && myInnerTypeIsNew) {
+         if (myTypeIsNew) {
             this.highlightHeading();
             this.open(); // duped by toggle on click, but missed if onload, only open if we're starting from scratch
-         } else if (!(myTypeIsNew || myInnerTypeIsNew) && selectedTypeIsNew) {
+         } else if (!myTypeIsNew && selectedTypeIsNew) {
             this.unhighlightHeading();
             this.shut(); 
          }
 
          if (selectedIdIsNew) {
             this._typeId = newId;
-            this.highlightLink(newId, this._inner);
-            this.unhighlightLink(oldId, this._inner);
+            this.highlightLink(newId);
+            this.unhighlightLink(oldId);
          }
       }
     }
@@ -123,8 +111,8 @@ export class SettingsNavLink extends TatorElement {
       }
     }
   
-   highlightLink(id, inner = false) {
-      const selectMe = this.linkMap.get(id);
+   highlightLink(id, inner = this._inner) {
+      const selectMe = inner ? this.innerLinkMap.get(id) : this.linkMap.get(id);
       if (selectMe) {
          selectMe.setAttribute("selected", "true");
       } else {
@@ -132,8 +120,8 @@ export class SettingsNavLink extends TatorElement {
       }
     }
   
-   unhighlightLink(id, inner = false) {
-      const deselectMe = this.linkMap.get(id)
+   unhighlightLink(id, inner = this._inner) {
+      const deselectMe = inner ? this.innerLinkMap.get(id) : this.linkMap.get(id);
       if (deselectMe) {
         deselectMe.setAttribute("selected", "false");
       } else {
