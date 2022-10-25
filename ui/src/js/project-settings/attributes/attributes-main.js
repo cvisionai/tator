@@ -151,7 +151,7 @@ export class AttributesMain extends HTMLElement {
   }
 
   _postAttribute(formObj){
-    this.modal._closeCallback();
+    this.modal._modalCloseAndClear();
     this.loading.showSpinner();
 
     let formJSON = {
@@ -167,10 +167,6 @@ export class AttributesMain extends HTMLElement {
     })
     .then(data => {
       let currentMessage = data.message;
-
-      // this.modal.addEventListener("close", this._dispatchRefresh.bind(this), {
-      //   once : true
-      // });
 
       if (status == 201) {
         // iconWrap.appendChild(succussIcon);
@@ -241,6 +237,8 @@ export class AttributesMain extends HTMLElement {
 
   async _saveClone(evt) {
     evt.preventDefault();
+    this.modal._modalCloseAndClear();
+    this.loading.showSpinner();
     const selectedData = this.clone.getInputData();
     //console.log(selectedData);
       
@@ -253,8 +251,10 @@ export class AttributesMain extends HTMLElement {
 
     const resp = await cloneData.createClones();
     if (resp.ok) {
+      this.loading.hideSpinner();
       this.modal._success(resp.message);
     } else {
+      this.loading.hideSpinner();
       this.modal._complete(resp.message);
     }
 
@@ -382,27 +382,23 @@ export class AttributesMain extends HTMLElement {
     attrSave.setAttribute("value", "Save");
     attrSave.setAttribute("class", `btn btn-clear f1 text-semibold`);
     
-    attrSave.addEventListener("click", (e) => {
+    attrSave.addEventListener("click", async (e) => {
       e.preventDefault();
+      this.modal._modalCloseAndClear();
+      this.loading.showSpinner();
       const attributeFormData = attrForm._attributeFormData({ entityType: this.typeName, id: this.fromId });
-
-      
-      return this._fetchAttributePutPromise(this.fromId, attributeFormData);               
+      await this._fetchAttributePutPromise(this.fromId, attributeFormData);
+      this.loading.hideSpinner();
     });
 
-    // form export class listener
-    // attrForm.addEventListener("change", () => {
-    //   this.hasChanges = true;
-    // });
-
-    // this.attrForms.push(attrForm);
+    this.modal._div.classList.add("modal-wide");
     this.modal._confirm({
       "titleText" : "Edit Attribute",
       "mainText" : attrForm,
       "buttonSave" : attrSave,
       "scroll" : true
     });
-    this.modal._div.classList.add("modal-wide");
+    
   }
 
   /**
@@ -468,7 +464,7 @@ export class AttributesMain extends HTMLElement {
   }
 
   _deleteAttrType(name){
-    this.modal._closeCallback();;
+    this.modal._modalCloseAndClear();;
     this.loading.showSpinner();
 
     let deleteAttribute = new AttributesDelete({

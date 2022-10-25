@@ -5,11 +5,11 @@ export class TypeFormTemplate extends TatorElement {
   constructor() {
     super();
 
-    // this.attributeSection = this._shadow.getElementById("type-form-attr-main");
-    
-    // console.log("Created type form....");
     this._hideAttributes = true;
     this.saveWarningFlow = false;
+
+    // Genrci fallback for warning flow save
+    this._warningSaveMessage = "Are you sure you want to edit this entity?";
   }
 
   connectedCallback() {
@@ -35,7 +35,6 @@ export class TypeFormTemplate extends TatorElement {
    * @param {{ map?: any; id?: string; name?: string; project?: any; description?: string; visible?: boolean; grouping_default?: boolean; media?: never[]; dtype?: string; colorMap?: null; interpolation?: string; association?: string; line_width?: number; delete_child_localizations?: boolean; cluster?: null; manifest?: null; files_per_job?: null; parameters?: never[]; categories?: string; form?: string; } | null} val
    */
   set data(val) {
-    console.log(val);
     if(val && val !== null){
       this._data = val;
     } else {
@@ -57,7 +56,7 @@ export class TypeFormTemplate extends TatorElement {
 
   _saveData() {
     if (this.saveWarningFlow == true) {
-      this.warningFlow(this.saveDataFunction.bind(this));
+      this.warningFlowSave();
     } else {
       this.saveDataFunction();
     }
@@ -89,7 +88,12 @@ export class TypeFormTemplate extends TatorElement {
     }
   }
 
-  warningFlow(todo) {
+  /**
+   * 
+   * @param {String} 
+   */
+  async warningFlowSave() {
+    await setUpWarningSaveMsg();
     const button = document.createElement("button");
     button.setAttribute("class", "btn f1 text-semibold text-red");
 
@@ -97,17 +101,20 @@ export class TypeFormTemplate extends TatorElement {
     button.appendChild(confirmText);
 
     button.addEventListener("click", () => {
-      console.log("TEST");
-      todo();
+      this.saveDataFunction();
       this.modal._modalCloseAndClear();
     });
 
-
     this.modal._confirm({
-      titleText: `Confirm {action}`,
-      mainText: `{actionWarning} #Todo`,
+      titleText: `Edit Confirmation`,
+      mainText: `${this._warningSaveMessage}`,
       buttonSave: button
     });
+  }
+
+  /* Overriede this in child (see Version-Edit) */
+  setUpWarningSaveMsg() {
+    return;
   }
 
   doSaveAction(formData) {

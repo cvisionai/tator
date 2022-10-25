@@ -68,13 +68,21 @@ export class VersionsEdit extends TypeFormTemplate {
          formData.show_empty = this._showEmpty.getValue();
       }
 
-      // SKIP this._number: Number is set on save, it is for display only
+      // Note: we SKIP this._number because Number (for display only) is set on save
 
       if (this._basesCheckbox.changed() || isNew) {
          formData.bases = this._basesCheckbox.getValue();
       }
 
       return formData;
+   }
+
+   async setUpWarningSaveMsg() {
+      const counts = await state.getState().getCountsRelatedToVersion(this._data.id);
+      this._warningSaveMessage = `There are ${counts.state} state${(counts.state == 1) ? '' : 's'} 
+         and ${counts.loc} localization${(counts.loc == 1) ? '' : 's'} existing in this version. 
+         Any edits will be reflected on those existing states and localizations.
+         <br/><br/> Do you want to continue?`;
    }
 }
 

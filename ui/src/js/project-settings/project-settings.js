@@ -36,6 +36,7 @@ export class ProjectSettings extends TatorPage {
     /* Update display for any change in data (#todo Project is different) */
     store.subscribe(state => state.Project, this.updateProject.bind(this));
     store.subscribe(state => state.selection, this.checkHash.bind(this));
+    store.subscribe(state => state.status, this.handleStatusChange.bind(this));
 
     // Init
     this._init();
@@ -60,10 +61,10 @@ export class ProjectSettings extends TatorPage {
    * The status of our store will trigger the spinner when "pending"
    * Potentially this could global catch error handling as well...
    * @param {} status 
-   * @param {*} prevStatus 
    */
-  handleStatusChange(status, prevStatus) {
-    console.log("Status: " + status.msg);
+  handleStatusChange(status) {
+    // Debug output, potentially useful as lightbox or all modal handles
+    console.log(`Status updated to "${status.name}" ${(status.msg !== "") ? " with message: "+status.msg : ""}`);
     if (status.name == "idle") {
       this.hideDimmer();
       this.loading.hideSpinner();

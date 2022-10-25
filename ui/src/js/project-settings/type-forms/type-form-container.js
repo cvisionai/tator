@@ -31,8 +31,9 @@ export class TypeFormContainer extends TatorElement {
 
   connectedCallback() {
     // Subscribe to selection and projectId
-    store.subscribe((state) => state.selection, this._updateForm.bind(this));
+    store.subscribe((state) => state.selection, this._updateFormSelection.bind(this));
     store.subscribe(state => state.projectId, this.setProjectId.bind(this));
+    store.subscribe(state => state.status, this.handleButtonsActive.bind(this));
     
     // Create in the inner form handles
     const formName = this.getAttribute("form");
@@ -52,6 +53,18 @@ export class TypeFormContainer extends TatorElement {
     this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
     this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
     this.delete.hidden = (this._typeName === "Project" && !canDeleteProject);
+  }
+
+  handleButtonsActive(newStatus) {
+    if (newStatus.name == "idle") {
+      this.save.removeAttribute("disabled");
+      this.resetLink.removeAttribute("disabled");
+      this.delete.removeAttribute("disabled");
+    } else {
+      this.save.setAttribute("disabled", "true");
+      this.resetLink.setAttribute("disabled", "true");
+      this.delete.setAttribute("disabled", "true");
+    }
   }
 
   setProjectId(newId, oldId) {
@@ -109,100 +122,109 @@ export class TypeFormContainer extends TatorElement {
     }
   }
 
-  _newData(newData, oldData) {
+  setUpData(data) {
+    this._form.data = data;
+    this.objectName = (this._typeName === "Membership") ? data.username : data.name;
+
+    // attribute section
+    if (!this._hideAttributes && typeof data.attribute_types !== "undefined") {
+      this.attributeTypes = data.attribute_types;
+    } else {
+      this.removeAttributeSection();
+    }
+  }
+
+  /**
+   * Subscription callback for [type] updates
+   * @param {*} newData 
+   */
+  _newData(newData) {
+    // console.log(`Type form container (id: ${this._typeId}, type: ${this._typeName}), newData: `, newData);
+    // console.log("> Selection...", store.getState().selection);
+
     // Nothing new or deleted
-    if (this.typeName == store.getState().selection.typeName) {
-      console.log("newData... ", newData);
-      console.log("oldData... ", oldData);
-
+    if (this._typeName == store.getState().selection.typeName && this._typeId !== "New") {
       if (newData.setList.has(Number(this._typeId))) {
-        // Refresh the view
-        console.log("SET THIS DATA!!", newData.map.get(Number(this._typeId)));
-        this._form.data = newData.map.get(Number(this._typeId));
-      } else if (this._typeId == "New") {
-        this._form.data = null;
+        // Refresh the view for typeId we're looking at within update
+        const data = newData.map.get(Number(this._typeId))
+        this.setUpData(data);
       } else {
-        const selectType = (newData.setList[0]) ? newData.setList[0] : "New";
-        window.history.pushState({}, "", `#${this.typeName}-${selectType}`)
+        // We have new data, but even tho Our typeName is selected the typeId isn't shown...
         // Just select something and let the subscribers take it from there....
+        const selectType = (newData.setList[0]) ? newData.setList[0] : "New";
+        window.history.pushState({}, "", `#${this._typeName}-${selectType}`)
         store.setState({ selection: { ...store.getState().selection, typeId: selectType } });
-      }
-
-      // attribute section
-      if (!this._hideAttributes && typeof this._form._data.attribute_types !== "undefined") {
-        this.attributeTypes = this._form._data.attribute_types;
-      } else {
-        this.removeAttributeSection();
       }
     }
   }
 
-  async _updateForm(newSelection, oldSelection) {
+  /**
+   * Subscription callback for [selection] updates
+   * @param {*} newData 
+   */
+  async _updateFormSelection(newSelection, oldSelection) {
     const affectsMe = (this._typeName == newSelection.typeName || this._typeName == oldSelection.typeName);
     
     if (affectsMe) {
       const newType = newSelection.typeName;
       const oldType = oldSelection.typeName;
 
-      console.log(`TYPEFORM..... CURRENT typeName ${this._typeName} and newType ${newType} oldType ${oldType}`);
       if (oldType === this._typeName && oldType !== newType) {
-        console.log("OLD Is hidden? " + this._typeName);
-        this.hidden = true; //return this.reset();
-        return;
+        this.hidden = true;
+        return; // If container type was the old type, and not the new one hide and end
+      } else {
+        this.hidden = false; // Otherwise Show
       }
-
-      console.log(this._typeName+" is new? unhiding this")
-      this.hidden = false;
-      
-      const newId = newSelection.typeId;
-      const oldId = oldSelection.typeId;
 
       // Add data
+      const newId = newSelection.typeId;
       this.typeId = newId;
-      if (newId !== "New") {
-        console.log(`this._typeName ${this._typeName}, this._typeId ${this._typeId}`);       
+
+      if (newId !== "New") {        
         const data = await store.getState().getData(this._typeName, this._typeId);
+        console.log(`DEBUG: selection found newData for  ${this._typeName}, id: ${this._typeId}`, data);
         
         if (data) {
-          console.log("Data is:::::", data);
-          console.log(data.name);
-
+          this.setUpData(data);
           this._form.data = data;
-          this.objectName = (this._typeName === "Membership") ? data.username : data.name;
-        
-          // attribute section
-          if (!this._hideAttributes && typeof data.attribute_types !== "undefined") {
-            this.attributeTypes = data.attribute_types;
-          } else {
-            this.removeAttributeSection();
-          }
-        } 
-      } else {
-        this._form.data = null;
-        this.objectName = "";
-        this.removeAttributeSection();
+          return;
+        }    
       }
+
+      /* Clear container in any other case */
+      // ie. NEW form (data is null), or no data from store
+      this.resetToNew();
     }
   }
 
+  // Removes the attribute main form, and hides the container
   removeAttributeSection() {
     if (this.attributeSection) this.attributeSection.remove();
     this._attributeContainer.hidden = true;
   }
 
+  /**
+   * Adds an attribute section to pages based on form data
+   */
   _getAttributeSection() {
+    // Clears
     this.removeAttributeSection();
+
+    // Setup
     this.attributeSection = document.createElement("attributes-main");
     this.attributeSection.setAttribute("data-from-id", `${this._typeId}`)
     this.attributeSection._init(this._typeName, this._form._data.id, this._form._data.name, this.projectId, this._form._data.attribute_types, this.modal);
+    
+    // Append and show
     this._attributeContainer.appendChild(this.attributeSection);
     this._attributeContainer.hidden = false;
   }
 
-
-  reset() {
-    this.hidden = true;
+  //
+  resetToNew() {
     this._form.data = null;
+    this.objectName = "";
+    this.removeAttributeSection();
   }
 }
 

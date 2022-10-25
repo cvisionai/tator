@@ -62,40 +62,24 @@ export class LeafMain extends TatorElement {
    */
   set data(val) {
     console.log("DATA SET FOR LEAF MAIN", val);
-
-    if (typeof val == "undefined" || val === null) {
+    if (typeof val == "undefined" || val === null || !val.parent) {
       //EMPTY this...
       this.leaves = [];
       this.fromId = null;
       this.fromName = null;
       this.attributeTypes = [];
     } else {
-      this.leaves = val;
-      if (val && val.parent) {
-        this.fromId = val.parent.id;
-        this.fromName = val.parent.name;
-        this.attributeTypes = val.parent.attribute_types;        
-      } else {
-        this.fromId = null;
-        this.fromName = null;
-        this.attributeTypes = [];
-      }
-
+      this.leaves = val.leaves;
+      this.fromId = val.parent.id;
+      this.fromName = val.parent.name;
+      this.attributeTypes = val.parent.attribute_types;
     }
   }
-
-  // /**
-  //  * @param {TatorElement} val
-  //  */
-  // set modal(val) {
-  //   this._modal = val;
-  // }
 
   /**
    * @param {string} val
    */
   set fromName(val) {
-    consol.log("SET FROM NAME TO " + val);
     this._leafTypeName.innerHTML = val;
   }
 
@@ -108,16 +92,17 @@ export class LeafMain extends TatorElement {
     this._leafMainBack.setAttribute("href", `#LeafType-${val}`)
   }
 
-    /**
-   * @param {string} val
-   */
+  /**
+  * @param {string} val
+  */
   set attributeTypes(val) {
+    console.log(val);
     this._attributeTypes = val;
   }
 
   /**
-   * @param {any[]} val
-   */
+  * @param {any[]} val
+  */
   set leaves(val) {
     this._leaves = val;
     this._leavesContainer.innerHTML = "";
@@ -130,8 +115,11 @@ export class LeafMain extends TatorElement {
     }
   }
 
-
-
+  /**
+   * For each leaf creates the leaf item and adds appropriate listeners
+   * @param {*} leaves 
+   * @returns 
+   */
   _getLeavesSection(leaves = this._leaves) {
     let leavesSection = document.createElement("div");
     leavesSection.style.minHeight = "150px";
@@ -307,7 +295,6 @@ export class LeafMain extends TatorElement {
 
     afObj.submitLeaf.addEventListener("click", (e) => {
       e.preventDefault();
-
       this._postLeaf(afObj.form);
     });
 
@@ -754,8 +741,12 @@ export class LeafMain extends TatorElement {
       const newId = newSelection.typeId;
       if (newId !== "New") {
         const data = await store.getState().getData("Leaf", newId);
+        const type = await store.getState().getData("LeafType", newId);
         console.log(data);
-        this.data = data;
+        this.data = {
+          parent: type,
+          leaves: data
+        };
       } else {
         this.data = null;
       }

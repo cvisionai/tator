@@ -30,6 +30,8 @@ export class LeafForm extends TatorElement {
     return this._changed = false;
   }
 
+
+
   _initEmptyForm(leaves, name, attributeTypes, deleteIcon) {
     const form = document.createElement("form");
     this.form = form;

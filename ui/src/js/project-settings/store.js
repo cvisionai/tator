@@ -3,7 +3,6 @@ import { subscribeWithSelector, devtools } from 'zustand/middleware';
 import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.js';
 
 const api = Utils.getApi();
-// console.log(api);
 
 const getMap = new Map();
 getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
@@ -145,12 +144,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       map: new Map(),
       name: "JobCluster"
    },
-   // User: {
-   //    init: false,
-   //    setList: new Set(),
-   //    map: new Map(),
-   //    name: "User"      
-   // },
+
 
    /* */
    setSelection: (newSelection) => {
@@ -200,9 +194,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       });
 
    },
-   removeProject: async () => {
-      // todo set({ project: await api.getProjectWithHttpInfo(get().projectId) });
-   },
 
    /* Generic to allow for loop calls */
    initType: async (type) => {
@@ -215,6 +206,7 @@ const store = create(subscribeWithSelector((set, get) => ({
 
       return get()[type];
    },
+
    fetchType: async (type) => {
       set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
       try {
@@ -279,7 +271,8 @@ const store = create(subscribeWithSelector((set, get) => ({
             await get().fetchType(type);
          }
 
-         set({ selection: { ...get().selection, typeName: type, typeId: object.data.id } });
+         // Select the new type (non-Leaf) forms
+         if(type !== "Leaf") set({ selection: { ...get().selection, typeName: type, typeId: object.data.id } });
          set({ status: { ...get().status, name: "idle", msg: "" } });
 
          // This includes the reponse so error handling can happen in ui
@@ -333,6 +326,19 @@ const store = create(subscribeWithSelector((set, get) => ({
          return err;
       }
 
+   },
+
+   getCountsRelatedToVersion: async (id) => {
+      try {
+         const state = await api.getStateCount(get().projectId, { version: id });
+         const loc = await api.getLocalizationCount(get().projectId, { version: id });
+
+         return { state, loc };
+
+      } catch (err) {
+         return null;
+      }
+     
    }
 })));
 
