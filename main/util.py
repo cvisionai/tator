@@ -1,27 +1,23 @@
 from collections import defaultdict
-from functools import reduce
 import logging
-from operator import or_
 import os
-import time
+from time import sleep
 import subprocess
 import json
 import datetime
-import shutil
-import math
+from math import ceil
 from typing import List
+from pprint import pformat, pprint
 
-from progressbar import progressbar,ProgressBar
+from progressbar import progressbar, ProgressBar
 from dateutil.parser import parse
 from boto3.s3.transfer import S3Transfer
-from PIL import Image
 
 from main.models import *
 from main.search import TatorSearch
 from main.store import get_tator_store
 
 from django.conf import settings
-from django.db.models import F, Q
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import streaming_bulk
@@ -73,7 +69,7 @@ def waitForMigrations():
             list(Project.objects.all())
             break
         except:
-            time.sleep(10)
+            sleep(10)
 
 INDEX_CHUNK_SIZE = 50000
 CLASS_MAPPING = {'media': Media,
@@ -91,7 +87,7 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
         if max_age_days:
             min_modified = datetime.datetime.now() - datetime.timedelta(days=max_age_days)
             qs = qs.filter(modified_datetime__gte=min_modified)
-        count = math.ceil(qs.count() / INDEX_CHUNK_SIZE)
+        count = ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
 def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
@@ -191,8 +187,6 @@ def makeDefaultVersion(project_number):
     logger.info("Updating states...")
     qs = State.objects.filter(project=project)
     qs.update(version=version)
-
-from pprint import pprint
 
 def make_video_definition(disk_file, url_path):
         cmd = [
@@ -385,8 +379,8 @@ def move_backups_to_s3():
     logger.info(f"Finished moving {num_moved} files!")
 
 
+ARCHIVE_MEDIA_KEYS = ["streaming", "archival", "audio", "image", "attachment"]
 def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False):
-    from pprint import pformat
     media_to_update = set()
     path_filename = "manifest_spec.txt"
 
@@ -434,7 +428,7 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
         success = True
         sc_needs_updating = False
         tag_needs_updating = False
-        for key in ["streaming", "archival", "audio", "image"]:
+        for key in ARCHIVE_MEDIA_KEYS:
             if not (key in single.media_files and single.media_files[key]):
                 continue
 
@@ -540,7 +534,6 @@ def fix_bad_archives(*, project_id_list=None, live_run=False, force_update=False
 def fix_bad_restores(
         *, media_id_list, live_run=False, force_update=False, restored_by_date=None
 ):
-    from pprint import pformat
     update_sc = set()
     update_tag = set()
     archived_resources = set()
@@ -625,7 +618,7 @@ def fix_bad_restores(
         sc_needs_updating = False
         tag_needs_updating = False
         if single.media_files:
-            for key in ["streaming", "archival", "audio", "image"]:
+            for key in ARCHIVE_MEDIA_KEYS:
                 if key in single.media_files and single.media_files[key]:
                     for file_info in single.media_files[key]:
                         has_segment_info = key == "streaming"
@@ -778,7 +771,7 @@ def update_media_archive_state(
     update_success = True
     if media.media_files:
         if dtype in ["image", "video"]:
-            for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"]):
+            for path in media.path_iterator(keys=ARCHIVE_MEDIA_KEYS):
                 update_success = update_success and update_operator(path, **op_kwargs)
         elif dtype == "multi":
             if not _archive_state_comp(media):
@@ -826,7 +819,7 @@ def get_clone_info(media: Media) -> dict:
 
     # Set media_dict["original"] to the part of the path that is the media id to which this object
     # was originally uploaded
-    paths = [path for path in media.path_iterator(keys=["streaming", "archival", "audio", "image"])]
+    paths = [path for path in media.path_iterator(keys=ARCHIVE_MEDIA_KEYS)]
     id0 = paths[0].split("/")[2]
     for path in paths[1:]:
         id1 = path.split("/")[2]
