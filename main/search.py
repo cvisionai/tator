@@ -177,7 +177,19 @@ class TatorSearch:
         :param old_name: Name of attribute type being mutated.
         :param new_name: New name for the attribute type.
         """
-        pass
+        element = None
+        for attribute_obj in entity_type.attribute_types:
+            if attribute_obj['name'] == old_name:
+                element = {**attribute_obj}
+        if element is None:
+            logger.error(f"Couldn't find {old_name} in {entity_type.name}")
+            return []
+
+        self.delete_index(entity_type, element)
+        element['name'] = new_name
+        self.create_psql_index(entity_type, element)
+
+        return [entity_type]
 
     def check_rename(self, entity_type, old_name, new_name):
         """
@@ -271,6 +283,16 @@ class TatorSearch:
                           string attributes should be indexed as keyword or text.
         :returns: Entity type with updated attribute_types.
         """
+        element = None
+        for attribute_obj in entity_type.attribute_types:
+            if attribute_obj['name'] == old_name:
+                element = {**attribute_obj}
+        if element is None:
+            raise(f"Couldn't find {old_name} in {entity_type.name}")
+
+        self.delete_index(entity_type, element)
+        element['dtype'] = new_attribute_type
+        self.create_psql_index(entity_type, element)
         return entity_type
 
     def delete_alias(self, entity_type, name):
@@ -281,4 +303,11 @@ class TatorSearch:
         :param name: Name of attribute type being deleted.
         :returns: Entity type with updated attribute_types.
         """
+        element = None
+        for attribute_obj in entity_type.attribute_types:
+            if attribute_obj['name'] == old_name:
+                element = {**attribute_obj}
+        if element is None:
+            raise(f"Couldn't find {old_name} in {entity_type.name}")
+        self.delete_index(entity_type, element)
         return entity_type
