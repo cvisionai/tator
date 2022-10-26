@@ -1,7 +1,7 @@
 # Build librclone shared object
 FROM golang:latest as rclone_build
 WORKDIR /go
-RUN git clone https://github.com/rclone/rclone.git
+RUN git clone https://github.com/rclone/rclone.git --single-branch --depth 1 --branch v1.59.2
 
 WORKDIR /go/rclone/librclone/
 RUN go build --buildmode=c-shared -o librclone.so github.com/rclone/rclone/librclone

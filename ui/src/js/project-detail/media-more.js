@@ -118,7 +118,7 @@ export class MediaMore extends TatorElement {
   }
 
   set media(val) {
-    const request = Utilities.getDownloadRequest(val);
+    const downloadInfo = Utilities.getDownloadInfo(val);
     this._media = val;
 
     // if (this._media && this._media.id) {
@@ -126,11 +126,12 @@ export class MediaMore extends TatorElement {
     //   this._moreIcon._svg.setAttribute("mediaId", `${this._media.id}`)
     // }
 
-    if (request == null) {
+    if (downloadInfo["request"] == null) {
       this._download.style.display = "none";
       this.setAttribute("downloadPermission", "Download in menu disabled due to permissions.")
     } else {
-      this._download.request = request;
+      this._download.request = downloadInfo["request"];
+      this._download.setAttribute("size", downloadInfo["size"]);
     }
 
     let hide = true;
@@ -163,7 +164,7 @@ export class MediaMore extends TatorElement {
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
       case "name":
-        if (newValue === null) {
+        if (newValue !== null) {
           this._download.setAttribute("name", newValue);
         } else {
           this._download.setAttribute("name", "");

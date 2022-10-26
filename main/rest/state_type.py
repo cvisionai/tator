@@ -13,6 +13,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
+from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible', 'grouping_default',
@@ -164,8 +165,12 @@ class StateTypeDetailAPI(BaseDetailView):
             type, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        StateType.objects.get(pk=params['id']).delete()
-        return {'message': f'State type {params["id"]} deleted successfully!'}
+        state_type = StateType.objects.get(pk=params["id"])
+        count = delete_instances(state_type, State, self.request.user, "state")
+        state_type.delete()
+        return {
+            "message": f"State type {params['id']} (and {count} instances) deleted successfully!"
+        }
 
     def get_queryset(self):
         return StateType.objects.all()

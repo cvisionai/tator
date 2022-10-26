@@ -203,6 +203,10 @@ export class AnnotationPlayer extends TatorElement {
       this._slider.onDemandLoaded(evt);
     });
 
+    this._video.addEventListener("maxPlaybackRate", evt => {
+      this._rateControl.max = evt.detail.rate;
+    });
+
     this._video.addEventListener("videoLengthChanged", evt =>
     {
       this._slider.setAttribute('max',evt.detail.length);
@@ -840,7 +844,7 @@ export class AnnotationPlayer extends TatorElement {
 
   checkReady()
   {
-    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() != "yes")
+    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() == false)
     {
       this.handleNotReadyEvent();
     }
@@ -868,6 +872,7 @@ export class AnnotationPlayer extends TatorElement {
       console.log("Already handling a not ready event");
       return;
     }
+    this._video.onDemandDownloadPrefetch(-1);
     this._playInteraction.disable();
 
     const timeouts = [3000, 6000, 12000, 16000];
@@ -904,7 +909,7 @@ export class AnnotationPlayer extends TatorElement {
           check_ready(this._video.currentFrame())}, 100);
         return;
       }
-      if (this._video.onDemandBufferAvailable() != "yes")
+      if (this._video.onDemandBufferAvailable() == false)
       {
         not_ready = true;
         if (timeoutCounter >= timeouts[timeoutIndex]) {
@@ -971,7 +976,7 @@ export class AnnotationPlayer extends TatorElement {
     }
     this._ratesAvailable = this._video.playbackRatesAvailable();
 
-    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() != "yes")
+    if (this._video.bufferDelayRequired() && this._video.onDemandBufferAvailable() == false)
     {
       this.handleNotReadyEvent();
       return;
@@ -1029,7 +1034,6 @@ export class AnnotationPlayer extends TatorElement {
     this.dispatchEvent(new Event("paused", {composed: true}));
     this._fastForward.removeAttribute("disabled");
     this._rewind.removeAttribute("disabled");
-    this._rateControl.setValue(this._rate);
     this.enableRateChange();
 
     const paused = this.is_paused();
@@ -1066,7 +1070,9 @@ export class AnnotationPlayer extends TatorElement {
       this.pause();
       this._video.setQuality(quality, buffer);
     }
+    this._playInteraction.disable();
     this._video.onDemandDownloadPrefetch(this._video.currentFrame());
+    this.checkReady();
     this._video.refresh(true);
   }
 

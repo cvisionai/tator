@@ -2,6 +2,7 @@ export function handle_video_error(evt, root)
 {
   let msg_html = "";
   let errorType = "";
+  let exit = false;
 
   if (evt.detail.secureContext == false) {
     errorType = "secureContext";
@@ -29,6 +30,21 @@ export function handle_video_error(evt, root)
     msg_html += `<br>For full feature support, please utilize the latest versions of<br/>${chrome_link} or ${edge_link}.`;
     msg_html += "</span>";
     sessionStorage.setItem(`handle_error__browser-support`, 'true');
+  } else if (evt.detail.forceCompat == 1)
+  {
+    errorType = "videoDecoderPresent";
+    msg_html += "<span class='text-normal' style='line-height:1.7rem'>";
+    msg_html += `Compatibility mode is enabled. `
+    msg_html += `<br>Not all video playback features will work optimally when bypassing the VideoDecoder API.`;
+    msg_html += "</span>";
+  } 
+  else
+  {
+    exit = true;
+  }
+  if (exit == true)
+  {
+    return;
   }
 
 

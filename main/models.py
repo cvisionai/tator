@@ -1088,7 +1088,9 @@ class Media(Model, ModelDiffMixin):
             if files is None:
                 files = []
             for obj in files:
-                yield (key, obj)
+                # Make sure `obj` is subscriptable
+                if hasattr(obj, "__getitem__"):
+                    yield (key, obj)
 
     def path_iterator(self, keys: List[str] = None) -> Generator[str, None, None]:
         """
@@ -1104,10 +1106,17 @@ class Media(Model, ModelDiffMixin):
             keys = []
 
         for key, media_def in self.media_def_iterator(keys):
-                yield media_def["path"]
+            # Do not yield invalid media definitions; must have at least the `path` field and, if
+            # streaming, must also have the `segment_info` field
+            if "path" not in media_def:
+                continue
+            if key == "streaming" and "segment_info" not in media_def:
+                continue
 
-                if key == "streaming":
-                    yield media_def["segment_info"]
+            yield media_def["path"]
+
+            if key == "streaming":
+                yield media_def["segment_info"]
 
 
 class FileType(Model):
@@ -1155,6 +1164,7 @@ class File(Model, ModelDiffMixin):
     """ Type associated with file """
     attributes = JSONField(null=True, blank=True)
     """ Values of user defined attributes. """
+    deleted = BooleanField(default=False)
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
@@ -1310,7 +1320,7 @@ def media_delete(sender, instance, **kwargs):
 @receiver(post_delete, sender=Media)
 def media_post_delete(sender, instance, **kwargs):
     # Delete all the files referenced in media_files
-    project_id = instance.project.id
+    project_id = instance.project and instance.project.id
     for path in instance.path_iterator():
         safe_delete(path, project_id)
 
@@ -1376,6 +1386,9 @@ class Localization(Model, ModelDiffMixin):
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
     deleted = BooleanField(default=False)
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    variant_deleted = BooleanField(default=False, null=True, blank=True)
+    """ Indicates this is a variant that is deleted """
 
 @receiver(post_save, sender=Localization)
 def localization_save(sender, instance, created, **kwargs):
@@ -1411,6 +1424,8 @@ class State(Model, ModelDiffMixin):
     modified_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
                              related_name='state_modified_by', db_column='modified_by')
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
+    parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
+    """ Pointer to localization in which this one was generated from """
     modified = BooleanField(default=True, null=True, blank=True)
     """ Indicates whether an annotation is original or modified.
         null: Original upload, no modifications.
@@ -1429,6 +1444,9 @@ class State(Model, ModelDiffMixin):
                            related_name='extracted',
                            db_column='extracted')
     deleted = BooleanField(default=False)
+    elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
+    variant_deleted = BooleanField(default=False, null=True, blank=True)
+    """ Indicates this is a variant that is deleted """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
 

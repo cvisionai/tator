@@ -56,36 +56,30 @@ def get_media_es_query(project, params):
 
     query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
     query['sort'] = [{'_exact_name': 'asc'}, {'_postgres_id': 'asc'}]
+    media_types = ["image", "video", "multi"]
     bools = [{'bool': {
-        'should': [
-            {'match': {'_dtype': 'image'}},
-            {'match': {'_dtype': 'video'}},
-            {'match': {'_dtype': 'multi'}},
-        ],
+        "should": [{"match": {"_dtype": type_}} for type_ in media_types],
         'minimum_should_match': 1,
     }}]
     annotation_bools = []
 
     media_ids = []
     if media_id_put is not None:
-        media_ids += [f'image_{id_}' for id_ in media_id_put]\
-                   + [f'video_{id_}' for id_ in media_id_put]\
-                   + [f'multi_{id_}' for id_ in media_id_put]
+        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id_put)
 
     if media_id is not None:
-        media_ids += [f'image_{id_}' for id_ in media_id]\
-                   + [f'video_{id_}' for id_ in media_id]\
-                   + [f'multi_{id_}' for id_ in media_id]
+        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id)
     if media_ids:
         bools.append({'ids': {'values': media_ids}})
 
     annotation_ids = []
+    annotation_types = ["box", "line", "dot"]
     if localization_ids is not None:
-        annotation_ids += [f'box_{id_}' for id_ in localization_ids]\
-                        + [f'line_{id_}' for id_ in localization_ids]\
-                        + [f'dot_{id_}' for id_ in localization_ids]
+        annotation_ids.extend(
+            f"{type_}_{id_}" for type_ in annotation_types for id_ in localization_ids
+        )
     if state_ids is not None:
-        annotation_ids += [f'state_{id_}' for id_ in state_ids]
+        annotation_ids.extend(f"state_{id_}" for id_ in state_ids)
     if annotation_ids:
         annotation_bools.append({'ids': {'values': annotation_ids}})
 
@@ -182,9 +176,11 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if media_id is not None:
         media_ids += media_id
     if state_ids is not None:
-        media_ids += list(State.media.through.objects\
-                          .filter(state__in=state_ids)\
-                          .values_list('media_id', flat=True).distinct())
+        media_ids += list(
+            State.media.through.objects.filter(state__in=state_ids)
+            .values_list("media_id", flat=True)
+            .distinct()
+        )
     if media_ids:
         qs = qs.filter(pk__in=media_ids)
 

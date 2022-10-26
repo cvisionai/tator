@@ -34,9 +34,6 @@ export class InvitationEdit extends OrganizationTypeForm {
   }
 
   _getExistingForm(data) {
-    // console.log("Get existing form");
-    // console.log(data);
-
     let current = this.boxHelper.boxWrapDefault({
       "children": ""
     });
@@ -56,22 +53,23 @@ export class InvitationEdit extends OrganizationTypeForm {
     this._permissionSelect.setValue(data.permission);
     this._permissionSelect.default = data.permission;
     this._permissionSelect.addEventListener("change", this._formChanged.bind(this));
-
-    // status
-    const statusOptions = [
-      { "label": "Pending", "value": "Pending" },
-      { "label": "Expired", "value": "Expired" },
-      { "label": "Accepted", "value": "Accepted" },
-    ];
-    this._statusSelect = document.createElement("enum-input");
-    this._statusSelect.setAttribute("name", "Status");
-    this._statusSelect.choices = statusOptions;
-    this._statusSelect._select.required = true;
-    this._statusSelect.setValue(data.status);
-    this._statusSelect.default = data.status;
-    this._statusSelect.permission = "View Only";
-    this._statusSelect.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._permissionSelect);
+
+    // status #Todo let user fix and Expired?
+    // const statusOptions = [
+    //   { "label": "Pending", "value": "Pending" },
+    //   { "label": "Expired", "value": "Expired" },
+    //   { "label": "Accepted", "value": "Accepted" },
+    // ];
+    // this._statusSelect = document.createElement("enum-input");
+    // this._statusSelect.setAttribute("name", "Status");
+    // this._statusSelect.choices = statusOptions;
+    // this._statusSelect._select.required = true;
+    // this._statusSelect.setValue(data.status);
+    // this._statusSelect.default = data.status;
+    // this._statusSelect.permission = "View Only";
+    // this._statusSelect.addEventListener("change", this._formChanged.bind(this));
+    // this._form.appendChild(this._statusSelect);
 
     // status
     this._statusField = document.createElement("text-input");
@@ -82,6 +80,16 @@ export class InvitationEdit extends OrganizationTypeForm {
     this._statusField.permission = "View Only";
     // this._statusField.addEventListener("change", this._formChanged.bind(this));
     this._form.appendChild(this._statusField);
+
+    //
+    if (this.data.status == "Pending") {
+      const registrationLink = `${window.location.origin}/registration?registration_token=${this.data.registration_token}`;
+      this._regLinkDisplay = document.createElement("link-input");
+      this._regLinkDisplay.setAttribute("name", "Registration Link");
+      this._regLinkDisplay.setAttribute("href", registrationLink);
+      this._regLinkDisplay.permission = "View Only";
+      this._form.appendChild(this._regLinkDisplay);     
+    }
 
     current.appendChild(this._form);
 
@@ -136,6 +144,10 @@ export class InvitationEdit extends OrganizationTypeForm {
       if (this._permissionSelect.changed()) {
         formData.permission = this._permissionSelect.getValue();
       }
+
+      // if (this._statusSelect.changed()) {
+      //   formData.status = this._statusSelect.getValue();
+      // }
     }
 
     return formData;
@@ -175,11 +187,6 @@ export class InvitationEdit extends OrganizationTypeForm {
         this._data.id = data.id;
         this._data.organization = this.organization;
 
-        if (!this._emailEnabled) {
-          let link = data.message.replace('User can register at ', '')
-          emailLinksHTML += `<li class="py-2"><span class="text-bold">${email}</span> can register at <a href="https://${link}" class="text-purple">${link}</a></li>`;
-        }
-
         return data.id;
       })
         .then((id) => {
@@ -198,6 +205,13 @@ export class InvitationEdit extends OrganizationTypeForm {
           if (typeof data.id !== "undefined" && data.id === this._data.id) {
             // if we can can get the status from endpoint, it is hardcoded above as pending (assumed since it was just created)
             this._data = data;
+          }
+          console.log(this._data);
+          
+
+          if (!this._emailEnabled) {
+            const registrationLink = `${window.location.origin}/registration?registration_token=${this._data.registration_token}`;
+            emailLinksHTML += `<li class="py-2"><span class="text-bold">${data.email}</span> can register at <a href="${registrationLink}" class="text-purple">${registrationLink}</a></li>`;
           }
 
           let form = document.createElement(this._getTypeClass());

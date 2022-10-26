@@ -9,9 +9,8 @@ export class MenuAppletDialog extends ModalDialog {
     this._div.style.margin = "10vh auto";
     this._title.nodeValue = "Menu Applet";
 
-    this._appletView = document.createElement("iframe");
-    this._appletView.setAttribute("class", "d-flex col-12")
-    this._main.appendChild(this._appletView);
+    // All applets will be stored in this modal and only the active applet will not be hidden.
+    this._appletViews = {};
 
     this._main.classList.remove("px-6");
     this._main.classList.add("px-2");
@@ -36,8 +35,6 @@ export class MenuAppletDialog extends ModalDialog {
       this.dispatchEvent(new Event("close"));
       this._appletElement.accept();
     });
-
-    this._appletView.addEventListener("load", this.initApplet.bind(this));
   }
 
   /**
@@ -106,7 +103,16 @@ export class MenuAppletDialog extends ModalDialog {
    * @param {Tator.Applet} applet
    */
   saveApplet(applet) {
+
+    var appletView = document.createElement("iframe");
+    appletView.setAttribute("class", "d-flex col-12");
+    appletView.style.display = "none";
+    appletView.src = applet.html_file;
+    this._main.appendChild(appletView);
+    this._appletViews[applet.name] = appletView;
     this._applets[applet.name] = applet;
+
+    // #TODO Potentially need a check to ensure the iframe gets loadeds for each saved applet
   }
 
   /**
@@ -119,18 +125,24 @@ export class MenuAppletDialog extends ModalDialog {
    *     projectId {int}
    */
   setApplet(appletName, data) {
-    this._appletView.src = this._applets[appletName].html_file;
+    for (const key in this._appletViews) {
+      this._appletViews[key].style.display = "none";
+    }
     this._appletData = data;
+    this._appletName = appletName;
+    this.initApplet();
+
+    this._appletViews[appletName].style.display = "flex";
   }
 
   initApplet() {
     if (this._appletData == null) { return; }
 
-    this._appletElement = this._appletView.contentWindow.document.getElementById("mainApplet");
+    this._appletElement = this._appletViews[this._appletName].contentWindow.document.getElementById("mainApplet");
 
     var height = this._appletElement.getModalHeight();
     if (height.includes("px")) {
-      this._appletView.style.height = height;
+      this._appletViews[this._appletName].style.height = height;
     }
 
     var title = this._appletElement.getModalTitle();
@@ -191,7 +203,7 @@ export class MenuAppletDialog extends ModalDialog {
     });
 
     this._appletElement.addEventListener("updateHeight", (evt) => {
-      this._appletView.style.height = evt.detail.height;
+      this._appletViews[this._appletName].style.height = evt.detail.height;
     });
 
     // Set the applet data

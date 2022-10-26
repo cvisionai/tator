@@ -29,35 +29,31 @@ export class DownloadButton extends TatorElement {
     this._button.addEventListener("click", () => {
       if (this.request)
       {
-        // Get the size first
-        let getSize = new Request(this.request.url, {headers: this.request.headers, method:"HEAD"});
-        fetch(getSize).then(sizeRes => { // HEAD fails (403) on presigned urls, but the file still downloads.
-                                         // TODO: Update DownloadInfo to return object size
-          const name = this.getAttribute("name");
-          const fileSize = parseInt(sizeRes.headers.get("content-length"));
-          console.log(`${name} is ${fileSize} bytes`);
-          const fileStream = streamSaver.createWriteStream(name, {size: fileSize});
-          fetch(this.request)
-            .then(res  => {
-              // https://github.com/jimmywarting/StreamSaver.js/blob/master/examples/fetch.html
-              const readableStream = res.body;
+        const fileSize = this.getAttribute("size");
+        const name = this.getAttribute("name");
 
-              if (window.WritableStream && readableStream.pipeTo) {
-                return readableStream.pipeTo(fileStream)
-                  .then(() => console.log('done writing'))
-              }
+        console.log(`${name} is ${fileSize} bytes`);
+        const fileStream = streamSaver.createWriteStream(name, {size: fileSize});
+        fetch(this.request)
+          .then(res  => {
+            // https://github.com/jimmywarting/StreamSaver.js/blob/master/examples/fetch.html
+            const readableStream = res.body;
 
-              window.writer = fileStream.getWriter()
+            if (window.WritableStream && readableStream.pipeTo) {
+              return readableStream.pipeTo(fileStream)
+                .then(() => console.log('done writing'))
+            }
 
-              const reader = res.body.getReader()
-              const pump = () => reader.read()
-                    .then(res => res.done
-                          ? writer.close()
-                          : writer.write(res.value).then(pump))
+            window.writer = fileStream.getWriter()
 
-              pump()
-            });
-        });
+            const reader = res.body.getReader()
+            const pump = () => reader.read()
+                  .then(res => res.done
+                        ? writer.close()
+                        : writer.write(res.value).then(pump))
+
+            pump()
+          });
       }
       else if (this.hasAttribute("url") && this.hasAttribute("name")) {
         const link = document.createElement("a");

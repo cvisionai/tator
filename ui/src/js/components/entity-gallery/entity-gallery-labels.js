@@ -62,6 +62,16 @@ export class EntityGalleryLabels extends TatorElement {
       { name: "Type", id: "type" }
     ]
 
+
+  }
+
+  set titleEntityTypeName(val) {
+    this._titleEntityTypeName = val;
+    this._titleText.textContent = `Select ${val} labels to display in the gallery`;
+  }
+
+  init(projectId) {
+    this.projectId = projectId;
     this.add({
       typeData: {
         id: -1,
@@ -71,17 +81,12 @@ export class EntityGalleryLabels extends TatorElement {
     });
   }
 
-  set titleEntityTypeName(val) {
-    this._titleText.textContent = `Select ${val} labels to display in the gallery`;
-  }
-
   /**
    * Add a section of labels to main label div
    * @param {typeData} - object
    *
   */
-  async add({ typeData, hideTypeName = false, checkedFirst = null, customBuiltIns = [] }) {
-    // console.log(typeData);
+  async add({ typeData, hideTypeName = false, checkedFirst = null, customBuiltIns = [] }) {   
     let typeName = typeData.name ? typeData.name : "";
 
     // don't re-add this type, or don't add if visible=false...
@@ -109,8 +114,12 @@ export class EntityGalleryLabels extends TatorElement {
 
       let idText = document.createElement("text");
       idText.setAttribute("class", "d-flex py-1 text-gray f3");
-      idText.textContent = `Type ID: ${typeData.id}`;
-      _title.appendChild(idText);
+      if (typeData.id == -1) {
+        idText.textContent = `Type: Built in`;
+      } else {
+        idText.textContent = `Type ID: ${typeData.id}`;
+      }
+        _title.appendChild(idText);
       labelsMain.appendChild(_title);
     }
 
@@ -142,16 +151,30 @@ export class EntityGalleryLabels extends TatorElement {
       // Save to refer to in get/set later
       this._selectionValues[typeData.id] = selectionBoxes;
 
+      // Check any project preferences, then also apply any cached (in that order)
+      // #todo get preferences list, this may need to be passed into this function
+      const projectPreference = [];
+      const cacheTypeList = this.getLocalStorage(typeData.id);
+      const listToApply = [...projectPreference, ...cacheTypeList];
+      console.log(typeData.id);
+      console.log(listToApply);
+      this._setValue({ typeId: typeData.id, values: listToApply });
+      
+      
       // Append to main box
       styleDiv.appendChild(selectionBoxes);
 
+      // Listen for changes
       selectionBoxes.addEventListener("change", (e) => {
         const builtIns = this._selectionValues[-1] ? this._selectionValues[-1].getValue() : [];
         const currentBoxes = typeData.id == -1 ? [] : e.target.getValue();
+        const newValue = [...builtIns, ...currentBoxes];
+
+        this.setLocalStorage(typeData.id);
 
         this.dispatchEvent(new CustomEvent("labels-update", {
             detail: {
-                value: [...builtIns, ...currentBoxes],
+                value: newValue,
                 typeId: typeData.id
               }
           }));
@@ -166,22 +189,17 @@ export class EntityGalleryLabels extends TatorElement {
 
   _getValue(typeId) {
     if (this._selectionValues[typeId]) {
+      // gets value of the selection boxes (type: checkbox-list) for that type
       return this._selectionValues[typeId].getValue();
     } else {
       return [];
     }
   }
 
-  _setValue({ typeId, values }){
-    // # assumes values are in the accepted format for checkbox set
-    //
-    let valuesList = this._getValue(typeId);
-    for(let box in valuesList){
-      if(values.contains(box.name)){
-        box.checked = true;
-      }
-    }
-    return this._selectionValues[typeId].setValue(valuesList);
+  _setValue({ typeId, values }) {
+    console.log("LABELS SET VALUES");
+    console.log(values);
+    this._selectionValues[typeId].updateValue(values);
   }
 
   /*
@@ -233,9 +251,31 @@ export class EntityGalleryLabels extends TatorElement {
       // reset checked - only check the first one
       checkedValue = false;
     }
-    console.log(this.newList);
+    // console.log(this.newList);
 
     return this.newList;
+  }
+
+  getLocalStorage(typeId) {
+    const storageKey = `project-${this.projectId}__${this._titleEntityTypeName}-labels__type-${typeId}`;
+    const storedData = localStorage.getItem(storageKey);
+    console.log(`GET storedData for ${storageKey} = ${storedData}`);
+
+    if (storedData) {
+      const data = JSON.parse(storedData);
+      return data.values;   
+    } else {
+      return [];
+    }
+
+  }
+
+  setLocalStorage(typeId) {
+    const storageKey = `project-${this.projectId}__${this._titleEntityTypeName}-labels__type-${typeId}`;
+    const newValue = JSON.stringify({ values: this._getValue(typeId) });
+    console.log(`SET storedData for ${storageKey} set to newValue = ${newValue}`);
+
+    localStorage.setItem(storageKey, newValue);
   }
 }
 

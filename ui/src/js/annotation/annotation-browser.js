@@ -9,6 +9,7 @@ export class AnnotationBrowser extends TatorElement {
     this._shadow.appendChild(this._panels);
 
     this._media = document.createElement("media-panel");
+    this._media.style.display = "block";
     this._panels.appendChild(this._media);
 
     this._framePanels = {};
@@ -41,7 +42,14 @@ export class AnnotationBrowser extends TatorElement {
         entity.addEventListener("close", evt => {
           this._media.style.display = "block";
           for (const typeId in this._framePanels) {
-            this._framePanels[typeId].style.display = "block";
+
+            var count = this._framePanels[typeId].getEntityCount();
+            if (count == 0) {
+              this._framePanels[typeId].style.display = "none";
+            }
+            else {
+              this._framePanels[typeId].style.display = "block";
+            }
           }
         });
 
@@ -60,6 +68,21 @@ export class AnnotationBrowser extends TatorElement {
       if (isFrameState && isInterpolated) {
         if (dataType.interpolation === "latest"){
           const frame = document.createElement("frame-panel");
+
+          frame.style.display = "none";
+
+          frame.addEventListener("dataUpdated", () => {
+            if (this._media.style.display == "block" || this._openedTypeId == dataType.id) {
+              var count = frame.getEntityCount();
+              if (count > 0) {
+                frame.style.display = "block";
+              }
+              else {
+                frame.style.display = "none";
+              }
+            }
+          });
+
           frame.setAttribute("media-id", this._mediaId);
 
           if (stateMediaIds) {
@@ -130,9 +153,15 @@ export class AnnotationBrowser extends TatorElement {
   }
 
   _openForTypeId(typeId) {
+    this._openedTypeId = typeId;
     for (const key in this._framePanels) {
       if (key == typeId) {
-        this._framePanels[key].style.display = "block";
+        if (this._framePanels[key].getEntityCount() > 0 ){
+          this._framePanels[key].style.display = "block";
+        }
+        else {
+          this._framePanels[key].style.display = "none";
+        }
       } else {
         this._framePanels[key].style.display = "none";
       }

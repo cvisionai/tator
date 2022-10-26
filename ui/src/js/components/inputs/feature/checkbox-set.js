@@ -69,6 +69,8 @@ export class CheckboxSet extends TatorElement {
     }
   }
 
+
+
   _newInput(item){
     let checkbox = document.createElement("checkbox-input");
     checkbox.setAttribute("name", `${item.name}`);
@@ -111,7 +113,7 @@ export class CheckboxSet extends TatorElement {
   }
 
   // Array of checked inputs hidden data
-  // @TODO this follows current patter for some checkboxes to store hidden data
+  // @TODO this follows current pattern for some checkboxes to store hidden data
   // should look into setting the data as value instead? or type to data and getValue = this?
   getData() {
     return this._inputs.filter(input => input.getChecked()).map(checked => checked.getData());
@@ -140,6 +142,20 @@ export class CheckboxSet extends TatorElement {
       if(Number(checkbox._input.value) === Number(value)) return checkbox.setAttribute("name", newLabel);
     }
     return console.log("No matching input found");
+  }
+
+  /**
+   * 
+   * @param {list} val
+   * Map(name: [name: "Atribute 1", checked: true ])
+   * @returns updates the checkbox elements related to val.name to checked or unchecked
+   */
+  updateValue(checkedList) {
+    for (let checkbox of this._inputs) {
+      const currentVal = decodeURI(checkbox._input.value);
+      console.log(`checkedList.includes(currentVal)  => ${checkedList.includes(currentVal)}`)
+      checkbox._checked = checkedList.includes(currentVal);
+    }
   }
 
   removeInput({ value }) {

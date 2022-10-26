@@ -14,6 +14,7 @@ from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import ProjectFullControlPermission
 from ._attribute_keywords import attribute_keywords
+from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'colorMap', 'line_width', 'visible', 'drawable', 'grouping_default']
@@ -151,9 +152,12 @@ class LocalizationTypeDetailAPI(BaseDetailView):
             shape, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        LocalizationType.objects.get(pk=params['id']).delete()
-        return {'message': f'Localization type {params["id"]} deleted successfully!'}
+        loc_type = LocalizationType.objects.get(pk=params["id"])
+        count = delete_instances(loc_type, Localization, self.request.user, "localization")
+        loc_type.delete()
+        return {
+            "message": f"Localization type {params['id']} (and {count} instances) deleted successfully!"
+        }
 
     def get_queryset(self):
         return LocalizationType.objects.all()
-

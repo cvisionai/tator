@@ -261,7 +261,28 @@ export class EntityBrowser extends TatorElement {
                 let tweakedObj = Object.assign({}, selector.data);
                 delete tweakedObj.version;
                 tweakedObj.attributes = values;
-                this._canvas.cloneToNewVersion(tweakedObj, this._data.getVersion().id);
+                if (endpoint == "Localization")
+                {
+                  this._canvas.cloneToNewVersion(tweakedObj, this._data.getVersion().id);
+                }
+                else if (endpoint == "State")
+                {
+                  let newObject = {};
+                  let state = tweakedObj;
+                  newObject.parent = state.id;
+                  newObject = Object.assign(newObject, values);
+                  newObject.version = this._data.getVersion().id;
+                  newObject.type = Number(state.meta.split("_")[1]);
+                  newObject.media_ids = state.media;
+                  newObject.frame = state.frame;
+                  newObject.localization_ids = state.localizations;
+                  console.info(JSON.stringify(newObject));
+                  this._undo.post("States", newObject, this._dataType);
+                }
+                else
+                {
+                  console.error(`Unknown endpoint '${endpoint}'`);
+                }
                 document.body.classList.remove("shortcuts-disabled");
                 saved = true;
               }

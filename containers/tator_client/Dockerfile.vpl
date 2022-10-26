@@ -1,4 +1,4 @@
-FROM cvisionai/svt_encoder:v0.0.8 as builder
+FROM cvisionai/vpl_encoder:v0.0.1 as builder
 ENV LANG C.UTF-8
 RUN apt-get update && apt-get install -y --no-install-recommends \
         wget unzip \
@@ -26,7 +26,13 @@ RUN pip3 --no-cache-dir --timeout=1000 install wheel
 RUN pip3 --no-cache-dir --timeout=1000 install pillow==9.0.0 imageio==2.14.0 progressbar2==4.0.0 boto3==1.20.41 pandas==1.4.0
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends fastjar libsm6 libxext6 libxrender-dev libx265-179 libx264-155 libpng16-16 libfreetype6 python3-opencv && rm -rf /var/lib/apt/lists
+RUN apt-get update &&  \
+                   apt-get install -y --no-install-recommends fastjar libsm6 libxext6 \
+		   libxrender-dev libx265-179 libx264-155 \
+                   libpng16-16 libfreetype6 python3-opencv \
+		   libx265-179 libx264-155 libx11-6 libxext6 libxfixes3 \
+		   libxcb1 libxcb-shm0 libxcb-shape0 libxcb-xfixes0 \
+		   libwayland-client0 libaom0 && rm -rf /var/lib/apt/lists
 
 # Copy over scripts
 COPY scripts/transcoder /scripts

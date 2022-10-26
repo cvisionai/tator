@@ -947,7 +947,14 @@ export class AttributesForm extends TatorElement {
       // 
       if (dtype === "enum") {
 
-        if ((this.isClone || this._dtype.changed() || this._enumDefault.changed || this._choices.changed() || this._labels.changed()) && this._enumDefault.value !== null) { //&& this._enumDefault.value !== ""
+        if (
+          (this.isClone
+          || this._dtype.changed()
+          || this._enumDefault.changed
+          || this._choices.changed()
+          || this._labels.changed())
+          && this._choices.getValue().includes(this._enumDefault.value)
+        ) {
           formData["default"] = this._enumDefault.value;
         }
 

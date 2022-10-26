@@ -124,8 +124,14 @@ export class AlgorithmEdit extends TypeForm {
       this._manifestPath.setAttribute("for", "manifest");
       this._manifestPath.setAttribute("type", "yaml");
       this._manifestPath.projectId = this.projectId;
-      this._manifestPath.setValue(this.data.manifest);
-      this._manifestPath.default = this.data.manifest;
+
+      if (this.data.manifest) {
+         this._manifestPath.setValue(`/media/${this.data.manifest}`);
+         this._manifestPath.default = `/media/${this.data.manifest}`;       
+      } else {
+         this._manifestPath.default = null;
+      }
+
       
       this._manifestPath._fetchCall = (bodyData) => {
          return fetch(`/rest/SaveAlgorithmManifest/${this.projectId}`,
@@ -142,8 +148,9 @@ export class AlgorithmEdit extends TypeForm {
          ).then(resp => resp.json()).then(
             manifestData => {
                // console.log(manifestData);
-               this._manifestPath.setValue(manifestData.url);
-               Utilities.showSuccessIcon(`Manifest file uploaded to: ${manifestData.url}`);
+               const viewLink = `/media/${manifestData.url}`;
+               this._manifestPath.setValue(viewLink);
+               Utilities.showSuccessIcon(`Manifest file uploaded to: ${viewLink}`);
             }
          );
       };

@@ -114,7 +114,10 @@ export class CollectionsGallery extends EntityCardSlideGallery {
       var stateTypes = this.collectionsData.getStateTypes();
 
 
+      
+
       // Label Values
+      this._cardAttributeLabels.init(this.modelData._project);
       this.currentLabelValues = {};
       const labelValues = [];
       for (let idx = 0; idx < stateTypes.length; idx++) {

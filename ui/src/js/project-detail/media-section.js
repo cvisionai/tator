@@ -433,7 +433,7 @@ export class MediaSection extends TatorElement {
                   }
                   filenames.add(basename);
 
-                  const request = Utilities.getDownloadRequest(media, headers);
+                  const request = Utilities.getDownloadInfo(media, headers)["request"];
                   if (request !== null) { // Media objects with no downloadable files will return null.
                     // Download media file.
                     console.log("Downloading " + media.name + " from " + request.url + "...");

@@ -102,7 +102,10 @@ export class AnnotationsGallery extends EntityCardGallery {
     this.panelContainer._panelTop._panel.entityData.addEventListener("save", this.entityFormChange.bind(this));
     this.panelContainer._panelTop._panel.mediaData.addEventListener("save", this.mediaFormChange.bind(this));
 
+    
+
     // Initialize labels selection
+    this._cardAttributeLabels.init(this.modelData._project);
     for (let locTypeData of this.modelData._localizationTypes){
       this._cardAttributeLabels.add({ 
          typeData: locTypeData,
@@ -187,7 +190,9 @@ export class AnnotationsGallery extends EntityCardGallery {
       /**
       * Card labels / attributes of localization or media type
       */
+      const builtInChosen = this._cardAttributeLabels._getValue(-1);
       this.cardLabelsChosenByType[entityTypeId] = this._cardAttributeLabels._getValue(entityTypeId);
+      const cardLabelsChosen = [...this.cardLabelsChosenByType[entityTypeId], ...builtInChosen];
 
       if (newCard) {
         card = document.createElement("entity-card");
@@ -280,7 +285,7 @@ export class AnnotationsGallery extends EntityCardGallery {
       card.init({
         obj: cardObj,
         panelContainer : this.panelContainer,
-        cardLabelsChosen: this.cardLabelsChosenByType[entityTypeId],
+        cardLabelsChosen: cardLabelsChosen,
         memberships: this.modelData._memberships
       });
 

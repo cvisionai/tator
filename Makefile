@@ -148,8 +148,7 @@ dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 .PHONY: tator-image
-tator-image:
-	$(MAKE) webpack
+tator-image: webpack
 	docker build --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 
@@ -182,9 +181,22 @@ experimental_docker:
 endif
 
 
+USE_VPL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a.get("enableVpl","False"))')
+ifeq ($(USE_VPL),True)
+.PHONY: client-vpl
+client-vpl:
+	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
+	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION)
+else
+.PHONY: client-vpl
+client-vpl:
+	@echo "Skipping VPL Build"
+endif
+
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
 client-image: experimental_docker
+	make client-vpl
 	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 	docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION)
@@ -223,11 +235,11 @@ USE_MIN_JS=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/value
 ifeq ($(USE_MIN_JS),True)
 webpack:
 	@echo "Building webpack bundles for production, because USE_MIN_JS is true"
-	cd ui && python3 make_index_files.py && npm run build
+	cd ui && npm install && python3 make_index_files.py && npm run build
 else
 webpack:
 	@echo "Building webpack bundles for development, because USE_MIN_JS is false"
-	cd ui && python3 make_index_files.py && npm run buildDev
+	cd ui && npm install && python3 make_index_files.py && npm run buildDev
 endif
 
 .PHONY: migrate
@@ -308,13 +320,13 @@ js-bindings:
 	./codegen.py tator-openapi-schema.yaml
 	docker run -it --rm \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
-		openapitools/openapi-generator-cli:v5.2.1 \
+		openapitools/openapi-generator-cli:v6.1.0 \
 		generate -c /pwd/config.json \
 		-i /pwd/tator-openapi-schema.yaml \
 		-g javascript -o /pwd/pkg -t /pwd/templates
 	docker run -it --rm \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
-		openapitools/openapi-generator-cli:v5.2.1 \
+		openapitools/openapi-generator-cli:v6.1.0 \
 		chmod -R 777 /pwd/pkg
 	cp -r examples pkg/examples
 	cp -r utils pkg/src/utils

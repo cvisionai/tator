@@ -91,7 +91,7 @@ export class AnnotationPage extends TatorPage {
 
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";
-      //window.alert("System error detected");
+      //window.alert(evt.message);
       Utilities.warningAlert("System error detected","#ff3e1d", true);
     });
 
@@ -179,6 +179,12 @@ export class AnnotationPage extends TatorPage {
           } else if (data.media_files && 'streaming' in data.media_files) {
             data.media_files.streaming.sort((a, b) => {return b.resolution[0] - a.resolution[0];});
           }
+
+          // Update Title Bar to show media information
+          // Usability guidance from mozilla specifies order should go fine -> coarser
+          // e.g. filename | tool name | org name
+          // We have tator before tool name, but having file name first is probably helpful enough.
+          document.title = `${data.name} | ${document.title}`
           this._breadcrumbs.setAttribute("media-name", data.name);
           this._browser.mediaInfo = data;
           this._undo.mediaInfo = data;
@@ -350,7 +356,7 @@ export class AnnotationPage extends TatorPage {
               this._prev.disabled = true;
             }
             else {
-              this._prev.addEventListener("click", () => {
+              this._prev.addEventListener("click", (evt) => {
                 let url = baseUrl + prevData.prev;
                 var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
@@ -362,7 +368,18 @@ export class AnnotationPage extends TatorPage {
                 }
                 searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
-                window.location.href = url;
+                // If the control key is pressed jump to a new tab.
+                if (evt.ctrlKey)
+                {
+                  let a = document.createElement("a");
+                  a.target="_blank";
+                  a.href = url;
+                  a.click();
+                }
+                else
+                {
+                  window.location.href = url;
+                }
               });
               this._prev.addEventListener("mouseenter", this.showPrevPreview.bind(this));
               this._prev.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
@@ -372,7 +389,7 @@ export class AnnotationPage extends TatorPage {
               this._next.disabled = true;
             }
             else {
-              this._next.addEventListener("click", () => {
+              this._next.addEventListener("click", (evt) => {
                 let url = baseUrl + nextData.next;
                 var searchParams = this._settings._queryParams();
                 searchParams.delete("selected_type");
@@ -384,7 +401,18 @@ export class AnnotationPage extends TatorPage {
                 }
                 searchParams = this._videoSettingsDialog.queryParams(searchParams);
                 url += "?" + searchParams.toString();
-                window.location.href = url;
+                // If the control key is pressed jump to a new tab.
+                if (evt.ctrlKey)
+                {
+                  let a = document.createElement("a");
+                  a.target="_blank";
+                  a.href = url;
+                  a.click();
+                }
+                else
+                {
+                  window.location.href = url;
+                }
               });
               this._next.addEventListener("mouseenter", this.showNextPreview.bind(this));
               this._next.addEventListener("mouseout", this.removeNextPrevPreview.bind(this));
@@ -1238,6 +1266,8 @@ export class AnnotationPage extends TatorPage {
     })
     .then(response => response.json())
     .then(applets => {
+      this._appletMap = {};
+
       for (let applet of applets) {
 
         if (applet.categories == null) {
@@ -1268,6 +1298,8 @@ export class AnnotationPage extends TatorPage {
           const toolAppletPanel = document.createElement("tools-applet-panel");
           toolAppletPanel.saveApplet(applet, this, canvas, canvasElement);
         }
+
+        this._appletMap[applet.name] = applet;
       }
     });
   }
@@ -1302,7 +1334,7 @@ export class AnnotationPage extends TatorPage {
     .then(result => {
       var registeredAnnotatorAlgos = [];
       for (const alg of result) {
-        if (alg.categories.includes("annotator-view")) {
+        if (alg.categories.includes("annotator-view") && !alg.categories.includes("hidden")) {
           registeredAnnotatorAlgos.push(alg.name);
           if (alg.name == this._extend_track_algo_name) {
             menu.enableExtendAutoMethod();
@@ -1610,10 +1642,13 @@ export class AnnotationPage extends TatorPage {
 
     canvas.addEventListener("launchMenuApplet", evt => {
       var data = {
+        applet: this._appletMap[evt.detail.appletName],
         frame: evt.detail.frame,
         version: evt.detail.version,
         media: evt.detail.media,
-        projectId: evt.detail.projectId
+        projectId: evt.detail.projectId,
+        selectedTrack: evt.detail.selectedTrack,
+        selectedLocalization: evt.detail.selectedLocalization
       };
 
       if (this._player.mediaType.dtype == "multi") {

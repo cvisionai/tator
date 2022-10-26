@@ -8,7 +8,7 @@
 //        operations.
 
 
-
+import { CTRL_SIZE } from "./video-buffer-manager";
 
 // TimeRanges isn't user constructable so make our own
 export class TatorTimeRanges {
@@ -155,6 +155,12 @@ class TatorVideoManager {
     this._codec_worker.postMessage({"type": "keyframeOnly", "value": val});
   }
 
+  set frameIncrement(val)
+  {
+    this._frameIncrement = val;
+    this._codec_worker.postMessage({"type": "frameIncrement", "value": val});
+  }
+
   set scrubbing(val)
   {
     this._scrubbing = val;
@@ -209,6 +215,16 @@ class TatorVideoManager {
     else if (msg.data.type == "error")
     {
       console.warn(msg.data);
+      if (msg.data.message.toLocaleString().indexOf("Unsupported configuration") > 0)
+      {
+        if (this._alertSent == undefined)
+        {
+          this._alertSent = true;
+          this._parent._canvas.dispatchEvent(new CustomEvent("codecNotSupported",
+                                    {composed: true,
+                                      detail: {"codec": this._codec_string}}));
+        }
+      }
     }
     else if (msg.data.type == "frameDelta")
     {
@@ -259,6 +275,45 @@ class TatorVideoManager {
     return false;
   }
 
+  images_near_cursor(max_distance, limit)
+  {
+    let timestamps = this._hot_frames.keys() // make sure keys are sorted!
+    let matches=[];
+    for (let timestamp of timestamps)
+    {
+      let image_timescale = this._hot_frames.get(timestamp).timescale;
+      let frame_delta = this._hot_frames.get(timestamp).frameDelta;
+      let cursor_in_ctx = this._current_cursor * image_timescale;
+      if (Math.abs(cursor_in_ctx - timestamp) <= (max_distance*frame_delta))
+      {
+        matches.push(timestamp);
+      }
+    }
+    return matches;
+  }
+
+  get_image(timestamp)
+  {
+    if (this._hot_frames.has(timestamp))
+    {
+      let sab = this._hot_frames.get(timestamp);
+      let image = new Uint8Array(sab, CTRL_SIZE);
+      // Todo function this
+      image.timescale = sab.timescale;
+      image.frameDelta = sab.frameDelta;
+      image.time = sab.timestamp / sab.timescale;
+      image.width = sab.width;
+      image.height = sab.height;
+      image.format = sab.format;
+      image.timestamp = sab.timestamp;
+      return image;
+    }
+    else
+    {
+      return null;
+    }
+  }
+
   // Returns true if the cursor is in the range of the hot frames
   time_is_hot(time)
   {
@@ -278,9 +333,9 @@ class TatorVideoManager {
 
   cursor_in_image(image)
   {
-    const image_timescale = image.data.timescale;
-    const frame_delta = image.data.frameDelta;
-    const time = image.data.time;
+    const image_timescale = image.timescale;
+    const frame_delta = image.frameDelta;
+    const time = image.time;
     let time_in_ctx = time * image_timescale;
     let cursor_in_ctx = this._current_cursor * image_timescale;
     if (cursor_in_ctx >= time_in_ctx && cursor_in_ctx < time_in_ctx+frame_delta)
@@ -294,17 +349,17 @@ class TatorVideoManager {
   }
 
   _returnFrame(frame)
-    {
+  {
     frame.close();
     this._codec_worker.postMessage({"type": "frameReturn"})
-    }
+  }
 
   _frameReady(msg)
   {
     // If there is a frame handler callback potentially avoid 
     // internal buffering.
     msg.data.returnFrame = () => {this._returnFrame(msg.data);};
-    //console.info(`${performance.now()} ${this._name} Frame @ ${msg.cursor} Ready`);
+    //console.info(`${performance.now()} ${this._name} Frame @ ${msg.data.timestamp}} Ready`);
     if (this.onFrame && this._playing == true)
     {
       this._current_cursor = msg.data.cursor;
@@ -321,12 +376,24 @@ class TatorVideoManager {
   _imageReady(image)
   {
     //console.info(`${performance.now()}: GOT ${this._name}: GOT h=${image.height}`);
+    // Make the image a uint8 clamped array
     image.data.timescale = image.timescale;
     image.data.frameDelta = image.frameDelta;
-    image.data.time = image.timestamp / image.data.timescale;
+    image.data.time = image.timestamp / image.timescale;
+    image.data.width = image.width;
+    image.data.height = image.height;
+    image.data.format = image.format;
+    image.data.timestamp = image.timestamp;
+    if (this._hot_frames.has(image.timestamp))
+    {
+      // Clear old one.
+      let sab = this._hot_frames.get(image.timestamp);
+      let ctrl = new Uint32Array(sab,0,CTRL_SIZE);
+      Atomics.store(ctrl, 0, 0);
+    }
     this._hot_frames.set(image.timestamp, image.data);
     //console.info(`${performance.now()}: ${this._name}: _imageReady() time=${image.data.time}: CiI=${this.cursor_in_image(image)} KFO=${this._keyframeOnly} SCRUBBING=${this._scrubbing} MUTE=${this._mute}`);
-    if ((this.cursor_in_image(image) || this._keyframeOnly == true) && this._mute == false)
+    if ((this.cursor_in_image(image.data) || this._keyframeOnly == true) && this._mute == false)
     {
       this._safeCall(this.oncanplay);
     }
@@ -370,9 +437,10 @@ class TatorVideoManager {
 
   // The seek buffer can keep up to 10 frames pre-decoded ready to go in either direction
   // to support extra fast prev/next 
-  _clean_hot()
+  _clean_hot(force)
   {
-    if (this._hot_frames.size < 25)
+    //console.info(`${this._name}: _clean_hot(): ${this._hot_frames.size}`);
+    if (this._hot_frames.size < 25 && force != true)
     {
       return;
     }
@@ -385,13 +453,18 @@ class TatorVideoManager {
     for (let hot_frame of timestamps)
     {
       // Only keep a max of 100 frames in memory
-      if (Math.abs(hot_frame - cursor_in_ctx)/this._frameDeltaMap.get(search.key) >= 25)
+      if (Math.abs(hot_frame - cursor_in_ctx)/this._frameDeltaMap.get(search.key) >= 25 || force == true)
       {
         delete_elements.push(hot_frame);
       }
     }
     for (let key of delete_elements)
     {
+      let sab = this._hot_frames.get(key);
+      let ctrl = new Uint32Array(sab,0,CTRL_SIZE);
+      Atomics.store(ctrl, 0, 0);
+      //console.info(`${this._name}: Deleting ${key}!`);
+      delete this._hot_frames.get(key);
       this._hot_frames.delete(key);
     }
   }
@@ -417,7 +490,16 @@ class TatorVideoManager {
         lastTimestamp = timestamp;
       }
     }
-    return this._hot_frames.get(lastTimestamp);
+    let sab = this._hot_frames.get(lastTimestamp);
+    let image = new Uint8Array(sab, CTRL_SIZE);
+    image.timescale = sab.timescale;
+    image.frameDelta = sab.frameDelta;
+    image.time = sab.timestamp / sab.timescale;
+    image.width = sab.width;
+    image.height = sab.height;
+    image.format = sab.format;
+    image.timestamp = sab.timestamp;
+    return image;
   }
 
   ///////////////////////////////////////////////////////////
@@ -484,6 +566,7 @@ class TatorVideoManager {
       this._current_cursor = video_time+this._bias;
     }
     const is_hot = this._cursor_is_hot();
+    this._clean_hot(); // clean hot prior to potentially getting more data back
     this._codec_worker.postMessage(
       {"type": "currentTime",
        "currentTime": this._current_cursor,
