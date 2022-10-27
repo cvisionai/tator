@@ -53,6 +53,45 @@ export class UploadElement extends TatorElement {
     });
   }
 
+  pickFiles(store) {
+    return window.showOpenFilePicker({
+      multiple: true,
+      types: [{
+        description: "Images",
+        accept: {
+          'image/jpeg': ['.jpe', '.jpeg', '.jpg'],
+          'image/bmp': ['.bmp'],
+          'image/png': ['.png'],
+          'image/gif': ['.gif'],
+          'image/tiff': ['.tiff', '.tif'],
+          'image/avif': ['.avif'],
+        }
+      }, {
+        description: "Videos",
+        accept: {
+          'video/mp4': ['.mp4'],
+          'video/x-msvideo': ['.avi'],
+          'video/3gpp': ['.3gp'],
+          'video/ogg': ['.ogg'],
+          'video/x-ms-wmv': ['.wmv'],
+          'video/webm': ['.webm'],
+          'video/x-flv': ['.flv'],
+          'video/quicktime': ['.mov', '.qt'],
+          'video/mp2t': ['.mts'],
+          'video/x-m4v': ['.m4v'],
+          'video/mpeg': ['.mpg', '.mpeg', '.mp2', '.mpe', '.mpv'],
+          'video/x-m4p': ['.m4p'],
+          'video/vnd.sealed.swf': ['.swf'],
+          'video/avchd': ['.avchd'],
+        }
+      }]
+    })
+    .then(handles => {
+      const uploads = store.getState().uploads;
+      store.setState({uploads: uploads.concat(handles)});
+    });
+  }
+
   _checkFile(file, gid) {
     // File extension can have multiple components in archives
     let comps = file.name.split(".").slice(-1);
