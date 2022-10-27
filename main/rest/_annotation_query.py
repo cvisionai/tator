@@ -5,8 +5,8 @@ import logging
 from django.db.models import Subquery
 from django.db.models.functions import Coalesce
 
-from ..models import Localization
-from ..models import State
+from ..models import Localization, LocalizationType
+from ..models import State, StateType
 from ..search import TatorSearch
 
 from ._media_query import query_string_to_media_ids
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 ANNOTATION_LOOKUP = {'localization': Localization,
                      'state': State}
+
+ANNOTATION_TYPE_LOOKUP = {'localization': LocalizationType, 'state': StateType}
 
 def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     """ Constructs a psql queryset.
@@ -66,9 +68,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     if state_ids and (annotation_type == 'state'):
         qs = qs.filter(pk__in=state_ids)
-
-    if filter_type is not None:
-        qs = qs.filter(meta=filter_type)
         
     if version is not None:
         qs = qs.filter(version__in=version)
@@ -79,7 +78,20 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if after is not None:
         qs = qs.filter(pk__gt=after)
 
-    qs = get_attribute_psql_queryset(project, annotation_type, qs, params, filter_ops)
+
+    if filter_type is not None:
+        qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = qs.filter(meta=filter_type)
+    else:
+        queries = []
+        for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
+            sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
+            if sub_qs:
+                queries.append(sub_qs.filter(meta=entity_type))
+        logger.info(f"Joining {len(queries)} queries together.")
+        qs = queries.pop()
+        for r in queries:
+            qs = qs.union(r)
 
     if exclude_parents:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
@@ -99,11 +111,23 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     elif stop is not None:
         qs = qs[:stop]
 
+    # Useful for profiling / checking out query complexity
+    logger.info(qs.query)
+    logger.info(qs.explain())
+
     return qs
         
 def get_annotation_queryset(project, params, annotation_type):
     # annotation_type is either localization or state
-    filter_ops = get_attribute_filter_ops(project, params, annotation_type)
+    filter_type = params.get('type')
+    project = params.get('project')
+    filter_ops=[]
+    if filter_type:
+        types = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type)
+    else:
+        types = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project)
+    for entity_type in types:
+        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
     qs = _get_annotation_psql_queryset(project, filter_ops, params, annotation_type)
     return qs
 

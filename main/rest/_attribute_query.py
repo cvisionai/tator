@@ -253,35 +253,15 @@ def _convert_boolean(value):
         value = bool(value)
     return value
 
-def _get_info_for_attribute(project, annotation_type, key):
+def _get_info_for_attribute(project, entity_type, key):
     """ Returns the first matching dtype with a matching key """
-    types=[]
-    if annotation_type in ['localization', 'all']:
-        types.extend(LocalizationType.objects.filter(project=project))
-    elif annotation_type in ['media', 'all']:
-        types.extend(MediaType.objects.filter(project=project))
-    elif annotation_type in ['state', 'all']:
-        types.extend(StateType.objects.filter(project=project))
-    elif annotation_type in ['leaf', 'all']:
-        types.extend(LeafType.objects.filter(project=project))
-    elif annotation_type in ['file', 'all']:
-        types.extend(FileType.objects.filter(project=project))
-    else:
-        logger.error(f"Unknown annotation_type '{annotation_type}'")
-    
-    for type_info in types:
-        for attribute_info in type_info.attribute_types:
-            if attribute_info['name'] == key:
-                return attribute_info
-    
-    raise(f"Couldn't find info for {key} of {annotation_type} in {project}")
+    for attribute_info in entity_type.attribute_types:
+        if attribute_info['name'] == key:
+            return attribute_info
+    return None
 
-def _get_field_for_attribute(project, annotation_type, key):
+def _get_field_for_attribute(project, entity_type, key):
     """ Returns the field type for a given key in a project/annotation_type """
-    info = _get_info_for_attribute(project, annotation_type, key)
-    if info is None:
-        raise (f'Unknown dtype for {key} in {project.id} of {annotaton_type}')
-    
     lookup_map = {'bool': BooleanField,
                   'int': IntegerField,
                   'float': FloatField,
@@ -290,13 +270,19 @@ def _get_field_for_attribute(project, annotation_type, key):
                   'datetime': DateTimeField,
                   'geopos': PointField,
                   'float_array': VectorField}
-
-    return lookup_map[info['dtype']], info.get('size', None)
+    info = _get_info_for_attribute(project, entity_type, key)
+    if info:
+        return lookup_map[info['dtype']], info.get('size', None)
+    else:
+        return None,None
 
 def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     kv = pair.split(KV_SEPARATOR, 1)
     key, value = kv
-    dtype = _get_info_for_attribute(project, annotation_type, key)['dtype']
+    info = _get_info_for_attribute(project, annotation_type, key)
+    if info is None:
+        return None, None,None
+    dtype = info['dtype']
     
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
@@ -317,20 +303,28 @@ def get_attribute_filter_ops(project, params, data_type):
             if op in params:
                 for kv in params[op]:
                     key, value, dtype = _convert_attribute_filter_value(kv, project, data_type, op)
-                    filter_ops.append((key, value, op))
+                    if key:
+                        filter_ops.append((key, value, op))
     return filter_ops
 
-def get_attribute_psql_queryset(project, annotation_type, qs, params, filter_ops):
+def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
     attribute_null = params.get('attribute_null')
     float_queries = params.get('float_array')
     if float_queries is None:
         float_queries = []
 
+    # return original queryset if no queries were supplied
+    if not filter_ops and not float_queries:
+        return qs
+
+    found_it = False
     for key, value, op in filter_ops:
-        field_type,_ = _get_field_for_attribute(project, annotation_type, key)
-        # Annotate with a typed object prior to query to ensure index usage
-        qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
-        qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+        field_type,_ = _get_field_for_attribute(project, entity_type, key)
+        if field_type:
+            # Annotate with a typed object prior to query to ensure index usage
+            qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
+            qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+            found_it=True
 
     if attribute_null is not None:
         for kv in attribute_null:
@@ -343,16 +337,19 @@ def get_attribute_psql_queryset(project, annotation_type, qs, params, filter_ops
         center = float_array_query['center']
         metric = float_array_query.get('metric', 'l2norm')
         order = float_array_query.get('order', 'asc')
-        field_type,size = _get_field_for_attribute(project, annotation_type, name)
-        qs = qs.annotate(**{f"{name}_typed": Cast(f"attributes__{name}", VectorField(size))})
-        if metric == 'l2norm':
-            qs = qs.order_by(L2Distance(f"{name}_typed"))
-        elif metric == 'cosine':
-            qs = qs.order_by(CosineDistance(f"{name}_typed"))
-        elif metric == 'ip':
-            qs = qs.order_by(MaxInnerProduct(f"{name}_typed"))
-    # Useful for profiling / checking out query complexity
-    # logger.info(f"Query = {qs.query}")
-    logger.info(qs.explain())
-    return qs
+        field_type,size = _get_field_for_attribute(project, entity_type, name)
+        if field_type:
+            found_it = True
+            qs = qs.annotate(**{f"{name}_typed": Cast(f"attributes__{name}", VectorField(size))})
+            if metric == 'l2norm':
+                qs = qs.order_by(L2Distance(f"{name}_typed"))
+            elif metric == 'cosine':
+                qs = qs.order_by(CosineDistance(f"{name}_typed"))
+            elif metric == 'ip':
+                qs = qs.order_by(MaxInnerProduct(f"{name}_typed"))
+
+    if found_it:
+        return qs
+    else:
+        return None
 
