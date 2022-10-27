@@ -214,12 +214,12 @@ def get_attribute_es_query(query_params, query, bools, project,
     return query
 
 ALLOWED_TYPES = {
-    'attribute': ('bool', 'float', 'datetime', 'keyword', 'text', 'int'),
+    'attribute': ('bool', 'float', 'datetime', 'keyword', 'string', 'int', 'enum'),
     'attribute_lt': ('float', 'datetime', 'int'),
     'attribute_lte': ('float', 'datetime', 'int'),
     'attribute_gt': ('float', 'datetime', 'int'),
     'attribute_gte': ('float', 'datetime', 'int'),
-    'attribute_contains': ('keyword', 'text'),
+    'attribute_contains': ('keyword', 'string', 'enum'),
     'attribute_distance': ('geopos',),
 }
 
