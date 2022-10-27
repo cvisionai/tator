@@ -1,8 +1,8 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.min.js';
+import { getApi } from '../../../../scripts/packages/tator-js/pkg';
 
-const api = Utils.getApi(window.localStorage.getItem('backend'));
+const api = getApi(window.localStorage.getItem('backend'));
 console.log(api);
 
 async function configureImageClassification(project) {
