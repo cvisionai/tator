@@ -169,26 +169,23 @@ jobs:
     - run:
         name: Install front end test dependencies
         command: |
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
-          sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
-          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
-          pip3 install playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python;
-          export PATH=$PATH:$HOME/.local/bin:/snap/bin;
-          playwright install;
-          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
-          pip3 install /tmp/tator*.whl;
-    - run:
-        name: SSH forward
-        command: ssh -N -L 8080:$(cat ~/public_ip_address.txt):80 lightsail
-        background: true
+          ssh lightsail 'wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb';
+          ssh lightsail 'sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb';
+          ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr';
+          ssh lightsail 'pip3 install playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python';
+          ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin';
+          ssh lightsail 'playwright install';
+    # - run:
+    #     name: SSH forward
+    #     command: ssh -N -L 8080:$(cat ~/public_ip_address.txt):80 lightsail
+    #     background: true
     - run:
         name: Front end tests
         command: |
-          mkdir /tmp/videos;
-          pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
-    - store_artifacts:
-        path: /tmp/videos
-        destination: videos
+          ssh lightsail 'mkdir /tmp/videos && pytest test --base-url=http://localhost --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
+    # - store_artifacts:
+    #     path: /tmp/videos
+    #     destination: videos
   tator-py-tests:
     machine:
       image: ubuntu-2004:202010-01
@@ -202,24 +199,23 @@ jobs:
     - run:
         name: Install tator-py test dependencies
         command: |
-          sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip;
-          scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
-          pip3 install /tmp/tator*.whl;
-          pip3 install pytest pandas opencv-python;
-          wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
-          unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip;
-          sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.;
-          sudo chmod +x /usr/local/bin/mp4dump;
+          ssh lightsail 'sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip';
+          ssh lightsail 'pip3 install pytest pandas opencv-python';
+          ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
+          ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
+          ssh lightsail 'sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
+          ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
     - run:
         name: Copy test directories
-        command: cp -r scripts/packages/tator-py/test ./tatorpy_test && cp -r scripts/packages/tator-py/examples .
+        command: ssh lightsail 'cp -r ~/tator/scripts/packages/tator-py/test ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/examples ~/tator/.';
     - run:
         name: Get API token
         command: |
           curl -d '{"username": "admin", "password": "admin", "refresh": true}' -H 'Content-Type: application/json' http://$(cat ~/public_ip_address.txt)/rest/Token | jq '.token' | xargs printf "%b\n" | tee ~/token.txt;
+          scp ~/token.txt lightsail:~
     - run:
         name: Run tator-py tests
-        command: pytest tatorpy_test --host=http://$(cat ~/public_ip_address.txt) --token=$(cat ~/token.txt) -s --keep
+        command: ssh lightsail 'pytest tatorpy_test --host=http://localhost --token=$(cat ~/token.txt) -s --keep';
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
