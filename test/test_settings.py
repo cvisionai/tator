@@ -53,7 +53,8 @@ def test_settings_mediaTypes(page_factory, project):
         page.fill('type-form-container[form="media-type-edit"] text-input[name="Description"] input', 'Media description for automated test.')
         print(f'dtypeName: {dtypeName}')
         if dtypeName != "Image":
-            page.fill('type-form-container[form="media-type-edit"] text-input[name="Default volume"] input', '50')
+            page.wait_for_selector('#media-type-edit--volume input')
+            page.fill('#media-type-edit--volume input', '50')
         page.click('type-form-container[form="media-type-edit"] bool-input[name="Visible"] label[for="on"]')
         page.click('type-form-container[form="media-type-edit"] input[type="submit"]')
         page.wait_for_selector(f'text="Media type created successfully!"')

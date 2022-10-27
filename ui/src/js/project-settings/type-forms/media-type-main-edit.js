@@ -18,7 +18,9 @@ export class MediaTypeEdit extends TypeFormTemplate {
     this._editDescription = this._shadow.getElementById("media-type-edit--description");
     this._volumeDiv = this._shadow.getElementById("media-type-edit--volume-div");
     this._defaultVolume = this._shadow.getElementById("media-type-edit--volume");
-    this._visibleBool = this._shadow.getElementById("media-type-edit--visible");    
+    this._visibleBool = this._shadow.getElementById("media-type-edit--visible");
+    
+    this.dtypeSelect.addEventListener("change", this._showHideVolume.bind(this));
   }
 
   async _setupFormUnique(data) {
@@ -40,6 +42,7 @@ export class MediaTypeEdit extends TypeFormTemplate {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
       this.dtypeSelect._select.removeAttribute("disabled");
+
     } else {
       this.dtypeSelect.setValue(data.dtype);
       this.dtypeSelect.default = data.dtype;
