@@ -131,8 +131,6 @@ class FileDetailAPI(BaseDetailView):
                 drop_file_from_resource(obj.path.name, obj)
                 safe_delete(obj.path.name, obj.project.id)
 
-        # Delete ES document
-        TatorSearch().delete_document(obj)
         msg = f'Registered file deleted successfully!'
 
         # Delete from database
