@@ -65,22 +65,7 @@ export class FileInput extends TatorElement {
     const warning = new InlineWarning();
     this.uploadWarningRow.appendChild(warning.div());
 
-    // this._resetLink = document.createElement("span");
-    // this._resetLink.setAttribute("class", "clickable");
-    // this._resetLink.textContent = "Reset.";
-    // this._resetLink.addEventListener("click", this.reset.bind(this));
-    // this.uploadWarningRow._resetLink;
-
-    //
     this._editInput.addEventListener("change", this._editListeners.bind(this));
-
-    // this._input.addEventListener("focus", () => {
-    //   document.body.classList.add("shortcuts-disabled");
-    // });
-
-    // this._input.addEventListener("blur", () => {
-    //   document.body.classList.remove("shortcuts-disabled");
-    // });
 
     this._editInput.addEventListener("input-invalid", (e) => {
       warning.show(e.detail.errorMsg);
@@ -92,6 +77,8 @@ export class FileInput extends TatorElement {
       warning.hide();
     });
 
+    this._projectId = null;
+    this._organizationId = null;
   }
 
   static get observedAttributes() {
@@ -172,7 +159,12 @@ export class FileInput extends TatorElement {
   }
 
   set projectId(val) {
+    console.log("SET PROJECT ID " + val);
     this._projectId = val;
+  }
+
+  set organizationId(val) {
+    this._organizationId = val;
   }
   
 
@@ -185,7 +177,7 @@ export class FileInput extends TatorElement {
     let uploadData = {
       file: blob,
       projectId: this._projectId,
-      organizationId: null,
+      organizationId: this._organizationId,
       gid: "",
       section: "",
       mediaTypeId: null,

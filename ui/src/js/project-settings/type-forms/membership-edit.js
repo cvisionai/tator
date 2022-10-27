@@ -21,12 +21,6 @@ export class MembershipEdit extends TypeFormTemplate {
     this._versionSelect = this._shadow.getElementById("membership-edit--default-version");
   }
 
-  // async connectedCallback() {
-  //   await store.getState().fetchType("User");
-  //   this._users = store.getState()[User].map;
-  // }
-
-
   async _setupFormUnique(data) {
     const formData = {};
 
@@ -52,6 +46,7 @@ export class MembershipEdit extends TypeFormTemplate {
     this._permissionSelect.default = data.permission;
 
     // default version
+    this._versionSelect.clear();
     const versionOptions = await getCompiledList({ type: "Version", check: data.default_version });
     this._versionSelect.resetChoices();
     this._versionSelect.choices = versionOptions;

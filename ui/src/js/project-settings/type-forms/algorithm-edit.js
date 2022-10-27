@@ -1,7 +1,7 @@
 import { TypeFormTemplate } from "./type-form-template.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
-import { getCompiledList } from "../store.js";
+import { getCompiledList, store } from "../store.js";
 
 export class AlgorithmEdit extends TypeFormTemplate {
    constructor() {
@@ -21,6 +21,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       this._shadow.appendChild(innerClone);
 
       this._form = this._shadow.getElementById("algorithm-edit--form");
+      this._userMessage = this._shadow.getElementById("algorithm-edit--user-message");
       this._editName = this._shadow.getElementById("algorithm-edit--name");
       this._editDescription = this._shadow.getElementById("algorithm-edit--description");
       this._userEdit = this._shadow.getElementById("algorithm-edit--user");
@@ -30,100 +31,118 @@ export class AlgorithmEdit extends TypeFormTemplate {
       this._filesPerJob = this._shadow.getElementById("algorithm-edit--files");
       this._categoriesList = this._shadow.getElementById("algorithm-edit--categories");
       this._parametersList = this._shadow.getElementById("algorithm-edit--parameters");
+
+      this._currentUser = null;
+   }
+   
+   async connectedCallback() {
+      store.subscribe(state => state.JobClusterPermission, this.savePermission.bind(this));
+      store.subscribe(state => state.projectId, this.setPermissions.bind(this));
+      store.subscribe(state => state.Project, this.setManifestInfo.bind(this), []);
+   }
+
+   setManifestInfo(project) {
+      this.projectId = project.data.id;
+      this._manifestPath.projectId = project.data.id;
+      this._manifestPath.organizationId = project.data.organization;      
+   }
+
+   // Before we setup the form, check if the user will be able to do things
+   async setPermissions() {
+      console.log("Set permissions was called.");
+      await store.getState().setJobClusterPermissions();
+   }
+
+
+   /**
+    * Sets up the message at top of form based on combination of if...
+    * - NEW algorithm: Cluster required; Prompt to ask admin, or link to add one
+    * - Edit algorithm: User without access to Job Cluster endpoint can edit algorithms...
+    *   but won't know what job cluster is (only works if it there)
+    * - Edit algorithm: Organizations without Job Clusters are required to add one to edit
+    */
+   savePermission(setPermission) {
+      this.cantSave = setPermission.userCantSave;
+      this.cantSee = setPermission.userCantSeeCluster
+   }
+
+   showMessagesCantSee(isNew) {
+      if (isNew) {
+         this._userMessage.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
+         state.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
+      } else {
+         this._userMessage.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
+         state.setState({ status: { ...store.getState().status, name: "idle", message: "" } });
+      }
+   }
+
+   showMessagesCantSave(isNew ) {
+      if (isNew) {
+         this._userMessage.innerHTML = `Required: Add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
+      } else {
+         this._userMessage.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
+      }
+      state.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
    }
 
    async _setupFormUnique(data) {
       this._data = data;
-      console.log("ALGO _setupFormUnique",data);
-      // Before we setup the form, check if the user will be able to do things
-      const jobClusterWithChecked = await getCompiledList({ type: "JobCluster", check: this._data.cluster });
-      this.userCantSaveCluster = !this.isStaff && (jobClusterWithChecked == null || jobClusterWithChecked.length == 0);
-      this.userCantSeeCluster = (jobClusterWithChecked === 403); // Non Auth user
+      console.log("ALgo _setupFormUnique "+data.id);
 
-      if (this.userCantSaveCluster || this.userCantSeeCluster) {
-         // this._cannotEdit = document.createElement("p");
-         // this._cannotEdit.setAttribute("class", "text-gray pb-3");
-         // this._form.appendChild(this._cannotEdit);
-      
-         if (this._data.id == "New") {
-            // // Wihtout authorization to see clusters, or if there are none
-            // if (this.userCantSeeCluster) {
-            //    this._cannotEdit.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
-            // } else {
-            //    this._cannotEdit.innerHTML = `Required: Add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to add an algorithm.`;
-            // }
-            
-            // this._form.appendChild(this._cannotEdit);
-            // this.savePost.disabled = true;
-            // this.savePost.hidden = true;
-            // current.appendChild(this._form);
-
-            // return current;
-         } else {
-            // if (this.userCantSeeCluster) {
-            //    this._cannotEdit.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
-            //    this.userCantSaveCluster = false;
-            // } else if (this.userCantSaveCluster) {
-            //    this.saveButton.disabled = true;
-            //    this._cannotEdit.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
-            // }
-         }
-      }
+      // Show appropriate messages if required
+      if (this.cantSave) this.showMessagesCantSave(this._data.id == "New");
+      if (this.cantSee) this.showMessagesCantSee(this._data.id == "New");
 
       // description
-      this._editDescription.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+      this._editDescription.permission = !this.cantSave ? "Can Edit" : "Ready Only";
       this._editDescription.setValue(this._data.description);
       this._editDescription.default = this._data.description;
 
       // User
-      this._registeredUserName = "";
-      this._registeredUserId = "";
+      // TODO move User data to store
       try {
          if (this._data.id == "New") {
+            if (this._currentUser == null) {
+               this._currentUser = await store.getState().getUser("GetCurrent");
+            }
+            console.log("this._currentUser", this._currentUser);
             //use current user
-            let userData = await this._userData.getCurrentUser();
-            // console.log(userData);
-            this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
-            this._registeredUserId = userData.id;
+            this._registeredUserName = `${this._currentUser.first_name} ${this._currentUser.last_name}`;
+            this._registeredUserId = this._currentUser.id;
          } else {
-            let userData = await this._userData.getUserById(this._data.user);
-            // console.log(userData);
+            const userData = await store.getState().getUser(this._data.user);
             this._registeredUserName = `${userData.first_name} ${userData.last_name}`;
-            this._registeredUserId = userData.id;
+            this._registeredUserId = this._data.user;
          }
       } catch (err) {
          console.error("Couldn't get user data.", err);
+         this._registeredUserName = "";
+         this._registeredUserId = "";
       }
 
       // Visible input with readable name
       this._userEditVisible.permission = "View Only";//!this.userCantSaveCluster ? "Can Edit" : "Ready Only";
       this._userEditVisible.setValue(this._registeredUserName);
       this._userEditVisible.default = this._registeredUserName;
-      // this._userEditVisible.permission = null;
 
       // Note: HIDDEN input for formValue of ID; Name is for user only
       this._userEdit.default = this._registeredUserId;
+      this._userEdit.setValue(this._registeredUserId);
       this._userEdit.permission = null;
 
       // Path to manifest
-      this._manifestPath.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-
-      console.log("What is data.project? +" + data.project);
-      this._manifestPath.projectId = this.projectId;
-      this._manifestPath.organizationId = this.organizationId;
-      console.log("ALGO !!!!!!!!!" + this.organizationId);
-
+      this._manifestPath.permission = !this.cantSave ? "Can Edit" : "Ready Only";
       if (this._data.manifest) {
          this._manifestPath.setValue(`/media/${this._data.manifest}`);
          this._manifestPath.default = `/media/${this._data.manifest}`;       
       } else {
+         this._manifestPath.setValue(null);
          this._manifestPath.default = null;
       }
 
-      
-      this._manifestPath._fetchCall = (bodyData) => {
-         return fetch(`/rest/SaveAlgorithmManifest/${this.projectId}`,
-            {
+      // override the fetch call on this web component
+      this._manifestPath._fetchCall = async (bodyData) => {
+         const resp = await fetch(`/rest/SaveAlgorithmManifest/${this.projectId}`, {
                method: "POST",
                credentials: "same-origin",
                body: JSON.stringify(bodyData),
@@ -132,49 +151,57 @@ export class AlgorithmEdit extends TypeFormTemplate {
                   "Accept": "application/json",
                   "Content-Type": "application/json"
                }
-            }
-         ).then(resp => resp.json()).then(
-            manifestData => {
-               // console.log(manifestData);
-               const viewLink = `/media/${manifestData.url}`;
-               this._manifestPath.setValue(viewLink);
-               Utilities.showSuccessIcon(`Manifest file uploaded to: ${viewLink}`);
-            }
-         );
+         });
+         if (resp.ok) {
+            const manifestData = await resp.json()
+            const viewLink = `/media/${manifestData.url}`;
+            this._manifestPath.setValue(viewLink);
+            Utilities.showSuccessIcon(`Manifest file uploaded to: ${viewLink}`);            
+         } else {
+            console.error(resp);
+         }
       };
 
       // Cluster
-      if (!this.userCantSeeCluster) {
+      this._clusterEnumInput.removeAttribute("tooltip"); //reset tooltip
+      this._clusterEnumInput.clear();
+      if (!this.cantSee) {
          // if they aren't a non auth user
+         const jobClusterWithChecked = await getCompiledList({ type: "JobCluster", skip: null, check: this._data.cluster});
+         // console.log("JOB CLUSTER WITH CHECKED", jobClusterWithChecked);
+
          // Check if there are going to be enum values first, show input with NULL
          if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
             this._clusterEnumInput.disabled = true;
             this._clusterEnumInput.setValue("Null");
+            this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
          } else {
             this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
             this._clusterEnumInput.choices = jobClusterWithChecked;
             this._clusterEnumInput.default = this._data.cluster;
+            this._clusterEnumInput.setValue(this._data.cluster);
          }
       } else {
          this._clusterEnumInput.default = this._data.cluster;
+         this._clusterEnumInput.setValue(this._data.cluster);
       }
 
       // Files per job
-      this._filesPerJob.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+      this._filesPerJob.permission = !this.cantSave ? "Can Edit" : "Ready Only";
       this._filesPerJob.setValue(this._data.files_per_job);
       this._filesPerJob.default = this._data.files_per_job;
 
       // Categories
-      this._categoriesList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
+      this._categoriesList.permission = !this.cantSave ? "Can Edit" : "Ready Only";
       this._categoriesList.setValue(this._data.categories);
       this._categoriesList.default = this._data.categories;
 
       // Parameters
-      // let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
-      // let paramInputTemplate = JSON.stringify({ name: '', value: '' });
-      this._parametersList.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-      // this._parametersList.setAttribute("properties", paramInputTypes);
-      // this._parametersList.setAttribute("empty-row", paramInputTemplate);
+      let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
+      let paramInputTemplate = JSON.stringify({ name: '', value: '' });
+      this._parametersList.permission = !this.cantSave ? "Can Edit" : "Ready Only";
+      this._parametersList.setAttribute("properties", paramInputTypes);
+      this._parametersList.setAttribute("empty-row", paramInputTemplate);
       this._parametersList.setValue(this._data.parameters);
       this._parametersList.default = this._data.parameters;
    }
@@ -202,10 +229,9 @@ export class AlgorithmEdit extends TypeFormTemplate {
       }
 
       // console.log(`UserCantSaveCluster ${this.userCantSaveCluster} and userCantSeeCluster ${this.userCantSeeCluster}`)
-      if (!(this.userCantSaveCluster || this.userCantSeeCluster)) {
+      if (!(this.cantSave || this.cantSee)) {
          if (this._clusterEnumInput.changed() || isNew) {
             let clusterValue = this._clusterEnumInput.getValue();
-            // console.log(clusterValue);
             if (clusterValue === null || clusterValue === "Null" || clusterValue == "") {
                formData.cluster = null;
             } else {

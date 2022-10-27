@@ -24,17 +24,22 @@ export class MediaTypeEdit extends TypeFormTemplate {
   async _setupFormUnique(data) {
 
     // dtype
-    const dTypeOptions = [
-      { "label": "Select", "value": "" },
-      { "label": "Video", "value": "video" },
-      { "label": "Image", "value": "image" },
-      { "label": "Multiview", "value": "multi" }
-    ];
-    // Emptyform uses "" for dtype value
-    this.dtypeSelect.choices = dTypeOptions;
+    if (!this.dtypeSelect._choices) {
+      const dTypeOptions = [
+        { "label": "Select", "value": "" },
+        { "label": "Video", "value": "video" },
+        { "label": "Image", "value": "image" },
+        { "label": "Multiview", "value": "multi" }
+      ];
+      // Emptyform uses "" for dtype value
+      this.dtypeSelect.choices = dTypeOptions;      
+    }
+
     if (!data.dtype) {
+      this.dtypeSelect.setValue("");
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
+      this.dtypeSelect._select.removeAttribute("disabled");
     } else {
       this.dtypeSelect.setValue(data.dtype);
       this.dtypeSelect.default = data.dtype;
@@ -46,8 +51,9 @@ export class MediaTypeEdit extends TypeFormTemplate {
     this._editDescription.default = this._data.description;
 
     // default volume (video, multi)
-    this._volumeDiv.hidden = (typeof data.dtype !== "undefined" && data.dtype === "image") || data.dtype == "";
-    const defaultVol = typeof this._data.default_volume !== "undefined" ? this._data.default_volume : 0;
+    this._volumeDiv.hidden = !(data.dtype === "video" || data.dtype === "multi");
+    
+    const defaultVol = this._data.default_volume;
     this._defaultVolume.setValue(defaultVol);
     this._defaultVolume.default = defaultVol;
 

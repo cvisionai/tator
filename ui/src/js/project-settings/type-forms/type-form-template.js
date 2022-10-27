@@ -8,8 +8,11 @@ export class TypeFormTemplate extends TatorElement {
     this._hideAttributes = true;
     this.saveWarningFlow = false;
 
-    // Genrci fallback for warning flow save
+    // Genenric fallback for warning flow save
     this._warningSaveMessage = "Are you sure you want to edit this entity?";
+
+    this.modal = document.createElement("modal-dialog");
+    this._shadow.appendChild(this.modal);
   }
 
   connectedCallback() {
@@ -127,12 +130,17 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   handleResponse(data) {
-    console.log(data);
+    console.log("HANDLE RESPONSE", data);
     if (data.response.ok) {
       return this.modal._success(data.data.message);
     } else {
-      console.log(data.response.message);
-      return this.modal._error(data.data.message);
+      if (data.response?.text && data.response?.status && data.response?.statusText) {
+        const message = JSON.parse(data.response.text).message;
+        return this.modal._error(`<strong>${data.response.status} ${data.response.statusText}</strong><br/><br/>${message}`);        
+      } else {
+        this.modal._error(`Error: Could not process request.`);
+      }
+
     }
   }
 
@@ -202,6 +210,7 @@ export class TypeFormTemplate extends TatorElement {
       description: "",
       visible: false,
       grouping_default: false,
+      default_volume: 0,
       media: [],
       dtype: "",
       colorMap: null,

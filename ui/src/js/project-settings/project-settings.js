@@ -26,17 +26,19 @@ export class ProjectSettings extends TatorPage {
     // Page: pieces
     this.main = this._shadow.getElementById("project-settings--main");
     this.settingsNav = this._shadow.getElementById("settings-nav--nav");
-    this.modal = this._shadow.getElementById("project-settings--modal");
     this.itemsContainer = this._shadow.getElementById("settings-nav--item-container");
-
-    // type forms are all children of itemsContainer
+    this.modal = this._shadow.getElementById("project-settings--modal");
+    console.log(this.modal);
+    store.setState({ modal: { ...store.getState().modal, element: this.modal } });
+    this.modal.addEventListener("open", this.showDimmer.bind(this));
+    this.modal.addEventListener("close", this.hideDimmer.bind(this));
   }
 
   connectedCallback() {
     /* Update display for any change in data (#todo Project is different) */
     store.subscribe(state => state.Project, this.updateProject.bind(this));
-    store.subscribe(state => state.selection, this.checkHash.bind(this));
     store.subscribe(state => state.status, this.handleStatusChange.bind(this));
+    
 
     // Init
     this._init();
@@ -65,12 +67,14 @@ export class ProjectSettings extends TatorPage {
   handleStatusChange(status) {
     // Debug output, potentially useful as lightbox or all modal handles
     console.log(`Status updated to "${status.name}" ${(status.msg !== "") ? " with message: "+status.msg : ""}`);
-    if (status.name == "idle") {
-      this.hideDimmer();
-      this.loading.hideSpinner();
-    } else {
+    if(status.name == "pending"){
       this.showDimmer();
       this.loading.showSpinner();
+    } else {
+      if (this.hasAttribute("has-open-modal")){
+        this.hideDimmer();
+        this.loading.hideSpinner();         
+      }
     }
   }
 
@@ -132,13 +136,6 @@ export class ProjectSettings extends TatorPage {
     this.selectedHash = window.location.hash;
   }
 
-  /* This is currently just a debug output, but could potentially handle mismatching */
-  checkHash(newSelect) {
-    if (this._selectedObjectId !== newSelect.typeId || this._selectedType !== newSelect.typeName) {
-      console.warn(`Hash "${this._selectedHash}" doesn't match up with selected item?`, newSelect);
-    }
-  }
-
   /* Project data required for settings page components are updated */
   updateProject(newType) {
     console.log("Project data set!", newType);
@@ -166,7 +163,6 @@ export class ProjectSettings extends TatorPage {
   }
 
   hideDimmer() {
-    this.modal._div.classList.remove("modal-wide"); // reset width
     return this.removeAttribute("has-open-modal");
   }
 

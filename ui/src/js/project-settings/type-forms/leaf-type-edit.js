@@ -20,12 +20,14 @@ export class LeafTypeEdit extends TypeFormTemplate {
 
   async _setupFormUnique(data) {
 
-    // dtype  
-    const dTypeOptions = [
-      { "value": "leaf", "label": "Leaf" }
-    ];
-    // Emptyform uses "" for dtype value
-    this.dtypeSelect.choices = dTypeOptions;
+    // dtype
+    if(!this.dtypeSelect._choices){
+      const dTypeOptions = [
+        { "value": "leaf", "label": "Leaf" }
+      ];
+      // Emptyform uses "" for dtype value
+      this.dtypeSelect.choices = dTypeOptions;
+    }
     if (!data.dtype) {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";

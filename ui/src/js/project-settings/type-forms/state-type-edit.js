@@ -28,23 +28,12 @@ export class StateTypeEdit extends TypeFormTemplate {
   async _setupFormUnique(data) {
     this._data = data;
 
-    // // Setup view
-    // this._typeId = data.id;
-    // this._objectName = data.name;
-    // this._projectId = data.project;
-
-    // // name
-    // let name = ""
-    // if (data.id !== "New") name = this._data.name
-    // this._editName.setValue(name);
-    // this._editName.default = name;
-
     // dtype
     const dTypeOptions = [
       { "label": "State", "value": "state" }
     ];
     // Emptyform uses "" for dtype value
-    this.dtypeSelect.choices = dTypeOptions;
+    if(typeof this.dtypeSelect._choices == "undefined") this.dtypeSelect.choices = dTypeOptions;
     if (!data.dtype) {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
@@ -70,8 +59,7 @@ export class StateTypeEdit extends TypeFormTemplate {
     if (typeof data.media !== "undefined") {
       try {
         const mediaListWithChecked = await getCompiledList({
-          type: this.typeName,
-          skip: data.id,
+          type: "MediaType",
           check: this._data.media
         });
         this._mediaCheckboxes.setValue( mediaListWithChecked );
@@ -82,13 +70,15 @@ export class StateTypeEdit extends TypeFormTemplate {
     }
 
     // Associations
-    const assocOptions = [
-      { "label" : "Select", "value" : ""},
-      { "value": "Media"},
-      { "value": "Frame" },
-      { "value": "Localization" }
-    ];
-    this._association.choices = assocOptions;
+    if(!this._association._choices){
+      const assocOptions = [
+        { "label" : "Select", "value" : ""},
+        { "value": "Media"},
+        { "value": "Frame" },
+        { "value": "Localization" }
+      ];
+      this._association.choices = assocOptions;
+    }
     if (!data.association) {
       this._association.default = ""; 
     } else {
@@ -103,7 +93,7 @@ export class StateTypeEdit extends TypeFormTemplate {
       { "label": "Latest", "value": "latest" },
       { "label": "Attr Style Range", "value": "attr_style_range" }
     ];
-    this._interpolation.choices = interpOptions;
+    if(typeof this._interpolation._choices == "undefined") this._interpolation.choices = interpOptions;
     if (!data.interpolation) {
       this._interpolation.default = ""; 
     } else {

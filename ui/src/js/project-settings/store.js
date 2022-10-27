@@ -63,9 +63,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       name: "idle",
       msg: "" // if Error this could trigger "toast" with message
    },
-   other: {
-      //
-   },
    projectId: null,
    organizationId: null,
    deletePermission: false,
@@ -145,6 +142,27 @@ const store = create(subscribeWithSelector((set, get) => ({
       name: "JobCluster"
    },
 
+   JobClusterPermission: {
+      userCantSee : false,
+      userCantSave: false
+   },
+
+   User: {
+      init: false,
+      setList: new Set(),
+      map: new Map(),
+      name: "Users"
+   },
+
+   /* Get current user */
+   getUser: async (userId) => { 
+      const object = await api.getUserWithHttpInfo(userId);
+      if (object.response.ok && object.data) {
+         return object.data;
+      }
+
+      return null;
+   },
 
    /* */
    setSelection: (newSelection) => {
@@ -156,13 +174,52 @@ const store = create(subscribeWithSelector((set, get) => ({
       });
    },
 
+   /** */
+   setJobClusterPermissions: async () => {
+      try {
+         const type = "JobCluster";
+         const fn = getMap.get(type);
+         const projectId = get().projectId;
+         const object = await fn(projectId);
+         const setList = get()[type].setList;
+         const map = get()[type].map;
+
+         /* Add the data via loop to: setList and map */
+         for (let item of object.data) {
+            setList.add(item.id);
+            map.set(item.id, item);
+         }
+
+         set({ [type]: { ...get()[type], setList, map, init: true } });
+         set({
+            JobClusterPermission: {
+               ...get().JobClusterPermission,
+               userCantSee: object.response.status === "403",
+               userCantSave: !get().isStaff && (object.data == null || object.data.length == 0)
+            }
+         });
+
+         // Success: Return status to idle (handles page spinner)
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return object;
+      } catch (err) {
+         console.error(err);
+         // Success: Return status to idle (handles page spinner)
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return null;
+      }
+   },
+
+   /**
+    * 
+    */
    getData: async (type, id) => {
       const info = get()[type];
 
       if (info.init !== true) {
          await get().fetchType(type);
       }
-      console.log("GET DATA... map:", info.map);
+      console.log("GET DATA... map for type "+type, info.map);
       return info.map.get(Number(id));
    },
 
@@ -199,50 +256,59 @@ const store = create(subscribeWithSelector((set, get) => ({
    initType: async (type) => {
       console.log("Init type: " + type);
       let init = get()[type].init;
+      let data = null;
 
       if (!init) {
-         await get().fetchType(type);
+         data = await get().fetchType(type);
+      } else {
+         data = await get()[type];
       }
 
-      return get()[type];
+      return data;
    },
 
    fetchType: async (type) => {
-      set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
+      set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
       try {
          const fn = getMap.get(type);
          const projectId = get().projectId;
          const object = await fn(projectId);
-         const setList = get()[type].setList;
-         const map = get()[type].map;
 
-         /* Add the data via loop to: setList and map */
-         if (type == "Project") {
-            setList.add(object.data.id);
-            map.set(object.data.id, object.data);
-
-            /* Project set like this to include a "data" attr */
-            set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
-         } else if (type == "Leaf") {
-            const leafTypes = await get().initType("LeafType");
-            const metaMap = getLeavesByParent({leafTypes,object, currentMap: map});
-            set({ [type]: { ...get()[type], setList, map: metaMap, init: true } });
-         } else {
-            for (let item of object.data) {
-               setList.add(item.id);
-               map.set(item.id, item);
+         if (object.response.ok) {
+            const setList = get()[type].setList;
+            const map = get()[type].map;
+   
+            /* Add the data via loop to: setList and map */
+            if (type == "Project") {
+               setList.add(object.data.id);
+               map.set(object.data.id, object.data);
+   
+               /* Project set like this to include a "data" attr */
+               set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
+            } else if (type == "Leaf") {
+               const leafTypes = await get().initType("LeafType");
+               const metaMap = getLeavesByParent({leafTypes,object, currentMap: map});
+               set({ [type]: { ...get()[type], setList, map: metaMap, init: true } });
+            } else {
+               for (let item of object.data) {
+                  setList.add(item.id);
+                  map.set(item.id, item);
+               }
+               set({ [type]: { ...get()[type], setList, map, init: true } });
             }
-            set({ [type]: { ...get()[type], setList, map, init: true } });
+   
+            // After LeafType is init, init Leaf (Keep here to avoid loop)
+            if (type == "LeafType") {
+               await get().initType("Leaf");
+            }
+   
+            // Success: Return status to idle (handles page spinner)
+            set({ status: { ...get().status, name: "idle", msg: "" } });
+            return object.data;
+         } else {
+            console.log("Object response not ok for fetchType", object);
          }
-
-         // After LeafType is init, init Leaf (Keep here to avoid loop)
-         if (type == "LeafType") {
-            await get().initType("Leaf");
-         }
-
-         // Success: Return status to idle (handles page spinner)
-         set({ status: { ...get().status, name: "idle", msg: "" } });
-         return object.data;
+        
       } catch (err) {
          // Error: Return status to idle (handles page spinner)
          console.error("Fetch type hit an issue.", err);
@@ -272,7 +338,8 @@ const store = create(subscribeWithSelector((set, get) => ({
          }
 
          // Select the new type (non-Leaf) forms
-         if(type !== "Leaf") set({ selection: { ...get().selection, typeName: type, typeId: object.data.id } });
+         window.location = `${window.location.origin}${window.location.pathname}#${type}-${object.data.id}`;
+         // if(type !== "Leaf") set({ selection: { ...get().selection, typeName: type, typeId: object.data.id } });
          set({ status: { ...get().status, name: "idle", msg: "" } });
 
          // This includes the reponse so error handling can happen in ui
@@ -386,7 +453,10 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
 
    for (let type of Object.keys(attributeDataByType)) {
       const data = await store.getState().initType(type);
-      for (let [key, entity] of data.map.entries()) {
+      console.log(`getDataByType = data for ${type}`, data);
+      const list = Array.isArray(data) ? data :  data.map.entries();
+      for (let entity of list) {
+         console.log("ENTITY", entity);
          attributeDataByType[type][entity.name] = entity.attribute_types;
       }
    }
@@ -394,6 +464,11 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
    return attributeDataByType;
 }
 
+/**
+ * 
+ * @param {*} param0 
+ * @returns 
+ */
 export const getLeavesByParent = ({ leafTypes, object, currentMap }) => {
    const newMap = new Map();
    const leaves = object.data;

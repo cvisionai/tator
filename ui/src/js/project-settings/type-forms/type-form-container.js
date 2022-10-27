@@ -23,8 +23,8 @@ export class TypeFormContainer extends TatorElement {
     this._addLeaves = this._shadow.getElementById("type-form--add-edit-leaves");
     this._addLeavesLink = this._shadow.getElementById("type-form--add-edit-leaves_link");
     this._leavesFormHeading = this._shadow.getElementById("type-form--leaves-active");
-    // this._attrMain = this._shadow.getElementById("type-form-attr-main");
 
+    // this is outside the template and references by all parts of page to sync the dimmer
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild(this.modal);
   }
@@ -38,7 +38,6 @@ export class TypeFormContainer extends TatorElement {
     // Create in the inner form handles
     const formName = this.getAttribute("form");
     this._form = document.createElement(formName);
-    this._form.modal = this.modal;
     this.typeFormDiv.appendChild(this._form);
 
     // Once we know what type, listen to changes
