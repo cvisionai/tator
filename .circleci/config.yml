@@ -129,6 +129,19 @@ jobs:
     - attach_workspace:
         at: ~/
     - run:
+        name: Install test dependencies
+        command: |
+          ssh lightsail 'wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb';
+          ssh lightsail 'sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb';
+          ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr python3-pip ffmpeg wget unzip';
+          ssh lightsail 'pip3 install pytest pandas playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python';
+          ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin';
+          ssh lightsail 'playwright install';
+          ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
+          ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
+          ssh lightsail 'sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
+          ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
+    - run:
         name: Install Tator
         command: |
           ssh lightsail 'export DOMAIN_ALIAS='"'localhost'"';cd tator && ./install.sh';
@@ -162,49 +175,21 @@ jobs:
     steps:
     - attach_workspace:
         at: ~/
-    - checkout
-    - run:
-        name: Clone submodules
-        command: git submodule update --init
-    - run:
-        name: Install front end test dependencies
-        command: |
-          ssh lightsail 'wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb';
-          ssh lightsail 'sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb';
-          ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr';
-          ssh lightsail 'pip3 install playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python';
-          ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin';
-          ssh lightsail 'playwright install';
-    # - run:
-    #     name: SSH forward
-    #     command: ssh -N -L 8080:$(cat ~/public_ip_address.txt):80 lightsail
-    #     background: true
     - run:
         name: Front end tests
         command: |
+          mkdir -p /tmp/videos
           ssh lightsail 'mkdir /tmp/videos && pytest test --base-url=http://localhost --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
-    # - store_artifacts:
-    #     path: /tmp/videos
-    #     destination: videos
+          scp -r lightsail:/tmp/videos /tmp/videos
+    - store_artifacts:
+        path: /tmp/videos
+        destination: videos
   tator-py-tests:
     machine:
       image: ubuntu-2004:202010-01
     steps:
     - attach_workspace:
         at: ~/
-    - checkout
-    - run:
-        name: Clone submodules
-        command: git submodule update --init
-    - run:
-        name: Install tator-py test dependencies
-        command: |
-          ssh lightsail 'sudo apt-get update && sudo apt-get -yq --no-install-suggests --no-install-recommends install python3-pip ffmpeg wget unzip';
-          ssh lightsail 'pip3 install pytest pandas opencv-python';
-          ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
-          ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
-          ssh lightsail 'sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
-          ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
     - run:
         name: Copy test directories
         command: ssh lightsail 'cp -r ~/tator/scripts/packages/tator-py/test ~/tator/tatorpy_test && cp -r ~/tator/scripts/packages/tator-py/examples ~/tator/.';
