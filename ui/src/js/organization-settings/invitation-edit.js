@@ -33,9 +33,8 @@ export class InvitationEdit extends OrganizationTypeForm {
   }
 
   _getExistingForm(data) {
-    let current = this.boxHelper.boxWrapDefault({
-      "children": ""
-    });
+    let current = document.createElement("div");
+    current.setAttribute("class", `py-3 rounded-2 edit-project__config`);
 
     //
     this._setForm();
@@ -97,9 +96,8 @@ export class InvitationEdit extends OrganizationTypeForm {
 
   _getNewForm(data) {
     // console.log("Get new form");
-    let current = this.boxHelper.boxWrapDefault({
-      "children": ""
-    });
+    let current = document.createElement("div");
+    current.setAttribute("class", `py-3 rounded-2 edit-project__config`);
     this._setForm();
 
     this._emailInput = document.createElement("email-list-input");

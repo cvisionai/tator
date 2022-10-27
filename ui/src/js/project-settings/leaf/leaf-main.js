@@ -62,17 +62,18 @@ export class LeafMain extends TatorElement {
    */
   set data(val) {
     console.log("DATA SET FOR LEAF MAIN", val);
-    if (typeof val == "undefined" || val === null || !val.parent) {
+    if (typeof val == "undefined" || val === null || !val[0].parentType) {
       //EMPTY this...
       this.leaves = [];
       this.fromId = null;
       this.fromName = null;
       this.attributeTypes = [];
     } else {
-      this.leaves = val.leaves;
-      this.fromId = val.parent.id;
-      this.fromName = val.parent.name;
-      this.attributeTypes = val.parent.attribute_types;
+      this.leaves = val;
+      const parent = val[0].parentType;
+      this.fromId = parent.id;
+      this.fromName = parent.name;
+      this.attributeTypes = parent.attribute_types;
     }
   }
 
@@ -106,7 +107,7 @@ export class LeafMain extends TatorElement {
   set leaves(val) {
     this._leaves = val;
     this._leavesContainer.innerHTML = "";
-
+    console.log("Setting up these leaves!", this._leaves);
     if (this._leaves && this._leaves.length > 0) {
       this._leafBoxShowHide.hidden = false;
       this._leavesContainer.appendChild(this._getLeavesSection());
@@ -660,15 +661,18 @@ export class LeafMain extends TatorElement {
     this.loading.showSpinner();
 
     if (typeof id != "undefined") {
-      const info = await store.getState().removeType({ type: "Leaf", id: id });
+      try {
+        const info = await store.getState().removeType({ type: "Leaf", id: id });
+        console.log("Handle delete response info is", info);
       
-      try{
-        if(info.response.ok) {
-          this.loading.hideSpinner();
-          this._modal._success(info.data.message);
+        const message = JSON.parse(info.response.text).message;
+        this.loading.hideSpinner();
+        if (info.response.ok) {
+          this._modal._success(message);
         } else {
-          this._modal._error(info.data.message);
+          this._modal._error(message);
         }
+
       } catch(err) {
         console.error(err);
         this._modal._error(err);
@@ -696,9 +700,9 @@ export class LeafMain extends TatorElement {
     let response = obj.response;
 
     if (response.status == 200) {
-      this._modal._error(currentMessage);
-    } else {
       this._modal._success(currentMessage);
+    } else {
+      this._modal._error(currentMessage);
     }
 
     this.loading.hideSpinner();
@@ -712,7 +716,8 @@ export class LeafMain extends TatorElement {
     if (this.typeName == store.getState().selection.typeName) {
       console.log("newData... ", newData);
       console.log("oldData... ", oldData);
-      console.log("does new data have... " + this._fromId);
+      console.log("does new data have... " + this._fromId + store.getState().selection.typeId);
+      console.log(newData.setList.has(store.getState().selection.typeId));
       console.log(newData.setList.has(this._fromId));
       
       if (newData.setList.has(this._fromId) || newData.setList.has(store.getState().selection.typeId)) {
@@ -744,11 +749,7 @@ export class LeafMain extends TatorElement {
       if (newId !== "New") {
         const data = await store.getState().getData("Leaf", newId);
         const type = await store.getState().getData("LeafType", newId);
-        console.log(data);
-        this.data = {
-          parent: type,
-          leaves: data
-        };
+        this.data = data;
       } else {
         this.data = null;
       }

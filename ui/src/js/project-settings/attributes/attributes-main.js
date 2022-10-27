@@ -279,12 +279,6 @@ export class AttributesMain extends HTMLElement {
     attributes = [],
     attributeId = undefined
   } = {}){
-    // let attributeCurrent = this.boxHelper.headingWrap({
-    //   "headingText" : `${attributes.name}`,
-    //   "descriptionText" : "Edit attribute.",
-    //   "level":3,
-    //   "collapsed":true
-    // });
     let innerAttributeBox = document.createElement("div");
     innerAttributeBox.setAttribute("class", "attributes-edit flex-items-center rounded-2 d-flex flex-row");
     this.attributeBox.appendChild(innerAttributeBox);
@@ -337,27 +331,6 @@ export class AttributesMain extends HTMLElement {
       this._deleteAttrConfirm(attributes.name);
     });
 
-
-    // create box with heading for this form
-    // let boxOnPage = this.boxHelper.boxWrapDefault( {
-    //   "children" : attributeCurrent,
-    //   "level":2
-    // } );
-
-    // let hiddenInnerBox = document.createElement("div");
-    // hiddenInnerBox.appendChild(attrForm);
-    // hiddenInnerBox.appendChild(this.deleteAttr(attributes.name));
-    // hiddenInnerBox.hidden = true;
-    // boxOnPage.appendChild(hiddenInnerBox);
-
-    // // add listener
-    // attributeCurrent.addEventListener("click", (e) => {
-    //   e.preventDefault();
-    //   this._toggleAttributes(hiddenInnerBox);
-    //   this._toggleChevron(e);
-    // });
-
-    // return boxOnPage;
     return innerAttributeBox;
   }
 
@@ -430,9 +403,9 @@ export class AttributesMain extends HTMLElement {
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
-    this.deleteBox = this.boxHelper.boxWrapDelete( {
-      "children" : headingDiv
-    } );
+    this.deleteBox = document.createElement("div");
+    deleteBox.setAttribute("class", `py-3 rounded-2 edit-project__config`);
+    deleteBox.appendChild(headingDiv);
 
     this.deleteBox.style.backgroundColor = "transparent";
 

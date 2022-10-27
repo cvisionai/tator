@@ -140,17 +140,17 @@ export class LeafItem extends TatorElement {
    handleDragEnd(e) {
       this.innerLeafBox.style.opacity = '1';
       this.leafName.style.border = "none";
-      this.leafMain.leafBox.style.border = "none";
+      this.leafMain._leafBox.style.border = "none";
    }
 
    handleDragEnter(e) {
       this.leafName.style.border = "3px dotted #333";
-      this.leafMain.leafBox.style.border = "none";
+      this.leafMain._leafBox.style.border = "none";
    }
 
    handleDragOver(e) {
       e.preventDefault();
-      this.leafMain.leafBox.style.border = "none";
+      this.leafMain._leafBox.style.border = "none";
       return false;
    }
 

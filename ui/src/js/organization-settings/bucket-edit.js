@@ -44,9 +44,8 @@ export class BucketEdit extends OrganizationTypeForm {
     this.data = data;
     console.log(this.data);
 
-    let current = this.boxHelper.boxWrapDefault({
-      "children": ""
-    });
+    let current = document.createElement("div");
+    current.setAttribute("class", `py-3 rounded-2 edit-project__config`);
 
     //
     this._setForm();

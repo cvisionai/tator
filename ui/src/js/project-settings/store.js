@@ -35,7 +35,7 @@ patchMap.set("Project", api.updateProjectWithHttpInfo.bind(api))
    .set("MediaType", api.updateMediaTypeWithHttpInfo.bind(api))
    .set("LocalizationType", api.updateLocalizationTypeWithHttpInfo.bind(api))
    .set("LeafType", api.updateLeafTypeWithHttpInfo.bind(api))
-   .set("Leaf", api.updateLeafListWithHttpInfo.bind(api))
+   .set("Leaf", api.updateLeafWithHttpInfo.bind(api))
    .set("StateType", api.updateStateTypeWithHttpInfo.bind(api))
    .set("Membership", api.updateMembershipWithHttpInfo.bind(api))
    .set("Version", api.updateVersionWithHttpInfo.bind(api))
@@ -47,7 +47,7 @@ deleteMap.set("Project", api.deleteProjectWithHttpInfo.bind(api))
    .set("MediaType", api.deleteMediaTypeWithHttpInfo.bind(api))
    .set("LocalizationType", api.deleteLocalizationTypeWithHttpInfo.bind(api))
    .set("LeafType", api.deleteLeafTypeWithHttpInfo.bind(api))
-   .set("Leaf", api.deleteLeafListWithHttpInfo.bind(api))
+   .set("Leaf", api.deleteLeafWithHttpInfo.bind(api))
    .set("StateType", api.deleteStateTypeWithHttpInfo.bind(api))
    .set("Membership", api.deleteMembershipWithHttpInfo.bind(api))
    .set("Version", api.deleteVersionWithHttpInfo.bind(api))
@@ -213,11 +213,8 @@ const store = create(subscribeWithSelector((set, get) => ({
     * 
     */
    getData: async (type, id) => {
+      if (!get()[type].init) await get().fetchType(type);
       const info = get()[type];
-
-      if (info.init !== true) {
-         await get().fetchType(type);
-      }
       console.log("GET DATA... map for type "+type, info.map);
       return info.map.get(Number(id));
    },
@@ -285,8 +282,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                /* Project set like this to include a "data" attr */
                set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
             } else if (type == "Leaf") {
-               const leafTypes = await get().initType("LeafType");
-               const data = getLeavesByParent({ leafTypes, object });
+               const data = await getLeavesByParent({ object });
                set({ [type]: { ...get()[type], setList, map: data.newMap, setList: data.newSetList, init: true } });
             } else {
                for (let item of object.data) {
@@ -380,14 +376,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          console.log(fn);
          const object = await fn(id);
 
-         const setList = get()[type].setList;
-         setList.delete(id);
-
-         const map = get()[type].map;
-         map.delete(id);
-
-         set({ [type]: { ...get()[type], map, setList } }); // `push` doesn't trigger state update    
-         set({ status: { ...get().status, name: "idle", msg: "" } });
+         await get().fetchType(type);
 
          return object;
       } catch (err) {
@@ -471,17 +460,23 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
  * @param {*} param0 
  * @returns 
  */
-export const getLeavesByParent = ({ leafTypes, object }) => {
+export const getLeavesByParent = async ({ object }) => {
    const newMap = new Map();
    const newSetList = new Set();
    const leaves = object.data;
+   const leafTypes = await store.getState().initType("LeafType");
 
    for (let item of leaves) {
+      // Add to setlist
       const parentId = item.meta;
       newSetList.add(parentId);
-      item.parent = leafTypes.map.get(parentId);
+      
+      // Get existing array, or start new leaves array
       const leaves = newMap.has(parentId) ? newMap.get(parentId) : [];
+      item.parentType = leafTypes.map.get(parentId);
       leaves.push(item);
+
+      // setup data
       newMap.set(parentId, leaves);
    }
    return {newSetList, newMap};
