@@ -1376,12 +1376,6 @@ class Localization(Model, ModelDiffMixin):
                                  related_name='localization_thumbnail_image',
                                  db_column='thumbnail_image')
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
-    modified = BooleanField(default=True, null=True, blank=True)
-    """ Indicates whether an annotation is original or modified.
-        null: Original upload, no modifications.
-        false: Original upload, but was modified or deleted.
-        true: Modified since upload or created via web interface.
-    """
     x = FloatField(null=True, blank=True)
     """ Horizontal position."""
     y = FloatField(null=True, blank=True)
@@ -1431,12 +1425,6 @@ class State(Model, ModelDiffMixin):
     version = ForeignKey(Version, on_delete=SET_NULL, null=True, blank=True, db_column='version')
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
-    modified = BooleanField(default=True, null=True, blank=True)
-    """ Indicates whether an annotation is original or modified.
-        null: Original upload, no modifications.
-        false: Original upload, but was modified or deleted.
-        true: Modified since upload or created via web interface.
-    """
     media = ManyToManyField(Media, related_name='media')
     localizations = ManyToManyField(Localization)
     segments = JSONField(null=True, blank=True)

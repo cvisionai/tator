@@ -79,9 +79,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if after is not None:
         qs = qs.filter(pk__gt=after)
 
-    # TODO: Remove modified parameter
-    qs = qs.exclude(modified=False)
-
     qs = get_attribute_psql_queryset(project, annotation_type, qs, params, filter_ops)
 
     if exclude_parents:
