@@ -96,7 +96,7 @@ export class TypeFormTemplate extends TatorElement {
    * @param {String} 
    */
   async warningFlowSave() {
-    await setUpWarningSaveMsg();
+    await this.setUpWarningSaveMsg();
     const button = document.createElement("button");
     button.setAttribute("class", "btn f1 text-semibold text-red");
 
@@ -167,11 +167,13 @@ export class TypeFormTemplate extends TatorElement {
     }    
   }
 
-  _resetForm() {
-    // Use the most recently set data to update the values of form
+  // Use the most recently set data to update the values of form
+  _resetForm(evt) {
+    evt.preventDefault();
     this.setupForm(this._data);
   }
 
+  
   _deleteType() {
     const button = document.createElement("button");
     button.setAttribute("class", "btn f1 text-semibold text-red");

@@ -28,8 +28,6 @@ export class ProjectSettings extends TatorPage {
     this.settingsNav = this._shadow.getElementById("settings-nav--nav");
     this.itemsContainer = this._shadow.getElementById("settings-nav--item-container");
     this.modal = this._shadow.getElementById("project-settings--modal");
-    console.log(this.modal);
-    store.setState({ modal: { ...store.getState().modal, element: this.modal } });
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
   }

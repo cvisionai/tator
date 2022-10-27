@@ -4,7 +4,6 @@ import { getCookie } from "../../util/get-cookie.js";
 export class SingleUpload {
 
   constructor(uploadData) {
-    console.log(uploadData);
     this.last_progress = Date.now();
     this.file = uploadData.file;
     this.validationType = typeof uploadData.validationType != undefined ? uploadData.validationType : "image";

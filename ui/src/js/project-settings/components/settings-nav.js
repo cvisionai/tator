@@ -9,17 +9,12 @@ export class SettingsNav extends TatorElement {
     const template = document.getElementById("settings-nav-template").content;
     this._shadow.appendChild(template.cloneNode(true));
 
-    console.log("Add template content: settings-nav-template");
-
-    // // Handlers
-    // this.div = this._shadow.getElementById("settings-nav--div");
+    // Handlers
     this.navLinkContainer = this._shadow.getElementById("settings-nav--nav");
   }
 
   connectedCallback() {
-    console.log("connectedCallback settings nav");
     this.setupMap();
-    // store.subscribe(state => state.selection, this.showSelection.bind(this));
   }
 
 

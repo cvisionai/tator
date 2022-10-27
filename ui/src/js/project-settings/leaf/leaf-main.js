@@ -712,11 +712,13 @@ export class LeafMain extends TatorElement {
     if (this.typeName == store.getState().selection.typeName) {
       console.log("newData... ", newData);
       console.log("oldData... ", oldData);
-
-      if (newData.setList.has(Number(this._fromId))) {
+      console.log("does new data have... " + this._fromId);
+      console.log(newData.setList.has(this._fromId));
+      
+      if (newData.setList.has(this._fromId) || newData.setList.has(store.getState().selection.typeId)) {
         // Refresh the view
-        console.log("SET THIS DATA!!", newData.map.get(Number(this._fromId)));
-        this.data = newData.map.get(Number(this._fromId));
+        console.log("SET THIS DATA!!", newData.map.get(this._fromId));
+        this.data = newData.map.get(this._fromId);
       }
     }
   }

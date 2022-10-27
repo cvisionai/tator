@@ -32,7 +32,6 @@ export class PlaceholderGlow extends TatorElement {
             break;
          case "className":
             this._className = newValue;
-            console.log("Add className newValue="+newValue);
             for (let row of this.div.children) {
                row.classList.add(newValue);
             }

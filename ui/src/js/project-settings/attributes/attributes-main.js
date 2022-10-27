@@ -1,7 +1,7 @@
 import { getCookie } from "../../util/get-cookie.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { AttributesClone } from "./attributes-clone.js";
-import { AttributesData } from "../data/data-attributes-clone.js";
+import { AttributesData } from "./data-attributes-clone.js";
 import { AttributesDelete } from "./attributes-delete.js";
 import { store, getAttributeDataByType } from "../store.js";
 

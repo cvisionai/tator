@@ -91,8 +91,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       init: false,
       setList: new Set(),
       map: new Map(),
-      name: "Leaf",
-      mapMeta: new Map()
+      name: "Leaf"
    },
    LeafType: {
       init: false,
@@ -287,8 +286,8 @@ const store = create(subscribeWithSelector((set, get) => ({
                set({ Project: { ...get().Project, init: true, setList, map, data: object.data } });
             } else if (type == "Leaf") {
                const leafTypes = await get().initType("LeafType");
-               const metaMap = getLeavesByParent({leafTypes,object, currentMap: map});
-               set({ [type]: { ...get()[type], setList, map: metaMap, init: true } });
+               const data = getLeavesByParent({ leafTypes, object });
+               set({ [type]: { ...get()[type], setList, map: data.newMap, setList: data.newSetList, init: true } });
             } else {
                for (let item of object.data) {
                   setList.add(item.id);
@@ -324,7 +323,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          const projectId = get().projectId;
          const object = await fn(projectId, data);
 
-         if (object.data && object.data.object) {
+         if (object.data && object.data.object && type !== "Leaf") {
             const setList = get()[type].setList;
             setList.add(object.data.id);
 
@@ -338,8 +337,11 @@ const store = create(subscribeWithSelector((set, get) => ({
          }
 
          // Select the new type (non-Leaf) forms
-         window.location = `${window.location.origin}${window.location.pathname}#${type}-${object.data.id}`;
-         // if(type !== "Leaf") set({ selection: { ...get().selection, typeName: type, typeId: object.data.id } });
+         if (type !== "Leaf") {
+            window.location = `${window.location.origin}${window.location.pathname}#${type}-${object.data.id}`;
+         } else {
+            window.location = `${window.location.href}`;
+         }
          set({ status: { ...get().status, name: "idle", msg: "" } });
 
          // This includes the reponse so error handling can happen in ui
@@ -469,19 +471,20 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
  * @param {*} param0 
  * @returns 
  */
-export const getLeavesByParent = ({ leafTypes, object, currentMap }) => {
+export const getLeavesByParent = ({ leafTypes, object }) => {
    const newMap = new Map();
+   const newSetList = new Set();
    const leaves = object.data;
 
    for (let item of leaves) {
       const parentId = item.meta;
+      newSetList.add(parentId);
       item.parent = leafTypes.map.get(parentId);
       const leaves = newMap.has(parentId) ? newMap.get(parentId) : [];
       leaves.push(item);
       newMap.set(parentId, leaves);
    }
-
-   return newMap;
+   return {newSetList, newMap};
 }
 
 export { store };
