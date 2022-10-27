@@ -200,41 +200,16 @@ class TatorSearch:
         if old_name == new_name:
             return None, None, None
 
-        # Check that the new name isn't already in use
-        if entity_type.project.attribute_type_uuids.get(new_name, None) is not None:
-            raise ValueError(
-                f"New attribute name {new_name} already in use in this project, please choose a "
-                f"different one."
-            )
+        element = None
+        for attribute_obj in entity_type.attribute_types:
+            if attribute_obj['name'] == old_name:
+                element = {**attribute_obj}
 
-        # Retrieve UUID, raise error if it doesn't exist.
-        uuid = entity_type.project.attribute_type_uuids.get(old_name)
-        if uuid is None:
-            raise ValueError(f"Could not find attribute name {old_name} in entity type "
-                             f"{type(entity_type).__name__} ID {entity_type.id}")
+        element['name'] = new_name
 
-        # Find old attribute type and create new attribute type.
-        new_attribute_type = None
-        for idx, attribute_type in enumerate(entity_type.attribute_types):
-            name = attribute_type['name']
-            if name == old_name:
-                replace_idx = idx
-                new_attribute_type = dict(attribute_type)
-                new_attribute_type['name'] = new_name
-            elif name == new_name:
-                raise ValueError(
-                    f"Could not rename attribute '{old_name}' to '{new_name}' because an attribute "
-                    f"with that name already exists in entity type {type(entity_type).__name__} ID "
-                    f"{entity_type.id}"
-                )
-
-        if new_attribute_type is None:
-            raise ValueError(
-                f"Could not find attribute name {old_name} in entity type "
-                f"{type(entity_type).__name__} ID {entity_type.id}"
-            )
-
-        return uuid, replace_idx, new_attribute_type
+        if self.is_index_present(entity_type, element) is True:
+            raise(f'Index already exists with the specified name. ID={entity_type.id} {old_name}->{new_name}')
+        
 
     def check_mutation(self, entity_type, name, new_attribute_type):
         """
@@ -284,15 +259,21 @@ class TatorSearch:
         :returns: Entity type with updated attribute_types.
         """
         element = None
-        for attribute_obj in entity_type.attribute_types:
-            if attribute_obj['name'] == old_name:
+        el_idx = -1
+        for idx,attribute_obj in enumerate(entity_type.attribute_types):
+            if attribute_obj['name'] == name:
                 element = {**attribute_obj}
+                el_idx = idx
         if element is None:
-            raise(f"Couldn't find {old_name} in {entity_type.name}")
+            names = [a.name for a in entity_type.attribute_types]
+            raise(f"Couldn't find {name} in {entity_type.name} {names}")
 
         self.delete_index(entity_type, element)
         element['dtype'] = new_attribute_type
         self.create_psql_index(entity_type, element)
+
+        # Update DB record for dtype and return it
+        entity_type.attribute_types[el_idx]['dtype'] = new_attribute_type
         return entity_type
 
     def delete_alias(self, entity_type, name):
@@ -305,7 +286,7 @@ class TatorSearch:
         """
         element = None
         for attribute_obj in entity_type.attribute_types:
-            if attribute_obj['name'] == old_name:
+            if attribute_obj['name'] == name:
                 element = {**attribute_obj}
         if element is None:
             raise(f"Couldn't find {old_name} in {entity_type.name}")
