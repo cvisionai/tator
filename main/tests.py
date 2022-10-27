@@ -34,7 +34,7 @@ TEST_IMAGE = 'https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/
 def assertResponse(self, response, expected_code):
     if response.status_code != expected_code:
         print(response.data)
-    assertResponse(self, response, expected_code)
+    self.assertEqual(response.status_code, expected_code)
 
 def create_test_user(is_staff=False):
     return User.objects.create(
