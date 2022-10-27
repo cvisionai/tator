@@ -10,7 +10,6 @@ from ..models import State
 from ..search import TatorSearch
 
 from ._media_query import query_string_to_media_ids
-from ._attribute_query import get_attribute_es_query
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 
