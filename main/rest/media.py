@@ -474,27 +474,6 @@ class MediaListAPI(BaseListView):
             loc_qs = Localization.objects.filter(project=project, media__in=media_ids)
             bulk_delete_and_log_changes(loc_qs, project, self.request.user)
 
-            # Clear elasticsearch entries for both media and its children.
-            # Note that clearing children cannot be done using has_parent because it does
-            # not accept queries with size, and has_parent also does not accept ids queries.
-            query = get_media_es_query(self.kwargs['project'], params)
-            TatorSearch().delete(self.kwargs['project'], query)
-            loc_ids = [f'box_{val.id}' for val in loc_qs.iterator()] \
-                    + [f'line_{val.id}' for val in loc_qs.iterator()] \
-                    + [f'dot_{val.id}' for val in loc_qs.iterator()]
-            TatorSearch().delete(self.kwargs['project'], {'query': {'ids': {'values': loc_ids}}})
-            state_ids = [val.id for val in state_qs.iterator()]
-            TatorSearch().delete(self.kwargs['project'], {
-                'query': {
-                    'bool': {
-                        'should': {'match': {'_dtype': 'state'}},
-                        'filter': {
-                            'terms': {'_postgres_id': state_ids},
-                        },
-                    }
-                },
-            })
-
         return {'message': f'Successfully deleted {count} medias!'}
 
     def _patch(self, params):
@@ -525,7 +504,6 @@ class MediaListAPI(BaseListView):
                     qs, params["project"], self.request.user, new_attributes=new_attrs
                 )
                 query = get_media_es_query(params["project"], params)
-                ts.update(self.kwargs["project"], obj.meta, query, new_attrs)
                 count = max(count, attr_count)
 
             if desired_archive_state is not None:
