@@ -154,7 +154,7 @@ def _get_file_psql_queryset(project, filter_ops, params):
     if name is not None:
         qs = qs.filter(name=name)
 
-    qs = get_attribute_psql_queryset(qs, params, filter_ops)
+    qs = get_attribute_psql_queryset(project, 'file', qs, params, filter_ops)
 
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).

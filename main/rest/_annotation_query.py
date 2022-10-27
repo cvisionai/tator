@@ -82,7 +82,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     # TODO: Remove modified parameter
     qs = qs.exclude(modified=False)
 
-    qs = get_attribute_psql_queryset(qs, params, filter_ops)
+    qs = get_attribute_psql_queryset(project, annotation_type, qs, params, filter_ops)
 
     if exclude_parents:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))

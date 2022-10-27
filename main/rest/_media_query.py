@@ -214,7 +214,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if archive_states is not None:
         qs = qs.filter(archive_state__in=archive_states)
 
-    qs = get_attribute_psql_queryset(qs, params, filter_ops)
+    qs = get_attribute_psql_queryset(project, 'media', qs, params, filter_ops)
 
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).

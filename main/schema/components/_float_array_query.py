@@ -17,15 +17,6 @@ float_array_query = {
             'enum': ['l2norm', 'ip', 'cosine'],
             'default': 'l2norm',
         },
-        'lower_bound': {
-            'description': 'Return results with metric greater than this value.',
-            'type': 'number',
-            'default': 0,
-        },
-        'upper_bound': {
-            'description': 'Return results with metric less than this value.',
-            'type': 'number',
-        },
         'order': {
             'description': 'Order in which results should be returned.',
             'type': 'string',

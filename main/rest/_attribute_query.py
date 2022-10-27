@@ -5,6 +5,15 @@ import logging
 
 from dateutil.parser import parse as dateutil_parse
 
+from django.db.models.functions import Cast
+from django.contrib.gis.db.models import CharField
+from django.contrib.gis.db.models import BooleanField
+from django.contrib.gis.db.models import IntegerField
+from django.contrib.gis.db.models import FloatField
+from django.contrib.gis.db.models import DateTimeField
+from django.contrib.gis.db.models import PointField
+from pgvector.django import VectorField
+
 from ..models import LocalizationType
 from ..models import StateType
 from ..models import MediaType
@@ -14,6 +23,8 @@ from ..models import Section
 
 from ._attributes import KV_SEPARATOR
 from ._float_array_query import get_float_array_query
+
+from pgvector.django import L2Distance, MaxInnerProduct, CosineDistance
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +253,7 @@ def _convert_boolean(value):
         value = bool(value)
     return value
 
-def _get_dtype_for_attribute(project, annotation_type, key):
+def _get_info_for_attribute(project, annotation_type, key):
     """ Returns the first matching dtype with a matching key """
     types=[]
     if annotation_type in ['localization', 'all']:
@@ -261,15 +272,31 @@ def _get_dtype_for_attribute(project, annotation_type, key):
     for type_info in types:
         for attribute_info in type_info.attribute_types:
             if attribute_info['name'] == key:
-                return attribute_info['dtype']
+                return attribute_info
     
-    logger.error(f"Couldn't find dtype for {key} of {annotation_type} in {project}")
-    return None
+    raise(f"Couldn't find info for {key} of {annotation_type} in {project}")
+
+def _get_field_for_attribute(project, annotation_type, key):
+    """ Returns the field type for a given key in a project/annotation_type """
+    info = _get_info_for_attribute(project, annotation_type, key)
+    if info is None:
+        raise (f'Unknown dtype for {key} in {project.id} of {annotaton_type}')
+    
+    lookup_map = {'bool': BooleanField,
+                  'int': IntegerField,
+                  'float': FloatField,
+                  'enum': CharField,
+                  'string': CharField,
+                  'datetime': DateTimeField,
+                  'geopos': PointField,
+                  'float_array': VectorField}
+
+    return lookup_map[info['dtype']], info.get('size', None)
 
 def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     kv = pair.split(KV_SEPARATOR, 1)
     key, value = kv
-    dtype = _get_dtype_for_attribute(project, annotation_type, key)
+    dtype = _get_info_for_attribute(project, annotation_type, key)['dtype']
     
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
@@ -293,16 +320,39 @@ def get_attribute_filter_ops(project, params, data_type):
                     filter_ops.append((key, value, op))
     return filter_ops
 
-def get_attribute_psql_queryset(qs, params, filter_ops):
+def get_attribute_psql_queryset(project, annotation_type, qs, params, filter_ops):
     attribute_null = params.get('attribute_null')
+    float_queries = params.get('float_array')
+    if float_queries is None:
+        float_queries = []
 
     for key, value, op in filter_ops:
-        qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
+        field_type,_ = _get_field_for_attribute(project, annotation_type, key)
+        # Annotate with a typed object prior to query to ensure index usage
+        qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
+        qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
 
     if attribute_null is not None:
         for kv in attribute_null:
             key, value = kv.split(KV_SEPARATOR)
             value = _convert_boolean(value)
             qs = qs.filter(**{f"attributes__{key}__isnull": value})
+
+    for query in float_queries:
+        name = float_array_query['name']
+        center = float_array_query['center']
+        metric = float_array_query.get('metric', 'l2norm')
+        order = float_array_query.get('order', 'asc')
+        field_type,size = _get_field_for_attribute(project, annotation_type, name)
+        qs = qs.annotate(**{f"{name}_typed": Cast(f"attributes__{name}", VectorField(size))})
+        if metric == 'l2norm':
+            qs = qs.order_by(L2Distance(f"{name}_typed"))
+        elif metric == 'cosine':
+            qs = qs.order_by(CosineDistance(f"{name}_typed"))
+        elif metric == 'ip':
+            qs = qs.order_by(MaxInnerProduct(f"{name}_typed"))
+    # Useful for profiling / checking out query complexity
+    # logger.info(f"Query = {qs.query}")
+    logger.info(qs.explain())
     return qs
 
