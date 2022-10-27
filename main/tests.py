@@ -3695,17 +3695,22 @@ class MutateAliasTestCase(APITestCase):
             entity.attributes = {attr_name: value}
         entity.save()
         time.sleep(1)
-        query_string = f'{search_name}:{self._convert_value(from_dtype, value)}'
-        ids, _ = self.search.search(project.pk, {'query': {'query_string': {'query': query_string}}})
-        assert(len(ids) == 1)
+        attribute = None
+        for attribute_obj in entity_type.attribute_types:
+            if attribute_obj['name'] == name:
+                attribute = {**attribute_obj}
+
+        assert(TatorSearch().is_index_present(entity_type, attribute) == True)
         entity_type = self.search.mutate_alias(
             entity_type, attr_name, {"name": attr_name, "dtype": to_dtype}, "update"
         )
         entity_type.save()
         time.sleep(1)
-        query_string = f'{search_name}:{self._convert_value(to_dtype, value)}'
-        ids, _ = self.search.search(project.pk, {'query': {'query_string': {'query': query_string}}})
-        assert(len(ids) == 1)
+        element = None
+        for attribute_obj in entity_type.attribute_types:
+            if attribute_obj['name'] == name:
+                element = {**attribute_obj}
+        assert(TatorSearch().is_index_present(entity_type, attribute) == True)
         project.delete()
         logger.info(f"Conversion of {from_dtype} to {to_dtype} success!")
 
