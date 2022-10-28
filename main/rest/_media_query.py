@@ -187,9 +187,6 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if localization_ids is not None:
         qs = qs.filter(localization__in=localization_ids).distinct()
 
-    if filter_type is not None:
-        qs = qs.filter(meta=filter_type)
-
     if name is not None:
         qs = qs.filter(name__iexact=name)
 
@@ -214,7 +211,19 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if archive_states is not None:
         qs = qs.filter(archive_state__in=archive_states)
 
-    qs = get_attribute_psql_queryset(project, 'media', qs, params, filter_ops)
+    if filter_type is not None:
+        qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = qs.filter(meta=filter_type)
+    else:
+        queries = []
+        for entity_type in MediaType.objects.filter(project=project):
+            sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
+            if sub_qs:
+                queries.append(sub_qs.filter(meta=entity_type))
+        logger.info(f"Joining {len(queries)} queries together.")
+        qs = queries.pop()
+        for r in queries:
+            qs = qs.union(r)
 
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).
