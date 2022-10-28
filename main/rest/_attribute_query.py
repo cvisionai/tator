@@ -241,7 +241,7 @@ OPERATOR_SUFFIXES = {
     'attribute_gt': '__gt',
     'attribute_gte': '__gte',
     'attribute_contains': '__icontains',
-    'attribute_distance': '__distance__lte',
+    'attribute_distance': '__distance_lte',
 }
 
 def _convert_boolean(value):
@@ -286,7 +286,7 @@ def _convert_attribute_filter_value(pair, project, annotation_type, operation):
     
     if dtype not in ALLOWED_TYPES[operation]:
         raise ValueError(f"Filter operation '{operation}' not allowed for dtype '{dtype}'!")
-    if dtype == 'boolean':
+    if dtype == 'bool':
         value = _convert_boolean(value)
     if dtype == 'double':
         value = float(value)
