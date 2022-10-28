@@ -1,4 +1,5 @@
 import os
+import re
 import inspect
 
 from ._common import print_page_error
@@ -51,6 +52,7 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     response = response_info.value
     respObject = response.json()
     registration_link = str(respObject["message"]).replace('User can register at ', '')
+    registration_link = re.sub(r'https?://.*?(/.*)', r'{base_url}\2', registration_link)
     new_user_id = respObject["id"]
     print("Invitation sent successful!")
 

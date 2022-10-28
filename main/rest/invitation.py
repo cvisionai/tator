@@ -62,7 +62,7 @@ class InvitationListAPI(BaseListView):
                                 registration_token=uuid.uuid1())
 
             proto = settings.PROTO
-            domain = os.getenv("MAIN_HOST") #  self.request.get_host()
+            domain = self.request.get_host()
             if users.count() == 1:
                 affiliations = Affiliation.objects.filter(user=users[0], organization=organization)
                 if affiliations.count() > 0:
