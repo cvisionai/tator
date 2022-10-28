@@ -3697,7 +3697,7 @@ class MutateAliasTestCase(APITestCase):
         time.sleep(1)
         attribute = None
         for attribute_obj in entity_type.attribute_types:
-            if attribute_obj['name'] == name:
+            if attribute_obj['name'] == attr_name:
                 attribute = {**attribute_obj}
 
         assert(TatorSearch().is_index_present(entity_type, attribute) == True)
@@ -3708,7 +3708,7 @@ class MutateAliasTestCase(APITestCase):
         time.sleep(1)
         element = None
         for attribute_obj in entity_type.attribute_types:
-            if attribute_obj['name'] == name:
+            if attribute_obj['name'] == attr_name:
                 element = {**attribute_obj}
         assert(TatorSearch().is_index_present(entity_type, attribute) == True)
         project.delete()
