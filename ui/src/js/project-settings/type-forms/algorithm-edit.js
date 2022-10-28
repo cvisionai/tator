@@ -37,22 +37,15 @@ export class AlgorithmEdit extends TypeFormTemplate {
    
    async connectedCallback() {
       store.subscribe(state => state.JobClusterPermission, this.savePermission.bind(this));
-      store.subscribe(state => state.projectId, this.setPermissions.bind(this));
       store.subscribe(state => state.Project, this.setManifestInfo.bind(this), []);
    }
 
-   setManifestInfo(project) {
+   async setManifestInfo(project) {
       this.projectId = project.data.id;
       this._manifestPath.projectId = project.data.id;
-      this._manifestPath.organizationId = project.data.organization;      
-   }
-
-   // Before we setup the form, check if the user will be able to do things
-   async setPermissions() {
-      console.log("Set permissions was called.");
+      this._manifestPath.organizationId = project.data.organization;
       await store.getState().setJobClusterPermissions();
    }
-
 
    /**
     * Sets up the message at top of form based on combination of if...

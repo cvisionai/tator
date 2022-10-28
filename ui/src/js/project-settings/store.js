@@ -176,20 +176,8 @@ const store = create(subscribeWithSelector((set, get) => ({
    /** */
    setJobClusterPermissions: async () => {
       try {
-         const type = "JobCluster";
-         const fn = getMap.get(type);
-         const projectId = get().projectId;
-         const object = await fn(projectId);
-         const setList = get()[type].setList;
-         const map = get()[type].map;
+         const object = await get().fetchTypeByOrg("JobCluster");
 
-         /* Add the data via loop to: setList and map */
-         for (let item of object.data) {
-            setList.add(item.id);
-            map.set(item.id, item);
-         }
-
-         set({ [type]: { ...get()[type], setList, map, init: true } });
          set({
             JobClusterPermission: {
                ...get().JobClusterPermission,
@@ -263,7 +251,42 @@ const store = create(subscribeWithSelector((set, get) => ({
       return data;
    },
 
+   fetchTypeByOrg: async (type) => {
+      set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
+      try {
+         const fn = getMap.get(type);
+         const orgId = get().organizationId;
+         if (get().organizationId) console.log(get().organizationId);
+         const object = await fn(orgId);
+
+         if (object.response.ok) {
+            const setList = get()[type].setList;
+            const map = get()[type].map;
+   
+            /* Add the data via loop to: setList and map */
+            for (let item of object.data) {
+               setList.add(item.id);
+               map.set(item.id, item);
+            }
+            set({ [type]: { ...get()[type], setList, map, init: true } });
+   
+            // Success: Return status to idle (handles page spinner)
+            set({ status: { ...get().status, name: "idle", msg: "" } });
+            
+         } else {
+            console.log("Object response not ok for fetchType", object);
+         }
+         return object;
+      } catch (err) {
+         // Error: Return status to idle (handles page spinner)
+         console.error("Fetch type by org hit an issue.", err);
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
+      }
+   },
+
    fetchType: async (type) => {
+      if (type == "JobCluster") return fetchTypeByOrg(type);
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
       try {
          const fn = getMap.get(type);
@@ -315,33 +338,27 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
       try {
          console.log("Adding new type....");
-         const fn = postMap.get(type, data);
+         const fn = postMap.get(type);
          const projectId = get().projectId;
-         const object = await fn(projectId, data);
+         const responseInfo = await fn(projectId, data); 
 
-         if (object.data && object.data.object && type !== "Leaf") {
-            const setList = get()[type].setList;
-            setList.add(object.data.id);
-
-            const map = get()[type].map;
-            map.set(object.data.id, object.data.object);
-
-            set({ [type]: { ...get()[type], setList, map } }); // `push` doesn't trigger state update
-         } else {
-            // If object isn't returned, refetch type
-            await get().fetchType(type);
-         }
+         // Refresh the page data before setting the selection
+         await get().fetchType(type);
 
          // Select the new type (non-Leaf) forms
-         if (type !== "Leaf") {
-            window.location = `${window.location.origin}${window.location.pathname}#${type}-${object.data.id}`;
+         if (type === "Leaf") {
+            // Try to reset selection to refresh the same page
+            get().setSelection({ typeId: get().selection.typeId });
          } else {
-            window.location = `${window.location.href}`;
+            //Response should have the newly added ID
+            let newID = (responseInfo.data.id) ? responseInfo.data.id : "New";
+            window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
          }
+         
          set({ status: { ...get().status, name: "idle", msg: "" } });
 
          // This includes the reponse so error handling can happen in ui
-         return object;
+         return responseInfo;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });
          return err;
@@ -351,19 +368,19 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ status: { ...get().status, name: "pending", msg: "Updating version..." } });
       try {
          const fn = patchMap.get(type);
-         const object = await fn(id, data);
+         const responseInfo = await fn(id, data);
 
-         if (object.data && object.data.object) {
-            const map = get()[type].map;
-            map.set(object.data.id, object.data.object);
+         // Assume object isn't returned, refetch type
+         await get().fetchType(type);
+         const objData = get()[type].map.get(id);
+         console.log(objData);
 
-            set({ [type]: { ...get()[type], map } }); // `push` doesn't trigger state update    
-         } else {
-            // If object isn't returned, refetch type
-            await get().fetchType(type);
+         if (type === "Leaf") {
+            get().setSelection({ typeId: objData.meta });
          }
+
          set({ status: { ...get().status, name: "idle", msg: "" } });
-         return object;
+         return responseInfo;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });
          return err;
@@ -444,10 +461,8 @@ export const getCompiledList = async ({ type, skip = null, check = null }) => {
 
    for (let type of Object.keys(attributeDataByType)) {
       const data = await store.getState().initType(type);
-      console.log(`getDataByType = data for ${type}`, data);
       const list = Array.isArray(data) ? data :  data.map.entries();
       for (let entity of list) {
-         console.log("ENTITY", entity);
          attributeDataByType[type][entity.name] = entity.attribute_types;
       }
    }
@@ -464,7 +479,7 @@ export const getLeavesByParent = async ({ object }) => {
    const newMap = new Map();
    const newSetList = new Set();
    const leaves = object.data;
-   const leafTypes = await store.getState().initType("LeafType");
+   // const leafTypes = await store.getState().initType("LeafType");
 
    for (let item of leaves) {
       // Add to setlist
@@ -473,7 +488,6 @@ export const getLeavesByParent = async ({ object }) => {
       
       // Get existing array, or start new leaves array
       const leaves = newMap.has(parentId) ? newMap.get(parentId) : [];
-      item.parentType = leafTypes.map.get(parentId);
       leaves.push(item);
 
       // setup data

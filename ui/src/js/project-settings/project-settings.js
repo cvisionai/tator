@@ -121,7 +121,7 @@ export class ProjectSettings extends TatorPage {
       console.warn("Hash set to null, value:" + val);
     }
 
-    console.log("Hash setup.... "+ this._selectedHash)
+    console.log("Hash setup.... " + this._selectedHash);
     store.getState().setSelection({
       typeName: this._selectedType,
       typeId: this._selectedObjectId,

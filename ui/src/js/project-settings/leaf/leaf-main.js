@@ -62,15 +62,15 @@ export class LeafMain extends TatorElement {
    */
   set data(val) {
     console.log("DATA SET FOR LEAF MAIN", val);
-    if (typeof val == "undefined" || val === null || !val[0].parentType) {
+    if (val === null) {
       //EMPTY this...
       this.leaves = [];
       this.fromId = null;
       this.fromName = null;
       this.attributeTypes = [];
     } else {
-      this.leaves = val;
-      const parent = val[0].parentType;
+      this.leaves = val.data;
+      const parent = val.type;
       this.fromId = parent.id;
       this.fromName = parent.name;
       this.attributeTypes = parent.attribute_types;
@@ -350,18 +350,19 @@ export class LeafMain extends TatorElement {
     let status = 0;
     
     try {
-      const info = await store.getState().addType({ type: "Leaf", data: [formJSON]});
-      let currentMessage = info.data.message;
+      const info = await store.getState().addType({ type: "Leaf", data: [formJSON] });
+      console.log(info);
+      // let currentMessage = JSON.parse(info.response.text).message;
 
-      if (info.response.ok) {
-        // iconWrap.appendChild(succussIcon);
-        this.loading.hideSpinner();
-        this._modal._success(currentMessage);
-      } else if (status == 400) {
-        iconWrap.appendChild(warningIcon);
-        this.loading.hideSpinner();
-        this._modal._error(`${currentMessage}`);
-      }
+      // if (info.response.ok) {
+      //   // iconWrap.appendChild(succussIcon);
+      //   this.loading.hideSpinner();
+      //   this._modal._success(currentMessage);
+      // } else if (status == 400) {
+      //   iconWrap.appendChild(warningIcon);
+      //   this.loading.hideSpinner();
+      //   this._modal._error(`${currentMessage}`);
+      // }
 
     } catch(error) {
       this.loading.hideSpinner();
@@ -687,43 +688,46 @@ export class LeafMain extends TatorElement {
   }
 
   async _updateLeaf(dataObject) {
+    console.log("UPDATE LEAF ", dataObject);
     try{
-    this.successMessages = "";
-    this.failedMessages = "";
-    this.confirmMessages = "";
-    this.saveModalMessage = "";
-    this.requiresConfirmation = false;
-    let formData = dataObject.formData;
+      this.successMessages = "";
+      this.failedMessages = "";
+      this.confirmMessages = "";
+      this.saveModalMessage = "";
+      this.requiresConfirmation = false;
+      let formData = dataObject.formData;
 
-    const obj = await store.getState().updateType({ type: "Leaf", id: dataObject.id, data: formData })
-    let currentMessage = obj.data.message;
-    let response = obj.response;
+      const info = await store.getState().updateType({ type: "Leaf", id: dataObject.id, data: formData })
+      let currentMessage = JSON.parse(info.response.text).message;;
 
-    if (response.status == 200) {
-      this._modal._success(currentMessage);
-    } else {
-      this._modal._error(currentMessage);
+      if (info.response.status == 200) {
+        this._modal._success(currentMessage);
+      } else {
+        this._modal._error(currentMessage);
+      }
+
+      this.loading.hideSpinner();
+    } catch(err) {
+      return console.error("Problem patching leaf...", err);
     }
-
-    this.loading.hideSpinner();
-  } catch(err) {
-    return console.error("Problem patching leaf...", err);
-  }
   }
 
-  _newData(newData, oldData) {
+  async _newData(newData) {
     // If Leaf is updated, but this container isn't shown, do nothing
     if (this.typeName == store.getState().selection.typeName) {
-      console.log("newData... ", newData);
-      console.log("oldData... ", oldData);
-      console.log("does new data have... " + this._fromId + store.getState().selection.typeId);
-      console.log(newData.setList.has(store.getState().selection.typeId));
-      console.log(newData.setList.has(this._fromId));
-      
-      if (newData.setList.has(this._fromId) || newData.setList.has(store.getState().selection.typeId)) {
-        // Refresh the view
-        console.log("SET THIS DATA!!", newData.map.get(this._fromId));
-        this.data = newData.map.get(this._fromId);
+      const selectedType = store.getState().selection.typeId;
+
+      if (newData.setList.has(selectedType)) {
+        const data = newData.map.get(selectedType);
+        const type = await store.getState().getData("LeafType", selectedType);
+        console.log("_newData FORM", {
+          data,
+          type
+        });
+        this.data = {
+          data,
+          type
+        };
       }
     }
   }
@@ -749,7 +753,14 @@ export class LeafMain extends TatorElement {
       if (newId !== "New") {
         const data = await store.getState().getData("Leaf", newId);
         const type = await store.getState().getData("LeafType", newId);
-        this.data = data;
+        console.log("UPDATE FORM", {
+          data,
+          type
+        });
+        this.data = {
+          data,
+          type
+        };
       } else {
         this.data = null;
       }

@@ -72,11 +72,12 @@ export class TypeFormTemplate extends TatorElement {
     if (Object.entries(formData).length !== 0 && !Array.isArray(formData)) {
       try {
         const respData = await this.doSaveAction(formData);
+        console.log(respData);
         this.handleResponse(respData);
       } catch (err) {
         this.modal._error(err)
       }
-    } else if (Array.isArray(formData)) {
+    } else if (Array.isArray(formData) && formData.length !== 0) {
       const responses = [];
       for (let d of formData) {
         const respData = await this.doSaveAction(d);
