@@ -339,30 +339,30 @@ export class LeafMain extends TatorElement {
     let formJSON = formObj._getLeafFormData();
     console.log(formJSON);
     let attr = { ...formJSON.attributes };
+    console.log(attr);
 
-    for (let key in formJSON) {
-      console.log(key);
-      formJSON[key] = formJSON[key];
+    for (let [key, value] of Object.entries(attr)) {
+      formJSON[key] = value;
     }
 
     delete formJSON["attributes"];
+    console.log(formJSON);
 
     let status = 0;
     
     try {
       const info = await store.getState().addType({ type: "Leaf", data: [formJSON] });
-      console.log(info);
-      // let currentMessage = JSON.parse(info.response.text).message;
+      let currentMessage = (info.data?.message) ? info.data.message : JSON.parse(info.response.text).message;
 
-      // if (info.response.ok) {
-      //   // iconWrap.appendChild(succussIcon);
-      //   this.loading.hideSpinner();
-      //   this._modal._success(currentMessage);
-      // } else if (status == 400) {
-      //   iconWrap.appendChild(warningIcon);
-      //   this.loading.hideSpinner();
-      //   this._modal._error(`${currentMessage}`);
-      // }
+      if (info.response.ok) {
+        // iconWrap.appendChild(succussIcon);
+        this.loading.hideSpinner();
+        this._modal._success(currentMessage);
+      } else if (status == 400) {
+        iconWrap.appendChild(warningIcon);
+        this.loading.hideSpinner();
+        this._modal._error(`${currentMessage}`);
+      }
 
     } catch(error) {
       this.loading.hideSpinner();
@@ -697,8 +697,8 @@ export class LeafMain extends TatorElement {
       this.requiresConfirmation = false;
       let formData = dataObject.formData;
 
-      const info = await store.getState().updateType({ type: "Leaf", id: dataObject.id, data: formData })
-      let currentMessage = JSON.parse(info.response.text).message;;
+      const info = await store.getState().updateType({ type: "Leaf", id: dataObject.id, data: formData });
+      let currentMessage = (info.data?.message) ? info.data.message : JSON.parse(info.response.text).message;
 
       if (info.response.status == 200) {
         this._modal._success(currentMessage);
@@ -707,7 +707,9 @@ export class LeafMain extends TatorElement {
       }
 
       this.loading.hideSpinner();
-    } catch(err) {
+    } catch (err) {
+      this.loading.hideSpinner();
+      this._modal._error(err);
       return console.error("Problem patching leaf...", err);
     }
   }

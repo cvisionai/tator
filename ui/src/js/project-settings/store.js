@@ -372,11 +372,9 @@ const store = create(subscribeWithSelector((set, get) => ({
 
          // Assume object isn't returned, refetch type
          await get().fetchType(type);
-         const objData = get()[type].map.get(id);
-         console.log(objData);
 
          if (type === "Leaf") {
-            get().setSelection({ typeId: objData.meta });
+            get().setSelection({ typeId: get().selection.typeId  });
          }
 
          set({ status: { ...get().status, name: "idle", msg: "" } });
