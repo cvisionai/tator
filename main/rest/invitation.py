@@ -62,19 +62,21 @@ class InvitationListAPI(BaseListView):
                                 registration_token=uuid.uuid1())
 
             proto = settings.PROTO
-            domain = self.request.get_host()
+            domain = os.getenv("MAIN_HOST") #  self.request.get_host()
             if users.count() == 1:
                 affiliations = Affiliation.objects.filter(user=users[0], organization=organization)
                 if affiliations.count() > 0:
                     raise RuntimeError(f"Affiliation already exists for email {email}!")
                 endpoint = "accept"
+                action = "accept this invitation"
             else:
                 endpoint = "registration"
+                action = "create an account"
 
             url = f"{proto}://{domain}/{endpoint}?registration_token={invite.registration_token}"
             text = (
                 f"You have been invited to collaborate with {organization} using Tator. "
-                f"To accept this invitation, please visit: \n\n{url}"
+                f"To {action}, please visit: \n\n{url}"
             )
 
             if settings.TATOR_EMAIL_ENABLED:
