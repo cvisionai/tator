@@ -393,6 +393,10 @@ const store = create(subscribeWithSelector((set, get) => ({
 
          await get().fetchType(type);
 
+         if (type === "Leaf") {
+            get().setSelection({ typeId: get().selection.typeId  });
+         }
+
          return object;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });

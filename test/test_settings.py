@@ -106,7 +106,6 @@ def test_settings_leafType(page_factory, project, base_url):
     page.wait_for_timeout(5000)
 
     # Add attributes to Leaf type
-    leafTypeLink = page.query_selector(f'text="{leaf_type_in_view}"')
     page.click(f'type-form-container[form="leaf-type-edit"] .add-new-in-form')
     page.wait_for_selector('modal-dialog form')
     page.fill('modal-dialog text-input[name="Name"] input', 'String Type')
@@ -178,14 +177,15 @@ def test_settings_leafType(page_factory, project, base_url):
     page.wait_for_selector('text="Delete Confirmation"')
     page.click('text="Confirm"')
 
-    page.wait_for_selector('modal-dialog modal-success')
-    # page.click('modal-dialog modal-close .modal__close')
-    # page.wait_for_timeout(5000)
+    page.wait_for_selector('leaf-main modal-dialog modal-success')
+    page.wait_for_timeout(5000)
     
     leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
     hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
+
     assert leaf_elems_count == 0
     assert hidden_els_count == 0
+    
     print(f'Successfully deleted leaf and child leaf.')
 
     page.close()
