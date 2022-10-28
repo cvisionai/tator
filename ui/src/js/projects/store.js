@@ -1,6 +1,6 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { getApi } from '../../../../scripts/packages/tator-js/pkg';
+import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
 const api = getApi(window.localStorage.getItem('backend'));
 console.log(api);

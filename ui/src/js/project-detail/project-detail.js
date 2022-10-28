@@ -599,7 +599,6 @@ export class ProjectDetail extends TatorPage {
     this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
-    /*  */
 
     // State of chosen labels for gallery
     this.cardLabelsChosenByType = {};

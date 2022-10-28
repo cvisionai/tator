@@ -81,7 +81,7 @@ app.get('/projects', (req, res) => {
 });
 
 app.get('/:projectId/project-detail', (req, res) => {
-  res.status(404).end();
+  res.render('project-detail', params);
 });
 
 app.get('/:projectId/project-settings', (req, res) => {

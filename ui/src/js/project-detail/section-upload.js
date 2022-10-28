@@ -1,5 +1,6 @@
 import { UploadElement } from "../components/upload-element.js";
 import { svgNamespace } from "../components/tator-element.js";
+import { api, store } from "./store.js";
 
 export class SectionUpload extends UploadElement {
   constructor() {
@@ -34,12 +35,15 @@ export class SectionUpload extends UploadElement {
     input.addEventListener("change", this._fileSelectCallback);
   }
 
+  connectedCallback() {
+    this.init(api, store, (progress) => {`Upload progress: ${progress}`;});
+  }
+
   static get observedAttributes() {
     return ["section"].concat(UploadElement.observedAttributes);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    UploadElement.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "section":
         this._uploadSection = async () => {

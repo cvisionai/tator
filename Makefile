@@ -23,7 +23,7 @@ SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 
-TATOR_JS_MODULE_FILE=scripts/packages/tator-js/pkg/dist/tator.min.js
+TATOR_JS_MODULE_FILE=scripts/packages/tator-js/pkg/src/index.js
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
@@ -353,13 +353,8 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 		chmod -R 777 /pwd/pkg
 	cp -r examples pkg/examples
 	cp -r utils pkg/src/utils
-	cp webpack* pkg/.
 	cd pkg && npm install
-	npm install querystring webpack webpack-cli --save-dev
-	npx webpack --config webpack.prod.js
-	mv dist/tator.min.js .
-	npx webpack --config webpack.dev.js
-	mv tator.min.js dist/.
+	npm install querystring --save-dev
 
 .PHONY: js-bindings
 js-bindings: .token/tator_online_$(GIT_VERSION)
