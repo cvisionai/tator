@@ -63,7 +63,7 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   _saveData() {
-    if (this.saveWarningFlow == true) {
+    if (this.saveWarningFlow == true && this.typeId !== "New") {
       this.warningFlowSave();
     } else {
       this.saveDataFunction();
@@ -168,12 +168,13 @@ export class TypeFormTemplate extends TatorElement {
     let eCount = 0;
     let errors = "";
 
-    for (let r of responses) {
-      if (r.response.ok) {
+    for (let object of responses) {
+      if (object.response.ok) {
         sCount++;
       } else {
         eCount++;
-        errors += `Error: ${r.data.message} \n`;
+        const message = JSON.parse(object.response.text).message;
+        errors += `Error: ${message} \n`; //${r.data.message}
       }
     }
 
