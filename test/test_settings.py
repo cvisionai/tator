@@ -179,7 +179,7 @@ def test_settings_leafType(page_factory, project, base_url):
 
     page.wait_for_selector('leaf-main modal-dialog modal-success')
     page.wait_for_timeout(5000)
-    
+
     leaf_elems_count = page.locator('.leaves-edit span[draggable="true"]').count()
     hidden_els_count = page.locator('leaf-item[class="hidden"]').count()
 
@@ -198,15 +198,13 @@ def test_settings_stateTypes(page_factory, project):
 
     # Create State types 
     # todo loop array like other types, and add assert statements
-    # Note/todo: when run sequentionally these are created in "MediaType" tests...
-    # re: #todo hitting error with media values sent as "[None, None]"
-    page.click('#nav-for-LeafType #sub-nav--plus-link')
+    page.click('#nav-for-StateType #sub-nav--plus-link')
     page.fill('#state-type-edit--form text-input[name="Name"] input', 'Alabama')
     page.fill('#state-type-edit--form text-input[name="Description"] input', 'State Type description for automated test.')
     page.click('#state-type-edit--form bool-input[name="Visible"] label[for="on"]')
     page.click('#state-type-edit--form bool-input[name="Grouping Default"] label[for="on"]')
-    page.click('#state-type-edit--form span:text("My Video Type")')
-    page.click('#state-type-edit--form span:text("My Image Type")')
+    page.click('#state-type-edit--form span:text("Test Videos")')
+    page.click('#state-type-edit--form span:text("Test Images")')
     page.select_option('#state-type-edit--form enum-input[name="Association"] select', label='Localization')
     page.select_option('#state-type-edit--form enum-input[name="Interpolation"] select', label='Latest')
     page.click('#state-type-edit--form bool-input[name="Delete Child Localizations"] label[for="on"]')
@@ -214,13 +212,12 @@ def test_settings_stateTypes(page_factory, project):
     page.wait_for_selector(f'text="State type created successfully!"')
     print(f"State type created successfully - Association: Localization, Interpolation: Latest")
 
-    page.click('#nav-for-LeafType #sub-nav--plus-link')
+    page.click('#nav-for-StateType #sub-nav--plus-link')
     page.fill('type-form-container[form="state-type-edit"] text-input[name="Name"] input', 'Alabama')
     page.fill('type-form-container[form="state-type-edit"] text-input[name="Description"] input', 'State Type description for automated test.')
     page.click('type-form-container[form="state-type-edit"] bool-input[name="Visible"] label[for="on"]')
     page.click('type-form-container[form="state-type-edit"] bool-input[name="Grouping Default"] label[for="on"]')
-    page.click('type-form-container[form="state-type-edit"] span:text("My Video Type")')
-    page.click('type-form-container[form="state-type-edit"] span:text("My Image Type")')
+    page.click('type-form-container[form="state-type-edit"] span:text("Test Videos")')
     page.select_option('type-form-container[form="state-type-edit"] enum-input[name="Association"] select', label='Media')
     page.select_option('type-form-container[form="state-type-edit"] enum-input[name="Interpolation"] select', label='Latest')
     page.click('type-form-container[form="state-type-edit"] bool-input[name="Delete Child Localizations"] label[for="on"]')
@@ -228,13 +225,13 @@ def test_settings_stateTypes(page_factory, project):
     page.wait_for_selector(f'text="State type created successfully!"')
     print(f"State type created successfully - Association: Media, Interpolation: Latest")
     
-    page.click('#nav-for-LeafType #sub-nav--plus-link')
+    page.click('#nav-for-StateType #sub-nav--plus-link')
     page.fill('type-form-container[form="state-type-edit"] text-input[name="Name"] input', 'Alabama')
     page.fill('type-form-container[form="state-type-edit"] text-input[name="Description"] input', 'State Type description for automated test.')
     page.click('type-form-container[form="state-type-edit"] bool-input[name="Visible"] label[for="on"]')
     page.click('type-form-container[form="state-type-edit"] bool-input[name="Grouping Default"] label[for="on"]')
-    page.click('type-form-container[form="state-type-edit"] span:text("My Video Type")')
-    page.click('type-form-container[form="state-type-edit"] span:text("My Image Type")')
+    page.click('type-form-container[form="state-type-edit"] span:text("Test Videos")')
+    page.click('type-form-container[form="state-type-edit"] span:text("Test Images")')
     page.select_option('type-form-container[form="state-type-edit"] enum-input[name="Association"] select', label='Frame')
     page.select_option('type-form-container[form="state-type-edit"] enum-input[name="Interpolation"] select', label='Latest')
     page.click('type-form-container[form="state-type-edit"] bool-input[name="Delete Child Localizations"] label[for="on"]')
@@ -266,9 +263,9 @@ def test_settings_projectMemberships(page_factory, project):
     memberId = formSelector.replace("#Membership-", "")
     print(memberId)
     subItem.click()
-    page.wait_for_selector(f'{formSelector} enum-input[name="Version"]')
-    page.select_option(f'{formSelector} enum-input[name="Version"] select', label='Baseline')
-    page.click(f'{formSelector} input[type="submit"]')
+    page.wait_for_selector(f'#membership-edit--form enum-input[name="Default version"]')
+    page.select_option(f'#membership-edit--form enum-input[name="Default version"] select', label='Baseline')
+    page.click(f'type-form-container[form="membership-edit"] input[type="submit"]')
     page.wait_for_selector(f'text="Membership {memberId} successfully updated!"')
     print(f"Membershipship id {memberId} updated successfully!")
    
@@ -560,6 +557,6 @@ def test_settings_projectDelete(page_factory, project):
     page.click('type-form-container[form="project-main-edit"] #type-form-delete')
     page.wait_for_selector(f'text="Delete Confirmation"')
     page.click('button:has-text("Confirm")')
-    page.wait_for_selector(f'text="Project {project} deleted successfully! Redirecting to projects..."')
+    page.wait_for_selector(f'text="Project {project} deleted successfully!"')
     print(f"Project deleted successfully!")
     page.close()

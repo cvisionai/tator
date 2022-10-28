@@ -136,7 +136,6 @@ export class TypeFormTemplate extends TatorElement {
   /* Overriede this in child (see Version-Edit) */
   async setUpWarningDeleteMsg() {
     this._warningDeleteMessage = `Pressing confirm will delete this ${this.typeName} and all its data from your account.<br/><br/>
-      Name: ${this._objectName} ID: ${this._typeId}
       <br/><br/>Do you want to continue?`;
     return this._warningDeleteMessage;
   }
@@ -152,8 +151,7 @@ export class TypeFormTemplate extends TatorElement {
 
   handleResponse(data) {
     if (data.response.ok) {
-      const message = (this.typeName == "project") ? `${data.data.message} Redirecting to projects...` : data.data.message;
-      return this.modal._success(message);
+      return this.modal._success(data.data.message);
     } else {
       if (data.response?.text && data.response?.status && data.response?.statusText) {
         const message = JSON.parse(data.response.text).message;
