@@ -9,7 +9,12 @@ export class TypeFormTemplate extends TatorElement {
     this.saveWarningFlow = false;
 
     // Genenric fallback for warning flow save
-    this._warningSaveMessage = "Are you sure you want to edit this entity?";
+    this._genericEditWarningMsg = "Are you sure you want to edit this entity?";
+    this._warningSaveMessage = this._genericEditWarningMsg;
+
+    // Generic fallback for delete message
+    this._genericDeleteWarningMsg = "Pressing confirm will delete this entity and all its data from your account. Do you want to continue?";
+    this._warningDeleteMessage = this._genericDeleteWarningMsg;
 
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild(this.modal);
@@ -97,7 +102,14 @@ export class TypeFormTemplate extends TatorElement {
    * @param {String} 
    */
   async warningFlowSave() {
-    await this.setUpWarningSaveMsg();
+    const msg = await this.setUpWarningSaveMsg();
+
+    if (msg == "skip") {
+      // If an eval inside warning message decides it is ok, we can head right to save
+      // ie. in versions if it will affect 0 states/loc no warning is required
+      return this.saveDataFunction();
+    }
+
     const button = document.createElement("button");
     button.setAttribute("class", "btn f1 text-semibold text-red");
 
@@ -117,8 +129,16 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   /* Overriede this in child (see Version-Edit) */
-  setUpWarningSaveMsg() {
+  async setUpWarningSaveMsg() {
     return;
+  }
+
+  /* Overriede this in child (see Version-Edit) */
+  async setUpWarningDeleteMsg() {
+    this._warningDeleteMessage = `Pressing confirm will delete this ${this.typeName} and all its data from your account.<br/><br/>
+      Name: ${this._objectName} ID: ${this._typeId}
+      <br/><br/>Do you want to continue?`;
+    return this._warningDeleteMessage;
   }
 
   doSaveAction(formData) {
@@ -131,9 +151,9 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   handleResponse(data) {
-    console.log("HANDLE RESPONSE", data);
     if (data.response.ok) {
-      return this.modal._success(data.data.message);
+      const message = (this.typeName == "project") ? `${data.data.message} Redirecting to projects...` : data.data.message;
+      return this.modal._success(message);
     } else {
       if (data.response?.text && data.response?.status && data.response?.statusText) {
         const message = JSON.parse(data.response.text).message;
@@ -175,18 +195,19 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   
-  _deleteType() {
+  async _deleteType() {
     const button = document.createElement("button");
-    button.setAttribute("class", "btn f1 text-semibold text-red");
+    button.setAttribute("class", "btn btn-clear f1 text-semibold btn-red");
 
-    let confirmText = document.createTextNode("Delete")
+    let confirmText = document.createTextNode("Confirm")
     button.appendChild(confirmText);
 
     button.addEventListener("click", this.asyncDelete.bind(this));
+    await this.setUpWarningDeleteMsg();
 
     this.modal._confirm({
-      titleText: `Confirm Delete`,
-      mainText: `Delete "${this.objectName}" (ID: ${this._data.id})? This cannot be undone.`,
+      titleText: `Delete Confirmation`,
+      mainText: this._warningDeleteMessage,
       buttonSave: button
     });
   }
@@ -197,7 +218,15 @@ export class TypeFormTemplate extends TatorElement {
       const respData = await store.getState().removeType({ type: this.typeName, id: this._data.id });
       console.log("Delete response", respData);
       this.handleResponse(respData);
-      window.location.replace(`${window.location.origin}${window.location.pathname}#${this.typeName}-New`);
+
+      if (this.typeName == "Project") {
+        setTimeout(function(){
+          window.location.href = '/projects/';
+       }, 3000);
+      } else {
+        window.location.replace(`${window.location.origin}${window.location.pathname}#${this.typeName}-New`);
+      }
+      
     } catch (err) {
       this.modal._error(err)
     }

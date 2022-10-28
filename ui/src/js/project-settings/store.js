@@ -354,7 +354,7 @@ const store = create(subscribeWithSelector((set, get) => ({
             let newID = (responseInfo.data.id) ? responseInfo.data.id : "New";
             window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
          }
-         
+
          set({ status: { ...get().status, name: "idle", msg: "" } });
 
          // This includes the reponse so error handling can happen in ui
@@ -403,14 +403,15 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    },
 
-   getCountsRelatedToVersion: async (id) => {
+   getCountsForVersion: async (id) => {
       try {
-         const state = await api.getStateCount(get().projectId, { version: id });
-         const loc = await api.getLocalizationCount(get().projectId, { version: id });
-
-         return { state, loc };
-
+         // console.log(`getCountsForVersion id ${id} in this project ${get().projectId}`);
+         const state = await api.getStateCount(get().projectId, { version: [id] });
+         const loc = await api.getLocalizationCount(get().projectId, { version: [id] });
+         const counts = { state, loc };
+         return counts;
       } catch (err) {
+         console.error(`Couldn't getCountsForVersion id ${id}`, err);
          return null;
       }
      

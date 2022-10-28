@@ -1,5 +1,5 @@
 import { TypeFormTemplate } from "./type-form-template.js";
-import { getCompiledList } from "../store.js";
+import { getCompiledList, store } from "../store.js";
 
 export class VersionsEdit extends TypeFormTemplate {
    constructor() {
@@ -78,11 +78,38 @@ export class VersionsEdit extends TypeFormTemplate {
    }
 
    async setUpWarningSaveMsg() {
-      const counts = await state.getState().getCountsRelatedToVersion(this._data.id);
+      const counts = await store.getState().getCountsForVersion(this._data.id);
+      if (counts == null) {
+         // If we have some error return a generic message
+         this._warningSaveMessage = this._genericEditWarningMsg;
+      }
+
+      // If this doesn't affect anything, don't show a warning
+      if (counts.states === 0 && counts.loc === 0) return "skip";
+
+      // Otherwise create the message with counts
       this._warningSaveMessage = `There are ${counts.state} state${(counts.state == 1) ? '' : 's'} 
          and ${counts.loc} localization${(counts.loc == 1) ? '' : 's'} existing in this version. 
          Any edits will be reflected on those existing states and localizations.
          <br/><br/> Do you want to continue?`;
+      
+      return this._warningSaveMessage;
+   }
+
+   async setUpWarningDeleteMsg() {
+      const counts = await store.getState().getCountsForVersion(this._data.id);
+      if (counts == null) {
+          // If we have some error return a generic message
+         this._warningDeleteMessage = this._genericDeleteWarningMsg;
+      }
+      
+      // Otherwise create the message with counts
+      this._warningDeleteMessage = `Pressing confirm will delete this Version and all related states and localizations from your account.
+         <br/><br/>There are ${counts.state} state${(counts.state == 1) ? '' : 's'} 
+         and ${counts.loc} localization${(counts.loc == 1) ? '' : 's'} that will also be deleted. 
+         <br/><br/> Do you want to continue?`;
+      
+      return this._warningDeleteMessage;
    }
 }
 
