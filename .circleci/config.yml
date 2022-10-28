@@ -178,7 +178,7 @@ jobs:
         name: Front end tests
         command: |
           mkdir -p /tmp/videos
-          ssh lightsail 'mkdir /tmp/videos && pytest test --base-url=http://localhost --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
+          ssh lightsail -t 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && pytest ~/tator/test --base-url=http://localhost --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
           scp -r lightsail:/tmp/videos /tmp/videos
     - store_artifacts:
         path: /tmp/videos
@@ -199,7 +199,7 @@ jobs:
           scp ~/token.txt lightsail:~
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && pytest ~/tator/tatorpy_test --host=http://localhost --token=$(cat ~/token.txt) -s --keep';
+        command: ssh lightsail -t 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && pytest ~/tator/tatorpy_test --host=http://localhost --token=$(cat ~/token.txt) -s --keep';
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
