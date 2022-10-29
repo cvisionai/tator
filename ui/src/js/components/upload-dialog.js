@@ -42,6 +42,14 @@ export class UploadDialog extends ModalDialog {
     this._close.style.display = "none";
     this._footer.appendChild(this._close);
 
+    this._closeButton = this._shadow.querySelector("modal-close");
+    this._closeButton.addEventListener("click", () => {
+      this.removeAttribute("is-open");
+      this._cancelled = true;
+      this.dispatchEvent(new Event("cancel"));
+      setTimeout(this._reset.bind(this), 1000);
+    });
+
     this._cancelButton.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this._cancelled = true;
