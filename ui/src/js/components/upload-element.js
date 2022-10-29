@@ -9,13 +9,23 @@ export class UploadElement extends TatorElement {
     super();
     this._fileSelectCallback = this._fileSelectCallback.bind(this);
     this._haveNewSection = false;
+    this._abortController = new AbortController();
     this._cancel = false;
   }
 
   init(api, store) {
     this._api = api;
     this._store = store;
-    this._store.subscribe(store.uploadCancel, () => {this._cancel = true;});
+    store.subscribe(state => state.uploadCancelled, (cancelled) => {
+      if (cancelled) {
+        // Cancel next uploads.
+        this._cancel = true;
+        // Abort uploads in progress.
+        this._abortController.abort();
+      } else {
+        this._cancel = false;
+      }
+    });
   }
 
   pickFiles(store) {
@@ -98,6 +108,7 @@ export class UploadElement extends TatorElement {
           "isImage": isImage,
           "isArchive": isArchive,
           "progressCallback": progressCallback.bind(this),
+          "abortController": this._abortController,
         };
       }
     }
@@ -136,6 +147,7 @@ export class UploadElement extends TatorElement {
     let numStarted = 0;
     let totalFiles = 0;
     let totalSize = 0;
+    this._abortController = new AbortController();
     if (typeof ev.dataTransfer === "undefined") {
       const files = ev.target.files;
       totalFiles = files.length;
@@ -208,12 +220,13 @@ export class UploadElement extends TatorElement {
       let promise = new Promise(resolve => resolve(true));
       this._store.setState({
         uploadTotalFiles: this._uploads.length,
+        uploadCancelled: false,
       });
       for (const [idx, msg] of this._uploads.entries()) {
         promise = promise
         .then(() => {
           if (this._cancel) {
-            throw `Upload of ${file.name} cancelled!`;
+            throw `Upload of ${msg.file.name} cancelled!`;
           }
           this._store.setState({
             uploadFilesComplete: idx,

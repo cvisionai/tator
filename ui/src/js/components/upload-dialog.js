@@ -67,6 +67,7 @@ export class UploadDialog extends ModalDialog {
     ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "is-open":
+        this._reset();
         break;
     }
   }

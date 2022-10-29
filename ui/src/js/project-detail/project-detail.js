@@ -461,7 +461,7 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._uploadDialog.addEventListener("cancel", evt => {
-      //TODO: Cancel downloads
+      store.getState().uploadCancel();
       this.removeAttribute("has-open-modal");
     });
 
