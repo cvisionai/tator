@@ -9,12 +9,13 @@ export class UploadElement extends TatorElement {
     super();
     this._fileSelectCallback = this._fileSelectCallback.bind(this);
     this._haveNewSection = false;
+    this._cancel = false;
   }
 
-  init(api, store, progressCallback) {
+  init(api, store) {
     this._api = api;
     this._store = store;
-    this._progressCallback = progressCallback;
+    this._store.subscribe(store.uploadCancel, () => {this._cancel = true;});
   }
 
   pickFiles(store) {
@@ -86,6 +87,9 @@ export class UploadElement extends TatorElement {
       }
 
       if (fileOk) {
+        function progressCallback(progress) {
+          this._store.setState({'uploadChunkProgress': progress});
+        }
         return {
           "file": file,
           "gid": gid,
@@ -93,10 +97,11 @@ export class UploadElement extends TatorElement {
           "section": this._section,
           "isImage": isImage,
           "isArchive": isArchive,
-          "progressCallback": this._progressCallback,
+          "progressCallback": progressCallback.bind(this),
         };
       }
     }
+    this._store.setState({uploadError: `${file.name} is not a valid file type for this project!`});
     return false;
   }
 
@@ -200,9 +205,32 @@ export class UploadElement extends TatorElement {
         detail: {numSkipped: numSkipped, numStarted: numStarted},
         composed: true
       }));
-      for (const msg of this._uploads) {
-        uploadMedia(this._api, msg.mediaType, msg.file, msg);
+      let promise = new Promise(resolve => resolve(true));
+      this._store.setState({
+        uploadTotalFiles: this._uploads.length,
+      });
+      for (const [idx, msg] of this._uploads.entries()) {
+        promise = promise
+        .then(() => {
+          if (this._cancel) {
+            throw `Upload of ${file.name} cancelled!`;
+          }
+          this._store.setState({
+            uploadFilesComplete: idx,
+            uploadChunkProgress: 0,
+            uploadFilename: msg.file.name,
+          });
+          return uploadMedia(this._api, msg.mediaType, msg.file, msg);
+        })
+        .then(() => {
+          this._store.setState({
+            uploadFilesComplete: idx + 1,
+          });
+        })
       }
+      promise.catch((error) => {
+        this._store.setState({uploadError: error.message});
+      });
     }
   }
 }

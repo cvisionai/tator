@@ -274,8 +274,8 @@ export class ProjectDetail extends TatorPage {
     const newSectionDialog = document.createElement("name-dialog");
     this._projects.appendChild(newSectionDialog);
 
-    const uploadDialog = document.createElement("upload-dialog");
-    this._projects.appendChild(uploadDialog);
+    this._uploadDialog = document.createElement("upload-dialog");
+    this._projects.appendChild(this._uploadDialog);
 
     const attachmentDialog = document.createElement("attachment-dialog");
     attachmentDialog._header.classList.add("fixed-height-scroll");
@@ -455,19 +455,17 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._mediaSection.addEventListener("filesadded", evt => {
-      //TODO upload files
       this._leaveConfirmOk = true;
-      uploadDialog.setTotalFiles(evt.detail.numStarted);
-      uploadDialog.setAttribute("is-open", "");
+      this._uploadDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
 
-    uploadDialog.addEventListener("cancel", evt => {
-      window._uploader.postMessage({ command: "cancelUploads" });
+    this._uploadDialog.addEventListener("cancel", evt => {
+      //TODO: Cancel downloads
       this.removeAttribute("has-open-modal");
     });
 
-    uploadDialog.addEventListener("close", evt => {
+    this._uploadDialog.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal");
     });
 
@@ -609,6 +607,7 @@ export class ProjectDetail extends TatorPage {
     this.setAttribute("project-id", Number(window.location.pathname.split('/')[1]));
     // Initialize store data
     store.getState().init();
+    this._uploadDialog.init(store);
   }
 
   static get observedAttributes() {

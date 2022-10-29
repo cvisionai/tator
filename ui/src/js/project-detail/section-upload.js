@@ -36,7 +36,7 @@ export class SectionUpload extends UploadElement {
   }
 
   connectedCallback() {
-    this.init(api, store, (progress) => {`Upload progress: ${progress}`;});
+    this.init(api, store);
   }
 
   static get observedAttributes() {
