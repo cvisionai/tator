@@ -14,7 +14,6 @@ module.exports = {
     annotator: "./src/js/annotator/index.js",
     token: "./src/js/token/index.js",
     projects: "./src/js/projects/index.js",
-    tasks: "./src/js/tasks/index.js",
     util: "./src/js/util/index.js",
     registration: "./src/js/registration/index.js",
     components: "./src/js/components/index.js",
