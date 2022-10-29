@@ -31,10 +31,10 @@ export class UploadDialog extends ModalDialog {
     this._errors.setAttribute("class", "modal__errors d-flex flex-column");
     this._main.appendChild(this._errors);
 
-    this._cancel = document.createElement("button");
-    this._cancel.setAttribute("class", "btn btn-clear btn-red");
-    this._cancel.textContent = "Cancel";
-    this._footer.appendChild(this._cancel);
+    this._cancelButton = document.createElement("button");
+    this._cancelButton.setAttribute("class", "btn btn-clear btn-red");
+    this._cancelButton.textContent = "Cancel";
+    this._footer.appendChild(this._cancelButton);
 
     this._close = document.createElement("button");
     this._close.setAttribute("class", "btn btn-clear btn-purple");
@@ -42,17 +42,17 @@ export class UploadDialog extends ModalDialog {
     this._close.style.display = "none";
     this._footer.appendChild(this._close);
 
-    this._cancel.addEventListener("click", () => {
+    this._cancelButton.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this._cancelled = true;
       this.dispatchEvent(new Event("cancel"));
-      this._reset();
+      setTimeout(this._reset.bind(this), 1000);
     });
 
     this._close.addEventListener("click", () => {
       this.removeAttribute("is-open");
       this.dispatchEvent(new Event("close"));
-      this._reset();
+      setTimeout(this._reset.bind(this), 1000);
     });
 
     this._doneFiles = 0;
@@ -67,7 +67,6 @@ export class UploadDialog extends ModalDialog {
     ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "is-open":
-        this._reset();
         break;
     }
   }
@@ -133,7 +132,7 @@ export class UploadDialog extends ModalDialog {
 
   _finish() {
     if (!this._cancelled) {
-      this._cancel.style.display = "none";
+      this._cancelButton.style.display = "none";
       this._close.style.display = "flex";
       if (this._failFiles == 0) {
         this._uploadText.textContent = "Upload complete! Monitor video transcodes with the \"Activity\" button.";
@@ -146,7 +145,7 @@ export class UploadDialog extends ModalDialog {
   }
 
   _reset() {
-    this._cancel.style.display = "flex";
+    this._cancelButton.style.display = "flex";
     this._close.style.display = "none";
     this._title.nodeValue = "Uploading Files";
     this._fileText.textContent = "";
