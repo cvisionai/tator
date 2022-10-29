@@ -19,9 +19,9 @@ const store = create(subscribeWithSelector((set, get) => ({
   uploadCancel: () => {
     set({
       uploadChunkProgress: 0,
-      uploadCurrentFile: "cancelled",
+      uploadCurrentFile: "",
       uploadTotalFiles: 0,
-      uploadError: "Upload cancelled by user!",
+      uploadError: "",
       uploadCancelled: true,
     });
   },

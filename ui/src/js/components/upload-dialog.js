@@ -154,6 +154,7 @@ export class UploadDialog extends ModalDialog {
     this._uploadText.textContent = "";
     this._uploadProgress.setAttribute("value", 0);
     this._doneFiles = 0;
+    this._failFiles = 0;
     
     while (this._errors.firstChild) {
       this._errors.removeChild(this._errors.firstChild);
