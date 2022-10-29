@@ -284,8 +284,6 @@ export class ProjectDetail extends TatorPage {
     this._activityNav = document.createElement("activity-nav");
     this.main.appendChild(this._activityNav);
 
-    this._leaveConfirmOk = false;
-
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg())
@@ -295,7 +293,7 @@ export class ProjectDetail extends TatorPage {
     store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
 
     window.addEventListener("beforeunload", evt => {
-      if (this._leaveConfirmOk) {
+      if (this._uploadDialog.hasAttribute("is-open")) {
         evt.preventDefault();
         evt.returnValue = '';
         window.alert("Uploads are in progress. Still leave?");
@@ -455,7 +453,6 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._mediaSection.addEventListener("filesadded", evt => {
-      this._leaveConfirmOk = true;
       this._uploadDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
