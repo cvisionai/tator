@@ -2,6 +2,7 @@ import { TatorPage } from "../../components/tator-page.js";
 import { TatorData } from "../../util/tator-data.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { FilterData } from "../../components/filter-data.js";
+import { store } from "./store.js";
 
 export class AnalyticsCollections extends TatorPage {
     constructor() {
@@ -83,10 +84,22 @@ export class AnalyticsCollections extends TatorPage {
 
       // Note: this will show them if they exist, may be project by project
       this.acceptedTypes = ["Media", "Localization"]; // No Frame assoc not shown here
+
+      // Create store subscriptions
+      store.subscribe(state => state.user, this._setUser.bind(this));
+      store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+      store.subscribe(state => state.project, this._init.bind(this));
     }
 
-  _init() {
+  connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
+    // Initialize store data
+    store.getState().init();
+  }
 
+  _init(project) {
+
+    this._breadcrumbs.setAttribute("project-name", project.name);
     this.loading.showSpinner();
     this.showDimmer();
 
@@ -105,8 +118,7 @@ export class AnalyticsCollections extends TatorPage {
     }
 
     // Database interface. This should only be used by the viewModel/interface code.
-    this.projectId = Number(this.getAttribute("project-id"));
-
+    this.projectId = project.id;
     this._modelData = new TatorData(this.projectId);
     this._modelData.init().then(() => {
 
@@ -173,18 +185,10 @@ export class AnalyticsCollections extends TatorPage {
 
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "project-name":
-        this._breadcrumbs.setAttribute("project-name", newValue);
-        break;
-      case "project-id":
-        this._init();
-        break;
-    }
   }
 
   static get observedAttributes() {
-    return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+    return TatorPage.observedAttributes;
   }
 
   // Page dimmer handler

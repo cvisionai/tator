@@ -49,7 +49,7 @@ app.get('/:projectId/analytics/localizations', (req, res) => {
 });
 
 app.get('/:projectId/analytics/collections', (req, res) => {
-  res.status(404).end();
+  res.render('analytics/collections');
 });
 
 app.get('/:projectId/analytics/corrections', (req, res) => {
