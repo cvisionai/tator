@@ -88,7 +88,10 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
-
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.project, this._updateProject.bind(this));
 
     //
     /* Other */
@@ -105,9 +108,11 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
   }
 
-  async _init() {
+  async _init(project) {
+    this._breadcrumbs.setAttribute("project-name", project.name);
+
     // Database interface. This should only be used by the viewModel/interface code.
-    this.projectId = Number(this.getAttribute("project-id"));
+    this.projectId = project.id;
     this._modelData = new TatorData(this.projectId);
 
     // Init after modal is defined
@@ -228,20 +233,18 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));    
   }
 
+  connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
+    // Initialize store data
+    store.getState().init();
+  }
+
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "project-name":
-        this._breadcrumbs.setAttribute("project-name", newValue);
-        break;
-      case "project-id":
-        this._init();
-        break;
-    }
   }
 
   static get observedAttributes() {
-    return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+    return TatorPage.observedAttributes;
   }
 
   _cardGallery(filterConditions, paginationState) {
