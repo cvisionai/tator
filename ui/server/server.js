@@ -45,7 +45,7 @@ app.get('/:projectId/analytics', (req, res) => {
 });
 
 app.get('/:projectId/analytics/localizations', (req, res) => {
-  res.status(404).end();
+  res.render('analytics/localizations');
 });
 
 app.get('/:projectId/analytics/collections', (req, res) => {

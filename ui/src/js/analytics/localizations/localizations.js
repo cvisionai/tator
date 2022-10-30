@@ -3,6 +3,7 @@ import { TatorData } from "../../util/tator-data.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { FilterData } from "../../components/filter-data.js";
 import { getCookie } from "../../util/get-cookie.js";
+import { store } from "./store.js";
 
 /**
  * Page that displays a grid view of selected annotations
@@ -90,12 +91,17 @@ export class AnalyticsLocalizations extends TatorPage {
     this._shadow.appendChild(this.modalNotify );
     this.modalNotify.addEventListener("open", this.showDimmer.bind(this));
     this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
+
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.project, this._init.bind(this));
   }
 
-  async _init() {
+  async _init(project) {
 
     // Database interface. This should only be used by the viewModel/interface code.
-    this.projectId = Number(this.getAttribute("project-id"));
+    this.projectId = project.id;
     this._modelData = new TatorData(this.projectId);
 
     this.loading.showSpinner();
@@ -104,17 +110,7 @@ export class AnalyticsLocalizations extends TatorPage {
     // Initialize the settings with the URL. The settings will be used later on.
     this._settings.processURL();
 
-    const response = await fetch("/rest/Project/" + this.projectId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-
-    const data = await response.json();
+    const data = project;
     this._permission = data.permission;
 
     if (this._permission === "View Only") {
@@ -236,20 +232,10 @@ export class AnalyticsLocalizations extends TatorPage {
     });
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "project-name":
-        this._breadcrumbs.setAttribute("project-name", newValue);
-        break;
-      case "project-id":
-        this._init();
-        break;
-    }
-  }
-
-  static get observedAttributes() {
-    return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+  connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
+    // Initialize store data
+    store.getState().init();
   }
 
   _cardGallery(filterConditions, paginationState) {
