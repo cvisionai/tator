@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/:projectId/analytics', (req, res) => {
-  res.status(404).end();
+  res.render('analytics/portal');
 });
 
 app.get('/:projectId/analytics/localizations', (req, res) => {

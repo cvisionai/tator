@@ -87,8 +87,6 @@ export class MediaSection extends TatorElement {
     this._searchParams = new URLSearchParams();
     this._numFilesCount = 0;
     this._searchString = "";
-
-
     
     this._setCallbacks();
   }
