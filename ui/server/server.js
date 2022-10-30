@@ -104,6 +104,10 @@ app.get('/token', (req, res) => {
   res.render('token', params);
 });
 
+app.get('/rest', (req, res) => {
+  res.render('browser', params);
+});
+
 app.use((req, res, next) => {
   res.status(404).end();
 });
