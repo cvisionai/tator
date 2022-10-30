@@ -100,6 +100,8 @@ export class AnalyticsLocalizations extends TatorPage {
 
   async _init(project) {
 
+    this._breadcrumbs.setAttribute("project-name", project.name);
+
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = project.id;
     this._modelData = new TatorData(this.projectId);
@@ -236,6 +238,14 @@ export class AnalyticsLocalizations extends TatorPage {
     TatorPage.prototype.connectedCallback.call(this);
     // Initialize store data
     store.getState().init();
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
+  }
+
+  static get observedAttributes() {
+    return TatorPage.observedAttributes;
   }
 
   _cardGallery(filterConditions, paginationState) {
