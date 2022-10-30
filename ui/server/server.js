@@ -57,7 +57,7 @@ app.get('/:projectId/analytics/corrections', (req, res) => {
 });
 
 app.get('/:projectId/analytics/files', (req, res) => {
-  res.status(404).end();
+  res.render('analytics/files');
 });
 
 app.get('/:projectId/dashboards', (req, res) => {

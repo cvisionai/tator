@@ -2,6 +2,7 @@ import { TatorPage } from "../../components/tator-page.js";
 import { TatorData } from "../../util/tator-data.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { FilterData } from "../../components/filter-data.js";
+import { store } from "./store.js";
 
 /**
  * Page that displays a grid view of selected annotations
@@ -91,7 +92,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     // Create store subscriptions
     store.subscribe(state => state.user, this._setUser.bind(this));
     store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
-    store.subscribe(state => state.project, this._updateProject.bind(this));
+    store.subscribe(state => state.project, this._init.bind(this));
 
     //
     /* Other */

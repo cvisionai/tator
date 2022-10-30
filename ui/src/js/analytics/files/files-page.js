@@ -1,5 +1,6 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { getCookie } from "../../util/get-cookie.js";
+import { store } from "./store.js";
 import TatorLoading from "../../../images/tator_loading.gif";
 
 export class FilesPage extends TatorPage {
@@ -43,6 +44,11 @@ export class FilesPage extends TatorPage {
     this._fileTableDiv.setAttribute("class", "px-3 py-3");
     main.appendChild(this._fileTableDiv);
 
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.project, this._init.bind(this));
+
     // Event listeners
     this._fileTypeButton.addEventListener("click", () => {
       this._fileTypeModal.setAttribute("is-open", "");
@@ -62,24 +68,23 @@ export class FilesPage extends TatorPage {
     });
   }
 
+  connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
+    // Initialize store data
+    store.getState().init();
+  }
+
   static get observedAttributes() {
-    return["project-name", "project-id"].concat(TatorPage.observedAttributes);
+    return TatorPage.observedAttributes;
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "project-name":
-        this._breadcrumbs.setAttribute("project-name", newValue);
-        break;
-      case "project-id":
-        this._init(newValue);
-        break;
-    }
   }
 
-  _init(projectId) {
-    this._projectId = projectId;
+  _init(project) {
+    this._breadcrumbs.setAttribute("project-name", project.name);
+    this._projectId = project.id;
     const fileTypesPromise = fetch("/rest/FileTypes/" + this._projectId, {
       method: "GET",
       credentials: "same-origin",
