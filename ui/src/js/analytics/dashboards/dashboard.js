@@ -86,6 +86,7 @@ export class RegisteredDashboard extends TatorPage {
   }
 
   _init(dashboard) {
+    document.title = `Tator | ${dashboard.name}`;
     this._dashboardId = dashboard.id;
     this._dashboard = dashboard;
     this._dashbordSource = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
