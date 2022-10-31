@@ -73,7 +73,7 @@ app.get('/organizations', (req, res) => {
 });
 
 app.get('/:organizationId/organization-settings', (req, res) => {
-  res.status(404).end();
+  res.render('organization-settings');
 });
 
 app.get('/projects', (req, res) => {
