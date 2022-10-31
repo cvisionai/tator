@@ -6,6 +6,7 @@ from django.db.models.functions import Coalesce
 
 from ..search import TatorSearch
 from ..models import Leaf
+from ..models import LeafType
 
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
@@ -71,7 +72,15 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
 
 def get_leaf_queryset(project, params):
     # Determine whether to use ES or not.
-    filter_ops = get_attribute_filter_ops(project, params, 'leaf')
+    project = params.get('project')
+    filter_type = params.get('type')
+    filter_ops=[]
+    if filter_type:
+        types = LeafType.objects.filter(pk=filter_type)
+    else:
+        types = LeafType.objects.filter(project=project)
+    for entity_type in types:
+        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
 
     # If using PSQL, construct the queryset.
     qs = _get_leaf_psql_queryset(project, filter_ops, params)

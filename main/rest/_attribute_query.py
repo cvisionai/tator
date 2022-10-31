@@ -3,6 +3,7 @@ from collections import defaultdict
 import copy
 import logging
 
+import datetime
 from dateutil.parser import parse as dateutil_parse
 
 from django.db.models.functions import Cast
@@ -322,7 +323,12 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         field_type,_ = _get_field_for_attribute(project, entity_type, key)
         if field_type:
             # Annotate with a typed object prior to query to ensure index usage
-            qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
+            if field_type == DateTimeField:
+                # TODO change this to function
+                qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", DateTimeField(default=datetime.datetime.now()))})
+                logger.info(qs.query)
+            else:
+                qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
             qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
             found_it=True
 

@@ -8,6 +8,7 @@ from django.db.models.functions import Coalesce
 from ..search import TatorSearch
 from ..models import Section
 from ..models import Media
+from ..models import MediaType
 from ..models import State
 
 from ._attribute_query import get_attribute_es_query
@@ -242,16 +243,21 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     return qs
 
 def _get_section_and_params(project, params):
+    filter_type = params.get('type')
     section_uuid = None
     if 'section' in params:
         section = Section.objects.get(pk=params['section'])
-        if not((section.lucene_search is None)
-               and (section.media_bools is None)
-               and (section.annotation_bools is None)):
-            use_es = True
         section_uuid = section.tator_user_sections
 
-    filter_ops = get_attribute_filter_ops(project, params, 'media')
+    project_type = params.get('type')
+    filter_type = params.get('type')
+    filter_ops=[]
+    if filter_type:
+        types = MediaType.objects.filter(pk=filter_type)
+    else:
+        types = MediaType.objects.filter(project=project)
+    for entity_type in types:
+        filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
 
     return section_uuid, filter_ops
 
