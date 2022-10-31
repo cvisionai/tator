@@ -1,6 +1,7 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { getCookie } from "../../util/get-cookie.js";
 import TatorLoading from "../../../images/tator_loading.gif";
+import { store } from "./dashboard-store.js";
 
 export class RegisteredDashboard extends TatorPage {
   constructor() {
@@ -41,6 +42,12 @@ export class RegisteredDashboard extends TatorPage {
     this._dashboardView.setAttribute("class", "d-flex flex-grow")
     main.appendChild(this._dashboardView);
 
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.project, this._updateProject.bind(this));
+    store.subscribe(state => state.dashboard, this._init.bind(this));
+
     // Listen for URL param events
     console.log(window.history.state);
     window.document.addEventListener('bookmark-update', handleEvent, false)
@@ -56,49 +63,35 @@ export class RegisteredDashboard extends TatorPage {
     window.addEventListener('hashchange', this.hashHandler.bind(this), false);
   }
 
+  connectedCallback() {
+    store.getState().init();
+  }
+
   static get observedAttributes() {
-    return["project-name", "project-id", "dashboard-id", "username"].concat(TatorPage.observedAttributes);
+    return TatorPage.observedAttributes;
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "project-name":
-        this._breadcrumbs.setAttribute("project-name", newValue);
-        break;
-      case "project-id":
-        this._breadcrumbs.setAttribute("analytics-name-link", window.location.origin + `/${newValue}/dashboards`);
-        break;
-      case "username":
-        this._username = newValue;
-        break;
-      case "dashboard-id":
-        this._init(newValue);
-        break;
-    }
   }
 
-  _init(dashboardId) {
-    this._dashboardId = dashboardId;
-    const dashboardPromise = fetch("/rest/Applet/" + dashboardId, {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-      }
-    });
-    dashboardPromise.then((response) => {
-      const dashboardData = response.json();
-      dashboardData.then((dashboard) => {
-        this._dashboard = dashboard;
-        this._dashbordSource = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
-        this._dashboardView.src = this._dashbordSource;
-        this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
-        this._loading.style.display = "none";
-      });
-    });
+  _setUser(user) {
+    TatorPage.prototype._setUser.call(this, user);
+    this._username = user.username;
+  }
+
+  _updateProject(project) {
+    this._breadcrumbs.setAttribute("project-name", project.name);
+    this._breadcrumbs.setAttribute("analytics-name-link", window.location.origin + `/${project.id}/dashboards`);
+  }
+
+  _init(dashboard) {
+    this._dashboardId = dashboard.id;
+    this._dashboard = dashboard;
+    this._dashbordSource = `${dashboard.html_file}${window.location.search !== "" ? window.location.search+"&" : "?"}username=${this._username}`;
+    this._dashboardView.src = this._dashbordSource;
+    this._breadcrumbs.setAttribute("analytics-sub-name", dashboard.name);
+    this._loading.style.display = "none";
   }
 
   hashHandler(e) {

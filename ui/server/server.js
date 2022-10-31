@@ -65,7 +65,7 @@ app.get('/:projectId/dashboards', (req, res) => {
 });
 
 app.get('/:projectId/dashboards/:id', (req, res) => {
-  res.status(404).end();
+  res.render('analytics/dashboard');
 });
 
 app.get('/organizations', (req, res) => {
@@ -89,14 +89,6 @@ app.get('/:projectId/project-settings', (req, res) => {
 });
 
 app.get('/:projectId/annotation/:id', (req, res) => {
-  res.status(404).end();
-});
-
-app.get('/registration', (req, res) => {
-  res.status(404).end();
-});
-
-app.get('/accept', (req, res) => {
   res.status(404).end();
 });
 
