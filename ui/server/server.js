@@ -41,39 +41,39 @@ app.get('/', (req, res) => {
 });
 
 app.get('/:projectId/analytics', (req, res) => {
-  res.render('analytics/portal');
+  res.render('analytics/portal', params);
 });
 
 app.get('/:projectId/analytics/localizations', (req, res) => {
-  res.render('analytics/localizations');
+  res.render('analytics/localizations', params);
 });
 
 app.get('/:projectId/analytics/collections', (req, res) => {
-  res.render('analytics/collections');
+  res.render('analytics/collections', params);
 });
 
 app.get('/:projectId/analytics/corrections', (req, res) => {
-  res.render('analytics/corrections');
+  res.render('analytics/corrections', params);
 });
 
 app.get('/:projectId/analytics/files', (req, res) => {
-  res.render('analytics/files');
+  res.render('analytics/files', params);
 });
 
 app.get('/:projectId/dashboards', (req, res) => {
-  res.render('analytics/dashboard-portal');
+  res.render('analytics/dashboard-portal', params);
 });
 
 app.get('/:projectId/dashboards/:id', (req, res) => {
-  res.render('analytics/dashboard');
+  res.render('analytics/dashboard', params);
 });
 
 app.get('/organizations', (req, res) => {
-  res.render('organizations');
+  res.render('organizations', params);
 });
 
 app.get('/:organizationId/organization-settings', (req, res) => {
-  res.render('organization-settings');
+  res.render('organization-settings', params);
 });
 
 app.get('/projects', (req, res) => {
@@ -85,7 +85,7 @@ app.get('/:projectId/project-detail', (req, res) => {
 });
 
 app.get('/:projectId/project-settings', (req, res) => {
-  res.status(404).end();
+  res.render('project-settings', params);
 });
 
 app.get('/:projectId/annotation/:id', (req, res) => {
