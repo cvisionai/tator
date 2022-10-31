@@ -1,6 +1,7 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { getCookie } from "../../util/get-cookie.js";
 import TatorLoading from "../../../images/tator_loading.gif";
+import { store } from "./store.js";
 
 export class DashboardPortal extends TatorPage {
     constructor() {
@@ -48,27 +49,30 @@ export class DashboardPortal extends TatorPage {
       this._dashboards = document.createElement("div");
       this._dashboards.setAttribute("class", "d-flex flex-column");
       main.appendChild(this._dashboards);
+
+      // Create store subscriptions
+      store.subscribe(state => state.user, this._setUser.bind(this));
+      store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+      store.subscribe(state => state.project, this._init.bind(this));
     }
 
     connectedCallback() {
       TatorPage.prototype.connectedCallback.call(this);
+      store.getState().init();
     }
 
     static get observedAttributes() {
-      return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+      return TatorPage.observedAttributes;
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
       TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-      switch (name) {
-        case "project-name":
-          this._breadcrumbs.setAttribute("project-name", newValue);
-          break;
-        case "project-id":
-          this._projectId = newValue;
-          this._getDashboards();
-          break;
-      }
+    }
+
+    _init(project) {
+      this._breadcrumbs.setAttribute("project-name", project.name);
+      this._projectId = project.id;
+      this._getDashboards();
     }
 
     _getDashboards() {

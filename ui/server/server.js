@@ -61,7 +61,7 @@ app.get('/:projectId/analytics/files', (req, res) => {
 });
 
 app.get('/:projectId/dashboards', (req, res) => {
-  res.status(404).end();
+  res.render('analytics/dashboard-portal');
 });
 
 app.get('/:projectId/dashboards/:id', (req, res) => {
