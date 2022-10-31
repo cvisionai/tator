@@ -104,13 +104,6 @@ app.use((req, res, next) => {
   res.status(404).end();
 });
 
-/*
-    path('stream-saver/sw.js', StreamSaverSWLocal.as_view(), name='sw'),
-    path('stream-saver/mitm.html', StreamSaverMITMLocal.as_view(), name='mitm'),
-    path('auth-project', AuthProjectView.as_view()),
-    path('auth-admin', AuthAdminView.as_view()),
-*/
-
 app.listen(port, () => {
   console.log('Started express server!');
 });
