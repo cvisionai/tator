@@ -7,6 +7,7 @@ import datetime
 from dateutil.parser import parse as dateutil_parse
 
 from django.db.models.functions import Cast
+from django.db.models import Func, F
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
@@ -323,13 +324,15 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         field_type,_ = _get_field_for_attribute(project, entity_type, key)
         if field_type:
             # Annotate with a typed object prior to query to ensure index usage
+            if field_type == PointField:
+                qs = qs.annotate(**{f"{key}_typed": Func(F(f"attributes__{key}[1]"), F(f"attributes__{key}[0]"), function='ST_MakePoint')})
             if field_type == DateTimeField:
-                # TODO change this to function
-                qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", DateTimeField(default=datetime.datetime.now()))})
-                logger.info(qs.query)
+                qs = qs.annotate(**{f'{key}_char': Cast(f'attributes__{key}', CharField())})
+                qs = qs.annotate(**{f"{key}_typed": Func(F(f'{key}_char'), function='to_timestamp')})
             else:
                 qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
             qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+            logger.info(qs.query)
             found_it=True
 
     if attribute_null is not None:
@@ -355,7 +358,9 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
                 qs = qs.order_by(MaxInnerProduct(f"{name}_typed"))
 
     if found_it:
+        logger.info("found it = true")
         return qs
     else:
+        logger.info("Found it = false")
         return None
 
