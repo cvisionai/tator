@@ -3,6 +3,7 @@ import { getCookie } from "../util/get-cookie.js";
 import { fetchRetry } from "../util/fetch-retry.js";
 import { Utilities } from "../util/utilities.js";
 import TatorLoading from "../../images/tator_loading.gif";
+import { store } from "./store.js";
 
 export class AnnotationPage extends TatorPage {
   constructor() {
@@ -89,6 +90,12 @@ export class AnnotationPage extends TatorPage {
       this._progressDialog.removeAttribute("is-open", "");
     });
 
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.project, this._updateProject.bind(this));
+    store.subscribe(state => state.media, this._updateMedia.bind(this));
+
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";
       //window.alert(evt.message);
@@ -126,6 +133,7 @@ export class AnnotationPage extends TatorPage {
   connectedCallback() {
     this.setAttribute("has-open-modal", "");
     TatorPage.prototype.connectedCallback.call(this);
+    store.getState().init();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {

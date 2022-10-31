@@ -89,7 +89,7 @@ app.get('/:projectId/project-settings', (req, res) => {
 });
 
 app.get('/:projectId/annotation/:id', (req, res) => {
-  res.status(404).end();
+  res.render('annotation', params);
 });
 
 app.get('/token', (req, res) => {
