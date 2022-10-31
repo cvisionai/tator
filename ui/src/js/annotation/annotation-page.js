@@ -94,7 +94,7 @@ export class AnnotationPage extends TatorPage {
     store.subscribe(state => state.user, this._setUser.bind(this));
     store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
     store.subscribe(state => state.project, this._updateProject.bind(this));
-    store.subscribe(state => state.media, this._updateMedia.bind(this));
+    store.subscribe(state => state.mediaId, this._updateMedia.bind(this));
 
     window.addEventListener("error", (evt) => {
       this._loading.style.display = "none";
@@ -134,6 +134,15 @@ export class AnnotationPage extends TatorPage {
     this.setAttribute("has-open-modal", "");
     TatorPage.prototype.connectedCallback.call(this);
     store.getState().init();
+  }
+
+  _updateProject(project) {
+    this.setAttribute("project-name", project.name);
+    this.setAttribute("project-id", project.id);
+  }
+
+  _updateMedia(mediaId) {
+    this.setAttribute("media-id", mediaId);
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
