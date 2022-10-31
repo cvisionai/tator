@@ -86,7 +86,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
-            if sub_qs:
+            if type(sub_qs) != type(None):
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
         qs = queries.pop()
