@@ -269,11 +269,11 @@ class TatorSearch:
             raise(f"Couldn't find {name} in {entity_type.name} {names}")
 
         self.delete_index(entity_type, element)
-        element['dtype'] = new_attribute_type
+        element['dtype'] = new_attribute_type['dtype']
         self.create_psql_index(entity_type, element)
 
         # Update DB record for dtype and return it
-        entity_type.attribute_types[el_idx]['dtype'] = new_attribute_type
+        entity_type.attribute_types[el_idx]['dtype'] = new_attribute_type['dtype']
         return entity_type
 
     def delete_alias(self, entity_type, name):
