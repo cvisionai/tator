@@ -69,7 +69,7 @@ app.get('/:projectId/dashboards/:id', (req, res) => {
 });
 
 app.get('/organizations', (req, res) => {
-  res.status(404).end();
+  res.render('organizations');
 });
 
 app.get('/:organizationId/organization-settings', (req, res) => {
