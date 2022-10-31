@@ -68,13 +68,15 @@ class InvitationListAPI(BaseListView):
                 if affiliations.count() > 0:
                     raise RuntimeError(f"Affiliation already exists for email {email}!")
                 endpoint = "accept"
+                action = "accept this invitation"
             else:
                 endpoint = "registration"
+                action = "create an account"
 
             url = f"{proto}://{domain}/{endpoint}?registration_token={invite.registration_token}"
             text = (
                 f"You have been invited to collaborate with {organization} using Tator. "
-                f"To accept this invitation, please visit: \n\n{url}"
+                f"To {action}, please visit: \n\n{url}"
             )
 
             if settings.TATOR_EMAIL_ENABLED:
