@@ -365,9 +365,17 @@ def set_default_versions():
     logger.info(f"Set all default versions!")
 
 def move_backups_to_s3():
-    store = get_tator_store().client
-    transfer = S3Transfer(store)
-    bucket_name = os.getenv('BUCKET_NAME')
+    # Try to use the default backup bucket
+    store = get_tator_store(backup=True)
+    if store is None:
+        # Fall back to the default live bucket
+        store = get_tator_store()
+        bucket_name = os.getenv("BUCKET_NAME")
+    else:
+        bucket_name = os.getenv("BACKUP_STORAGE_BUCKET_NAME")
+
+    client = store.client
+    transfer = S3Transfer(client)
     num_moved = 0
     for backup in os.listdir('/backup'):
         logger.info(f"Moving {backup} to S3...")
