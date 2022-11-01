@@ -87,10 +87,8 @@ export class TypeFormTemplate extends TatorElement {
       for (let d of formData) {
         const respData = await this.doSaveAction(d);
         responses.push(respData);
-        this.handleResponseList(responses);
       }
-      
-      this.handleResponse(respData);
+      this.handleResponseList(responses);
     } else {
       // console.log();
       this.modal._success("Nothing new to save!");

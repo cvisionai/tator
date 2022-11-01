@@ -75,7 +75,7 @@ def test_settings_localizationTypes(page_factory, project):
     for dtypeName in localization_dtypeSet:
         # Create types
         page.click('#nav-for-LocalizationType #sub-nav--plus-link')
-        page.fill(f'#localization-type-edit--form text-input[name="Name"] input', 'Auto {dtypeName} Type')
+        page.fill(f'#localization-type-edit--form text-input[name="Name"] input', f'Auto {dtypeName} Type')
         page.select_option(f'#localization-type-edit--form enum-input[name="Data Type"] select', label=dtypeName)
         page.fill('#localization-type-edit--form text-input[name="Description"] input', 'Loc Type description for automated test.')
         page.click('#localization-type-edit--form bool-input[name="Visible"] label[for="on"]')
@@ -86,6 +86,7 @@ def test_settings_localizationTypes(page_factory, project):
         page.click('type-form-container[form="localization-edit"] input[type="submit"]')
         page.wait_for_selector(f'text="Localization type created successfully!"')
         print(f"{dtypeName} - Localization type created successfully!!")
+        page.wait_for_timeout(5000)
     page.close()
 
 def test_settings_leafType(page_factory, project, base_url):
