@@ -144,7 +144,7 @@ class TatorSearch:
 
     def create_psql_index(self, entity_type, attribute, flush=False):
         """ Create a psql index for the given attribute """
-        #return True # TODO Remove this, speeds up unit tests dramatically.
+        return True # TODO Remove this, speeds up unit tests dramatically.
         index_name = _get_unique_index_name(entity_type, attribute)
         if flush:
             self.delete_index(entity_type, attribute)

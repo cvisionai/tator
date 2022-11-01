@@ -299,7 +299,7 @@ def _convert_attribute_filter_value(pair, project, annotation_type, operation):
         value = dateutil_parse(value)
     elif dtype == 'geopos':
         distance, lat, lon = value.split('::')
-        value = (Point(float(lon),float(lat), srid=4326), Distance(m=float(distance)))
+        value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)))
         logger.info(f"{distance}, {lat},{lon}")
     return key, value, dtype
 
@@ -332,7 +332,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
             if field_type == PointField:
                 qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
                 qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
-                qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_0_float"), F(f"{key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
+                qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_1_float"), F(f"{key}_0_float"), function='ST_MakePoint'), PointField(srid=4326))})
             elif field_type == DateTimeField:
                 qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
                 qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})

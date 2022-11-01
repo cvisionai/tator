@@ -1086,6 +1086,9 @@ class AttributeTestMixin:
                 f'type={self.entity_type.pk}&format=json'
             )
             assertResponse(self, response, status.HTTP_200_OK)
+            print(f"{test_vals}")
+            print(f"{test_lat}, {test_lon} {dist}")
+            print(f"Expecting {[latlon_distance(test_lat, test_lon, lat, lon) < dist for lat, lon in test_vals]}")
             self.assertEqual(len(response.data), sum([
                 latlon_distance(test_lat, test_lon, lat, lon) < dist
                 for lat, lon in test_vals
