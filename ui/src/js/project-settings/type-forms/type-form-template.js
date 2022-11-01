@@ -149,13 +149,13 @@ export class TypeFormTemplate extends TatorElement {
     }
   }
 
-  handleResponse(data) {
-    if (data.response.ok) {
-      return this.modal._success(data.data.message);
+  handleResponse(info) {
+    let message = (info.data?.message) ? info.data.message : JSON.parse(info.response.text).message;
+    if (info.response.ok) {
+      return this.modal._success(message);
     } else {
-      if (data.response?.text && data.response?.status && data.response?.statusText) {
-        const message = JSON.parse(data.response.text).message;
-        return this.modal._error(`<strong>${data.response.status} ${data.response.statusText}</strong><br/><br/>${message}`);        
+      if (info.response?.text && info.response?.status && info.response?.statusText) {
+        return this.modal._error(`<strong>${info.response.status} ${info.response.statusText}</strong><br/><br/>${message}`);        
       } else {
         this.modal._error(`Error: Could not process request.`);
       }

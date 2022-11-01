@@ -19,13 +19,15 @@ export class MembershipEdit extends TypeFormTemplate {
     this._userInput = this._shadow.getElementById("membership-edit--search-users");
     this._permissionSelect = this._shadow.getElementById("membership-edit--permission");
     this._versionSelect = this._shadow.getElementById("membership-edit--default-version");
+
+    this._userData = document.createElement("user-data");
   }
 
   async _setupFormUnique(data) {
     const formData = {};
 
+    this._userInput.reset();
     if (data.id == "New") {
-      this._userData = document.createElement("user-data");
       this._userInput.init(this._userData);
       this._userInput.hidden = false;
     } else {

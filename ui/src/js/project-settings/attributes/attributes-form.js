@@ -909,8 +909,11 @@ export class AttributesForm extends TatorElement {
             formData["default"] = defaultVal;
           } else if (dtype == "bool") {
             // allow for bool value to be changed to null
-            defaultVal = defaultVal;
-            formData["default"] = defaultVal;
+            if (String(defaultVal).trim() === "") {
+              delete formData["default"];
+            } else {
+              formData["default"] = defaultVal;
+            }
           } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must be the cases above
             formData["default"] = defaultVal;
           }

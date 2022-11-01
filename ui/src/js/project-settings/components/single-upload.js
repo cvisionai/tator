@@ -32,6 +32,7 @@ export class SingleUpload {
   // Returns promise resolving to upload.
   getUploadInfo() {
     let url;
+    
     if (this.projectId) {
       url = `/rest/UploadInfo/${this.projectId}?num_parts=${this.numParts}`
     } else if (this.organizationId) {
@@ -39,6 +40,8 @@ export class SingleUpload {
     } else {
       throw new Error("Upload requires organization ID or project ID!")
     }
+    console.log(url);
+    
     return fetch(url, {
       method: "GET",
       signal: this.controller.signal,

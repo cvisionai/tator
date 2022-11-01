@@ -286,7 +286,7 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    fetchType: async (type) => {
-      if (type == "JobCluster") return fetchTypeByOrg(type);
+      if (type == "JobCluster") return get().fetchTypeByOrg(type);
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
       try {
          const fn = getMap.get(type);

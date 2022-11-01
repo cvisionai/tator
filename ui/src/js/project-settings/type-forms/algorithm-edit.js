@@ -169,12 +169,14 @@ export class AlgorithmEdit extends TypeFormTemplate {
             this._clusterEnumInput.setValue("Null");
             this._clusterEnumInput.setAttribute("tooltip", "No Job Clusters associated to this Organization");
          } else {
+            this._clusterEnumInput.removeAttribute("disabled");
             this._clusterEnumInput.permission = !this.userCantSaveCluster ? "Can Edit" : "Ready Only";
-            this._clusterEnumInput.choices = jobClusterWithChecked;
+            this._clusterEnumInput.choices = [{ label: "None", value: ""}, ...jobClusterWithChecked];
             this._clusterEnumInput.default = this._data.cluster;
             this._clusterEnumInput.setValue(this._data.cluster);
          }
       } else {
+         this._clusterEnumInput.disabled = true;
          this._clusterEnumInput.default = this._data.cluster;
          this._clusterEnumInput.setValue(this._data.cluster);
       }
