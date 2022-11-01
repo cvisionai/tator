@@ -226,12 +226,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         for r in queries:
             qs = qs.union(r)
 
-    # Coalesce is a no-op that prevents PSQL from using the primary key index for small
-    # LIMIT values (which results in slow queries).
-    if stop is None:
-        qs = qs.order_by('name', 'id')
-    else:
-        qs = qs.order_by(Coalesce('name', 'name'), 'id')
+    qs = qs.order_by('name', 'id')
 
     if start is not None and stop is not None:
         qs = qs[start:stop]
