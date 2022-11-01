@@ -4,3 +4,5 @@ docker tag cvisionai/tator_online:$CIRCLE_SHA1 $AWS_REGISTRY/tator_online:$CIRCL
 docker push $AWS_REGISTRY/tator_online:$CIRCLE_SHA1
 docker tag cvisionai/tator_graphql:$CIRCLE_SHA1 $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
 docker push $AWS_REGISTRY/tator_graphql:$CIRCLE_SHA1
+docker tag cvisionai/tator_ui:$CIRCLE_SHA1 $AWS_REGISTRY/tator_ui:$CIRCLE_SHA1
+docker push $AWS_REGISTRY/tator_ui:$CIRCLE_SHA1
