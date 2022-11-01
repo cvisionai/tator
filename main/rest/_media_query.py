@@ -235,6 +235,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     elif stop is not None:
         qs = qs[:stop]
 
+    logger.info(qs.query)
+    logger.info(qs.explain())
+
     return qs
 
 def _get_section_and_params(project, params):

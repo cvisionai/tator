@@ -201,8 +201,10 @@ class AttributeTypeListAPI(BaseListView):
             # Renames the attribute alias for the entity type in PSQL and ES
             if attribute_renamed:
                 # Update entity type alias
-                ts.rename_alias(entity_type, old_name, new_name)
-                entity_type.save()
+                updated_types = ts.rename_alias(entity_type, related_objects, old_name, new_name)
+                for instance in updated_types:
+                    instance.save()
+                logger.info(f"Renamed {old_name} to {new_name}")
                 entity_type.project.save()
 
                 # Update entity alias

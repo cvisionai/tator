@@ -7,6 +7,8 @@ import re
 import time
 import psycopg2
 
+from django.db import connection
+
 logger = logging.getLogger(__name__)
 
 # Indicates what types can mutate into. Maps from type -> to type.
@@ -22,7 +24,7 @@ ALLOWED_MUTATIONS = {
 }
 
 def get_connection():
-    conn = psycopg2.connect(database="tator_online",
+    conn = psycopg2.connect(database=connection.settings_dict['NAME'],
                          host=os.getenv('POSTGRES_HOST'),
                          user=os.getenv('POSTGRES_USERNAME'),
                          password=os.getenv('POSTGRES_PASSWORD'))
@@ -127,24 +129,31 @@ class TatorSearch:
         proj_indices = self.list_indices(project)
         with get_connection().cursor() as cursor:
             for _,index_name,_ in proj_indices:
+                import time
+                print("DROP INDEX IF EXISTS {}".format(index_name))
                 cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
 
     def delete_index(self, entity_type, attribute):
         """ Delete the index for a given entity type """
         index_name = _get_unique_index_name(entity_type, attribute)
         with get_connection().cursor() as cursor:
+            print("DROP INDEX IF EXISTS {}".format(index_name))
             cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
 
     def is_index_present(self, entity_type, attribute):
         """ Returns true if the index exists for this attribute """
         index_name = _get_unique_index_name(entity_type, attribute)
+        print("Checking for index")
         with get_connection().cursor() as cursor:
             cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+            print("checked")
             return bool(cursor.fetchall())
 
     def create_psql_index(self, entity_type, attribute, flush=False):
         """ Create a psql index for the given attribute """
-        return True # TODO Remove this, speeds up unit tests dramatically.
+        #return True # TODO Remove this, speeds up unit tests dramatically.
+        import time
+        print(f"{time.time()} Making psql index for {entity_type.name}:{attribute['name']}")
         index_name = _get_unique_index_name(entity_type, attribute)
         if flush:
             self.delete_index(entity_type, attribute)
@@ -158,6 +167,7 @@ class TatorSearch:
             return False
 
         index_func(entity_type, attribute)
+        print(f"{time.time()} Finished psql index for {entity_type.name}:{attribute['name']}")
         return self.is_index_present(entity_type, attribute)
 
     def create_mapping(self, entity_type, flush=False):
@@ -179,8 +189,10 @@ class TatorSearch:
         :param new_name: New name for the attribute type.
         """
         element = None
-        for attribute_obj in entity_type.attribute_types:
+        found_idx = None
+        for idx,attribute_obj in enumerate(entity_type.attribute_types):
             if attribute_obj['name'] == old_name:
+                found_idx = idx
                 element = {**attribute_obj}
         if element is None:
             logger.error(f"Couldn't find {old_name} in {entity_type.name}")
@@ -188,8 +200,9 @@ class TatorSearch:
 
         self.delete_index(entity_type, element)
         element['name'] = new_name
+        entity_type.attribute_types[found_idx]['name'] = new_name
         self.create_psql_index(entity_type, element)
-
+    
         return [entity_type]
 
     def check_rename(self, entity_type, old_name, new_name):
@@ -217,21 +230,18 @@ class TatorSearch:
         Checks mutation operation and raises if it is invalid. See `mutate_alias` for argument
         description.
         """
-        # Retrieve UUID, raise error if it doesn't exist.
-        uuid = entity_type.project.attribute_type_uuids.get(name)
-        if uuid is None:
-            raise ValueError(f"Could not find attribute name {name} in entity type "
-                             f"{type(entity_type).__name__} ID {entity_type.id}")
-
+        found_it = False
         # Find old attribute type and create new attribute type.
         for idx, attribute_type in enumerate(entity_type.attribute_types):
             if attribute_type['name'] == name:
                 replace_idx = idx
-                old_mapping_type = _get_alias_type(attribute_type)
-                old_mapping_name = f'{uuid}_{old_mapping_type}'
                 old_dtype = attribute_type['dtype']
+                old_mapping_name = attribute_type['name']
+                found_it = True
                 break
-        else:
+        
+        
+        if found_it != True:
             raise ValueError(f"Could not find attribute name {name} in entity type "
                              f"{type(entity_type).__name__} ID {entity_type.id}")
 
@@ -239,8 +249,6 @@ class TatorSearch:
         if new_dtype not in ALLOWED_MUTATIONS[old_dtype]:
             raise RuntimeError(f"Attempted mutation of {name} from {old_dtype} to {new_dtype} is "
                                 "not allowed!")
-
-        return uuid, replace_idx, old_mapping_name
 
     def mutate_alias(self, entity_type, name, new_attribute_type, mod_type, new_style=None):
         """
@@ -266,15 +274,18 @@ class TatorSearch:
                 element = {**attribute_obj}
                 el_idx = idx
         if element is None:
-            names = [a.name for a in entity_type.attribute_types]
-            raise(f"Couldn't find {name} in {entity_type.name} {names}")
+            names = [a['name'] for a in entity_type.attribute_types]
+            raise(Exception(f"Couldn't find {name} in {entity_type.name} {names}"))
 
         self.delete_index(entity_type, element)
         element['dtype'] = new_attribute_type['dtype']
         self.create_psql_index(entity_type, element)
 
         # Update DB record for dtype and return it
-        entity_type.attribute_types[el_idx]['dtype'] = new_attribute_type['dtype']
+        if mod_type == "update":
+            entity_type.attribute_types[el_idx].update(new_attribute_type)
+        elif mod_type == "replace":
+            entity_type.attribute_types[el_idx] = new_attribute_type
         return entity_type
 
     def delete_alias(self, entity_type, name):

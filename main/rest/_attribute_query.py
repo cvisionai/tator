@@ -299,7 +299,7 @@ def _convert_attribute_filter_value(pair, project, annotation_type, operation):
         value = dateutil_parse(value)
     elif dtype == 'geopos':
         distance, lat, lon = value.split('::')
-        value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)))
+        value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
         logger.info(f"{distance}, {lat},{lon}")
     return key, value, dtype
 
@@ -321,7 +321,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         float_queries = []
 
     # return original queryset if no queries were supplied
-    if not filter_ops and not float_queries:
+    if not filter_ops and not float_queries and not attribute_null:
         return qs
 
     found_it = False
@@ -332,13 +332,17 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
             if field_type == PointField:
                 qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
                 qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
-                qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_1_float"), F(f"{key}_0_float"), function='ST_MakePoint'), PointField(srid=4326))})
+                qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_0_float"), F(f"{key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
+                qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
             elif field_type == DateTimeField:
                 qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
                 qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})
+                qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+            elif field_type == CharField:
+                qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
             else:
-                qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
-            qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                qs = qs.annotate(**{f'{key}_typed': Cast(f'attributes__{key}', field_type())})
+                qs = qs.filter(**{f'{key}_typed{OPERATOR_SUFFIXES[op]}': value})
             found_it=True
 
     if attribute_null is not None:
@@ -346,12 +350,13 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
             key, value = kv.split(KV_SEPARATOR)
             value = _convert_boolean(value)
             qs = qs.filter(**{f"attributes__{key}__isnull": value})
+            found_it = True
 
     for query in float_queries:
-        name = float_array_query['name']
-        center = float_array_query['center']
-        metric = float_array_query.get('metric', 'l2norm')
-        order = float_array_query.get('order', 'asc')
+        name = query['name']
+        center = query['center']
+        metric = query.get('metric', 'l2norm')
+        order = query.get('order', 'asc')
         field_type,size = _get_field_for_attribute(project, entity_type, name)
         if field_type:
             found_it = True
@@ -364,9 +369,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
                 qs = qs.order_by(MaxInnerProduct(f"{name}_typed"))
 
     if found_it:
-        logger.info("found it = true")
         return qs
     else:
-        logger.info("Found it = false")
         return None
 

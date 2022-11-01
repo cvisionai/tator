@@ -499,6 +499,7 @@ class Project(Model):
     """
     default_media = ForeignKey('MediaType', null=True, blank=True, on_delete=SET_NULL,
                                related_name='+')
+
     """ Default media type for uploads.
     """
     def has_user(self, user_id):
@@ -597,11 +598,8 @@ def project_save(sender, instance, created, **kwargs):
 def project_delete(sender, instance, **kwargs):
     if instance.thumb:
         safe_delete(instance.thumb, instance.id)
-
-@receiver(pre_delete, sender=Project)
-def delete_index_project(sender, instance, **kwargs):
     TatorSearch().delete_project_indices(instance.pk)
-
+    
 class Membership(Model):
     """Stores a user and their access level for a project.
     """
