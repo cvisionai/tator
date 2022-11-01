@@ -14,6 +14,8 @@ from django.contrib.gis.db.models import IntegerField
 from django.contrib.gis.db.models import FloatField
 from django.contrib.gis.db.models import DateTimeField
 from django.contrib.gis.db.models import PointField
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import Distance
 from pgvector.django import VectorField
 
 from ..models import LocalizationType
@@ -295,6 +297,10 @@ def _convert_attribute_filter_value(pair, project, annotation_type, operation):
         value = int(value)
     elif dtype == 'date':
         value = dateutil_parse(value)
+    elif dtype == 'geopos':
+        distance, lat, lon = value.split('::')
+        value = (Point(float(lon),float(lat), srid=4326), Distance(m=float(distance)))
+        logger.info(f"{distance}, {lat},{lon}")
     return key, value, dtype
 
 def get_attribute_filter_ops(project, params, data_type):
@@ -324,16 +330,15 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         if field_type:
             # Annotate with a typed object prior to query to ensure index usage
             if field_type == PointField:
-                qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}[0]', FloatField())})
-                qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}[0]', FloatField())})
-                qs = qs.annotate(**{f"{key}_typed": Func(F(f"{key}_1_float"), F(f"{key}_0_float"), function='ST_MakePoint')}) # reversed here
+                qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
+                qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
+                qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_0_float"), F(f"{key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
             elif field_type == DateTimeField:
                 qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
                 qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})
             else:
                 qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
             qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
-            logger.info(qs.query)
             found_it=True
 
     if attribute_null is not None:
