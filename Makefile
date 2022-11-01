@@ -337,9 +337,7 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-js/.
 	cd scripts/packages/tator-js
-	rm -rf pkg
-	mkdir pkg
-	mkdir pkg/src
+	rm -rf pkg && mkdir pkg && mkdir pkg/src
 	./codegen.py tator-openapi-schema.yaml
 	docker run --rm \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
@@ -354,9 +352,8 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	cp -r examples pkg/examples
 	cp -r utils pkg/src/utils
 	cd pkg && npm install
-	cd pkg && npm install -D @playwright/test isomorphic-fetch fetch-retry \
-		spark-md5
-	npm install querystring --save-dev
+	npm install -D @playwright/test \
+		isomorphic-fetch fetch-retry spark-md5 uuid querystring
 
 .PHONY: js-bindings
 js-bindings: .token/tator_online_$(GIT_VERSION)
