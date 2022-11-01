@@ -35,10 +35,6 @@ import traceback
 logger = logging.getLogger(__name__)
 
 
-class APIBrowserView(LoginRequiredMixin, TemplateView):
-    template_name = 'browser.html'
-    extra_context = {'schema_url': 'schema'}
-
 class LoginRedirect(View):
     def dispatch(self, request, *args, **kwargs):
         """ Redirects SAML logins to the IdP and caches the next url """
@@ -102,9 +98,6 @@ class PasswordResetRequestView(TemplateView):
 class PasswordResetView(TemplateView):
     template_name = 'password-reset/password-reset.html'
 
-class OrganizationsView(LoginRequiredMixin, TemplateView):
-    template_name = 'organizations.html'
-
 class AccountProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'account-profile/account-profile.html'
 
@@ -122,18 +115,8 @@ class ProjectBase(LoginRequiredMixin):
         return context
 
 
-class ProjectDetailView(ProjectBase, TemplateView):
-    template_name = 'project-detail.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        token, _ = Token.objects.get_or_create(user=self.request.user)
-        context['token'] = token
-        return context
-
 class StreamSaverSWLocal(ProjectBase, TemplateView):
     def get(self, *args, **kwargs):
-        # response = HttpResponse()
         response = TemplateResponse(self.request, 'stream-saver/sw.js', {}, 'application/javascript')
         del response.headers["X-Frame-Options"]
         del response.headers["Cross-Origin-Embedder-Policy"]
@@ -145,7 +128,6 @@ class StreamSaverSWLocal(ProjectBase, TemplateView):
 
 class StreamSaverMITMLocal(ProjectBase, TemplateView):
     def get(self, *args, **kwargs):
-        # response = HttpResponse()
         response = TemplateResponse(self.request, 'stream-saver/mitm.html', {})
         del response.headers["X-Frame-Options"]
         del response.headers["Cross-Origin-Embedder-Policy"]
@@ -153,64 +135,6 @@ class StreamSaverMITMLocal(ProjectBase, TemplateView):
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
 
         return response
-
-class ProjectSettingsView(ProjectBase, TemplateView):
-    template_name = 'project-settings.html'
-
-class OrganizationSettingsView(LoginRequiredMixin, TemplateView):
-    template_name = 'organization-settings.html'
-
-    def get_context_data(self, **kwargs):
-        # Get organization info.
-        context = super().get_context_data(**kwargs)
-        organization = get_object_or_404(Organization, pk=self.kwargs['organization_id'])
-        context['organization'] = organization
-        context['email_enabled'] = settings.TATOR_EMAIL_ENABLED
-
-        # Check if user is part of project.
-        if organization.user_permission(self.request.user.pk) != 'Admin':
-            raise PermissionDenied
-        return context
-
-class DashboardPortalView(ProjectBase, TemplateView):
-    template_name = 'analytics/dashboard-portal.html'
-
-
-class DashboardView(ProjectBase, TemplateView):
-    template_name = 'analytics/dashboard.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        dashboard = get_object_or_404(Dashboard, pk=self.kwargs['id'])
-        context['dashboard'] = dashboard
-        return context
-
-
-class FilesView(ProjectBase, TemplateView):
-    template_name = 'analytics/files.html'
-
-
-class AnalyticsLocalizationsView(ProjectBase, TemplateView):
-    template_name = 'analytics/localizations.html'
-
-class AnalyticsCorrectionsView(ProjectBase, TemplateView):
-    template_name = 'analytics/corrections.html'
-
-class AnalyticsCollectionsView(ProjectBase, TemplateView):
-    template_name = 'analytics/collections.html'
-
-class AnalyticsPortalView(ProjectBase, TemplateView):
-    template_name = 'analytics/portal.html'
-
-class AnnotationView(ProjectBase, TemplateView):
-    template_name = 'annotation.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        media = get_object_or_404(Media, pk=self.kwargs['id'])
-        context['media'] = media
-        return context
-
 
 def validate_project(user, project):
     # We only cache 'True' effectively with this logic
