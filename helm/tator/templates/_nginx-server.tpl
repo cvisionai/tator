@@ -288,7 +288,7 @@ server {
     gzip_min_length 1024;
   }
 
-	location ~ ^/rest$|^/(projects|token|organizations)|^/\d+/ {
+	location ~ ^/$|^/rest$|^/(projects|token|organizations)|^/\d+/ {
     {{- if .Values.maintenance }}
     return 503;
     {{- end }}

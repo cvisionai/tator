@@ -17,7 +17,8 @@ if (window.location.pathname != "/accounts/login") {
     }
   })
   .then(response => {
-    if (response.status == 301) {
+    const url = new URL(response.url);
+    if (response.status == 301 || url.pathname.startsWith('/accounts/login')) {
       window.location.href = `/accounts/login?next=${window.location.pathname}`;
     }
   });
