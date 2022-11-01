@@ -70,12 +70,12 @@ def make_string_index(entity_type, attribute, method='GIN'):
 def make_datetime_index(entity_type, attribute):
     table_name = entity_type._meta.db_table.replace('type','')
     index_name = _get_unique_index_name(entity_type, attribute)
-    func_str=f"""CREATE OR REPLACE FUNCTION to_timestamp(text)
+    func_str=f"""CREATE OR REPLACE FUNCTION tator_timestamp(text)
                  RETURNS timestamp AS
                 $func$
                 SELECT CAST($1 as timestamp)
                 $func$ LANGUAGE sql IMMUTABLE;"""
-    sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} USING btree (to_timestamp(attributes->>'{attribute['name']}')) WHERE project={entity_type.project.id} AND meta={entity_type.id};"""
+    sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} USING btree (tator_timestamp(attributes->>'{attribute['name']}')) WHERE project={entity_type.project.id} AND meta={entity_type.id};"""
     with get_connection().cursor() as cursor:
         cursor.execute(func_str)
         cursor.execute(sql_str)
@@ -144,6 +144,7 @@ class TatorSearch:
 
     def create_psql_index(self, entity_type, attribute, flush=False):
         """ Create a psql index for the given attribute """
+        #return True # TODO Remove this, speeds up unit tests dramatically.
         index_name = _get_unique_index_name(entity_type, attribute)
         if flush:
             self.delete_index(entity_type, attribute)

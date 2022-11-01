@@ -30,7 +30,6 @@ from pgvector.django import L2Distance, MaxInnerProduct, CosineDistance
 
 logger = logging.getLogger(__name__)
 
-
 def format_query_string(query_str: str) -> str:
     """
     Preformatting before passing the query to ElasticSearch.
@@ -325,10 +324,12 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         if field_type:
             # Annotate with a typed object prior to query to ensure index usage
             if field_type == PointField:
-                qs = qs.annotate(**{f"{key}_typed": Func(F(f"attributes__{key}[1]"), F(f"attributes__{key}[0]"), function='ST_MakePoint')})
-            if field_type == DateTimeField:
-                qs = qs.annotate(**{f'{key}_char': Cast(f'attributes__{key}', CharField())})
-                qs = qs.annotate(**{f"{key}_typed": Func(F(f'{key}_char'), function='to_timestamp')})
+                qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}[0]', FloatField())})
+                qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}[0]', FloatField())})
+                qs = qs.annotate(**{f"{key}_typed": Func(F(f"{key}_1_float"), F(f"{key}_0_float"), function='ST_MakePoint')}) # reversed here
+            elif field_type == DateTimeField:
+                qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
+                qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})
             else:
                 qs = qs.annotate(**{f"{key}_typed": Cast(f"attributes__{key}", field_type())})
             qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
