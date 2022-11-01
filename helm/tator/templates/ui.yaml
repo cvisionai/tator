@@ -24,6 +24,9 @@ spec:
         - name: tator-ui
           image: {{ .Values.dockerRegistry }}/tator_ui:{{ .Values.gitRevision }}
           imagePullPolicy: "Always"
+          env:
+          - name: DEBUG
+            value: "express:*"
           command:
           - npm
           args:
