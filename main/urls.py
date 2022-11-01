@@ -19,7 +19,6 @@ from .views import (
     AuthAdminView,
     AuthProjectView,
     LoginRedirect,
-    MainRedirect,
     PasswordResetRequestView,
     PasswordResetView,
     RegistrationView,
@@ -42,7 +41,6 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('', MainRedirect.as_view(), name='home'),
     path('accounts/account-profile/',
          AccountProfileView.as_view(), name='account-profile'),
     path('stream-saver/sw.js', StreamSaverSWLocal.as_view(), name='sw'),

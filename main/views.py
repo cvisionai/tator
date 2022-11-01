@@ -14,10 +14,7 @@ from django.template.response import TemplateResponse
 from rest_framework.authentication import TokenAuthentication
 import yaml
 
-from .models import Dashboard
-from .models import Organization
 from .models import Project
-from .models import Media
 from .models import Membership
 from .models import Affiliation
 from .models import Invitation
@@ -49,22 +46,6 @@ class LoginRedirect(View):
                 out += f"?next={next_url}"
 
         return redirect(out)
-
-class MainRedirect(View):
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            out = redirect('projects')
-        else:
-            if os.getenv('COGNITO_ENABLED') == 'TRUE':
-                with open('/cognito/cognito.yaml', 'r') as f:
-                    config = yaml.safe_load(f)
-                out = redirect(f"https://{config['domain']}/login"
-                               f"?client_id={config['client-id']}"
-                               "&response_type=code&scope=openid"
-                               f"&redirect_uri=https://{os.getenv('MAIN_HOST')}/jwt-gateway")
-            else:
-                out = redirect('redirect/login')
-        return out
 
 class RegistrationView(TemplateView):
     template_name = 'registration/registration.html'
