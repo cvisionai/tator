@@ -354,6 +354,8 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	cp -r examples pkg/examples
 	cp -r utils pkg/src/utils
 	cd pkg && npm install
+	cd pkg && npm install -D @playwright/test isomorphic-fetch fetch-retry \
+		spark-md5
 	npm install querystring --save-dev
 
 .PHONY: js-bindings
