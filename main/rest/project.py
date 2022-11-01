@@ -129,12 +129,23 @@ class ProjectListAPI(BaseListView):
         )
         project.save()
 
-        member = Membership(
-            project=project,
-            user=self.request.user,
-            permission=Permission.FULL_CONTROL,
-        )
+        member_qs = Membership.objects.filter(project=project, user=self.request.user)
+        if member_qs.count() > 1:
+            raise RuntimeError(
+                f"Found {member_qs.count()} memberships for user {self.request.user} in project "
+                f"{project}, there should be at most one"
+            )
+        elif member_qs.count() == 1:
+            member = member_qs.first()
+            member.permission = Permission.FULL_CONTROL
+        else:
+            member = Membership(
+                project=project,
+                user=self.request.user,
+                permission=Permission.FULL_CONTROL,
+            )
         member.save()
+
         projects = Project.objects.filter(pk=project.id)
         return {
             'message': f"Project {params['name']} created!",

@@ -1,4 +1,5 @@
 import os
+import re
 import inspect
 
 from ._common import print_page_error
@@ -51,16 +52,11 @@ def test_organization_settings(page_factory, project, launch_time, image_file, b
     response = response_info.value
     respObject = response.json()
     registration_link = str(respObject["message"]).replace('User can register at ', '')
+    registration_link = re.sub(r'https?://.*?(/.*)', r'{base_url}\1', registration_link).format(base_url=base_url)
     new_user_id = respObject["id"]
     print("Invitation sent successful!")
 
     # Note: Existing user gets redirected to /organization, but new user gets form.
-    if(base_url.find("https:") > -1):
-        protocol = "https://"
-    else:
-        protocol = "http://"
-    registration_link = protocol + registration_link
-    print(registration_link)
     if registration_link.find('accept') != -1:
         print(f"Accepting invitation at: {registration_link}")
         page.goto(registration_link, wait_until='networkidle')

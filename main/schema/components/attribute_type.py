@@ -114,6 +114,7 @@ attribute_type_properties_no_defaults = {
 
 attribute_type_update = {
     "type": "object",
+    "required": ["entity_type", "old_attribute_type_name", "new_attribute_type"],
     "description": "Renames an attribute of a type.",
     "properties": {
         "entity_type": {
@@ -127,6 +128,10 @@ attribute_type_update = {
         "new_attribute_type": {
             'type': 'object',
             'properties': attribute_type_properties_no_defaults,
+        },
+        "max_instances": {
+            "type": "integer",
+            "description": "If specified, the mutation will fail if more instances exist.",
         },
     },
 }

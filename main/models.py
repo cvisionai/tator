@@ -218,6 +218,7 @@ class JobChannel(Enum): # Keeping for migration compatiblity
     pass
 
 class Permission(Enum):
+    NO_ACCESS = 'n'
     VIEW_ONLY = 'r'
     CAN_EDIT = 'w'
     CAN_TRANSFER = 't'
@@ -235,6 +236,7 @@ class TwoDPlotType(Enum):
 class Organization(Model):
     name = CharField(max_length=128)
     thumb = CharField(max_length=1024, null=True, blank=True)
+    default_membership_permission = EnumField(Permission, max_length=1, default=Permission.NO_ACCESS)
     def user_permission(self, user_id):
         permission = None
         qs = self.affiliation_set.filter(user_id=user_id)
@@ -561,11 +563,34 @@ def make_default_version(instance):
         show_empty=True,
     )
 
+def add_org_users(project):
+    organization = project.organization
+    if not organization:
+        return
+    permission = organization.default_membership_permission
+
+    # If no access is given by default, don't create memberships
+    if permission == Permission.NO_ACCESS:
+        return
+
+    users = list(
+        Affiliation.objects.filter(organization=organization)
+        .values_list("user", flat=True)
+        .distinct()
+    )
+    user_qs = User.objects.filter(pk__in=users)
+    for user in user_qs:
+        if Membership.objects.filter(project=project, user=user).exists():
+            continue
+
+        Membership.objects.create(project=project, user=user, permission=permission).save()
+
 @receiver(post_save, sender=Project)
 def project_save(sender, instance, created, **kwargs):
     TatorSearch().create_index(instance.pk)
     if created:
         make_default_version(instance)
+        add_org_users(instance)
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 

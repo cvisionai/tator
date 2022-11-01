@@ -23,6 +23,9 @@ def _serialize_organizations(organizations, user_id):
     cache = TatorCache()
     for idx, organization in enumerate(organizations):
         organization_data[idx]['permission'] = str(organization.user_permission(user_id))
+        default_membership_permission = organization.default_membership_permission
+        default_membership_permission = default_membership_permission.name.replace("_", " ").title()
+        organization_data[idx]["default_membership_permission"] = default_membership_permission
         thumb_path = organization_data[idx]['thumb']
         if thumb_path:
             url = cache.get_presigned(user_id, thumb_path)
@@ -99,6 +102,8 @@ class OrganizationDetailAPI(BaseDetailView):
             if organization.thumb:
                 safe_delete(organization.thumb)
             organization.thumb = params['thumb']
+        if "default_membership_permission" in params:
+            organization.default_membership_permission = params["default_membership_permission"]
         organization.save()
         return {'message': f"Organization {params['id']} updated successfully!"}
 

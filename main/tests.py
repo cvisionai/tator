@@ -1635,7 +1635,7 @@ class StateTestCase(
         self.project = create_test_project(self.user)
         self.version = self.project.version_set.all()[0]
         self.membership = create_test_membership(self.user, self.project)
-        media_entity_type = MediaType.objects.create(
+        self.media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
             project=self.project,
@@ -1646,9 +1646,9 @@ class StateTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        self.entity_type.media.add(media_entity_type)
+        self.entity_type.media.add(self.media_entity_type)
         self.media_entities = [
-            create_test_video(self.user, f'asdf', media_entity_type, self.project)
+            create_test_video(self.user, f"asdf", self.media_entity_type, self.project)
             for idx in range(random.randint(3, 10))
         ]
         self.entities = []
@@ -1683,6 +1683,34 @@ class StateTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'state1'}
         TatorSearch().refresh(self.project.pk)
+
+
+    def test_frame_association(self):
+        media = self.media_entities[0]
+        endpoint = f"/rest/{self.list_uri}/{self.project.pk}"
+        create_json = [{"type": self.entity_type.pk, "name": "asdf", "media_ids": [media.id]}]
+
+        # Test default state type with no frame association
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Test state type with frame association
+        entity_type = StateType.objects.create(
+            name="frame states",
+            project=self.project,
+            association="Frame",
+        )
+        entity_type.media.add(self.media_entity_type)
+        create_json[0]["type"] = entity_type.pk
+
+        # No frame value in `create_json` should return 400
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Frame value added, should return 201
+        create_json[0]["frame"] = 1
+        response = self.client.post(endpoint, create_json, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def tearDown(self):
         self.project.delete()
@@ -2756,6 +2784,67 @@ class OrganizationTestCase(
         endpoint = f'/rest/{self.list_uri}'
         response = self.client.post(endpoint, self.create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_default_membership(self):
+        other_user = create_test_user(is_staff=False)
+        other_affiliation = create_test_affiliation(other_user, self.organization)
+
+        proj_spec = {
+            "name": "Org test",
+            "summary": "Auto project membership test",
+            "organization": self.organization.pk,
+        }
+        response = self.client.post("/rest/Projects", proj_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        project_id = response.data["id"]
+
+        # Confirm project creator has full control
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        # Confirm `other_user` has no membership
+        self.assertEqual(
+            Membership.objects.filter(project=project_id, user=other_user).count(), 0
+        )
+
+        # Update default membership permission to `CAN_EXECUTE`
+        patch_default_membership = {"default_membership_permission": "Can Execute"}
+        endpoint = f"/rest/{self.detail_uri}/{self.organization.pk}"
+        response = self.client.patch(endpoint, patch_default_membership, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Confirm project creator still has full control
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        # Confirm `other_user` still has no membership
+        self.assertEqual(
+            Membership.objects.filter(project=project_id, user=other_user).count(), 0
+        )
+
+        # Delete the test project to start over
+        Project.objects.get(pk=project_id).delete()
+
+        # Confirm project creator has full control
+        response = self.client.post("/rest/Projects", proj_spec, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        project_id = response.data["id"]
+
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=self.user).permission,
+            Permission.FULL_CONTROL,
+        )
+
+        # Confirm `other_user` has `CAN_EXECUTE` permission
+        self.assertEqual(
+            Membership.objects.get(project=project_id, user=other_user).permission,
+            Permission.CAN_EXECUTE,
+        )
+        Project.objects.get(pk=project_id).delete()
 
     def tearDown(self):
         self.project.delete()

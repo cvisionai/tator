@@ -44,6 +44,12 @@ def computeRequiredFields(typeObj):
     for field in newObjType._meta.get_fields(include_parents=False):
         if not field.is_relation and not field.blank and field.default is None:
             datafields[field.name] = field.description
+        elif (
+            field.name == "frame"
+            and hasattr(typeObj, "association")
+            and typeObj.association == "Frame"
+        ):
+            datafields[field.name] = field.description
 
     attributes={}
     for column in typeObj.attribute_types:
