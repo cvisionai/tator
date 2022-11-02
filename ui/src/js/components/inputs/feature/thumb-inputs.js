@@ -1,7 +1,7 @@
 import { TatorElement } from "../../tator-element.js";
 import { hasPermission } from "../../../util/has-permission.js";
 import { getCookie } from "../../../util/get-cookie.js";
-import { TypeFormValidation } from "../../../project-settings/type-form-validation.js";
+import { InputValidation } from "../input-validation.js";
 import { InlineWarning } from "../../../components/inline-warning.js";
 import { SingleUpload } from "../../../project-settings/components/single-upload.js";
 import TatorSymbol from "../../../../images/tator-logo-symbol-only.png";
@@ -50,7 +50,7 @@ export class ThumbInput extends TatorElement {
       this._editInput.appendChild(this.uploadWarningRow);
 
       // Validate file size / show warning
-      this.validate = new TypeFormValidation(); // @TODO move validation in here
+      this.validate = new InputValidation();
       const warning = new InlineWarning();
       this.uploadWarningRow.appendChild(warning.div());
          

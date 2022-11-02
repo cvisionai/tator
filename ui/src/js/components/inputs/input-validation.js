@@ -1,4 +1,11 @@
-export class TypeFormValidation{
+/**
+ * The has reusable functions to test input values
+ * Idea is centralizing this functionality
+ * Use to get a true/false value "on change" or file input like:
+ * const hasError = this.validate.findError("thumb_size", file.size);
+ */
+
+export class InputValidation{
     constructor(){
 
     }
