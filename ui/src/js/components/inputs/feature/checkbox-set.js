@@ -62,6 +62,9 @@ export class CheckboxSet extends TatorElement {
   }
 
   setValue(val) {
+    this._inputDiv.innerHTML = "";
+    this._inputs = [];
+    
     if( val && val.length ){
       for (let item of val) {
         this._newInput(item);

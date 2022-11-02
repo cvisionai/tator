@@ -30,12 +30,6 @@ export class AttributesForm extends TatorElement {
     this.form = form;
 
     this.form.addEventListener("change", this._formChanged.bind(this));
-    // this.form.addEventListener("change", (event) => {
-    //   console.log("Attribute form changed");
-    //   this.changed = true;
-    //   return this.form.classList.add("changed");
-    // });   
-
 
     // Fields for this form
     // name
@@ -195,7 +189,6 @@ export class AttributesForm extends TatorElement {
   }
 
   _formChanged() {
-    console.log("Attribute form changed");
     this.changed = true;
     return this.form.classList.add("changed");
   }
@@ -609,7 +602,6 @@ export class AttributesForm extends TatorElement {
       const child = currentDefault;
       const parent = child.parentNode;
       const index = Array.prototype.indexOf.call(parent.children, child);
-      //console.log( "New enum default : " + this._choices._inputs[index].getValue() );
       this._enumDefault.value = this._choices._inputs[index].getValue();
       this._enumDefault.changed = true;
     });
@@ -778,8 +770,6 @@ export class AttributesForm extends TatorElement {
 
   _irreversibleCheck({ dtype = "", newType = "" } = {}) {
     let allRules = this._getDTypeRules();
-    console.log("irreversible check for dtype "+dtype);
-    console.log(allRules[dtype]);
     let ruleSetForDtype = allRules[dtype].irreversible;
 
     return ruleSetForDtype.includes(newType);
@@ -909,8 +899,11 @@ export class AttributesForm extends TatorElement {
             formData["default"] = defaultVal;
           } else if (dtype == "bool") {
             // allow for bool value to be changed to null
-            defaultVal = defaultVal;
-            formData["default"] = defaultVal;
+            if (String(defaultVal).trim() === "") {
+              delete formData["default"];
+            } else {
+              formData["default"] = defaultVal;
+            }
           } else if (dtype != "bool" && dtype != "datetime" && dtype != "geopos") { // these must be the cases above
             formData["default"] = defaultVal;
           }
@@ -971,7 +964,6 @@ export class AttributesForm extends TatorElement {
       console.error("Formdata for attributes error.", err);
     }
 
-    // console.log(formData);
     return {formData};
   }
 
@@ -1044,7 +1036,6 @@ export class AttributesForm extends TatorElement {
       "old_attribute_type_name": this.dataset.oldName,
       "new_attribute_type": attrFormObj.formData
     };
-    // console.log(attrFormObj.formData);
 
     data.newName = this._name.getValue();
     data.oldName = this.dataset.oldName;
@@ -1064,11 +1055,7 @@ export class AttributesForm extends TatorElement {
     promiseInfo.newName = this._name.getValue();
     promiseInfo.oldName = this.dataset.oldName;
 
-    // console.log("formData");
-    // console.log(formData);
-
     // Hand of the data, and call this form unchanged
-    console.log(this._getAttributeFormData());
     formData.new_attribute_type = this._getAttributeFormData();
     this.form.classList.remove("changed");
     this.changeReset();

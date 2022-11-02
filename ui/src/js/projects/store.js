@@ -3,6 +3,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.min.js';
 
 const api = Utils.getApi();
+console.log(api);
 
 async function configureImageClassification(project) {
   let response = await api.createMediaType(project.id, {

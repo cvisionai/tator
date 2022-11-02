@@ -1,9 +1,10 @@
-import { TypeForm } from "../project-settings/type-forms/type-form.js";
+// import { TypeForm } from "../project-settings/type-forms/type-form.js";
+import { OrganizationTypeForm } from "./organization-type-form.js";
+
 import { hasPermission } from "../util/has-permission.js";
 import { getCookie } from "../util/get-cookie.js";
-import { SettingsBox } from "../project-settings/settings-box-helpers.js";
 
-export class OrganizationMainEdit extends TypeForm {
+export class OrganizationMainEdit extends OrganizationTypeForm {
   constructor() {
     super();
 
@@ -25,9 +26,6 @@ export class OrganizationMainEdit extends TypeForm {
     this.organizationId = this.data.id;
     this.modal = modal;
     this.sideNav = sidenav;
-
-    // Pass modal to helper
-    this.boxHelper = new SettingsBox( this.modal );
 
     this.setupFormPage();
   }
@@ -80,9 +78,9 @@ export class OrganizationMainEdit extends TypeForm {
   }
 
   _getSectionForm() {
-    this.boxOnPage = this.boxHelper.boxWrapDefault({
-      "children": document.createTextNode("")
-    });
+    this.boxOnPage = document.createElement("div");
+    this.boxOnPage.setAttribute("class", `py-3 rounded-2 edit-project__config`);
+    this.boxOnPage.append( document.createTextNode("") );
   
     this._form = document.createElement("form");
     this._form.id = "organization-" + this.data.id;
@@ -222,9 +220,10 @@ export class OrganizationMainEdit extends TypeForm {
     headingDiv.appendChild(heading);
     headingDiv.appendChild(description);
 
-    this.deleteBox = this.boxHelper.boxWrapDelete( {
-      "children" : headingDiv
-    } );
+    this.deleteBox = document.createElement("div");
+    this.deleteBox.setAttribute("class", `text-red py-3 rounded-2 edit-project__config`);
+    this.deleteBox.style.border = "1px solid $color-charcoal--light";
+    this.deleteBox.append( headingDiv );
 
     this.deleteBox.style.backgroundColor = "transparent";
 

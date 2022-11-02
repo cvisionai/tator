@@ -1,5 +1,4 @@
 import { OrganizationTypeForm } from "./organization-type-form.js";
-import { TypeForm } from "../project-settings/type-forms/type-form.js";
 
 export class JobClusterEdit extends OrganizationTypeForm {
   constructor() {
@@ -34,9 +33,8 @@ export class JobClusterEdit extends OrganizationTypeForm {
     console.log("Get existing form");
     console.log(data.id);
 
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+    let current = document.createElement("div");
+    current.setAttribute("class", `py-3 rounded-2 edit-project__config`);
 
     //
     this._setForm();
@@ -93,9 +91,8 @@ export class JobClusterEdit extends OrganizationTypeForm {
 
   _getNewForm(data) {
     console.log("Get new form");
-    let current = this.boxHelper.boxWrapDefault( {
-        "children" : ""
-      } );
+    let current = document.createElement("div");
+    current.setAttribute("class", `py-3 rounded-2 edit-project__config`);
     this._setForm();
 
     // name

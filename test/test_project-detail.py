@@ -61,6 +61,7 @@ def test_basic(request, page_factory, project): #video
                   f.write(chunk)
 
    page.set_input_files('section-upload input', [nasa_space_photo_1,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_2,nasa_space_photo_2,nasa_space_photo_3,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1,nasa_space_photo_1])
+   page.wait_for_timeout(5000)
    page.query_selector('upload-dialog').query_selector('text=Close').click()
 
    page.locator('.project__header reload-button').click()
