@@ -23,8 +23,7 @@ export class AppletEdit extends TypeFormTemplate {
       this._categoriesList = this._shadow.getElementById("applet-edit--categories");
    }
 
-   async _setupFormUnique(data) {
-      this._data = data;
+   async _setupFormUnique() {
       // append link
       if (this._data.id && this._data.id !== "New") {
          this._linkToDashboard.setAttribute("href", `${window.location.origin}/${this.projectId}/dashboards/${this._data.id}`);

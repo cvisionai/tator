@@ -25,21 +25,19 @@ export class StateTypeEdit extends TypeFormTemplate {
     this._deleteChildLoc = this._shadow.getElementById("state-type-edit--delete-child");
   }
 
-  async _setupFormUnique(data) {
-    this._data = data;
-
+  async _setupFormUnique() {
     // dtype
     const dTypeOptions = [
       { "label": "State", "value": "state" }
     ];
     // Emptyform uses "" for dtype value
     if(typeof this.dtypeSelect._choices == "undefined") this.dtypeSelect.choices = dTypeOptions;
-    if (!data.dtype) {
+    if (!this._data.dtype) {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
     } else {
-      this.dtypeSelect.setValue(data.dtype);
-      this.dtypeSelect.default = data.dtype;
+      this.dtypeSelect.setValue(this._data.dtype);
+      this.dtypeSelect.default = this._data.dtype;
       this.dtypeSelect._select.disabled = true;
     }
 
@@ -56,7 +54,7 @@ export class StateTypeEdit extends TypeFormTemplate {
     this._groupingDefault.default = this._data.grouping_default;
 
     // const MEDIA = "Media"; 
-    if (typeof data.media !== "undefined") {
+    if (typeof this._data.media !== "undefined") {
       try {
         const mediaListWithChecked = await getCompiledList({
           type: "MediaType",
@@ -79,26 +77,28 @@ export class StateTypeEdit extends TypeFormTemplate {
       ];
       this._association.choices = assocOptions;
     }
-    if (!data.association) {
+    if (!this._data.association) {
       this._association.default = ""; 
     } else {
-      this._association.setValue(data.association);
-      this._association.default = data.association;
+      this._association.setValue(this._data.association);
+      this._association.default = this._data.association;
     }
 
     // Interpolation
-    const interpOptions = [
-      { "label" : "Select", "value" : ""},
-      { "label": "None", "value": "none" },
-      { "label": "Latest", "value": "latest" },
-      { "label": "Attr Style Range", "value": "attr_style_range" }
-    ];
-    if(typeof this._interpolation._choices == "undefined") this._interpolation.choices = interpOptions;
-    if (!data.interpolation) {
+    if(!this._interpolation._choices) {
+      const interpOptions = [
+        { "label" : "Select", "value" : ""},
+        { "label": "None", "value": "none" },
+        { "label": "Latest", "value": "latest" },
+        { "label": "Attr Style Range", "value": "attr_style_range" }
+      ];
+      this._interpolation.choices = interpOptions;
+    }
+    if (!this._data.interpolation) {
       this._interpolation.default = ""; 
     } else {
-      this._interpolation.setValue(data.interpolation);
-      this._interpolation.default = data.interpolation;
+      this._interpolation.setValue(this._data.interpolation);
+      this._interpolation.default = this._data.interpolation;
     }
 
     // Child Localizations

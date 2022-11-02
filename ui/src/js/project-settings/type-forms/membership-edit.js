@@ -23,11 +23,9 @@ export class MembershipEdit extends TypeFormTemplate {
     this._userData = document.createElement("user-data");
   }
 
-  async _setupFormUnique(data) {
-    const formData = {};
-
+  async _setupFormUnique() {
     this._userInput.reset();
-    if (data.id == "New") {
+    if (this._data.id == "New") {
       this._userInput.init(this._userData);
       this._userInput.hidden = false;
     } else {
@@ -44,17 +42,17 @@ export class MembershipEdit extends TypeFormTemplate {
     ];
     if(typeof this._permissionSelect._choices == "undefined") this._permissionSelect.choices = permissionOptions;
     this._permissionSelect._select.required = true;
-    this._permissionSelect.setValue(data.permission);
-    this._permissionSelect.default = data.permission;
+    this._permissionSelect.setValue(this._data.permission);
+    this._permissionSelect.default = this._data.permission;
 
     // default version
     this._versionSelect.clear();
-    const versionOptions = await getCompiledList({ type: "Version", check: data.default_version });
+    const versionOptions = await getCompiledList({ type: "Version", check: this._data.default_version });
     this._versionSelect.resetChoices();
     this._versionSelect.choices = versionOptions;
     this._versionSelect._select.required = true;
-    this._versionSelect.setValue(data.default_version);
-    this._versionSelect.default = data.default_version;
+    this._versionSelect.setValue(this._data.default_version);
+    this._versionSelect.default = this._data.default_version;
   }
 
   _getFormData() {

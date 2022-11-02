@@ -78,9 +78,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       state.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
    }
 
-   async _setupFormUnique(data) {
-      this._data = data;
-      
+   async _setupFormUnique() {
       // Show appropriate messages if required
       if (this.cantSave) this.showMessagesCantSave(this._data.id == "New");
       if (this.cantSee) this.showMessagesCantSee(this._data.id == "New");

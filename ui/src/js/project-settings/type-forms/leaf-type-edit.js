@@ -18,8 +18,7 @@ export class LeafTypeEdit extends TypeFormTemplate {
     this.dtypeSelect = this._shadow.getElementById("leaf-type-edit--data-type");
   }
 
-  async _setupFormUnique(data) {
-
+  async _setupFormUnique() {
     // dtype
     if(!this.dtypeSelect._choices){
       const dTypeOptions = [
@@ -28,12 +27,12 @@ export class LeafTypeEdit extends TypeFormTemplate {
       // Emptyform uses "" for dtype value
       this.dtypeSelect.choices = dTypeOptions;
     }
-    if (!data.dtype) {
+    if (!this._data.dtype) {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
     } else {
-      this.dtypeSelect.setValue(data.dtype);
-      this.dtypeSelect.default = data.dtype;
+      this.dtypeSelect.setValue(this._data.dtype);
+      this.dtypeSelect.default = this._data.dtype;
       this.dtypeSelect._select.disabled = true;
     }
 
@@ -42,7 +41,8 @@ export class LeafTypeEdit extends TypeFormTemplate {
     this._editDescription.default = this._data.description;
 
     // visible
-    // @TODO won't be in use until we have a leaf tree editor
+    // TODO won't be in use until we have a leaf tree editor
+    // TODO Note: editor exists so we should add this?
     // this._visibleBool = document.createElement("bool-input");
     // this._visibleBool.setAttribute("name", "Visible");
     // this._visibleBool.setAttribute("on-text", "Yes");
@@ -50,7 +50,7 @@ export class LeafTypeEdit extends TypeFormTemplate {
     // this._visibleBool.setValue(this._data.visible);
     // this._visibleBool.default = this._data.visible;
     // this._visibleBool.addEventListener("change", this._formChanged.bind(this));
-    // this._form.appendChild(this._visibleBool);
+
   }
 
   _getFormData() {

@@ -105,8 +105,6 @@ export class SettingsNavLink extends TatorElement {
     unhighlightHeading() {
       if (this._headingGroup) {
         this._headingGroup.setAttribute("selected", "false");
-      } else {
-        console.warn("No nav heading found to unhiglight in settings nav.")
       }
     }
   
@@ -114,8 +112,6 @@ export class SettingsNavLink extends TatorElement {
       const selectMe = inner ? this.innerLinkMap.get(id) : this.linkMap.get(id);
       if (selectMe) {
          selectMe.setAttribute("selected", "true");
-      } else {
-        console.warn("No nav found to higlight in settings nav.")
       }
     }
   
@@ -123,8 +119,6 @@ export class SettingsNavLink extends TatorElement {
       const deselectMe = inner ? this.innerLinkMap.get(id) : this.linkMap.get(id);
       if (deselectMe) {
         deselectMe.setAttribute("selected", "false");
-      } else {
-        console.warn("No nav found to unhiglight in settings nav.")
       }
     }
   

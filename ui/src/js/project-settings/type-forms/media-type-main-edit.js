@@ -23,8 +23,7 @@ export class MediaTypeEdit extends TypeFormTemplate {
     this.dtypeSelect.addEventListener("change", this._showHideVolume.bind(this));
   }
 
-  async _setupFormUnique(data) {
-
+  async _setupFormUnique() {
     // dtype
     if (!this.dtypeSelect._choices) {
       const dTypeOptions = [
@@ -37,15 +36,15 @@ export class MediaTypeEdit extends TypeFormTemplate {
       this.dtypeSelect.choices = dTypeOptions;      
     }
 
-    if (!data.dtype) {
+    if (!this._data.dtype) {
       this.dtypeSelect.setValue("");
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";
       this.dtypeSelect._select.removeAttribute("disabled");
 
     } else {
-      this.dtypeSelect.setValue(data.dtype);
-      this.dtypeSelect.default = data.dtype;
+      this.dtypeSelect.setValue(this._data.dtype);
+      this.dtypeSelect.default = this._data.dtype;
       this.dtypeSelect._select.disabled = true;
     }
     
@@ -54,7 +53,7 @@ export class MediaTypeEdit extends TypeFormTemplate {
     this._editDescription.default = this._data.description;
 
     // default volume (video, multi)
-    this._volumeDiv.hidden = !(data.dtype === "video" || data.dtype === "multi");
+    this._volumeDiv.hidden = !(this._data.dtype === "video" || this._data.dtype === "multi");
     
     const defaultVol = this._data.default_volume;
     this._defaultVolume.setValue(defaultVol);

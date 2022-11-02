@@ -29,8 +29,7 @@ export class LocalizationEdit extends TypeFormTemplate {
     this._mediaCheckboxes = this._shadow.getElementById("localization-type-edit--media");
   }
 
-  async _setupFormUnique(data) {
-
+  async _setupFormUnique() {
     // dtype
     const dTypeOptions = [
       { "label": "Select", "value": "" },
@@ -40,14 +39,14 @@ export class LocalizationEdit extends TypeFormTemplate {
       { "label": "Poly", "value": "poly" }
     ];
     if(typeof this.dtypeSelect._choices == "undefined") this.dtypeSelect.choices = dTypeOptions;
-    if (!data.dtype || data.dtype === "") {
+    if (!this._data.dtype || this._data.dtype === "") {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.setValue("");
       this.dtypeSelect.default = "";
       this.dtypeSelect._select.disabled = false;
     } else {
-      this.dtypeSelect.setValue(data.dtype);
-      this.dtypeSelect.default = data.dtype;
+      this.dtypeSelect.setValue(this._data.dtype);
+      this.dtypeSelect.default = this._data.dtype;
       this.dtypeSelect._select.disabled = true;
     }
 
@@ -82,7 +81,7 @@ export class LocalizationEdit extends TypeFormTemplate {
     this._groupingDefault.default = this._data.grouping_default;
 
     // const MEDIA = "Media"; 
-    if (typeof data.media !== "undefined") {
+    if (typeof this._data.media !== "undefined") {
       try {
         const mediaListWithChecked = await getCompiledList({ type: "MediaType", skip: null, check: this._data.media});
         this._mediaCheckboxes.setValue(mediaListWithChecked);

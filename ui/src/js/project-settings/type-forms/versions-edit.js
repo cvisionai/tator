@@ -23,7 +23,7 @@ export class VersionsEdit extends TypeFormTemplate {
       this._basesCheckbox = this._shadow.getElementById("versions-edit--bases");
    }
 
-   async _setupFormUnique(data) {
+   async _setupFormUnique() {
       // description
       this._editDescription.setValue(this._data.description);
       this._editDescription.default = this._data.description;
@@ -34,7 +34,7 @@ export class VersionsEdit extends TypeFormTemplate {
 
       // number
       this._number.permission = "View Only";
-      if (typeof data.number === "undefined") {
+      if (typeof this._data.number === "undefined") {
          this._number.setValue("Created on Save");
          this._number.default = "";
       } else {
@@ -43,7 +43,7 @@ export class VersionsEdit extends TypeFormTemplate {
       }
 
       // Bases   
-      const basesListWithChecked = await getCompiledList({ type: this.typeName, skip: data.id, check: this._data.bases});
+      const basesListWithChecked = await getCompiledList({ type: this.typeName, skip: this._data.id, check: this._data.bases});
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
    }

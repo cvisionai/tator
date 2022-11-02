@@ -41,7 +41,7 @@ export class TypeFormTemplate extends TatorElement {
   /**
    * @param {{ map?: any; id?: string; name?: string; project?: any; description?: string; visible?: boolean; grouping_default?: boolean; media?: never[]; dtype?: string; colorMap?: null; interpolation?: string; association?: string; line_width?: number; delete_child_localizations?: boolean; cluster?: null; manifest?: null; files_per_job?: null; parameters?: never[]; categories?: string; form?: string; } | null} val
    */
-  set data(val) {
+  set data (val) {
     if(val && val !== null){
       this._data = val;
     } else {
@@ -58,7 +58,7 @@ export class TypeFormTemplate extends TatorElement {
       this._editName.default = name;
     }
 
-    this._setupFormUnique(this._data);
+    this._setupFormUnique();
   }
 
   _saveData() {

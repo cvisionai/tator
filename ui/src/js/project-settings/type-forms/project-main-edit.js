@@ -20,11 +20,10 @@ export class ProjectMainEdit extends TypeFormTemplate {
     this._enableDownloads = this._shadow.getElementById("project-edit--downloads");
   }
 
-  async _setupFormUnique(data) {
-    this._data = data;
+  async _setupFormUnique() {
     // Thumb
-    this._thumbUpload.organization = data.organization;
-    this._thumbUpload.projectId = data.id;
+    this._thumbUpload.organization = this._data.organization;
+    this._thumbUpload.projectId = this._data.id;
     this._thumbUpload.setValue(this._data.thumb);
     this._thumbUpload.default = this._data.thumb === null ? "" : this._data.thumb;
     
