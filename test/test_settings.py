@@ -60,7 +60,7 @@ def test_settings_mediaTypes(page_factory, project):
         page.wait_for_selector(f'text="Media type created successfully!"')
         # page.click('modal-dialog modal-close .modal__close')
         print(f"{dtypeName} Media type created successfully!")
-
+        page.wait_for_timeout(5000)
         # todo - Assert information saved, edit and re-assert
         # Note/todo: when run sequentionally they are clicked in "States"...
     page.close()
