@@ -123,11 +123,10 @@ export class LeafForm extends TatorElement {
         widget = document.createElement("datetime-input");
         widget.setAttribute("name", column.name);
       } catch (e) {
-        console.log(e.description);
+        console.error(e.description);
       }
 
       if ((widget && widget._input && widget._input.type == "text") || !widget._input) {
-        console.log("No browser support for datetime, or error. Degrading to text-input.");
         widget = document.createElement("text-input");
         widget.setAttribute("name", column.name);
         widget.setAttribute("type", column.dtype);
@@ -203,7 +202,6 @@ export class LeafForm extends TatorElement {
 }
 
   _formChanged() {
-    console.log("Leaf form changed");
     this.changed = true;
     return this.form.classList.add("changed");
   }
@@ -268,16 +266,10 @@ export class LeafForm extends TatorElement {
     // Name: Always sent
     formData.name = this._name.getValue();
 
-    // Path: Should never change or be sent
-    // if ((this._path.changed() || this.isClone) && this._path.getValue() !== null) {
-    //   formData.path = this._path.getValue();
-    // }
+    // NOTE: Path: Should never change or be sent
 
-    // Parent: Only when changed, or when it is a Clone pass the value along
-    // Don't send if the value is null => invalid
-    // if ((this._parentLeaf.changed() || this.isClone) && this._parentLeaf.getValue() !== null) {
-      formData.parent = Number(this._parentLeaf.getValue());
-    // }
+    // Parent: Always send
+    formData.parent = Number(this._parentLeaf.getValue());
 
     // Custom attributes
     const attrVals = this._getWidgetValues();
@@ -288,7 +280,6 @@ export class LeafForm extends TatorElement {
     // Always send the type
     formData.type = this._fromType;
 
-    console.log(formData);
     return formData;
   }
 

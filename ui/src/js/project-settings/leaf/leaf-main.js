@@ -61,7 +61,6 @@ export class LeafMain extends TatorElement {
    * @param {any[] | null} val
    */
   set data(val) {
-    console.log("DATA SET FOR LEAF MAIN", val);
     if (val === null) {
       //EMPTY this...
       this.leaves = [];
@@ -97,7 +96,6 @@ export class LeafMain extends TatorElement {
   * @param {string} val
   */
   set attributeTypes(val) {
-    console.log(val);
     this._attributeTypes = val;
   }
 
@@ -107,7 +105,6 @@ export class LeafMain extends TatorElement {
   set leaves(val) {
     this._leaves = val;
     this._leavesContainer.innerHTML = "";
-    console.log("Setting up these leaves!", this._leaves);
     if (this._leaves && this._leaves.length > 0) {
       this._leafBoxShowHide.hidden = false;
       this._leavesContainer.appendChild(this._getLeavesSection());
@@ -244,17 +241,12 @@ export class LeafMain extends TatorElement {
 
   leafBoxStart(e) {
     const textData = e.dataTransfer.getData("text/plain");
-    console.log(textData);
   }
 
   leafBoxDrop(e) {
-    console.log("this._leafBox handle drop");
     e.preventDefault();
     e.stopPropagation(); // stops the browser from redirecting.
     this._leafBox.style.border = "none";
-
-    console.log(`leafBoxDrop: Move ${this.movingEl} to no parent?`);
-    // console.log(e.dataTransfer);
     this.moveLeaf({ detail: { newParent: -1, forLeaf: this.movingEl } });
   }
 
@@ -269,7 +261,6 @@ export class LeafMain extends TatorElement {
     if (e.target.classList.contains("edit-project__config")) {
       this._leafBox.style.border = "3px dotted #333";
     } else {
-      // console.log(`If this isn't over me, don't be dotty... `);
       this._leafBox.style.border = "none";
     }
 
@@ -337,17 +328,13 @@ export class LeafMain extends TatorElement {
     this._modal._closeCallback();
     this.loading.showSpinner();
     let formJSON = formObj._getLeafFormData();
-    console.log(formJSON);
     let attr = { ...formJSON.attributes };
-    console.log(attr);
 
     for (let [key, value] of Object.entries(attr)) {
       formJSON[key] = value;
     }
 
     delete formJSON["attributes"];
-    console.log(formJSON);
-
     let status = 0;
     
     try {
@@ -371,7 +358,6 @@ export class LeafMain extends TatorElement {
   }
 
   _dispatchRefresh(e) {
-    //console.log("modal complete closed");
     this.dispatchEvent(this.refreshTypeEvent);
   }
 
@@ -442,7 +428,6 @@ export class LeafMain extends TatorElement {
   }
 
   moveLeaf(e) {
-    console.log("move leaf");
     const forLeaf = e.detail.forLeaf;
     const newParent = e.detail.newParent;
 
@@ -664,8 +649,6 @@ export class LeafMain extends TatorElement {
     if (typeof id != "undefined") {
       try {
         const info = await store.getState().removeType({ type: "Leaf", id: id });
-        console.log("Handle delete response info is", info);
-      
         const message = JSON.parse(info.response.text).message;
         this.loading.hideSpinner();
         if (info.response.ok) {
@@ -688,7 +671,6 @@ export class LeafMain extends TatorElement {
   }
 
   async _updateLeaf(dataObject) {
-    console.log("UPDATE LEAF ", dataObject);
     try{
       this.successMessages = "";
       this.failedMessages = "";
@@ -722,10 +704,6 @@ export class LeafMain extends TatorElement {
       if (newData.setList.has(selectedType)) {
         const data = newData.map.get(selectedType);
         const type = await store.getState().getData("LeafType", selectedType);
-        console.log("_newData FORM", {
-          data,
-          type
-        });
         this.data = {
           data,
           type
@@ -737,8 +715,6 @@ export class LeafMain extends TatorElement {
   async _updateForm(newSelection, oldSelection) {
     const newType = newSelection.typeName;
     const oldType = oldSelection.typeName;
-
-    console.log("Leaf form... newSelection", newSelection)
     const affectsMe = (this.typeName == newType || this.typeName == oldType);
     
     if (affectsMe) {
@@ -746,7 +722,6 @@ export class LeafMain extends TatorElement {
         this.hidden = true; 
         return;
       } else {
-        console.log(this.typeName+" is new: unhiding this")
         this.hidden = false;
       }
 
@@ -755,10 +730,6 @@ export class LeafMain extends TatorElement {
       if (newId !== "New") {
         const data = await store.getState().getData("Leaf", newId);
         const type = await store.getState().getData("LeafType", newId);
-        console.log("UPDATE FORM", {
-          data,
-          type
-        });
         this.data = {
           data,
           type

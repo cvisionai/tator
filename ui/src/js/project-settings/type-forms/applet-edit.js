@@ -78,10 +78,7 @@ export class AppletEdit extends TypeFormTemplate {
 
    _getFormData() {
       const formData = {};
-
-      // console.log(`Data ID: ${this._data.id}`);
       const isNew = this._data.id == "New" ? true : false;
-      // const isNew = true;
 
       if (this._editName.changed() || isNew) {
          formData.name = this._editName.getValue();

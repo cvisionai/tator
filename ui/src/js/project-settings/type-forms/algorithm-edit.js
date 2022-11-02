@@ -80,8 +80,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
 
    async _setupFormUnique(data) {
       this._data = data;
-      console.log("ALgo _setupFormUnique "+data.id);
-
+      
       // Show appropriate messages if required
       if (this.cantSave) this.showMessagesCantSave(this._data.id == "New");
       if (this.cantSee) this.showMessagesCantSee(this._data.id == "New");
@@ -98,7 +97,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
             if (this._currentUser == null) {
                this._currentUser = await store.getState().getUser("GetCurrent");
             }
-            console.log("this._currentUser", this._currentUser);
+            
             //use current user
             this._registeredUserName = `${this._currentUser.first_name} ${this._currentUser.last_name}`;
             this._registeredUserId = this._currentUser.id;
@@ -161,7 +160,6 @@ export class AlgorithmEdit extends TypeFormTemplate {
       if (!this.cantSee) {
          // if they aren't a non auth user
          const jobClusterWithChecked = await getCompiledList({ type: "JobCluster", skip: null, check: this._data.cluster});
-         // console.log("JOB CLUSTER WITH CHECKED", jobClusterWithChecked);
 
          // Check if there are going to be enum values first, show input with NULL
          if (jobClusterWithChecked == null || jobClusterWithChecked.length == 0) {
@@ -204,9 +202,6 @@ export class AlgorithmEdit extends TypeFormTemplate {
 
    _getFormData() {
       const formData = {};
-
-      // console.log(`Data ID: ${this._data.id}`);
-      // const isNew = this._data.id == "New" ? true : false;
       const isNew = true;
 
       if (this._editName.changed() || isNew) {
@@ -223,7 +218,6 @@ export class AlgorithmEdit extends TypeFormTemplate {
          formData.manifest = null;         
       }
 
-      // console.log(`UserCantSaveCluster ${this.userCantSaveCluster} and userCantSeeCluster ${this.userCantSeeCluster}`)
       if (!(this.cantSave || this.cantSee)) {
          if (this._clusterEnumInput.changed() || isNew) {
             let clusterValue = this._clusterEnumInput.getValue();

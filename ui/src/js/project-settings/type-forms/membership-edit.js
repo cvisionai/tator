@@ -59,14 +59,11 @@ export class MembershipEdit extends TypeFormTemplate {
 
   _getFormData() {
     let formData;
-    console.log("Get form data........");
     // New we can be adding multiple memberships
     if (this._data.id == "New") {
       formData = [];
       const users = this._userData.getUsers();
-      console.log("USERS", users);
       for (const [userId, user] of users.entries()) {
-        console.log(user);
         formData.push({
           user: userId,
           username: user.username, // ignored by BE, used by FE only

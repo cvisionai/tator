@@ -44,7 +44,6 @@ export class VersionsEdit extends TypeFormTemplate {
 
       // Bases   
       const basesListWithChecked = await getCompiledList({ type: this.typeName, skip: data.id, check: this._data.bases});
-      // console.log("Set value in checkbox set..."+basesListWithChecked.length);
       this._basesCheckbox.setValue(basesListWithChecked);
       this._basesCheckbox.default = basesListWithChecked;
    }
@@ -52,8 +51,6 @@ export class VersionsEdit extends TypeFormTemplate {
 
    _getFormData() {
       const formData = {};
-
-      // console.log(`Data ID: ${this._data.id}`);
       const isNew = this._data.id == "New" ? true : false;
 
       if (this._editName.changed() || isNew) {

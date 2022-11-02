@@ -85,7 +85,6 @@ export class LocalizationEdit extends TypeFormTemplate {
     if (typeof data.media !== "undefined") {
       try {
         const mediaListWithChecked = await getCompiledList({ type: "MediaType", skip: null, check: this._data.media});
-        console.log("mediaListWithChecked", mediaListWithChecked);
         this._mediaCheckboxes.setValue(mediaListWithChecked);
         this._mediaCheckboxes.default = mediaListWithChecked;
       } catch (err) {
@@ -96,8 +95,6 @@ export class LocalizationEdit extends TypeFormTemplate {
 
   _getFormData(){
     const formData = {};
-    
-    // console.log(`Data ID: ${this._data.id}`);
     const isNew = this._data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {

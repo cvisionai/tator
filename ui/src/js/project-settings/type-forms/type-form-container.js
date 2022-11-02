@@ -67,7 +67,6 @@ export class TypeFormContainer extends TatorElement {
   }
 
   setProjectId(newId, oldId) {
-    console.log("Set projectId to newId");
     this.projectId = newId;
   }
 
@@ -75,7 +74,6 @@ export class TypeFormContainer extends TatorElement {
    * @param {string} val
    */
     set typeName(val) {
-      // console.log("Setting typeName");
       this._typeName = val;
       for (let span of this.typeNameSet) {
         span.textContent = val;
@@ -138,9 +136,6 @@ export class TypeFormContainer extends TatorElement {
    * @param {*} newData 
    */
   _newData(newData) {
-    // console.log(`Type form container (id: ${this._typeId}, type: ${this._typeName}), newData: `, newData);
-    // console.log("> Selection...", store.getState().selection);
-
     // Nothing new or deleted
     if (this._typeName == store.getState().selection.typeName && this._typeId !== "New") {
       if (newData.setList.has(Number(this._typeId))) {
@@ -181,7 +176,7 @@ export class TypeFormContainer extends TatorElement {
 
       if (newId !== "New") {        
         const data = await store.getState().getData(this._typeName, this._typeId);
-        console.log(`DEBUG: selection found newData for  ${this._typeName}, id: ${this._typeId}`, data);
+        // console.log(`DEBUG: selection found newData for  ${this._typeName}, id: ${this._typeId}`, data);
         
         if (data) {
           this.setUpData(data);

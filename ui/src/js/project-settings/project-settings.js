@@ -64,7 +64,7 @@ export class ProjectSettings extends TatorPage {
    */
   handleStatusChange(status) {
     // Debug output, potentially useful as lightbox or all modal handles
-    console.log(`Status updated to "${status.name}" ${(status.msg !== "") ? " with message: "+status.msg : ""}`);
+    // console.log(`DEBUG: Status updated to "${status.name}" ${(status.msg !== "") ? " with message: "+status.msg : ""}`);
     if(status.name == "pending"){
       this.showDimmer();
       this.loading.showSpinner();
@@ -116,12 +116,9 @@ export class ProjectSettings extends TatorPage {
       this._selectedType = null;
       this._selectedObjectId = null;
       this._innerSelection = null;
-
-      // Invalid, or val === "reset"
-      console.warn("Hash set to null, value:" + val);
     }
 
-    console.log("Hash setup.... " + this._selectedHash);
+    // console.log("DEBUG: Hash setup.... " + this._selectedHash);
     store.getState().setSelection({
       typeName: this._selectedType,
       typeId: this._selectedObjectId,
@@ -136,7 +133,6 @@ export class ProjectSettings extends TatorPage {
 
   /* Project data required for settings page components are updated */
   updateProject(newType) {
-    console.log("Project data set!", newType);
     this._breadcrumbs.setAttribute("project-name", newType.data.name);
     this.setProjectPermission(newType.data.permission);
   }

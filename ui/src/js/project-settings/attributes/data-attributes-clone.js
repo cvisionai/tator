@@ -14,7 +14,6 @@ export class AttributesData {
   }
 
   _fetchPostPromise({ formData = null } = {}) {
-    console.log(formData);
     if (formData != null) {
       return fetch("/rest/AttributeType/" + this.typeId, {
         method: "POST",
@@ -41,8 +40,6 @@ export class AttributesData {
     for (let data of this.selectedData) {
       let cloneValue = JSON.parse(data); //parse data attribute
       cloneValue._default = cloneValue.default;
-      // console.log("cloneValue");
-      // console.log(cloneValue);
 
       this.attributeForm = new AttributesForm();
       this.attributeForm._getFormWithValues({ clone: true, ...cloneValue });

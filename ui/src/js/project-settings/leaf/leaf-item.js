@@ -129,8 +129,6 @@ export class LeafItem extends TatorElement {
       const forLeaf = this.leaf.id;
       const newParent = null;
       const data = { forLeaf, newParent };
-
-      console.log(`handleDragStart:Move ${forLeaf} to a no parent yet, newparent: ${newParent}`);
       this.leafMain.movingEl = forLeaf;
 
       e.dataTransfer.effectAllowed = 'move';
@@ -161,16 +159,11 @@ export class LeafItem extends TatorElement {
 
    handleDrop(e) {
       e.stopPropagation(); // stops the browser from redirecting.
-      console.log("Leaf Item handle drop");
       this.leafName.style.border = "none";
 
       const textData = e.dataTransfer.getData("text/plain");
-      console.log(textData);
-
       const data = JSON.parse(textData);
       data.newParent = this.leaf.id;
-
-      console.log(`Move ${data.forLeaf} to a new parent ${data.newParent}?`);
       this.dispatchEvent(new CustomEvent("new-parent", { detail: data }));
 
       return false;

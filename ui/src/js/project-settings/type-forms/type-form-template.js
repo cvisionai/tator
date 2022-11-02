@@ -31,7 +31,6 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   setOrganizationId(newId, oldId) {
-    console.log("setOrganizationId"+newId);
     this.organizationId = newId;
   }
 
@@ -71,13 +70,11 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   async saveDataFunction() {
-    console.log("saveDataFunction........");
     const formData = this._getFormData();
 
     if (Object.entries(formData).length !== 0 && !Array.isArray(formData)) {
       try {
         const respData = await this.doSaveAction(formData);
-        console.log(respData);
         this.handleResponse(respData);
       } catch (err) {
         this.modal._error(err)
@@ -90,7 +87,6 @@ export class TypeFormTemplate extends TatorElement {
       }
       this.handleResponseList(responses);
     } else {
-      // console.log();
       this.modal._success("Nothing new to save!");
     }
   }
@@ -213,7 +209,6 @@ export class TypeFormTemplate extends TatorElement {
     this.modal._modalCloseAndClear();
     try {
       const respData = await store.getState().removeType({ type: this.typeName, id: this._data.id });
-      console.log("Delete response", respData);
       this.handleResponse(respData);
 
       if (this.typeName == "Project") {

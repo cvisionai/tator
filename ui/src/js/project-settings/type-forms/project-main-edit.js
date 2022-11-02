@@ -23,7 +23,6 @@ export class ProjectMainEdit extends TypeFormTemplate {
   async _setupFormUnique(data) {
     this._data = data;
     // Thumb
-    console.log(data);
     this._thumbUpload.organization = data.organization;
     this._thumbUpload.projectId = data.id;
     this._thumbUpload.setValue(this._data.thumb);

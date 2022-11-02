@@ -203,7 +203,6 @@ const store = create(subscribeWithSelector((set, get) => ({
    getData: async (type, id) => {
       if (!get()[type].init) await get().fetchType(type);
       const info = get()[type];
-      console.log("GET DATA... map for type "+type, info.map);
       return info.map.get(Number(id));
    },
 
@@ -238,7 +237,6 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    /* Generic to allow for loop calls */
    initType: async (type) => {
-      console.log("Init type: " + type);
       let init = get()[type].init;
       let data = null;
 
@@ -256,7 +254,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       try {
          const fn = getMap.get(type);
          const orgId = get().organizationId;
-         if (get().organizationId) console.log(get().organizationId);
          const object = await fn(orgId);
 
          if (object.response.ok) {
@@ -274,7 +271,7 @@ const store = create(subscribeWithSelector((set, get) => ({
             set({ status: { ...get().status, name: "idle", msg: "" } });
             
          } else {
-            console.log("Object response not ok for fetchType", object);
+            console.error("Object response not ok for fetchType", object);
          }
          return object;
       } catch (err) {
@@ -324,7 +321,7 @@ const store = create(subscribeWithSelector((set, get) => ({
             set({ status: { ...get().status, name: "idle", msg: "" } });
             return object.data;
          } else {
-            console.log("Object response not ok for fetchType", object);
+            console.error("Object response not ok for fetchType", object);
          }
         
       } catch (err) {
@@ -337,7 +334,6 @@ const store = create(subscribeWithSelector((set, get) => ({
    addType: async ({ type, data }) => {
       set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
       try {
-         console.log("Adding new type....");
          const fn = postMap.get(type);
          const projectId = get().projectId;
          const responseInfo = await fn(projectId, data); 
@@ -388,7 +384,6 @@ const store = create(subscribeWithSelector((set, get) => ({
       set({ status: { ...get().status, name: "pending", msg: "Updating version..." } });
       try {
          const fn = deleteMap.get(type);
-         console.log(fn);
          const object = await fn(id);
 
          await get().fetchType(type);
@@ -405,9 +400,13 @@ const store = create(subscribeWithSelector((set, get) => ({
 
    },
 
+   /**
+    * Accepts a version ID
+    * @param {int} id 
+    * @returns related state and localization counts
+    */
    getCountsForVersion: async (id) => {
       try {
-         // console.log(`getCountsForVersion id ${id} in this project ${get().projectId}`);
          const state = await api.getStateCount(get().projectId, { version: [id] });
          const loc = await api.getLocalizationCount(get().projectId, { version: [id] });
          const counts = { state, loc };

@@ -109,8 +109,6 @@ export class StateTypeEdit extends TypeFormTemplate {
 
   _getFormData(){
     const formData = {};
-
-    // console.log(`Data ID: ${this._data.id}`);
     const isNew = this._data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {

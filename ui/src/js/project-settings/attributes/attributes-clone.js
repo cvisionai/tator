@@ -5,7 +5,6 @@ export class AttributesClone {
   constructor(attributeDataByType) {
     // Feature-related class(es) to customize form element. Applies to all elements.
     this.attributeDataByType = attributeDataByType;
-    console.log(this.attributeDataByType);
     this.attributeFormHelper = new AttributesForm();
   }
 
@@ -36,10 +35,6 @@ export class AttributesClone {
       this.placeholderAttributes.innerHTML = ""; //empty any current value
       this.checkedRadio = []; //removed remembered check
       this.placeholderEntities.appendChild(entitySelect);
-
-      const list = this.attributeDataByType;
-
-      //console.log(list);
   
       entitySelect.addEventListener("change", () => {
         const entity = this._entitySelect.getValue();
@@ -118,7 +113,6 @@ export class AttributesClone {
   _getEntitiesForType(type) {
     let entityOptions = [{"label":"Select", "value": ""}];
     this.entities = this.attributeDataByType[type];
-    console.log(" _getEntitiesForType(type) {",this.entities);
 
     if (this.entities) {
       for (let o in this.entities) {

@@ -240,7 +240,6 @@ export class AttributesMain extends HTMLElement {
     this.modal._modalCloseAndClear();
     this.loading.showSpinner();
     const selectedData = this.clone.getInputData();
-    //console.log(selectedData);
       
     let cloneData = new AttributesData({
       projectId: this.projectId,
@@ -522,16 +521,11 @@ export class AttributesMain extends HTMLElement {
       let iconWrap = document.createElement("span");
       let warningIcon = document.createElement("modal-warning");
 
-      // console.log(`currentMessage::::: ${currentMessage}`);
-
       if (response.status == 200) {
-        //console.log("Return Message - It's a 200 response.");
         iconWrap.appendChild(succussIcon);
         this.successMessages += `<div class="py-2">${iconWrap.innerHTML} <span class="v-align-top">${currentMessage}</span></div>`;
       } else if (response.status != 200) {
         iconWrap.appendChild(warningIcon);
-        //console.log("Return Message - It's a 400 response for main form.");
-        // this.failedMessages += `<div class="py-2"><span class="v-align-top">${currentMessage}</span></div>`;
         this.failedMessages += `<div class="py-4">${iconWrap.innerHTML} <span class="v-align-top">Changes editing ${attributeOldName} not saved.</span></div> <div class="f1">Error: ${currentMessage}</div>`
       }
     }).then(() => {

@@ -40,7 +40,6 @@ export class SingleUpload {
     } else {
       throw new Error("Upload requires organization ID or project ID!")
     }
-    console.log(url);
     
     return fetch(url, {
       method: "GET",
