@@ -101,12 +101,6 @@ app.get('/rest', (req, res) => {
   res.render('browser', params);
 });
 
-app.use('*', proxy(argv.backend, {
-  proxyReqPathResolver: function(req) {
-    return req.originalUrl;
-  }
-}));
-
 app.listen(port, () => {
   console.log('Started express server!');
 });

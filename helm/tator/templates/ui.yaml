@@ -33,11 +33,7 @@ spec:
           - run
           - serve
           - --
-          {{- if .Values.requireHttps }}
-          - --backend=https://{{ .Values.domain }}
-          {{- else }}
-          - --backend=http://{{ .Values.domain }}
-          {{- end }}
+          - --backend=''
           {{- if .Values.email.enabled }}
           - --email_enabled
           {{- end }}

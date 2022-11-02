@@ -25,7 +25,7 @@ cors:
   # Enable this to allow cross origin resource sharing (CORS).
   enabled: true
   # Value of Access-Control-Allow-Origin header
-  origin: localhost
+  origin: "http://localhost:8080"
   # Value of Access-Control-Allow-Methods header
   methods: '*'
 # Enable this to turn on "down for maintenance" page.
