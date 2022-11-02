@@ -1,4 +1,26 @@
+{{ define "cors.template" }}
+{{- if hasKey .Values "cors" }}
+{{- if $.Values.cors.enabled }}
+add_header Access-Control-Allow-Origin {{ .Values.cors.origin }} always;
+add_header Access-Control-Allow-Methods {{ .Values.cors.methods }} always;
+add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+add_header Access-Control-Allow-Credentials true always;
+if ($request_method = OPTIONS)
+{
+  add_header Content-Length 0;
+  add_header Content-Type text/plain;
+  add_header Access-Control-Allow-Origin {{ .Values.cors.origin }} always;
+  add_header Access-Control-Allow-Methods {{ .Values.cors.methods }} always;
+  add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
+  add_header Access-Control-Allow-Credentials true always;
+  return 200;
+}
+{{- end }}
+{{- end }}
+{{ end }}
+
 {{ define "nginxserver.template" }}
+{{- $corsSettings := dict "Values" .Values }}
 {{- if .Values.requireHttps }}
 server {
   listen 80;
@@ -75,24 +97,7 @@ server {
     {{- end }}
     add_header Cross-Origin-Opener-Policy same-origin;
     add_header Cross-Origin-Embedder-Policy require-corp;
-    {{- if hasKey .Values "allowCors" }}
-    {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin * always;
-    add_header Access-Control-Allow-Methods * always;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-    add_header Access-Control-Allow-Credentials true always;
-    if ($request_method = OPTIONS)
-    {
-      add_header Content-Length 0;
-      add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin * always;
-      add_header Access-Control-Allow-Methods * always;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-      add_header Access-Control-Allow-Credentials true always;
-      return 200;
-    }
-    {{- end }}
-    {{- end }}
+    {{include "cors.template" $corsSettings | indent 4}}
   }
   location /docs {
     return 301 https://tator.io/docs;
@@ -104,25 +109,7 @@ server {
     add_header 'Access-Control-Allow-Headers' 'Authorization,X-CSRFToken' always;
     add_header Cross-Origin-Opener-Policy same-origin;
     add_header Cross-Origin-Embedder-Policy require-corp;
-    
-    {{- if hasKey .Values "allowCors" }}
-    {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin * always;
-    add_header Access-Control-Allow-Methods * always;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-    add_header Access-Control-Allow-Credentials true always;
-    if ($request_method = OPTIONS)
-    {
-      add_header Content-Length 0;
-      add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin * always;
-      add_header Access-Control-Allow-Methods * always;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-      add_header Access-Control-Allow-Credentials true always;
-      return 200;
-    }
-    {{- end }}
-    {{- end }}
+    {{include "cors.template" $corsSettings | indent 4}}
     auth_request /auth-project;
   }
   location /media/working
@@ -149,24 +136,7 @@ server {
   {{- if .Values.minio.enabled }}
   location /objects/ {
     proxy_pass http://tator-minio:9000/;
-    {{- if hasKey .Values "allowCors" }}
-    {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin * always;
-    add_header Access-Control-Allow-Methods * always;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-    add_header Access-Control-Allow-Credentials true always;
-    if ($request_method = OPTIONS)
-    {
-      add_header Content-Length 0;
-      add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin * always;
-      add_header Access-Control-Allow-Methods * always;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-      add_header Access-Control-Allow-Credentials true always;
-      return 200;
-    }
-    {{- end }}
-    {{- end }}
+    {{include "cors.template" $corsSettings | indent 4}}
   }
   location /minio {
     auth_request /auth-admin;
@@ -264,24 +234,7 @@ server {
     proxy_set_header X-Forwarded-Proto https;
     {{- end }}
     add_header Cache-Control "max-age=0, must-revalidate";
-    {{- if hasKey .Values "allowCors" }}
-    {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin * always;
-    add_header Access-Control-Allow-Methods * always;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-    add_header Access-Control-Allow-Credentials true always;
-    if ($request_method = OPTIONS)
-    {
-      add_header Content-Length 0;
-      add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin * always;
-      add_header Access-Control-Allow-Methods * always;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-      add_header Access-Control-Allow-Credentials true always;
-      return 200;
-    }
-    {{- end }}
-    {{- end }}
+    {{include "cors.template" $corsSettings | indent 4}}
 
     gzip on;
     gzip_types application/json;
@@ -307,24 +260,7 @@ server {
     proxy_set_header X-Forwarded-Proto https;
     {{- end }}
     add_header Cache-Control "max-age=0, must-revalidate";
-    {{- if hasKey .Values "allowCors" }}
-    {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin * always;
-    add_header Access-Control-Allow-Methods * always;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-    add_header Access-Control-Allow-Credentials true always;
-    if ($request_method = OPTIONS)
-    {
-      add_header Content-Length 0;
-      add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin * always;
-      add_header Access-Control-Allow-Methods * always;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-      add_header Access-Control-Allow-Credentials true always;
-      return 200;
-    }
-    {{- end }}
-    {{- end }}
+    {{include "cors.template" $corsSettings | indent 4}}
 
     gzip on;
     gzip_types application/json;
@@ -356,24 +292,7 @@ server {
     proxy_set_header X-Forwarded-Proto https;
     {{- end }}
     add_header Cache-Control "max-age=0, must-revalidate";
-    {{- if hasKey .Values "allowCors" }}
-    {{- if $.Values.allowCors }}
-    add_header Access-Control-Allow-Origin * always;
-    add_header Access-Control-Allow-Methods * always;
-    add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-    add_header Access-Control-Allow-Credentials true always;
-    if ($request_method = OPTIONS)
-    {
-      add_header Content-Length 0;
-      add_header Content-Type text/plain;
-      add_header Access-Control-Allow-Origin * always;
-      add_header Access-Control-Allow-Methods * always;
-      add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
-      add_header Access-Control-Allow-Credentials true always;
-      return 200;
-    }
-    {{- end }}
-    {{- end }}
+    {{include "cors.template" $corsSettings | indent 4}}
 
     gzip on;
     gzip_types application/json;

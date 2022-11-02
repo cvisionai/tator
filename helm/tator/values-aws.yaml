@@ -21,8 +21,13 @@ domain: &domain www.yourdomain.com
 #    tlsKeySecretName: mysite-tls-key
 #    # Cert secret name that will be used in secret for this domain.
 #    tlsCertSecretName: mysite-tls-cert
-# Enable this to allow cross origin resource sharring (CORS).
-allowCors: false
+cors:
+  # Enable this to allow cross origin resource sharing (CORS).
+  enabled: true
+  # Value of Access-Control-Allow-Origin header
+  origin: localhost
+  # Value of Access-Control-Allow-Methods header
+  methods: '*'
 # Enable this to turn on "down for maintenance" page.
 maintenance: false
 nginxReplicas: 5
