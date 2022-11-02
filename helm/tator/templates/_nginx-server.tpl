@@ -1,6 +1,7 @@
 {{ define "cors.template" }}
 {{- if hasKey .Values "cors" }}
 {{- if $.Values.cors.enabled }}
+proxy_hide_header Access-Control-Allow-Origin;
 add_header Access-Control-Allow-Origin {{ .Values.cors.origin }} always;
 add_header Access-Control-Allow-Methods {{ .Values.cors.methods }} always;
 add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-CSRFToken" always;
