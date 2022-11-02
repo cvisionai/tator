@@ -102,7 +102,7 @@ _reset:
 	kubectl delete pods -l app=$(podname)
 
 _bash:
-	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/bash
+	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh
 
 _logs:
 	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
@@ -134,6 +134,8 @@ cluster-deps:
 cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	kubectl cp $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///'):/tator_online/ui/server/static /tmp/static
+	kubectl cp /tmp/static $$(kubectl get pod -l "app=nginx" -o name | head -n 1 | sed 's/pod\///'):/ 
 
 cluster-upgrade: check-migration main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
