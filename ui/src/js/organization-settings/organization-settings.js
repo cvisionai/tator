@@ -43,7 +43,7 @@ export class OrganizationSettings extends TatorPage {
     this._shadow.appendChild(this.main);
 
     // Navigation panels main for item settings.
-    this.settingsNav =  document.createElement("settings-nav");
+    this.settingsNav =  document.createElement("settings-nav-no-template");
     this.main.appendChild( this.settingsNav );
 
     // Web Components for this page

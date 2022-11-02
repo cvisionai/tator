@@ -22,12 +22,6 @@ export class LeafItem extends TatorElement {
       this.leafPathName.setAttribute("style", "margin-left: 25px;");
       this.addChildLeafIndent.appendChild(this.leafPathName);
 
-      // this.addChildLeaf = document.createElement("div");
-      // this.addChildLeaf.setAttribute("class", "btn btn-small btn-outline f3 mr-3 py-1 px-1");
-      // this.addChildLeaf.setAttribute("style", "width: fit-content; height: fit-content; margin-left: 25px;");
-      // this.addChildLeaf.textContent = "Add Child"
-      // this.addChildLeafIndent.appendChild(this.addChildLeaf);
-
       // Current leaf: LEFT content
       this.innerLeafBox = document.createElement("div");
       this.innerLeafBox.setAttribute("class", "px-3 d-flex flex-align-center");
@@ -135,8 +129,6 @@ export class LeafItem extends TatorElement {
       const forLeaf = this.leaf.id;
       const newParent = null;
       const data = { forLeaf, newParent };
-
-      console.log(`handleDragStart:Move ${forLeaf} to a no parent yet, newparent: ${newParent}`);
       this.leafMain.movingEl = forLeaf;
 
       e.dataTransfer.effectAllowed = 'move';
@@ -146,17 +138,17 @@ export class LeafItem extends TatorElement {
    handleDragEnd(e) {
       this.innerLeafBox.style.opacity = '1';
       this.leafName.style.border = "none";
-      this.leafMain.leafBox.style.border = "none";
+      this.leafMain._leafBox.style.border = "none";
    }
 
    handleDragEnter(e) {
       this.leafName.style.border = "3px dotted #333";
-      this.leafMain.leafBox.style.border = "none";
+      this.leafMain._leafBox.style.border = "none";
    }
 
    handleDragOver(e) {
       e.preventDefault();
-      this.leafMain.leafBox.style.border = "none";
+      this.leafMain._leafBox.style.border = "none";
       return false;
    }
 
@@ -167,16 +159,11 @@ export class LeafItem extends TatorElement {
 
    handleDrop(e) {
       e.stopPropagation(); // stops the browser from redirecting.
-      console.log("Leaf Item handle drop");
       this.leafName.style.border = "none";
 
       const textData = e.dataTransfer.getData("text/plain");
-      console.log(textData);
-
       const data = JSON.parse(textData);
       data.newParent = this.leaf.id;
-
-      console.log(`Move ${data.forLeaf} to a new parent ${data.newParent}?`);
       this.dispatchEvent(new CustomEvent("new-parent", { detail: data }));
 
       return false;

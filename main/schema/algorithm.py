@@ -138,6 +138,8 @@ class AlgorithmDetailSchema(AutoSchema):
                     '$ref': '#/components/schemas/Algorithm',
                 }}},
             }
+        elif method == 'PATCH':
+            responses['200'] = message_schema('update', 'registered algorithm')
         elif method == 'DELETE':
             responses['200'] = message_schema('deletion', 'registered algorithm')
         return responses

@@ -27,8 +27,6 @@ export class AttributesClone {
     this.form.appendChild(this._typeSelect);
 
     this.submitForm = null;
-    
-
 
     this._typeSelect.addEventListener("change",  (event) => {
       let type = this._typeSelect.getValue();
@@ -37,10 +35,6 @@ export class AttributesClone {
       this.placeholderAttributes.innerHTML = ""; //empty any current value
       this.checkedRadio = []; //removed remembered check
       this.placeholderEntities.appendChild(entitySelect);
-
-      const list = this.attributeDataByType;
-
-      //console.log(list);
   
       entitySelect.addEventListener("change", () => {
         const entity = this._entitySelect.getValue();
