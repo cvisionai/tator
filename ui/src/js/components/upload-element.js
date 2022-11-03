@@ -1,6 +1,7 @@
 import { TatorElement } from "./tator-element.js";
 import { getCookie } from "../util/get-cookie.js";
 import { v1 as uuidv1 } from "uuid";
+import { uploadMedia } from "../../../../scripts/packages/tator-js/pkg/src/index.js";
 import TatorLoading from "../../images/tator_loading.gif";
 
 export class UploadElement extends TatorElement {
@@ -8,47 +9,21 @@ export class UploadElement extends TatorElement {
     super();
     this._fileSelectCallback = this._fileSelectCallback.bind(this);
     this._haveNewSection = false;
+    this._abortController = new AbortController();
+    this._cancel = false;
   }
 
-  static get observedAttributes() {
-    return ["project-id", "username", "token", "section"];
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (name === "project-id") {
-      // Get all media types for this project.
-      fetch("/rest/MediaTypes/" + newValue, {
-        method: "GET",
-        credentials: "same-origin",
-        headers: {
-          "X-CSRFToken": getCookie("csrftoken"),
-          "Accept": "application/json",
-          "Content-Type": "application/json"
-        },
-      })
-      .then(response => response.json())
-      .then(data => {
-        this._mediaTypes = data;
-      });
-    }
-    else if (name === "username") {
-      this._username = newValue;
-    }
-    else if (name === "token") {
-      this._token = newValue;
-    }
-    else if (name === "section") {
-      this._section = newValue;
-    }
-  }
-
-  set worker(val) {
-    this._worker = val;
-    this._worker.addEventListener("message", evt => {
-      const msg = evt.data;
-      if (msg.command == "newUploadSection") {
-        this._newSectionName = msg.sectionName;
-        this._haveNewSection = true;
+  init(api, store) {
+    this._api = api;
+    this._store = store;
+    store.subscribe(state => state.uploadCancelled, (cancelled) => {
+      if (cancelled) {
+        // Cancel next uploads.
+        this._cancel = true;
+        // Abort uploads in progress.
+        this._abortController.abort();
+      } else {
+        this._cancel = false;
       }
     });
   }
@@ -61,11 +36,12 @@ export class UploadElement extends TatorElement {
     const isImage = ext.match(/(tiff|tif|bmp|jpe|jpg|jpeg|png|gif|avif)$/i);
     const isVideo = ext.match(/(mp4|avi|3gp|ogg|wmv|webm|flv|mkv|mov|mts|m4v|mpg|mp2|mpeg|mpe|mpv|m4p|qt|swf|avchd)$/i);
     const isArchive = ext.match(/^(zip|tar)/i);
-    for (let idx = 0; idx < this._mediaTypes.length; idx++) {
+    const mediaTypes = this._store.getState().mediaTypes;
+    for (let idx = 0; idx < mediaTypes.length; idx++) {
       // TODO: It is possible for users to define two media types with
       // the same extension, in which case we might be uploading to the
       // wrong media type.
-      const mediaType = this._mediaTypes[idx];
+      const mediaType = this._store.getState().mediaTypes[idx];
       let fileOk = false;
       if (mediaType.file_format === null) {
         if (mediaType.dtype == "image" && isImage) {
@@ -82,21 +58,22 @@ export class UploadElement extends TatorElement {
       }
 
       if (fileOk) {
-        this._messages.push({
-          "command": "addUpload",
+        function progressCallback(progress) {
+          this._store.setState({'uploadChunkProgress': progress});
+        }
+        return {
           "file": file,
           "gid": gid,
-          "username": this._username,
-          "projectId": this.getAttribute("project-id"),
-          "mediaTypeId": (isArchive ? -1 : mediaType.id),
+          "mediaType": (isArchive ? -1 : mediaType),
           "section": this._section,
-          "token": this._token,
           "isImage": isImage,
-          "isArchive": isArchive
-        });
-        return true;
+          "isArchive": isArchive,
+          "progressCallback": progressCallback.bind(this),
+          "abortController": this._abortController,
+        };
       }
     }
+    this._store.setState({uploadError: `${file.name} is not a valid file type for this project!`});
     return false;
   }
 
@@ -111,8 +88,8 @@ export class UploadElement extends TatorElement {
     // Send immediate notification of adding files.
     this.dispatchEvent(new Event("addingfiles", {composed: true}));
 
-    // Messages to send to service worker.
-    this._messages = [];
+    // Messages to send to store.
+    this._uploads = [];
 
     // Set a group ID on the upload.
     const gid = uuidv1();
@@ -131,12 +108,19 @@ export class UploadElement extends TatorElement {
     let numStarted = 0;
     let totalFiles = 0;
     let totalSize = 0;
+    this._abortController = new AbortController();
     if (typeof ev.dataTransfer === "undefined") {
       const files = ev.target.files;
       totalFiles = files.length;
       for (const file of files) {
         const added = this._checkFile(file, gid);
-        if (added) { numStarted++; } else { numSkipped++; }
+        if (added) {
+          this._uploads.push(added);
+          numStarted++;
+          totalSize += file.size;
+        } else {
+          numSkipped++;
+        }
       }
     } else {
       const items = await getAllFileEntries(ev.dataTransfer.items);
@@ -146,6 +130,7 @@ export class UploadElement extends TatorElement {
           item.file(file => {
             const added = this._checkFile(file, gid);
             if (added) {
+              this._uploads.push(added);
               numStarted++;
               totalSize += file.size;
             } else {
@@ -193,9 +178,33 @@ export class UploadElement extends TatorElement {
         detail: {numSkipped: numSkipped, numStarted: numStarted},
         composed: true
       }));
-      for (const msg of this._messages) {
-        window._uploader.postMessage(msg);
+      let promise = new Promise(resolve => resolve(true));
+      this._store.setState({
+        uploadTotalFiles: this._uploads.length,
+        uploadCancelled: false,
+      });
+      for (const [idx, msg] of this._uploads.entries()) {
+        promise = promise
+        .then(() => {
+          if (this._cancel) {
+            throw `Upload of ${msg.file.name} cancelled!`;
+          }
+          this._store.setState({
+            uploadFilesComplete: idx,
+            uploadChunkProgress: 0,
+            uploadFilename: msg.file.name,
+          });
+          return uploadMedia(this._api, msg.mediaType, msg.file, msg);
+        })
+        .then(() => {
+          this._store.setState({
+            uploadFilesComplete: idx + 1,
+          });
+        })
       }
+      promise.catch((error) => {
+        this._store.setState({uploadError: error.message});
+      });
     }
   }
 }

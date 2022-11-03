@@ -1,10 +1,10 @@
 #Helps to have a line like %sudo ALL=(ALL) NOPASSWD: /bin/systemctl
 
-CONTAINERS=postgis pgbouncer redis client gunicorn nginx pruner sizer
+CONTAINERS=ui postgis pgbouncer redis client gunicorn nginx pruner sizer
 
 OPERATIONS=reset logs bash
 
-IMAGES=graphql-image postgis-image client-image
+IMAGES=ui-image graphql-image postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
 
@@ -23,7 +23,7 @@ SYSTEM_IMAGE_REGISTRY=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/
 TATOR_PY_WHEEL_VERSION=$(shell python3 -c 'import json; a = json.load(open("scripts/packages/tator-py/config.json", "r")); print(a.get("packageVersion"))')
 TATOR_PY_WHEEL_FILE=scripts/packages/tator-py/dist/tator-$(TATOR_PY_WHEEL_VERSION)-py3-none-any.whl
 
-TATOR_JS_MODULE_FILE=scripts/packages/tator-js/pkg/dist/tator.min.js
+TATOR_JS_MODULE_FILE=scripts/packages/tator-js/pkg/src/index.js
 
 # default to dockerhub cvisionai organization
 ifeq ($(SYSTEM_IMAGE_REGISTRY),None)
@@ -102,7 +102,7 @@ _reset:
 	kubectl delete pods -l app=$(podname)
 
 _bash:
-	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/bash
+	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh
 
 _logs:
 	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
@@ -134,6 +134,9 @@ cluster-deps:
 cluster-install:
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml # No helm chart for this version yet
 	helm install --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
+	kubectl cp $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///'):/tator_online/ui/server/static /tmp/static
+	kubectl cp $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///'):/tator_online/ui/dist /tmp/static
+	kubectl cp /tmp/static $$(kubectl get pod -l "app=nginx" -o name | head -n 1 | sed 's/pod\///'):/ 
 
 cluster-upgrade: check-migration main/version.py clean_schema images .token/tator_online_$(GIT_VERSION)
 	helm upgrade --debug --atomic --timeout 60m0s --set gitRevision=$(GIT_VERSION) tator helm/tator
@@ -156,20 +159,9 @@ dashboard-token:
 	kubectl -n kube-system describe secret $$(kubectl -n kube-system get secret | grep tator-kubernetes-dashboard | awk '{print $$1}')
 
 # GIT-based diff for image generation
-# Available for both tator-backend and tator-image, change dep to ".token/tator_backend_$(GIT_VERSION)"
+# Available for tator-image, change dep to ".token/tator_online_$(GIT_VERSION)"
 # Will cause a rebuild on any dirty working tree OR if the image has been built with a token generated
 ifeq ($(shell git diff main | wc -l), 0)
-.token/tator_backend_$(GIT_VERSION):
-	@echo "No git changes detected"
-	$(MAKE) tator-backend
-else
-.PHONY: .token/tator_backend_$(GIT_VERSION)
-.token/tator_backend_$(GIT_VERSION):
-	@echo "Git changes detected"
-	$(MAKE) tator-backend
-endif
-
-ifeq ($(shell git diff | wc -l), 0)
 .token/tator_online_$(GIT_VERSION):
 	@echo "No git changes detected"
 	make tator-image
@@ -180,19 +172,17 @@ else
 	$(MAKE) tator-image
 endif
 
-.PHONY: tator-backend
-tator-backend: 
-	docker build --network host -t $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION) -f containers/tator/backend.dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION)
-	mkdir -p .token
-	touch .token/tator_backend_$(GIT_VERSION)
-
 .PHONY: tator-image
-tator-image: webpack
-	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/frontend.dockerfile . || exit 255
+tator-image:
+	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
 	touch .token/tator_online_$(GIT_VERSION)
+
+.PHONY: ui-image
+ui-image: webpack
+	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
+	docker push $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION)
 
 .PHONY: graphql-image
 graphql-image: doc/_build/schema.yaml
@@ -275,9 +265,7 @@ main/version.py:
 endif
 
 collect-static: webpack
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- rm -rf /tator_online/main/static
-	kubectl cp ui/dist $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///'):/tator_online/main/static
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 |sed 's/pod\///') -- python3 manage.py collectstatic --noinput
+	@scripts/collect-static.sh
 
 dev-push:
 	@scripts/dev-push.sh
@@ -352,9 +340,7 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 	rm -f scripts/packages/tator-js/tator-openapi-schema.yaml
 	cp doc/_build/schema.yaml scripts/packages/tator-js/.
 	cd scripts/packages/tator-js
-	rm -rf pkg
-	mkdir pkg
-	mkdir pkg/src
+	rm -rf pkg && mkdir pkg && mkdir pkg/src
 	./codegen.py tator-openapi-schema.yaml
 	docker run --rm \
 		-v $(shell pwd)/scripts/packages/tator-js:/pwd \
@@ -368,16 +354,12 @@ $(TATOR_JS_MODULE_FILE): doc/_build/schema.yaml
 		chmod -R 777 /pwd/pkg
 	cp -r examples pkg/examples
 	cp -r utils pkg/src/utils
-	cp webpack* pkg/.
 	cd pkg && npm install
-	npm install querystring webpack webpack-cli --save-dev
-	npx webpack --config webpack.prod.js
-	mv dist/tator.min.js .
-	npx webpack --config webpack.dev.js
-	mv tator.min.js dist/.
+	npm install -D @playwright/test \
+		isomorphic-fetch fetch-retry spark-md5 uuid querystring
 
 .PHONY: js-bindings
-js-bindings: .token/tator_backend_$(GIT_VERSION)
+js-bindings: .token/tator_online_$(GIT_VERSION)
 	make $(TATOR_JS_MODULE_FILE)
 
 .PHONY: r-docs
@@ -440,10 +422,10 @@ markdown-docs:
 
 
 # Only run if schema changes
-doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_backend_$(GIT_VERSION)
+doc/_build/schema.yaml: $(shell find main/schema/ -name "*.py") .token/tator_online_$(GIT_VERSION)
 	rm -fr doc/_build/schema.yaml
 	mkdir -p doc/_build
-	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_backend:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
+	docker run --rm -e DJANGO_SECRET_KEY=1337 -e ELASTICSEARCH_HOST=127.0.0.1 -e TATOR_DEBUG=false -e TATOR_USE_MIN_JS=false $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) python3 manage.py getschema > doc/_build/schema.yaml
 	sed -i "s/\^\@//g" doc/_build/schema.yaml
 
 # Hold over

@@ -1,8 +1,8 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector, devtools } from 'zustand/middleware';
-import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.js';
+import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
-const api = Utils.getApi();
+const api = getApi(window.localStorage.getItem('backend'));
 
 const getMap = new Map();
 getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
@@ -63,10 +63,12 @@ const store = create(subscribeWithSelector((set, get) => ({
       name: "idle",
       msg: "" // if Error this could trigger "toast" with message
    },
-   projectId: null,
+   projectId: Number(window.location.pathname.split('/')[1]),
    organizationId: null,
    deletePermission: false,
    isStaff: false,
+   user: null,
+   announcements: [],
 
    Project: {
       name: "Project",
@@ -204,6 +206,19 @@ const store = create(subscribeWithSelector((set, get) => ({
       if (!get()[type].init) await get().fetchType(type);
       const info = get()[type];
       return info.map.get(Number(id));
+   },
+
+   initHeader: async () => {
+    Promise.all([
+      api.whoami(),
+      api.getAnnouncementList(),
+    ])
+    .then((values) => {
+      set({
+        user: values[0],
+        announcements: values[1],
+      });
+    });
    },
 
    /* project */

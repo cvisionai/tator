@@ -87,13 +87,11 @@ export class MediaSection extends TatorElement {
     this._searchParams = new URLSearchParams();
     this._numFilesCount = 0;
     this._searchString = "";
-
-
     
     this._setCallbacks();
   }
 
-  init(project, section, username, token) {
+  init(project, section) {
     if (section === null) {
       this._sectionName = "All Media";
       this._upload.setAttribute("section", "");
@@ -109,8 +107,6 @@ export class MediaSection extends TatorElement {
     
     this._nameText.nodeValue = this._sectionName;
     this._upload.setAttribute("project-id", project);
-    this._upload.setAttribute("username", username);
-    this._upload.setAttribute("token", token);
     this._more.section = section;
 
     this._start = 0;

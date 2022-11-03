@@ -47,36 +47,14 @@ export class TatorPage extends TatorElement {
 
   connectedCallback() {
     this._browserCheck.init(this._shadow);
-    fetch("/rest/Announcements", {
-      method: "GET",
-      ...sameOriginCredentials(),
-    })
-    .then(response => response.json())
-    .then(announcements => {
-      if (announcements.length > 0) {
-        this._announcements.init(announcements);
-        this._announcements.setAttribute("is-open", "");
-        this.setAttribute("has-open-modal", "");
-        
-      }
-    });
   }
 
   static get observedAttributes() {
-    return ["username", "email", "has-open-modal"];
+    return ["has-open-modal"];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
-      case "username":
-        this._header.setAttribute("username", newValue);
-        if (newValue == 'Guest Account') {
-          this._nav.disableAccountSettings();
-        }
-        break;
-      case "email":
-        this._header.setAttribute("email", newValue);
-        break;
       case "has-open-modal":
         if (newValue === null) {
           this._dimmer.classList.remove("has-open-modal");
@@ -84,6 +62,22 @@ export class TatorPage extends TatorElement {
           this._dimmer.classList.add("has-open-modal");
         }
         break;
+    }
+  }
+
+  _setUser(user) {
+    this._header.setAttribute("username", `${user.first_name} ${user.last_name}`);
+    if (user.name == 'Guest Account') {
+      this._nav.disableAccountSettings();
+    }
+    this._header.setAttribute("email", user.email);
+  }
+
+  _setAnnouncements(announcements) {
+    if (announcements.length > 0) {
+      this._announcements.init(announcements);
+      this._announcements.setAttribute("is-open", "");
+      this.setAttribute("has-open-modal", "");
     }
   }
 }
