@@ -233,11 +233,14 @@ class AttributeTypeListAPI(BaseListView):
 
                 if mod_type == "update":
                     # An update is a combination of the new and old states
-                    new_attribute_type = old_attribute_type.update(new_attribute_type)
+                    final_attribute_type = old_attribute_type.copy()
+                    final_attribute_type.update(new_attribute_type)
+                else:
+                    final_attribute_type = new_attribute_type
 
                 messages.append(
                     f"Attribute '{new_name}' mutated from:\n{pformat(old_attribute_type)}\nto:\n"
-                    f"{pformat(new_attribute_type)}"
+                    f"{pformat(final_attribute_type)}"
                 )
 
         return {"message": "\n".join(messages)}
