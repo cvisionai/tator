@@ -6,6 +6,7 @@ import tempfile
 import inspect
 import io
 import pytesseract
+import pytest
 import numpy as np
 from pprint import pprint
 
@@ -72,6 +73,7 @@ def _wait_for_frame(canvas, frame, timeout=30):
     page.wait_for_timeout(1000)
   assert canvas_frame == frame, f"canvas={canvas_frame}, expected={frame}"
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_accuracy(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -135,6 +137,7 @@ def test_playback_accuracy(page_factory, project, count_test):
 
 
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_accuracy_multi(page_factory, project, multi_count):
   print("[Multi] Going to annotation view...(Accuracy)")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -185,6 +188,7 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
   _wait_for_frame(canvas[1], current_frame)
   page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_count):
   print("[Multi] Going to annotation view...(Accuracy)")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -294,6 +298,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
   _wait_for_color(page, canvas, 0, timeout=30, name='seek / pause')
   page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_buffer_usage_multi(page_factory, project, multi_rgb):
   # Tests play, scrub, and seek buffer usage
   print("[Multi] Going to annotation view...")
@@ -343,6 +348,7 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_schedule(page_factory, project, count_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -427,6 +433,7 @@ def test_playback_schedule(page_factory, project, count_test):
   assert factor == 4
   page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_playback_schedule_1fps(page_factory, project, count_1fps_test):
   print("[Video] Going to annotation view...")
   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
