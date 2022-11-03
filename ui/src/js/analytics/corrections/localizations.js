@@ -107,6 +107,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = project.id;
+    console.log("Corrections this._projectId" + this._projectId);
     this._modelData = new TatorData(this.projectId);
 
     // Init after modal is defined
