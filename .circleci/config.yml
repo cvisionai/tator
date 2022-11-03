@@ -172,7 +172,7 @@ jobs:
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb;
           sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb;
           sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr;
-          pip3 install playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python;
+          pip3 install playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python pytest-rerunfailures;
           export PATH=$PATH:$HOME/.local/bin:/snap/bin;
           playwright install;
           scp -r lightsail:/tmp/tator_py_whl/tator*.whl /tmp;
@@ -185,7 +185,7 @@ jobs:
         name: Front end tests
         command: |
           mkdir /tmp/videos;
-          pytest test --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
+          pytest test --slowmo 100 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s;
     - store_artifacts:
         path: /tmp/videos
         destination: videos

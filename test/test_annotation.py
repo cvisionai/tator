@@ -89,6 +89,7 @@ def common_annotation(page, canvas, bias=0):
         page.wait_for_timeout(5000)
 
 
+@pytest.mark.flaky(reruns=2)
 def test_video_annotation(page_factory, project, video):
     print("[Video] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -101,6 +102,7 @@ def test_video_annotation(page_factory, project, video):
     common_annotation(page, canvas)
     page.close()
     
+@pytest.mark.flaky(reruns=2)
 def test_image_annotation(page_factory, project, image):
     print("[Image] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
@@ -112,6 +114,7 @@ def test_image_annotation(page_factory, project, image):
     common_annotation(page, canvas)
     page.close()
 
+@pytest.mark.flaky(reruns=2)
 def test_multi_annotation(page_factory, project, multi):
     print("[Multi] Going to annotation view...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
