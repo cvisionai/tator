@@ -6,13 +6,13 @@ import { svgNamespace } from "../components/tator-element.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
 import { FilterData } from "../components/filter-data.js";
 import { v1 as uuidv1 } from "uuid";
+import { store } from "./store.js";
+import { api } from "./store.js";
 import Gear from "../../images/svg/gear.svg";
 
 export class ProjectDetail extends TatorPage {
   constructor() {
     super();
-
-    window._uploader = new Worker(new URL("../tasks/upload-worker.js", import.meta.url));
 
     // Success and warning Utility hooks
     const utilitiesDiv = document.createElement("div");
@@ -34,7 +34,6 @@ export class ProjectDetail extends TatorPage {
     // Wrapper to allow r.side bar to slide into left
     this.mainWrapper = document.createElement("div");
     this.mainWrapper.setAttribute("class", "analysis--main--wrapper col-12 d-flex");
-    // this.mainWrapper.setAttribute("style", "padding-left: 25%;");
     this._shadow.appendChild(this.mainWrapper);
 
     // Original main element
@@ -43,13 +42,6 @@ export class ProjectDetail extends TatorPage {
     this.main.setAttribute("style", "padding-left: 390px;");
     this.mainWrapper.appendChild(this.main);
 
-    // // Panel top bar
-    // const sectionContainer = document.createElement("entity-panel-container");
-    // sectionContainer.setAttribute("class", "");
-    // this.main.appendChild(sectionContainer);
-
-
-    //
     /* LEFT*** Navigation Pane - Project Detail Viewer */
     this.aside = document.createElement("aside");
     this.aside.setAttribute("class", "entity-panel--container-left col-3"); //slide-close 
@@ -63,9 +55,6 @@ export class ProjectDetail extends TatorPage {
     //
     const section = document.createElement("section");
     section.setAttribute("class", "sections-wrap py-6 col-3 px-5 text-gray"); // 
-
-    // Content for panel is appended in panel code
-    // this._panelContainer._panelTop._shadow.appendChild(section);
 
     const folderHeader = document.createElement("div");
     folderHeader.setAttribute("class", "d-flex flex-justify-between flex-items-center py-4");
@@ -207,8 +196,6 @@ export class ProjectDetail extends TatorPage {
 
     // Hidden search input
     this._search = document.createElement("project-search");
-    // subheader.appendChild(this._search);
-
 
     const filterdiv = document.createElement("div");
     filterdiv.setAttribute("class", "mt-3");
@@ -226,15 +213,9 @@ export class ProjectDetail extends TatorPage {
 
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
-    // this._bulkEdit._messageBar_top.hidden = false;
     this._bulkEdit._selectionPanel.hidden = true;
     this._shadow.appendChild(this._bulkEdit);
     filterdiv.appendChild(this._bulkEdit._selectionPanel);
-
-
-    // this._bulkEdit.addEventListener("multi-enabled", () => {
-    //   // console.log("multi-enabled heard in project detail");
-    // });
 
     // Media section
     this._mediaSection = document.createElement("media-section");
@@ -293,8 +274,8 @@ export class ProjectDetail extends TatorPage {
     const newSectionDialog = document.createElement("name-dialog");
     this._projects.appendChild(newSectionDialog);
 
-    const uploadDialog = document.createElement("upload-dialog");
-    this._projects.appendChild(uploadDialog);
+    this._uploadDialog = document.createElement("upload-dialog");
+    this._projects.appendChild(this._uploadDialog);
 
     const attachmentDialog = document.createElement("attachment-dialog");
     attachmentDialog._header.classList.add("fixed-height-scroll");
@@ -303,14 +284,16 @@ export class ProjectDetail extends TatorPage {
     this._activityNav = document.createElement("activity-nav");
     this.main.appendChild(this._activityNav);
 
-    this._leaveConfirmOk = false;
-
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
     this._shadow.appendChild(this.loading.getImg())
 
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+
     window.addEventListener("beforeunload", evt => {
-      if (this._leaveConfirmOk) {
+      if (this._uploadDialog.hasAttribute("is-open")) {
         evt.preventDefault();
         evt.returnValue = '';
         window.alert("Uploads are in progress. Still leave?");
@@ -470,32 +453,17 @@ export class ProjectDetail extends TatorPage {
     });
 
     this._mediaSection.addEventListener("filesadded", evt => {
-      this._leaveConfirmOk = true;
-      uploadDialog.setTotalFiles(evt.detail.numStarted);
-      uploadDialog.setAttribute("is-open", "");
+      this._uploadDialog.setAttribute("is-open", "");
       this.setAttribute("has-open-modal", "");
     });
 
-    uploadDialog.addEventListener("cancel", evt => {
-      window._uploader.postMessage({ command: "cancelUploads" });
+    this._uploadDialog.addEventListener("cancel", evt => {
+      store.getState().uploadCancel();
       this.removeAttribute("has-open-modal");
     });
 
-    uploadDialog.addEventListener("close", evt => {
+    this._uploadDialog.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal");
-    });
-
-    window._uploader.addEventListener("message", evt => {
-      const msg = evt.data;
-      if (msg.command == "uploadProgress") {
-        uploadDialog.setProgress(msg.percent, `Uploading ${msg.filename}`);
-      } else if (msg.command == "uploadDone") {
-        uploadDialog.uploadFinished();
-      } else if (msg.command == "uploadFailed") {
-        uploadDialog.addError(`Failed to upload ${msg.filename}`);
-      } else if (msg.command == "allUploadsDone") {
-        this._leaveConfirmOk = false;
-      }
     });
 
     this._mediaSection.addEventListener("attachments", evt => {
@@ -626,11 +594,17 @@ export class ProjectDetail extends TatorPage {
     this.modalNotify.addEventListener("close", this.hideDimmer.bind(this));
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
-    /*  */
 
     // State of chosen labels for gallery
     this.cardLabelsChosenByType = {};
     this.mediaTypesMap = new Map();
+  }
+
+  connectedCallback() {
+    this.setAttribute("project-id", Number(window.location.pathname.split('/')[1]));
+    // Initialize store data
+    store.getState().init();
+    this._uploadDialog.init(store);
   }
 
   static get observedAttributes() {
@@ -989,8 +963,6 @@ export class ProjectDetail extends TatorPage {
         this._analyticsButton.setAttribute("project-id", newValue);
         this._init();
         break;
-      case "token":
-        break;
     }
   }
 
@@ -1023,7 +995,7 @@ export class ProjectDetail extends TatorPage {
     }
     window.history.replaceState(`${this._projectText.textContent}|${sectionName}`, "Filter", newUrl);
 
-    await this._mediaSection.init(projectId, section, this.getAttribute("username"), this.getAttribute("token"));
+    await this._mediaSection.init(projectId, section);
 
     if (params.has("page") && params.has("pagesize") && !clearPage) {
       let pageSize = Number(params.get("pagesize"));

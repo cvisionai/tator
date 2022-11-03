@@ -1,4 +1,3 @@
-{% load static %}
 <!DOCTYPE html>
 <html>
   <head>
@@ -11,8 +10,15 @@
     <div id="swagger-ui"></div>
     <script crossorigin="anonymous" src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
     <script>
+    function getCookie(name) {
+      let value = "; " + document.cookie;
+      let parts = value.split("; " + name + "=");
+      if (parts.length == 2) {
+        return parts.pop().split(";").shift();
+      }
+    }
     const ui = SwaggerUIBundle({
-        url: "{% url schema_url %}",
+        url: "/schema/",
         dom_id: '#swagger-ui',
         presets: [
           SwaggerUIBundle.presets.apis,
@@ -20,7 +26,7 @@
         ],
         layout: "BaseLayout",
         requestInterceptor: (request) => {
-          request.headers['X-CSRFToken'] = "{{ csrf_token }}"
+          request.headers['X-CSRFToken'] = getCookie('csrftoken');
           return request;
         }
       })

@@ -2,6 +2,7 @@ import { TatorPage } from "../../components/tator-page.js";
 import { TatorData } from "../../util/tator-data.js";
 import { LoadingSpinner } from "../../components/loading-spinner.js";
 import { FilterData } from "../../components/filter-data.js";
+import { store } from "./store.js";
 
 /**
  * Page that displays a grid view of selected annotations
@@ -83,6 +84,12 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     // Use in panel navigation
     this._panelContainer._panelTop._navigation.init();
 
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.project, this._init.bind(this));
+
+    //
     /* Other */
     // Class to hide and showing loading spinner
     this.loading = new LoadingSpinner();
@@ -95,9 +102,11 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
   }
 
-  async _init() {
+  async _init(project) {
+    this._breadcrumbs.setAttribute("project-name", project.name);
+
     // Database interface. This should only be used by the viewModel/interface code.
-    this.projectId = Number(this.getAttribute("project-id"));
+    this.projectId = project.id;
     this._modelData = new TatorData(this.projectId);
 
     // Init after modal is defined
@@ -191,20 +200,18 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
   }
 
+  connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
+    // Initialize store data
+    store.getState().init();
+  }
+
   attributeChangedCallback(name, oldValue, newValue) {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "project-name":
-        this._breadcrumbs.setAttribute("project-name", newValue);
-        break;
-      case "project-id":
-        this._init();
-        break;
-    }
   }
 
   static get observedAttributes() {
-    return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+    return TatorPage.observedAttributes;
   }
 
   _cardGallery({ conditions, pagination, cache }) {

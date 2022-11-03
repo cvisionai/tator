@@ -1,5 +1,6 @@
 import { TatorPage } from "../../components/tator-page.js";
 import { SvgDefinition } from "../../components/svg-definitions/all-svg.js";
+import { store } from "./store.js";
 
 export class AnalyticsPortal extends TatorPage {
   constructor() {
@@ -26,7 +27,12 @@ export class AnalyticsPortal extends TatorPage {
 
     this.main = document.createElement("main");
     this.main.setAttribute("class", "layout-max d-flex flex-justify-center");
-    this._shadow.appendChild(this.main);;
+    this._shadow.appendChild(this.main);
+
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.project, this._updateProject.bind(this));
 
     // Annotations
     const localizationsBox = this._getDashboardBox({
@@ -35,16 +41,6 @@ export class AnalyticsPortal extends TatorPage {
         iconName: "grid-icon"
       });
     this.main.appendChild(localizationsBox);
-
-    // Collections
-    /*
-    const collectionsBox = this._getDashboardBox({
-        name : "Collections",
-        href : `/${this.projectId}/analytics/collections`,
-        iconName: "track-icon"
-      });
-    this.main.appendChild(collectionsBox);
-    */
 
     // Corrections
     const correctionsBox = this._getDashboardBox({
@@ -71,20 +67,14 @@ export class AnalyticsPortal extends TatorPage {
     this.main.appendChild(filesBox);
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "project-name":
-        this._breadcrumbs.setAttribute("project-name", newValue);
-        break;
-      case "project-id":
-        //this._init();
-        break;
-    }
+  connectedCallback() {
+    TatorPage.prototype.connectedCallback.call(this);
+    // Initialize store data
+    store.getState().init();
   }
 
-  static get observedAttributes() {
-    return ["project-name", "project-id"].concat(TatorPage.observedAttributes);
+  _updateProject(project) {
+    this._breadcrumbs.setAttribute("project-name", project.name);
   }
 
   _getDashboardBox({name, href, iconName, disabled}={}){

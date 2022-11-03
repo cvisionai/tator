@@ -17,6 +17,8 @@ export class ProjectsDashboard extends TatorPage {
     this._modalNotify = this._shadow.getElementById("modal-notify");
 
     // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
     store.subscribe(state => state.projects, this._updateProjects.bind(this));
     store.subscribe(state => state.organizations, this._updateOrganizations.bind(this));
 
@@ -65,8 +67,7 @@ export class ProjectsDashboard extends TatorPage {
   connectedCallback() {
     TatorPage.prototype.connectedCallback.call(this);
     // Initialize store data
-    store.getState().fetchProjects();
-    store.getState().fetchOrganizations();
+    store.getState().init();
   }
 
   static get observedAttributes() {

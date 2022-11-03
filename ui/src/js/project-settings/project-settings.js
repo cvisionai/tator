@@ -34,6 +34,8 @@ export class ProjectSettings extends TatorPage {
 
   connectedCallback() {
     /* Update display for any change in data (#todo Project is different) */
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
     store.subscribe(state => state.Project, this.updateProject.bind(this));
     store.subscribe(state => state.status, this.handleStatusChange.bind(this));
     
@@ -80,8 +82,10 @@ export class ProjectSettings extends TatorPage {
    * Run when project-id is set to run fetch the page content.
   */
   async _init() {
+    store.getState().initHeader();
+
     // Project id
-    this.projectId = this.getAttribute("project-id");
+    this.projectId = store.getState().projectId;
   
     // This just happens once and unlike getType, it also sets project info
     await store.getState().setProjectData(this.projectId);

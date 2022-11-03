@@ -1,8 +1,8 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.min.js';
+import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
-const api = Utils.getApi();
+const api = getApi(window.localStorage.getItem('backend'));
 console.log(api);
 
 async function configureImageClassification(project) {
@@ -106,13 +106,25 @@ async function configureActivityRecognition(project) {
 }
 
 const store = create(subscribeWithSelector((set, get) => ({
+  user: null,
+  announcements: [],
   projects: [],
   organizations: [],
-  fetchProjects: async () => {
-    set({ projects: await api.getProjectList() });
-  },
-  fetchOrganizations: async () => {
-    set({ organizations: await api.getOrganizationList() });
+  init: async () => {
+    Promise.all([
+      api.whoami(),
+      api.getAnnouncementList(),
+      api.getProjectList(),
+      api.getOrganizationList(),
+    ])
+    .then((values) => {
+      set({
+        user: values[0],
+        announcements: values[1],
+        projects: values[2],
+        organizations: values[3],
+      });
+    });
   },
   addProject: async (projectSpec, preset) => {
     let response = await api.createProject(projectSpec);

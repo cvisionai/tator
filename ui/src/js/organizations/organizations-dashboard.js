@@ -1,5 +1,6 @@
 import { TatorPage } from "../components/tator-page.js";
 import { getCookie } from "../util/get-cookie.js";
+import { store } from "./store.js";
 
 export class OrganizationsDashboard extends TatorPage {
   constructor() {
@@ -42,6 +43,10 @@ export class OrganizationsDashboard extends TatorPage {
 
     this._modalNotify = document.createElement("modal-notify");
     main.appendChild(this._modalNotify);
+
+    // Create store subscriptions
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
 
     this._removeCallback = evt => {
       deleteOrganization.setAttribute("organization-id", evt.detail.organizationId);
@@ -87,6 +92,7 @@ export class OrganizationsDashboard extends TatorPage {
   }
 
   connectedCallback() {
+    store.getState().init();
     TatorPage.prototype.connectedCallback.call(this);
     // Get organizations
     fetch("/rest/Organizations", {
@@ -104,20 +110,6 @@ export class OrganizationsDashboard extends TatorPage {
         this._insertOrganizationSummary(organization);
       }
       this._newOrganizationDialog.organizations = organizations;
-    })
-
-    // Get organizations
-    fetch("/rest/Organizations", {
-      method: "GET",
-      credentials: "same-origin",
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-      },
-    })
-    .then(response => response.json())
-    .then(organizations => {
       const adminOrganizations = organizations.filter(org => org.permission == "Admin");
       if (adminOrganizations.length > 0) {
         this._newOrganizationDialog.organizations = adminOrganizations;

@@ -5,7 +5,9 @@ fields = SimpleNamespace(
     username='username',
     first_name='first_name',
     last_name='last_name',
-    email='email')
+    email='email',
+    is_staff='is_staff',
+)
 
 user_properties = {
     fields.username: {
@@ -65,6 +67,10 @@ user = {
         fields.id: {
             'type': 'integer',
             'description': 'Unique integer identifying a user.',
+        },
+        fields.is_staff: {
+            'type': 'boolean',
+            'description': 'Whether this user is a system administrator.',
         },
         **user_properties,
     },

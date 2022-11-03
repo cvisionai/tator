@@ -1,9 +1,9 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector, devtools } from 'zustand/middleware';
-import { Utils } from '../../../../scripts/packages/tator-js/pkg/dist/tator.js';
+import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
-const api = Utils.getApi();
-// console.log(api);
+const api = getApi(window.localStorage.getItem('backend'));
+const organizationId = Number(window.location.pathname.split('/')[1]);
 
 const getMap = new Map();
 getMap.set("Project", api.getProjectWithHttpInfo.bind(api))
@@ -69,9 +69,24 @@ const store = create(subscribeWithSelector((set, get) => ({
       //
    },
    projectId: null,
-   organizationId: null,
+   organization: null,
    deletePermission: false,
    isStaff: false,
+   init: async () => {
+    Promise.all([
+      api.whoami(),
+      api.getAnnouncementList(),
+      api.getOrganization(organizationId),
+    ])
+    .then((values) => {
+      set({
+        user: values[0],
+        announcements: values[1],
+        organization: values[2],
+        organizationId: values[2].id,
+      });
+    });
+   },
 
 })));
 

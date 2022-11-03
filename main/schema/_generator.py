@@ -188,7 +188,7 @@ class CustomGenerator(SchemaGenerator):
                     'in': 'header',
                     'name': 'Authorization',
                 },
-                'CookieAuth': {
+                'SessionAuth': {
                     'type': 'apiKey',
                     'in': 'header',
                     'name': 'X-CSRFToken',
@@ -196,7 +196,7 @@ class CustomGenerator(SchemaGenerator):
             }
             schema['security'] = [
                 {'TokenAuth': []},
-                {'CookieAuth': []},
+                {'SessionAuth': []},
             ]
 
             # Set server entry.

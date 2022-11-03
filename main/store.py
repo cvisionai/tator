@@ -127,11 +127,8 @@ class TatorStorage(ABC):
         try:
             return self._head_object(path)
         except:
-            msg = f"Failed to call `head_object` on path '{path}'"
-            if quiet:
-                logger.debug(msg, exc_info=True)
-            else:
-                logger.warning(msg, exc_info=True)
+            if not quiet:
+                logger.warning(f"Failed to call `head_object` on path '{path}'", exc_info=True)
 
         return {}
 
