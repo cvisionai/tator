@@ -1,6 +1,6 @@
 import os
 import inspect
-
+import pytest
 
 from ._common import print_page_error
 
@@ -394,6 +394,7 @@ def test_settings_appletTests(page_factory, project, base_url, html_file):
     print(f"Successfully registered Applet.")
 
 
+@pytest.mark.flaky(reruns=2)
 def test_settings_attributeTests(page_factory, project, base_url):
     print("Attribute Settings...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
