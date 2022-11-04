@@ -14,6 +14,31 @@ from ._common import print_page_error
 # Confirm the count
 def test_basic(request, page_factory, project, image, video): #image 
    print("Loc and Cor Gallery tests...")
+
+   print("Adding a new attr to filter on later.")
+   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+   page.goto(f"/{project}/project-settings", wait_until='networkidle')
+   page.on("pageerror", print_page_error)
+
+   # All Attr types
+   dtype = "string"
+   attr_name = "Reviewer"
+   loc_type_in_view = "Test Boxes"
+
+   # Add Attribute Types
+   page.click('#sub-nav--heading-button[type="LocalizationType"]')
+   page.wait_for_selector(f'text="{loc_type_in_view}"')
+   page.click(f'text="{loc_type_in_view}"')
+   formSelector = 'type-form-container[form="localization-edit"]'     
+   page.click(f'{formSelector} .add-new-in-form')
+   page.wait_for_selector('modal-dialog form')
+   page.fill('modal-dialog text-input[name="Name"] input', attr_name)
+   page.select_option(f'modal-dialog enum-input[name="Data Type"] select', dtype)
+   page.click('modal-dialog bool-input[name="Visible"] label[for="on"]')
+   page.click('modal-dialog input[type="submit"]')
+   page.wait_for_selector(f'text="New attribute type \'{attr_name}\' added"')
+
+
    print("Going to annotation view to create annotations")
    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
@@ -28,16 +53,16 @@ def test_basic(request, page_factory, project, image, video): #image
    canvas_center_x = canvas_box['x'] + canvas_box['width'] / 2
    canvas_center_y = canvas_box['y'] + canvas_box['height'] / 2
    print("Drawing boxes with different enum values...")
-   box_info = [((-200, -50), 'Test Choice 1'),
-                ((-50, -50), 'Test Choice 2'),
-                ((-40, -40), 'Test Choice 2'),
-                ((100, -50), 'Test Choice 3'),
-                ((100, -60), 'Test Choice 3'),
-                ((90, -50), 'Test Choice 3'),
-                ((20, -20), 'Test Choice 3'),
-                ((-30, -10), 'Test Choice 3')]
+   box_info = [((-200, -50), 'String1'),
+                ((-50, -50), 'String2'),
+                ((-40, -40), 'String2'),
+                ((100, -50), 'String3'),
+                ((100, -60), 'String3'),
+                ((90, -50), 'String3'),
+                ((20, -20), 'String3'),
+                ((-30, -10), 'String3')]
    
-   for idx, (start, enum_value) in enumerate(box_info):
+   for idx, (start, test_value) in enumerate(box_info):
       page.click('box-button:not(.disabled)')
       x, y = start
       x += canvas_center_x
@@ -54,70 +79,24 @@ def test_basic(request, page_factory, project, image, video): #image
       page.mouse.up()
       page.wait_for_selector('save-dialog.is-open')
       save_dialog = page.query_selector('save-dialog.is-open')
-      enum_input = save_dialog.query_selector('enum-input[name="Test Enum"]')
-      enum_input.query_selector('select').select_option(enum_value)
+      test_input = save_dialog.query_selector(f'text-input[name="{attr_name}"] input')
+      test_input.fill(test_value)
       save_dialog.query_selector('text="Save"').click()
       light = page.query_selector('#tator-success-light')
       light.wait_for_element_state('visible')
       light.wait_for_element_state('hidden')
-   
-   # Video annotations
-   print("[Video] Going to annotation view...")
-   page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-   page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation decent screen
-   page.goto(f"/{project}/annotation/{video}", wait_until='networkidle')
-   page.on("pageerror", print_page_error)
-   page.wait_for_selector('video-canvas')
-   canvas = page.query_selector('video-canvas')
-   page.wait_for_selector('play-button:not(.disabled)')
-   canvas_box = canvas.bounding_box()
-   print(f"Canvas info: {canvas_box}")
-   canvas_center_x = canvas_box['x'] + canvas_box['width'] / 2
-   canvas_center_y = canvas_box['y'] + canvas_box['height'] / 2
-   print("Drawing boxes with different enum values...")
-   box_info = [((-200, -50), 'Test Choice 1'),
-                ((-50, -50), 'Test Choice 2'),
-                ((-40, -40), 'Test Choice 2'),
-                ((100, -50), 'Test Choice 3'),
-                ((100, -60), 'Test Choice 3'),
-                ((90, -50), 'Test Choice 3'),
-                ((20, -20), 'Test Choice 3'),
-                ((-30, -10), 'Test Choice 3')]
-   
-   for idx, (start, enum_value) in enumerate(box_info):
-      page.click('box-button:not(.disabled)')
-      x, y = start
-      x += canvas_center_x
-      y += canvas_center_y
-      print(f"Create Box {x},{y}")
-      width = 100
-      height = 100
-      page.mouse.move(x, y, steps=50)
-      page.wait_for_timeout(1000)
-      page.mouse.down()
-      page.wait_for_timeout(1000)
-      page.mouse.move(x + width, y + height, steps=50)
-      page.wait_for_timeout(1000)
-      page.mouse.up()
-      page.wait_for_selector('save-dialog.is-open')
-      save_dialog = page.query_selector('save-dialog.is-open')
-      enum_input = save_dialog.query_selector('enum-input[name="Test Enum"]')
-      enum_input.query_selector('select').select_option(enum_value)
-      save_dialog.query_selector('text="Save"').click()
-      light = page.query_selector('#tator-success-light')
-      light.wait_for_element_state('visible')
-      light.wait_for_element_state('hidden')
-   
 
+   # TODO expand to video, and multi annotations?
 
-
-
-   # 
+   # Go to gallery and try filtering on Reviewer Attr
    print("Going to localizations gallery")
    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
    page.goto(f"/{project}/analytics/localizations", wait_until='networkidle')
    
+   # Get all the loc on page
+   page.select_option('.pagination select.form-select', value="100")
+   page.wait_for_timeout(5000)
 
    # confirm count
    cards = page.query_selector_all('.enitity-gallery entity-card[style="display: block;"]')
@@ -128,12 +107,146 @@ def test_basic(request, page_factory, project, image, video): #image
    page.wait_for_selector('text="Localization Labels"')
    page.query_selector('text="Localization Labels"').click()
 
-   attribute_selected_name = "Test Enum"
+   attribute_selected_name = attr_name
    checkboxes = page.query_selector_all(f'.entity-gallery-labels .entity-gallery-labels--checkbox-div checkbox-input[name="{attribute_selected_name}"]')
    
    print(f'Label panel is open: found {len(checkboxes)} labels with this name {attribute_selected_name}....')
-   checkboxes[0].click()  # for images
-   checkboxes[2].click()  # for video
+   checkboxes[0].click()  # for Box loc type
    
    page.query_selector('.enitity-gallery__labels-div nav-close').click()
+   page.wait_for_timeout(5000)
 
+   # Count results by attr value -- should be 1,2,5
+   # How many are String1
+   choice_one_text = 'String1'
+   choice_ones = page.query_selector_all(f'text=": {choice_one_text}"')
+   print(f'Text with "String1": found {len(choice_ones)}')
+
+   # How many are String2
+   choice_two_text = 'String2'
+   choice_twos = page.query_selector_all(f'text=": {choice_two_text}"')
+   print(f'Text with "String2": found {len(choice_twos)}')
+
+   # How many are String3
+   choice_three_text = 'String3'
+   choice_threes = page.query_selector_all(f'text=": {choice_three_text}"')
+   print(f'Text with "String3": found {len(choice_threes)}')
+
+   # Filter test
+   print("Start: Test Filtering") 
+   page.click('text="Filter"')
+   page.wait_for_selector('filter-condition-group button.btn.btn-outline.btn-small')
+   page.click('filter-condition-group button.btn.btn-outline.btn-small')
+
+   page.wait_for_selector('enum-input[name="Category"]')
+   page.select_option('enum-input[name="Category"] select', value="Annotation")
+
+   page.wait_for_selector('enum-input[name="Field"]')
+   page.select_option('enum-input[name="Field"] select', value=attr_name)
+
+   page.wait_for_selector('enum-input[name="Modifier"]')
+   page.select_option('enum-input[name="Modifier"] select', value="==")
+
+   page.wait_for_selector('text-input[name="Value"] input')
+   page.fill('text-input[name="Value"] input', choice_three_text)
+
+   filterGroupButtons = page.query_selector_all('.modal__footer button')
+   filterGroupButtons[0].click()
+
+   page.wait_for_selector('entity-card[style="display: block;"]')
+   page.wait_for_timeout(5000)
+
+   cards = page.query_selector_all('entity-card[style="display: block;"]')
+   cardLength = len(cards)
+   print(f"Cards length after search {cardLength} == 5")
+   assert cardLength == 5
+
+   # Repeat check for other attr -- should be 0,0,5
+   # How many are String1
+   choice_one_text = 'String1'
+   choice_ones = page.query_selector_all(f'text=": {choice_one_text}"')
+   print(f'Text with "String1": found {len(choice_ones)}')
+
+   # How many are String2
+   choice_two_text = 'String2'
+   choice_twos = page.query_selector_all(f'text=": {choice_two_text}"')
+   print(f'Text with "String2": found {len(choice_twos)}')
+
+   # How many are String3
+   choice_three_text = 'String3'
+   choice_threes = page.query_selector_all(f'text=": {choice_three_text}"')
+   print(f'Text with "String3": found {len(choice_threes)}')
+
+
+   # Go to corrections gallery
+   # Check filter is same / labels are stills shown
+
+   page.click('bulk-correct-button button')
+   page.wait_for_timeout(5000)
+   
+   # Repeat check for other attr -- should be 0,0,5
+   cards = page.query_selector_all('entity-card[style="display: block;"]')
+   cardLength = len(cards)
+   print(f"Cards length after search {cardLength} == 5")
+   assert cardLength == 5
+
+   
+   # How many are String1
+   choice_one_text = 'String1'
+   choice_ones = page.query_selector_all(f'text=": {choice_one_text}"')
+   print(f'Text with "String1": found {len(choice_ones)}')
+
+   # How many are String2
+   choice_two_text = 'String2'
+   choice_twos = page.query_selector_all(f'text=": {choice_two_text}"')
+   print(f'Text with "String2": found {len(choice_twos)}')
+
+   # How many are String3
+   choice_three_text = 'String3'
+   choice_threes = page.query_selector_all(f'text=": {choice_three_text}"')
+   print(f'Text with "String3": found {len(choice_threes)}')
+
+   # Did label selection also preselect attributes?
+   ## There should be one input checked 
+   selected = page.query_selector_all('.bulk-edit-attr-choices_bulk-edit input:checked')
+   print(f'Assert selected inputs {len(selected)} == Checked count 1')
+   assert len(selected) == 1
+
+   # Select 2
+   cards[1].click()
+   cards[3].click()
+   choice_four_text = 'String4'
+   page.fill('text-input[name="Reviewer"] input', choice_four_text)
+   page.click('.bulk-edit-submit-button')
+   page.wait_for_timeout(5000)
+
+   page.wait_for_selector('modal-dialog .save-confirmation')
+   page.click('modal-dialog .save-confirmation')
+   page.wait_for_timeout(5000)
+
+   # page.wait_for_selector(f'text=": {choice_four_text}"')
+   choice_fours = page.query_selector_all(f'text=": {choice_four_text}"')
+   print(f'Text with "String4": found {len(choice_fours)}')
+
+   cards = page.query_selector_all('entity-card[style="display: block;"]')
+   cardLength = len(cards)
+   print(f"Cards length after edit {cardLength} == 5")
+   assert cardLength == 5
+
+   # Now refilter it should go away....
+   print("Re-Apply Filter") 
+   page.click('text="Filter"')
+   page.wait_for_selector('enum-input[name="Category"]')
+   filterGroupButtons = page.query_selector_all('.modal__footer button')
+   filterGroupButtons[0].click()
+
+   page.wait_for_selector('entity-card[style="display: block;"]')
+   page.wait_for_timeout(5000)
+
+   cards = page.query_selector_all('entity-card[style="display: block;"]')
+   cardLength = len(cards)
+   print(f"Cards length after re-filter {cardLength} == 3")
+   assert cardLength == 3
+
+   choice_fours = page.query_selector_all(f'text=": {choice_four_text}"')
+   print(f'Text with "String4": (should be 0) found {len(choice_fours)}')
