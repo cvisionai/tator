@@ -140,7 +140,7 @@ jobs:
           ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
           ssh lightsail 'sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
           ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
-          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends sshfs;
+          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install sshfs;
     - run:
         name: Install Tator
         command: |
@@ -188,7 +188,8 @@ jobs:
         name: Front end tests
         command: |
           mkdir -p /tmp/videos;
-          sudo sshfs -o allow_other,default_permissions lightsail:/tmp/videos /tmp/videos
+          ssh lightsail 'mkdir -p /tmp/videos';
+          sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest test --slowmo 100 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
     - store_artifacts:
         path: /tmp/videos
