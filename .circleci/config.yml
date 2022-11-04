@@ -140,7 +140,6 @@ jobs:
           ssh lightsail 'unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
           ssh lightsail 'sudo cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4dump /usr/local/bin/.';
           ssh lightsail 'sudo chmod +x /usr/local/bin/mp4dump';
-          sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install sshfs;
     - run:
         name: Install Tator
         command: |
@@ -180,6 +179,10 @@ jobs:
         command: |
           scp -r /home/circleci/.ssh lightsail:/home/ubuntu/.;
           ssh lightsail 'sed -i "s/circleci/ubuntu/g" ~/.ssh/config';
+    - run:
+        name: Install sshfs
+        command: sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install sshfs
+        background: true
     - run:
         name: SSH forward
         command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';ssh -N -L 8080:$PUBLIC_IP:80 lightsail';
