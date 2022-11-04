@@ -23,5 +23,5 @@ if __name__=="__main__":
   # Do some imports here for libraries jobs will need
 
   # Start a worker with a custom name
-  worker = Worker([queue], connection=redis, name='jobs-worker')
+  worker = Worker([queue], connection=redis)
   worker.work()

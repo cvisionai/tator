@@ -6,6 +6,9 @@ from uuid import uuid1
 import re
 import time
 import psycopg2
+from psycopg2 import sql
+
+from .worker import push_job
 
 from django.db import connection
 
@@ -23,8 +26,8 @@ ALLOWED_MUTATIONS = {
     'float_array': ['float_array'],
 }
 
-def get_connection():
-    conn = psycopg2.connect(database=connection.settings_dict['NAME'],
+def get_connection(db_name):
+    conn = psycopg2.connect(database=db_name,
                          host=os.getenv('POSTGRES_HOST'),
                          user=os.getenv('POSTGRES_USERNAME'),
                          password=os.getenv('POSTGRES_PASSWORD'))
@@ -40,68 +43,77 @@ def _get_unique_index_name(entity_type, attribute):
     index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_{entity_name_sanitized}_{attribute_name_sanitized}"
     return index_name
 
-def make_btree_index(entity_type, attribute, psql_type):
-    table_name = entity_type._meta.db_table.replace('type','')
-    index_name = _get_unique_index_name(entity_type, attribute)
-    with get_connection().cursor() as cursor:
+def make_btree_index(db_name, project_id, entity_type_id, table_name, index_name,  attribute, psql_type):
+    with get_connection(db_name).cursor() as cursor:
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+        if bool(cursor.fetchall()):
+            return
         sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING btree (CAST(attributes->>'{attribute['name']}' AS {psql_type}))
-                                 WHERE project={entity_type.project.id} and meta={entity_type.id}"""
+                                 WHERE project={project_id} and meta={entity_type_id}"""
         cursor.execute(sql_str)
         logger.info(sql_str)
-def make_bool_index(entity_type, attribute):
-    make_btree_index(entity_type, attribute, 'boolean')
+def make_bool_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'boolean')
 
 
-def make_int_index(entity_type, attribute):
-    make_btree_index(entity_type, attribute, 'integer')
+def make_int_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'integer')
 
-def make_float_index(entity_type, attribute):
-    make_btree_index(entity_type, attribute, 'float')
+def make_float_index(db_name,project_id, entity_type_id, table_name, index_name, attribute):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'float')
 
-def make_string_index(entity_type, attribute, method='GIN'):
-    table_name = entity_type._meta.db_table.replace('type','')
-    index_name = _get_unique_index_name(entity_type, attribute)
-    with get_connection().cursor() as cursor:
+def make_string_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, method='GIN'):
+    with get_connection(db_name).cursor() as cursor:
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+        if bool(cursor.fetchall()):
+            return
         sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                                  USING {method} (CAST(attributes->>'{attribute['name']}' AS text) {method.lower()}_trgm_ops)
-                                 WHERE project={entity_type.project.id} and meta={entity_type.id}"""
+                                 WHERE project={project_id} and meta={entity_type_id}"""
         cursor.execute(sql_str)
         logger.info(sql_str)
 
-def make_datetime_index(entity_type, attribute):
-    table_name = entity_type._meta.db_table.replace('type','')
-    index_name = _get_unique_index_name(entity_type, attribute)
+def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute):
     func_str=f"""CREATE OR REPLACE FUNCTION tator_timestamp(text)
                  RETURNS timestamp AS
                 $func$
                 SELECT CAST($1 as timestamp)
                 $func$ LANGUAGE sql IMMUTABLE;"""
-    sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} USING btree (tator_timestamp(attributes->>'{attribute['name']}')) WHERE project={entity_type.project.id} AND meta={entity_type.id};"""
-    with get_connection().cursor() as cursor:
+    sql_str=f"""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} USING btree (tator_timestamp(attributes->>'{attribute['name']}')) WHERE project={project_id} AND meta={entity_type_id};"""
+    with get_connection(db_name).cursor() as cursor:
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+        if bool(cursor.fetchall()):
+            return
         cursor.execute(func_str)
         cursor.execute(sql_str)
         logger.info(sql_str)
 
 
 
-def make_geopos_index(entity_type, attribute):
-    table_name = entity_type._meta.db_table.replace('type','')
-    index_name = _get_unique_index_name(entity_type, attribute)
-    sql_str = f"""CREATE INDEX {index_name} ON {table_name} using gist(ST_MakePoint((attributes -> '{attribute['name']}' -> 1)::float, (attributes -> '{attribute['name']}' -> 0)::float)) WHERE project={entity_type.project.id} and meta={entity_type.id};"""
-    with get_connection().cursor() as cursor:
+def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute):
+    sql_str = f"""CREATE INDEX {index_name} ON {table_name} using gist(ST_MakePoint((attributes -> '{attribute['name']}' -> 1)::float, (attributes -> '{attribute['name']}' -> 0)::float)) WHERE project={project_id} and meta={entity_type_id};"""
+    with get_connection(db_name).cursor() as cursor:
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+        if bool(cursor.fetchall()):
+            return
         cursor.execute(sql_str)
         logger.info(sql_str)
 
-def make_vector_index(entity_type, attribute):
-    table_name = entity_type._meta.db_table.replace('type','')
-    index_name = _get_unique_index_name(entity_type, attribute)
-    with get_connection().cursor() as cursor:
+def make_vector_index(db_name, project_id, entity_type_id, table_name, index_name, attribute):
+    with get_connection(db_name).cursor() as cursor:
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+        if bool(cursor.fetchall()):
+            return
         # Create an index method for each access type
         for method in ['l2', 'ip', 'cosine']:
-            sql_str = f"""CREATE INDEX {index_name}_{method} ON {table_name} using ivfflat(CAST(attributes -> '{attribute['name']}' AS vector({attribute['size']})) vector_{method}_ops) WHERE project={entity_type.project.id} and meta={entity_type.id};"""
+            sql_str = f"""CREATE INDEX {index_name}_{method} ON {table_name} using ivfflat(CAST(attributes -> '{attribute['name']}' AS vector({attribute['size']})) vector_{method}_ops) WHERE project={project_id} and meta={entity_type_id};"""
             cursor.execute(sql_str)
             logger.info(sql_str)
+
+def delete_psql_index(db_name,index_name):
+    with get_connection(db_name).cursor() as cursor:
+        cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {index_name}".format(index_name=sql.Identifier(index_name)))
 
 class TatorSearch:
     """ Interface for managing psql indices
@@ -121,39 +133,30 @@ class TatorSearch:
 
     def list_indices(self, project):
         """ Based on a project id, list all known indices """
-        with get_connection().cursor() as cursor:
+        with get_connection(connection.settings_dict['NAME']).cursor() as cursor:
             cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname LIKE '{}'".format(f"tator_proj_{project}_%"))
             return cursor.fetchall()
 
     def delete_project_indices(self, project):
         proj_indices = self.list_indices(project)
-        with get_connection().cursor() as cursor:
-            for _,index_name,_ in proj_indices:
-                import time
-                print("DROP INDEX IF EXISTS {}".format(index_name))
-                cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
+        for _,index_name,_ in proj_indices:
+            push_job(delete_psql_index, args=(connection.settings_dict['NAME'], index_name), result_ttl=0)
+            
 
     def delete_index(self, entity_type, attribute):
         """ Delete the index for a given entity type """
         index_name = _get_unique_index_name(entity_type, attribute)
-        with get_connection().cursor() as cursor:
-            print("DROP INDEX IF EXISTS {}".format(index_name))
-            cursor.execute("DROP INDEX CONCURRENTLY IF EXISTS {}".format(index_name))
+        push_job(delete_psql_index, args=(connection.settings_dict['NAME'], index_name), result_ttl=0)
 
     def is_index_present(self, entity_type, attribute):
         """ Returns true if the index exists for this attribute """
         index_name = _get_unique_index_name(entity_type, attribute)
-        print("Checking for index")
-        with get_connection().cursor() as cursor:
+        with get_connection(connection.settings_dict['NAME']).cursor() as cursor:
             cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
-            print("checked")
             return bool(cursor.fetchall())
 
     def create_psql_index(self, entity_type, attribute, flush=False):
         """ Create a psql index for the given attribute """
-        #return True # TODO Remove this, speeds up unit tests dramatically.
-        import time
-        print(f"{time.time()} Making psql index for {entity_type.name}:{attribute['name']}")
         index_name = _get_unique_index_name(entity_type, attribute)
         if flush:
             self.delete_index(entity_type, attribute)
@@ -166,15 +169,13 @@ class TatorSearch:
             logger.error(f"Index '{index_name}' can't be created with unknown dtype {attribute['dtype']}")
             return False
 
-        index_func(entity_type, attribute)
-        print(f"{time.time()} Finished psql index for {entity_type.name}:{attribute['name']}")
-        return self.is_index_present(entity_type, attribute)
+        table_name = entity_type._meta.db_table.replace('type','')
+        index_name = _get_unique_index_name(entity_type, attribute)
+        push_job(index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute), result_ttl=0)
 
     def create_mapping(self, entity_type, flush=False):
         for attribute in entity_type.attribute_types:
-            begin=time.time()
-            if self.create_psql_index(entity_type, attribute, flush=flush):
-                logger.info(f"Created index {entity_type.name}:{attribute['name']} in {time.time()-begin} seconds.")
+            self.create_psql_index(entity_type, attribute, flush=flush)
 
     def rename_alias(self, entity_type, related_objects, old_name, new_name):
         """
