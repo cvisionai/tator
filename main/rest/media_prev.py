@@ -6,6 +6,8 @@ from ..models import Media
 from ..search import TatorSearch
 from ..schema import MediaPrevSchema
 
+from ._media_query import get_media_queryset
+
 from ._base_views import BaseDetailView
 from ._permissions import ProjectViewOnlyPermission
 
@@ -24,14 +26,24 @@ class MediaPrevAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
-
         # Find this object.
         media_id = params['id']
         media = Media.objects.get(pk=media_id)
 
-        # Get query associated with media filters.
-        response_data = {}
+        qs = get_media_queryset(media.project.id, params).reverse()
+        iter_obj = qs.iterator()
+        next_id = -1
+        try:
+            for x in range(qs.count()):
+                record = next(iter_obj)
+                if record.id == media_id:
+                    next_record = next(iter_obj)
+                    next_id = next_record.id
+                    break
+        except StopIteration:
+            pass
 
+        response_data = {'prev': next_id}
         return response_data
 
     def get_queryset(self):
