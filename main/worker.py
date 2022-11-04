@@ -6,7 +6,7 @@ import os
 def test_it():
   redis = Redis(host=os.getenv('REDIS_HOST'))
   queue = Queue('async_jobs', connection=redis)
-  queue.enqueue(print, 'Hello World', result_ttl=0)
+  queue.enqueue(print, args=('Hello World',), result_ttl=0)
 
 if __name__=="__main__":
   redis = Redis(host=os.getenv('REDIS_HOST'))
