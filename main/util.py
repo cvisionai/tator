@@ -859,7 +859,7 @@ def update_queryset_archive_state(media_qs, target_state):
     for media in media_qs.iterator():
         if not media.media_files:
             # No files to move to archive storage, consider this media archived
-            media.archive_status_date = datetime.now(timezone.utc)
+            media.archive_status_date = datetime.datetime.now(datetime.timezone.utc)
             media.archive_state = target_state["archive_state"]
             media.save()
             continue
