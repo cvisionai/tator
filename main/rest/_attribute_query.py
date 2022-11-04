@@ -79,6 +79,8 @@ def _get_info_for_attribute(project, entity_type, key):
             return {'name': key[1:], 'dtype': 'int'}
         elif key in ['_created_datetime', '_modified_datetime']:
             return {'name': key[1:], 'dtype': 'datetime'}
+        elif key in ['_name']:
+            return {'name': key[1:], 'dtype': 'string'}
         else:
             return None
     else:
