@@ -3630,6 +3630,7 @@ class MutateAliasTestCase(APITestCase):
             if attribute_obj['name'] == attr_name:
                 attribute = {**attribute_obj}
 
+        time.sleep(2) # Give plenty of time for index to be created
         assert(TatorSearch().is_index_present(entity_type, attribute) == True)
         entity_type = self.search.mutate_alias(
             entity_type, attr_name, {"name": attr_name, "dtype": to_dtype}, "update"
@@ -3640,6 +3641,7 @@ class MutateAliasTestCase(APITestCase):
         for attribute_obj in entity_type.attribute_types:
             if attribute_obj['name'] == attr_name:
                 element = {**attribute_obj}
+        time.sleep(2) # Give plenty of time for index to be created
         assert(TatorSearch().is_index_present(entity_type, attribute) == True)
         project.delete()
         logger.info(f"Conversion of {from_dtype} to {to_dtype} success!")
