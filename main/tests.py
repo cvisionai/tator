@@ -16,7 +16,7 @@ from django.contrib.gis.geos import Point
 from minio import Minio
 from minio.deleteobjects import DeleteObject
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APITransactionTestCase
 from dateutil.parser import parse as dateutil_parse
 from botocore.errorfactory import ClientError
 
@@ -25,6 +25,8 @@ from .models import *
 from .search import TatorSearch, ALLOWED_MUTATIONS
 from .store import get_tator_store, PATH_KEYS
 from .util import update_queryset_archive_state
+
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -1229,7 +1231,6 @@ class VideoTestCase(
         PermissionDetailMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
-        print("Started Setup")
         logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -1241,7 +1242,6 @@ class VideoTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        print("Made Media Types")
         self.entities = [
             create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
@@ -1253,19 +1253,16 @@ class VideoTestCase(
             create_test_video, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
-        print("Finished Setup()")
 
 
     def tearDown(self):
         self.project.delete()
 
     def test_annotation_delete(self):
-        print("Got here")
         medias = [
             create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
         ]
-        print("Got here 2")
         state_type = StateType.objects.create(project=self.project,
                                               name='track_type',
                                               association='Localization',
@@ -1343,7 +1340,6 @@ class VideoTestCase(
         response = self.client.get(f'/rest/StateCount/{self.project.pk}')
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data, 0)
-        print("Finished test")
 
 class ImageTestCase(
         APITestCase,
@@ -3574,7 +3570,7 @@ class AttributeTestCase(APITestCase):
         self.project.delete()
 
 
-class MutateAliasTestCase(APITestCase):
+class MutateAliasTestCase(APITransactionTestCase):
     """Tests alias mutation in elasticsearch.
     """
     def setUp(self):
@@ -3619,19 +3615,21 @@ class MutateAliasTestCase(APITestCase):
 
     def _test_mutation(self, from_dtype, to_dtype, attr_name, search_name, value):
         project, entity_type, entity = self._setup()
-        if isinstance(value, datetime.datetime):
-            entity.attributes = {attr_name: value.isoformat()}
-        else:
-            entity.attributes = {attr_name: value}
-        entity.save()
-        time.sleep(1)
+        transaction.commit() # clear prior lives from transaction locks
         attribute = None
         for attribute_obj in entity_type.attribute_types:
             if attribute_obj['name'] == attr_name:
                 attribute = {**attribute_obj}
 
-        time.sleep(2) # Give plenty of time for index to be created
-        assert(TatorSearch().is_index_present(entity_type, attribute) == True)
+        found_it = False
+        for i in range(30):
+            if TatorSearch().is_index_present(entity_type, attribute) == True:
+                found_it = True
+                break
+            time.sleep(1)
+
+        assert(found_it)
+
         entity_type = self.search.mutate_alias(
             entity_type, attr_name, {"name": attr_name, "dtype": to_dtype}, "update"
         )
@@ -3641,8 +3639,17 @@ class MutateAliasTestCase(APITestCase):
         for attribute_obj in entity_type.attribute_types:
             if attribute_obj['name'] == attr_name:
                 element = {**attribute_obj}
-        time.sleep(2) # Give plenty of time for index to be created
-        assert(TatorSearch().is_index_present(entity_type, attribute) == True)
+
+        found_it = False
+        for i in range(30):
+            print(f"{to_dtype}: {project.id} {element}")
+            transaction.commit()
+            if TatorSearch().is_index_present(entity_type, element) == True:
+                found_it = True
+                break
+            time.sleep(1)
+
+        assert(found_it)
         project.delete()
         logger.info(f"Conversion of {from_dtype} to {to_dtype} success!")
 
@@ -3656,6 +3663,7 @@ class MutateAliasTestCase(APITestCase):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['int']):
             value = random.randint(-100, 100)
             with self.subTest(i=index):
+                print(f"Checking conversion to {new_dtype}")
                 self._test_mutation('int', new_dtype, 'Int Test', 'Int\ Test', value)
 
     def test_float_mutations(self):
