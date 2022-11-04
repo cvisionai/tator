@@ -133,7 +133,7 @@ jobs:
         command: |
           ssh lightsail 'wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb';
           ssh lightsail 'sudo -E apt-get -yq --no-install-suggests --no-install-recommends install ./google-chrome-stable_current_amd64.deb';
-          ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr python3-pip ffmpeg wget unzip';
+          ssh lightsail 'sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install tesseract-ocr python3-pip ffmpeg wget unzip sshfs';
           ssh lightsail 'pip3 install pytest pandas playwright==1.17.2 pytest-playwright==0.1.2 pytesseract==0.3.9 opencv-python pytest-rerunfailures';
           ssh lightsail 'export PATH=$PATH:$HOME/.local/bin:/snap/bin && playwright install';
           ssh lightsail 'wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip';
@@ -186,9 +186,9 @@ jobs:
     - run:
         name: Front end tests
         command: |
-          mkdir -p /tmp/videos
+          mkdir -p /tmp/videos;
+          sudo sshfs -o allow_other,default_permissions lightsail:/tmp/videos /tmp/videos
           ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest test --slowmo 100 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
-          scp -r lightsail:/tmp/videos /tmp/videos
     - store_artifacts:
         path: /tmp/videos
         destination: videos
@@ -208,7 +208,7 @@ jobs:
           scp ~/token.txt lightsail:~
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && pytest ~/tator/tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep';
+        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep';
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
