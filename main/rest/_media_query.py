@@ -11,7 +11,6 @@ from ..models import Media
 from ..models import MediaType
 from ..models import State
 
-from ._attribute_query import get_attribute_es_query
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attributes import KV_SEPARATOR
@@ -33,123 +32,6 @@ def _get_archived_filter(params):
         f"['archived', 'live', 'all']."
     )
 
-
-def get_media_es_query(project, params):
-    """ Constructs an elasticsearch query.
-    """
-    # Get query parameters.
-    media_id = params.get('media_id')
-    media_id_put = params.get('ids') # PUT request only
-    localization_ids = params.get('localization_ids') # PUT request only
-    state_ids = params.get('state_ids') # PUT request only
-    filter_type = params.get('type')
-    name = params.get('name')
-    section = params.get('section')
-    dtype = params.get('dtype')
-    md5 = params.get('md5')
-    gid = params.get('gid')
-    uid = params.get('uid')
-    start = params.get('start')
-    stop = params.get('stop')
-    after = params.get('after')
-    after_id = params.get('after_id')
-    archive_state = _get_archived_filter(params)
-
-    query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-    query['sort'] = [{'_exact_name': 'asc'}, {'_postgres_id': 'asc'}]
-    media_types = ["image", "video", "multi"]
-    bools = [{'bool': {
-        "should": [{"match": {"_dtype": type_}} for type_ in media_types],
-        'minimum_should_match': 1,
-    }}]
-    annotation_bools = []
-
-    media_ids = []
-    if media_id_put is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id_put)
-
-    if media_id is not None:
-        media_ids.extend(f"{type_}_{id_}" for type_ in media_types for id_ in media_id)
-    if media_ids:
-        bools.append({'ids': {'values': media_ids}})
-
-    annotation_ids = []
-    annotation_types = ["box", "line", "dot"]
-    if localization_ids is not None:
-        annotation_ids.extend(
-            f"{type_}_{id_}" for type_ in annotation_types for id_ in localization_ids
-        )
-    if state_ids is not None:
-        annotation_ids.extend(f"state_{id_}" for id_ in state_ids)
-    if annotation_ids:
-        annotation_bools.append({'ids': {'values': annotation_ids}})
-
-    if filter_type is not None:
-        bools.append({'match': {'_meta': {'query': int(filter_type)}}})
-
-    if name is not None:
-        bools.append({'match': {'_exact_name': {'query': name}}})
-
-    if dtype is not None:
-        bools.append({'match': {'_dtype': {'query': dtype}}})
-
-    if md5 is not None:
-        bools.append({'match': {'_md5': {'query': md5}}})
-
-    if gid is not None:
-        bools.append({'match': {'_gid': {'query': gid}}})
-
-    if uid is not None:
-        bools.append({'match': {'_uid': {'query': uid}}})
-
-    if start is not None:
-        query['from'] = int(start)
-        if start > 10000:
-            raise ValueError("Parameter 'start' must be less than 10000! Try using 'after_id'.")
-
-    if start is None and stop is not None:
-        query['size'] = int(stop)
-        if stop > 10000:
-            raise ValueError("Parameter 'stop' must be less than 10000! Try using 'after_id'.")
-
-    if start is not None and stop is not None:
-        query['size'] = int(stop) - int(start)
-        if stop > 10000:
-            raise ValueError("Parameter 'stop' must be less than 10000! Try using "
-                             "'after_id'.")
-
-    if after is not None:
-        bools.append({'range': {'_exact_name': {'gt': after}}})
-
-    if after_id is not None:
-        after_media = Media.objects.get(pk=after_id)
-        bools.append({
-            'bool': {
-                'should': [{
-                    'bool': {
-                        'must': [{'match': {'_exact_name': {'query': after_media.name}}},
-                                 {'range': {'_postgres_id': {'gt': after_id}}}],
-                    },
-                }, {
-                    'range': {'_exact_name': {'gt': after_media.name}}
-                }],
-                "minimum_should_match": 1,
-            },
-        })
-
-    if archive_state is not None:
-        bools.append(
-            {
-                "bool": {
-                    "should": [{"match": {"_archive_state": state}} for state in archive_state],
-                    "minimum_should_match": 1,
-                }
-            }
-        )
-
-    query = get_attribute_es_query(params, query, bools, project, is_media=True,
-                                   annotation_bools=annotation_bools)
-    return query
 
 def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     """ Constructs a psql queryset.

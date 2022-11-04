@@ -72,9 +72,19 @@ def _convert_boolean(value):
 
 def _get_info_for_attribute(project, entity_type, key):
     """ Returns the first matching dtype with a matching key """
-    for attribute_info in entity_type.attribute_types:
-        if attribute_info['name'] == key:
-            return attribute_info
+    if key.startswith('_'):
+        if key in ['_x', '_y', '_u', '_v', '_width', '_height']:
+            return {'name': k[1:], 'dtype': 'float'}
+        elif key in ['_created_by', '_modified_by']:
+            return {'name': k[1:], 'dtype': 'int'}
+        elif key in ['_created_datetime', '_modified_datetime']:
+            return {'name': k[1:], 'dtype': 'datetime'}
+        else:
+            return None
+    else:
+        for attribute_info in entity_type.attribute_types:
+            if attribute_info['name'] == key:
+                return attribute_info
     return None
 
 def _get_field_for_attribute(project, entity_type, key):
@@ -140,24 +150,29 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
 
     found_it = False
     for key, value, op in filter_ops:
-        field_type,_ = _get_field_for_attribute(project, entity_type, key)
-        if field_type:
-            # Annotate with a typed object prior to query to ensure index usage
-            if field_type == PointField:
-                qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
-                qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
-                qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_0_float"), F(f"{key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
-                qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
-            elif field_type == DateTimeField:
-                qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
-                qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})
-                qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
-            elif field_type == CharField:
-                qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
-            else:
-                qs = qs.annotate(**{f'{key}_typed': Cast(f'attributes__{key}', field_type())})
-                qs = qs.filter(**{f'{key}_typed{OPERATOR_SUFFIXES[op]}': value})
-            found_it=True
+        if key.startswith('_'):
+            db_field = key[1:]
+            qs = qs.filter(**{f'{db_key}{OPERATOR_SUFFIXES[op]}': value})
+            found_it = True
+        else:
+            field_type,_ = _get_field_for_attribute(project, entity_type, key)
+            if field_type:
+                # Annotate with a typed object prior to query to ensure index usage
+                if field_type == PointField:
+                    qs = qs.annotate(**{f'{key}_0_float': Cast(f'attributes__{key}__0', FloatField())})
+                    qs = qs.annotate(**{f'{key}_1_float': Cast(f'attributes__{key}__1', FloatField())})
+                    qs = qs.annotate(**{f"{key}_typed": Cast(Func(F(f"{key}_0_float"), F(f"{key}_1_float"), function='ST_MakePoint'), PointField(srid=4326))})
+                    qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                elif field_type == DateTimeField:
+                    qs = qs.annotate(**{f'{key}_text': Cast(f'attributes__{key}', CharField())})
+                    qs = qs.annotate(**{f'{key}_typed': Cast(f'{key}_text', DateTimeField())})
+                    qs = qs.filter(**{f"{key}_typed{OPERATOR_SUFFIXES[op]}": value})
+                elif field_type == CharField:
+                    qs = qs.filter(**{f"attributes__{key}{OPERATOR_SUFFIXES[op]}": value})
+                else:
+                    qs = qs.annotate(**{f'{key}_typed': Cast(f'attributes__{key}', field_type())})
+                    qs = qs.filter(**{f'{key}_typed{OPERATOR_SUFFIXES[op]}': value})
+                found_it=True
 
     if attribute_null is not None:
         for kv in attribute_null:

@@ -49,7 +49,7 @@ from ._util import (
     check_required_fields,
 )
 from ._base_views import BaseListView, BaseDetailView
-from ._media_query import get_media_queryset, get_media_es_query
+from ._media_query import get_media_queryset
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
 from ._permissions import ProjectEditPermission, ProjectTransferPermission
 
@@ -503,7 +503,6 @@ class MediaListAPI(BaseListView):
                 bulk_update_and_log_changes(
                     qs, params["project"], self.request.user, new_attributes=new_attrs
                 )
-                query = get_media_es_query(params["project"], params)
                 count = max(count, attr_count)
 
             if desired_archive_state is not None:

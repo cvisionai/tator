@@ -7,7 +7,6 @@ from ..search import TatorSearch
 from ..schema import SectionAnalysisSchema
 
 from ._base_views import BaseDetailView
-from ._media_query import get_attribute_es_query
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
@@ -23,46 +22,8 @@ class SectionAnalysisAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
+        # TODO re-implement
         mediaId = params.get('media_id', None)
         analyses = list(Analysis.objects.filter(project=self.kwargs['project']))
         response_data = {}
-        for analysis in analyses:
-            media_query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-            media_query['query']['bool']['filter'] = []
-            media_query = get_attribute_es_query(params, media_query, [], self.kwargs['project'])
-            query_str = f'{analysis.data_query}'
-            if mediaId is not None:
-                if not media_query['query']['bool']['filter']:
-                    media_query['query']['bool']['filter'] = []
-                media_query['query']['bool']['filter'].append(
-                    {'ids': {'values': [f'video_{id_}' for id_ in mediaId] + 
-                                       [f'image_{id_}' for id_ in mediaId]}}
-                )
-
-            # Do the search on all media.
-            query = copy.deepcopy(media_query)
-            if not query['query']['bool']['filter']:
-                query['query']['bool']['filter'] = []
-            query['query']['bool']['filter'].append(
-                {'query_string': {'query': query_str}},
-            )
-            media_count = TatorSearch().count(self.kwargs['project'], query)
-
-            # Do the search on all annotations.
-            query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
-            query['query']['bool']['filter'] = []
-            if media_query:
-                query['query']['bool']['filter'].append({
-                    'has_parent': {
-                        'parent_type': 'media',
-                        **media_query,
-                    }
-                })
-            query['query']['bool']['filter'].append({
-                'query_string': {'query': query_str}
-            })
-            annotation_count = TatorSearch().count(self.kwargs['project'], query)
-
-            # Use whichever is higher (media or annotation)
-            response_data[analysis.name] = max(annotation_count, media_count)
         return response_data
