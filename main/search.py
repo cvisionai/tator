@@ -162,7 +162,6 @@ class TatorSearch:
         """ Returns true if the index exists for this attribute """
         index_name = _get_unique_index_name(entity_type, attribute)
         with get_connection(connection.settings_dict['NAME']).cursor() as cursor:
-            print(f"Looking for {index_name}")
             cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
             result=cursor.fetchall()
             return bool(result)
@@ -172,22 +171,20 @@ class TatorSearch:
         index_name = _get_unique_index_name(entity_type, attribute)
         if flush:
             self.delete_index(entity_type, attribute)
-        if self.is_index_present(entity_type, attribute):
-            print(f"Index '{index_name}' already exists.")
+        if self.is_index_present(entity_type, attribute) and flush==False:
+            logger.info(f"Index '{index_name}' already exists.")
             return False
 
         index_func = self.index_map.get(attribute['dtype'],None)
         if index_func is None:
-            print(f"Index '{index_name}' can't be created with unknown dtype {attribute['dtype']}")
+            logger.info(f"Index '{index_name}' can't be created with unknown dtype {attribute['dtype']}")
             return False
 
         table_name = entity_type._meta.db_table.replace('type','')
         index_name = _get_unique_index_name(entity_type, attribute)
-        print(f"Pushing CREATE {index_name}")
         push_job(index_func, args=(connection.settings_dict['NAME'], entity_type.project.id, entity_type.id, table_name, index_name, attribute, flush), result_ttl=0)
 
     def create_mapping(self, entity_type, flush=False):
-        print(f"Creating indices for {entity_type.project.pk}/{entity_type.pk}")
         for attribute in entity_type.attribute_types:
             self.create_psql_index(entity_type, attribute, flush=flush)
 

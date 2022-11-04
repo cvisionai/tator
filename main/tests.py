@@ -3642,7 +3642,6 @@ class MutateAliasTestCase(APITransactionTestCase):
 
         found_it = False
         for i in range(30):
-            print(f"{to_dtype}: {project.id} {element}")
             transaction.commit()
             if TatorSearch().is_index_present(entity_type, element) == True:
                 found_it = True
