@@ -411,7 +411,8 @@ def test_settings_attributeTests(page_factory, project, base_url):
     page.click(f'text="{media_type_in_view}"')
     formSelector = 'type-form-container[form="media-type-edit"]'
 
-    for dtype in dtypeSet:      
+    for dtype in dtypeSet:
+        page.wait_for_timeout(5000)
         page.click(f'{formSelector} .add-new-in-form')
         page.wait_for_selector('modal-dialog form')
         page.fill('modal-dialog text-input[name="Name"] input', dtype+' Type')
