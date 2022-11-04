@@ -675,7 +675,7 @@ export class ProjectDetail extends TatorPage {
     this.showDimmer();
     this.loading.showSpinner();
     const projectId = this.getAttribute("project-id");
-    this._projectId = projectId;
+    this.projectId = projectId;
     this._settingsButton.setAttribute("href", `/${projectId}/project-settings`);
     this._activityNav.init(projectId);
 
@@ -806,7 +806,6 @@ export class ProjectDetail extends TatorPage {
             this._mediaSection._files._cardAttributeLabels = this._cardAttributeLabels;
             this._mediaSection._bulkEdit = this._bulkEdit;
             this._bulkEdit.init(this, this._mediaSection._files, "media", projectId, true);
-            // this._bulkEdit._showEditPanel();
 
             const parsedAlgos = algos.filter(function (alg) {
               if (Array.isArray(alg.categories)) {
@@ -1127,7 +1126,7 @@ export class ProjectDetail extends TatorPage {
 
     if (list && list.length > 0) {
       this.deleteFileForm.setAttribute("media-id", list);
-      this.deleteFileForm.setAttribute("project-id", this._projectId);
+      this.deleteFileForm.setAttribute("project-id", this.projectId);
       this.deleteFileForm.setAttribute("media-name", "Selected files");
       this.deleteFileForm.setAttribute("media-id", String(list));
       this.deleteFileForm.setAttribute("is-open", "");

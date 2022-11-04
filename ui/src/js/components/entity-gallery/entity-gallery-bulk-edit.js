@@ -91,7 +91,7 @@ export class GalleryBulkEdit extends TatorElement {
    init(page, gallery, type = "localization", projectId = null, additionalTools = false) {
       // console.log("BULK EDIT INITIALIZED!");
       this._page = page;
-      this._projectId = this._page.getAttribute("project-id");
+      this._projectId = this._page.projectId;
       this._editType = type;
 
       if (type == "media") {
@@ -489,6 +489,7 @@ export class GalleryBulkEdit extends TatorElement {
    }
 
    _patchLocalizations(formData) {
+      console.log("Bulk edit this._projectId" + this._projectId);
       return fetch(`/rest/Localizations/${this._projectId}`, {
          method: "PATCH",
          mode: "cors",

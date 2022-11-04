@@ -32,10 +32,10 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._settings.style.marginLeft = "50px";
     div.appendChild(this._settings);
 
-    
+
 
     this._settings._localizationsView.hidden = false;
-    
+
     // entity-gallery-bulk-edit
     // Part of Gallery: Communicates between card + page
     this._bulkEdit = document.createElement("entity-gallery-bulk-edit");
@@ -54,18 +54,13 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this.main.setAttribute("class", "enitity-gallery--main col-12");
     this.mainWrapper.appendChild(this.main);
 
-    // this._bulkEditModal = this._bulkEdit._bulkEditModal; //document.createElement("modal-dialog");
-    // this.mainWrapper.appendChild(this._bulkEdit._editPanel);
-    // this._bulkEdit._editPanel.addEventListener("select-click", this._bulkEdit._editPanel._bulkEditModal.closeCallback)
-    // this._settings._bulkCorrect.addEventListener("click", this._bulkEdit._showSelectionPanel.bind(this._bulkEdit))  
-
     //
     /* Card Gallery */
     // Gallery of cards showing filter results
     this._filterResults = document.createElement("annotations-corrections-gallery");
     this.main.appendChild(this._filterResults);
 
-    
+
 
     // Localizations Filter
     /* Filter interface part of gallery */
@@ -105,8 +100,6 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._shadow.appendChild(this.modal);
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
-
-
   }
 
   async _init(project) {
@@ -114,6 +107,7 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
 
     // Database interface. This should only be used by the viewModel/interface code.
     this.projectId = project.id;
+    console.log("Corrections this._projectId" + this._projectId);
     this._modelData = new TatorData(this.projectId);
 
     // Init after modal is defined
@@ -126,112 +120,85 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this.cardData.addEventListener("setCardImage", (evt) => {
       this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
     });
-        // this.loading.showSpinner();
-    // this.showDimmer();
+
     await this._modelData.init()
 
-      // Pass panel and localization types to gallery
-      this._filterResults._initPanel({
-        panelContainer: this._panelContainer,
-        pageModal: this.modal,
-        modelData: this._modelData,
-        cardData: this.cardData,
-        bulkEdit: this._bulkEdit
-      });
+    // Pass panel and localization types to gallery
+    this._filterResults._initPanel({
+      panelContainer: this._panelContainer,
+      pageModal: this.modal,
+      modelData: this._modelData,
+      cardData: this.cardData,
+      bulkEdit: this._bulkEdit
+    });
 
-      // Initialize the settings with the URL. The settings will be used later on.
-      this._settings.processURL();
+    // Initialize the settings with the URL. The settings will be used later on.
+    this._settings.processURL();
 
-      // Set lock value
-      this._settings._lock.hidden = true; // #TODO
+    // Set lock value
+    this._settings._lock.hidden = true; // #TODO
 
-      // if (this._settings.hasAttribute("lock")) {
-      //   let settingsLock = this._settings.getAttribute("lock");
+    // Init vars for filter state
+    this._filterConditions = this._settings.getFilterConditionsObject();
+    this._bulkEdit.checkForFilters(this._filterConditions);
+    this._useCachedResults = false;
 
-      //   if (settingsLock === "1") {
-      //     this._settings._lock.unlock();
-      //     this._panelContainer.setAttribute("permissionValue", "Can Edit");
-      //   }
-      // }
+    // Init vars for pagination state
+    let pageSize = this._settings.getPageSize();
+    if (Number.isNaN(pageSize)) {
+      pageSize = this._filterResults._paginator.getPageSize();
+    }
 
-      // Init vars for filter state
-      this._filterConditions = this._settings.getFilterConditionsObject();
-      this._bulkEdit.checkForFilters(this._filterConditions);
-      this._useCachedResults = false;
+    let page = this._settings.getPage();
+    if (Number.isNaN(page)) {
+      page = 1;
+    }
 
-      // Init vars for pagination state
-      let pageSize = this._settings.getPageSize();
-      if (Number.isNaN(pageSize)) {
-        pageSize = this._filterResults._paginator.getPageSize();
-      }
+    let pageStart = (page - 1) * pageSize;
+    let pageStop = pageStart + pageSize;
+    this._paginationState = {
+      pageSize: pageSize,
+      page: page,
+      start: pageStart,
+      stop: pageStop,
+      init: true
+    };
 
-      let page = this._settings.getPage();
-      if (Number.isNaN(page)) {
-        page = 1;
-      }
+    // Init Card Gallery and Right Panel
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      cache: false
+    });
 
-      let pageStart = (page - 1) * pageSize;
-      let pageStop = pageStart + pageSize;
-      this._paginationState = {
-        pageSize: pageSize,
-        page: page,
-        start: pageStart,
-        stop: pageStop,
-        init: true
-      };
+    // Filter interface
+    this._filterDataView = new FilterData(
+      this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]
+    );
 
+    // Init panel side behavior
+    this._panelContainer.init({
+      main: this.main,
+      aside: this.aside,
+      pageModal: this.modal,
+      modelData: this._modelData,
+      gallery: this._filterResults,
+      bulkEdit: this._bulkEdit
+    });
 
+    this._filterDataView.init(); // requires model data to be init
+    this._filterView.dataView = this._filterDataView;
+    this._filterView.setFilterConditions(this._filterConditions);
 
-      // Init Card Gallery and Right Panel
-      await this._cardGallery(
-        this._filterConditions,
-        this._paginationState
-      );
+    // Listen for pagination events
+    this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
+    this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
 
-      // Filter interface
-      this._filterDataView = new FilterData(
-        this._modelData, ["annotation-analytics-view"], ["MediaStates", "LocalizationStates"]);
+    this._filterResults._paginator.setValues(this._paginationState);
+    this._filterResults._paginator_top.setValues(this._paginationState);
 
-
-      
-      // Init panel side behavior
-      this._panelContainer.init({
-        main: this.main,
-        aside: this.aside,
-        pageModal: this.modal,
-        modelData: this._modelData,
-        gallery: this._filterResults,
-        bulkEdit: this._bulkEdit
-      });
-
-      // Settings lock value
-      // this._settings._lock.addEventListener("click", evt => {
-      //   const locked = this._settings._lock._pathLocked.style.display != "none";
-      //   const permissionValue = locked ? "View Only" : "Can Edit";
-      //   const panelPermissionEvt = new CustomEvent("permission-update", { detail: { permissionValue } })
-      //   this._panelContainer.dispatchEvent(panelPermissionEvt);
-
-      //   if (locked) {
-      //     this._settings.setAttribute("lock", 0);
-      //   } else {
-      //     this._settings.setAttribute("lock", 1);
-      //   }
-      //   //window.history.pushState({}, "", this._settings.getURL());
-      // });
-
-      this._filterDataView.init(); // requires model data to be init
-      this._filterView.dataView = this._filterDataView;
-      this._filterView.setFilterConditions(this._filterConditions);
-
-      // Listen for pagination events
-      this._filterResults._paginator.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-      this._filterResults._paginator_top.addEventListener("selectPage", this._paginateFilterResults.bind(this));
-
-      this._filterResults._paginator.setValues(this._paginationState);
-      this._filterResults._paginator_top.setValues(this._paginationState);
-
-      // Listen for filter events
-      this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));    
+    // Listen for filter events
+    this._filterView.addEventListener("filterParameters", this._updateFilterResults.bind(this));
   }
 
   connectedCallback() {
@@ -248,31 +215,33 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     return TatorPage.observedAttributes;
   }
 
-  _cardGallery(filterConditions, paginationState) {
+  _cardGallery({ conditions, pagination, cache }) {
     this.showDimmer();
     this.loading.showSpinner();
 
     /**
      * Always use a cached list when fetching cards for any pagination state
      */
-    // if (this._filterView._useCachedResults) {
+    if (cache) {
       // Initial view-modal "Cardlist" from fetched localizations
-      return this.cardData.makeCardListFromBulk(filterConditions, paginationState).then((cardList) => {
-        // CardList inits Gallery component with cards & pagination on page
-        this._filterResults.show(cardList);
-        this.loading.hideSpinner();
-        this.hideDimmer();
-      });      
-    // } else {
-    //   // Initial view-modal "Cardlist" from fetched localizations
-    //   this.cardData.makeCardList(filterConditions, paginationState).then((cardList) => {
-    //     // CardList inits Gallery component with cards & pagination on page
-    //     this._filterResults.show(cardList);
-    //     this.loading.hideSpinner();
-    //     this.hideDimmer();
-    //   });
-    // }
-    
+      return this.cardData.makeCardListFromBulk(conditions, pagination)
+        .then((cardList) => {
+          // CardList inits Gallery component with cards & pagination on page
+          this._filterResults.show(cardList);
+          this.loading.hideSpinner();
+          this.hideDimmer();
+        });
+    } else {
+      // Initial view-modal "Cardlist" from fetched localizations
+      this.cardData.makeCardList(conditions, pagination)
+        .then((cardList) => {
+          // CardList inits Gallery component with cards & pagination on page
+          this._filterResults.show(cardList);
+          this.loading.hideSpinner();
+          this.hideDimmer();
+        });
+    }
+
   }
 
   // Reset the pagination back to page 0
@@ -290,11 +259,12 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._paginationState.page = 1;
     this._paginationState.stop = this._paginationState.pageSize;
 
-    // updated the card gallery
-    await this._cardGallery(
-      this._filterConditions,
-      this._paginationState
-    );
+    // updated the card gallery because of filter
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      cache: false
+    });
 
     this._settings.setAttribute("filterConditions", filterURIString);
     this._settings.setAttribute("pagesize", this._paginationState.pageSize);
@@ -311,11 +281,12 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this._paginationState.pageSize = evt.detail.pageSize;
     this._paginationState.init = false;
 
-    // get the gallery
-    await this._cardGallery(
-      this._filterConditions,
-      this._paginationState
-    );
+    // get the gallery during pagination
+    await this._cardGallery({
+      conditions: this._filterConditions,
+      pagination: this._paginationState,
+      cache: true
+    });
 
     // make sure view lined up top and bottom
     this._filterResults._paginator.setValues(this._paginationState);
