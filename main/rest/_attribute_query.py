@@ -74,11 +74,11 @@ def _get_info_for_attribute(project, entity_type, key):
     """ Returns the first matching dtype with a matching key """
     if key.startswith('_'):
         if key in ['_x', '_y', '_u', '_v', '_width', '_height']:
-            return {'name': k[1:], 'dtype': 'float'}
+            return {'name': key[1:], 'dtype': 'float'}
         elif key in ['_created_by', '_modified_by']:
-            return {'name': k[1:], 'dtype': 'int'}
+            return {'name': key[1:], 'dtype': 'int'}
         elif key in ['_created_datetime', '_modified_datetime']:
-            return {'name': k[1:], 'dtype': 'datetime'}
+            return {'name': key[1:], 'dtype': 'datetime'}
         else:
             return None
     else:
@@ -152,7 +152,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
     for key, value, op in filter_ops:
         if key.startswith('_'):
             db_field = key[1:]
-            qs = qs.filter(**{f'{db_key}{OPERATOR_SUFFIXES[op]}': value})
+            qs = qs.filter(**{f'{db_field}{OPERATOR_SUFFIXES[op]}': value})
             found_it = True
         else:
             field_type,_ = _get_field_for_attribute(project, entity_type, key)
