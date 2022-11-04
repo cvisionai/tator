@@ -182,7 +182,6 @@ jobs:
     - run:
         name: Install sshfs
         command: sudo -E apt-get update && sudo -E apt-get -yq --no-install-suggests --no-install-recommends install sshfs
-        background: true
     - run:
         name: SSH forward
         command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';ssh -N -L 8080:$PUBLIC_IP:80 lightsail';
