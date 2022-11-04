@@ -192,13 +192,6 @@ def test_basic(request, page_factory, project): #video
    assert cardLength == 2
    print("Complete!") 
 
-# def test_bulk_edit(request, page_factory, project): #video
-   # print("Project Detail Page tests...")
-   # page = page_factory(
-   #     f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
-   # page.goto(f"/{project}/project-detail")
-   # page.on("pageerror", print_page_error)
-
    ## Test multiple edit.....
    print("Start: Test media labels and mult edit")
    
