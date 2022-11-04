@@ -175,14 +175,19 @@ jobs:
     - attach_workspace:
         at: ~/
     - run:
+        name: Copy SSH config
+        command: |
+          scp -r /home/circleci/.ssh lightsail:/home/ubuntu/.;
+          ssh lightsail 'sed -i "s/circleci/ubuntu/g" ~/.ssh/config';
+    - run:
         name: SSH forward
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';ssh -N -L 8080:$PUBLIC_IP:80 localhost'
+        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';ssh -N -L 8080:$PUBLIC_IP:80 lightsail';
         background: true
     - run:
         name: Front end tests
         command: |
           mkdir -p /tmp/videos
-          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && pytest ~/tator/test --slowmo 100 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
+          ssh lightsail 'mkdir -p /tmp/videos && export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest test --slowmo 100 --base-url=http://localhost:8080 --browser=chromium --username=admin --password=admin --videos=/tmp/videos -s';
           scp -r lightsail:/tmp/videos /tmp/videos
     - store_artifacts:
         path: /tmp/videos
