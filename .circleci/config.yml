@@ -177,7 +177,7 @@ jobs:
     - run:
         name: Copy SSH config
         command: |
-          rsync -a --ignore-existing /home/circleci/.ssh lightsail:/home/ubuntu/.ssh;
+          rsync -a --ignore-existing /home/circleci/.ssh/ lightsail:/home/ubuntu/.ssh/;
           ssh lightsail 'sed -i "s/circleci/ubuntu/g" ~/.ssh/config';
     - run:
         name: Install sshfs
