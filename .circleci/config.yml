@@ -256,7 +256,6 @@ workflows:
     - rest-tests:
         requires:
         - install-tator
-        - front-end-tests
         context: cvisionai
         filters:
           tags:
@@ -264,7 +263,6 @@ workflows:
     - tator-py-tests:
         requires:
         - install-tator
-        - front-end-tests
         context: cvisionai
         filters:
           tags:
