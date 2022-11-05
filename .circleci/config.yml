@@ -177,7 +177,7 @@ jobs:
     - run:
         name: Copy SSH config
         command: |
-          scp -r /home/circleci/.ssh lightsail:/home/ubuntu/.;
+          rsync -a --ignore-existing /home/circleci/.ssh lightsail:/home/ubuntu/.ssh;
           ssh lightsail 'sed -i "s/circleci/ubuntu/g" ~/.ssh/config';
     - run:
         name: Install sshfs
@@ -256,6 +256,7 @@ workflows:
     - rest-tests:
         requires:
         - install-tator
+        - front-end-tests
         context: cvisionai
         filters:
           tags:
@@ -263,6 +264,7 @@ workflows:
     - tator-py-tests:
         requires:
         - install-tator
+        - front-end-tests
         context: cvisionai
         filters:
           tags:
