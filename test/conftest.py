@@ -13,8 +13,7 @@ import tator
 from ._common import get_video_path, download_file, create_media, upload_media_file
 
 class PageFactory:
-    def __init__(self, base_url, browser, browser_context_args, storage, base_path):
-        self.base_url = base_url
+    def __init__(self, browser, browser_context_args, storage, base_path):
         self.browser = browser
         self.browser_context_args = browser_context_args
         self.storage = storage
@@ -26,7 +25,6 @@ class PageFactory:
         os.makedirs(artifact_path, exist_ok=True)
         page = self.browser.new_page(
             **self.browser_context_args,
-            base_url=self.base_url,
             record_video_dir=artifact_path,
             record_har_path=os.path.join(artifact_path, 'har.json'),
             locale='en-us',
@@ -75,7 +73,6 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
     os.makedirs(videos, exist_ok=True)
     context = chrome.new_context(
         **browser_context_args,
-        base_url=base_url,
         record_video_dir=videos,
         locale="en-US",
     )
@@ -93,7 +90,7 @@ def authenticated(request, launch_time, base_url, chrome, browser_context_args):
 def page_factory(request, launch_time, base_url, chrome, browser_context_args, authenticated):
     base_path = os.path.join(request.config.option.videos, launch_time)
     storage = authenticated.storage_state(path="/tmp/state.json")
-    yield PageFactory(base_url, chrome, browser_context_args, storage, base_path)
+    yield PageFactory(chrome, browser_context_args, storage, base_path)
 
 @pytest.fixture(scope='session')
 def token(request, page_factory):
