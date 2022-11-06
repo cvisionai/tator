@@ -64,6 +64,8 @@ def test_basic(request, page_factory, project, image, video): #image
       page.click('box-button:not(.disabled)')
       x, y = start
       print(f"Create Box {x},{y}")
+      x += canvas_box['x']
+      y += canvas_box['y']
       width = 100
       height = 100
       page.mouse.move(x, y, steps=50)
