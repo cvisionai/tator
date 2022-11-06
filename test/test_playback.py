@@ -103,10 +103,10 @@ def test_playback_accuracy(page_factory, project, count_test):
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.mouse.move(seek_x+500, seek_y, steps=10)
   canvas_frame = _get_canvas_frame(canvas)
   assert(int(display_div.inner_text())==canvas_frame)
   page.mouse.up()
@@ -171,10 +171,10 @@ def test_playback_accuracy_multi(page_factory, project, multi_count):
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.mouse.move(seek_x+500, seek_y, steps=10)
   page.wait_for_timeout(1000)
   current_frame = int(display_div.inner_text())
   _wait_for_frame(canvas[0], current_frame)
@@ -222,10 +222,10 @@ def test_playback_accuracy_multi_offset(page_factory, project, multi_offset_coun
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+500, seek_y, steps=50)
+  page.mouse.move(seek_x+500, seek_y, steps=10)
   page.wait_for_timeout(1000)
   current_frame = int(display_div.inner_text())
   _wait_for_frame(canvas[0], current_frame)
@@ -270,7 +270,7 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
 
   # Wait for hq buffer and verify it is red
-  page.wait_for_timeout(120000) # This takes forever with the weird color video
+  page.wait_for_timeout(15000) # This takes forever with the weird color video
   _wait_for_color(page, canvas, 0, timeout=30, name='seek')
 
   play_button.click()
@@ -283,13 +283,13 @@ def test_buffer_usage_single(page_factory, project, rgb_test):
 
   # Click the scrub handle
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+5, seek_y, steps=50)
+  page.mouse.move(seek_x+5, seek_y, steps=10)
   _wait_for_color(page, canvas, 1, timeout=30, name='small scrub (play buffer)')
 
-  page.mouse.move(seek_x+1000, seek_y, steps=50)
+  page.mouse.move(seek_x+1000, seek_y, steps=10)
   # Look for either green(play) or blue(scrub) based on how much got buffered, both are correct
   _wait_for_color(page, canvas, [1,2], timeout=30, name='big scrub (scrub buffer)')
 
@@ -314,29 +314,36 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
 
 
   # Wait for hq buffer and verify it is red
+  print("Waiting 15 seconds for video to load")
   page.wait_for_timeout(15000) # this takes forever with the weird color video
+  print("Waiting for page load colors")
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
 
+  print("Pressing play...")
   play_button.click()
+  print("Waiting for play colors")
   _wait_for_color(page, canvas[0], 1, timeout=30)
   _wait_for_color(page, canvas[1], 1, timeout=30)
   # Pause the video
+  print("Pressing pause...")
   play_button.click()
+  print("Waiting for pause colors")
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
 
 
   # Click the scrub handle
+  print("Moving scrub bar")
   seek_x,seek_y = _get_element_center(seek_handle)
-  page.mouse.move(seek_x, seek_y, steps=50)
+  page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
-  page.mouse.move(seek_x+5, seek_y, steps=50)
+  page.mouse.move(seek_x+5, seek_y, steps=10)
   _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
   _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
 
-  page.mouse.move(seek_x+1900, seek_y, steps=50)
+  page.mouse.move(seek_x+1900, seek_y, steps=10)
   _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
   _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
 
