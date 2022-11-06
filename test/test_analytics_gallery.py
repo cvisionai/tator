@@ -50,23 +50,19 @@ def test_basic(request, page_factory, project, image, video): #image
    canvas = page.query_selector('image-canvas')
    canvas_box = canvas.bounding_box()
    print(f"Canvas info: {canvas_box}")
-   canvas_center_x = canvas_box['x'] + canvas_box['width'] / 2
-   canvas_center_y = canvas_box['y'] + canvas_box['height'] / 2
    print("Drawing boxes with different enum values...")
-   box_info = [((-200, -50), 'String1'),
-                ((-50, -50), 'String2'),
-                ((-40, -40), 'String2'),
-                ((100, -50), 'String3'),
-                ((100, -60), 'String3'),
-                ((90, -50), 'String3'),
-                ((20, -20), 'String3'),
-                ((-30, -10), 'String3')]
+   box_info = [((10, 10), 'String1'),
+                ((50, 10), 'String2'),
+                ((100, 10), 'String2'),
+                ((150, 10), 'String3'),
+                ((200, 10), 'String3'),
+                ((250, 10), 'String3'),
+                ((300, 10), 'String3'),
+                ((350, 10), 'String3')]
    
    for idx, (start, test_value) in enumerate(box_info):
       page.click('box-button:not(.disabled)')
       x, y = start
-      x += canvas_center_x
-      y += canvas_center_y
       print(f"Create Box {x},{y}")
       width = 100
       height = 100
