@@ -12,7 +12,7 @@ from ._common import print_page_error
 # Bulk Edit
 # Back to Loc gallery filter on Edit
 # Confirm the count
-def test_basic(request, page_factory, project, image, video): #image 
+def test_basic(request, page_factory, project, image1, video): #image 
    print("Loc and Cor Gallery tests...")
 
    print("Adding a new attr to filter on later.")
