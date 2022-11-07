@@ -16,8 +16,6 @@ from ._base_views import BaseDetailView
 from ._permissions import ProjectViewOnlyPermission
 
 logger = logging.getLogger(__name__)
-
-from collections import defaultdict
 class MediaStatsAPI(BaseDetailView):
     """ Count, download size, and total size of a media list.
 
@@ -36,7 +34,6 @@ class MediaStatsAPI(BaseDetailView):
         # total_size
         # duration
         duration = 0
-        counts=defaultdict(lambda : 0)
         total_size = 0
 
         # Run aggregations
@@ -60,8 +57,9 @@ class MediaStatsAPI(BaseDetailView):
             if type_agg[k]:
                 total_size+=type_agg[k]
 
-        if counts['video'] > 0:
-            avg_fps = agg['total_fps'] / counts['video']
+        num_vids = qs.filter(meta__dtype='video').count()
+        if num_vids > 0:
+            avg_fps = agg['total_fps'] / num_vids
             duration = agg['total_frames'] / avg_fps
 
         response_data = {'count': qs.count(), 'duration': duration, 'total_size': total_size, 'download_size': total_size}
