@@ -339,18 +339,22 @@ def test_buffer_usage_multi(page_factory, project, multi_rgb):
   page.mouse.move(seek_x, seek_y, steps=10)
   page.mouse.down()
 
+  print("Testing small scrub")
   page.mouse.move(seek_x+5, seek_y, steps=10)
   _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
   _wait_for_color(page, canvas[0], 1, timeout=30, name='small scrub')
 
+  print("Testing large scrub")
   page.mouse.move(seek_x+1900, seek_y, steps=10)
   _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
   _wait_for_color(page, canvas[0], [1,2], timeout=30) # play buffer is OK here too
 
   # Release the scrub
+  print("Stopping scrub")
   page.mouse.up()
   _wait_for_color(page, canvas[0], 0, timeout=30)
   _wait_for_color(page, canvas[1], 0, timeout=30)
+  print("Closing page")
   page.close()
 
 
