@@ -205,6 +205,19 @@ def image_section(request, page_factory, project):
     yield section
 
 @pytest.fixture(scope='session')
+def image_section1(request, page_factory, project):
+    print("Creating image section...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.goto(f'/{project}/project-detail', wait_until='networkidle')
+    page.click('text="Add folder"')
+    page.fill('name-dialog input', 'Images 1')
+    page.click('text="Save"')
+    page.click('text="Images 1"')
+    section = int(page.url.split('=')[-1])
+    page.close()
+    yield section
+
+@pytest.fixture(scope='session')
 def image_set(request):
     print("Getting image files...")
     out_path = '/tmp/lfw.tgz'
@@ -353,6 +366,28 @@ def image(request, page_factory, project, image_section, image_file):
     print("Uploading an image...")
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f"/{project}/project-detail?section={image_section}", wait_until='networkidle')
+    page.wait_for_selector('section-upload')
+    page.set_input_files('section-upload input', image_file)
+    page.query_selector('upload-dialog').query_selector('text=Close').click()
+    while True:
+        page.locator('.project__header reload-button').click()
+        page.wait_for_load_state('networkidle')
+        cards = page.query_selector_all('entity-card')
+        if len(cards) == 0:
+            continue
+        href = cards[0].query_selector('a').get_attribute('href')
+        if 'annotation' in href:
+            print(f"Card href is {href}, media is ready...")
+            break
+    image = int(cards[0].get_attribute('media-id'))
+    page.close()
+    yield image
+
+@pytest.fixture(scope='session')
+def image1(request, page_factory, project, image_section1, image_file):
+    print("Uploading an image...")
+    page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
+    page.goto(f"/{project}/project-detail?section={image_section1}", wait_until='networkidle')
     page.wait_for_selector('section-upload')
     page.set_input_files('section-upload input', image_file)
     page.query_selector('upload-dialog').query_selector('text=Close').click()

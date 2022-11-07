@@ -12,7 +12,7 @@ from ._common import print_page_error
 # Bulk Edit
 # Back to Loc gallery filter on Edit
 # Confirm the count
-def test_basic(request, page_factory, project, image, video): #image 
+def test_basic(request, page_factory, project, image1, video): #image 
    print("Loc and Cor Gallery tests...")
 
    print("Adding a new attr to filter on later.")
@@ -44,7 +44,7 @@ def test_basic(request, page_factory, project, image, video): #image
    page.set_viewport_size({"width": 2560, "height": 1440}) # Annotation a decent screen
    
    # Image annotations
-   page.goto(f"/{project}/annotation/{image}", wait_until='networkidle')
+   page.goto(f"/{project}/annotation/{image1}", wait_until='networkidle')
    page.on("pageerror", print_page_error)
    page.wait_for_selector('image-canvas')
    canvas = page.query_selector('image-canvas')
