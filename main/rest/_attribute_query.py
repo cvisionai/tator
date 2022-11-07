@@ -148,7 +148,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
 
     # return original queryset if no queries were supplied
     if not filter_ops and not float_queries and not attribute_null:
-        return qs
+        return None
 
     found_it = False
     for key, value, op in filter_ops:
