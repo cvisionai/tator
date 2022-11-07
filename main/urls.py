@@ -110,14 +110,6 @@ urlpatterns += [
         name='SaveAlgorithmManifest',
     ),
     path(
-        'rest/Analyses/<int:project>',
-        AnalysisListAPI.as_view(),
-    ),
-    path(
-        'rest/Analysis/<int:id>',
-        AnalysisDetailAPI.as_view(),
-    ),
-    path(
         'rest/Announcements',
         AnnouncementListAPI.as_view(),
     ),
@@ -373,11 +365,6 @@ urlpatterns += [
     path(
         'rest/Section/<int:id>',
         SectionDetailAPI.as_view(),
-    ),
-    path(
-        'rest/SectionAnalysis/<int:project>',
-        SectionAnalysisAPI.as_view(),
-        name='SectionAnalysis',
     ),
     path(
         'rest/States/<int:project>',

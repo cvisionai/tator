@@ -20,7 +20,6 @@ from .models import StateType
 from .models import LeafType
 from .models import JobCluster
 from .models import Algorithm
-from .models import Analysis
 from .models import Version
 
 admin.site.register(Organization)
@@ -39,7 +38,6 @@ admin.site.register(StateType)
 admin.site.register(LeafType)
 admin.site.register(JobCluster)
 admin.site.register(Algorithm)
-admin.site.register(Analysis)
 admin.site.register(Version)
 
 TokenAdmin.raw_id_fields = ('user',)
