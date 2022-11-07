@@ -189,6 +189,7 @@ jobs:
     - run:
         name: Front end tests
         command: |
+          ssh lightsail 'argo delete --all';
           mkdir -p /tmp/videos;
           ssh lightsail 'mkdir -p /tmp/videos';
           sshfs -o default_permissions lightsail:/tmp/videos /tmp/videos;
@@ -246,13 +247,6 @@ workflows:
         filters:
           tags:
             only: /.*/
-    - front-end-tests:
-        requires:
-        - install-tator
-        context: cvisionai
-        filters:
-          tags:
-            only: /.*/
     - rest-tests:
         requires:
         - install-tator
@@ -263,6 +257,14 @@ workflows:
     - tator-py-tests:
         requires:
         - install-tator
+        context: cvisionai
+        filters:
+          tags:
+            only: /.*/
+    - front-end-tests:
+        requires:
+        - rest-tests
+        - tator-py-tests
         context: cvisionai
         filters:
           tags:
