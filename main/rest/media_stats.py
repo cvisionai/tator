@@ -46,13 +46,15 @@ class MediaStatsAPI(BaseDetailView):
                                 streaming=Func(F('media_files__streaming'), function='jsonb_array_elements'),
                                 thumbnail_gif=Func(F('media_files__thumbnail_gif'), function='jsonb_array_elements'),
                                 thumbnail=Func(F('media_files__thumbnail'), function='jsonb_array_elements'),
-                                archival=Func(F('media_files__archival'), function='jsonb_array_elements'))
+                                archival=Func(F('media_files__archival'), function='jsonb_array_elements'),
+                                attachment=Func(F('media_files__attachment'), function='jsonb_array_elements'))
         type_agg=extracted.aggregate(image_size=Sum(Cast('image__size', BigIntegerField())),
-                                streaming_size=Sum(Cast('streaming__size', BigIntegerField())),
-                                thumbnail_gif_size=Sum(Cast('thumbnail_gif__size', BigIntegerField())),
-                                thumbnail_size=Sum(Cast('thumbnail__size', BigIntegerField())),
-                                archival_size=Sum(Cast('archival__size', BigIntegerField())),
-                                )
+                                    streaming_size=Sum(Cast('streaming__size', BigIntegerField())),
+                                    thumbnail_gif_size=Sum(Cast('thumbnail_gif__size', BigIntegerField())),
+                                    thumbnail_size=Sum(Cast('thumbnail__size', BigIntegerField())),
+                                    archival_size=Sum(Cast('archival__size', BigIntegerField())),
+                                    attachment_size=Sum(Cast('attachment__size', BigIntegerField())),
+                                    )
         logger.info(type_agg)
         for k in type_agg.keys():
             if type_agg[k]:
