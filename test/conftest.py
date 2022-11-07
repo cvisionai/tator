@@ -210,7 +210,7 @@ def image_section1(request, page_factory, project):
     page = page_factory(f"{os.path.basename(__file__)}__{inspect.stack()[0][3]}")
     page.goto(f'/{project}/project-detail', wait_until='networkidle')
     page.click('text="Add folder"')
-    page.fill('name-dialog input', 'Images 2')
+    page.fill('name-dialog input', 'Images 1')
     page.click('text="Save"')
     page.click('text="Images 1"')
     section = int(page.url.split('=')[-1])
