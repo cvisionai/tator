@@ -1,8 +1,10 @@
 import logging
 from collections import defaultdict
 
-from django.db import connection
 from django.db.models import Sum, Avg, Count
+from django.db.models import Func, F
+from django.db.models.functions import Cast
+from django.contrib.gis.db.models import BigIntegerField
 
 from ..models import Media
 from ..search import TatorSearch
@@ -35,55 +37,33 @@ class MediaStatsAPI(BaseDetailView):
         # duration
         duration = 0
         counts=defaultdict(lambda : 0)
-        sizes=defaultdict(lambda : 0)
-
-        # Re-wrap query to get columns accessible
-        ids = [x['id'] for x in qs.values()]
-        qs = Media.objects.filter(pk__in=ids)
+        total_size = 0
 
         # Run aggregations
         agg = qs.filter(meta__dtype='video').aggregate(total_frames=Sum('num_frames'), total_fps=Sum('fps'))
 
-        with connection.cursor() as cursor:
-            # Get counts of types
-            for key in ['video', 'image', 'multi', 'live']:
-                type_qs = qs.filter(meta__dtype=key)
-                counts[key] = type_qs.count()
-            
-                if key == 'image':
-                    type_ids = list(type_qs.values_list('id', flat=True))
-                    type_ids = [str(x) for x in type_ids]
-                    type_ids = ",".join(type_ids)
-                    cursor.execute(f"SELECT SUM(CAST(image->'size' AS int)) FROM (SELECT jsonb_array_elements(media_files->'image') AS image from main_media WHERE id IN ({type_ids})) AS selector")
-                    res = cursor.fetchone()
-                    if res[0]:
-                        sizes[key] += res[0]
-                elif key == 'video':
-                    type_ids = list(type_qs.values_list('id', flat=True))
-                    type_ids = [str(x) for x in type_ids]
-                    type_ids = ",".join(type_ids)
-                    sql_str = f"SELECT SUM(CAST(streaming->'size' AS int)) FROM (SELECT jsonb_array_elements(media_files->'streaming') AS streaming from main_media WHERE id IN ({type_ids})) AS selector"
-                    logger.info(sql_str)
-                    cursor.execute(sql_str)
-                    res = cursor.fetchone()
-                    if res[0]:
-                        sizes[key] =+ res[0]
-                    cursor.execute(f"SELECT SUM(CAST(archival->'size' AS int)) FROM (SELECT jsonb_array_elements(media_files->'archival') AS archival from main_media WHERE id IN ({type_ids})) AS selector")
-                    res = cursor.fetchone()
-                    if res[0]:
-                        sizes[key] += res[0]
-            
-        
+        extracted=qs.annotate(image=Func(F('media_files__image'), function='jsonb_array_elements'),
+                                streaming=Func(F('media_files__streaming'), function='jsonb_array_elements'),
+                                thumbnail_gif=Func(F('media_files__thumbnail_gif'), function='jsonb_array_elements'),
+                                thumbnail=Func(F('media_files__thumbnail'), function='jsonb_array_elements'),
+                                archival=Func(F('media_files__archival'), function='jsonb_array_elements'))
+        type_agg=extracted.aggregate(image_size=Sum(Cast('image__size', BigIntegerField())),
+                                streaming_size=Sum(Cast('streaming__size', BigIntegerField())),
+                                thumbnail_gif_size=Sum(Cast('thumbnail_gif__size', BigIntegerField())),
+                                thumbnail_size=Sum(Cast('thumbnail__size', BigIntegerField())),
+                                archival_size=Sum(Cast('archival__size', BigIntegerField())),
+                                )
+        logger.info(type_agg)
+        for k in type_agg.keys():
+            if type_agg[k]:
+                total_size+=type_agg[k]
+
         if counts['video'] > 0:
             avg_fps = agg['total_fps'] / counts['video']
             duration = agg['total_frames'] / avg_fps
 
-            
-        response_data = {'count': qs.count(), 'duration': duration}
-        for key in ['video', 'image', 'multi', 'live']:
-            response_data[f"total_{key}_count"] = counts[key]
+        response_data = {'count': qs.count(), 'duration': duration, 'total_size': total_size, 'download_size': total_size}
         
-        for key in ['video', 'image']:
-            response_data[f"total_{key}_size"] = sizes[key]
+        
         return response_data
 
