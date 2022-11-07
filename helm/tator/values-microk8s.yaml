@@ -165,7 +165,7 @@ elasticsearch:
   nodeSelector: 
     dbServer: "yes"
 filebeat:
-  enabled: true
+  enabled: false
   image: docker.elastic.co/beats/filebeat-oss
   imageTag: 7.10.2
   filebeatConfig:
@@ -184,7 +184,7 @@ filebeat:
         hosts: ['${ELASTICSEARCH_HOST:elasticsearch-master}:${ELASTICSEARCH_PORT:9200}']
       setup.ilm.enabled: false
 kibana:
-  enabled: true
+  enabled: false
   image: docker.elastic.co/kibana/kibana-oss
   imageTag: 7.10.2
   kibanaConfig:
