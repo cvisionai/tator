@@ -204,6 +204,7 @@ def bulk_update_and_log_changes(queryset, project, user, update_kwargs=None, new
     # Get prior state data for ChangeLog creation
     updated_ids = list(queryset.values_list("id", flat=True))
     first_obj = queryset.first()
+    queryset = type(first_obj).objects.filter(pk__in=updated_ids)
     ref_table = ContentType.objects.get_for_model(first_obj)
     model_dict = first_obj.model_dict
 
