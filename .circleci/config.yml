@@ -9,7 +9,6 @@ jobs:
       image: ubuntu-2004:2022.04.2
     environment:
       DOCKER_REGISTRY: cvisionai
-      DOCKER_BUILDKIT: 1
     steps:
     - attach_workspace:
         at: ~/
