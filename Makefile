@@ -88,6 +88,9 @@ check_restore:
 init-logs:
 	kubectl logs $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -c init-tator-online
 
+ui_bash:
+	kubectl exec -it $$(kubectl get pod -l "app=ui" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh
+
 # Top-level rule to catch user action + podname and whether it is present
 # Sets pod name to the command to execute on each pod.
 define generate_rule
@@ -102,7 +105,7 @@ _reset:
 	kubectl delete pods -l app=$(podname)
 
 _bash:
-	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/sh
+	kubectl exec -it $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///') -- /bin/bash
 
 _logs:
 	kubectl describe pod $$(kubectl get pod -l "app=$(podname)" -o name | head -n 1 | sed 's/pod\///')
