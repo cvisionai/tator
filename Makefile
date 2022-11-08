@@ -174,24 +174,24 @@ endif
 
 .PHONY: tator-image
 tator-image:
-	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
 	touch .token/tator_online_$(GIT_VERSION)
 
 .PHONY: ui-image
 ui-image: webpack
-	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION) -f containers/tator_ui/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_ui:$(GIT_VERSION)
 
 .PHONY: graphql-image
 graphql-image: doc/_build/schema.yaml
-	docker build --network host -t $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION) -f containers/tator_graphql/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION) -f containers/tator_graphql/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_graphql:$(GIT_VERSION)
 
 .PHONY: postgis-image
 postgis-image:
-	docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_postgis:latest
 
 EXPERIMENTAL_DOCKER=$(shell docker version --format '{{json .Client.Experimental}}')
@@ -214,7 +214,7 @@ USE_VPL=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.y
 ifeq ($(USE_VPL),True)
 .PHONY: client-vpl
 client-vpl: $(TATOR_PY_WHEEL_FILE)
-	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION) -f containers/tator_client/Dockerfile.vpl . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_vpl:$(GIT_VERSION)
 else
 .PHONY: client-vpl
@@ -224,11 +224,11 @@ endif
 
 .PHONY: client-amd64
 client-amd64: $(TATOR_PY_WHEEL_FILE)
-	docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --platform linux/amd64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_amd64:$(GIT_VERSION) -f containers/tator_client/Dockerfile . || exit 255
 
 .PHONY: client-aarch64
 client-aarch64: $(TATOR_PY_WHEEL_FILE)
-		docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
+		DOCKER_BUILDKIT=1 docker build --platform linux/aarch64 --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_aarch64:$(GIT_VERSION) -f containers/tator_client/Dockerfile_arm . || exit 255
 
 # Publish client image to dockerhub so it can be used cross-cluster
 .PHONY: client-image
@@ -247,7 +247,7 @@ client-latest: client-image
 
 .PHONY: braw-image
 braw-image:
-	docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
+	DOCKER_BUILDKIT=1 docker build --network host -t $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) -f containers/tator_client_braw/Dockerfile . || exit 255
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION)
 	docker tag $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:$(GIT_VERSION) $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
 	docker push $(SYSTEM_IMAGE_REGISTRY)/tator_client_braw:latest
