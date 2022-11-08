@@ -327,6 +327,9 @@ def user_save(sender, instance, created, **kwargs):
         else:
             TatorCognito().update_attributes(instance)
     if created:
+        if settings.SAML_ENABLED and not instance.email:
+            instance.email = instance.username
+            instance.save()
         invites = Invitation.objects.filter(email=instance.email, status='Pending')
         if (invites.count() == 0) and (os.getenv('AUTOCREATE_ORGANIZATIONS')):
             organization = Organization.objects.create(name=f"{instance}'s Team")
