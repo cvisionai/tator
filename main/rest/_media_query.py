@@ -95,11 +95,8 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         qs = qs.filter(archive_state__in=archive_states)
 
     if filter_type is not None:
-        attr_qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
-        if attr_qs:
-            qs = attr_qs.filter(meta=filter_type)
-        else:
-            qs = qs.filter(meta=filter_type)
+        qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = qs.filter(meta=filter_type)
     else:
         queries = []
         for entity_type in MediaType.objects.filter(project=project):
@@ -107,10 +104,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
             if sub_qs:
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
-        if queries:
-            qs = queries.pop()
-            for r in queries:
-                qs = qs.union(r)
+        qs = queries.pop()
+        for r in queries:
+            qs = qs.union(r)
 
     qs = qs.order_by('name', 'id')
 

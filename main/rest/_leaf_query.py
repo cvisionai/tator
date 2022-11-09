@@ -41,11 +41,8 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
         qs = qs.filter(name=name)
 
     if filter_type is not None:
-        attr_qs = get_attribute_psql_queryset(project, LeafType.objects.get(pk=filter_type), qs, params, filter_ops)
-        if attr_qs:
-            qs = attr_qs.filter(meta=filter_type)
-        else:
-            qs = qs.filter(meta=filter_type)
+        qs = get_attribute_psql_queryset(project, LeafType.objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = qs.filter(meta=filter_type)
     else:
         queries = []
         for entity_type in LeafType.objects.filter(project=project):
@@ -53,10 +50,9 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
             if sub_qs:
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
-        if queries:
-            qs = queries.pop()
-            for r in queries:
-                qs = qs.union(r)
+        qs = queries.pop()
+        for r in queries:
+            qs = qs.union(r)
 
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).

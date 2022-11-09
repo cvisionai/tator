@@ -80,11 +80,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
 
     if filter_type is not None:
-        attr_qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
-        if attr_qs:
-            qs = attr_qs.filter(meta=filter_type)
-        else:
-            qs = qs.filter(meta=filter_type)
+        qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
+        qs = qs.filter(meta=filter_type)
     else:
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
@@ -92,10 +89,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             if type(sub_qs) != type(None):
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
-        if queries:
-            qs = queries.pop()
-            for r in queries:
-                qs = qs.union(r)
+        qs = queries.pop()
+        for r in queries:
+            qs = qs.union(r)
 
     if exclude_parents:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
