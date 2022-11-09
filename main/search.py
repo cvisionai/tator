@@ -278,6 +278,9 @@ class TatorSearch:
             self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush)
             self.create_psql_index(entity_type, {'name': 'tator_user_sections', 'dtype': 'section'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_restoration_requested', 'dtype': 'native'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_archive_status_date', 'dtype': 'native'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_archive_state', 'dtype': 'native_string'}, flush=flush)
         if type(entity_type) == LocalizationType:
             self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush)
