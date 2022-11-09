@@ -2454,42 +2454,6 @@ class TranscodeTestCase(
     def tearDown(self):
         self.project.delete()
 
-class AnalysisCountTestCase(
-        APITestCase,
-        PermissionCreateTestMixin,
-        PermissionListMembershipTestMixin):
-    def setUp(self):
-        logging.disable(logging.CRITICAL)
-        self.user = create_test_user()
-        self.client.force_authenticate(self.user)
-        self.project = create_test_project(self.user)
-        self.membership = create_test_membership(self.user, self.project)
-        self.entity_type = MediaType.objects.create(
-            name="video",
-            dtype='video',
-            project=self.project,
-            attribute_types=create_test_attribute_types(),
-        )
-        self.entities = [
-            create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
-            for idx in range(random.randint(3, 10))
-        ]
-        self.analysis = Analysis.objects.create(
-            project=self.project,
-            name="count_test",
-            data_query='Enum Test:enum_val1',
-        )
-        self.list_uri = 'Analyses'
-        self.detail_uri = 'Analysis'
-        self.create_json = {
-            'name': 'count_create_test',
-            'data_query': 'Enum Test:enum_val2',
-        }
-        self.edit_permission = Permission.FULL_CONTROL
-
-    def tearDown(self):
-        self.project.delete()
-
 class VersionTestCase(
         APITestCase,
         PermissionCreateTestMixin,
