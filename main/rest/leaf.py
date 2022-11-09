@@ -50,9 +50,11 @@ class LeafSuggestionAPI(BaseDetailView):
     http_method_names = ['get']
 
     def _get(self, params):
+        project = params.get('project')
         minLevel=int(params.get('minLevel', 1))
         startsWith=params.get('query', None)
         ancestor=params['ancestor']
+        """
         query = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(dict))))
         query['size'] = 10
         query['sort']['_exact_treeleaf_name'] = 'asc'
@@ -61,8 +63,18 @@ class LeafSuggestionAPI(BaseDetailView):
             {'range': {'_treeleaf_depth': {'gte': minLevel}}},
             {'query_string': {'query': f'{startsWith}* AND _treeleaf_path:{ancestor}*'}},
         ]
-        ids, _ = TatorSearch().search(params['project'], query)
-        queryset = list(Leaf.objects.filter(pk__in=ids))
+        """
+        # Try to find root node for type
+        root_node = Leaf.objects.filter(project=project, path=ancestor)
+        if root_node.count() == 0:
+            return []
+        
+        type_id = root_node[0].meta
+        queryset = Leaf.objects.filter(project=project, 
+                                       meta=type_id, 
+                                       name__istartswith=startsWith, 
+                                       path__istartswith=ancestor,
+                                       path__depth__gte=minLevel)
 
         suggestions=[]
         for idx,match in enumerate(queryset):
@@ -93,6 +105,7 @@ class LeafSuggestionAPI(BaseDetailView):
             return elem["group"]
 
         suggestions.sort(key=functor)
+        logger.info(queryset.explain())
         return suggestions
 
 class LeafListAPI(BaseListView):

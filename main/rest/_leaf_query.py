@@ -73,6 +73,7 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     elif stop is not None:
         qs = qs[:stop]
 
+    logger.info(qs.explain())
     return qs
 
 def get_leaf_queryset(project, params):

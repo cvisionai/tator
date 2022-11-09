@@ -108,6 +108,25 @@ def make_string_index(db_name,project_id, entity_type_id, table_name, index_name
         cursor.execute(sql_str, (project_id, entity_type_id))
         print(sql_str.as_string(cursor))
 
+def make_upper_string_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, method='GIN'):
+    col_name = _get_column_name(attribute)
+    index_name += "_upper"
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
+                                 USING {method} (UPPER(CAST({col_name} AS text)) {method}_trgm_ops)
+                                 WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                                                                     method=sql.SQL(method.lower()),
+                                                                   table_name=sql.Identifier(table_name),
+                                                                   col_name=sql.SQL(col_name))
+        cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str.as_string(cursor))
+
 def make_section_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, method='GIN'):
     col_name = _get_column_name(attribute)
     with get_connection(db_name).cursor() as cursor:
@@ -223,7 +242,8 @@ class TatorSearch:
         'float_array' : make_vector_index,
         'native' : make_native_index,
         'native_string' : make_native_string_index,
-        'section' : make_section_index
+        'section' : make_section_index,
+        'upper_string': make_upper_string_index
     }
 
     def list_indices(self, project):
@@ -290,6 +310,8 @@ class TatorSearch:
         if type(entity_type) == LeafType:
             self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'string'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'string'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'upper_string'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'upper_string'}, flush=flush)
 
     def rename_alias(self, entity_type, related_objects, old_name, new_name):
         """
