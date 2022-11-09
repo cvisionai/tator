@@ -3,6 +3,7 @@ from collections import defaultdict
 import logging
 
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
 from ..search import TatorSearch
 from ..models import Leaf
@@ -43,16 +44,20 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, LeafType.objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
-    else:
+    if filter_ops:
         queries = []
         for entity_type in LeafType.objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if sub_qs:
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
-        qs = queries.pop()
-        for r in queries:
-            qs = qs.union(r)
+        if queries:
+            query = Q(pk__in=sub_qs)
+            for r in queries:
+                query = query | Query(pk__in=r)
+            qs = qs.filter(query)
+        else:
+            qs = sub_qs
 
     # Coalesce is a no-op that prevents PSQL from using the primary key index for small
     # LIMIT values (which results in slow queries).

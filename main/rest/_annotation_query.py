@@ -4,6 +4,7 @@ import logging
 
 from django.db.models import Subquery
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
 from ..models import Localization, LocalizationType
 from ..models import State, StateType
@@ -82,16 +83,21 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
-    else:
+    elif filter_ops:
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if type(sub_qs) != type(None):
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
-        qs = queries.pop()
-        for r in queries:
-            qs = qs.union(r)
+        sub_qs = queries.pop()
+        if queries:
+            query = Q(pk__in=sub_qs)
+            for r in queries:
+                query = query | Query(pk__in=r)
+            qs = qs.filter(query)
+        else:
+            qs = sub_qs
 
     if exclude_parents:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))

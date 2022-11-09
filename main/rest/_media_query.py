@@ -4,6 +4,7 @@ import logging
 from urllib import parse as urllib_parse
 
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
 from ..search import TatorSearch
 from ..models import Section
@@ -97,16 +98,22 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
-    else:
+    elif filter_ops:
         queries = []
         for entity_type in MediaType.objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if sub_qs:
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
-        qs = queries.pop()
-        for r in queries:
-            qs = qs.union(r)
+        
+        sub_qs = queries.pop()
+        if queries:
+            query = Q(pk__in=sub_qs)
+            for r in queries:
+                query = query | Query(pk__in=r)
+            qs = qs.filter(query)
+        else:
+            qs = sub_qs
 
     qs = qs.order_by('name', 'id')
 
