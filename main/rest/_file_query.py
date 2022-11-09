@@ -2,6 +2,7 @@ from collections import defaultdict
 import logging
 
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
 from ..search import TatorSearch
 from ..models import File
@@ -49,16 +50,16 @@ def _get_file_psql_queryset(project, filter_ops, params):
             if sub_qs:
                 queries.append(sub_qs.filter(meta=entity_type))
         logger.info(f"Joining {len(queries)} queries together.")
-        qs = queries.pop()
-        for r in queries:
-            qs = qs.union(r)
+        sub_qs = queries.pop()
+        if queries:
+            query = Q(pk__in=sub_qs)
+            for r in queries:
+                query = query | Q(pk__in=r)
+            qs = qs.filter(query)
+        else:
+            qs = sub_qs
 
-    # Coalesce is a no-op that prevents PSQL from using the primary key index for small
-    # LIMIT values (which results in slow queries).
-    if stop is None:
-        qs = qs.order_by('id')
-    else:
-        qs = qs.order_by(Coalesce('id', 'id'))
+    qs = qs.order_by('id')
 
     if start is not None and stop is not None:
         qs = qs[start:stop]

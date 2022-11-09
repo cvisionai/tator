@@ -94,7 +94,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         if queries:
             query = Q(pk__in=sub_qs)
             for r in queries:
-                query = query | Query(pk__in=r)
+                query = query | Q(pk__in=r)
             qs = qs.filter(query)
         else:
             qs = sub_qs
@@ -103,12 +103,8 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)
         
-    # Coalesce is a no-op that prevents PSQL from using the primary key index for small
-    # LIMIT values (which results in slow queries).
-    if exclude_parents or (stop is None):
+    if exclude_parents:
         qs = qs.order_by('id')
-    else:
-        qs = qs.order_by(Coalesce('id', 'id'))
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]
