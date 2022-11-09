@@ -44,30 +44,41 @@ def _get_unique_index_name(entity_type, attribute):
     return index_name
 
 def _get_column_name(attribute):
-    if attribute.startswith('_'):
-        return attribute[1:] # internal field
+    name=re.sub(r"[^a-zA-Z0-9]","_",attribute['name'])
+    if name.startswith('_'):
+        return name[1:] # internal field
     else:
-        return f"attributes->>'{attribute['name']}'" #embedded in JSONB field
+        return f"attributes->>'{name}'" #embedded in JSONB field
 
 def make_btree_index(db_name, project_id, entity_type_id, table_name, index_name,  attribute, psql_type, flush):
     with get_connection(db_name).cursor() as cursor:
         if flush:
-            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.Literal(index_name)))
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.Identifier(index_name)))
         cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
         if bool(cursor.fetchall()):
             return
         col_name = _get_column_name(attribute)
-        sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
-                           USING btree (CAST({col_name} AS {psql_type}))
-                           WHERE project=%s and meta=%s""").format(index_name=sql.Literal(index_name),
-                                                                   table_name=sql.Identifier(table_name),
-                                                                   col_name=sql.Identifier(col_name),
-                                                                   psql_type=sql.Literal(psql_type))
+        if psql_type == 'native':
+            sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
+                            USING btree ({col_name})
+                            WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                                                                    table_name=sql.Identifier(table_name),
+                                                                    col_name=sql.SQL(col_name))
+        else:
+            sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
+                            USING btree (CAST({col_name} AS {psql_type}))
+                            WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                                                                    table_name=sql.Identifier(table_name),
+                                                                    col_name=sql.SQL(col_name),
+                                                                    psql_type=sql.SQL(psql_type))
         cursor.execute(sql_str, (project_id, entity_type_id))
         print(sql_str)
+
+def make_native_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush):
+    make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'native', flush)
+
 def make_bool_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush):
     make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'boolean', flush)
-
 
 def make_int_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush):
     make_btree_index(db_name,project_id, entity_type_id, table_name, index_name, attribute, 'integer', flush)
@@ -79,20 +90,19 @@ def make_string_index(db_name,project_id, entity_type_id, table_name, index_name
     col_name = _get_column_name(attribute)
     with get_connection(db_name).cursor() as cursor:
         if flush:
-            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.Literal(index_name)))
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
         cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
         if bool(cursor.fetchall()):
             return
         col_name = _get_column_name(attribute)
         sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
-                                 USING {method} (CAST({col_name} AS text) {method.lower()}_trgm_ops)
-                                 WHERE project=%s and meta=%s""").format(index_name=sql.Literal(index_name),
-                                                                   method=sql.Literal(method),
+                                 USING {method} (CAST({col_name} AS text) {method}_trgm_ops)
+                                 WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                                                                     method=sql.SQL(method.lower()),
                                                                    table_name=sql.Identifier(table_name),
-                                                                   col_name=sql.Identifier(col_name),
-                                                                   psql_type=sql.Literal(psql_type))
+                                                                   col_name=sql.SQL(col_name))
         cursor.execute(sql_str, (project_id, entity_type_id))
-        print(sql_str)
+        print(sql_str.as_string(cursor))
 
 def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush):
     func_str=f"""CREATE OR REPLACE FUNCTION tator_timestamp(text)
@@ -100,14 +110,15 @@ def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_na
                 $func$
                 SELECT CAST($1 as timestamp)
                 $func$ LANGUAGE sql IMMUTABLE;"""
+    col_name = _get_column_name(attribute)
     sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name} 
-    USING btree (tator_timestamp({col_name})) WHERE project=%s AND meta=%s;""").format(index_name=sql.Literal(index_name),
+    USING btree (tator_timestamp({col_name})) WHERE project=%s AND meta=%s;""").format(index_name=sql.SQL(index_name),
                                                                    table_name=sql.Identifier(table_name),
-                                                                   col_name=sql.Identifier(col_name)
+                                                                   col_name=sql.SQL(col_name)
                                                                    )
     with get_connection(db_name).cursor() as cursor:
         if flush:
-            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.Literal(index_name)))
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
         cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
         if bool(cursor.fetchall()):
             return
@@ -126,7 +137,7 @@ def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name
                          )
     with get_connection(db_name).cursor() as cursor:
         if flush:
-            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.Literal(index_name)))
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
         cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
         if bool(cursor.fetchall()):
             return
@@ -136,7 +147,7 @@ def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name
 def make_vector_index(db_name, project_id, entity_type_id, table_name, index_name, attribute, flush):
     with get_connection(db_name).cursor() as cursor:
         if flush:
-            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.Literal(index_name)))
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
         cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
         if bool(cursor.fetchall()):
             return
@@ -145,15 +156,16 @@ def make_vector_index(db_name, project_id, entity_type_id, table_name, index_nam
             sql_str = sql.SQL("""CREATE INDEX {index_name}_{method} ON {table_name} 
                                  using ivfflat(CAST(attributes -> '{attribute['name']}' AS vector({attribute['size']})) 
                                                                    vector_{method}_ops) WHERE project=%s and meta=%s;""").format(
-                                                                   index_name=sql.Literal(index_name),
-                                                                   method=sql.Literal(method),
+                                                                   index_name=sql.SQL(index_name),
+                                                                   method=sql.SQL(method),
                                                                    table_name=sql.Identifier(table_name))
+            print(sql_str)
             cursor.execute(sql_str, (project_id, entity_type_id))
             print(sql_str)
 
 def delete_psql_index(db_name,index_name):
     with get_connection(db_name).cursor() as cursor:
-        cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.Literal(index_name)))
+        cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
 
 class TatorSearch:
     """ Interface for managing psql indices
@@ -169,6 +181,7 @@ class TatorSearch:
         'datetime' : make_datetime_index,
         'geopos' : make_geopos_index,
         'float_array' : make_vector_index,
+        'native' : make_native_index
     }
 
     def list_indices(self, project):
@@ -199,8 +212,6 @@ class TatorSearch:
     def create_psql_index(self, entity_type, attribute, flush=False):
         """ Create a psql index for the given attribute """
         index_name = _get_unique_index_name(entity_type, attribute)
-        if flush:
-            self.delete_index(entity_type, attribute)
         if self.is_index_present(entity_type, attribute) and flush==False:
             logger.info(f"Index '{index_name}' already exists.")
             return False
@@ -221,13 +232,18 @@ class TatorSearch:
 
         # Add project specific indices based on the type being indexed
         if type(entity_type) == MediaType:
-            pass
+            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'string'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush)
         if type(entity_type) == LocalizationType:
-            pass
+            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush)
         if type(entity_type) == StateType:
-            pass
+            self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush)
         if type(entity_type) == LeafType:
-            pass
+            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'string'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'string'}, flush=flush)
 
     def rename_alias(self, entity_type, related_objects, old_name, new_name):
         """
