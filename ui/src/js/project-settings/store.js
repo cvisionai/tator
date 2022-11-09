@@ -272,8 +272,8 @@ const store = create(subscribeWithSelector((set, get) => ({
          const object = await fn(orgId);
 
          if (object.response.ok) {
-            const setList = get()[type].setList;
-            const map = get()[type].map;
+            const setList = new Set();
+            const map = new Map();
    
             /* Add the data via loop to: setList and map */
             for (let item of object.data) {
@@ -306,8 +306,8 @@ const store = create(subscribeWithSelector((set, get) => ({
          const object = await fn(projectId);
 
          if (object.response.ok) {
-            const setList = get()[type].setList;
-            const map = get()[type].map;
+            const setList = new Set();
+            const map = new Map();
    
             /* Add the data via loop to: setList and map */
             if (type == "Project") {
