@@ -3586,7 +3586,7 @@ class MutateAliasTestCase(APITransactionTestCase):
                 attribute = {**attribute_obj}
 
         found_it = False
-        for i in range(30):
+        for i in range(300):
             if TatorSearch().is_index_present(entity_type, attribute) == True:
                 found_it = True
                 break
@@ -3605,7 +3605,7 @@ class MutateAliasTestCase(APITransactionTestCase):
                 element = {**attribute_obj}
 
         found_it = False
-        for i in range(30):
+        for i in range(300):
             transaction.commit()
             if TatorSearch().is_index_present(entity_type, element) == True:
                 found_it = True
