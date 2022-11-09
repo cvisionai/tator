@@ -40,7 +40,10 @@ def _get_unique_index_name(entity_type, attribute):
     type_name_sanitized=entity_type.__class__.__name__.lower()
     entity_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",entity_type.name).lower()
     attribute_name_sanitized=re.sub(r"[^a-zA-Z0-9]","_",attribute['name']).lower()
-    index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_{entity_name_sanitized}_{attribute_name_sanitized}"
+    if attribute['name'].startswith('_'):
+        index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_internal_{attribute_name_sanitized}"
+    else:
+        index_name=f"tator_proj_{entity_type.project.id}_{type_name_sanitized}_{entity_name_sanitized}_{attribute_name_sanitized}"
     return index_name
 
 def _get_column_name(attribute):
@@ -61,9 +64,10 @@ def make_btree_index(db_name, project_id, entity_type_id, table_name, index_name
         if psql_type == 'native':
             sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                             USING btree ({col_name})
-                            WHERE project=%s and meta=%s""").format(index_name=sql.SQL(index_name),
+                            WHERE project=%s""").format(index_name=sql.SQL(index_name),
                                                                     table_name=sql.Identifier(table_name),
                                                                     col_name=sql.SQL(col_name))
+            cursor.execute(sql_str, (project_id, ))
         else:
             sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
                             USING btree (CAST({col_name} AS {psql_type}))
@@ -71,7 +75,7 @@ def make_btree_index(db_name, project_id, entity_type_id, table_name, index_name
                                                                     table_name=sql.Identifier(table_name),
                                                                     col_name=sql.SQL(col_name),
                                                                     psql_type=sql.SQL(psql_type))
-        cursor.execute(sql_str, (project_id, entity_type_id))
+            cursor.execute(sql_str, (project_id, entity_type_id))
         print(sql_str)
 
 def make_native_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush):
@@ -102,6 +106,42 @@ def make_string_index(db_name,project_id, entity_type_id, table_name, index_name
                                                                    table_name=sql.Identifier(table_name),
                                                                    col_name=sql.SQL(col_name))
         cursor.execute(sql_str, (project_id, entity_type_id))
+        print(sql_str.as_string(cursor))
+
+def make_section_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, method='GIN'):
+    col_name = _get_column_name(attribute)
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
+                                 USING {method} (CAST({col_name} AS text) {method}_trgm_ops)
+                                 WHERE project=%s""").format(index_name=sql.SQL(index_name),
+                                                                     method=sql.SQL(method.lower()),
+                                                                   table_name=sql.Identifier(table_name),
+                                                                   col_name=sql.SQL(col_name))
+        cursor.execute(sql_str, (project_id, ))
+        print(sql_str.as_string(cursor))
+
+def make_native_string_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush, method='GIN'):
+    col_name = _get_column_name(attribute)
+    with get_connection(db_name).cursor() as cursor:
+        if flush:
+            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
+        cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
+        if bool(cursor.fetchall()):
+            return
+        col_name = _get_column_name(attribute)
+        sql_str=sql.SQL("""CREATE INDEX CONCURRENTLY {index_name} ON {table_name}
+                                 USING {method} ({col_name} {method}_trgm_ops)
+                                 WHERE project=%s""").format(index_name=sql.SQL(index_name),
+                                                                     method=sql.SQL(method.lower()),
+                                                                   table_name=sql.Identifier(table_name),
+                                                                   col_name=sql.SQL(col_name))
+        cursor.execute(sql_str, (project_id, ))
         print(sql_str.as_string(cursor))
 
 def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_name,  attribute, flush):
@@ -181,7 +221,9 @@ class TatorSearch:
         'datetime' : make_datetime_index,
         'geopos' : make_geopos_index,
         'float_array' : make_vector_index,
-        'native' : make_native_index
+        'native' : make_native_index,
+        'native_string' : make_native_string_index,
+        'section' : make_section_index
     }
 
     def list_indices(self, project):
@@ -232,9 +274,10 @@ class TatorSearch:
 
         # Add project specific indices based on the type being indexed
         if type(entity_type) == MediaType:
-            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'string'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'native_string'}, flush=flush) # native fields are indexed across the entire project
             self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush)
+            self.create_psql_index(entity_type, {'name': 'tator_user_sections', 'dtype': 'section'}, flush=flush)
         if type(entity_type) == LocalizationType:
             self.create_psql_index(entity_type, {'name': '_created_datetime', 'dtype': 'native'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_modified_datetime', 'dtype': 'native'}, flush=flush)
