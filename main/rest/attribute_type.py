@@ -271,7 +271,7 @@ class AttributeTypeListAPI(BaseListView):
             if entity_type.attribute_types:
                 existing_names = [a['name'] for a in entity_type.attribute_types]
                 if new_attribute_type['name'] in existing_names:
-                    raise ValueError(f"{a['name'] is already an attribute.")
+                    raise ValueError(f"{a['name']} is already an attribute.")
                 entity_type.attribute_types.append(new_attribute_type)
             else:
                 entity_type.attribute_types = []
