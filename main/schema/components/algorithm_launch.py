@@ -16,22 +16,18 @@ algorithm_parameter = {
     },
 }
 
+from .._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
+
 algorithm_launch_spec = {
     'type': 'object',
-    'required': ['algorithm_name'],
+    'required': ['algorithm_name', 'media_ids'],
     'properties': {
         'algorithm_name': {
             'description': 'Name of the algorithm to execute.',
             'type': 'string',
         },
-        'media_query': {
-            'description': 'Query string used to filter media IDs. If '
-                           'supplied, media_ids will be ignored.',
-            'type': 'string',
-        },
         'media_ids': {
-            'description': 'List of media IDs. Must supply media_query '
-                           'or media_ids.',
+            'description': 'List of media IDs.',
             'type': 'array',
             'items': {'type': 'integer'},
         },

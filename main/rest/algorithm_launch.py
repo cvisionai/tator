@@ -10,7 +10,6 @@ from ..models import Algorithm
 from ..models import Media
 from ..kube import TatorAlgorithm
 from ..schema import AlgorithmLaunchSchema
-
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._media_query import query_string_to_media_ids
@@ -55,15 +54,7 @@ class AlgorithmLaunchAPI(BaseListView):
             raise Http404
         files_per_job = alg_obj.files_per_job
 
-        media_ids = []
-        # Get media IDs
-        if 'media_query' in params:
-            media_ids = query_string_to_media_ids(project_id, params['media_query'])
-        elif 'media_ids' in params:
-            media_ids = params['media_ids']
-        else:
-            media = Media.objects.filter(project=project_id)
-            media_ids = list(media.values_list("id", flat=True))
+        media_ids = params['media_ids']
         media_ids = [str(a) for a in media_ids]
 
         # Harvest extra parameters to pass into the algorithm if requested
