@@ -313,7 +313,7 @@ class TatorSearch:
             self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'upper_string'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'upper_string'}, flush=flush)
 
-    def rename_alias(self, entity_type, related_objects, old_name, new_name):
+    def rename_alias(self, entity_type, old_name, new_name):
         """
         Adds an alias corresponding to an attribute type rename. Note that the old alias will still
         exist but can be excluded by specifying fields parameter in query_string queries. Entity
