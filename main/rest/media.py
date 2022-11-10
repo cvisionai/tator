@@ -561,11 +561,6 @@ class MediaListAPI(BaseListView):
                     )
                     archive_qs = Media.objects.filter(pk__in=archive_ids_to_update)
 
-                    # Update in ES
-                    documents = []
-                    for entity in archive_qs:
-                        documents += ts.build_document(entity)
-
                 count = max(count, archive_count)
 
         return {"message": f"Successfully patched {count} medias!"}

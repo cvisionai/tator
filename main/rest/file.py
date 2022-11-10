@@ -106,12 +106,6 @@ class FileListAPI(BaseListView):
             modified_by=self.request.user,
             attributes=attrs)
 
-        # Build ES document
-        ts = TatorSearch()
-        documents = []
-        documents += ts.build_document(new_file)
-        ts.bulk_add_documents(documents)
-
         return {"message": f"Successfully created file {new_file.id}!", "id": new_file.id}
 
 class FileDetailAPI(BaseDetailView):
