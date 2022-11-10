@@ -6,9 +6,11 @@ from django.db.models import Subquery
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 
-from ..models import Localization, LocalizationType
+from ..models import Localization, LocalizationType, Media, MediaType
 from ..models import State, StateType
 from ..search import TatorSearch
+
+from ..schema._attributes import related_keys
 
 from ._media_query import query_string_to_media_ids
 from ._attribute_query import get_attribute_filter_ops
@@ -80,9 +82,11 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = qs.filter(pk__gt=after)
 
 
+    relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values('media').distinct()
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
+        relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values('media').distinct()
     elif filter_ops:
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
@@ -99,6 +103,23 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         else:
             qs = sub_qs
 
+    # Do a related query
+    if any([x in params for x in related_keys]):
+        related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
+        matches = [x for x in related_keys if x in params]
+        faux_params={key.replace('related_',''): params[key] for key in matches}
+        logger.info(faux_params)
+        related_matches = []
+        for entity_type in related_media_types:
+            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            if faux_filter_ops:
+                related_matches.append(get_attribute_psql_queryset(project, entity_type, Media.objects.filter(project=project), faux_params, faux_filter_ops))
+        if related_matches:
+            related_match = related_matches.pop()
+            query = Q(media__in=related_match)
+            for r in related_matches:
+                query = query | Q(media__in=r)
+            qs = qs.filter(query)
     if exclude_parents:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)

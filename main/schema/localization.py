@@ -5,7 +5,7 @@ from rest_framework.schemas.openapi import AutoSchema
 from ._message import message_schema
 from ._message import message_with_id_list_schema
 from ._errors import error_responses
-from ._attributes import attribute_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
 from ._annotation_query import annotation_filter_parameter_schema
 
 localization_filter_schema = [
@@ -86,7 +86,7 @@ class LocalizationListSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
-            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema
+            params = annotation_filter_parameter_schema + attribute_filter_parameter_schema + localization_filter_schema + related_attribute_filter_parameter_schema
         return params
 
     def get_request_body(self, path, method):

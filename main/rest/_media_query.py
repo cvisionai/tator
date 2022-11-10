@@ -8,9 +8,11 @@ from django.db.models import Q
 
 from ..search import TatorSearch
 from ..models import Section
-from ..models import Media
-from ..models import MediaType
+from ..models import Media, Localization, State
+from ..models import MediaType, LocalizationType, StateType
 from ..models import State
+
+from ..schema._attributes import related_keys
 
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
@@ -95,7 +97,11 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if archive_states is not None:
         qs = qs.filter(archive_state__in=archive_states)
 
+    relevant_state_type_ids = StateType.objects.filter(project=project)
+    relevant_localization_type_ids = LocalizationType.objects.filter(project=project)
     if filter_type is not None:
+        relevant_state_type_ids = relevant_state_type_ids.filter(media__in=[filter_type])
+        relevant_localization_type_ids = relevant_localization_type_ids.filter(media__in=[filter_type])
         qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
     elif filter_ops:
@@ -114,6 +120,31 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
             qs = qs.filter(query)
         else:
             qs = sub_qs
+
+     # Do a related query
+    logger.info(params)
+    if any([x in params for x in related_keys]):
+        related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
+        related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
+        logger.info(f"Related Query on {related_localization_types} + {related_state_types}")
+        matches = [x for x in related_keys if x in params]
+        faux_params={key.replace('related_',''): params[key] for key in matches}
+        logger.info(faux_params)
+        related_matches = []
+        for entity_type in related_state_types:
+            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            if faux_filter_ops:
+                related_matches.append(get_attribute_psql_queryset(project, entity_type, State.objects.filter(project=project), faux_params, faux_filter_ops))
+        for entity_type in related_localization_types:
+            faux_filter_ops = get_attribute_filter_ops(project, faux_params, entity_type)
+            if faux_filter_ops:
+                related_matches.append(get_attribute_psql_queryset(project, entity_type, Localization.objects.filter(project=project), faux_params, faux_filter_ops))
+        if related_matches:
+            related_match = related_matches.pop()
+            query = Q(pk__in=related_match.values('media'))
+            for r in related_matches:
+                query = query | Q(pk__in=r.values('media'))
+            qs = qs.filter(query)
 
     qs = qs.order_by('name', 'id')
 

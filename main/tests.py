@@ -1752,6 +1752,14 @@ class LocalizationMediaDeleteCase(APITestCase):
             name='loc_line_type',
             dtype='line',
             attribute_types=create_test_attribute_types())
+ 
+        # Associate media type and localization type together
+        self.box_type.media.add(self.image_type)
+        self.box_type.save()
+        self.line_type.media.add(self.image_type)
+        self.line_type.save()
+        self.dot_type.media.add(self.image_type)
+        self.dot_type.save()
 
     def test_single_media_delete(self):
         # Tests deleting a localization's associated media (1). The corresponding
@@ -1903,25 +1911,25 @@ class LocalizationMediaDeleteCase(APITestCase):
         assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val1}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val1}")
         self.assertEqual(len(response.data), 3)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val2}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}")
         self.assertEqual(len(response.data), 3)
 
-        response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val1}%22", format='json')
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?attribute=String Test::{unique_string_attr_val1}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val1}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val1}")
         self.assertEqual(len(response.data), 0)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val2}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}")
         self.assertEqual(len(response.data), 3)
 
-        response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val2}%22", format='json')
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?attribute=String Test::{unique_string_attr_val2}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?media_search=%22{unique_string_attr_val2}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}")
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}")

@@ -81,6 +81,25 @@ attribute_filter_parameter_schema = [
         'explode': False,
     },
     {
+        'name': 'start',
+        'in': 'query',
+        'required': False,
+        'description': 'Pagination start index. Index of the first item in a larger list to '
+                       'return.',
+        'schema': {'type': 'integer'},
+    },
+    {
+        'name': 'stop',
+        'in': 'query',
+        'required': False,
+        'description': 'Pagination start index. Non-inclusive ndex of the last item in a '
+                       'larger list to return.',
+        'schema': {'type': 'integer'},
+    }
+]
+
+related_attribute_filter_parameter_schema = [
+        {
         'name': 'related_attribute',
         'in': 'query',
         'required': False,
@@ -185,20 +204,6 @@ attribute_filter_parameter_schema = [
                    'items': {'type': 'string'}},
         'explode': False,
     },
-    {
-        'name': 'start',
-        'in': 'query',
-        'required': False,
-        'description': 'Pagination start index. Index of the first item in a larger list to '
-                       'return.',
-        'schema': {'type': 'integer'},
-    },
-    {
-        'name': 'stop',
-        'in': 'query',
-        'required': False,
-        'description': 'Pagination start index. Non-inclusive ndex of the last item in a '
-                       'larger list to return.',
-        'schema': {'type': 'integer'},
-    }
 ]
+
+related_keys = [x['name'] for x in related_attribute_filter_parameter_schema]

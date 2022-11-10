@@ -6,7 +6,7 @@ from ._message import message_schema
 from ._message import message_with_id_schema
 from ._errors import error_responses
 from ._media_query import media_filter_parameter_schema
-from ._attributes import attribute_filter_parameter_schema
+from ._attributes import attribute_filter_parameter_schema, related_attribute_filter_parameter_schema
 
 boilerplate = dedent("""\
 A media may be an image or a video. Media are a type of entity in Tator,
@@ -74,7 +74,7 @@ class MediaListSchema(AutoSchema):
     def get_filter_parameters(self, path, method):
         params = []
         if method in ['GET', 'PUT', 'PATCH', 'DELETE']:
-            params = media_filter_parameter_schema + attribute_filter_parameter_schema
+            params = media_filter_parameter_schema + attribute_filter_parameter_schema + related_attribute_filter_parameter_schema
         if method in ['GET', 'PUT']:
             params += [{
                 'name': 'presigned',
