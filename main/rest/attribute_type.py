@@ -184,19 +184,6 @@ class AttributeTypeListAPI(BaseListView):
                 cls._check_attribute_type(new_attribute_type)
                 ts.check_mutation(entity_type, old_name, new_attribute_type)
 
-                # TODO Remove this check once ES has been removed
-                if obj_qs.filter(project=entity_type.project).count() > max_instances:
-                    type_name = type(entity_type).__name__
-                    name = type_name.replace("Type", "")
-
-                    if name != "Media":
-                        name += "s"
-
-                    raise RuntimeError(
-                        f"Cannot mutate {type_name} with ID {entity_type.id} via the web UI "
-                        f"because it has too many {name}. Contact your Tator admin for assistance."
-                    )
-
             # List of success messages to return
             messages = []
 
@@ -282,6 +269,9 @@ class AttributeTypeListAPI(BaseListView):
 
             # Add the attribute to the desired entity type
             if entity_type.attribute_types:
+                existing_names = [a['name'] for a in entity_type.attribute_types]
+                if new_attribute_type['name'] in existing_names:
+                    raise ValueError(f"{a['name'] is already an attribute.")
                 entity_type.attribute_types.append(new_attribute_type)
             else:
                 entity_type.attribute_types = []
