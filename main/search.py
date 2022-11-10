@@ -437,6 +437,6 @@ class TatorSearch:
             if attribute_obj['name'] == name:
                 element = {**attribute_obj}
         if element is None:
-            raise(f"Couldn't find {old_name} in {entity_type.name}")
+            raise(f"Could not find attribute name {name} in entity type {entity_type.name}")
         self.delete_index(entity_type, element)
         return entity_type
