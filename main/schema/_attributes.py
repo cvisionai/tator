@@ -1,47 +1,5 @@
 attribute_filter_parameter_schema = [
     {
-        'name': 'search',
-        'in': 'query',
-        'required': False,
-        'description': 'Lucene query syntax string for use with Elasticsearch. '
-                       'See [reference](https://www.elastic.co/guide/en/elasticsearch/'
-                       'reference/7.10/query-dsl-query-string-query.html#query-string-syntax). '
-                       'This search string only applies to the relevant objects, not children or '
-                       'parents. For media, child annotations can be searched with `annotation_search`. '
-                       'For localizations and states, parent media can be searched with `media_search`.',
-        'schema': {'type': 'string'},
-        'examples': {
-            'no_search': {
-                'summary': 'No search',
-                'value': '',
-            },
-            'basic': {
-                'summary': 'Generic search',
-                'value': '"My search string"',
-            },
-            'user_attribute': {
-                'summary': 'Search on user-defined attribute',
-                'value': 'Species:lobster',
-            },
-            'builtin_attribute': {
-                'summary': 'Search built-in attribute',
-                'value': '_name:*.mp4',
-            },
-            'numerical_attribute': {
-                'summary': 'Search numerical attribute',
-                'value': '_width:<0.5',
-            },
-            'wildcard': {
-                'summary': 'Wildcard search',
-                'value': 'Species:*hake',
-            },
-            'boolean': {
-                'summary': 'Boolean search',
-                'value': '_name:*.mp4 AND Species:*hake',
-            },
-        },
-    },
-    {
         'name': 'attribute',
         'in': 'query',
         'required': False,
@@ -137,14 +95,5 @@ attribute_filter_parameter_schema = [
         'description': 'Pagination start index. Non-inclusive ndex of the last item in a '
                        'larger list to return.',
         'schema': {'type': 'integer'},
-    },
-    {
-        'name': 'force_es',
-        'in': 'query',
-        'required': False,
-        'description': 'Set to 1 to require an Elasticsearch based query. This can be used '
-                       'as a consistency check or for performance comparison.',
-        'schema': {'type': 'integer',
-                   'enum': [0, 1]},
-    },
+    }
 ]
