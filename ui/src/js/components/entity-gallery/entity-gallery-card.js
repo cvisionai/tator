@@ -531,9 +531,9 @@ export class EntityCard extends TatorElement {
       for (let [attr, value] of Object.entries(data.attributes)) {
         if (typeof this.attributeDivs[attr] !== "undefined") {
           if (this.attributeDivs[attr] != null) {
-            this.attributeDivs[attr].value.innerHTML = value;
+            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray">${attr}</span>: ${value}`;
           } else {
-            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray"><<span class="text-italics ">not set</span>></span>`;
+            this.attributeDivs[attr].value.innerHTML = `<span class="text-dark-gray"><span class="text-dark-gray">${attr}</span>: <<span class="text-italics ">not set</span>></span>`;
           }
         }
       }
