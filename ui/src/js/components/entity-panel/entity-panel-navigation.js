@@ -90,9 +90,9 @@ export class EntityPanelNavigation extends TatorElement {
    }
 
    _emitSelection(action, value = null) {
-      // console.log("updated via emit selection");
+      // console.log("updated via emit selection "+Object.keys(this._cardIndexes).length,this._cardIndexes);
       let newCardIndex = null;
-      let total = this._data.length;
+      let total = Object.keys(this._cardIndexes).length;
 
       // what is the new index
       if (action == "next") {
@@ -103,14 +103,12 @@ export class EntityPanelNavigation extends TatorElement {
          newCardIndex = value;
       }
 
-      // console.log(`newCardIndex ${newCardIndex} and current index is this._cardIndex ${this._cardIndex} (displayed should be +1)`);
-
       if (newCardIndex < 0) {
-         console.log(`But oops we're out of range! [START -1]  setting to end of the line`);
          newCardIndex = Number(total) - 1;
+         // console.log(`But oops we're out of range! [START -1]  setting to end of the line, newCardIndex::${newCardIndex}`);
       } else if (newCardIndex == total) {
-         console.log(`But oops we're out of range! [END +1] setting to begginning of the line`);
          newCardIndex = 0;
+         // console.log(`But oops we're out of range! [END +1] setting to begginning of the line::${newCardIndex}`);
       }
 
       // Select the el, and update the nav
@@ -133,22 +131,22 @@ export class EntityPanelNavigation extends TatorElement {
    }
 
    handle({ cardElements, cardIndexes, cardObj }) {
-      // console.log("handled via panel top");
       // Setup next/prev/slider nav
       this._data = cardElements;
+      this._cardIndexes = cardIndexes;
       this._cardIndex = cardIndexes[cardObj.id];
       this._selectedCardEl = this._data[this._cardIndex];
       this._updateCurrentValues();
    }
 
    _updateCurrentValues() {
-      let cardIndex = this._cardIndex;
-      let start = Number(cardIndex) + 1;
-      let total = this._data.length;
-
-      // console.log("Navigation Init at card index: " + cardIndex);
-
+      // console.log("_updateCurrentValues this._cardIndexes.size" + Object.keys(this._cardIndexes).length);
+      // console.log("Navigation Init at card index: " + this._cardIndex);
+      let start = Number(this._cardIndex) + 1;
       this._current.textContent = start;
+
+      // #TODO to add working slider
+      // let total = Object.keys(this._cardIndexes).length;
       // this._slider.setAttribute("value", start);
       // this._slider.setAttribute("max", total);
 
