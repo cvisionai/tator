@@ -433,11 +433,12 @@ class TatorSearch:
         :returns: Entity type with updated attribute_types.
         """
         element = None
-        for attribute_obj in entity_type.attribute_types:
+        for idx,attribute_obj in enumerate(entity_type.attribute_types):
             if attribute_obj['name'] == name:
                 element = {**attribute_obj}
+                found_idx = idx
         if element is None:
             raise(f"Could not find attribute name {name} in entity type {entity_type.name}")
         self.delete_index(entity_type, element)
-        del entity_type.attribute_types['name']
+        del entity_type.attribute_types[found_idx]
         return entity_type
