@@ -329,6 +329,11 @@ urlpatterns += [
         name='Membership',
     ),
     path(
+        'rest/Migrate/<int:id>',
+        MigrateListAPI.as_view(),
+        name='Media'
+    ),
+    path(
         'rest/Notify',
         NotifyAPI.as_view(),
     ),

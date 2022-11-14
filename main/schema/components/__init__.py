@@ -86,6 +86,7 @@ from .media_type import media_type
 from .membership import membership_spec
 from .membership import membership_update
 from .membership import membership
+from .migrate import migrate_spec
 from .notify import notify_spec
 from .organization import organization_spec
 from .organization import organization_update

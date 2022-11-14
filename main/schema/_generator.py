@@ -123,6 +123,7 @@ class CustomGenerator(SchemaGenerator):
                 'MembershipSpec': membership_spec,
                 'MembershipUpdate': membership_update,
                 'Membership': membership,
+                'MigrateProject': migrate_spec,
                 'MultiDefinition': multi_definition,
                 'NotifySpec': notify_spec,
                 'OrganizationSpec': organization_spec,
