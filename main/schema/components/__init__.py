@@ -10,6 +10,9 @@ from .algorithm import algorithm_manifest
 from .algorithm import algorithm_manifest_spec
 from .analysis import analysis_spec
 from .analysis import analysis
+from .attribute_query import attribute_filter_schema
+from .attribute_query import attribute_combinator_schema
+from .attribute_query import attribute_operation_schema
 from .announcement import announcement
 from .attribute_type import (
     autocomplete_service,

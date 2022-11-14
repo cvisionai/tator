@@ -2,7 +2,7 @@ section_post_properties = {
     'name': {
         'type': 'string',
         'description': 'Unique name of the section.',
-    }
+    },
     'tator_user_sections': {
         'type': 'string',
         'description': 'Attribute that is applied to media to identify membership to a section.',
