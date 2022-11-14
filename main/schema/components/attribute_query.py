@@ -23,6 +23,7 @@ attribute_combinator_schema = {
                         'description': 'Method to combine ',
                         'enum': ['and', 'or']},
           'operations':  {'type': 'array',
+                          'description': 'Must be a AttributeOperationSpec!',
                           'items': {'type': 'object'}},
         }
 }
