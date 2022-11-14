@@ -3586,7 +3586,7 @@ class MutateAliasTestCase(APITransactionTestCase):
         self.client.force_authenticate(self.user)
         self.search = TatorSearch()
 
-    def _setUp(self):
+    def _setup(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         project = create_test_project(self.user)
         entity_type = MediaType.objects.create(
