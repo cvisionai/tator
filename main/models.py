@@ -1524,14 +1524,6 @@ class Section(Model):
     lucene_search = CharField(max_length=1024, null=True, blank=True)
     """ Optional lucene query syntax search string.
     """
-    media_bools = JSONField(null=True, blank=True)
-    """ Optional list of elasticsearch boolean queries that should be applied
-        to media. These are applied to the boolean query "filter" list.
-    """
-    annotation_bools = JSONField(null=True, blank=True)
-    """ Optional list of elasticsearch boolean queries that should be applied
-        to annotations. These are applied to the boolean query "filter" list.
-    """
     tator_user_sections = CharField(max_length=128, null=True, blank=True)
     """ Identifier used to label media that is part of this section via the
         tator_user_sections attribute. If not set, this search is not scoped
