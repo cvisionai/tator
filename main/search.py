@@ -47,7 +47,7 @@ def _get_unique_index_name(entity_type, attribute):
     return index_name
 
 def _get_column_name(attribute):
-    name=re.sub(r"[^a-zA-Z0-9]","_",attribute['name'])
+    name=re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
     if name.startswith('_'):
         return name[1:] # internal field
     else:
@@ -188,9 +188,12 @@ def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_na
 
 
 def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush):
+    print(attribute)
+    attr_name = re.sub(r"[^a-zA-Z0-9]","_",attribute['name'])
     sql_str = sql.SQL("""CREATE INDEX {index_name} ON {table_name} 
-                         using gist(ST_MakePoint((attributes -> '{attribute['name']}' -> 1)::float, 
-                         (attributes -> '{attribute['name']}' -> 0)::float)) WHERE project=%s and meta=%s;""").format(
+                         using gist(ST_MakePoint((attributes -> '{attr_name}' -> 1)::float, 
+                         (attributes -> '{attr_name}' -> 0)::float)) WHERE project=%s and meta=%s;""").format(
+                            attr_name=sql.SQL(attr_name),
                             index_name=sql.Identifier(index_name),
                             table_name=sql.Identifier(table_name)
                          )
