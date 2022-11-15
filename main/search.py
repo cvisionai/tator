@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 
 # Indicates what types can mutate into. Maps from type -> to type.
 ALLOWED_MUTATIONS = {
-    'bool': ['bool'],
-    'int': ['int', 'float'],
-    'float': ['int', 'float'],
-    'enum': ['enum', 'string'],
-    'string': ['enum', 'string'],
-    'datetime': [ 'string', 'datetime'],
-    'geopos': ['geopos'],
-    'float_array': ['float_array'],
+    'bool': [],
+    'int': ['float'],
+    'float': ['float'],
+    'enum': ['string'],
+    'string': ['enum',],
+    'datetime': [ 'string'],
+    'geopos': [],
+    'float_array': [],
 }
 
 def get_connection(db_name):
