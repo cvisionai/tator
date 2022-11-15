@@ -171,7 +171,7 @@ def build_query_recursively(query_object):
             # python is more forgiving then SQL so convert any partial dates to 
             # full-up ISO8601 datetime strings WITH TIMEZONE.
             operation = operation.replace('date_','')
-            if operation='range':
+            if operation=='range':
                 utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
                 value_0 = utc.datetime.isoformat()
                 utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
@@ -184,7 +184,7 @@ def build_query_recursively(query_object):
             distance, lat, lon = value
             value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
         
-        return Q(**f"{db_lookup}__{operation}": value)
+        return Q(**{f"{db_lookup}__{operation}": value})
 
     return query
         

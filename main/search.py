@@ -189,7 +189,7 @@ def make_datetime_index(db_name,project_id, entity_type_id, table_name, index_na
 
 def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name,   attribute, flush):
     print(attribute)
-    attr_name = re.sub(r"[^a-zA-Z0-9]","_",attribute['name'])
+    attr_name = re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
     sql_str = sql.SQL("""CREATE INDEX {index_name} ON {table_name} 
                          using gist(ST_MakePoint((attributes -> '{attr_name}' -> 1)::float, 
                          (attributes -> '{attr_name}' -> 0)::float)) WHERE project=%s and meta=%s;""").format(
@@ -214,10 +214,14 @@ def make_vector_index(db_name, project_id, entity_type_id, table_name, index_nam
         if bool(cursor.fetchall()):
             return
         # Create an index method for each access type
+        attr_name = re.sub(r"[^a-zA-Z0-9] ","_",attribute['name'])
+        attr_size = int(attribute['size'])
         for method in ['l2', 'ip', 'cosine']:
             sql_str = sql.SQL("""CREATE INDEX {index_name}_{method} ON {table_name} 
-                                 using ivfflat(CAST(attributes -> '{attribute['name']}' AS vector({attribute['size']})) 
+                                 using ivfflat(CAST(attributes -> '{attr_name}' AS vector({attr_size})) 
                                                                    vector_{method}_ops) WHERE project=%s and meta=%s;""").format(
+                                                                   attr_name=sql.SQL(attr_name),
+                                                                   attr_size=sql.SQL(attr_size),
                                                                    index_name=sql.SQL(index_name),
                                                                    method=sql.SQL(method),
                                                                    table_name=sql.Identifier(table_name))
