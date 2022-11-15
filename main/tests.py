@@ -3587,7 +3587,6 @@ class MutateAliasTestCase(APITransactionTestCase):
         self.search = TatorSearch()
 
     def _setup(self):
-        print(f'\n{self.__class__.__name__}=', end='', flush=True)
         project = create_test_project(self.user)
         entity_type = MediaType.objects.create(
             name="video",
@@ -3660,37 +3659,32 @@ class MutateAliasTestCase(APITransactionTestCase):
         project.delete()
         logger.info(f"Conversion of {from_dtype} to {to_dtype} success!")
 
-    def test_bool_mutations(self):
+    def test_all_mutations(self):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['bool']):
             value = random.choice([True, False])
             with self.subTest(i=index):
                 self._test_mutation('bool', new_dtype, 'Bool Test', 'Bool\ Test', value)
 
-    def test_int_mutations(self):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['int']):
             value = random.randint(-100, 100)
             with self.subTest(i=index):
                 self._test_mutation('int', new_dtype, 'Int Test', 'Int\ Test', value)
 
-    def test_float_mutations(self):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['float']):
             value = random.uniform(0, 1000)
             with self.subTest(i=index):
                 self._test_mutation('float', new_dtype, 'Float Test', 'Float\ Test', value)
 
-    def test_enum_mutations(self):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['enum']):
             value = random_string(10)
             with self.subTest(i=index):
                 self._test_mutation('enum', new_dtype, 'Enum Test', 'Enum\ Test', value)
 
-    def test_string_mutations(self):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['string']):
             value = random_string(10)
             with self.subTest(i=index):
                 self._test_mutation('string', new_dtype, 'String Test', 'String\ Test', value)
 
-    def test_datetime_mutations(self):
         for index, new_dtype in enumerate(ALLOWED_MUTATIONS['datetime']):
             value = datetime.datetime.now()
             with self.subTest(i=index):
