@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 ALLOWED_MUTATIONS = {
     'bool': [],
     'int': ['float'],
-    'float': ['float'],
+    'float': ['int'],
     'enum': ['string'],
     'string': ['enum',],
     'datetime': [ 'string'],

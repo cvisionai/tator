@@ -5,9 +5,10 @@ import logging
 
 import datetime
 from dateutil.parser import parse as dateutil_parse
+import pytz
 
 from django.db.models.functions import Cast
-from django.db.models import Func, F
+from django.db.models import Func, F, Q
 from django.contrib.gis.db.models import CharField
 from django.contrib.gis.db.models import BooleanField
 from django.contrib.gis.db.models import IntegerField
@@ -139,6 +140,57 @@ def get_attribute_filter_ops(project, params, data_type):
                     if key:
                         filter_ops.append((key, value, op))
     return filter_ops
+
+def build_query_recursively(query_object):
+    if 'method' in query_object:
+        sub_queries = [build_query_recursively(x) for x in query_object['operations']]
+        if len(sub_queries) == 0:
+            raise(Exception("Operation list is 0."))
+        if 'method' == 'not':
+            if len(sub_queries) != 1:
+                raise(Exception("NOT operator can only be applied to one suboperation"))
+            query = ~sub_queries[0]
+        elif 'method' == 'and':
+            query = sub_queries.pop()
+            for q in sub_queries:
+                query = query & Q
+        elif 'method' == 'or':
+            query = sub_queries.pop()
+            for q in sub_queries:
+                query = query | Q
+    else:
+        attr_name = query_object['attribute']
+        operation = query_object['operation']
+        value = query_object['value']
+        if attr_name.startswith('_'):
+            db_lookup=attr_name[:1]
+        else:
+            db_lookup=f"attributes__{attr_name}"
+        
+        if operation.startswith('date_'):
+            # python is more forgiving then SQL so convert any partial dates to 
+            # full-up ISO8601 datetime strings WITH TIMEZONE.
+            operation = operation.replace('date_','')
+            if operation='range':
+                utc_datetime = dateutil_parse(value[0]).astimezone(pytz.UTC)
+                value_0 = utc.datetime.isoformat()
+                utc_datetime = dateutil_parse(value[1]).astimezone(pytz.UTC)
+                value_1 = utc.datetime.isoformat()
+                value = (value_0,value_1)
+            else:
+                utc_datetime = dateutil_parse(value).astimezone(pytz.UTC)
+                value = utc.datetime.isoformat()
+        elif operation.startswith('distance_'):
+            distance, lat, lon = value
+            value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
+        
+        return Q(**f"{db_lookup}__{operation}": value)
+
+    return query
+        
+def get_attribute_psql_queryset_from_query_obj(project, qs, query_object):
+    q_object = build_query_recursively(query_object)
+    return qs.filter(q_object)
 
 def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
     attribute_null = params.get('attribute_null')

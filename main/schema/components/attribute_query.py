@@ -9,7 +9,21 @@ attribute_filter_schema = {
           'operation': {
               'type': 'string',
               'description': 'Name of the operation to apply. Not all operations apply to all attributes.',
-              'enum': ['eq', 'gt', 'gte', 'lt', 'lte', 'icontains', 'distance_lte', 'isnull']
+              'enum': ['eq', 
+                       'gt', 
+                       'gte', 
+                       'lt', 
+                       'lte', 
+                       'icontains', 
+                       'isnull', 
+                       # Date specific operations
+                       'date_eq',
+                       'date_gte',
+                       'date_gt',
+                       'date_lt',
+                       'date_lte',
+                       'date_range',
+                       'distance_lte',]
           },
          'value': {'$ref': '#/components/schemas/AttributeValue'},
     }
@@ -21,7 +35,7 @@ attribute_combinator_schema = {
         'properties': {
           'method': {'type': 'string',
                         'description': 'Method to combine ',
-                        'enum': ['and', 'or']},
+                        'enum': ['and', 'or', 'not']},
           'operations':  {'type': 'array',
                           'description': 'Must be a AttributeOperationSpec!',
                           'items': {'type': 'object'}},
