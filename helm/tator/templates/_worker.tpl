@@ -29,11 +29,11 @@ spec:
           args: {{ .args }}
           resources:
             limits:
-              cpu: {{ .Values.gunicornCpuLimit | default "4000m" }}
-              memory: {{ .Values.gunicornMemoryLimit | default "16Gi" }}
+              cpu: {{ .Values.workerCpuLimit | default "1000m" }}
+              memory: {{ .Values.workerMemoryLimit | default "1Gi" }}
             requests:
-              cpu: {{ .Values.gunicornCpuRequest | default "1000m" }}
-              memory: {{ .Values.gunicornMemoryRequest | default "4Gi" }}
+              cpu: {{ .Values.workerCpuRequest | default "1000m" }}
+              memory: {{ .Values.workerMemoryRequest | default "1Gi" }}
           env:
             {{include "tatorEnv.template" . | indent 12 }}
           volumeMounts:
