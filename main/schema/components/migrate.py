@@ -78,5 +78,5 @@ migrate_properties = {
 
 migrate_spec = {
     "type": "object",
-    "properties": project_properties,
+    "properties": migrate_properties,
 }

@@ -74,6 +74,66 @@ def _serialize_projects(projects, user_id):
             project_data[idx]["thumb"] = thumb
     return project_data
 
+
+def _create_project(params, user):
+    """ Project POST method in its own function for reuse by Migrate endpoint. """
+
+    # If user does not have admin privileges within the organization, raise a 403.
+    affiliation = Affiliation.objects.filter(organization=params["organization"], user=user)
+    if affiliation.exists():
+        if affiliation[0].permission != "Admin":
+            raise PermissionDenied
+    else:
+        raise PermissionDenied
+
+    if Project.objects.filter(membership__user=user).filter(name__iexact=params["name"]).exists():
+        raise Exception("Project with this name already exists!")
+
+    # Make sure bucket can be set by this user.
+    if "bucket" in params:
+        params["bucket"] = get_object_or_404(Bucket, pk=params["bucket"])
+        if params["bucket"].organization.pk != params["organization"]:
+            raise PermissionDenied
+
+    # Make sure upload bucket can be set by this user.
+    if "upload_bucket" in params:
+        params["upload_bucket"] = get_object_or_404(Bucket, pk=params["upload_bucket"])
+        if params["upload_bucket"].organization.pk != params["organization"]:
+            raise PermissionDenied
+
+    params["organization"] = get_object_or_404(Organization, pk=params["organization"])
+
+    if "body" in params:
+        del params["body"]
+
+    project = Project.objects.create(**params, creator=user, size=0, num_files=0)
+    project.save()
+
+    member_qs = Membership.objects.filter(project=project, user=user)
+    n_memberships = member_qs.count()
+    if n_memberships > 1:
+        raise RuntimeError(
+            f"Found {n_memberships} memberships for user {user} in project {project}, there should "
+            f"be at most one."
+        )
+    elif n_memberships == 1:
+        member = member_qs.first()
+        member.permission = Permission.FULL_CONTROL
+    else:
+        member = Membership(
+            project=project,
+            user=user,
+            permission=Permission.FULL_CONTROL,
+        )
+    member.save()
+
+    projects = Project.objects.filter(pk=project.id)
+    return {
+        "message": f"Project {params['name']} created!",
+        "id": project.id,
+        "object": _serialize_projects(projects, user.pk)[0],
+    }
+
 class ProjectListAPI(BaseListView):
     """ Interact with a list of projects.
 
@@ -94,64 +154,7 @@ class ProjectListAPI(BaseListView):
         return _serialize_projects(projects, self.request.user.pk)
 
     def _post(self, params):
-        # If user does not have admin privileges within the organization, raise a 403.
-        affiliation = Affiliation.objects.filter(organization=params['organization'],
-                                                 user=self.request.user)
-        if affiliation.exists():
-            if affiliation[0].permission != 'Admin':
-                raise PermissionDenied
-        else:
-            raise PermissionDenied
-
-        if Project.objects.filter(
-            membership__user=self.request.user).filter(name__iexact=params['name']).exists():
-            raise Exception("Project with this name already exists!")
-
-        # Make sure bucket can be set by this user.
-        if 'bucket' in params:
-            params['bucket'] = get_object_or_404(Bucket, pk=params['bucket'])
-            if params['bucket'].organization.pk != params['organization']:
-                raise PermissionDenied
-
-        # Make sure upload bucket can be set by this user.
-        if 'upload_bucket' in params:
-            params['upload_bucket'] = get_object_or_404(Bucket, pk=params['upload_bucket'])
-            if params['upload_bucket'].organization.pk != params['organization']:
-                raise PermissionDenied
-
-        params['organization'] = get_object_or_404(Organization, pk=params['organization'])
-        del params['body']
-        project = Project.objects.create(
-            **params,
-            creator=self.request.user,
-            size=0,
-            num_files=0,
-        )
-        project.save()
-
-        member_qs = Membership.objects.filter(project=project, user=self.request.user)
-        if member_qs.count() > 1:
-            raise RuntimeError(
-                f"Found {member_qs.count()} memberships for user {self.request.user} in project "
-                f"{project}, there should be at most one"
-            )
-        elif member_qs.count() == 1:
-            member = member_qs.first()
-            member.permission = Permission.FULL_CONTROL
-        else:
-            member = Membership(
-                project=project,
-                user=self.request.user,
-                permission=Permission.FULL_CONTROL,
-            )
-        member.save()
-
-        projects = Project.objects.filter(pk=project.id)
-        return {
-            'message': f"Project {params['name']} created!",
-            'id': project.id,
-            'object': _serialize_projects(projects, self.request.user.pk)[0],
-        }
+        return _create_project(params, self.request.user)
 
     def get_queryset(self):
         memberships = Membership.objects.filter(user=self.request.user)

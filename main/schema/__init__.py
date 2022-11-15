@@ -64,6 +64,7 @@ from .media_type import MediaTypeListSchema
 from .media_type import MediaTypeDetailSchema
 from .membership import MembershipListSchema
 from .membership import MembershipDetailSchema
+from .migrate import MigrateListSchema
 from .notify import NotifySchema
 from .oauth2 import Oauth2LoginSchema
 from .organization import OrganizationListSchema

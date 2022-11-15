@@ -20,6 +20,37 @@ fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'f
           'default_box', 'default_line', 'default_dot']
 
 
+def _set_default_localiztion_types(params, names):
+    for name in names:
+        lt = params.get(name)
+        if lt is not None:
+            lt = LocalizationType.objects.get(pk=lt)
+            if lt.project.pk != params["project"]:
+                raise ValueError(
+                    f"{name.capitalize().replace('_', ' ')} is not part of project "
+                    f"{params['project']}"
+                )
+
+            params[name] = lt
+
+
+def _create_media_type(params):
+    """Media Type POST method in its own function for reuse by Migrate endpoint."""
+    _set_default_localiztion_types(params, ["default_box", "default_line", "default_dot"])
+
+    if params["name"] in attribute_keywords:
+        raise ValueError(
+            f"{params['name']} is a reserved keyword and cannot be used for an attribute name!"
+        )
+    params["project"] = Project.objects.get(pk=params["project"])
+
+    if "body" in params:
+        del params["body"]
+    obj = MediaType(**params)
+    obj.save()
+    return {"id": obj.id, "message": "Media type created successfully!"}
+
+
 class MediaTypeListAPI(BaseListView):
     """ Create or retrieve media types.
 
@@ -61,31 +92,7 @@ class MediaTypeListAPI(BaseListView):
             name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        default_box = params.get('default_box')
-        default_line = params.get('default_line')
-        default_dot = params.get('default_dot')
-
-        if default_box is not None:
-            params["default_box"] = LocalizationType.objects.get(pk=params["default_box"])
-            if params["default_box"].project.pk != params["project"]:
-                raise ValueError(f"Default box is not part of project {params['project']}!")
-        if default_line is not None:
-            params["default_line"] = LocalizationType.objects.get(pk=params["default_line"])
-            if params["default_line"].project.pk != params["project"]:
-                raise ValueError(f"Default line is not part of project {params['project']}!")
-        if default_dot is not None:
-            params["default_dot"] = LocalizationType.objects.get(pk=params["default_dot"])
-            if params["default_dot"].project.pk != params["project"]:
-                raise ValueError(f"Default dot is not part of project {params['project']}!")
-
-        if params['name'] in attribute_keywords:
-            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
-                             "an attribute name!")
-        params['project'] = Project.objects.get(pk=params['project'])
-        del params['body']
-        obj = MediaType(**params)
-        obj.save()
-        return {'id': obj.id, 'message': 'Media type created successfully!'}
+        return _create_media_type(params)
 
 
 class MediaTypeDetailAPI(BaseDetailView):

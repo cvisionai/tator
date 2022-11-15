@@ -27,6 +27,46 @@ def _serialize_memberships(memberships):
                                                 else membership['username'].lower())
     return membership_data
 
+
+def _create_membership(params):
+    """ Membership POST method in its own function for reuse by Migrate endpoint. """
+
+    project = params["project"]
+    user = params["user"]
+    permission = params["permission"]
+    default_version = params.get("default_version")
+    if permission == "View Only":
+        permission = "r"
+    elif permission == "Can Edit":
+        permission = "w"
+    elif permission == "Can Transfer":
+        permission = "t"
+    elif permission == "Can Execute":
+        permission = "x"
+    elif permission == "Full Control":
+        permission = "a"
+    else:
+        raise ValueError(
+            "Permission must have one of the following values: View Only, Can Edit, Can Transfer, "
+            "Can Execute, Full Control."
+        )
+
+    existing = Membership.objects.filter(project=project, user=user)
+    if existing.exists():
+        raise RuntimeError(f"Membership already exists for project {project}, user {user}!")
+    project = Project.objects.get(pk=project)
+    user = User.objects.get(pk=user) 
+    if default_version is not None:
+        default_version = Version.objects.get(pk=default_version)
+    membership = Membership.objects.create(
+        project=project,
+        user=user,
+        permission=permission,
+        default_version=default_version,
+    )
+    membership.save()
+    return {"message": f"Membership of {user} to {project} created!", "id": membership.id}
+
 class MembershipListAPI(BaseListView):
     """ Create or retrieve a list of project memberships.
 
@@ -46,39 +86,7 @@ class MembershipListAPI(BaseListView):
         return _serialize_memberships(members)
 
     def _post(self, params):
-        project = params['project']
-        user = params['user']
-        permission = params['permission']
-        default_version = params.get('default_version')
-        if permission == 'View Only':
-            permission = 'r'
-        elif permission == 'Can Edit':
-            permission = 'w'
-        elif permission == 'Can Transfer':
-            permission = 't'
-        elif permission == 'Can Execute':
-            permission = 'x'
-        elif permission == 'Full Control':
-            permission = 'a'
-        else:
-            raise ValueError(f"Permission must have one of the following values: View Only, "
-                              "Can Edit, Can Transfer, Can Execute, Full Control.")
-        existing = Membership.objects.filter(project=project, user=user)
-        if existing.exists():
-            raise RuntimeError(f"Membership already exists for project {project}, user {user}!")
-        project = Project.objects.get(pk=project)
-        user = User.objects.get(pk=user) 
-        if default_version is not None:
-            default_version = Version.objects.get(pk=default_version)
-        membership = Membership.objects.create(
-            project=project,
-            user=user,
-            permission=permission,
-            default_version=default_version,
-        )
-        membership.save()
-        return {'message': f"Membership of {user} to {project} created!",
-                'id': membership.id}
+        return _create_membership(params)
 
     def get_queryset(self):
         project_id = self.kwargs['project']

@@ -70,6 +70,190 @@ def _fill_m2m(response_data):
         state['media'] = media.get(state['id'], [])
     return response_data
 
+
+def _create_state_list(params, user):
+    """State POST method in its own function for reuse by Migrate endpoint."""
+    # Check that we are getting a state list.
+    try:
+        state_specs = params["body"]
+    except KeyError:
+        raise ValueError("State creation requires list of states!")
+
+    # Get a default version.
+    membership = Membership.objects.get(user=user, project=params["project"])
+    if membership.default_version:
+        default_version = membership.default_version
+    else:
+        default_version = Version.objects.filter(project=params["project"], number__gte=0).order_by(
+            "number"
+        )
+        if default_version.exists():
+            default_version = default_version[0]
+        else:
+            # If no versions exist, create one.
+            default_version = Version.objects.create(
+                name="Baseline",
+                description="Initial version",
+                project=project,
+                number=0,
+            )
+
+    # Find unique foreign keys.
+    meta_ids = set([state["type"] for state in state_specs])
+    version_ids = set([state.get("version", None) for state in state_specs])
+    version_ids.add(default_version.id)
+    localization_ids = set()
+    media_ids = set()
+    for state_spec in state_specs:
+        localization_ids.update(state_spec.get("localization_ids", []))
+        media_ids.update(state_spec["media_ids"])
+
+    # Make foreign key querysets.
+    meta_qs = StateType.objects.filter(pk__in=meta_ids)
+    version_qs = Version.objects.filter(pk__in=version_ids)
+    localization_qs = Localization.objects.filter(pk__in=localization_ids)
+    media_qs = Media.objects.filter(pk__in=media_ids)
+
+    # Construct foreign key dictionaries.
+    project = Project.objects.get(pk=params["project"])
+    metas = {obj.id: obj for obj in meta_qs.iterator()}
+    versions = {obj.id: obj for obj in version_qs.iterator()}
+    versions[None] = default_version
+
+    # Make sure project of all foreign keys is correct.
+    meta_projects = list(meta_qs.values_list("project", flat=True).distinct())
+    version_projects = list(version_qs.values_list("project", flat=True).distinct())
+    localization_projects = list(localization_qs.values_list("project", flat=True).distinct())
+    media_projects = list(media_qs.values_list("project", flat=True).distinct())
+    if len(meta_projects) != 1:
+        raise Exception(
+            f"Localization types must be part of project {project.id}, got "
+            f"projects {meta_projects}!"
+        )
+    elif meta_projects[0] != project.id:
+        raise Exception(
+            f"Localization types must be part of project {project.id}, got "
+            f"project {meta_projects[0]}!"
+        )
+    if len(version_projects) != 1:
+        raise Exception(
+            f"Versions must be part of project {project.id}, got projects " f"{version_projects}!"
+        )
+    elif version_projects[0] != project.id:
+        raise Exception(
+            f"Versions must be part of project {project.id}, got project " f"{version_projects[0]}!"
+        )
+    if len(localization_ids) > 0:
+        if len(localization_projects) != 1:
+            raise Exception(
+                f"Localizations must be part of project {project.id}, got projects "
+                f"{localization_projects}!"
+            )
+        elif localization_projects[0] != project.id:
+            raise Exception(
+                f"Localizations must be part of project {project.id}, got project "
+                f"{localization_projects[0]}!"
+            )
+    if len(media_projects) != 1:
+        raise Exception(
+            f"Media must be part of project {project.id}, got projects " f"{media_projects}!"
+        )
+    elif media_projects[0] != project.id:
+        raise Exception(
+            f"Media must be part of project {project.id}, got project " f"{media_projects[0]}!"
+        )
+
+    # Get required fields for attributes.
+    required_fields = {id_: computeRequiredFields(metas[id_]) for id_ in meta_ids}
+    attr_specs = [
+        check_required_fields(
+            required_fields[state["type"]][0], required_fields[state["type"]][2], state
+        )
+        for state in state_specs
+    ]
+
+    # Create the state objects.
+    objs = (
+        State(
+            project=project,
+            meta=metas[state_spec["type"]],
+            attributes=attrs,
+            created_by=user,
+            modified_by=user,
+            version=versions[state_spec.get("version", None)],
+            frame=state_spec.get("frame", None),
+            parent=State.objects.get(pk=state_spec.get("parent"))
+            if state_spec.get("parent")
+            else None,
+        )
+        for state_spec, attrs in zip(state_specs, attr_specs)
+    )
+    states = bulk_create_from_generator(objs, State)
+
+    # Create media relations.
+    media_relations = []
+    for state, state_spec in zip(states, state_specs):
+        for media_id in state_spec["media_ids"]:
+            media_states = State.media.through(
+                state_id=state.id,
+                media_id=media_id,
+            )
+            media_relations.append(media_states)
+            if len(media_relations) > 1000:
+                State.media.through.objects.bulk_create(media_relations, ignore_conflicts=True)
+                media_relations = []
+    State.media.through.objects.bulk_create(media_relations, ignore_conflicts=True)
+
+    # Create localization relations.
+    loc_relations = []
+    for state, state_spec in zip(states, state_specs):
+        if "localization_ids" in state_spec:
+            for localization_id in state_spec["localization_ids"]:
+                loc_states = State.localizations.through(
+                    state_id=state.id,
+                    localization_id=localization_id,
+                )
+                loc_relations.append(loc_states)
+                if len(loc_relations) > 1000:
+                    State.localizations.through.objects.bulk_create(
+                        loc_relations, ignore_conflicts=True
+                    )
+                    loc_relations = []
+    State.localizations.through.objects.bulk_create(loc_relations, ignore_conflicts=True)
+
+    # Calculate segments (this is not triggered for bulk created m2m).
+    localization_ids = itertools.chain(
+        *[state_spec.get("localization_ids", []) for state_spec in state_specs]
+    )
+    loc_id_to_frame = {
+        loc["id"]: loc["frame"]
+        for loc in Localization.objects.filter(pk__in=localization_ids)
+        .values("id", "frame")
+        .iterator()
+    }
+    for state, state_spec in zip(states, state_specs):
+        frames = [loc_id_to_frame[loc_id] for loc_id in state_spec.get("localization_ids", [])]
+        if len(frames) > 0:
+            frames = np.sort(frames)
+            segments = np.split(frames, np.where(np.diff(frames) != 1)[0] + 1)
+            state.segments = [[int(segment[0]), int(segment[-1])] for segment in segments]
+    State.objects.bulk_update(states, ["segments"])
+
+    # Build ES documents.
+    ts = TatorSearch()
+    documents = []
+    for state in states:
+        documents += ts.build_document(state)
+        if len(documents) > 1000:
+            ts.bulk_add_documents(documents)
+            documents = []
+    ts.bulk_add_documents(documents)
+
+    ids = bulk_log_creation(states, project, user)
+
+    return {"message": f"Successfully created {len(ids)} states!", "id": ids}
+
+
 class StateListAPI(BaseListView):
     """ Interact with list of states.
 
@@ -147,166 +331,7 @@ class StateListAPI(BaseListView):
         return response_data
 
     def _post(self, params):
-        # Check that we are getting a state list.
-        if 'body' in params:
-            state_specs = params['body']
-        else:
-            raise Exception('State creation requires list of states!')
-
-        # Get a default version.
-        membership = Membership.objects.get(user=self.request.user, project=params['project'])
-        if membership.default_version:
-            default_version = membership.default_version
-        else:
-            default_version = Version.objects.filter(project=params['project'],
-                                                     number__gte=0).order_by('number')
-            if default_version.exists():
-                default_version = default_version[0]
-            else:
-                # If no versions exist, create one.
-                default_version = Version.objects.create(
-                    name="Baseline",
-                    description="Initial version",
-                    project=project,
-                    number=0,
-                )
-
-        # Find unique foreign keys.
-        meta_ids = set([state['type'] for state in state_specs])
-        version_ids = set([state.get('version', None) for state in state_specs])
-        version_ids.add(default_version.id)
-        localization_ids = set()
-        media_ids = set()
-        for state_spec in state_specs:
-            localization_ids.update(state_spec.get('localization_ids', []))
-            media_ids.update(state_spec['media_ids'])
-
-        # Make foreign key querysets.
-        meta_qs = StateType.objects.filter(pk__in=meta_ids)
-        version_qs = Version.objects.filter(pk__in=version_ids)
-        localization_qs = Localization.objects.filter(pk__in=localization_ids)
-        media_qs = Media.objects.filter(pk__in=media_ids)
-
-        # Construct foreign key dictionaries.
-        project = Project.objects.get(pk=params['project'])
-        metas = {obj.id:obj for obj in meta_qs.iterator()}
-        versions = {obj.id:obj for obj in version_qs.iterator()}
-        versions[None] = default_version
-
-        # Make sure project of all foreign keys is correct.
-        meta_projects = list(meta_qs.values_list('project', flat=True).distinct())
-        version_projects = list(version_qs.values_list('project', flat=True).distinct())
-        localization_projects = list(localization_qs.values_list('project', flat=True).distinct())
-        media_projects = list(media_qs.values_list('project', flat=True).distinct())
-        if len(meta_projects) != 1:
-            raise Exception(f"Localization types must be part of project {project.id}, got "
-                            f"projects {meta_projects}!")
-        elif meta_projects[0] != project.id:
-            raise Exception(f"Localization types must be part of project {project.id}, got "
-                            f"project {meta_projects[0]}!")
-        if len(version_projects) != 1:
-            raise Exception(f"Versions must be part of project {project.id}, got projects "
-                            f"{version_projects}!")
-        elif version_projects[0] != project.id:
-            raise Exception(f"Versions must be part of project {project.id}, got project "
-                            f"{version_projects[0]}!")
-        if len(localization_ids) > 0:
-            if len(localization_projects) != 1:
-                raise Exception(f"Localizations must be part of project {project.id}, got projects "
-                                f"{localization_projects}!")
-            elif localization_projects[0] != project.id:
-                raise Exception(f"Localizations must be part of project {project.id}, got project "
-                                f"{localization_projects[0]}!")
-        if len(media_projects) != 1:
-            raise Exception(f"Media must be part of project {project.id}, got projects "
-                            f"{media_projects}!")
-        elif media_projects[0] != project.id:
-            raise Exception(f"Media must be part of project {project.id}, got project "
-                            f"{media_projects[0]}!")
-
-        # Get required fields for attributes.
-        required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
-        attr_specs = [check_required_fields(required_fields[state['type']][0],
-                                            required_fields[state['type']][2],
-                                            state)
-                      for state in state_specs]
-
-        # Create the state objects.
-        objs = (
-            State(
-                project=project,
-                meta=metas[state_spec["type"]],
-                attributes=attrs,
-                created_by=self.request.user,
-                modified_by=self.request.user,
-                version=versions[state_spec.get("version", None)],
-                frame=state_spec.get("frame", None),
-                parent=State.objects.get(pk=state_spec.get("parent")) if state_spec.get("parent") else None,
-            )
-            for state_spec, attrs in zip(state_specs, attr_specs)
-        )
-        states = bulk_create_from_generator(objs, State)
-
-        # Create media relations.
-        media_relations = []
-        for state, state_spec in zip(states, state_specs):
-            for media_id in state_spec['media_ids']:
-                media_states = State.media.through(
-                    state_id=state.id,
-                    media_id=media_id,
-                )
-                media_relations.append(media_states)
-                if len(media_relations) > 1000:
-                    State.media.through.objects.bulk_create(media_relations,
-                                                            ignore_conflicts=True)
-                    media_relations = []
-        State.media.through.objects.bulk_create(media_relations,
-                                                ignore_conflicts=True)
-
-        # Create localization relations.
-        loc_relations = []
-        for state, state_spec in zip(states, state_specs):
-            if 'localization_ids' in state_spec:
-                for localization_id in state_spec['localization_ids']:
-                    loc_states = State.localizations.through(
-                        state_id=state.id,
-                        localization_id=localization_id,
-                    )
-                    loc_relations.append(loc_states)
-                    if len(loc_relations) > 1000:
-                        State.localizations.through.objects.bulk_create(loc_relations,
-                                                                        ignore_conflicts=True)
-                        loc_relations = []
-        State.localizations.through.objects.bulk_create(loc_relations,
-                                                        ignore_conflicts=True)
-
-        # Calculate segments (this is not triggered for bulk created m2m).
-        localization_ids = itertools.chain(*[state_spec.get('localization_ids', [])
-                                             for state_spec in state_specs])
-        loc_id_to_frame = {loc['id']:loc['frame'] for loc in
-                           Localization.objects.filter(pk__in=localization_ids)\
-                           .values('id', 'frame').iterator()}
-        for state, state_spec in zip(states, state_specs):
-            frames = [loc_id_to_frame[loc_id] for loc_id in state_spec.get('localization_ids', [])]
-            if len(frames) > 0:
-                frames = np.sort(frames)
-                segments = np.split(frames, np.where(np.diff(frames) != 1)[0] + 1)
-                state.segments = [[int(segment[0]), int(segment[-1])] for segment in segments]
-        State.objects.bulk_update(states, ['segments'])
-
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for state in states:
-            documents += ts.build_document(state)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
-        ids = bulk_log_creation(states, project, self.request.user)
-
-        return {'message': f'Successfully created {len(ids)} states!', 'id': ids}
+        return _create_state_list(params, self.request.user)
 
     def _delete(self, params):
         qs = get_annotation_queryset(params['project'], params, 'state')

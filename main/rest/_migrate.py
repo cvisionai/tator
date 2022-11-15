@@ -9,6 +9,17 @@ import traceback
 
 from collections import defaultdict
 
+from .clone_media import _clone_media_list
+from .leaf_type import _create_leaf_type
+from .localization import _create_localization_list
+from .localization_type import _create_localization_type
+from .media_type import _create_media_type
+from .membership import _create_membership
+from .project import _create_project
+from .section import _create_section
+from .state import _create_state_list
+from .state_type import _create_state_type
+from .version import _create_version
 from ..models import (
     Leaf,
     LeafType,
@@ -100,7 +111,7 @@ def find_sections(params, dest_project):
     if params["skip_sections"]:
         logger.info("Skipping sections due to skip_sections.")
     else:
-        sections = Section.objects.filter(project=params["project"])
+        sections = Section.objects.filter(project=params["id"])
         num_src = sections.count()
         if params.get("sections", []):
             sections = [section for section in sections if section.name in params["sections"]]
@@ -147,7 +158,7 @@ def find_media_types(params, dest_project):
     if params.get("skip_media_types", False):
         logger.info("Skipping media types due to skip_media_types.")
     else:
-        media_types = MediaType.objects.filter(project=params["project"])
+        media_types = MediaType.objects.filter(project=params["id"])
         if dest_project is not None:
             existing = MediaType.objects.filter(project=dest_project.id)
             existing_names = [media_type.name for media_type in existing]
@@ -377,7 +388,9 @@ def find_localizations(
     else:
         # Get existing localizations.
         dest_media_ids = list(media_mapping.values())
-        existing_loc = Localization.objects.filter(project=dest_project.id, media__in=dest_media_ids)
+        existing_loc = Localization.objects.filter(
+            project=dest_project.id, media__in=dest_media_ids
+        )
         # Get all source localizations.
         src_media_ids = list(media_mapping.keys()) + [m.id for m in media]
         source_loc = Localization.objects.filter(project=params["id"], media__in=src_media_ids)
@@ -495,7 +508,9 @@ def find_leaves(params, dest_project):
                 break
             if dest_project:
                 all_dest_leaves = Leaf.objects.filter(project=dest_project.id)
-                dest_leaves = [leaf for leaf in all_dest_leaves if min_depth < leaf.depth() < max_depth]
+                dest_leaves = [
+                    leaf for leaf in all_dest_leaves if min_depth < leaf.depth() < max_depth
+                ]
                 dest_paths = [leaf.path[1] for leaf in dest_leaves]
                 for leaf in src_leaves:
                     path = leaf.path[1]
@@ -511,7 +526,7 @@ def find_leaves(params, dest_project):
     return leaves, leaf_mapping
 
 
-def create_project(params, dest_project):
+def create_project(params, dest_project, user):
     """Creates a project if necessary. Returns the destination project ID."""
     if dest_project is None:
         src_project = Project.objects.get(params["id"])
@@ -519,126 +534,186 @@ def create_project(params, dest_project):
         spec = {"name": name, "organization": params["dest_organization"]}
         if src_project.summary:
             spec["summary"] = src_project.summary
-        # TODO continue here!
-        response = dest_api.create_project(project_spec=spec)
-        logger.info(f"Created new project with ID {response.id}")
-        dest_project = response.id
+        response = _create_project(spec, user)
+        logger.info(f"Created new project with ID {response['id']}")
+        dest_project = response["id"]
     else:
         dest_project = dest_project.id
     return dest_project
 
 
-def create_memberships(src_api, dest_api, dest_project, memberships, users):
+def create_memberships(dest_project, memberships, users):
     """Creates memberships."""
-    num_skipped = 0
-    num_created = 0
+    num_created = min(len(memberships), len(users))
     for membership, user in zip(memberships, users):
-        # Look up user by username.
-        dest_users = dest_api.get_user_list(username=user.username)
-        if len(dest_users) == 0:
-            num_skipped += 1
+        permission = membership.permission
+        if permission == "r":
+            permission = "View Only"
+        elif permission == "w":
+            permission = "Can Edit"
+        elif permission == "t":
+            permission = "Can Transfer"
+        elif permission == "x":
+            permission = "Can Execute"
+        elif permission == "a":
+            permission = "Full Control"
         else:
-            dest_user = dest_users[0]
-            spec = {"user": dest_user.id, "permission": membership.permission}
-            response = dest_api.create_membership(dest_project, membership_spec=spec)
-            assert isinstance(response, tator.models.CreateResponse)
-            num_created += 1
+            raise ValueError(
+                "Permission must have one of the following values: 'r', 'w', 't', 'x', or 'a'"
+            )
+        spec = {"project": dest_project, "user": user.id, "permission": permission}
+        response = _create_membership(spec)
     msg = f"Created {num_created} memberships."
-    if num_skipped > 0:
-        msg += f" Skipped {num_skipped} (no matching user)."
     logger.info(msg)
 
 
-def create_sections(src_api, dest_api, dest_project, sections):
+def create_sections(dest_project, sections):
     """Creates sections."""
     for section in sections:
-        response = tator.util.clone_section(src_api, section.id, dest_project, dest_api)
-        assert isinstance(response, tator.models.CreateResponse)
+        spec = {"name": section.name, "project": dest_project}
+        if section.annotation_bools:
+            spec["annotation_bools"] = section.annotation_bools
+        if section.media_bools:
+            spec["media_bools"] = section.media_bools
+        if section.lucene_string:
+            spec["lucene_string"] = section.lucene_string
+        if section.tator_user_sections:
+            spec["tator_user_sections"] = section.tator_user_sections
+        _create_section(spec)
     logger.info(f"Created {len(sections)} sections.")
 
 
-def create_versions(src_api, dest_api, dest_project, versions, version_mapping):
+def create_versions(dest_project, versions, version_mapping, user):
     """Creates versions. Returns updated version mapping."""
     for version in versions:
-        response = tator.util.clone_version(
-            src_api, version.id, dest_project, version_mapping, dest_api
-        )
-        assert isinstance(response, tator.models.CreateResponse)
-        version_mapping[version.id] = response.id
+        spec = {
+            "project": dest_project,
+            "name": version.name,
+            "description": version.description,
+            "show_empty": version.show_empty,
+            "bases": [],
+        }
+        for base in version.bases:
+            if base in version_mapping:
+                spec["bases"].append(version_mapping[base])
+            else:
+                raise ValueError(f"Base version with ID {base} not contained in version mapping!")
+        response = _create_version(spec, user)
+        version_mapping[version.id] = response["id"]
     logger.info(f"Created {len(versions)} versions.")
     return version_mapping
 
 
-def create_media_types(src_api, dest_api, dest_project, media_types, media_type_mapping):
+def create_media_types(dest_project, media_types, media_type_mapping):
     """Creates media types. Returns updated media type mapping."""
     for media_type in media_types:
-        response = tator.util.clone_media_type(src_api, media_type.id, dest_project, dest_api)
-        assert isinstance(response, tator.models.CreateResponse)
-        media_type_mapping[media_type.id] = response.id
+        spec = {
+            "project": dest_project,
+            "name": media_type.name,
+            "description": media_type.description,
+            "dtype": media_type.dtype,
+            "default_volume": media_type.default_volume,
+            "attribute_types": media_type.attribute_types,
+        }
+        if media_type.file_format:
+            spec["file_format"] = media_type.file_format
+        if media_type.overlay_config:
+            spec["overlay_config"] = media_type.overlay_config
+        if media_type.streaming_config:
+            spec["streaming_config"] = media_type.streaming_config
+        if media_type.archive_config:
+            spec["archive_config"] = media_type.archive_config
+        response = _create_media_type(spec)
+        media_type_mapping[media_type.id] = response["id"]
     logger.info(f"Created {len(media_types)} media types.")
     return media_type_mapping
 
 
 def create_localization_types(
-    src_api,
-    dest_api,
-    dest_project,
-    localization_types,
-    localization_type_mapping,
-    media_type_mapping,
+    dest_project, localization_types, localization_type_mapping, media_type_mapping
 ):
     """Creates localization types. Returns updated localization type mapping."""
     for localization_type in localization_types:
-        response = tator.util.clone_localization_type(
-            src_api, localization_type.id, dest_project, media_type_mapping, dest_api
-        )
-        assert isinstance(response, tator.models.CreateResponse)
-        localization_type_mapping[localization_type.id] = response.id
+        spec = {
+            "name": localization_type.name,
+            "description": localization_type.description,
+            "dtype": localization_type.dtype,
+            "grouping_default": localization_type.grouping_default,
+            "color_map": localization_type.color_map,
+            "line_width": localization_type.line_width,
+            "visible": localization_type.visible,
+            "attribute_types": localization_type.attribute_types,
+        }
+        media_types = set()
+        for media_type in localization_type.media:
+            if media_type in media_type_mapping:
+                media_types.add(media_type_mapping[media_type])
+            else:
+                raise ValueError(
+                    f"Media type mapping does not contain source media ID {media_type}!"
+                )
+        spec["media_types"] = list(media_types)
+
+        response = _create_localization_type(params)
+        localization_type_mapping[localization_type.id] = response["id"]
     logger.info(f"Created {len(localization_types)} localization types.")
     return localization_type_mapping
 
 
-def create_state_types(
-    src_api, dest_api, dest_project, state_types, state_type_mapping, media_type_mapping
-):
+def create_state_types(dest_project, state_types, state_type_mapping, media_type_mapping):
     """Creates state types. Returns updated state type mapping."""
     for state_type in state_types:
-        response = tator.util.clone_state_type(
-            src_api, state_type.id, dest_project, media_type_mapping, dest_api
-        )
-        assert isinstance(response, tator.models.CreateResponse)
-        state_type_mapping[state_type.id] = response.id
+        spec = {
+            "project": dest_project,
+            "name": state_type.name,
+            "description": state_type.description,
+            "association": state_type.association,
+            "interpolation": state_type.interpolation,
+            "grouping_default": state_type.grouping_default,
+            "delete_child_localizations": state_type.delete_child_localizations,
+            "visible": state_type.visible,
+            "attribute_types": state_type.attribute_types,
+        }
+        media_types = []
+        for media_type in state_type.media:
+            if media_type in media_type_mapping:
+                media_types.append(media_type_mapping[media_type])
+            else:
+                raise ValueError(
+                    f"Media type mapping does not contain source media ID {media_type}!"
+                )
+        spec["media_types"] = media_types
+        response = _create_state_type(spec)
+        state_type_mapping[state_type.id] = response["id"]
     logger.info(f"Created {len(state_types)} state types.")
     return state_type_mapping
 
 
-def create_leaf_types(src_api, dest_api, dest_project, leaf_types, leaf_type_mapping):
+def create_leaf_types(dest_project, leaf_types, leaf_type_mapping):
     """Creates leaf types. Returns updated leaf type mapping."""
     for leaf_type in leaf_types:
-        response = tator.util.clone_leaf_type(src_api, leaf_type.id, dest_project, dest_api)
-        assert isinstance(response, tator.models.CreateResponse)
-        leaf_type_mapping[leaf_type.id] = response.id
+        spec = {
+            "project": dest_project,
+            "name": leaf_type.name,
+            "description": leaf_type.description,
+            "attribute_types": leaf_type.attribute_types,
+        }
+        response = _create_leaf_type(spec)
+        leaf_type_mapping[leaf_type.id] = response["id"]
     logger.info(f"Created {len(leaf_types)} leaf types.")
     return leaf_type_mapping
 
 
 def create_media(
-    args,
-    src_api,
-    dest_api,
-    dest_project,
-    media,
-    media_type_mapping,
-    media_mapping,
-    ignore_media_transfer,
+    params, dest_project, media, media_type_mapping, media_mapping, ignore_media_transfer
 ):
     """Creates media. Returns media mapping."""
     num_total = len(media)
     # Look up sections in destination project, create a dict between tator_user_sections and
     # section name.
-    sections = src_api.get_section_list(args.project)
-    if args.sections:
-        sections = [section for section in sections if section.name in args.sections]
+    sections = list(Section.objects.filter(project=params["id"]))
+    if params["sections"]:
+        sections = [section for section in sections if section.name in params["sections"]]
     section_mapping = {s.tator_user_sections: s.name for s in sections}
     section_mapping[None] = None
     # Construct dictionary between destination type/destination section and media IDs.
@@ -647,43 +722,92 @@ def create_media(
         key = (media_type_mapping[single.meta], section_mapping[get_tator_user_sections(single)])
         media_ids[key].append(single.id)
     # Sort keys so that multi are created after images/videos.
-    sorter = lambda mtype: 1 if dest_api.get_media_type(mtype[0]).dtype == "multi" else 0
+    sorter = lambda mtype: 1 if MediaType.objects.get(pk=mtype[0]).dtype == "multi" else 0
     keys = list(media_ids.keys())
     keys.sort(key=sorter)
     # Iterate through type/sections and create media.
     use_dest_api = None if src_api is dest_api else dest_api
     total_created = 0
-    for key in keys:
-        dest_type, dest_section = key
-        for idx in range(0, len(media_ids[key]), 100):  # Do batching here to manage ID query size.
-            query_params = {"project": args.project, "media_id": media_ids[key][idx : idx + 100]}
-            generator = tator.util.clone_media_list(
-                src_api,
-                query_params,
-                dest_project,
-                media_mapping,
-                dest_type,
-                dest_section,
-                use_dest_api,
-                ignore_media_transfer,
-            )
-            for _, _, response, id_map in generator:
-                if isinstance(response, tator.models.CreateResponse):
-                    total_created += 1
-                elif isinstance(response, tator.models.CreateListResponse):
-                    total_created += len(response.id)
-                else:
-                    raise ValueError("Error cloning media!")
-                logger.info(f"Created {total_created} of {num_total} files...")
-                media_mapping = {**media_mapping, **id_map}
+    for dest_type, dest_section in keys:
+        media_list = [
+            m.id for m in Media.objects.filter(project=params["id"], pk__in=media_ids[key])
+        ]
+        spec = {
+            "dest_project": dest_project,
+            "dest_section": dest_section,
+            "dest_type": dest_type,
+            "media_id": media_list,
+        }
+        response = _clone_media_list(spec, params["id"], respect_max=False)
+        total_created += len(response["id"])
+        media_mapping.update(zip(media_list, response["id"]))
+        logger.info(f"Created {total_created} of {num_total} files...")
     logger.info(f"Created {num_total} media.")
     return media_mapping
 
 
+def _convert_loc_for_post(
+    loc, localization_type_mapping, version_mapping, media_mapping, parent_mapping={}
+):
+    # Check for version mapping.
+    version_id = loc.version
+    if version_id in version_mapping:
+        version_id = version_mapping[version_id]
+    else:
+        raise ValueError(f"Source version ID {version_id} missing from version_mapping!")
+
+    # Check for media mapping.
+    media_id = loc.media
+    if media_id in media_mapping:
+        media_id = media_mapping[media_id]
+    else:
+        raise ValueError(f"Source media ID {media_id} missing from media_mapping!")
+
+    # Swap localization type IDs.
+    localization_type_id = loc.meta
+    if localization_type_id in localization_type_mapping:
+        localization_type_id = localization_type_mapping[localization_type_id]
+    else:
+        raise ValueError(
+            f"Source localization_type ID {localization_type_id} missing from "
+            "localization_type_mapping!"
+        )
+
+    # Check for parent mapping.
+    parent_id = loc.parent
+    if parent_id:
+        parent_id = int(parent_id)
+        if parent_id in parent_mapping:
+            parent_id = parent_mapping[parent_id]
+        else:
+            logger.warning(
+                f"Source parent ID {parent_id} missing from parent_mapping! Not "
+                f"setting parent for source localization {loc.id}..."
+            )
+            parent_id = None
+    # Fill in required fields for post.
+    spec = {
+        "type": localization_type_id,
+        "version": version_id,
+        "media_id": media_id,
+        "x": loc.x,
+        "y": loc.y,
+        "width": loc.width,
+        "height": loc.height,
+        "u": loc.u,
+        "v": loc.v,
+        "frame": loc.frame,
+        **loc.attributes,
+    }
+    if parent_id:
+        spec["parent"] = parent_id
+    spec = {key: spec[key] for key in spec if spec[key] is not None}
+    return spec
+
+
 def create_localizations(
-    args,
-    src_api,
-    dest_api,
+    params,
+    user,
     dest_project,
     localizations,
     localization_type_mapping,
@@ -694,32 +818,94 @@ def create_localizations(
     """Creates localizations. Returns localization mapping."""
     # Iterate through media and create localization.
     total_created = 0
-    for idx in range(0, len(localizations), 100):  # Do batching here to manage ID query size.
-        query_params = {
-            "project": args.project,
-            "localization_id_query": {"ids": [loc.id for loc in localizations[idx : idx + 100]]},
-        }
-        generator = tator.util.clone_localization_list(
-            src_api,
-            query_params,
-            dest_project,
-            version_mapping,
-            media_mapping,
-            localization_type_mapping,
-            dest_api,
+
+    # Start by getting list of localizations to be cloned.
+    locs = Localization.objects.filter(pk__in=localizations)
+
+    # Find parent localizations.
+    parent_ids = [int(loc.parent) for loc in locs if loc.parent]
+    parent_locs = [loc for loc in locs if loc.id in parent_ids]
+    child_locs = [loc for loc in locs if loc.id not in parent_ids]
+    parent_mapping = {}
+
+    # Create spec for parent localizations.
+    parent_spec = [
+        _convert_loc_for_post(loc, localization_type_mapping, version_mapping, media_mapping)
+        for loc in parent_locs
+    ]
+
+    # Create parent localizations first.
+    spec = {"body": parent_spec, "project": params["id"]}
+    response = _create_localization_list(spec, user)
+    parent_mapping.update(zip(parent_locs, response["id"]))
+    localization_mapping.update(zip(parent_locs, response["id"]))
+
+    # Convert spec for child localizations.
+    child_spec = [
+        _convert_loc_for_post(
+            loc, localization_type_mapping, version_mapping, media_mapping, parent_mapping
         )
-        for _, _, response, id_map in generator:
-            total_created += len(response.id)
-            logger.info(f"Created {total_created} of {len(localizations)} localizations...")
-            localization_mapping = {**localization_mapping, **id_map}
+        for loc in child_locs
+    ]
+
+    # Create the child localizations.
+    spec = {"body": child_spec, "project": params["id"]}
+    response = _create_localization_list(spec, user)
+    localization_mapping.update(zip(parent_locs, response["id"]))
     logger.info(f"Created {total_created} localizations.")
     return localization_mapping
 
 
+def _convert_state_for_post(
+    state, version_mapping, media_mapping, localization_mapping, state_type_mapping
+):
+    # Swap version IDs.
+    version_id = state.version
+    if version_id in version_mapping:
+        version_id = version_mapping[version_id]
+    else:
+        raise ValueError(f"Source version ID {version_id} missing from version_mapping!")
+    # Swap media IDs.
+    media_ids = state.media
+    for idx, media_id in enumerate(media_ids):
+        if media_id in media_mapping:
+            media_ids[idx] = media_mapping[media_id]
+        else:
+            raise ValueError(f"Source media ID {media_id} missing from media_mapping!")
+    # Swap localization IDs.
+    localization_ids = state.localizations
+    for idx, localization_id in enumerate(localization_ids):
+        if localization_id in localization_mapping:
+            localization_ids[idx] = localization_mapping[localization_id]
+        else:
+            raise ValueError(
+                f"Source localization ID {localization_id} missing from " "localization_mapping!"
+            )
+    # Swap state type IDs.
+    state_type_id = state.meta
+    if state_type_id in state_type_mapping:
+        state_type_id = state_type_mapping[state_type_id]
+    else:
+        raise ValueError(
+            f"Source state_type ID {state_type_id} missing from " "state_type_mapping!"
+        )
+    # Fill in required fields for post.
+    spec = {
+        "type": state_type_id,
+        "version": version_id,
+        "media_ids": media_ids,
+        "localization_ids": localization_ids,
+        **state.attributes,
+    }
+    if state.frame is not None:
+        spec["frame"] = state.frame
+    spec = {key: spec[key] for key in spec if spec[key] is not None}
+    return spec
+
+
 def create_states(
-    args,
-    src_api,
-    dest_api,
+    params,
+    user,
     dest_project,
     states,
     state_type_mapping,
@@ -731,149 +917,53 @@ def create_states(
     """Creates states."""
     # Iterate through media and create state.
     total_created = 0
-    for idx in range(0, len(states), 100):  # Do batching here to manage ID query size.
-        query_params = {
-            "project": args.project,
-            "state_id_query": {"ids": [state.id for state in states[idx : idx + 100]]},
-        }
-        generator = tator.util.clone_state_list(
-            src_api,
-            query_params,
-            dest_project,
-            version_mapping,
-            media_mapping,
-            localization_mapping,
-            state_type_mapping,
-            dest_api,
+    converted_states = [
+        _convert_state_for_post(
+            state, version_mapping, media_mapping, localization_mapping, state_type_mapping
         )
-        for _, _, response, id_map in generator:
-            total_created += len(response.id)
-            logger.info(f"Created {total_created} of {len(states)} states...")
-            state_mapping = {**state_mapping, **id_map}
+        for state in states
+    ]
+    spec = {"project": params["id"], "body": converted_states}
+    response = _create_state_list(spec, user)
+    total_created += len(response.id)
+    state_mapping.update(zip(states, response["id"]))
     logger.info(f"Created {total_created} states.")
     return state_mapping
 
 
-def create_leaves(args, src_api, dest_api, dest_project, leaves, leaf_type_mapping, leaf_mapping):
+def _convert_leaf_for_post(leaf, leaf_type_mapping, parent_mapping):
+    # Swap parent IDs.
+    parent_id = leaf.parent
+    if parent_id:
+        if parent_id in parent_mapping:
+            parent_id = parent_mapping[parent_id]
+        else:
+            raise ValueError(f"Source parent ID {parent_id} missing from parent_mapping!")
+
+    # Swap leaf type IDs.
+    leaf_type_id = leaf.meta
+    if leaf_type_id in leaf_type_mapping:
+        leaf_type_id = leaf_type_mapping[leaf_type_id]
+    else:
+        raise ValueError(f"Source leaf_type ID {leaf_type_id} missing from " "leaf_type_mapping!")
+
+    # Fill in required fields for post.
+    spec = {"name": leaf.name, "type": leaf_type_id, "parent": parent_id, **leaf.attributes}
+    spec = {key: spec[key] for key in spec if spec[key] is not None}
+    return spec
+
+
+def create_leaves(params, dest_project, leaves, leaf_type_mapping, leaf_mapping):
     """Creates leaves. Returns leaf mapping."""
     total_created = 0
-    leaf_count = sum([len(leaf_list) for leaf_list in leaves.values()])
-    for depth in leaves:
-        for idx in range(0, len(leaves[depth]), 100):
-            leaf_ids = [leaf.id for leaf in leaves[depth][idx : idx + 100]]
-            query_params = {"project": args.project, "leaf_id": leaf_ids}
-            generator = tator.util.clone_leaf_list(
-                src_api, query_params, dest_project, leaf_mapping, leaf_type_mapping, dest_api
-            )
-            for _, _, response, id_map in generator:
-                total_created += len(response.id)
-                logger.info(f"Created {total_created} of {leaf_count}")
-                leaf_mapping = {**leaf_mapping, **id_map}
-    logger.info(f"Created {leaf_count} leaves.")
-
-
-if __name__ == "__main__":
-    args = parse_args()
-    src_api, dest_api = setup_apis(args)
-    # Find which resources need to be migrated.
-    dest_project = find_dest_project(args, src_api, dest_api)
-    memberships, users = find_memberships(args, src_api, dest_api, dest_project)
-    sections = find_sections(args, src_api, dest_api, dest_project)
-    versions, version_mapping = find_versions(args, src_api, dest_api, dest_project)
-    media_types, media_type_mapping = find_media_types(args, src_api, dest_api, dest_project)
-    localization_types, localization_type_mapping = find_localization_types(
-        args, src_api, dest_api, dest_project
-    )
-    state_types, state_type_mapping = find_state_types(args, src_api, dest_api, dest_project)
-    leaf_types, leaf_type_mapping = find_leaf_types(args, src_api, dest_api, dest_project)
-    media, media_mapping = find_media(args, src_api, dest_api, dest_project)
-    localizations, localization_mapping = find_localizations(
-        args,
-        src_api,
-        dest_api,
-        dest_project,
-        media,
-        media_mapping,
-        localization_type_mapping,
-        version_mapping,
-    )
-    states, state_mapping = find_states(
-        args,
-        src_api,
-        dest_api,
-        dest_project,
-        media,
-        media_mapping,
-        state_type_mapping,
-        version_mapping,
-    )
-    leaves, leaf_mapping = find_leaves(args, src_api, dest_api, dest_project)
-    ignore_media_transfer = True if args.ignore_media_transfer else False
-    if ignore_media_transfer:
-        logger.info("Will not transfer media_files")
-
-    # Confirm migration with user.
-    proceed = input("Continue with migration [y/N]? ")
-    if proceed == "y":
-        # Perform migration.
-        dest_project = create_project(args, src_api, dest_api, dest_project)
-        create_memberships(src_api, dest_api, dest_project, memberships, users)
-        create_sections(src_api, dest_api, dest_project, sections)
-        version_mapping = create_versions(
-            src_api, dest_api, dest_project, versions, version_mapping
-        )
-        media_type_mapping = create_media_types(
-            src_api, dest_api, dest_project, media_types, media_type_mapping
-        )
-        localization_type_mapping = create_localization_types(
-            src_api,
-            dest_api,
-            dest_project,
-            localization_types,
-            localization_type_mapping,
-            media_type_mapping,
-        )
-        state_type_mapping = create_state_types(
-            src_api, dest_api, dest_project, state_types, state_type_mapping, media_type_mapping
-        )
-        leaf_type_mapping = create_leaf_types(
-            src_api, dest_api, dest_project, leaf_types, leaf_type_mapping
-        )
-        media_mapping = create_media(
-            args,
-            src_api,
-            dest_api,
-            dest_project,
-            media,
-            media_type_mapping,
-            media_mapping,
-            ignore_media_transfer,
-        )
-        localization_mapping = create_localizations(
-            args,
-            src_api,
-            dest_api,
-            dest_project,
-            localizations,
-            localization_type_mapping,
-            localization_mapping,
-            media_mapping,
-            version_mapping,
-        )
-        create_states(
-            args,
-            src_api,
-            dest_api,
-            dest_project,
-            states,
-            state_type_mapping,
-            state_mapping,
-            media_mapping,
-            version_mapping,
-            localization_mapping,
-        )
-        create_leaves(
-            args, src_api, dest_api, dest_project, leaves, leaf_type_mapping, leaf_mapping
-        )
-    else:
-        logger.info("Migration cancelled by user.")
+    leaf_count = sum(len(leaf_list) for leaf_list in leaves.values())
+    for depth, branch in leaves.items():
+        converted_leaves = [
+            _convert_leaf_for_post(leaf, leaf_type_mapping, leaf_mapping) for leaf in branch
+        ]
+        spec = {"project": params["id"], "body": converted_leaves}
+        response = _create_leaf_list(spec, user)
+        leaf_mapping.update(zip(branch, response["id"]))
+        total_created += len(response["id"])
+        logger.info(f"Created {total_created} of {leaf_count}")
+    logger.info(f"Created {total_created} leaves.")

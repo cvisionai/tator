@@ -21,6 +21,78 @@ from ._util import bulk_create_from_generator
 
 logger = logging.getLogger(__name__)
 
+
+def _media_obj_generator(original_medias, dest_project, meta, section):
+    for media in original_medias.iterator():
+        new_obj = media
+        new_obj.pk = None
+        new_obj.project = Project.objects.get(pk=dest_project)
+        new_obj.meta = MediaType.objects.get(pk=meta.id)
+        if section:
+            new_obj.attributes['tator_user_sections'] = section.tator_user_sections
+        yield new_obj
+
+def _clone_media_list(params, src_project, respect_max=True):
+    """ Clone media POST method in its own function for reuse by Migrate endpoint. """
+    MAX_NUM_MEDIA = 500
+    dest = params["dest_project"]
+
+    # Make sure destination path exists.
+    os.makedirs(os.path.join("/media", str(dest)), exist_ok=True)
+
+    # Retrieve media that will be cloned.
+    response_data = []
+    original_medias = get_media_queryset(src_project, params)
+
+    # If there are too many Media to create at once, raise an exception.
+    if original_medias.count() > MAX_NUM_MEDIA and respect_max:
+        raise ValueError(
+            f"Maximum number of media that can be cloned in one request is {MAX_NUM_MEDIA}. "
+            f"Try paginating request with start, stop, or after parameters."
+        )
+
+    # If given media type is not part of destination project, raise an exception.
+    if params["dest_type"] == -1:
+        meta = MediaType.objects.filter(project=dest)[0]
+    else:
+        meta = MediaType.objects.get(pk=params["dest_type"])
+        if meta.project.pk != dest:
+            raise ValueError("Destination media type is not part of destination project!")
+
+    # Look for destination section, if given.
+    section = None
+    if params.get("dest_section"):
+        sections = Section.objects.filter(project=dest, name__iexact=params['dest_section'])
+        if sections.count() == 0:
+            section = Section.objects.create(
+                project=Project.objects.get(pk=dest),
+                name=params["dest_section"],
+                tator_user_sections=str(uuid1()),
+            )
+        else:
+            section = sections[0]
+
+    objs = _media_obj_generator(original_medias, dest, meta, section)
+    medias = bulk_create_from_generator(objs, Media)
+
+    # Update resources.
+    keys = ['streaming', 'archival', 'audio', 'image', 'thumbnail', 'thumbnail_gif', 'attachment']
+    for media in medias:
+        for path in media.path_iterator(keys):
+            Resource.add_resource(path, media)
+
+    # Build ES documents.
+    ts = TatorSearch()
+    documents = []
+    for media in medias:
+        documents += ts.build_document(media)
+    ts.bulk_add_documents(documents)
+
+    # Return created IDs.
+    ids = [media.id for media in medias]
+    return {"message": f"Successfully cloned {len(ids)} medias!", "id": ids}
+
+
 class CloneMediaListAPI(BaseListView):
     """ Clone a list of media without copying underlying files.
     """
@@ -28,78 +100,9 @@ class CloneMediaListAPI(BaseListView):
     permission_classes = [ClonePermission]
     http_method_names = ['post']
     entity_type = MediaType # Needed by attribute filter mixin
-    MAX_NUM_MEDIA = 500
-
-    @staticmethod
-    def _media_obj_generator(original_medias, dest_project, dest_type, section):
-        for media in original_medias.iterator():
-            new_obj = media
-            new_obj.pk = None
-            new_obj.project = Project.objects.get(pk=dest_project)
-            new_obj.meta = MediaType.objects.get(pk=dest_type)
-            if section:
-                new_obj.attributes['tator_user_sections'] = section.tator_user_sections
-            yield new_obj
 
     def _post(self, params):
-        dest = params['dest_project']
-
-        # Make sure destination path exists.
-        os.makedirs(os.path.join('/media', str(dest)), exist_ok=True)
-
-        # Retrieve media that will be cloned.
-        response_data = []
-        original_medias = get_media_queryset(self.kwargs['project'], params)
-
-        # If there are too many Media to create at once, raise an exception.
-        if original_medias.count() > self.MAX_NUM_MEDIA:
-            raise Exception('Maximum number of media that can be cloned in one request is '
-                           f'{self.MAX_NUM_MEDIA}. Try paginating request with start, stop, '
-                            'or after parameters.')
-
-        # If given media type is not part of destination project, raise an exception.
-        if params['dest_type'] == -1:
-            meta = MediaType.objects.filter(project=dest)[0]
-        else:
-            meta = MediaType.objects.get(pk=params['dest_type'])
-            if meta.project.pk != dest:
-                raise Exception('Destination media type is not part of destination project!')
-
-        # Look for destination section, if given.
-        section = None
-        if params.get('dest_section'):
-            sections = Section.objects.filter(project=dest,
-                                              name__iexact=params['dest_section'])
-            if sections.count() == 0:
-                section = Section.objects.create(project=Project.objects.get(pk=dest),
-                                                 name=params['dest_section'],
-                                                 tator_user_sections=str(uuid1()))
-            else:
-                section = sections[0]
-
-        objs = self._media_obj_generator(original_medias, dest, params["dest_type"], section)
-        medias = bulk_create_from_generator(objs, Media)
-
-        # Update resources.
-        for media in medias:
-            if media.media_files:
-                for key in ['streaming', 'archival', 'audio', 'image', 'thumbnail',
-                            'thumbnail_gif', 'attachment']:
-                    for f in media.media_files.get(key, []):
-                        Resource.add_resource(f['path'], media)
-                        if key == 'streaming':
-                            Resource.add_resource(f['segment_info'], media)
-
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for media in medias:
-            documents += ts.build_document(media)
-        ts.bulk_add_documents(documents)
-
-        # Return created IDs.
-        ids = [media.id for media in medias]
-        return {'message': f'Successfully cloned {len(ids)} medias!', 'id': ids}
+        return _clone_media_list(params, self.kwargs["project"])
 
 
 class GetClonedMediaAPI(BaseDetailView):

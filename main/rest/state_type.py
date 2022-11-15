@@ -19,6 +19,31 @@ fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'interpolation', 'association', 'visible', 'grouping_default',
           'delete_child_localizations', 'default_localization']
 
+
+def _create_state_type(params):
+    """ State Type POST method in its own function for reuse by Migrate endpoint. """
+    if params["name"] in attribute_keywords:
+        raise ValueError(
+            f"{params['name']} is a reserved keyword and cannot be used for an attribute name!"
+        )
+    params["project"] = Project.objects.get(pk=params["project"])
+    media_types = params.pop("media_types")
+    if "body" in params:
+        del params["body"]
+    obj = StateType(**params)
+    obj.save()
+    media_qs = MediaType.objects.filter(
+        project=params["project"], pk__in=media_types)
+    if media_qs.count() != len(media_types):
+        obj.delete()
+        raise ObjectDoesNotExist(
+            f"Could not find media IDs {media_types} when creating state type!")
+    for media in media_qs:
+        obj.media.add(media)
+    obj.save()
+    return {"message": "State type created successfully!", "id": obj.id}
+
+
 class StateTypeListAPI(BaseListView):
     """ Create or retrieve state types.
 
@@ -70,24 +95,7 @@ class StateTypeListAPI(BaseListView):
             type, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        if params['name'] in attribute_keywords:
-            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
-                             "an attribute name!")
-        params['project'] = Project.objects.get(pk=params['project'])
-        media_types = params.pop('media_types')
-        del params['body']
-        obj = StateType(**params)
-        obj.save()
-        media_qs = MediaType.objects.filter(
-            project=params['project'], pk__in=media_types)
-        if media_qs.count() != len(media_types):
-            obj.delete()
-            raise ObjectDoesNotExist(
-                f"Could not find media IDs {media_types} when creating state type!")
-        for media in media_qs:
-            obj.media.add(media)
-        obj.save()
-        return {'message': 'State type created successfully!', 'id': obj.id}
+        return _create_state_type(params)
 
 
 class StateTypeDetailAPI(BaseDetailView):

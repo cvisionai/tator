@@ -96,6 +96,80 @@ class LeafSuggestionAPI(BaseDetailView):
         suggestions.sort(key=functor)
         return suggestions
 
+
+def _leaf_obj_generator(project, leaf_specs, attr_specs, metas, user):
+    for leaf_spec, attrs in zip(leaf_specs, attr_specs):
+        parent = leaf_spec.get("parent")
+        if parent is not None:
+            parent = Leaf.objects.get(pk=parent)
+            if parent.project.pk != project.id:
+                raise Exception(f"Specified parent ID is not in project {project.id}")
+
+        leaf = Leaf(
+            project=project,
+            meta=metas[leaf_spec["type"]],
+            attributes=attrs,
+            created_by=user,
+            modified_by=user,
+            name=leaf_spec["name"],
+            parent=parent,
+        )
+        leaf.path = leaf.computePath()
+        yield leaf
+
+
+def _create_leaf_list(params, user):
+    # Check that we are getting a leaf list.
+    try:
+        leaf_specs = params["body"]
+    except KeyError:
+        raise ValueError("Leaf creation requires list of leaves!")
+
+    # Find unique foreign keys.
+    meta_ids = set([leaf["type"] for leaf in leaf_specs])
+
+    # Make foreign key querysets.
+    meta_qs = LeafType.objects.filter(pk__in=meta_ids)
+
+    # Construct foreign key dictionaries.
+    project = Project.objects.get(pk=params["project"])
+    metas = {obj.id: obj for obj in meta_qs.iterator()}
+
+    # Get required fields for attributes.
+    required_fields = {id_: computeRequiredFields(metas[id_]) for id_ in meta_ids}
+    for val in required_fields.values():
+        val[0].pop("path", None)  # Remove path since it is computed.
+    attr_specs = [
+        check_required_fields(
+            required_fields[leaf["type"]][0], required_fields[leaf["type"]][2], leaf
+        )
+        for leaf in leaf_specs
+    ]
+
+    # Create the leaf objects.
+    objs = _leaf_obj_generator(project, leaf_specs, attr_specs, metas, user)
+    leaves = bulk_create_from_generator(objs, Leaf)
+    create_buffer = []
+
+    # Build ES documents.
+    ts = TatorSearch()
+    documents = []
+    for leaf in leaves:
+        documents += ts.build_document(leaf)
+        if len(documents) > 1000:
+            ts.bulk_add_documents(documents)
+            documents = []
+    ts.bulk_add_documents(documents)
+
+    ids = bulk_log_creation(leaves, project, user)
+
+    # Return created IDs.
+    if len(ids) == 1:
+        return {"message": f"Successfully created {len(ids)} leaf!", "id": ids}
+    else:
+        return {"message": f"Successfully created {len(ids)} leaves!", "id": ids}
+
+
 class LeafListAPI(BaseListView):
     """ Interact with a list of leaves.
 
@@ -112,75 +186,8 @@ class LeafListAPI(BaseListView):
         response_data = list(qs.values(*LEAF_PROPERTIES))
         return response_data
 
-    @staticmethod
-    def _leaf_obj_generator(project, leaf_specs, attr_specs, metas, user):
-        for leaf_spec, attrs in zip(leaf_specs, attr_specs):
-            parent = leaf_spec.get("parent")
-            if parent is not None:
-                parent = Leaf.objects.get(pk=parent)
-                if parent.project.pk != project.id:
-                    raise Exception(f"Specified parent ID is not in project {project.id}")
-
-            leaf = Leaf(
-                project=project,
-                meta=metas[leaf_spec["type"]],
-                attributes=attrs,
-                created_by=user,
-                modified_by=user,
-                name=leaf_spec["name"],
-                parent=parent,
-            )
-            leaf.path = leaf.computePath()
-            yield leaf
-
     def _post(self, params):
-        # Check that we are getting a leaf list.
-        if 'body' in params:
-            leaf_specs = params['body']
-        else:
-            raise Exception('Leaf creation requires list of leaves!')
-
-        # Find unique foreign keys.
-        meta_ids = set([leaf['type'] for leaf in leaf_specs])
-
-        # Make foreign key querysets.
-        meta_qs = LeafType.objects.filter(pk__in=meta_ids)
-
-        # Construct foreign key dictionaries.
-        project = Project.objects.get(pk=params['project'])
-        metas = {obj.id: obj for obj in meta_qs.iterator()}
-
-        # Get required fields for attributes.
-        required_fields = {id_:computeRequiredFields(metas[id_]) for id_ in meta_ids}
-        for val in required_fields.values():
-            val[0].pop('path', None) # Remove path since it is computed.
-        attr_specs = [check_required_fields(required_fields[leaf['type']][0],
-                                            required_fields[leaf['type']][2],
-                                            leaf)
-                      for leaf in leaf_specs]
-
-        # Create the leaf objects.
-        objs = self._leaf_obj_generator(project, leaf_specs, attr_specs, metas, self.request.user)
-        leaves = bulk_create_from_generator(objs, Leaf)
-        create_buffer = []
-
-        # Build ES documents.
-        ts = TatorSearch()
-        documents = []
-        for leaf in leaves:
-            documents += ts.build_document(leaf)
-            if len(documents) > 1000:
-                ts.bulk_add_documents(documents)
-                documents = []
-        ts.bulk_add_documents(documents)
-
-        ids = bulk_log_creation(leaves, project, self.request.user)
-
-        # Return created IDs.
-        if len(ids) == 1:
-            return {'message': f'Successfully created {len(ids)} leaf!', 'id': ids}
-        else:
-            return {'message': f'Successfully created {len(ids)} leaves!', 'id': ids}
+        return _create_leaf_list(params, self.request.user)
 
     def _delete(self, params):
         qs = get_leaf_queryset(params['project'], params)

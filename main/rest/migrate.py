@@ -1,22 +1,4 @@
 import logging
-import datetime
-from itertools import chain
-import os
-import shutil
-import mimetypes
-import datetime
-import tempfile
-from uuid import uuid1
-from urllib.parse import urlparse
-
-from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
-from django.db.models import Case, When
-from django.http import Http404
-from PIL import Image
-import pillow_avif  # add AVIF support to pillow
-import rawpy
-import imageio
 
 from ..models import (
     Media,
@@ -30,16 +12,34 @@ from ..models import (
     database_qs,
     database_query_ids,
 )
-from ..search import TatorSearch
-from ..schema import MediaListSchema, MediaDetailSchema, parse
-from ..schema.components import media as media_schema
-from ..notify import Notify
-from ..download import download_file
-from ..store import get_tator_store, get_storage_lookup
-from ..cache import TatorCache
+from ..schema import MigrateListSchema
 
-# from ._migrate import (
-# )
+from ._migrate import (
+    create_leaf_types,
+    create_leaves,
+    create_localizations,
+    create_localization_types,
+    create_media,
+    create_media_types,
+    create_memberships,
+    create_project,
+    create_sections,
+    create_states,
+    create_state_types,
+    create_versions,
+    find_dest_project,
+    find_leaf_types,
+    find_leaves,
+    find_localizations,
+    find_localization_types,
+    find_media,
+    find_media_types,
+    find_memberships,
+    find_sections,
+    find_states,
+    find_state_types,
+    find_versions,
+)
 
 from ._util import url_to_key
 from ._util import (
@@ -91,33 +91,22 @@ class MigrateListAPI(BaseListView):
             logger.info("Will not transfer media_files, due to ignore_media_transfer")
 
         # Perform migration.
-        dest_project = create_project(params, dest_project)
-        create_memberships(src_api, dest_api, dest_project, memberships, users)
-        create_sections(src_api, dest_api, dest_project, sections)
+        dest_project = create_project(params, dest_project, self.request.user)
+        create_memberships(dest_project, memberships, users)
+        create_sections(dest_project, sections)
         version_mapping = create_versions(
-            src_api, dest_api, dest_project, versions, version_mapping
+            dest_project, versions, version_mapping, self.request.user
         )
-        media_type_mapping = create_media_types(
-            src_api, dest_api, dest_project, media_types, media_type_mapping
-        )
+        media_type_mapping = create_media_types(dest_project, media_types, media_type_mapping)
         localization_type_mapping = create_localization_types(
-            src_api,
-            dest_api,
-            dest_project,
-            localization_types,
-            localization_type_mapping,
-            media_type_mapping,
+            dest_project, localization_types, localization_type_mapping, media_type_mapping
         )
         state_type_mapping = create_state_types(
-            src_api, dest_api, dest_project, state_types, state_type_mapping, media_type_mapping
+            dest_project, state_types, state_type_mapping, media_type_mapping
         )
-        leaf_type_mapping = create_leaf_types(
-            src_api, dest_api, dest_project, leaf_types, leaf_type_mapping
-        )
+        leaf_type_mapping = create_leaf_types(dest_project, leaf_types, leaf_type_mapping)
         media_mapping = create_media(
             params,
-            src_api,
-            dest_api,
             dest_project,
             media,
             media_type_mapping,
@@ -126,8 +115,7 @@ class MigrateListAPI(BaseListView):
         )
         localization_mapping = create_localizations(
             params,
-            src_api,
-            dest_api,
+            self.request.user,
             dest_project,
             localizations,
             localization_type_mapping,
@@ -135,10 +123,9 @@ class MigrateListAPI(BaseListView):
             media_mapping,
             version_mapping,
         )
-        create_states(
+        state_mapping = create_states(
             params,
-            src_api,
-            dest_api,
+            self.request.user,
             dest_project,
             states,
             state_type_mapping,
@@ -147,7 +134,5 @@ class MigrateListAPI(BaseListView):
             version_mapping,
             localization_mapping,
         )
-        create_leaves(
-            params, src_api, dest_api, dest_project, leaves, leaf_type_mapping, leaf_mapping
-        )
-        return response
+        create_leaves(params, dest_project, leaves, leaf_type_mapping, leaf_mapping)
+        return {"message": f"Successfully cloned project {params['id']}!", "id": dest_project}

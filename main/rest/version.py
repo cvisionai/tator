@@ -19,6 +19,36 @@ from ._permissions import ProjectEditPermission
 
 logger = logging.getLogger(__name__)
 
+
+def _create_version(params, user):
+    """ Version POST method in its own function for reuse by Migrate endpoint. """
+    name = params["name"]
+    description = params.get("description", None)
+    project = params["project"]
+
+    number = max([obj.number for obj in Version.objects.filter(project=project)]) + 1
+
+    obj = Version(
+        name=name,
+        description=description,
+        show_empty=params["show_empty"],
+        number=number,
+        project=Project.objects.get(pk=project),
+        created_by=user,
+    )
+    obj.save()
+
+    if "bases" in params:
+        qs = Version.objects.filter(pk__in=params["bases"])
+        if qs.count() < len(params["bases"]):
+            obj.delete()
+            raise ObjectDoesNotExist
+        else:
+            obj.bases.set(qs)
+
+    return {"message": "Created version successfully!", "id": obj.id}
+
+
 class VersionListAPI(BaseListView):
     """ Interact with a list of versions.
 
@@ -34,31 +64,7 @@ class VersionListAPI(BaseListView):
     http_method_names = ['get', 'post']
 
     def _post(self, params):
-        name = params['name']
-        description = params.get('description', None)
-        project = params['project']
-
-        number = max([obj.number for obj in Version.objects.filter(project=project)]) + 1
-
-        obj = Version(
-            name=name,
-            description=description,
-            show_empty=params['show_empty'],
-            number=number,
-            project=Project.objects.get(pk=project),
-            created_by=self.request.user,
-        )
-        obj.save()
-
-        if 'bases' in params:
-            qs = Version.objects.filter(pk__in=params['bases'])
-            if qs.count() < len(params['bases']):
-                obj.delete()
-                raise ObjectDoesNotExist
-            else:
-                obj.bases.set(qs)
-
-        return {'message': 'Created version successfully!', 'id': obj.id}
+        return _create_version(params, self.request.user)
 
     def _get(self, params):
         media = params.get('media_id', None)

@@ -14,6 +14,21 @@ from ._types import delete_instances
 
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types', 'visible']
 
+
+def _create_leaf_type(params):
+    """ Leaf Type POST method in its own function for reuse by Migrate endpoint. """
+    if params["name"] in attribute_keywords:
+        raise ValueError(
+            f"{params['name']} is a reserved keyword and cannot be used for an attribute name!"
+        )
+    params["project"] = Project.objects.get(pk=params["project"])
+    if "body" in params:
+        del params["body"]
+    obj = LeafType(**params)
+    obj.save()
+    return {"message": "Leaf type created successfully!", "id": obj.id}
+
+
 class LeafTypeListAPI(BaseListView):
     """ Interact with leaf type list.
 
@@ -30,14 +45,7 @@ class LeafTypeListAPI(BaseListView):
                     .order_by('name').values(*fields))
 
     def _post(self, params):
-        if params['name'] in attribute_keywords:
-            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
-                              "an attribute name!")
-        params['project'] = Project.objects.get(pk=params['project'])
-        del params['body']
-        obj = LeafType(**params)
-        obj.save()
-        return {'message': 'Leaf type created successfully!', 'id': obj.id}
+        return _create_leaf_type(params)
 
 class LeafTypeDetailAPI(BaseDetailView):
     """ Interact with individual leaf type.

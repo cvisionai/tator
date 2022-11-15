@@ -19,6 +19,34 @@ from ._types import delete_instances
 fields = ['id', 'project', 'name', 'description', 'dtype', 'attribute_types',
           'colorMap', 'line_width', 'visible', 'drawable', 'grouping_default']
 
+
+def _create_localization_type(params):
+    """ Localization Type POST method in its own function for reuse by Migrate endpoint. """
+    if params["name"] in attribute_keywords:
+        raise ValueError(
+            f"{params['name']} is a reserved keyword and cannot be used for an attribute name!"
+        )
+    params["project"] = Project.objects.get(pk=params["project"])
+    media_types = params.pop("media_types")
+    if "color_map" in params:
+        params["colorMap"] = params.pop("color_map")
+    if "body" in params:
+        del params["body"]
+    obj = LocalizationType(**params)
+    obj.save()
+    media_qs = MediaType.objects.filter(project=params["project"], pk__in=media_types)
+    if media_qs.count() != len(media_types):
+        obj.delete()
+        raise ObjectDoesNotExist(
+            f"Could not find media type IDs {media_types} when creating localization type!"
+        )
+    for media in media_qs:
+        obj.media.add(media)
+    obj.save()
+
+    return {"message": "Localization type created successfully!", "id": obj.id}
+
+
 class LocalizationTypeListAPI(BaseListView):
     """ Create or retrieve localization types.
 
@@ -63,25 +91,7 @@ class LocalizationTypeListAPI(BaseListView):
             shape, name, description, and (like other entity types) may have any number of attribute
             types associated with it.
         """
-        if params['name'] in attribute_keywords:
-            raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
-                              "an attribute name!")
-        params['project'] = Project.objects.get(pk=params['project'])
-        media_types = params.pop('media_types')
-        if 'color_map' in params:
-            params['colorMap'] = params.pop('color_map')
-        del params['body']
-        obj = LocalizationType(**params)
-        obj.save()
-        media_qs = MediaType.objects.filter(project=params['project'], pk__in=media_types)
-        if media_qs.count() != len(media_types):
-            obj.delete()
-            raise ObjectDoesNotExist(f"Could not find media IDs {media_types} when creating localization type!")
-        for media in media_qs:
-            obj.media.add(media)
-        obj.save()
-
-        return {'message': 'Localization type created successfully!', 'id': obj.id}
+        return _create_localization_type(params)
 
 class LocalizationTypeDetailAPI(BaseDetailView):
     """ Interact with an individual localization type.
