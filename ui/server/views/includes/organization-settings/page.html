@@ -1,0 +1,99 @@
+<template id="project-settings--header">
+   <div id="header" class="annotation__header d-flex flex-items-center flex-justify-between px-2 f3">
+      <div class="d-flex flex-items-center">
+         <settings-breadcrumbs id="project-settings--breadcrumbs"></settings-breadcrumbs>
+      </div>
+      <div class="d-flex">
+         <span style="width: 32px;">
+            <success-light></success-light>
+         </span>
+      </div>
+   </div>
+</template>
+
+
+{% include "includes/components/form-container.html" %}
+<template id="project-settings">
+   <main id="project-settings--main" class="position-relative">
+      <div id="settings-nav--div" class="py-6 clearfix position-relative px-md-6">
+         <!-- Side nav -->
+         <settings-nav id="settings-nav--nav"></settings-nav>
+
+         <!-- Main page container -->
+         <div id="settings-nav--item-container" class="NavItem float-left col-md-9 col-xl-10 col-xs-12">
+            <type-form-container form="organization-main-edit" hidden></type-form-container>
+            <type-form-container form="affiliation-edit" hidden></type-form-container>
+            <type-form-container form="invitation-edit" hidden></type-form-container>
+            <type-form-container form="bucket-edit" hidden></type-form-container>
+            <type-form-container form="job-cluster-edit" hidden></type-form-container>
+         </div>
+      </div>
+   </main>
+   <modal-dialog id="project-settings--modal"></modal-dialog>
+</template>
+
+
+{% include "includes/components/side-nav-link.html" %}
+<template id="settings-nav-template">
+   <div id="settings-nav--nav" class="SideNav rounded-2 float-left col-xl-2 col-md-3 col-xs-12">
+      <!-- Organization sidebar item -->
+      <settings-nav-link type="Organization" add="false">
+         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
+            viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+            <line x1="20" y1="9" x2="23" y2="9"></line>
+            <line x1="20" y1="14" x2="23" y2="14"></line>
+            <line x1="1" y1="9" x2="4" y2="9"></line>
+            <line x1="1" y1="14" x2="4" y2="14"></line>
+         </svg>
+         <span slot="label">Organization</span>
+      </settings-nav-link>
+
+      <!-- Affiliation Sidebar item -->
+      <settings-nav-link type="Affiliation">
+         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+         </svg>
+         <span slot="label">Affiliations</span>
+      </settings-nav-link>
+
+      <!-- Invitation Sidebar item -->
+      <settings-nav-link type="Invitation">
+         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
+            viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+         </svg>
+         <span slot="label">Invitations</span>
+      </settings-nav-link>
+
+      <!-- Bucket Sidebar item -->
+      <settings-nav-link type="Bucket">
+         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em"
+            viewBox="0 0 20 20">
+            <path
+               d="M11 1c-4.908 0-7.998 1.592-7.79 2.95 0.060 0.389 0.225 1.945 0.434 3.273-2.405 0.934-3.202 2.449-3.095 3.684 0.127 1.461 1.441 3.025 4.328 3.295 1.648 0.154 3.631-0.75 4.916-2.295-0.122-0.207-0.193-0.45-0.193-0.707 0-0.774 0.627-1.4 1.4-1.4s1.4 0.627 1.4 1.4c0 0.762-0.61 1.381-1.369 1.398-1.529 1.973-3.858 3.164-6.064 3.025 0.051 0.324 0.070 0.947 0.096 1.113 0.090 0.579 2.347 2.26 5.937 2.264 3.59-0.004 5.847-1.685 5.938-2.263 0.088-0.577 1.641-11.409 1.852-12.787 0.208-1.358-2.883-2.95-7.79-2.95zM1.943 10.785c-0.055-0.643 0.455-1.498 1.924-2.139 0.211 1.34 0.441 2.797 0.643 4.074-1.604-0.313-2.498-1.149-2.567-1.935zM11 6.024c-3.59-0.002-6.137-1.334-6.137-1.832-0.002-0.494 2.547-1.79 6.137-1.788 3.59-0.002 6.139 1.294 6.137 1.788 0 0.498-2.547 1.83-6.137 1.832z">
+            </path>
+         </svg>
+         <span slot="label">Buckets</span>
+      </settings-nav-link>
+
+      <!-- JobCluster Sidebar item -->
+      <settings-nav-link type="JobCluster">
+         <svg slot="icon" class="SideNav-icon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" style="fill: none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+         <span slot="label">Job Clusters</span>
+      </settings-nav-link>
+   </div>
+</template>
