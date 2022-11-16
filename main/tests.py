@@ -2677,9 +2677,11 @@ class BookmarkTestCase(
             'name': 'New name',
         }
         self.edit_permission = Permission.CAN_EDIT
+        transaction.commit()
 
     def tearDown(self):
         self.project.delete()
+        transaction.commit()
 
 class AffiliationTestCase(
         APITransactionTestCase,
@@ -3248,7 +3250,7 @@ class ResourceTestCase(APITransactionTestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
-        wait_for_indices(self.image_type)
+        wait_for_indices(image_type)
         body = {'url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
@@ -3641,7 +3643,7 @@ class MutateAliasTestCase(APITransactionTestCase):
             project=project,
             attribute_types=create_test_attribute_types(),
         )
-        wait_for_indices(self.entity_type)
+        wait_for_indices(entity_type)
         entity = create_test_video(self.user, 'test.mp4', entity_type, project)
         return project, entity_type, entity
 
