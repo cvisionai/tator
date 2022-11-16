@@ -1133,7 +1133,7 @@ class FileMixin:
     def _generate_key(self):
         return f'{self.organization.pk}/{self.project.pk}/{self.media.pk}/{uuid1()}'
 
-class CurrentUserTestCase(APITestCase):
+class CurrentUserTestCase(APITransactionTestCase):
     def test_get(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -1141,7 +1141,7 @@ class CurrentUserTestCase(APITestCase):
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.user.id)
 
-class ProjectDeleteTestCase(APITestCase):
+class ProjectDeleteTestCase(APITransactionTestCase):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -1186,7 +1186,7 @@ class ProjectDeleteTestCase(APITestCase):
         self.client.delete(f'/rest/Project/{self.project.pk}')
 
 class AlgorithmLaunchTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -1207,7 +1207,7 @@ class AlgorithmLaunchTestCase(
         self.project.delete()
 
 class AlgorithmTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionListMembershipTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -1227,7 +1227,7 @@ class AlgorithmTestCase(
         self.project.delete()
 
 class VideoTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         PermissionListMembershipTestMixin,
@@ -1346,7 +1346,7 @@ class VideoTestCase(
         self.assertEqual(response.data, 0)
 
 class ImageTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         PermissionListMembershipTestMixin,
@@ -1382,7 +1382,7 @@ class ImageTestCase(
         self.project.delete()
 
 class LocalizationBoxTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1447,7 +1447,7 @@ class LocalizationBoxTestCase(
         self.project.delete()
 
 class LocalizationLineTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1512,7 +1512,7 @@ class LocalizationLineTestCase(
         self.project.delete()
 
 class LocalizationDotTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1575,7 +1575,7 @@ class LocalizationDotTestCase(
         self.project.delete()
 
 class LocalizationPolyTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1637,7 +1637,7 @@ class LocalizationPolyTestCase(
         self.project.delete()
 
 class StateTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1734,7 +1734,7 @@ class StateTestCase(
     def tearDown(self):
         self.project.delete()
 
-class LocalizationMediaDeleteCase(APITestCase):
+class LocalizationMediaDeleteCase(APITransactionTestCase):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -1949,7 +1949,7 @@ class LocalizationMediaDeleteCase(APITestCase):
     def tearDown(self):
         self.project.delete()
 
-class StateMediaDeleteCase(APITestCase):
+class StateMediaDeleteCase(APITransactionTestCase):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2111,7 +2111,7 @@ class StateMediaDeleteCase(APITestCase):
         self.project.delete()
 
 class LeafTestCase(
-        APITestCase,
+        APITransactionTestCase,
         AttributeTestMixin,
         DefaultCreateTestMixin,
         PermissionCreateTestMixin,
@@ -2158,7 +2158,7 @@ class LeafTestCase(
         self.project.delete()
 
 class LeafTypeTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2186,7 +2186,7 @@ class LeafTypeTestCase(
         self.project.delete()
 
 class StateTypeTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2231,7 +2231,7 @@ class StateTypeTestCase(
         self.project.delete()
 
 class MediaTypeTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2271,7 +2271,7 @@ class MediaTypeTestCase(
         self.project.delete()
 
 class LocalizationTypeTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2322,7 +2322,7 @@ class LocalizationTypeTestCase(
         self.project.delete()
 
 class MembershipTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionListMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
@@ -2347,7 +2347,7 @@ class MembershipTestCase(
     def tearDown(self):
         self.project.delete()
 
-class ProjectTestCase(APITestCase):
+class ProjectTestCase(APITransactionTestCase):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2452,7 +2452,7 @@ class ProjectTestCase(APITestCase):
             project.delete()
 
 class TranscodeTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -2483,7 +2483,7 @@ class TranscodeTestCase(
         self.project.delete()
 
 class VersionTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2522,7 +2522,7 @@ class VersionTestCase(
         self.project.delete()
 
 class FavoriteStateTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2566,7 +2566,7 @@ class FavoriteStateTestCase(
         self.project.delete()
 
 class FavoriteLocalizationTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2610,7 +2610,7 @@ class FavoriteLocalizationTestCase(
         self.project.delete()
 
 class BookmarkTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2645,7 +2645,7 @@ class BookmarkTestCase(
         self.project.delete()
 
 class AffiliationTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionListAffiliationTestMixin,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
@@ -2680,7 +2680,7 @@ class AffiliationTestCase(
         self.project.delete()
 
 class OrganizationTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -2780,7 +2780,7 @@ class OrganizationTestCase(
         self.project.delete()
 
 class BucketTestCase(
-        APITestCase,
+        APITransactionTestCase,
         PermissionListAffiliationTestMixin,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
@@ -2823,7 +2823,7 @@ class BucketTestCase(
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.affiliation.save()
 
-class ImageFileTestCase(APITestCase, FileMixin):
+class ImageFileTestCase(APITransactionTestCase, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2854,7 +2854,7 @@ class ImageFileTestCase(APITestCase, FileMixin):
     def test_thumbnail_gif(self):
         self._test_methods('thumbnail_gif')
 
-class VideoFileTestCase(APITestCase, FileMixin):
+class VideoFileTestCase(APITransactionTestCase, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2892,7 +2892,7 @@ class VideoFileTestCase(APITestCase, FileMixin):
     def test_archival(self):
         self._test_methods('archival')
 
-class AudioFileTestCase(APITestCase, FileMixin):
+class AudioFileTestCase(APITransactionTestCase, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2917,7 +2917,7 @@ class AudioFileTestCase(APITestCase, FileMixin):
     def test_audio(self):
         self._test_methods('audio')
 
-class AuxiliaryFileTestCase(APITestCase, FileMixin):
+class AuxiliaryFileTestCase(APITransactionTestCase, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2942,7 +2942,7 @@ class AuxiliaryFileTestCase(APITestCase, FileMixin):
     def test_attachment(self):
         self._test_methods('attachment')
 
-class ResourceTestCase(APITestCase):
+class ResourceTestCase(APITransactionTestCase):
 
     MEDIA_ROLES = {'streaming': 'VideoFiles',
                    'archival': 'VideoFiles',
@@ -3456,7 +3456,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
         self.project.delete()
         self.organization.delete()
 
-class AttributeTestCase(APITestCase):
+class AttributeTestCase(APITransactionTestCase):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -3740,7 +3740,7 @@ class MutateAliasTestCase(APITransactionTestCase):
 
     #TODO: write totally different test for geopos mutations (not supported in query string queries)
 
-class JobClusterTestCase(APITestCase):
+class JobClusterTestCase(APITransactionTestCase):
     @staticmethod
     def _random_job_cluster_spec():
         uid = str(uuid1())
