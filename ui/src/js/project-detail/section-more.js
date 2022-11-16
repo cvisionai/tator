@@ -132,20 +132,37 @@ export class SectionMore extends TatorElement {
       this._deleteSection.style.display = "block";
       this._deleteMedia.style.display = "block";
     }
+    // End of day permission makes the call...
+    this.showHideWithPermission();
   }
 
   set project(val) {
-    if (!hasPermission(val.permission, "Can Execute")) {
+    this._project = val;
+    this.showHideWithPermission();    
+  }
+
+  showHideWithPermission() {
+    const permission = this._project.permission;
+    const enableDownloads = this._project.enable_downloads;
+
+    if (!hasPermission(permission, "Can Execute")) {
       this._algorithmMenu.style.display = "none";
     }
-    if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
+    
+    if (!(hasPermission(permission, "Can Transfer") && enableDownloads)) {
       this._download.style.display = "none";
       this._annotations.style.display = "none";
       this._deleteSection.style.display = "none";
       this._deleteMedia.style.display = "none";
     }
-    if (!hasPermission(val.permission, "Can Edit")) {
+
+    if (permission === "View Only") {
       this._rename.style.display = "none";
+      this._deleteSection.style.display = "none";
+      this._deleteMedia.style.display = "none";
+      this._bulkEditMedia.style.display = "none";
+      this._download.style.display = "block";
+      this._annotations.style.display = "block";
     }
   }
 

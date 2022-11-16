@@ -88,11 +88,11 @@ export class GalleryBulkEdit extends TatorElement {
 
 
 
-   init(page, gallery, type = "localization", projectId = null, additionalTools = false) {
-      // console.log("BULK EDIT INITIALIZED!");
+   init({page, gallery, type = "localization", projectId = null, additionalTools = false, permission}) {
       this._page = page;
       this._projectId = this._page.projectId;
       this._editType = type;
+      this._permission = permission;
 
       if (type == "media") {
          this._editPanel.xClose.classList.remove("hidden");
@@ -121,12 +121,14 @@ export class GalleryBulkEdit extends TatorElement {
 
       if (e.code == "Control") {
          if (e.code == "a" || e.code == "A") {
+            if (this._permission == "View Only") return;
             this.selectAllOnPage();
          }
       }
 
       if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
          e.preventDefault();
+         if (this._permission == "View Only") return;
          this.selectAllOnPage();
       }
 
