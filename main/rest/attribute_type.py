@@ -22,7 +22,6 @@ from ._base_views import BaseListView
 from ._attributes import (
     bulk_patch_attributes,
     bulk_rename_attributes,
-    bulk_mutate_attributes,
     bulk_delete_attributes,
     convert_attribute,
 )
@@ -218,9 +217,6 @@ class AttributeTypeListAPI(BaseListView):
                             if attribute_type["name"] == new_name:
                                 new_attribute = attribute_type
                                 break
-
-                        # Mutate the entity attribute values
-                        bulk_mutate_attributes(new_attribute, obj_qs)
 
                 if mod_type == "update":
                     # An update is a combination of the new and old states

@@ -79,36 +79,6 @@ class DeleteKey(Func): #pylint: disable=abstract-method
             expression, key=key, create_missing='true' if create_missing else 'false', **extra
         )
 
-
-def bulk_mutate_attributes(attribute_type, q_s):
-    """
-    Mutates the given attribute type in all entries of the QuerySet that have it.
-    """
-    name = attribute_type["name"]
-    dtype = attribute_type["dtype"]
-
-    if dtype == "int":
-        fn = int
-    elif dtype == "float":
-        fn = float
-    elif dtype == "enum":
-        fn = str
-    elif dtype == "string":
-        fn = str
-    else:
-        raise ValueError(f"'{dtype}' not a valid mutation destination type")
-
-    entities = []
-    for entity in q_s:
-        if entity.attributes:
-            if name in entity.attributes:
-                entity.attributes[name] = fn(entity.attributes[name])
-                entities.append(entity)
-
-    if entities:
-        type(entities[0]).objects.bulk_update(entities, ["attributes"], batch_size=1000)
-
-
 def convert_attribute(attr_type, attr_val): #pylint: disable=too-many-branches
     """Attempts to convert an attribute to its expected datatype. Raises an
        exception if conversion fails.

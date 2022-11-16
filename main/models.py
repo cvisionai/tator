@@ -1524,6 +1524,11 @@ class Section(Model):
     lucene_search = CharField(max_length=1024, null=True, blank=True)
     """ Optional lucene query syntax search string.
     """
+
+    object_search = JSONField(null=True, blank=True)
+    """
+    Object search using a search structure defined as AttributeOperationSpec
+    """
     tator_user_sections = CharField(max_length=128, null=True, blank=True)
     """ Identifier used to label media that is part of this section via the
         tator_user_sections attribute. If not set, this search is not scoped
