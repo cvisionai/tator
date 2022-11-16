@@ -117,9 +117,11 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     this.cardData.addEventListener("setCardImage", (evt) => {
       this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
     });
+    
+    await this._modelData.init();
 
     // Init after modal is defined & modelData
-    this._bulkEdit.init({ page: this, permission: project.permission });
+    this._bulkEdit.init({ page: this, permission: this._modelData._project.permission });
 
     // Pass panel and localization types to gallery
     this._filterResults._initPanel({
