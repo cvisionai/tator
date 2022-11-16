@@ -110,9 +110,6 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
     console.log("Corrections this._projectId" + this._projectId);
     this._modelData = new TatorData(this.projectId);
 
-    // Init after modal is defined
-    this._bulkEdit.init(this);
-
     // Card Data export class collects raw model and parses into view-model format
     this.cardData = document.createElement("annotation-card-data");
     await this.cardData.init(this._modelData);
@@ -121,7 +118,8 @@ export class AnalyticsLocalizationsCorrections extends TatorPage {
       this._filterResults.updateCardImage(evt.detail.id, evt.detail.image);
     });
 
-    await this._modelData.init()
+    // Init after modal is defined & modelData
+    this._bulkEdit.init({ page: this, permission: project.permission });
 
     // Pass panel and localization types to gallery
     this._filterResults._initPanel({

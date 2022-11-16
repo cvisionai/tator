@@ -805,7 +805,18 @@ export class ProjectDetail extends TatorPage {
             //
             this._mediaSection._files._cardAttributeLabels = this._cardAttributeLabels;
             this._mediaSection._bulkEdit = this._bulkEdit;
-            this._bulkEdit.init(this, this._mediaSection._files, "media", projectId, true);
+
+
+            this._bulkEdit.init({
+              page: this,
+              gallery: this._mediaSection._files,
+              type: "media",
+              projectId,
+              additionalTools: true,
+              permission: project.permission
+            });              
+
+
 
             const parsedAlgos = algos.filter(function (alg) {
               if (Array.isArray(alg.categories)) {

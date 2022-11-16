@@ -208,10 +208,12 @@ export class MediaMore extends TatorElement {
   // Use project to determine permission for each button
   set project(val) {
     this._project = val;
-
     // Uses the class "hidden" which overiddes the hidden true/false set in toggle functions
     if (this._project.permission == "View Only") {
-      this._div.hidden = true;
+      this._algorithmMenu.classList.add("hidden");
+      this._rename.classList.add("hidden");
+      this._mediaMoveButton.classList.add("hidden");
+      this._del.classList.add("hidden");
     } else {
       if (!hasPermission(val.permission, "Can Execute")) {
         this._algorithmMenu.classList.add("hidden");
