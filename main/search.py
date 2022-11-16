@@ -263,7 +263,7 @@ class TatorSearch:
         """ Delete all indices synchronously """
         proj_indices = self.list_indices(project)
         for _,index_name,_ in proj_indices:
-            delete_psql_index(connection.settings_dict['NAME'], index_name)
+            push_job(delete_psql_index, args=(connection.settings_dict['NAME'], index_name))
             
 
     def delete_index(self, entity_type, attribute):

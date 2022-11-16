@@ -36,7 +36,6 @@ def wait_for_indices(entity_type):
     for attribute in entity_type.attribute_types:
         found_it = False
         for i in range(300):
-            transaction.commit()
             if TatorSearch().is_index_present(entity_type, attribute) == True:
                 found_it = True
                 break
@@ -2647,7 +2646,7 @@ class FavoriteLocalizationTestCase(
         self.project.delete()
 
 class BookmarkTestCase(
-        APITransactionTestCase,
+        APITestCase,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2677,11 +2676,9 @@ class BookmarkTestCase(
             'name': 'New name',
         }
         self.edit_permission = Permission.CAN_EDIT
-        transaction.commit()
 
     def tearDown(self):
         self.project.delete()
-        transaction.commit()
 
 class AffiliationTestCase(
         APITransactionTestCase,
