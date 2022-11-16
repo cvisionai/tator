@@ -66,17 +66,17 @@ class MediaTypeListAPI(BaseListView):
         default_dot = params.get('default_dot')
 
         if default_box is not None:
-          params['default_box'] = LocalizationType.objects.get(pk=params['default_box'])
-          if params['default_box'].project.pk != params['project']:
-            raise ValueError(f"Default box is not part of project {params['project']}!")
+            params["default_box"] = LocalizationType.objects.get(pk=params["default_box"])
+            if params["default_box"].project.pk != params["project"]:
+                raise ValueError(f"Default box is not part of project {params['project']}!")
         if default_line is not None:
-          params['default_line'] = LocalizationType.objects.get(pk=params['default_line'])
-          if params['default_line'].project.pk != params['project']:
-            raise ValueError(f"Default line is not part of project {params['project']}!")
+            params["default_line"] = LocalizationType.objects.get(pk=params["default_line"])
+            if params["default_line"].project.pk != params["project"]:
+                raise ValueError(f"Default line is not part of project {params['project']}!")
         if default_dot is not None:
-          params['default_dot'] = LocalizationType.objects.get(pk=params['default_dot'])
-          if params['default_dot'].project.pk != params['project']:
-            raise ValueError(f"Default dot is not part of project {params['project']}!")
+            params["default_dot"] = LocalizationType.objects.get(pk=params["default_dot"])
+            if params["default_dot"].project.pk != params["project"]:
+                raise ValueError(f"Default dot is not part of project {params['project']}!")
 
         if params['name'] in attribute_keywords:
             raise ValueError(f"{params['name']} is a reserved keyword and cannot be used for "
@@ -148,20 +148,20 @@ class MediaTypeDetailAPI(BaseDetailView):
             obj.default_volume = default_volume
 
         if default_box is not None:
-          default_box = LocalizationType.objects.get(pk=default_box)
-          if default_box.project.pk != obj.project:
-            raise ValueError(f"Default box is not part of project {obj.project}!")
-          obj.default_box = default_box
+            default_box = LocalizationType.objects.get(pk=default_box)
+            if default_box.project.pk != obj.project:
+                raise ValueError(f"Default box is not part of project {obj.project}!")
+            obj.default_box = default_box
         if default_line is not None:
-          default_line = LocalizationType.objects.get(pk=default_line)
-          if default_line.project.pk != obj.project:
-            raise ValueError(f"Default line is not part of project {obj.project}!")
-          obj.default_line = default_line
+            default_line = LocalizationType.objects.get(pk=default_line)
+            if default_line.project.pk != obj.project:
+                raise ValueError(f"Default line is not part of project {obj.project}!")
+            obj.default_line = default_line
         if default_dot is not None:
-          default_dot = LocalizationType.objects.get(pk=default_dot)
-          if default_dot.project.pk != obj.project:
-            raise ValueError(f"Default dot is not part of project {obj.project}!")
-          obj.default_dot = default_dot
+            default_dot = LocalizationType.objects.get(pk=default_dot)
+            if default_dot.project.pk != obj.project:
+                raise ValueError(f"Default dot is not part of project {obj.project}!")
+            obj.default_dot = default_dot
 
         obj.save()
         return {'message': 'Media type updated successfully!'}
