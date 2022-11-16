@@ -594,11 +594,14 @@ def project_save(sender, instance, created, **kwargs):
     if instance.thumb:
         Resource.add_resource(instance.thumb, None)
 
+@receiver(pre_delete, sender=Project)
+def project_pre_delete(sender, instance, **kwargs):
+    TatorSearch().delete_project_indices(instance.pk)
+
 @receiver(post_delete, sender=Project)
-def project_delete(sender, instance, **kwargs):
+def project_post_delete(sender, instance, **kwargs):
     if instance.thumb:
         safe_delete(instance.thumb, instance.id)
-    TatorSearch().delete_project_indices(instance.pk)
     
 class Membership(Model):
     """Stores a user and their access level for a project.

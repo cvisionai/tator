@@ -32,6 +32,17 @@ logger = logging.getLogger(__name__)
 
 TEST_IMAGE = 'https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png'
 
+def wait_for_indices(entity_type):
+    for attribute in entity_type.attribute_types:
+        found_it = False
+        for i in range(300):
+            transaction.commit()
+            if TatorSearch().is_index_present(entity_type, attribute) == True:
+                found_it = True
+                break
+            time.sleep(1)
+        assert(found_it)
+        
 
 def assertResponse(self, response, expected_code):
     if response.status_code != expected_code:
@@ -1246,6 +1257,7 @@ class VideoTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entities = [
             create_test_video(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
@@ -1260,7 +1272,9 @@ class VideoTestCase(
 
 
     def tearDown(self):
+        print(f"{time.time()}: Begin Delete.")
         self.project.delete()
+        print(f"{time.time()}: End Delete.")
 
     def test_annotation_delete(self):
         medias = [
@@ -1365,6 +1379,7 @@ class ImageTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entities = [
             create_test_image(self.user, f'asdf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
@@ -1409,6 +1424,7 @@ class LocalizationBoxTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
             create_test_video(self.user, f'asdf{idx}', media_entity_type, self.project)
@@ -1474,6 +1490,7 @@ class LocalizationLineTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
             create_test_video(self.user, f'asdf{idx}', media_entity_type, self.project)
@@ -1539,6 +1556,7 @@ class LocalizationDotTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
             create_test_video(self.user, f'asdf{idx}', media_entity_type, self.project)
@@ -1602,6 +1620,7 @@ class LocalizationPolyTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entity_type.media.add(media_entity_type)
         self.media_entities = [
             create_test_video(self.user, f'asdf{idx}', media_entity_type, self.project)
@@ -1665,6 +1684,7 @@ class StateTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entity_type.media.add(self.media_entity_type)
         self.media_entities = [
             create_test_video(self.user, f"asdf", self.media_entity_type, self.project)
@@ -1748,21 +1768,25 @@ class LocalizationMediaDeleteCase(APITransactionTestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.image_type)
         self.box_type = LocalizationType.objects.create(
             project=self.project,
             name='loc_box_type',
             dtype='box',
             attribute_types=create_test_attribute_types())
+        wait_for_indices(self.box_type)
         self.dot_type = LocalizationType.objects.create(
             project=self.project,
             name='loc_dot_type',
             dtype='dot',
             attribute_types=create_test_attribute_types())
+        wait_for_indices(self.dot_type)
         self.line_type = LocalizationType.objects.create(
             project=self.project,
             name='loc_line_type',
             dtype='line',
             attribute_types=create_test_attribute_types())
+        wait_for_indices(self.line_type)
  
         # Associate media type and localization type together
         self.box_type.media.add(self.image_type)
@@ -1963,6 +1987,7 @@ class StateMediaDeleteCase(APITransactionTestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.image_type)
         self.entity_type = StateType.objects.create(
             name="states",
             dtype='state',
@@ -1971,6 +1996,7 @@ class StateMediaDeleteCase(APITransactionTestCase):
             interpolation="none",
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entity_type.media.add(self.image_type)
 
     def test_single_media_delete(self):
@@ -2130,6 +2156,7 @@ class LeafTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.entities = [
             create_test_leaf(f'leaf{idx}', self.entity_type, self.project)
             for idx in range(random.randint(6, 10))
@@ -2216,6 +2243,8 @@ class StateTypeTestCase(
                 attribute_types=create_test_attribute_types(),
             ),
         ]
+        wait_for_indices(self.entities[0])
+        wait_for_indices(self.entities[1])
         self.list_uri = 'StateTypes'
         self.detail_uri = 'StateType'
         self.create_json = {
@@ -2257,6 +2286,9 @@ class MediaTypeTestCase(
                 attribute_types=create_test_attribute_types(),
             ),
         ]
+        wait_for_indices(self.entities[0])
+        wait_for_indices(self.entities[1])
+
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {
             'name': 'asdf',
@@ -2307,6 +2339,9 @@ class LocalizationTypeTestCase(
                 attribute_types=create_test_attribute_types(),
             ),
         ]
+        wait_for_indices(self.entities[0])
+        wait_for_indices(self.entities[1])
+        wait_for_indices(self.entities[2])
         self.list_uri = 'LocalizationTypes'
         self.detail_uri = 'LocalizationType'
         self.create_json = {
@@ -2548,6 +2583,8 @@ class FavoriteStateTestCase(
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
+        wait_for_indices(self.state_type)
         self.entities = [create_test_favorite(f"Favorite {idx}", self.project,
                                               self.user, self.state_type, "State")
                          for idx in range(random.randint(6, 10))]
@@ -2839,6 +2876,7 @@ class ImageFileTestCase(APITransactionTestCase, FileMixin):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'ImageFiles'
         self.detail_uri = 'ImageFile'
@@ -2870,6 +2908,7 @@ class VideoFileTestCase(APITransactionTestCase, FileMixin):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'VideoFiles'
         self.detail_uri = 'VideoFile'
@@ -2908,6 +2947,7 @@ class AudioFileTestCase(APITransactionTestCase, FileMixin):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'AudioFiles'
         self.detail_uri = 'AudioFile'
@@ -2933,6 +2973,7 @@ class AuxiliaryFileTestCase(APITransactionTestCase, FileMixin):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.media = create_test_video(self.user, f'asdf', self.entity_type, self.project)
         self.list_uri = 'AuxiliaryFiles'
         self.detail_uri = 'AuxiliaryFile'
@@ -2967,11 +3008,13 @@ class ResourceTestCase(APITransactionTestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.file_entity_type = FileType.objects.create(
             name="TestFileType",
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.file_entity_type)
         self.store = get_tator_store()
         self.backup_bucket = None
 
@@ -3205,6 +3248,7 @@ class ResourceTestCase(APITransactionTestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.image_type)
         body = {'url': TEST_IMAGE,
                 'type': image_type.pk,
                 'section': 'asdf',
@@ -3446,11 +3490,13 @@ class ResourceWithBackupTestCase(ResourceTestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         self.file_entity_type = FileType.objects.create(
             name="TestFileType",
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.file_entity_type)
 
     def tearDown(self):
         self.project.delete()
@@ -3470,6 +3516,7 @@ class AttributeTestCase(APITransactionTestCase):
             project=self.project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         media_entity_type = MediaType.objects.create(
             name="video",
             dtype='video',
@@ -3594,6 +3641,7 @@ class MutateAliasTestCase(APITransactionTestCase):
             project=project,
             attribute_types=create_test_attribute_types(),
         )
+        wait_for_indices(self.entity_type)
         entity = create_test_video(self.user, 'test.mp4', entity_type, project)
         return project, entity_type, entity
 
