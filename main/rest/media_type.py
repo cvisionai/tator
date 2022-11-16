@@ -1,8 +1,11 @@
 from django.db import transaction
 
-from ..models import MediaType
-from ..models import Media
-from ..models import Project
+from ..models import (
+    LocalizationType,
+    Media,
+    MediaType,
+    Project,
+)
 from ..schema import MediaTypeListSchema
 from ..schema import MediaTypeDetailSchema
 
