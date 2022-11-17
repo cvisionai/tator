@@ -27,16 +27,26 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
     name = params.get('name')
     start = params.get('start')
     stop = params.get('stop')
+    depth = params.get('depth')
 
     qs = Leaf.objects.filter(project=project, deleted=False)
 
     leaf_ids = []
+    id_supplied = False
     if leaf_id is not None:
         leaf_ids += leaf_id
+        id_supplied = True
     if leaf_id_put is not None:
         leaf_ids += leaf_id_put
-    if leaf_ids:
-        qs = qs.filter(pk__in=leaf_ids)
+        id_supplied = True
+    if id_supplied:
+        if leaf_ids == []:
+            qs = qs.filter(pk=-1)
+        else:
+            qs = qs.filter(pk__in=leaf_ids)
+
+    if depth is not None:
+        qs = qs.filter(path__depth=depth)
 
     if name is not None:
         qs = qs.filter(name=name)
