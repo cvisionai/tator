@@ -34,6 +34,17 @@ logger = logging.getLogger(__name__)
 
 TEST_IMAGE = 'https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png'
 
+class TatorTransactionTest(APITransactionTestCase):
+    """ Handle cases when test runner flushes DB and indices are still being made. """
+    def _fixture_teardown(self):
+        for x in range(30):
+            try:
+                super()._fixture_teardown()
+                break
+            except:
+                print("Flush failed, sleep, and try again.")
+                time.sleep(1)
+
 def wait_for_indices(entity_type):
     for attribute in entity_type.attribute_types:
         found_it = False
@@ -1144,7 +1155,7 @@ class FileMixin:
     def _generate_key(self):
         return f'{self.organization.pk}/{self.project.pk}/{self.media.pk}/{uuid1()}'
 
-class CurrentUserTestCase(APITransactionTestCase):
+class CurrentUserTestCase(TatorTransactionTest):
     def test_get(self):
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
@@ -1152,7 +1163,7 @@ class CurrentUserTestCase(APITransactionTestCase):
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], self.user.id)
 
-class ProjectDeleteTestCase(APITransactionTestCase):
+class ProjectDeleteTestCase(TatorTransactionTest):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -1197,7 +1208,7 @@ class ProjectDeleteTestCase(APITransactionTestCase):
         self.client.delete(f'/rest/Project/{self.project.pk}')
 
 class AlgorithmLaunchTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -1215,7 +1226,7 @@ class AlgorithmLaunchTestCase(
         self.edit_permission = Permission.CAN_EXECUTE
 
 class AlgorithmTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionListMembershipTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -1232,7 +1243,7 @@ class AlgorithmTestCase(
         ]
 
 class VideoTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         PermissionListMembershipTestMixin,
@@ -1348,7 +1359,7 @@ class VideoTestCase(
         self.assertEqual(response.data, 0)
 
 class ImageTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         PermissionListMembershipTestMixin,
@@ -1381,7 +1392,7 @@ class ImageTestCase(
         self.patch_json = {'name': 'image1'}
 
 class LocalizationBoxTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1443,7 +1454,7 @@ class LocalizationBoxTestCase(
         self.patch_json = {'name': 'box1'}
 
 class LocalizationLineTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1505,7 +1516,7 @@ class LocalizationLineTestCase(
         self.patch_json = {'name': 'line1'}
 
 class LocalizationDotTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1565,7 +1576,7 @@ class LocalizationDotTestCase(
         self.patch_json = {'name': 'dot1'}
 
 class LocalizationPolyTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1624,7 +1635,7 @@ class LocalizationPolyTestCase(
         self.patch_json = {'name': 'box1'}
 
 class StateTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         AttributeMediaTestMixin,
         DefaultCreateTestMixin,
@@ -1719,7 +1730,7 @@ class StateTestCase(
         response = self.client.post(endpoint, create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-class LocalizationMediaDeleteCase(APITransactionTestCase):
+class LocalizationMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -1935,7 +1946,7 @@ class LocalizationMediaDeleteCase(APITransactionTestCase):
         response = self.client.get(f"/rest/Localizations/{self.project.pk}")
         self.assertEqual(len(response.data), 0)
 
-class StateMediaDeleteCase(APITransactionTestCase):
+class StateMediaDeleteCase(TatorTransactionTest):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2096,7 +2107,7 @@ class StateMediaDeleteCase(APITransactionTestCase):
         self.assertEqual(len(response.data), 0)
 
 class LeafTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         AttributeTestMixin,
         DefaultCreateTestMixin,
         PermissionCreateTestMixin,
@@ -2140,7 +2151,7 @@ class LeafTestCase(
         self.patch_json = {'name': 'leaf1'}
 
 class LeafTypeTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2165,7 +2176,7 @@ class LeafTypeTestCase(
         self.edit_permission = Permission.FULL_CONTROL
 
 class StateTypeTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2209,7 +2220,7 @@ class StateTypeTestCase(
         self.edit_permission = Permission.FULL_CONTROL
 
 class MediaTypeTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2249,7 +2260,7 @@ class MediaTypeTestCase(
         }
 
 class LocalizationTypeTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2300,7 +2311,7 @@ class LocalizationTypeTestCase(
         self.edit_permission = Permission.FULL_CONTROL
 
 class MembershipTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionListMembershipTestMixin,
         PermissionDetailTestMixin):
     def setUp(self):
@@ -2322,7 +2333,7 @@ class MembershipTestCase(
         }
         self.edit_permission = Permission.FULL_CONTROL
 
-class ProjectTestCase(APITransactionTestCase):
+class ProjectTestCase(TatorTransactionTest):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2423,7 +2434,7 @@ class ProjectTestCase(APITransactionTestCase):
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
 
 class TranscodeTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -2451,7 +2462,7 @@ class TranscodeTestCase(
         self.edit_permission = Permission.CAN_TRANSFER
 
 class VersionTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2487,7 +2498,7 @@ class VersionTestCase(
         self.edit_permission = Permission.CAN_EDIT
 
 class FavoriteStateTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2530,7 +2541,7 @@ class FavoriteStateTestCase(
         }
 
 class FavoriteLocalizationTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionCreateTestMixin,
         PermissionListMembershipTestMixin,
         PermissionDetailMembershipTestMixin,
@@ -2603,7 +2614,7 @@ class BookmarkTestCase(
         self.edit_permission = Permission.CAN_EDIT
 
 class AffiliationTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionListAffiliationTestMixin,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
@@ -2635,7 +2646,7 @@ class AffiliationTestCase(
         return self.organization
 
 class OrganizationTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -2732,7 +2743,7 @@ class OrganizationTestCase(
         Project.objects.get(pk=project_id).delete()
 
 class BucketTestCase(
-        APITransactionTestCase,
+        TatorTransactionTest,
         PermissionListAffiliationTestMixin,
         PermissionDetailAffiliationTestMixin):
     def setUp(self):
@@ -2775,7 +2786,7 @@ class BucketTestCase(
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         self.affiliation.save()
 
-class ImageFileTestCase(APITransactionTestCase, FileMixin):
+class ImageFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2807,7 +2818,7 @@ class ImageFileTestCase(APITransactionTestCase, FileMixin):
     def test_thumbnail_gif(self):
         self._test_methods('thumbnail_gif')
 
-class VideoFileTestCase(APITransactionTestCase, FileMixin):
+class VideoFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2846,7 +2857,7 @@ class VideoFileTestCase(APITransactionTestCase, FileMixin):
     def test_archival(self):
         self._test_methods('archival')
 
-class AudioFileTestCase(APITransactionTestCase, FileMixin):
+class AudioFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2872,7 +2883,7 @@ class AudioFileTestCase(APITransactionTestCase, FileMixin):
     def test_audio(self):
         self._test_methods('audio')
 
-class AuxiliaryFileTestCase(APITransactionTestCase, FileMixin):
+class AuxiliaryFileTestCase(TatorTransactionTest, FileMixin):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -2898,7 +2909,7 @@ class AuxiliaryFileTestCase(APITransactionTestCase, FileMixin):
     def test_attachment(self):
         self._test_methods('attachment')
 
-class ResourceTestCase(APITransactionTestCase):
+class ResourceTestCase(TatorTransactionTest):
 
     MEDIA_ROLES = {'streaming': 'VideoFiles',
                    'archival': 'VideoFiles',
@@ -3409,7 +3420,7 @@ class ResourceWithBackupTestCase(ResourceTestCase):
         )
         wait_for_indices(self.file_entity_type)
 
-class AttributeTestCase(APITransactionTestCase):
+class AttributeTestCase(TatorTransactionTest):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
         logging.disable(logging.CRITICAL)
@@ -3527,7 +3538,7 @@ class AttributeTestCase(APITransactionTestCase):
         self.membership.save()
 
 
-class MutateAliasTestCase(APITransactionTestCase):
+class MutateAliasTestCase(TatorTransactionTest):
     """Tests alias mutation in elasticsearch.
     """
     def setUp(self):
@@ -3692,7 +3703,7 @@ class MutateAliasTestCase(APITransactionTestCase):
 
     #TODO: write totally different test for geopos mutations (not supported in query string queries)
 
-class JobClusterTestCase(APITransactionTestCase):
+class JobClusterTestCase(TatorTransactionTest):
     @staticmethod
     def _random_job_cluster_spec():
         uid = str(uuid1())
