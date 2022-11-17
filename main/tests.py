@@ -10,6 +10,8 @@ from uuid import uuid1
 from math import sin, cos, sqrt, atan2, radians
 import re
 
+from main.models import *
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import Point
@@ -41,7 +43,6 @@ def wait_for_indices(entity_type):
                 break
             time.sleep(1)
         assert(found_it)
-        
 
 def assertResponse(self, response, expected_code):
     if response.status_code != expected_code:
@@ -1213,9 +1214,6 @@ class AlgorithmLaunchTestCase(
         }
         self.edit_permission = Permission.CAN_EXECUTE
 
-    def tearDown(self):
-        self.project.delete()
-
 class AlgorithmTestCase(
         APITransactionTestCase,
         PermissionListMembershipTestMixin):
@@ -1232,9 +1230,6 @@ class AlgorithmTestCase(
             create_test_algorithm(self.user, f'result{idx}', self.project)
             for idx in range(random.randint(6, 10))
         ]
-
-    def tearDown(self):
-        self.project.delete()
 
 class VideoTestCase(
         APITransactionTestCase,
@@ -1268,12 +1263,6 @@ class VideoTestCase(
             create_test_video, self.user, 'asdfa', self.entity_type, self.project)
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'video1', 'last_edit_start': '2017-07-21T17:32:28Z'}
-
-
-    def tearDown(self):
-        print(f"{time.time()}: Begin Delete.")
-        self.project.delete()
-        print(f"{time.time()}: End Delete.")
 
     def test_annotation_delete(self):
         medias = [
@@ -1391,10 +1380,6 @@ class ImageTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'image1'}
 
-
-    def tearDown(self):
-        self.project.delete()
-
 class LocalizationBoxTestCase(
         APITransactionTestCase,
         AttributeTestMixin,
@@ -1456,10 +1441,6 @@ class LocalizationBoxTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'box1'}
-
-
-    def tearDown(self):
-        self.project.delete()
 
 class LocalizationLineTestCase(
         APITransactionTestCase,
@@ -1523,10 +1504,6 @@ class LocalizationLineTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'line1'}
 
-
-    def tearDown(self):
-        self.project.delete()
-
 class LocalizationDotTestCase(
         APITransactionTestCase,
         AttributeTestMixin,
@@ -1587,10 +1564,6 @@ class LocalizationDotTestCase(
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'dot1'}
 
-
-    def tearDown(self):
-        self.project.delete()
-
 class LocalizationPolyTestCase(
         APITransactionTestCase,
         AttributeTestMixin,
@@ -1649,10 +1622,6 @@ class LocalizationPolyTestCase(
         }]
         self.edit_permission = Permission.CAN_EDIT
         self.patch_json = {'name': 'box1'}
-
-
-    def tearDown(self):
-        self.project.delete()
 
 class StateTestCase(
         APITransactionTestCase,
@@ -1749,9 +1718,6 @@ class StateTestCase(
         create_json[0]["frame"] = 1
         response = self.client.post(endpoint, create_json, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def tearDown(self):
-        self.project.delete()
 
 class LocalizationMediaDeleteCase(APITransactionTestCase):
     def setUp(self):
@@ -1969,9 +1935,6 @@ class LocalizationMediaDeleteCase(APITransactionTestCase):
         response = self.client.get(f"/rest/Localizations/{self.project.pk}")
         self.assertEqual(len(response.data), 0)
 
-    def tearDown(self):
-        self.project.delete()
-
 class StateMediaDeleteCase(APITransactionTestCase):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -2132,9 +2095,6 @@ class StateMediaDeleteCase(APITransactionTestCase):
         response = self.client.get(f"/rest/States/{self.project.pk}?media_search=%22{unique_string_attr_val}%22")
         self.assertEqual(len(response.data), 0)
 
-    def tearDown(self):
-        self.project.delete()
-
 class LeafTestCase(
         APITransactionTestCase,
         AttributeTestMixin,
@@ -2179,10 +2139,6 @@ class LeafTestCase(
         self.edit_permission = Permission.FULL_CONTROL
         self.patch_json = {'name': 'leaf1'}
 
-
-    def tearDown(self):
-        self.project.delete()
-
 class LeafTypeTestCase(
         APITransactionTestCase,
         PermissionCreateTestMixin,
@@ -2207,9 +2163,6 @@ class LeafTypeTestCase(
         }
         self.patch_json = {'name': 'leaf asdf'}
         self.edit_permission = Permission.FULL_CONTROL
-
-    def tearDown(self):
-        self.project.delete()
 
 class StateTypeTestCase(
         APITransactionTestCase,
@@ -2255,9 +2208,6 @@ class StateTypeTestCase(
         self.patch_json = {'name': 'state asdf'}
         self.edit_permission = Permission.FULL_CONTROL
 
-    def tearDown(self):
-        self.project.delete()
-
 class MediaTypeTestCase(
         APITransactionTestCase,
         PermissionCreateTestMixin,
@@ -2297,9 +2247,6 @@ class MediaTypeTestCase(
             'dtype': 'video',
             'attribute_types': create_test_attribute_types(),
         }
-
-    def tearDown(self):
-        self.project.delete()
 
 class LocalizationTypeTestCase(
         APITransactionTestCase,
@@ -2352,9 +2299,6 @@ class LocalizationTypeTestCase(
         self.patch_json = {'name': 'box asdf'}
         self.edit_permission = Permission.FULL_CONTROL
 
-    def tearDown(self):
-        self.project.delete()
-
 class MembershipTestCase(
         APITransactionTestCase,
         PermissionListMembershipTestMixin,
@@ -2377,9 +2321,6 @@ class MembershipTestCase(
             'permission': 'Full Control',
         }
         self.edit_permission = Permission.FULL_CONTROL
-
-    def tearDown(self):
-        self.project.delete()
 
 class ProjectTestCase(APITransactionTestCase):
     def setUp(self):
@@ -2481,10 +2422,6 @@ class ProjectTestCase(APITransactionTestCase):
         )
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
 
-    def tearDown(self):
-        for project in self.entities:
-            project.delete()
-
 class TranscodeTestCase(
         APITransactionTestCase,
         PermissionCreateTestMixin):
@@ -2512,9 +2449,6 @@ class TranscodeTestCase(
             'size': 1,
         }
         self.edit_permission = Permission.CAN_TRANSFER
-
-    def tearDown(self):
-        self.project.delete()
 
 class VersionTestCase(
         APITransactionTestCase,
@@ -2551,9 +2485,6 @@ class VersionTestCase(
             'description': 'asdf123',
         }
         self.edit_permission = Permission.CAN_EDIT
-
-    def tearDown(self):
-        self.project.delete()
 
 class FavoriteStateTestCase(
         APITransactionTestCase,
@@ -2598,9 +2529,6 @@ class FavoriteStateTestCase(
             'name': 'New name',
         }
 
-    def tearDown(self):
-        self.project.delete()
-
 class FavoriteLocalizationTestCase(
         APITransactionTestCase,
         PermissionCreateTestMixin,
@@ -2642,9 +2570,6 @@ class FavoriteLocalizationTestCase(
             'name': 'New name',
         }
 
-    def tearDown(self):
-        self.project.delete()
-
 class BookmarkTestCase(
         APITestCase,
         PermissionCreateTestMixin,
@@ -2677,9 +2602,6 @@ class BookmarkTestCase(
         }
         self.edit_permission = Permission.CAN_EDIT
 
-    def tearDown(self):
-        self.project.delete()
-
 class AffiliationTestCase(
         APITransactionTestCase,
         PermissionListAffiliationTestMixin,
@@ -2711,9 +2633,6 @@ class AffiliationTestCase(
 
     def get_organization(self):
         return self.organization
-
-    def tearDown(self):
-        self.project.delete()
 
 class OrganizationTestCase(
         APITransactionTestCase,
@@ -2811,9 +2730,6 @@ class OrganizationTestCase(
             Permission.CAN_EXECUTE,
         )
         Project.objects.get(pk=project_id).delete()
-
-    def tearDown(self):
-        self.project.delete()
 
 class BucketTestCase(
         APITransactionTestCase,
@@ -3016,10 +2932,6 @@ class ResourceTestCase(APITransactionTestCase):
         wait_for_indices(self.file_entity_type)
         self.store = get_tator_store()
         self.backup_bucket = None
-
-    def tearDown(self):
-        self.project.delete()
-        self.organization.delete()
 
     def _random_store_obj(self, media):
         """ Creates an store file with random key. Simulates an upload.
@@ -3497,10 +3409,6 @@ class ResourceWithBackupTestCase(ResourceTestCase):
         )
         wait_for_indices(self.file_entity_type)
 
-    def tearDown(self):
-        self.project.delete()
-        self.organization.delete()
-
 class AttributeTestCase(APITransactionTestCase):
     def setUp(self):
         print(f'\n{self.__class__.__name__}=', end='', flush=True)
@@ -3617,9 +3525,6 @@ class AttributeTestCase(APITransactionTestCase):
                 assertResponse(self, response, expected_status)
         self.membership.permission = Permission.FULL_CONTROL
         self.membership.save()
-
-    def tearDown(self):
-        self.project.delete()
 
 
 class MutateAliasTestCase(APITransactionTestCase):
@@ -3862,7 +3767,3 @@ class JobClusterTestCase(APITransactionTestCase):
         assertResponse(self, response, status.HTTP_403_FORBIDDEN)
         affiliation.permission = old_permission
         affiliation.save()
-
-    def tearDown(self):
-        self.entity.delete()
-        self.organization.delete()
