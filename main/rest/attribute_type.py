@@ -166,12 +166,6 @@ class AttributeTypeListAPI(BaseListView):
             if attribute_renamed:
                 ts.check_rename(entity_type, old_name, new_name)
             if attribute_mutated:
-                # TODO Update this check once ES has been removed
-                if dtype_mutated and has_related_objects:
-                    raise ValueError(
-                        f"Attempted to mutate '{old_name}'s dtype, but it exists on other types. "
-                        f"Currently, this is not allowed from the UI."
-                    )
                 cls._check_attribute_type(new_attribute_type)
                 ts.check_mutation(entity_type, old_name, new_attribute_type)
 

@@ -21,7 +21,7 @@ ALLOWED_MUTATIONS = {
     'float': ['int'],
     'enum': ['string'],
     'string': ['enum',],
-    'datetime': [ 'string'],
+    'datetime': [],
     'geopos': [],
     'float_array': [],
 }
