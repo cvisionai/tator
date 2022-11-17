@@ -35,9 +35,7 @@ class SectionListAPI(BaseListView):
     def _post(self, params):
         project = params['project']
         name = params['name']
-        lucene_search = params.get('lucene_search', None)
-        media_bools = params.get('media_bools', None)
-        annotation_bools = params.get('annotation_bools', None)
+        object_search = params.get('object_search', None)
         tator_user_sections = params.get('tator_user_sections', None)
         visible = params.get("visible", True)
 
@@ -49,9 +47,7 @@ class SectionListAPI(BaseListView):
         section = Section.objects.create(
             project=project,
             name=name,
-            lucene_search=lucene_search,
-            media_bools=media_bools,
-            annotation_bools=annotation_bools,
+            object_search=object_search,
             tator_user_sections=tator_user_sections,
             visible=visible,
         )
@@ -86,12 +82,8 @@ class SectionDetailAPI(BaseDetailView):
                 project=section.project, name__iexact=params['name']).exists():
                 raise Exception("Section with this name already exists!")
             section.name = params['name']
-        if 'lucene_search' in params:
-            section.lucene_search = params['lucene_search']
-        if 'media_bools' in params:
-            section.media_bools = params['media_bools']
-        if 'annotation_bools' in params:
-            section.annotation_bools = params['annotation_bools']
+        if 'object_search' in params:
+            section.object_search = params['object_search']
         if 'tator_user_sections' in params:
             section.tator_user_sections = params['tator_user_sections']
         if "visible" in params:
