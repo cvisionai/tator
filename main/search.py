@@ -297,9 +297,6 @@ class TatorSearch:
 
     def create_mapping(self, entity_type, flush=False):
         from .models import MediaType, LocalizationType, StateType, LeafType
-        for attribute in entity_type.attribute_types:
-            self.create_psql_index(entity_type, attribute, flush=flush)
-
         # Add project specific indices based on the type being indexed
         if type(entity_type) == MediaType:
             self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'native_string'}, flush=flush) # native fields are indexed across the entire project
@@ -320,6 +317,9 @@ class TatorSearch:
             self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'string'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_name', 'dtype': 'upper_string'}, flush=flush)
             self.create_psql_index(entity_type, {'name': '_path', 'dtype': 'upper_string'}, flush=flush)
+
+        for attribute in entity_type.attribute_types:
+            self.create_psql_index(entity_type, attribute, flush=flush)
 
     def rename_alias(self, entity_type, old_name, new_name):
         """
