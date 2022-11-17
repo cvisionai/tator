@@ -87,7 +87,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
         relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(pk=filter_type).values('media').distinct()
-    elif filter_ops:
+    elif filter_ops or params.get('float_array',None):
         queries = []
         for entity_type in ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)

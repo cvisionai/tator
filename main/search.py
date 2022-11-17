@@ -209,7 +209,8 @@ def make_geopos_index(db_name,project_id, entity_type_id, table_name, index_name
 def make_vector_index(db_name, project_id, entity_type_id, table_name, index_name, attribute, flush):
     with get_connection(db_name).cursor() as cursor:
         if flush:
-            cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}").format(index_name=sql.SQL(index_name)))
+            for method in ['l2', 'ip', 'cosine']:
+                cursor.execute(sql.SQL("DROP INDEX CONCURRENTLY IF EXISTS {index_name}_{method}").format(index_name=sql.SQL(index_name), method=sql.SQL(method)))
         cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = %s", (index_name,))
         if bool(cursor.fetchall()):
             return
@@ -218,10 +219,10 @@ def make_vector_index(db_name, project_id, entity_type_id, table_name, index_nam
         attr_size = int(attribute['size'])
         for method in ['l2', 'ip', 'cosine']:
             sql_str = sql.SQL("""CREATE INDEX {index_name}_{method} ON {table_name} 
-                                 using ivfflat(CAST(attributes -> '{attr_name}' AS vector({attr_size})) 
+                                 using ivfflat(CAST(attributes ->> '{attr_name}' AS vector({attr_size})) 
                                                                    vector_{method}_ops) WHERE project=%s and meta=%s;""").format(
                                                                    attr_name=sql.SQL(attr_name),
-                                                                   attr_size=sql.SQL(attr_size),
+                                                                   attr_size=sql.SQL(f"{attr_size}"),
                                                                    index_name=sql.SQL(index_name),
                                                                    method=sql.SQL(method),
                                                                    table_name=sql.Identifier(table_name))
@@ -275,9 +276,14 @@ class TatorSearch:
         """ Returns true if the index exists for this attribute """
         index_name = _get_unique_index_name(entity_type, attribute)
         with get_connection(connection.settings_dict['NAME']).cursor() as cursor:
-            cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
-            result=cursor.fetchall()
-            return bool(result)
+            if attribute['dtype'] == 'float_array':
+                cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname LIKE '{}%'".format(index_name))
+                result=cursor.fetchall()
+                return bool(result)
+            else:
+                cursor.execute("SELECT tablename,indexname,indexdef from pg_indexes where indexname = '{}'".format(index_name))
+                result=cursor.fetchall()
+                return bool(result)
 
     def create_psql_index(self, entity_type, attribute, flush=False):
         """ Create a psql index for the given attribute """

@@ -60,6 +60,7 @@ class LocalizationListAPI(BaseListView):
     entity_type = LocalizationType # Needed by attribute filter mixin
 
     def _get(self, params):
+        logger.info(f"PARAMS={params}")
         qs = get_annotation_queryset(self.kwargs['project'], params, 'localization')
         response_data = list(qs.values(*LOCALIZATION_PROPERTIES))
 

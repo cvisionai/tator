@@ -236,20 +236,34 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
             found_it = True
 
     for query in float_queries:
+        logger.info(f"EXECUTING FLOAT QUERY={query}")
+        found_it = True
         name = query['name']
         center = query['center']
+        upper_bound = query.get('upper_bound', None)
+        lower_bound = query.get('lower_bound', None)
         metric = query.get('metric', 'l2norm')
         order = query.get('order', 'asc')
         field_type,size = _get_field_for_attribute(project, entity_type, name)
         if field_type:
             found_it = True
-            qs = qs.annotate(**{f"{name}_typed": Cast(f"attributes__{name}", VectorField(size))})
+            qs = qs.annotate(**{f"{name}_char": Cast(f"attributes__{name}", CharField())})
+            qs = qs.annotate(**{f"{name}_typed": Cast(f"{name}_char", VectorField(dimensions=size))})
             if metric == 'l2norm':
-                qs = qs.order_by(L2Distance(f"{name}_typed"))
+                qs = qs.annotate(**{f"{name}_distance": L2Distance(f"{name}_typed", center)})
             elif metric == 'cosine':
-                qs = qs.order_by(CosineDistance(f"{name}_typed"))
+                qs = qs.annotate(**{f"{name}_distance":CosineDistance(f"{name}_typed", center)})
             elif metric == 'ip':
-                qs = qs.order_by(MaxInnerProduct(f"{name}_typed"))
+                qs = qs.annotate(**{f"{name}_distance":MaxInnerProduct(f"{name}_typed", center)})
+
+            if upper_bound:
+                qs = qs.filter(**{f"{name}_distance__lte": upper_bound})
+            if lower_bound:
+                qs = qs.filter(**{f"{name}_distance__gte": lower_bound})
+            if order == 'asc':
+                qs = qs.order_by(f"{name}_distance")
+            else:
+                qs = qs.order_by(f"-{name}_distance")
 
     if found_it:
         return qs
