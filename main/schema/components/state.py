@@ -155,6 +155,7 @@ state_id_query = {
             'type': 'array',
             'items': {'$ref': '#/components/schemas/FloatArrayQuery'},
         },
+        'object_search' : {'$ref': '#/components/schemas/AttributeOperationSpec'},
     }
 }
 
