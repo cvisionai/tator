@@ -128,11 +128,7 @@ attribute_type_update = {
         "new_attribute_type": {
             'type': 'object',
             'properties': attribute_type_properties_no_defaults,
-        },
-        "max_instances": {
-            "type": "integer",
-            "description": "If specified, the mutation will fail if more instances exist.",
-        },
+        }
     },
 }
 

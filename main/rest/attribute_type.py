@@ -122,8 +122,6 @@ class AttributeTypeListAPI(BaseListView):
         old_attribute_type = None
         new_attribute_type = params["new_attribute_type"]
 
-        # This is a temporary limit until ES is removed
-        max_instances = params.get("max_instances", 100000)
         new_name = new_attribute_type["name"]
         attribute_renamed = old_name != new_name
 
@@ -166,12 +164,6 @@ class AttributeTypeListAPI(BaseListView):
             # Atomic validation of all changes; TatorSearch.check_* methods raise if there is a
             # problem that would cause either a rename or a mutation to fail.
             if attribute_renamed:
-                # TODO Update this check once ES has been removed
-                if has_related_objects:
-                    raise ValueError(
-                        f"Attempted to rename attribute '{old_name}', but it exists on other types. "
-                        f"Currently, this is not allowed from the UI."
-                    )
                 ts.check_rename(entity_type, old_name, new_name)
             if attribute_mutated:
                 # TODO Update this check once ES has been removed
