@@ -211,6 +211,13 @@ related_attribute_filter_parameter_schema = [
                    'items': {'type': 'string'}},
         'explode': False,
     },
+    {
+        'name': 'encoded_related_search',
+        'in': 'query',
+        'required': False,
+        'description': 'Binary64 encoded string representing an `Object_Search` defined in /components/AttributeOperationFilter applied against related objects',
+        'schema': {'type': 'string'},
+    }
 ]
 
 related_keys = [x['name'] for x in related_attribute_filter_parameter_schema]

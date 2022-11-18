@@ -30,6 +30,8 @@ ANNOTATION_TYPE_LOOKUP = {'localization': LocalizationType, 'state': StateType}
 def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     """ Constructs a psql queryset.
     """
+
+    logger.info(f"PARAMS={params}")
     # Get query parameters.
     media_id = params.get('media_id')
     media_id_put = params.get('media_ids') # PUT request only
@@ -108,7 +110,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             qs = sub_qs
 
     # Do a related query
-    if any([x in params for x in related_keys]):
+    if any([x in params for x in related_keys if x.startswith('related_')]):
         related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
         matches = [x for x in related_keys if x in params]
         faux_params={key.replace('related_',''): params[key] for key in matches}
@@ -128,9 +130,35 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if params.get('object_search'):
         qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
 
+    if params.get('encoded_related_search'):
+        search_obj = json.loads(base64.b64decode(params.get('encoded_related_search').encode()).decode())
+        logger.info(f"Applying ENCODED_RELATED_SEARCH={search_obj}")
+        related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
+        related_matches = []
+        logger.info(f"******Related_Matches_Set={related_media_types}")
+        for entity_type in related_media_types:
+            media_qs = Media.objects.filter(project=project, meta=entity_type)
+            logger.info(f"%%%% MEDIA INFO FOR {media_qs.count()}")
+            for m in media_qs:
+                logger.info(f"Media {m.id}: {m.attributes}")
+            media_qs =  get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
+            logger.info(f"MEDIA_SUB_QUERY={media_qs.query}")
+            logger.info(f"MEDIA_SUB_QUERY_COUNT={media_qs.count()}")
+            if media_qs.count():
+                related_matches.append(media_qs)
+        logger.info(f"*******Related Matches = {len(related_matches)}")
+        if related_matches:
+            related_match = related_matches.pop()
+            query = Q(media__in=related_match)
+            for r in related_matches:
+                query = query | Q(media__in=r)
+            qs = qs.filter(query)
+        else:
+            qs = qs.filter(pk=-1)
+
     # Used by GET queries
     if params.get('encoded_search'):
-        search_obj = json.loads(base64.b64decode(params.get('encoded_search')).decode())
+        search_obj = json.loads(base64.b64decode(params.get('encoded_search').encode()).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
     if exclude_parents:

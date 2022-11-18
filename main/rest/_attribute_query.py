@@ -143,21 +143,22 @@ def get_attribute_filter_ops(project, params, data_type):
 
 def build_query_recursively(query_object):
     if 'method' in query_object:
+        method = query_object['method'].lower()
         sub_queries = [build_query_recursively(x) for x in query_object['operations']]
         if len(sub_queries) == 0:
             raise(Exception("Operation list is 0."))
-        if 'method' == 'not':
+        if method == 'not':
             if len(sub_queries) != 1:
                 raise(Exception("NOT operator can only be applied to one suboperation"))
             query = ~sub_queries[0]
-        elif 'method' == 'and':
+        elif method == 'and':
             query = sub_queries.pop()
             for q in sub_queries:
-                query = query & Q
-        elif 'method' == 'or':
+                query = query & q
+        elif method == 'or':
             query = sub_queries.pop()
             for q in sub_queries:
-                query = query | Q
+                query = query | q
     else:
         attr_name = query_object['attribute']
         operation = query_object['operation']
@@ -166,7 +167,6 @@ def build_query_recursively(query_object):
             db_lookup=attr_name[:1]
         else:
             db_lookup=f"attributes__{attr_name}"
-        
         if operation.startswith('date_'):
             # python is more forgiving then SQL so convert any partial dates to 
             # full-up ISO8601 datetime strings WITH TIMEZONE.
