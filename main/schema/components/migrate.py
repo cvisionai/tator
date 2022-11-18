@@ -1,15 +1,8 @@
 migrate_properties = {
-    "dest_host": {
-        "description": "Host containing destination project. If not given the destination project is assumed to be on the same host as the source.",
-        "type": "string",
-    },
-    "dest_token": {
-        "description": "Token for host containing destination project. If not given the destination project is assumed to be on the same host as the source.",
-        "type": "string",
-    },
     "dest_project": {
         "description": "Destination project, if it already exists. If omitted, a new project will be created using either the same name or the name specified by --new_project_name.",
-        "type": "string",
+        "type": "integer",
+        "minimum": 1,
     },
     "new_project_name": {
         "description": "Name to user for new project if --dest_project is omitted.",
@@ -17,7 +10,8 @@ migrate_properties = {
     },
     "dest_organization": {
         "description": "Destination organization. Required if using --new_project_name.",
-        "type": "string",
+        "type": "integer",
+        "minimum": 1,
     },
     "sections": {
         "description": "Specific sections to migrate. If not given, all media in the source project will be migrated.",
