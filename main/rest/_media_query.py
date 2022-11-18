@@ -175,6 +175,8 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
             for r in related_matches:
                 query = query | Q(pk__in=r.values('media'))
             qs = qs.filter(query)
+        else:
+            qs = qs.filter(pk=-1)
 
     # Used by GET queries
     if params.get('encoded_search'):

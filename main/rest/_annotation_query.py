@@ -132,21 +132,13 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     if params.get('encoded_related_search'):
         search_obj = json.loads(base64.b64decode(params.get('encoded_related_search').encode()).decode())
-        logger.info(f"Applying ENCODED_RELATED_SEARCH={search_obj}")
         related_media_types = MediaType.objects.filter(pk__in=relevant_media_type_ids)
         related_matches = []
-        logger.info(f"******Related_Matches_Set={related_media_types}")
         for entity_type in related_media_types:
             media_qs = Media.objects.filter(project=project, meta=entity_type)
-            logger.info(f"%%%% MEDIA INFO FOR {media_qs.count()}")
-            for m in media_qs:
-                logger.info(f"Media {m.id}: {m.attributes}")
             media_qs =  get_attribute_psql_queryset_from_query_obj(media_qs, search_obj)
-            logger.info(f"MEDIA_SUB_QUERY={media_qs.query}")
-            logger.info(f"MEDIA_SUB_QUERY_COUNT={media_qs.count()}")
             if media_qs.count():
                 related_matches.append(media_qs)
-        logger.info(f"*******Related Matches = {len(related_matches)}")
         if related_matches:
             related_match = related_matches.pop()
             query = Q(media__in=related_match)
