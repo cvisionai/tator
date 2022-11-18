@@ -2,6 +2,9 @@
 from collections import defaultdict
 import logging
 
+import json
+import base64
+
 from django.db.models import Subquery
 from django.db.models.functions import Coalesce
 from django.db.models import Q
@@ -124,6 +127,12 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     if params.get('object_search'):
         qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+
+    # Used by GET queries
+    if params.get('encoded_search'):
+        search_obj = json.loads(base64.b64decode(params.get('encoded_search')).decode())
+        qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
+
     if exclude_parents:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)

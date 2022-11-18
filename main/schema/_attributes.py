@@ -95,6 +95,13 @@ attribute_filter_parameter_schema = [
         'description': 'Pagination start index. Non-inclusive ndex of the last item in a '
                        'larger list to return.',
         'schema': {'type': 'integer'},
+    },
+    {
+        'name': 'encoded_search',
+        'in': 'query',
+        'required': False,
+        'description': 'Binary64 encoded string representing an `Object_Search` defined in /components/AttributeOperationFilter',
+        'schema': {'type': 'string'},
     }
 ]
 
