@@ -16,6 +16,7 @@ from ..schema._attributes import related_keys
 
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
+from ._attribute_query import get_attribute_psql_queryset_from_query_obj
 from ._attributes import KV_SEPARATOR
 
 logger = logging.getLogger(__name__)
@@ -145,6 +146,9 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
             for r in related_matches:
                 query = query | Q(pk__in=r.values('media'))
             qs = qs.filter(query)
+
+    if params.get('object_search'):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
 
     qs = qs.order_by('name', 'id')
 

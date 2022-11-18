@@ -69,6 +69,9 @@ def _get_leaf_psql_queryset(project, filter_ops, params):
         else:
             qs = sub_qs
 
+    if params.get('object_search'):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+
     qs = qs.order_by('id')
 
     if start is not None and stop is not None:

@@ -15,6 +15,7 @@ from ..schema._attributes import related_keys
 from ._media_query import query_string_to_media_ids
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
+from ._attribute_query import get_attribute_psql_queryset_from_query_obj
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +121,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             for r in related_matches:
                 query = query | Q(media__in=r)
             qs = qs.filter(query)
+
+    if params.get('object_search'):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
     if exclude_parents:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)

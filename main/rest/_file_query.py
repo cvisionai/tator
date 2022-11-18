@@ -10,6 +10,8 @@ from ..models import FileType
 
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
+from ._attribute_query import get_attribute_psql_queryset_from_query_obj
+
 from ._attributes import KV_SEPARATOR
 from ._float_array_query import get_float_array_query
 
@@ -58,6 +60,9 @@ def _get_file_psql_queryset(project, filter_ops, params):
             qs = qs.filter(query)
         else:
             qs = sub_qs
+
+    if params.get('object_search'):
+        qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
 
     qs = qs.order_by('id')
 

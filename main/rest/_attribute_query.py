@@ -184,11 +184,14 @@ def build_query_recursively(query_object):
             distance, lat, lon = value
             value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
         
-        return Q(**{f"{db_lookup}__{operation}": value})
+        if operation in ['date_eq','eq']:
+            return Q(**{f"{db_lookup}": value})
+        else:
+            return Q(**{f"{db_lookup}__{operation}": value})
 
     return query
         
-def get_attribute_psql_queryset_from_query_obj(project, qs, query_object):
+def get_attribute_psql_queryset_from_query_obj(qs, query_object):
     q_object = build_query_recursively(query_object)
     return qs.filter(q_object)
 
