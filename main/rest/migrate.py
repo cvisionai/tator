@@ -136,3 +136,6 @@ class MigrateListAPI(BaseListView):
         )
         create_leaves(params, dest_project, leaves, leaf_type_mapping, leaf_mapping)
         return {"message": f"Successfully cloned project {params['id']}!", "id": dest_project}
+
+    def get_queryset(self):
+        return Project.objects.all()
