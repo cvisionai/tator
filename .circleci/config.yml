@@ -258,7 +258,6 @@ workflows:
     - tator-py-tests:
         requires:
         - install-tator
-        - rest-tests
         context: cvisionai
         filters:
           tags:
