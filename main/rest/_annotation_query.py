@@ -9,7 +9,7 @@ from django.db.models import Subquery
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 
-from ..models import Localization, LocalizationType, Media, MediaType
+from ..models import Localization, LocalizationType, Media, MediaType, Section
 from ..models import State, StateType
 from ..search import TatorSearch
 
@@ -87,7 +87,6 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     if after is not None:
         qs = qs.filter(pk__gt=after)
 
-
     relevant_media_type_ids = ANNOTATION_TYPE_LOOKUP[annotation_type].objects.filter(project=project).values('media').distinct()
     if filter_type is not None:
         qs = get_attribute_psql_queryset(project, ANNOTATION_TYPE_LOOKUP[annotation_type].objects.get(pk=filter_type), qs, params, filter_ops)
@@ -108,6 +107,19 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             qs = qs.filter(query)
         else:
             qs = sub_qs
+
+    if 'section' in params:
+        section = Section.objects.get(pk=params['section'])
+        section_uuid = section.tator_user_sections
+        media_ids=[]
+        # This iteration ensures the scoped UUID index is used
+        for media_type_id in relevant_media_type_ids:
+            media_qs = Media.objects.filter(project=project, attributes__tator_user_sections=section_uuid)
+            media_ids.append(media_qs)
+        query = Q(media__in=media_ids.pop())
+        for m in media_ids:
+            query = query | Q(media__in=m)
+        qs = qs.filter(query)
 
     # Do a related query
     if any([x in params for x in related_keys if x.startswith('related_')]):

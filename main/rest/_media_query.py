@@ -127,7 +127,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
 
      # Do a related query
     logger.info(params)
-    if any([x in params for x in related_keys]):
+    if any([x in params for x in related_keys if x.startswith('related_')]):
         related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
         related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
         logger.info(f"Related Query on {related_localization_types} + {related_state_types}")
