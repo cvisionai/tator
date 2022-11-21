@@ -167,7 +167,8 @@ class AttributeTypeListAPI(BaseListView):
                 ts.check_rename(entity_type, old_name, new_name)
             if attribute_mutated:
                 cls._check_attribute_type(new_attribute_type)
-                ts.check_mutation(entity_type, old_name, new_attribute_type)
+                if dtype_mutated:
+                    ts.check_mutation(entity_type, old_name, new_attribute_type)
 
             # List of success messages to return
             messages = []
