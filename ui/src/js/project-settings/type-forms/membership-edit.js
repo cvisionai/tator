@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 import { getCompiledList, store } from "../store.js";
 
 export class MembershipEdit extends TypeFormTemplate {

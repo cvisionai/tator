@@ -14,26 +14,29 @@ getMap.set("Organization", api.getOrganizationWithHttpInfo.bind(api))
 
 const postMap = new Map();
 postMap
-   .set("Organization", api.createMediaTypeWithHttpInfo.bind(api))
-   .set("Affiliation", api.createLocalizationTypeWithHttpInfo.bind(api))
-   .set("Bucket", api.createLeafTypeWithHttpInfo.bind(api))
-   .set("Invitation", api.createLeafListWithHttpInfo.bind(api))
-   .set("JobCluster", api.createStateTypeWithHttpInfo.bind(api));
+   .set("Organization", api.createOrganizationWithHttpInfo.bind(api))
+   .set("Affiliation", api.createAffiliationWithHttpInfo.bind(api))
+   .set("Bucket", api.createBucketWithHttpInfo.bind(api))
+   .set("Invitation", api.createInvitationWithHttpInfo.bind(api))
+   .set("JobCluster", api.createJobClusterWithHttpInfo.bind(api));
 
 const patchMap = new Map();
-patchMap.set("Organization", api.updateProjectWithHttpInfo.bind(api))
-   .set("Affiliation", api.updateMediaTypeWithHttpInfo.bind(api))
-   .set("Bucket", api.updateLocalizationTypeWithHttpInfo.bind(api))
-   .set("Invitation", api.updateLeafTypeWithHttpInfo.bind(api))
-   .set("JobCluster", api.updateLeafListWithHttpInfo.bind(api));
+patchMap.set("Organization", api.updateOrganizationWithHttpInfo.bind(api))
+   .set("Affiliation", api.updateAffiliationWithHttpInfo.bind(api))
+   .set("Bucket", api.updateBucketWithHttpInfo.bind(api))
+   .set("Invitation", api.updateInvitationWithHttpInfo.bind(api))
+   .set("JobCluster", api.updateJobClusterWithHttpInfo.bind(api));
 
 const deleteMap = new Map();
-deleteMap.set("Organization", api.deleteProjectWithHttpInfo.bind(api))
-   .set("Affiliation", api.deleteMediaTypeWithHttpInfo.bind(api))
-   .set("Bucket", api.deleteLocalizationTypeWithHttpInfo.bind(api))
-   .set("Invitation", api.deleteLeafTypeWithHttpInfo.bind(api))
-   .set("JobCluster", api.deleteLeafListWithHttpInfo.bind(api));
+deleteMap.set("Organization", api.deleteOrganizationWithHttpInfo.bind(api))
+   .set("Affiliation", api.deleteAffiliationWithHttpInfo.bind(api))
+   .set("Bucket", api.deleteBucketWithHttpInfo.bind(api))
+   .set("Invitation", api.deleteInvitationWithHttpInfo.bind(api))
+   .set("JobCluster", api.deleteJobClusterWithHttpInfo.bind(api));
 
+/**
+ * 
+*/
 const store = create(subscribeWithSelector((set, get) => ({
    selection: {
       typeName: "",
@@ -48,7 +51,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       //
    },
    organizationId: null,
-   organization: null,
+   emailEnabled: false,
    Organization: {
       name: "Organization",
       data: {},
@@ -93,7 +96,6 @@ const store = create(subscribeWithSelector((set, get) => ({
         user: values[0],
         announcements: values[1],
         organizationId: values[2].id,
-        organization: values[2],
       });
        
        const data = values[2];
@@ -125,6 +127,44 @@ const store = create(subscribeWithSelector((set, get) => ({
         announcements: values[1],
       });
     });
+   },
+
+   /* */
+   setSelection: (newSelection) => {
+      set({
+         selection: {
+            ...get().selection,
+            ...newSelection
+         }
+      });
+   },
+
+   /* project */
+   setOrganizationData: async (id) => {
+      set({
+         status: {
+            name: "pending",
+            msg: "Fetching project data..."
+         }
+      });
+
+      const object = await api.getOrganizationWithHttpInfo(id);
+      const setList = get()["Organization"].setList;
+      const map = get()["Organization"].map;
+
+      setList.add(object.data.id);
+      map.set(object.data.id, object.data);
+
+      set({ organizationId: object.data.id });
+      set({ Organization: { ...get().Organization, init: true, setList, map, data: object.data } });
+      
+      set({
+         status: {
+            name: "idle",
+            msg: ""
+         }
+      });
+
    },
 
    /* Generic to allow for loop calls */
@@ -192,7 +232,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                map.set(object.data.id, object.data);
    
                /* Organization set like this to include a "data" attr */
-               set({ Organization: { ...get().Project, init: true, setList, map, data: object.data } });
+               set({ Organization: { ...get().Organization, init: true, setList, map, data: object.data } });
             } else {
                for (let item of object.data) {
                   setList.add(item.id);
@@ -269,7 +309,6 @@ const store = create(subscribeWithSelector((set, get) => ({
          set({ status: { ...get().status, name: "idle", msg: "" } });
          return err;
       }
-
    },
 
 })));

@@ -1,4 +1,4 @@
-import { TatorElement } from "../../components/tator-element.js";
+import { TatorElement } from "../tator-element.js";
 
 export class PlaceholderGlow extends TatorElement {
    constructor() {

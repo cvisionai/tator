@@ -1,0 +1,51 @@
+<template id="organization-edit">
+   <form id="organization-edit--form">
+      <thumb-input id="organization-edit--thumb" name="Thumbnail" for="thumb"></thumb-input>
+      <text-input id="organization-edit--name" name="Name" type="string"></text-input>
+   </form>
+</template>
+
+
+<template id="affiliation-edit">
+   <form id="affiliation-edit--form">
+      <user-input hidden id="affiliation-edit--search-users" name="Search users"></user-input>
+      <enum-input id="affiliation-edit--permission" name="Permission"></enum-input>
+   </form>
+</template>
+
+
+<template id="invitation-edit">
+   <form id="invitation-edit--form">
+      <email-list-input id="invitation-edit--email" hidden name="Email addresses"></email-list-input>
+      <enum-input id="invitation-edit--permission" name="Permission"></enum-input>
+      <text-input id="invitation-edit--status" hidden name="Status" type="string"></text-input>
+      <link-input id="invitation-edit--reg-link" hidden name="Registration Link"></link-input>
+   </form>
+</template>
+
+
+<template id="bucket-edit">
+   <form id="bucket-edit--form">
+      <text-input id="bucket-edit--name" name="Name" type="string"></text-input>
+      <radio-set id="bucket-edit--bucket-type" name="Bucket Type"></radio-set>
+      <text-input id="bucket-edit--access-key" hidden name="Access Key" type="string"></text-input>
+      <text-input id="bucket-edit--secret-key" hidden name="Secret Key" type="password"></text-input>
+      <text-input id="bucket-edit--endpoint-url" hidden name="Endpoint URL" type="string"></text-input>
+      <text-input id="bucket-edit--region" hidden name="Region" type="string"></text-input>
+      <text-input id="bucket-edit--archive-storage-class" hidden name="Archive Storage Class" type="string">
+      </text-input>
+      <text-input id="bucket-edit--live-storage-class" hidden name="Live Storage Class" type="string"></text-input>
+      <text-area id="bucket-edit--form" hidden name="GCS Key Info" type="json" hidden=""></text-area>
+   </form>
+</template>
+
+
+<template id="job-cluster-edit">
+   <form id="job-cluster-edit--form">
+      <text-input id="job-cluster-edit--name" name="Name" type="string"></text-input>
+      <text-input id="job-cluster-edit--host" name="Host" type="string"></text-input>
+      <text-input id="job-cluster-edit--port" name="Port" type="int"></text-input>
+      <text-input id="job-cluster-edit--token" name="Token" type="password"></text-input>
+      <text-area id="job-cluster-edit--cert" name="Cert" type="string"></text-area>
+   </form>
+</template>

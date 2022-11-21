@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 import { getCookie } from "../../util/get-cookie.js";
 import { Utilities } from "../../util/utilities.js";
 

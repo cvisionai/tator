@@ -1,8 +1,7 @@
 import { TatorPage } from "../components/tator-page.js";
 import { LoadingSpinner } from "../components/loading-spinner.js";
-import { OrganizationData } from "./organization-data.js";
-import { OrganizationMainEdit } from "./organization-main-edit.js";
 import { store } from "./store.js";
+import { hasPermission} from '../util/has-permission.js';
 
 export class OrganizationSettings extends TatorPage {
   constructor() {
@@ -10,70 +9,42 @@ export class OrganizationSettings extends TatorPage {
 
     // loading spinner
     this.loading = new LoadingSpinner();
-    this._shadow.appendChild( this.loading.getImg());
-    this.loading.showSpinner();
-
-    // header
-    const header = document.createElement("div");
-    this._headerDiv = this._header._shadow.querySelector("header");
-    header.setAttribute("class", "annotation__header d-flex flex-items-center flex-justify-between px-2 f3");
+    this._shadow.appendChild(this.loading.getImg());
+    
+    // Header: This is adds the breadcrumb and successLight-spacer to the header
     const user = this._header._shadow.querySelector("header-user");
-    user.parentNode.insertBefore(header, user);
+    const headerTemplate = document.getElementById("organization-settings--header").content;
+    user.parentNode.insertBefore(headerTemplate.cloneNode(true), user);
 
-    const div = document.createElement("div");
-    div.setAttribute("class", "d-flex flex-items-center");
-    header.appendChild(div);
-    
-    this._breadcrumbs = document.createElement("settings-breadcrumbs");
-    div.appendChild(this._breadcrumbs);
+    // Header: pieces
+    this._breadcrumbs = this._header._shadow.getElementById("organization-settings--breadcrumbs");
 
-    const settingsDiv = document.createElement("div");
-    settingsDiv.setAttribute("class", "d-flex");
-    header.appendChild(settingsDiv);
+    // Page: main element
+    const template = document.getElementById("organization-settings").content;
+    this._shadow.appendChild(template.cloneNode(true));
 
-    this._lightSpacer = document.createElement("span");
-    this._lightSpacer.style.width = "32px";
-    settingsDiv.appendChild(this._lightSpacer);
-
-    this._success = document.createElement("success-light");
-    this._lightSpacer.appendChild(this._success);
-
-    // main element
-    this.main = document.createElement("main");
-    this.main.setAttribute("class", "position-relative");
-    this._shadow.appendChild(this.main);
-
-    // Navigation panels main for item settings.
-    this.settingsNav =  document.createElement("settings-nav-no-template");
-    this.main.appendChild( this.settingsNav );
-
-    // Web Components for this page
-    this.settingsViewClasses = [  "affiliation-edit",
-                                  "invitation-edit",
-                                  "bucket-edit",
-                                  "job-cluster-edit",
-                               ];
-    
-    // Modal parent - to pass to page components
-    this.modal = document.createElement("modal-dialog");
-    this._shadow.appendChild( this.modal );
+    // Page: pieces
+    this.main = this._shadow.getElementById("organization-settings--main");
+    this.settingsNav = this._shadow.getElementById("organization-nav--nav");
+    this.itemsContainer = this._shadow.getElementById("organization-nav--item-container");
+    this.modal = this._shadow.getElementById("organization-settings--modal");
     this.modal.addEventListener("open", this.showDimmer.bind(this));
     this.modal.addEventListener("close", this.hideDimmer.bind(this));
-
-    // Create store subscriptions
-    store.subscribe(state => state.user, this._setUser.bind(this));
-    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
-    store.subscribe(state => state.organization, this._init.bind(this));
-
-    // Error catch all
-    window.addEventListener("error", (evt) => {
-      //
-    });
-
   }
 
   connectedCallback() {
     store.getState().init();
+
+    /* Create store subscriptions */
+    store.subscribe(state => state.user, this._setUser.bind(this));
+    store.subscribe(state => state.announcements, this._setAnnouncements.bind(this));
+    store.subscribe(state => state.status, this.handleStatusChange.bind(this));
+
+    /* Update display for any change in data (#todo Organization is different) */
+    store.subscribe(state => state.Organization, this.updateOrganization.bind(this));
+
+    // Init
+    this._init();
   }
 
   /* Get personlized information when we have project-id, and fill page. */
@@ -84,172 +55,95 @@ export class OrganizationSettings extends TatorPage {
     TatorPage.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
     switch (name) {
       case "email_enabled":
-        this._emailEnabled = newValue === "False" ? false : true;
+        // this._emailEnabled = newValue === "False" ? false : true;
+        const value = newValue == "True" ? true : false;
+        store.setState({ emailEnabled: value });
         break;
+    }
+  }
+
+  /**
+   * The status of our store will trigger the spinner when "pending"
+   * Potentially this could global catch error handling as well...
+   * @param {} status 
+   */
+  handleStatusChange(status) {
+    // Debug output, potentially useful as lightbox or all modal handles
+    // console.log(`DEBUG: Status updated to "${status.name}" ${(status.msg !== "") ? " with message: "+status.msg : ""}`);
+    if(status.name == "pending"){
+      this.showDimmer();
+      this.loading.showSpinner();
+    } else {
+      if (this.hasAttribute("has-open-modal")){
+        this.hideDimmer();
+        this.loading.hideSpinner();         
+      }
     }
   }
 
   /* 
    * Run when organization-id is set to run fetch the page content. 
    */
-  _init(organization) {
-    // Organization data
-    this._breadcrumbs._projectText.textContent = "Organizations";
-    this._breadcrumbs._projectText.setAttribute("href", `/organizations`);
-    this._breadcrumbs._settingsText.textContent = `Organization ${organization.id} settings`;
-    this.organizationId = organization.id;
-    this.organizationData = new OrganizationData(this.organizationId);
-    this.organizationEdit = new OrganizationMainEdit();
-    const organizationPromise = this.organizationData.getOrganization();
+  async _init() {
+    await store.getState().initHeader();
+    
+    // Figure out if something else needs to be shown
+    this.moveToCurrentHash();
 
-    organizationPromise
-    .then(data => {
-      const formView = this.organizationEdit;
-
-      this.loading.hideSpinner();
-      this.makeContainer({
-        objData: data, 
-        classBase: formView,
-        hidden : false
-      });
-
-      // Fill it with contents
-      this.settingsNav.fillContainer({
-        type : formView.typeName,
-        id : data.id,
-        itemContents : formView
-      });
-
-      // init form with the data
-      formView._init({ 
-        data: data, 
-        modal : this.modal, 
-        sidenav: this.settingsNav,
-        orgData: this.organizationData
-      });
-
-      // Add nav to that container
-      this.settingsNav._addSimpleNav({
-        name : formView._getHeading(),
-        type : formView.typeName ,
-        id : data.id,
-        selected : true
-      });
-       
-      for (let i in this.settingsViewClasses) {
-        // Add a navigation section
-        // let data =  dataArray[i] ;
-        let tc = this.settingsViewClasses[i];
-        let typeClassView = document.createElement(tc);
-
-        // Data for a subitem that is an empty row
-        // an empty row in each TYPE
-        let emptyData = typeClassView._getEmptyData();
-        emptyData.name = "+ Add new";
-        emptyData.organization = this.organizationId;
-
-        // Add empty form container for + New
-        this.makeContainer({
-          objData: emptyData, 
-          classBase: typeClassView
-        });
-
-        // Add navs
-        const headingEl = this.settingsNav._addNav({
-          name : typeClassView._getHeading(),
-          type : typeClassView.typeName, 
-          subItems : [ emptyData ]
-        });
-
-        // Add add new containers
-        typeClassView.init(this.organizationData);
-
-        this.settingsNav.fillContainer({
-          type : typeClassView.typeName,
-          id : emptyData.id,
-          itemContents : typeClassView
-        });
-
-        // init the form with the data
-        typeClassView._init({ 
-          data : emptyData, 
-          modal : this.modal, 
-          sidenav: this.settingsNav,
-          orgData: this.organizationData
-        });
-
-        headingEl.addEventListener("click", () => {
-          // provide the class
-          this._sectionInit({ viewClass : tc })
-        }, { once: true }); // just run this once
-      }
-    });
+    // this handles back button, and some pushes to this to trigger selection change
+    window.addEventListener("hashchange", this.moveToCurrentHash.bind(this));
   }
 
-  /* Run when organization-id is set to run fetch the page content. */
-  _sectionInit( {viewClass} ) {
-    const formView = document.createElement( viewClass );
-    console.log(viewClass);
-
-    formView._fetchGetPromise({"id": this.organizationId} )
-    .then( (data) => {
-      return data.json();
-    }).then( (objData) => {
-      this.loading.hideSpinner();
-
-      // Add item containers for Types
-      this.makeContainers({
-        objData, 
-        classBase: formView
-      });
-
-      // Add navs
-      this.settingsNav._addNav({
-        type : formView.typeName, 
-        subItems : objData,
-        subItemsOnly : true
-      });
-
-      // Add contents for each Entity
-      for(let g of objData){
-        let form = document.createElement(viewClass);
-        this.settingsNav.fillContainer({
-          type : form.typeName,
-          id : g.id,
-          itemContents : form
-        });
-
-        // init form with the data
-        form._init({ 
-          data : g, 
-          modal : this.modal, 
-          sidenav: this.settingsNav,
-          orgData: this.organizationData
-        });
-
-        if (viewClass == "invitation-edit") {
-          console.log("Email enabled is: "+this._emailEnabled)
-          form.emailEnabled = this._emailEnabled;
-        }
-
-      }
-          
-    });
-  }
-
-  makeContainer({objData = {}, classBase, hidden = true}){
-    // Adds item panels for each view
-    this.settingsNav.addItemContainer({
-      type : classBase.typeName,
-      id : objData.id,
-      hidden
-    });
-  }
-  
-  makeContainers({objData = {}, classBase, hidden = true}){
-     for(let data of objData){
-      this.makeContainer({objData : data, classBase, hidden});
+  /**
+   * @param {string} val
+   */
+   set selectedHash(val) {
+    if (val.split("-").length > 1) {
+      this._selectedHash = val;
+      const split = val.split("-");
+      this._selectedType = split[0].replace("#","");
+      this._selectedObjectId = split[1];
+      this._innerSelection = typeof split[2] !== "undefined";
+    } else if (val === "") {
+      // No hash is home for project-settings
+      this._selectedHash = `#Project-${this.projectId}`;
+      this._selectedType = "Project";
+      this._selectedObjectId = this.projectId;
+      this._innerSelection = false;
+    } else { 
+      // Error handle
+      this._selectedHash = null;
+      this._selectedType = null;
+      this._selectedObjectId = null;
+      this._innerSelection = null;
     }
+
+    console.log("DEBUG: Hash setup.... " + this._selectedHash);
+    store.getState().setSelection({
+      typeName: this._selectedType,
+      typeId: this._selectedObjectId,
+      inner: this._innerSelection
+    });
+  }
+
+  /* Sets the selection based on a hash change, or hash on load */
+  moveToCurrentHash() {
+    this.selectedHash = window.location.hash;
+  }
+
+  /* Organization data required for settings page components are updated */
+  updateOrganization(newType) {
+    if (!this.organizationId) {
+      this.organizationId = newType.data.id;
+      this._breadcrumbs.setAttribute("organization-name", `${newType.data.name}`);      
+    }
+  }
+
+  userHasPermission() {
+    // if(this.userHasPermission()) {
+    //   this.typeFormDiv.appendChild( this.deleteOrganizationSection() );
+    // }
+    return hasPermission( this.data.permission, "Creator" );
   }
 
   // Modal for this page, and handlers

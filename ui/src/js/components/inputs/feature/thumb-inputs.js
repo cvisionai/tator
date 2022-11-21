@@ -3,7 +3,7 @@ import { hasPermission } from "../../../util/has-permission.js";
 import { getCookie } from "../../../util/get-cookie.js";
 import { InputValidation } from "../input-validation.js";
 import { InlineWarning } from "../../../components/inline-warning.js";
-import { SingleUpload } from "../../../project-settings/components/single-upload.js";
+import { SingleUpload } from "./single-upload.js";
 import TatorSymbol from "../../../../images/tator-logo-symbol-only.png";
 
 export class ThumbInput extends TatorElement {

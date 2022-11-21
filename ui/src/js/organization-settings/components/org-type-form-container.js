@@ -1,12 +1,12 @@
 import { TatorElement } from "../../components/tator-element.js";
 import { store } from "../store.js";
 
-export class TypeFormContainer extends TatorElement {
+export class OrgTypeFormContainer extends TatorElement {
   constructor() {
     super();
 
     // Header: This is adds the breadcrumb and successLight-spacer to the header
-    const template = document.getElementById("typeFormContainer").content;
+    const template = document.getElementById("type-form-container").content;
     this._shadow.appendChild(template.cloneNode(true));
 
     // Main parts of page
@@ -224,6 +224,6 @@ export class TypeFormContainer extends TatorElement {
 
 
 
-if (!customElements.get("type-form-container")) {
-  customElements.define("type-form-container", TypeFormContainer);
+if (!customElements.get("org-type-form-container")) {
+  customElements.define("org-type-form-container", OrgTypeFormContainer);
 }

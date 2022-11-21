@@ -3,7 +3,7 @@ import { hasPermission } from "../../../util/has-permission.js";
 import { getCookie } from "../../../util/get-cookie.js";
 import { InputValidation } from "../input-validation";
 import { InlineWarning } from "../../inline-warning.js";
-import { SingleUpload } from "../../../project-settings/components/single-upload.js";
+import { SingleUpload } from "./single-upload.js";
 
 export class FileInput extends TatorElement {
   constructor() {

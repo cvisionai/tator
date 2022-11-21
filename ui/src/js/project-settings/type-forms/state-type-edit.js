@@ -1,4 +1,4 @@
-import { TypeFormTemplate } from "./type-form-template.js";
+import { TypeFormTemplate } from "../components/type-form-template.js";
 import { getCompiledList } from "../store.js";
 
 export class StateTypeEdit extends TypeFormTemplate {
