@@ -23,6 +23,14 @@ export class AppletEdit extends TypeFormTemplate {
       this._categoriesList = this._shadow.getElementById("applet-edit--categories");
    }
 
+   /** These override template to set additional info to the form */   
+    setProjectIds(newProject) {
+      this.projectId = newProject.data.id;
+      this.organizationId = newProject.data.organization;
+      this._htmlFilePath.projectId = newProject.data.id;
+      this._htmlFilePath.organizationId = newProject.data.organization;
+    }
+
    async _setupFormUnique() {
       // append link
       if (this._data.id && this._data.id !== "New") {
@@ -34,10 +42,6 @@ export class AppletEdit extends TypeFormTemplate {
       // description
       this._editDescription.setValue(this._data.description);
       this._editDescription.default = this._data.description;
-
-      // Path to html file
-      this._htmlFilePath.projectId = this.projectId;
-      this._htmlFilePath.organizationId = this.organizationId;
 
       if (typeof this._data.html_file == "undefined") {
          this._data.html_file = [];
