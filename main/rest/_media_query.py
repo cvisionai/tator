@@ -81,6 +81,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         qs = qs.filter(name__iexact=name)
 
     if section_uuid is not None:
+        logger.info(f"******Filtering on {section_uuid}")
         qs = qs.filter(attributes__tator_user_sections=section_uuid)
 
     if dtype is not None:
@@ -108,12 +109,14 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         relevant_localization_type_ids = relevant_localization_type_ids.filter(media__in=[filter_type])
         qs = get_attribute_psql_queryset(project, MediaType.objects.get(pk=filter_type), qs, params, filter_ops)
         qs = qs.filter(meta=filter_type)
-    elif filter_ops:
+    elif filter_ops or params.get('float_array',None):
         queries = []
         for entity_type in MediaType.objects.filter(project=project):
             sub_qs = get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops)
             if sub_qs:
                 queries.append(sub_qs.filter(meta=entity_type))
+            else:
+                queries.append(sub_qs.filter(pk=-1)) # no matches
         logger.info(f"Joining {len(queries)} queries together.")
         
         sub_qs = queries.pop()

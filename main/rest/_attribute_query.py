@@ -84,6 +84,8 @@ def _get_info_for_attribute(project, entity_type, key):
             return {'name': key[1:], 'dtype': 'string'}
         else:
             return None
+    elif key == 'tator_user_sections':
+        return {'name': 'tator_user_sections', 'dtype': 'string'}
     else:
         for attribute_info in entity_type.attribute_types:
             if attribute_info['name'] == key:
