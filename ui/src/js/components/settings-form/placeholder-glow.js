@@ -22,8 +22,10 @@ export class PlaceholderGlow extends TatorElement {
    }
    attributeChangedCallback(name, oldValue, newValue) {
       switch (name) {
-         case "rows":
-            
+         case "size":
+            const size = newValue.split("_");
+            this._row.style = `width: ${size[1]}px; height: ${size[0]}px`;
+         case "rows":          
             for (let x = 0; x <= newValue; x++) {
                this._row.style = `width: ${String((Math.random() * (110 - 80) + 80).toFixed(0))}px`;
                const cloneRow = this._row.cloneNode();

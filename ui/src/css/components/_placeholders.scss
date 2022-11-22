@@ -5,7 +5,7 @@ $placeholder-opacity-min:           .2 !default;
    min-height: 1em;
    vertical-align: middle;
    cursor: wait;
-   background-color: currentcolor !important;
+   background-color: $color-charcoal--light !important;
    opacity: $placeholder-opacity-max;
  
    &.btn::before {

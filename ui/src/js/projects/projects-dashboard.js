@@ -15,6 +15,7 @@ export class ProjectsDashboard extends TatorPage {
     this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
     this._deleteProject = this._shadow.getElementById("delete-project");
     this._modalNotify = this._shadow.getElementById("modal-notify");
+    this._placeholders = this._shadow.getElementById("project-placeholders");
 
     // Create store subscriptions
     store.subscribe(state => state.user, this._setUser.bind(this));
@@ -36,18 +37,7 @@ export class ProjectsDashboard extends TatorPage {
     this._newProjectDialog.addEventListener("close", evt => {
       this.removeAttribute("has-open-modal", "");
       if (this._newProjectDialog._confirm) {
-        const projectSpec = this._newProjectDialog.getProjectSpec();
-        const preset = this._newProjectDialog.getProjectPreset();
-        store.getState().addProject(projectSpec, preset)
-        .then(project => {
-          this._projectCreationRedirect = `/${project.id}/project-settings`;
-          this._modalNotify.init("Project created successfully!",
-                                 "Continue to project settings or close this dialog.",
-                                 "ok",
-                                 "Continue to settings");
-          this._modalNotify.setAttribute("is-open", "");
-          this.setAttribute("has-open-modal", "");
-        });
+        this._createProject();
       }
     });
 
@@ -85,6 +75,7 @@ export class ProjectsDashboard extends TatorPage {
         this._insertProjectSummary(project);
       }
     }
+    this._placeholders.remove();
     // Remove any projects no longer present.
     for (let project of prevProjects) {
       if (!projects.includes(project)) {
@@ -117,6 +108,20 @@ export class ProjectsDashboard extends TatorPage {
   _openNewProjectDialog() {
     this._newProjectDialog.init();
     this._newProjectDialog.setAttribute("is-open", "");
+    this.setAttribute("has-open-modal", "");
+  }
+
+  async _createProject() {
+    const projectSpec = this._newProjectDialog.getProjectSpec();
+    const preset = this._newProjectDialog.getProjectPreset();
+    const project = await store.getState().addProject(projectSpec, preset);
+    this._insertProjectSummary(project);
+    this._projectCreationRedirect = `/${project.id}/project-settings`;
+    this._modalNotify.init("Project created successfully!",
+                            "Continue to project settings or close this dialog.",
+                            "ok",
+                            "Continue to settings");
+    this._modalNotify.setAttribute("is-open", "");
     this.setAttribute("has-open-modal", "");
   }
 }

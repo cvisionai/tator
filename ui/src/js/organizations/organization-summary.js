@@ -5,33 +5,17 @@ export class OrganizationSummary extends TatorElement {
   constructor() {
     super();
 
-    const div = document.createElement("div");
-    div.setAttribute("class", "projects d-flex flex-items-center rounded-2");
-    this._shadow.appendChild(div);
+    const template = document.getElementById("organization-summary").content;
+    this._shadow.appendChild(template.cloneNode(true));
 
-    this._link = document.createElement("a");
-    this._link.setAttribute("class", "projects__link d-flex flex-items-center text-white");
-    div.appendChild(this._link);
-
-    this._img = document.createElement("img");
-    this._img.setAttribute("crossorigin", "anonymous");
-    this._img.setAttribute("class", "projects__image px-2 rounded-1");
-    this._link.appendChild(this._img);
-
-    const text = document.createElement("div");
-    text.setAttribute("class", "projects__text px-3");
-    this._link.appendChild(text);
-
-    const h2 = document.createElement("h2");
-    h2.setAttribute("class", "text-semibold py-2");
-    text.appendChild(h2);
-
-    this._text = document.createTextNode("");
-    h2.appendChild(this._text);
+    this._link = this._shadow.getElementById("organization-link");
+    this._img = this._shadow.getElementById("organization-thumbnail");
+    this._name = this._shadow.getElementById("organization-name");
   }
 
   set info(val) {
-    this._text.nodeValue = val.name;
+    console.log("Info val", val);
+    this._name.textContent = val.name;
     this._organizationId = val.id;
     if (val.thumb) {
       this._img.setAttribute("src", val.thumb);

@@ -47,7 +47,7 @@ export class OrganizationSettings extends TatorPage {
     this._init();
   }
 
-  /* Get personlized information when we have project-id, and fill page. */
+  /* Get personlized information when we have organization-id, and fill page. */
   static get observedAttributes() {
     return ["email_enabled"].concat(TatorPage.observedAttributes);
   }
@@ -105,10 +105,10 @@ export class OrganizationSettings extends TatorPage {
       this._selectedObjectId = split[1];
       this._innerSelection = typeof split[2] !== "undefined";
     } else if (val === "") {
-      // No hash is home for project-settings
-      this._selectedHash = `#Project-${this.projectId}`;
-      this._selectedType = "Project";
-      this._selectedObjectId = this.projectId;
+      // No hash is home for organization-settings
+      this._selectedHash = `#Organization-${this.organizationId}`;
+      this._selectedType = "Organization";
+      this._selectedObjectId = this.organizationId;
       this._innerSelection = false;
     } else { 
       // Error handle
