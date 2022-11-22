@@ -127,7 +127,7 @@ echo "Installing pip packages."
 pip3 install --upgrade pip
 pip3 install setuptools
 pip3 install pillow
-pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pyyaml
+pip3 install /tmp/tator_py_whl/*.whl pandas opencv-python pytest pytest-parallel pyyaml
 export PATH=$PATH:$HOME/.local/bin:/snap/bin
 
 # Copy over values.yaml.

@@ -214,7 +214,7 @@ jobs:
           scp ~/token.txt lightsail:~
     - run:
         name: Run tator-py tests
-        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep';
+        command: ssh lightsail 'export PUBLIC_IP='"'$(cat ~/public_ip_address.txt)'"';export TOKEN='"'$(cat ~/token.txt)'"';export PATH=$PATH:$HOME/.local/bin:/snap/bin && cd tator && pytest tatorpy_test --host=http://$PUBLIC_IP --token=$TOKEN -s --keep --workers 64';
   cleanup-lightsail:
     machine:
       image: ubuntu-2004:202010-01
