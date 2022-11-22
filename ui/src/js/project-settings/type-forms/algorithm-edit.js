@@ -61,10 +61,10 @@ export class AlgorithmEdit extends TypeFormTemplate {
    showMessagesCantSee(isNew) {
       if (isNew) {
          this._userMessage.textContent = "Required: A Job Cluster is required to add an algorithm. User is not authorized to select a Job Cluster. ";
-         state.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
+         // store.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
       } else {
          this._userMessage.textContent = "Warning: Current user does not have access to view Job Clusters. Edits will only save if an active cluster is already present.";
-         state.setState({ status: { ...store.getState().status, name: "idle", message: "" } });
+         // store.setState({ status: { ...store.getState().status, name: "idle", message: "" } });
       }
    }
 
@@ -74,7 +74,7 @@ export class AlgorithmEdit extends TypeFormTemplate {
       } else {
          this._userMessage.innerHTML = `View Only: Please add a Job Cluster via <a href="/${this.organizationId}/organization-settings" class="text-purple clickable">Organization Settings</a> to edit this algorithm.`;
       }
-      state.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
+      // store.setState({ status: { ...store.getState().status, name: "error", message: "View Only: Please add a Job Cluster" } });
    }
 
    async _setupFormUnique() {

@@ -21,17 +21,13 @@ export class TypeFormTemplate extends TatorElement {
   }
 
   connectedCallback() {
-    store.subscribe(state => state.projectId, this.setProjectId.bind(this));
-    store.subscribe(state => state.organizationId, this.setOrganizationId.bind(this));
+    store.subscribe(state => state.Project, this.setProjectIds.bind(this));
     store.subscribe(state => state.isStaff, this.setIsStaff.bind(this));
   }
 
-  setProjectId(newId, oldId) {
-    this.projectId = newId;
-  }
-
-  setOrganizationId(newId, oldId) {
-    this.organizationId = newId;
+  setProjectIds(newProject) {
+    this.projectId = newProject.data.id;
+    this.organizationId = newProject.data.organization;
   }
 
   setIsStaff(newIS, oldIS) {
