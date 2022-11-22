@@ -123,7 +123,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         if queries:
             query = Q(pk__in=sub_qs)
             for r in queries:
-                query = query | Query(pk__in=r)
+                query = query | Q(pk__in=r)
             qs = qs.filter(query)
         else:
             qs = sub_qs

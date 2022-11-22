@@ -241,6 +241,8 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
             found_it = True
 
     for query in float_queries:
+        if not 'type' in params:
+            raise(Exception("Must supply 'type' if supplying a float_query. "))
         logger.info(f"EXECUTING FLOAT QUERY={query}")
         found_it = True
         name = query['name']
