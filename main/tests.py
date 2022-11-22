@@ -1776,6 +1776,7 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         # Tests deleting a localization's associated media (1). The corresponding
         # localization must also be deleted. Delete via the endpoint.
         unique_string_attr_val = 'super_unique_string_to_search_for_1'
+        attr_search = f"String Test::{unique_string_attr_val}"
         body = {'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
@@ -1834,25 +1835,25 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         response = self.client.delete(f"/rest/Media/{media_id1}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 4)
 
         response = self.client.delete(f"/rest/Media/{media_id2}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(f"/rest/Media/{media_id3}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 2)
 
         response = self.client.delete(f"/rest/Media/{media_id4}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Localizations/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 0)
 
     def test_multiple_media_delete(self):
@@ -1977,6 +1978,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         # state must also be deleted. Delete via the endpoint.
 
         unique_string_attr_val = 'super_unique_string_to_search_for_1'
+        attr_search = f"String Test::{unique_string_attr_val}"
         body = {'type': self.image_type.pk,
                 'section': 'asdf',
                 'name': 'asdf',
@@ -2003,13 +2005,13 @@ class StateMediaDeleteCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
-        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 1)
 
         response = self.client.delete(f"/rest/Media/{media_id}", format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 0)
 
     def test_multiple_media_delete(self):
@@ -2017,6 +2019,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         # The media is deleted and the subsequent states should also be deleted.
 
         unique_string_attr_val = 'super_unique_string_to_search_for_2'
+        attr_search = f'String Test::{unique_string_attr_val}'
 
         body = {'type': self.image_type.pk,
                 'section': 'asdf',
@@ -2073,10 +2076,10 @@ class StateMediaDeleteCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 2)
 
-        response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/Medias/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 3)
 
-        response = self.client.get(f"/rest/States/{self.project.pk}?media_search=String%5C%20Test%3A{unique_string_attr_val}")
+        response = self.client.get(f"/rest/States/{self.project.pk}?related_attribute={attr_search}")
         self.assertEqual(len(response.data), 2)
 
         not_deleted = State.objects.filter(project=self.project.pk, media__deleted=False)\
@@ -2084,10 +2087,10 @@ class StateMediaDeleteCase(TatorTransactionTest):
         deleted = State.objects.filter(project=self.project.pk, media__deleted=True)\
                                 .values_list('id', flat=True)
 
-        response = self.client.delete(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?attribute={attr_search}" format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Medias/{self.project.pk}?search=%22{unique_string_attr_val}%22", format='json')
+        response = self.client.get(f"/rest/Medias/{self.project.pk}?attribute={attr_search}, format='json')
         self.assertEqual(len(response.data), 0)
 
         not_deleted_medias = Media.objects.filter(project=self.project.pk, deleted=False).values_list('id', flat=True)
@@ -2097,13 +2100,13 @@ class StateMediaDeleteCase(TatorTransactionTest):
         deleted = State.objects.filter(project=self.project.pk, media__deleted=True)\
                                 .values_list('id', flat=True)
 
-        response = self.client.get(f"/rest/States/{self.project.pk}?attribute=String%20Test%3A%3A{unique_string_attr_val}")
+        response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 0)
 
-        response = self.client.get(f"/rest/States/{self.project.pk}?search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
         self.assertEqual(len(response.data), 0)
 
-        response = self.client.get(f"/rest/States/{self.project.pk}?media_search=%22{unique_string_attr_val}%22")
+        response = self.client.get(f"/rest/States/{self.project.pk}?related_attribute={attr_search}")
         self.assertEqual(len(response.data), 0)
 
 class LeafTestCase(
