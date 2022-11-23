@@ -137,7 +137,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             query = Q(media__in=related_match)
             for r in related_matches:
                 query = query | Q(media__in=r)
-            qs = qs.filter(query)
+            qs = qs.filter(query).distinct()
 
     if params.get('object_search'):
         qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
@@ -156,7 +156,7 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
             query = Q(media__in=related_match)
             for r in related_matches:
                 query = query | Q(media__in=r)
-            qs = qs.filter(query)
+            qs = qs.filter(query).distinct()
         else:
             qs = qs.filter(pk=-1)
 

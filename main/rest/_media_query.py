@@ -151,7 +151,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
             query = Q(pk__in=related_match.values('media'))
             for r in related_matches:
                 query = query | Q(pk__in=r.values('media'))
-            qs = qs.filter(query)
+            qs = qs.filter(query).distinct()
 
     if params.get('object_search'):
         qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
@@ -177,7 +177,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
             query = Q(pk__in=related_match.values('media'))
             for r in related_matches:
                 query = query | Q(pk__in=r.values('media'))
-            qs = qs.filter(query)
+            qs = qs.filter(query).distinct()
         else:
             qs = qs.filter(pk=-1)
 
