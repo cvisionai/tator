@@ -2087,10 +2087,10 @@ class StateMediaDeleteCase(TatorTransactionTest):
         deleted = State.objects.filter(project=self.project.pk, media__deleted=True)\
                                 .values_list('id', flat=True)
 
-        response = self.client.delete(f"/rest/Medias/{self.project.pk}?attribute={attr_search}" format='json')
+        response = self.client.delete(f"/rest/Medias/{self.project.pk}?attribute={attr_search}",format='json')
         assertResponse(self, response, status.HTTP_200_OK)
 
-        response = self.client.get(f"/rest/Medias/{self.project.pk}?attribute={attr_search}, format='json')
+        response = self.client.get(f"/rest/Medias/{self.project.pk}?attribute={attr_search}", format='json')
         self.assertEqual(len(response.data), 0)
 
         not_deleted_medias = Media.objects.filter(project=self.project.pk, deleted=False).values_list('id', flat=True)
