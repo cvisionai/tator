@@ -25,6 +25,7 @@ class ObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
     GCP = "UploadServer"
+    OCI = "OCI"
 
 
 VALID_STORAGE_CLASSES = {
@@ -32,11 +33,13 @@ VALID_STORAGE_CLASSES = {
         ObjectStore.AWS: ["STANDARD", "DEEP_ARCHIVE"],
         ObjectStore.MINIO: ["STANDARD"],
         ObjectStore.GCP: ["STANDARD", "COLDLINE"],
+        ObjectStore.OCI: ["STANDARD"],
     },
     "live_sc": {
         ObjectStore.AWS: ["STANDARD"],
         ObjectStore.MINIO: ["STANDARD"],
         ObjectStore.GCP: ["STANDARD"],
+        ObjectStore.OCI: ["STANDARD"],
     },
 }
 
@@ -46,11 +49,13 @@ DEFAULT_STORAGE_CLASSES = {
         ObjectStore.AWS: "DEEP_ARCHIVE",
         ObjectStore.MINIO: "STANDARD",
         ObjectStore.GCP: "COLDLINE",
+        ObjectStore.OCI: "STANDARD",
     },
     "live_sc": {
         ObjectStore.AWS: "STANDARD",
         ObjectStore.MINIO: "STANDARD",
         ObjectStore.GCP: "STANDARD",
+        ObjectStore.OCI: "STANDARD",
     },
 }
 
@@ -103,6 +108,8 @@ class TatorStorage(ABC):
             return GCPStorage(bucket, client, bucket_name, rclone_params, external_host)
         if server is ObjectStore.MINIO:
             return MinIOStorage(bucket, client, bucket_name, rclone_params, external_host)
+        if server is ObjectStore.OCI:
+            return OCIStorage(bucket, client, bucket_name, rclone_params, external_host)
 
         raise ValueError(f"Server type '{server}' is not supported")
 
@@ -441,6 +448,20 @@ class S3Storage(MinIOStorage):
             RestoreRequest={"Days": min_exp_days},
         )
 
+class OCIStorage(MinIOStorage):
+    def __init__(self, bucket, client, bucket_name, rclone_params, external_host=None):
+        super().__init__(bucket, client, bucket_name, rclone_params, external_host)
+        self._server = ObjectStore.OCI
+        self.remote_type = "oci"
+
+    def object_tagged_for_archive(self, path):
+        return False # OCI does not support object tags.
+
+    def _put_archive_tag(self, path):
+        pass # OCI does not support object tags.
+
+    def put_media_id_tag(self, path, media_id):
+        pass # OCI does not support object tags.
 
 class GCPStorage(TatorStorage):
     def __init__(self, bucket, client, bucket_name, rclone_params, external_host=None):
@@ -658,15 +679,18 @@ def get_tator_store(
         else:
             server = ObjectStore.MINIO
     else:
-        response_server = response["ResponseMetadata"]["HTTPHeaders"]["server"]
+        response_server = response["ResponseMetadata"]["HTTPHeaders"].get("server", "")
+        api_id = response["ResponseMetadata"]["HTTPHeaders"].get("x-api-id", "")
         if ObjectStore.AWS.value in response_server:
             server = ObjectStore.AWS
         elif ObjectStore.MINIO.value in response_server:
             server = ObjectStore.MINIO
+        elif "s3-compatible" in api_id:
+            server = ObjectStore.OCI
         else:
             raise ValueError(f"Received unhandled server type '{response_server}'")
 
-    provider = {ObjectStore.AWS: "AWS", ObjectStore.MINIO: "Minio"}[server]
+    provider = {ObjectStore.AWS: "AWS", ObjectStore.MINIO: "Minio", ObjectStore.OCI: "Minio"}[server]
 
     # These parameters are used by `TatorBackupManager` to communicate with storage providers using
     # the Python wrapper to the golang library `librclone`
