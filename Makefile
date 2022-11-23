@@ -296,7 +296,7 @@ testinit:
 	
 .PHONY: test
 test:
-	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'python3 manage.py test --keep --parallel 8'
+	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'python3 manage.py test --keep'
 
 .PHONY: cache_clear
 cache-clear:
