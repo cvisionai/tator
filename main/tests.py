@@ -52,7 +52,7 @@ def wait_for_indices(entity_type):
             if TatorSearch().is_index_present(entity_type, attribute) == True:
                 found_it = True
                 break
-            time.sleep(1)
+            time.sleep(0.1)
         assert(found_it)
 
 def assertResponse(self, response, expected_code):
