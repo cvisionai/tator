@@ -9,7 +9,16 @@
 <template id="affiliation-edit">
    <form id="affiliation-edit--form">
       <user-input hidden id="affiliation-edit--search-users" name="Search users"></user-input>
-      <enum-input id="affiliation-edit--permission" name="Permission"></enum-input>
+      <enum-input id="affiliation-edit--permission" name="Org Permission"></enum-input>
+      <div>
+         <h2>Project membership (Ready only summary style)</h2>
+         <div>
+            <p>Project: Jellyfish</p>
+            <p>Permission: "Can Edit"</p>
+            <p>Version: "Baseline"</p>
+            <button>Edit (links to) /{projectId}/project-settings#Membership-{Id}</button>
+         </div>
+      </div>
    </form>
 </template>
 
@@ -20,6 +29,7 @@
       <enum-input id="invitation-edit--permission" name="Permission"></enum-input>
       <text-input id="invitation-edit--status" hidden name="Status" type="string"></text-input>
       <link-input id="invitation-edit--reg-link" hidden name="Registration Link"></link-input>
+      <link-input id="invitation-edit--aff-link" hidden name="Affiliation Record"></link-input>
    </form>
 </template>
 
@@ -35,7 +45,7 @@
       <text-input id="bucket-edit--archive-storage-class" hidden name="Archive Storage Class" type="string">
       </text-input>
       <text-input id="bucket-edit--live-storage-class" hidden name="Live Storage Class" type="string"></text-input>
-      <text-area id="bucket-edit--form" hidden name="GCS Key Info" type="json" hidden=""></text-area>
+      <text-area id="bucket-edit--gcs-key-info" hidden name="GCS Key Info" type="json" hidden=""></text-area>
    </form>
 </template>
 
@@ -47,5 +57,19 @@
       <text-input id="job-cluster-edit--port" name="Port" type="int"></text-input>
       <text-input id="job-cluster-edit--token" name="Token" type="password"></text-input>
       <text-area id="job-cluster-edit--cert" name="Cert" type="string"></text-area>
+   </form>
+</template>
+
+<template id="project-display">
+   <form id="project-display--form">
+      <img id="project-thumbnail" class="projects__image px-2 rounded-1" crossorigin="anonymous" style="object-fit:cover"  >
+      <text-input id="project-display--name" name="Name" type="string" permission="View Only"></text-input>
+      <text-input id="project-display--summary" name="Summary" type="string" permission="View Only"></text-input>
+      <text-link id="project-display--edit-link" name="Edit Link" permission="View Only"></text-input>
+      <text-input id="project-display--num-files" name="Num files" type="string" permission="View Only"></text-input>
+      <text-input id="project-display--size" name="Size" type="string" permission="View Only"></text-input>
+      <text-input id="project-display--duration" name="Duration" type="string" permission="View Only"></text-input>
+      <text-area id="project-display--usernames" name="Users" type="string" permission="View Only"></text-input>
+      <new-project-dialog id="new-project-dialog"></new-project-dialog>
    </form>
 </template>

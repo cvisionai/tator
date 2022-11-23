@@ -24,6 +24,14 @@ export class OrgTypeFormContainer extends TatorElement {
     this._addLeavesLink = this._shadow.getElementById("type-form--add-edit-leaves_link");
     this._leavesFormHeading = this._shadow.getElementById("type-form--leaves-active");
 
+    this._saveEditSection = this._shadow.getElementById("type-form--save-reset-section");
+    this._customButtonSection = this._shadow.getElementById("type-form--custom-button-section");
+    this._customButton = this._shadow.getElementById("type-form--custom-button");
+
+    this._customButtonSectionPrimary = this._shadow.getElementById("type-form--custom-button-section-primary");
+    this._customButtonPrimary = this._shadow.getElementById("type-form--custom-button-primary");
+
+
     // this is outside the template and references by all parts of page to sync the dimmer
     this.modal = document.createElement("modal-dialog");
     this._shadow.appendChild(this.modal);
@@ -44,8 +52,26 @@ export class OrgTypeFormContainer extends TatorElement {
     store.subscribe(state => state[this._form.typeName], this._newData.bind(this));
     
     const canDeleteProject = store.getState().deletePermission;
-    this.typeName = this._form.typeName;
-    this._addLeaves.hidden = !(this._typeName == "LeafType");
+    const typeName = this._form.typeName;
+    this.typeName = typeName;
+    
+    if (typeName === "Project") {
+      this._saveEditSection.classList.add("hidden");
+      this._customButtonSection.hidden = false;
+      this._customButtonPrimary.innerHTML = `View/Edit Project`;
+      this._customButtonPrimary.addEventListener("click", this._linkToProject.bind(this));
+ 
+      this._customButtonSectionPrimary.hidden = false;
+      this._customButton.innerHTML = `Clone Project`;
+      this._customButton.addEventListener("click", this._cloneProjectDialog.bind(this));
+    } else if (typeName == "Invitation") {
+      this._customButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill feather feather-send"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      &nbsp; Reset & Resend Invitation`;
+      this._customButton.addEventListener("click", this._resetInvitation.bind(this));
+    
+      this._customButtonPrimary.innerHTML = `View/Edit Affiliation`;
+      this._customButtonPrimary.addEventListener("click", this._linkToAffiliation.bind(this));   
+    }
 
     // Event listeners for container actions
     this.save.addEventListener("click", this._form._saveData.bind(this._form));
@@ -104,9 +130,9 @@ export class OrgTypeFormContainer extends TatorElement {
 
     }
 
-    /**
- * @param {int} val
- */
+  /**
+   * @param {int} val
+  */
   set objectName(val) {
     this._objectName = val;
     if (this._typeId === "New") {
@@ -115,14 +141,42 @@ export class OrgTypeFormContainer extends TatorElement {
     } else {
       this.editH1.hidden = false;
       this.newH1.hidden = true;
-      this.objectNameDisplay.textContent = val;
+      this.objectNameDisplay.innerHTML = val;
     }
   }
 
   setUpData(data) {
+    this._data = data;
     this._form.data = data;
-    this.objectName = (this._typeName === "Membership") ? data.username : data.name;
+    let objectName = "";
+    if (this._typeName === "Affiliation") {
+      objectName = data.username;
+    } else if (this._typeName === "Invitation") {
+      objectName = data.email;
+    } else {
+      objectName = data.name;
+    }
+    this.objectName = objectName
 
+    // hide/show action button
+    if (this._typeName === "Invitation") {
+      const showCustomButton = (this._form._data.status == "Expired" || this._form._data.status == "Accepted");
+      if (showCustomButton) {
+        if (this._form._data.status == "Expired") {
+          this._customButtonSection.hidden = false;
+          this._customButtonSectionPrimary.hidden = true;
+        } else if (this._form._data.status == "Accepted") {
+          this._customButtonSectionPrimary.hidden = false;
+          this._customButtonSection.hidden = true;
+        }
+        this._saveEditSection.classList.add("hidden"); // Btn requires class change, not just hidden flag 
+      } else {
+        this._saveEditSection.classList.remove("hidden");
+        this._customButtonSection.hidden = true;
+        this._customButtonSectionPrimary.hidden = true;
+      }      
+    }
+    
     // attribute section
     if (!this._hideAttributes && typeof data.attribute_types !== "undefined") {
       this.attributeTypes = data.attribute_types;
@@ -136,6 +190,7 @@ export class OrgTypeFormContainer extends TatorElement {
    * @param {*} newData 
    */
   _newData(newData) {
+    // console.log("newData", newData);
     // Nothing new or deleted
     if (this._typeName == store.getState().selection.typeName && this._typeId !== "New") {
       if (newData.setList.has(Number(this._typeId))) {
@@ -219,6 +274,27 @@ export class OrgTypeFormContainer extends TatorElement {
     this._form.data = null;
     this.objectName = "";
     this.removeAttributeSection();
+  }
+
+  async _resetInvitation() {
+    const info = await store.getState().resetInvitation(this._data);
+    if (info.response?.ok) {
+      this.modal._complete(`New invitation link sent! Details: <br/> ${info.data.message}`);
+    } else {
+      this.modal._error(info);
+    }
+  }
+
+  async _cloneProjectDialog() {
+    this.modal._complete("TODO clone dialog");
+  }
+
+  _linkToAffiliation() {
+    window.location.href = `${window.location.origin}${window.location.pathname}#Affiliation-${this._data.id}`;
+  }
+
+  _linkToProject() {
+    window.location.href = `${window.location.origin}/${this._data.id}/project-settings`;
   }
 }
 

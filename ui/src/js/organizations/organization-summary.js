@@ -14,7 +14,6 @@ export class OrganizationSummary extends TatorElement {
   }
 
   set info(val) {
-    console.log("Info val", val);
     this._name.textContent = val.name;
     this._organizationId = val.id;
     if (val.thumb) {

@@ -1,4 +1,5 @@
 import { OrgTypeFormTemplate } from "./components/org-type-form-template.js";
+import { store } from "./store.js";
 
 export class InvitationEdit extends OrgTypeFormTemplate {
   constructor() {
@@ -17,6 +18,11 @@ export class InvitationEdit extends OrgTypeFormTemplate {
     this._permissionSelect = this._shadow.getElementById("invitation-edit--permission");
     this._statusField = this._shadow.getElementById("invitation-edit--status");
     this._regLinkDisplay = this._shadow.getElementById("invitation-edit--reg-link");
+    this._affiliationDisplay = this._shadow.getElementById("invitation-edit--aff-link");
+
+    //
+    this._statusField.permission = "View Only";
+    this._regLinkDisplay.permission = "View Only";
   }
   
   async _setupFormUnique() {
@@ -32,14 +38,14 @@ export class InvitationEdit extends OrgTypeFormTemplate {
       this._permissionSelect.choices = permissionOptions;
     }
     this._permissionSelect._select.required = (this._data.id === "New");
-    this._permissionSelect.setValue(data.permission);
-    this._permissionSelect.default = data.permission;
+    this._permissionSelect.setValue(this._data.permission);
+    this._permissionSelect.default = this._data.permission;
+    this._permissionSelect.permission = "Can Edit";
 
     // status
     if (this._data.id !== "New") {
       this._statusField.setValue(this._data.status);
       this._statusField.default = this._data.status;
-      this._statusField.permission = "View Only";
       this._statusField.hidden = false;
     } else {
       this._statusField.hidden = true;
@@ -49,11 +55,28 @@ export class InvitationEdit extends OrgTypeFormTemplate {
     if (this._data.status == "Pending") {
       const registrationLink = `${window.location.origin}/registration?registration_token=${this._data.registration_token}`;
       this._regLinkDisplay.setAttribute("href", registrationLink);
-      this._regLinkDisplay.permission = "View Only";
-      this._regLinkDisplay.hidden = false;     
+      this._regLinkDisplay.hidden = false;
+      this._permissionSelect.permission = "View Only";
+      this._statusField._input.classList.add("text-yellow");
     } else {
       this._regLinkDisplay.hidden = true;
+      this._statusField._input.classList.remove("text-yellow");
     }
+
+    //
+    if (this._data.status == "Expired") {
+      this._permissionSelect.permission = "View Only";
+      this._statusField._input.classList.add("text-red");
+    } else {
+      this._statusField._input.classList.remove("text-red");
+    }
+
+    if (this._data.status == "Accepted") {
+      this._statusField._input.classList.add("text-green");
+    } else {
+      this._statusField._input.classList.remove("text-green");
+    }
+
   }
 
   _getFormData() {
@@ -64,7 +87,7 @@ export class InvitationEdit extends OrgTypeFormTemplate {
       for (const email of emails) {
         formData.push({
           email: email,
-          permission: this._permission.getValue(),
+          permission: this._permissionSelect.getValue(),
         });
       }
     } else {
@@ -73,10 +96,6 @@ export class InvitationEdit extends OrgTypeFormTemplate {
       if (this._permissionSelect.changed()) {
         formData.permission = this._permissionSelect.getValue();
       }
-
-      // if (this._statusSelect.changed()) {
-      //   formData.status = this._statusSelect.getValue();
-      // }
     }
 
     return formData;

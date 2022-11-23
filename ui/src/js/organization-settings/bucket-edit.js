@@ -22,10 +22,14 @@ export class BucketEdit extends OrgTypeFormTemplate {
 
     this._form = this._shadow.getElementById("bucket-edit--form");
     this._editName = this._shadow.getElementById("bucket-edit--name");
-    this._editHost = this._shadow.getElementById("bucket-edit--host");
-    this._editPort = this._shadow.getElementById("bucket-edit--port");
-    this._editToken = this._shadow.getElementById("bucket-edit--token");
-    this._editCert = this._shadow.getElementById("bucket-edit--cert");
+    this._editBucketType = this._shadow.getElementById("bucket-edit--bucket-type");
+    this._editAccessKey = this._shadow.getElementById("bucket-edit--access-key");
+    this._editSecretKey = this._shadow.getElementById("bucket-edit--secret-key");
+    this._editEndpointUrl = this._shadow.getElementById("bucket-edit--endpoint-url");
+    this._editRegion = this._shadow.getElementById("bucket-edit--region");
+    this._editArchiveSc = this._shadow.getElementById("bucket-edit--archive-storage-class");
+    this._editLiveSc = this._shadow.getElementById("bucket-edit--live-storage-class");
+    this._editGcsKeyInfo = this._shadow.getElementById("bucket-edit--gcs-key-info");
   }
 
 
@@ -47,7 +51,7 @@ export class BucketEdit extends OrgTypeFormTemplate {
       ];
       this._editBucketType.setValue(bucketTypes);
       this._editBucketType.default = bucketTypes;
-      this._editBucketType.addEventListener("change", this.this._editBucketType.bind(this));
+      this._editBucketType.addEventListener("change", this._setBucketType.bind(this));
     } 
 
 

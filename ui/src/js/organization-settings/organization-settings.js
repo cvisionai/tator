@@ -42,9 +42,6 @@ export class OrganizationSettings extends TatorPage {
 
     /* Update display for any change in data (#todo Organization is different) */
     store.subscribe(state => state.Organization, this.updateOrganization.bind(this));
-
-    // Init
-    this._init();
   }
 
   /* Get personlized information when we have organization-id, and fill page. */
@@ -106,6 +103,7 @@ export class OrganizationSettings extends TatorPage {
       this._innerSelection = typeof split[2] !== "undefined";
     } else if (val === "") {
       // No hash is home for organization-settings
+      console.log(this.organizationId);
       this._selectedHash = `#Organization-${this.organizationId}`;
       this._selectedType = "Organization";
       this._selectedObjectId = this.organizationId;
@@ -134,8 +132,11 @@ export class OrganizationSettings extends TatorPage {
   /* Organization data required for settings page components are updated */
   updateOrganization(newType) {
     if (!this.organizationId) {
+      // Organization id
       this.organizationId = newType.data.id;
-      this._breadcrumbs.setAttribute("organization-name", `${newType.data.name}`);      
+      this._breadcrumbs.setAttribute("organization-name", `${newType.data.name}`);
+      // Init
+      this._init();
     }
   }
 

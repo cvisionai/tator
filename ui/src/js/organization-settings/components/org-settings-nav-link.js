@@ -41,14 +41,18 @@ export class OrgSettingsNavLink extends TatorElement {
    connectedCallback() {
       store.subscribe(state => state.selection, this.showSelection.bind(this));
       store.subscribe(state => state[this._type], this.renderSubNav.bind(this));
-
-      
+      store.subscribe(state => state.organizationId, this.initToggle.bind(this));
       
       const removeAdd = this.getAttribute("add");
       if (removeAdd === "false") {
          this._subNavPlus.classList.add("hidden");
       }
       
+
+   }
+
+   // Wait until we have an org, and orgId to allow click handler
+   initToggle() {
       this._subNavPlus.setAttribute("href", `#${this._type}-New`);
       this._headingButton.addEventListener("click", this.toggle.bind(this));
    }
@@ -187,7 +191,28 @@ export class OrgSettingsNavLink extends TatorElement {
       
       for (const id of newData.setList) {
          const currentData = newData.map.get(id);
-         const objectName = (typeName === "Membership") ? currentData.username : currentData.name;
+         let objectName = "";
+         if (typeName === "Affiliation") {
+            objectName = currentData.username;
+         } else if (typeName === "Invitation") {
+            let icon = "";
+            if (currentData.status == "Pending") {
+               icon = `<span class="text-yellow">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 -7 30 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail no-fill"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+               </span>`;
+            } else if (currentData.status == "Expired") {
+               icon = `<span class="text-red">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 -7 30 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x-circle no-fill"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+               </span>`;
+            } else if (currentData.status == "Accepted") {
+               icon = `<span class="text-green">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 -7 30 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle no-fill"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+               </span>`;
+            }
+            objectName = `${icon} ${currentData.email}`;
+         } else {
+            objectName = currentData.name;
+         }
          this.getLink(typeName, currentData.id, objectName);
       }
 
@@ -206,6 +231,10 @@ export class OrgSettingsNavLink extends TatorElement {
       subNavLink.setAttribute("class", `SideNav-subItem ${(typeDataId == "New") ? "text-italic" : ""}`);
       subNavLink.href = `#${selector}`;
       subNavLink.innerHTML = objectName;
+
+      if (type == "Invitation") {
+         subNavLink.style.marginLeft = "24px"; // account for icon, keeps text mostly lined up
+      }
       
       // Add new link to map for use later
       if (inner) {

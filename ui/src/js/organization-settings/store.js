@@ -4,13 +4,115 @@ import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
 const api = getApi(window.localStorage.getItem('backend'));
 const organizationId = Number(window.location.pathname.split('/')[1]);
+console.log(api);
+
+async function configureImageClassification(project) {
+   let response = await api.createMediaType(project.id, {
+     name: "Images",
+     dtype: "image",
+     attribute_types: [{
+       name: "Label",
+       description: "Image classification label.",
+       dtype: "string",
+       order: 0,
+     }],
+   });
+   console.log(response.message);
+ }
+ 
+ async function configureObjectDetection(project) {
+   let response = await api.createMediaType(project.id, {
+     name: "Images",
+     dtype: "image",
+     attribute_types: [],
+   });
+   console.log(response.message);
+   const imageTypeId = response.id;
+ 
+   response = await api.createMediaType(project.id, {
+     name: "Videos",
+     dtype: "video",
+     attribute_types: [],
+   });
+   console.log(response.message);
+   const videoTypeId = response.id;
+ 
+   response = await api.createLocalizationType(project.id, {
+     name: "Boxes",
+     dtype: "box",
+     media_types: [imageTypeId, videoTypeId],
+     attribute_types: [{
+       name: "Label",
+       description: "Object detection label.",
+       dtype: "string",
+       order: 0,
+     }],
+   });
+   console.log(response.message);
+ }
+ 
+ async function configureMultiObjectTracking(project) {
+   let response = await api.createMediaType(project.id, {
+     name: "Videos",
+     dtype: "video",
+     attribute_types: [],
+   });
+   console.log(response.message);
+   const videoTypeId = response.id;
+ 
+   response = await api.createStateType(project.id, {
+     name: "Tracks",
+     association: "Localization",
+     interpolation: "none",
+     media_types: [videoTypeId],
+     attribute_types: [{
+       name: "Label",
+       description: "Track label.",
+       dtype: "string",
+       order: 0,
+     }],
+   });
+   console.log(response.message);
+ 
+   response = await api.createLocalizationType(project.id, {
+     name: "Boxes",
+     dtype: "box",
+     media_types: [videoTypeId],
+     attribute_types: [],
+   });
+ }
+ 
+ async function configureActivityRecognition(project) {
+   let response = await api.createMediaType(project.id, {
+     name: "Videos",
+     dtype: "video",
+     attribute_types: [],
+   });
+   console.log(response.message);
+   const videoTypeId = response.id;
+ 
+   response = await api.createStateType(project.id, {
+     name: "Activities",
+     association: "Frame",
+     interpolation: "latest",
+     media_types: [videoTypeId],
+     attribute_types: [{
+       name: "Something in view",
+       description: "Whether something is happening in the video.",
+       dtype: "bool",
+       order: 0,
+     }],
+   });
+   console.log(response.message);
+ }
 
 const getMap = new Map();
 getMap.set("Organization", api.getOrganizationWithHttpInfo.bind(api))
    .set("Affiliation", api.getAffiliationListWithHttpInfo.bind(api))
    .set("Bucket", api.getBucketListWithHttpInfo.bind(api))
    .set("Invitation", api.getInvitationListWithHttpInfo.bind(api))
-   .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api));
+   .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
+   .set("Project", api.getProjectListWithHttpInfo.bind(api));
 
 const postMap = new Map();
 postMap
@@ -83,6 +185,13 @@ const store = create(subscribeWithSelector((set, get) => ({
       setList: new Set(),
       map: new Map()
    },
+   Project: {
+      name: "Project",
+      init: false,
+      setList: new Set(),
+      map: new Map(),
+      userMap: new Map()
+   },
    deletePermission: false,
    isStaff: false,
    init: async () => {
@@ -111,7 +220,7 @@ const store = create(subscribeWithSelector((set, get) => ({
     * 
     */
     getData: async (type, id) => {
-      if (!get()[type].init) await get().fetchType(type);
+      if (!get()[type].init) await get().fetchTypeByOrg(type);
       const info = get()[type];
       return info.map.get(Number(id));
    },
@@ -173,7 +282,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       let data = null;
 
       if (!init) {
-         data = await get().fetchType(type);
+         data = await get().fetchTypeByOrg(type);
       } else {
          data = await get()[type];
       }
@@ -182,22 +291,42 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    fetchTypeByOrg: async (type) => {
+      console.log("fetchTypeByOrg "+type);
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
       try {
          const fn = getMap.get(type);
          const orgId = get().organizationId;
-         const object = await fn(orgId);
+
+         const object = (type == "Project") ? await fn({organization: orgId}) : await fn(orgId);
+
+         console.log("fetchTypeByOrg response....", object);
 
          if (object.response.ok) {
             const setList = new Set();
             const map = new Map();
+            const userMap = new Map();
    
             /* Add the data via loop to: setList and map */
             for (let item of object.data) {
                setList.add(item.id);
                map.set(item.id, item);
+
+               if (type == "Project") {
+                  if (item.usernames.length > 0) {
+                     for (let u of item.usernames) {
+                        const projectList = userMap.has(u) ? userMap.get(u) : [];
+                        projectList.push(item);
+                        userMap.set(u, projectList);
+                     }
+                  }
+               }
             }
-            set({ [type]: { ...get()[type], setList, map, init: true } });
+            if (type == "Project") {
+               set({ [type]: { ...get()[type], setList, map, userMap, init: true } });
+            } else {
+               set({ [type]: { ...get()[type], setList, map, init: true } });
+            }
+            
    
             // Success: Return status to idle (handles page spinner)
             set({ status: { ...get().status, name: "idle", msg: "" } });
@@ -213,57 +342,15 @@ const store = create(subscribeWithSelector((set, get) => ({
          return err;
       }
    },
-
-   fetchType: async (type) => {
-      if (type == "JobCluster") return get().fetchTypeByOrg(type);
-      set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
-      try {
-         const fn = getMap.get(type);
-         const projectId = get().projectId;
-         const object = await fn(projectId);
-
-         if (object.response.ok) {
-            const setList = new Set();
-            const map = new Map();
-   
-            /* Add the data via loop to: setList and map */
-            if (type == "Organization") {
-               setList.add(object.data.id);
-               map.set(object.data.id, object.data);
-   
-               /* Organization set like this to include a "data" attr */
-               set({ Organization: { ...get().Organization, init: true, setList, map, data: object.data } });
-            } else {
-               for (let item of object.data) {
-                  setList.add(item.id);
-                  map.set(item.id, item);
-               }
-               set({ [type]: { ...get()[type], setList, map, init: true } });
-            }
-   
-            // Success: Return status to idle (handles page spinner)
-            set({ status: { ...get().status, name: "idle", msg: "" } });
-            return object.data;
-         } else {
-            console.error("Object response not ok for fetchType", object);
-         }
-        
-      } catch (err) {
-         // Error: Return status to idle (handles page spinner)
-         console.error("Fetch type hit an issue.", err);
-         set({ status: { ...get().status, name: "idle", msg: "" } });
-         return err;
-      }
-   },
    addType: async ({ type, data }) => {
       set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
       try {
          const fn = postMap.get(type);
-         const projectId = get().projectId;
-         const responseInfo = await fn(projectId, data); 
+         const organizationId = get().organizationId;
+         const responseInfo = await fn(organizationId, data); 
 
          // Refresh the page data before setting the selection
-         await get().fetchType(type);
+         await get().fetchTypeByOrg(type);
 
          // Select the new type 
          //Response should have the newly added ID
@@ -287,7 +374,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          const responseInfo = await fn(id, data);
 
          // Assume object isn't returned, refetch type
-         await get().fetchType(type);
+         await get().fetchTypeByOrg(type);
 
          set({ status: { ...get().status, name: "idle", msg: "" } });
          return responseInfo;
@@ -302,7 +389,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          const fn = deleteMap.get(type);
          const object = await fn(id);
 
-         await get().fetchType(type);
+         await get().fetchTypeByOrg(type);
 
          return object;
       } catch (err) {
@@ -310,7 +397,69 @@ const store = create(subscribeWithSelector((set, get) => ({
          return err;
       }
    },
+   resetInvitation: async (inviteSpec) => {
+      console.log("resetInvitation", inviteSpec);
+      set({ status: { ...get().status, name: "pending", msg: "Reseting invitation..." } });
+      try {
+         const type = "Invitation";
+         const fn = deleteMap.get(type);
+         const object = await fn(inviteSpec.id);
+         console.log("Result deleting"+inviteSpec.id, object)
 
+         const createFn = postMap.get(type);
+         const objectCreate = await createFn(get().organizationId, {
+            email: inviteSpec.email,
+            permission: inviteSpec.permission
+         });
+         console.log("Result adding a new with the same spec", objectCreate)
+
+         get().setSelection({
+            typeName: "Invitation",
+            typeId: objectCreate.data.id,
+            inner: false            
+         });
+
+         await get().fetchTypeByOrg(type);
+
+         return objectCreate;
+      } catch (err) {
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
+      }
+   },
+   getProjectByUsername: async (username) => {
+      const info = await get().initType("Project");
+      console.log("Project info....", info);
+      const userProjects = info.userMap.has(username) ? info.userMap.has(username) : [];
+      return userProjects;
+   },
+   addProject: async (projectSpec, preset) => {
+      let response = await api.createProject(projectSpec);
+      const project = response.object;
+      console.log(response.message);
+      switch (preset) {
+        case "imageClassification":
+          await configureImageClassification(project);
+          break;
+        case "objectDetection":
+          await configureObjectDetection(project);
+          break;
+        case "multiObjectTracking":
+          await configureMultiObjectTracking(project);
+          break;
+        case "activityRecognition":
+          await configureActivityRecognition(project);
+          break;
+        case "none":
+          break;
+        default:
+          console.error(`Invalid preset: ${preset}`);
+      }
+      
+      //refreshes view
+      get().fetchTypeByOrg("Project");
+      return project;
+    },
 })));
 
 

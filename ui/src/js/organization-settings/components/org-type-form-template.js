@@ -42,6 +42,7 @@ export class OrgTypeFormTemplate extends TatorElement {
    * @param {{ map?: any; id?: string; name?: string; project?: any; description?: string; visible?: boolean; grouping_default?: boolean; media?: never[]; dtype?: string; colorMap?: null; interpolation?: string; association?: string; line_width?: number; delete_child_localizations?: boolean; cluster?: null; manifest?: null; files_per_job?: null; parameters?: never[]; categories?: string; form?: string; } | null} val
    */
   set data (val) {
+    console.log(val);
     if(val && val !== null){
       this._data = val;
     } else {
@@ -64,7 +65,7 @@ export class OrgTypeFormTemplate extends TatorElement {
 
   async saveDataFunction() {
     const formData = this._getFormData();
-
+    console.log("formData", formData);
     if (Object.entries(formData).length !== 0 && !Array.isArray(formData)) {
       try {
         const respData = await this.doSaveAction(formData);
@@ -78,6 +79,7 @@ export class OrgTypeFormTemplate extends TatorElement {
         const respData = await this.doSaveAction(d);
         responses.push(respData);
       }
+      console.log("formData do save action responses", responses);
       this.handleResponseList(responses);
     } else {
       this.modal._success("Nothing new to save!");
@@ -217,33 +219,7 @@ export class OrgTypeFormTemplate extends TatorElement {
     }
   }
 
-  // _getEmptyData() {
-  //   this.typeId = "New";
-  //   this.objectName = "";
-  //   return {
-  //     id: `New`,
-  //     name: "+ Add New",
-  //     project: this.projectId,
-  //     description: "",
-  //     visible: false,
-  //     grouping_default: false,
-  //     default_volume: 0,
-  //     media: [],
-  //     dtype: "",
-  //     colorMap: null,
-  //     interpolation: "none",
-  //     association: "Media",
-  //     line_width: 2,
-  //     delete_child_localizations: false,
-  //     cluster: null,
-  //     manifest: null,
-  //     files_per_job: null,
-  //     parameters: [],
-  //     categories: "",
-  //     form: "empty"
-  //   };
-  // }
-
+  /** This is specific to org forms */
   _getEmptyData() {
     return {
       "id" : `New`,
@@ -261,7 +237,7 @@ export class OrgTypeFormTemplate extends TatorElement {
       "archive_sc": "",
       "live_sc": "",
       "gcs_key_info": null,
-      "form": "empty"
+      "form": "empty",
     };
   }
 
