@@ -5,7 +5,7 @@ import logging
 import json
 import os
 from uuid import uuid4
-from typing import Generator
+from typing import Generator, Tuple
 
 from django.db import transaction
 
@@ -88,15 +88,10 @@ class RcloneException(Exception):
 
 
 class TatorBackupManager:
-    __project_stores = None
     __rclone = None
     __Project = None
 
     def __init__(self):
-        # Use a shared copy of the `__project_stores` dictionary
-        if TatorBackupManager.__project_stores is None:
-            TatorBackupManager.__project_stores = {}
-
         # Only instantiate one rclone dll
         if TatorBackupManager.__rclone is None:
             # Shared object location hard-coded in tator Dockerfile
@@ -152,39 +147,36 @@ class TatorBackupManager:
         failed = False
         project_id = project.id
 
-        if project_id not in TatorBackupManager.__project_stores:
-            TatorBackupManager.__project_stores[project_id] = {}
+        project_bucket_info = {}
 
-            # Determine if the default bucket is being used for all StoreTypes or none
-            use_default_bucket = project.get_bucket() is None
+        # Determine if the default bucket is being used for all StoreTypes or none
+        use_default_bucket = project.get_bucket() is None
 
-            # Get the `TatorStore` object that connects to object storage for the given type
-            for store_type in StoreType:
-                is_backup = store_type == StoreType.BACKUP
-                project_bucket = (
-                    None if use_default_bucket else project.get_bucket(backup=is_backup)
+        # Get the `TatorStore` object that connects to object storage for the given type
+        for store_type in StoreType:
+            is_backup = store_type == StoreType.BACKUP
+            project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
+            try:
+                store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
+            except:
+                failed = True
+                logger.error(
+                    f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
+                    exc_info=True,
                 )
-                try:
-                    store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
-                except:
-                    failed = True
-                    logger.error(
-                        f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
-                        exc_info=True,
-                    )
-                    break
+                break
 
-                if store:
-                    TatorBackupManager.__project_stores[project_id][store_type] = {
-                        "store": store,
-                        "remote_name": f"{project_id}_{store_type}",
-                        "bucket_name": store.bucket_name,
-                    }
+            if store:
+                project_bucket_info[store_type] = {
+                    "store": store,
+                    "remote_name": f"{project_id}_{store_type}",
+                    "bucket_name": store.bucket_name,
+                }
 
-            if failed:
-                TatorBackupManager.__project_stores.pop(project_id, None)
+        if failed:
+            project_bucket_info = {}
 
-        return TatorBackupManager.__project_stores.get(project_id, None)
+        return project_bucket_info
 
     def _create_rclone_remote(self, remote_name, bucket_name, remote_type, rclone_params):
         if remote_type not in ["s3"]:
@@ -204,7 +196,7 @@ class TatorBackupManager:
 
         return False, None
 
-    def get_store_info(self, project) -> bool:
+    def get_store_info(self, project) -> Tuple[bool, dict]:
         """
         Adds the given project to the backup manager, if necessary, and returns the information
         about all associated data stores. This requries four steps:
@@ -239,13 +231,13 @@ class TatorBackupManager:
                     )
                 except:
                     logger.error(
-                        f"Failed to create remote config for bucket {bucket_info['bucket_name']} in project "
-                        f"{project.id}",
+                        f"Failed to create remote config for bucket {bucket_info['bucket_name']} "
+                        f"in project {project.id}",
                         exc_info=True,
                     )
                     success = False
         else:
-            logger.warning(f"Failed to get store info for project '{project.id}'", exc_info=True)
+            logger.warning(f"Failed to get store info for project '{project.id}'")
 
         return success, store_info
 
@@ -265,18 +257,27 @@ class TatorBackupManager:
         :rtype: Generator[tuple, None, None]
         """
         successful_backups = set()
+        project_store_map = {}
         for resource in resource_qs.iterator():
             success = True
             path = resource.path
             try:
                 project = self.project_from_resource(resource)
             except:
-                logger.warning(f"Could not get project from resource with path '{path}', skipping", exc_info=True)
+                logger.warning(
+                    f"Could not get project from resource with path '{path}', skipping",
+                    exc_info=True,
+                )
                 success = False
                 project = None
 
             if success:
-                success, store_info = self.get_store_info(project)
+                if project.id not in project_store_map:
+                    success, store_info = self.get_store_info(project)
+                    if success:
+                        project_store_map[project.id] = store_info
+                else:
+                    store_info = project_store_map[project.id]
                 success = success and StoreType.BACKUP in store_info
 
             if success:
