@@ -1,6 +1,6 @@
-import { ModalDialog } from "../components/modal-dialog.js";
+import { ModalDialog } from "../../components/modal-dialog.js";
 
-export class NewProjectDialog extends ModalDialog {
+export class OrgNewProjectDialog extends ModalDialog {
   constructor() {
     super(); 
     console.log("Test");
@@ -159,4 +159,4 @@ export class NewProjectDialog extends ModalDialog {
   }
 }
 
-customElements.define("new-project-dialog", NewProjectDialog);
+customElements.define("org-new-project-dialog", OrgNewProjectDialog);

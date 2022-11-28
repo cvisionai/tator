@@ -20,15 +20,14 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
    this._numFiles = this._shadow.getElementById("project-display--num-files");
    this._size = this._shadow.getElementById("project-display--size");
    this._duration = this._shadow.getElementById("project-display--duration");
-     this._usernames = this._shadow.getElementById("project-display--usernames");
-     this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
-
-     this._newProjectDialog.addEventListener("close", evt => {
-      this.removeAttribute("has-open-modal", "");
+   this._usernames = this._shadow.getElementById("project-display--usernames");
+   this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
+    console.log(this._newProjectDialog);
+   this._newProjectDialog.addEventListener("close", evt => {
       if (this._newProjectDialog._confirm) {
-        this._createProject();
+         this._createProject();
       }
-    });
+   });
 
     this.modal.addEventListener("close", evt => {
       // this.removeAttribute("has-open-modal", "");
