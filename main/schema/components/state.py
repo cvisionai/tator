@@ -7,9 +7,13 @@ state_properties = {
         'description': 'If a clone, the pk of the parent.',
         'type': 'number',
         'nullable': True,
-    }
+    },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
-
 version_properties = {
     'version': {
         'description': 'Unique integer identifying the version.',
@@ -68,6 +72,10 @@ state_get_properties = {
     'created_by': {
         'type': 'integer',
         'description': 'Unique integer identifying the user who created this state.'
+    },
+    'variant_deleted': {
+        'type' : 'boolean',
+        'description': 'Unique integer identifying the user who created this localization.'
     }
 }
 
@@ -167,6 +175,31 @@ state_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
+        'new_version': {
+            'type': 'integer',
+            'description': 'Unique integer identifying a new version for these objects',
+        },
+        **state_id_query['properties'],
+    },
+}
+
+state_delete_schema = {
+    'type': 'object',
+    'properties': {
+        'prune': {
+            'type': 'integer',
+            'description': 'If set to 1 will purge the object from the database entirely. This removes any record, change-log, that this metadatum ever existed.',
+            'minimum': 0,
+            'maximum': 1,
+            'default': 0,
+        }
+    }
+}
+
+state_bulk_delete_schema = {
+    'type': 'object',
+    'properties': {
+        **state_delete_schema['properties'],
         **state_id_query['properties'],
     },
 }

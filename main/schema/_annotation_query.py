@@ -56,5 +56,43 @@ annotation_filter_parameter_schema = [
                    'maximum': 1,
                    'default': 0
                    }
-    }
+    },
+    {
+        'name': 'elementalId',
+        'in': 'query',
+        'description': 'Elemental ID to search for',
+        'schema': {'type': 'string'},
+        'required': False,
+    },
+    {
+        'name': 'merge',
+        'in': 'query',
+        'required': False,
+        'description': 'Reduce result set based on a server side merge. '
+                       'If multiple versions are selected and a variant of the object exists in both versions, '
+                       'the merge logic will return 1 or 0 objects. '
+                       'Example: \nVersion B derives off Version A. An object, with the same elemental id "foo" exists on both.'
+                       '\n'
+                       'If Version B over A is selected and merge is turned on:'
+                       ' + The "foo" present on Version B is returned '
+                       ' + If the "foo" on version B is deleted, no "foo" is returned.'
+                       'An exception occurs if an Elasticsearch query is triggered and pagination parameters '
+                       '(start or stop) are included.',
+        'schema': {'type': 'integer',
+                   'minimum': 0,
+                   'maximum': 1,
+                   'default': 1
+                   }
+    },
+    {
+        'name': 'showDeleted',
+        'in': 'query',
+        'required': False,
+        'description': 'Include in the return set objects that have `variant_deleted` set to True.',
+        'schema': {'type': 'integer',
+                   'minimum': 0,
+                   'maximum': 1,
+                   'default': 0
+                   }
+    },
 ]

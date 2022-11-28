@@ -45,9 +45,10 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
     version = params.get('version')
     frame = params.get('frame')
     after = params.get('after')
-    exclude_parents = params.get('excludeParents')
+    apply_merge = params.get('merge')
     start = params.get('start')
     stop = params.get('stop')
+    elemental_id = params.get('elementalId')
 
     qs = ANNOTATION_LOOKUP[annotation_type].objects.filter(project=project, deleted=False)
     media_ids = []
@@ -80,6 +81,9 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         
     if version is not None:
         qs = qs.filter(version__in=version)
+
+    if elemental_id is not None:
+        qs = qs.filter(elemental_id=elemental_id)
 
     if frame is not None:
         qs = qs.filter(frame=frame)
@@ -165,12 +169,17 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         search_obj = json.loads(base64.b64decode(params.get('encoded_search').encode()).decode())
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
-    if exclude_parents:
+    if apply_merge:
         parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
         qs = qs.difference(parent_set)
+
+    show_deleted = params.get('showDeleted')
+    if not show_deleted:
+        qs = ANNOTATION_LOOKUP[annotation_type].objects\
+                         .filter(pk__in=qs.values_list('pk', flat=True))\
+                         .filter(variant_deleted=False)
         
-    if exclude_parents:
-        qs = qs.order_by('id')
+    qs = qs.order_by('id')
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]

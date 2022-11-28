@@ -73,6 +73,8 @@ from .localization_type import localization_type
 from .localization import localization_spec
 from .localization import localization_bulk_update
 from .localization import localization_update
+from .localization import localization_delete_schema
+from .localization import localization_bulk_delete_schema
 from .localization import localization
 from .localization import localization_id_query
 from .media_next import media_next
@@ -104,6 +106,8 @@ from .section_analysis import section_analysis
 from .state import state_spec
 from .state import state_bulk_update
 from .state import state_update
+from .state import state_delete_schema
+from .state import state_bulk_delete_schema
 from .state import state
 from .state import state_id_query
 from .state import state_merge_update

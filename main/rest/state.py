@@ -301,18 +301,32 @@ class StateListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'state')
         count = qs.count()
         if count > 0:
-            # Delete states.
-            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+            if params['prune'] == 1:
+                # Delete states.
+                bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+            else:
+                obj = qs.first()
+                entity_type = obj.meta
+                bulk_update_and_log_changes(
+                qs,
+                params["project"],
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
 
         return {'message': f'Successfully deleted {count} states!'}
 
     def _patch(self, params):
         qs = get_annotation_queryset(params['project'], params, 'state')
+        patched_version = params.pop("new_version", None)
         count = qs.count()
         if count > 0:
             new_attrs = validate_attributes(params, qs[0])
+            update_kwargs = {"modified_by": self.request.user}
+            if patched_version is not None:
+                update_kwargs["version"] = patched_version
             bulk_update_and_log_changes(
-                qs, params["project"], self.request.user, new_attributes=new_attrs
+                qs, params["project"], self.request.user, update_kwargs=update_kwargs, new_attributes=new_attrs
             )
 
         return {'message': f'Successfully updated {count} states!'}
@@ -420,10 +434,21 @@ class StateDetailAPI(BaseDetailView):
                 if not loc_qs.exists():
                     delete_localizations.append(loc.id)
 
-        delete_and_log_changes(state, project, self.request.user)
-
-        qs = Localization.objects.filter(pk__in=delete_localizations)
-        bulk_delete_and_log_changes(qs, project, self.request.user)
+        if params['prune'] == 1:
+            delete_and_log_changes(state, project, self.request.user)
+            qs = Localization.objects.filter(pk__in=delete_localizations)
+            bulk_delete_and_log_changes(qs, project, self.request.user)
+        else:
+            state.variant_deleted = True
+            state.save()
+            log_changes(state, state.model_dict, state.project, self.request.user)
+            qs = Localization.objects.filter(pk__in=delete_localizations)
+            bulk_update_and_log_changes(
+                qs,
+                project,
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
 
         return {'message': f'State {params["id"]} successfully deleted!'}
 

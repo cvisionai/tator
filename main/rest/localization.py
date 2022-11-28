@@ -37,6 +37,7 @@ from ._util import (
     check_required_fields,
     delete_and_log_changes,
     log_changes,
+    construct_elemental_id_from_parent
 )
 from ._permissions import ProjectEditPermission
 
@@ -177,9 +178,7 @@ class LocalizationListAPI(BaseListView):
                 created_by=self.request.user,
                 modified_by=self.request.user,
                 version=versions[loc_spec.get("version", None)],
-                parent=Localization.objects.get(pk=loc_spec.get("parent"))
-                if loc_spec.get("parent")
-                else None,
+                parent=Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None,
                 x=loc_spec.get("x", None),
                 y=loc_spec.get("y", None),
                 u=loc_spec.get("u", None),
@@ -188,6 +187,7 @@ class LocalizationListAPI(BaseListView):
                 height=loc_spec.get("height", None),
                 points=loc_spec.get("points", None),
                 frame=loc_spec.get("frame", None),
+                elemental_id=construct_elemental_id_from_parent(Localization.objects.get(pk=loc_spec.get("parent")) if loc_spec.get("parent") else None)
             )
             for loc_spec, attrs in zip(loc_specs, attr_specs)
         )
@@ -202,13 +202,23 @@ class LocalizationListAPI(BaseListView):
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
-            # Delete the localizations.
-            bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+            if params['prune'] == 1:
+                # Delete the localizations.
+                bulk_delete_and_log_changes(qs, params["project"], self.request.user)
+            else:
+                obj = qs.first()
+                entity_type = obj.meta
+                bulk_update_and_log_changes(
+                qs,
+                params["project"],
+                self.request.user,
+                update_kwargs={"variant_deleted": True},
+                new_attributes=None)
 
         return {'message': f'Successfully deleted {count} localizations!'}
 
     def _patch(self, params):
-        patched_version = params.pop("version", None)
+        patched_version = params.pop("new_version", None)
         qs = get_annotation_queryset(params['project'], params, 'localization')
         count = qs.count()
         if count > 0:
@@ -324,6 +334,9 @@ class LocalizationDetailAPI(BaseDetailView):
         new_attrs = validate_attributes(params, obj)
         obj = patch_attributes(new_attrs, obj)
 
+        if params.get("elemental_id", None):
+            obj.elemental_id = params.get("elemental_id", None)
+
         # Update modified_by to be the last user
         obj.modified_by = self.request.user
 
@@ -342,7 +355,13 @@ class LocalizationDetailAPI(BaseDetailView):
         if not qs.exists():
             raise Http404
         obj = qs[0]
-        delete_and_log_changes(obj, obj.project, self.request.user)
+        if params['prune'] == 1:
+            delete_and_log_changes(obj, obj.project, self.request.user)
+        else:
+            b = qs[0]
+            b.variant_deleted = True
+            b.save()
+            log_changes(b, b.model_dict, b.project, self.request.user)
         return {'message': f'Localization {params["id"]} successfully deleted!'}
 
     def get_queryset(self):

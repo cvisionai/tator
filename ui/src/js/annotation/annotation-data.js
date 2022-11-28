@@ -100,9 +100,10 @@ export class AnnotationData extends HTMLElement {
       const mediaIds = dataType.dtype == "state" ? this._stateMediaIds : this._localizationMediaIds;
       let dataUrl = "/rest/" + dataEndpoint + "/" + this._projectId + "?media_id=" +
         mediaIds.join(',') + "&type=" + dataType.id.split("_")[1];
+      // The UI desires the merge result not the raw result from the server
       if (dataEndpoint == "Localizations" || dataEndpoint == "States")
       {
-        dataUrl += "&excludeParents=1";
+        dataUrl += "&merge=1";
       }
       return dataUrl;
     };

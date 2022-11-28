@@ -13,6 +13,8 @@ from progressbar import progressbar, ProgressBar
 from dateutil.parser import parse
 from boto3.s3.transfer import S3Transfer
 
+import uuid
+
 from main.models import *
 from main.search import TatorSearch
 from main.store import get_tator_store
@@ -90,6 +92,13 @@ def get_num_index_chunks(project_number, section, max_age_days=None):
         count = ceil(qs.count() / INDEX_CHUNK_SIZE)
     return count
 
+def rebuildAllSearchIndices(project_number):
+    try:
+        TatorSearch().es.indices.delete(f"project_{project_number}")
+    except:
+        pass
+    for section in ['index', 'mappings', 'media', 'states', 'localizations', 'treeleaves', 'files']:
+        buildSearchIndices(project_number, section)
 def buildSearchIndices(project_number, section, mode='index', chunk=None, max_age_days=None):
     """ Builds search index for a project.
         section must be one of:
@@ -106,19 +115,19 @@ def buildSearchIndices(project_number, section, mode='index', chunk=None, max_ag
     if section == 'mappings':
         # Create mappings
         logger.info("Building mappings for media types...")
-        for type_ in progressbar(list(MediaType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(MediaType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for localization types...")
-        for type_ in progressbar(list(LocalizationType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(LocalizationType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for state types...")
-        for type_ in progressbar(list(StateType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(StateType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for leaf types...")
-        for type_ in progressbar(list(LeafType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(LeafType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Building mappings for file types...")
-        for type_ in progressbar(list(FileType.objects.filter(project=project_number))):
+        for type_ in progressbar.progressbar(list(FileType.objects.filter(project=project_number))):
             TatorSearch().create_mapping(type_)
         logger.info("Build mappings complete!")
         return
@@ -975,3 +984,25 @@ def notify_admins(not_ready, ses=None):
                 title=f"Nightly archive for {project.name} ({project.id}) failed",
                 text="\n\n".join(email_text_list),
             )
+
+def add_elemental_id(project, metadata_type):
+    assert metadata_type in ['localization', 'state']
+    if metadata_type == 'localization':
+        type_obj = LocalizationType
+        obj_obj = Localization
+    elif metadata_type == 'state':
+        type_obj = StateType
+        obj_obj = State
+
+    types = type_obj.objects.filter(project=project)
+    parents_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=True, elemental_id__isnull=True)
+    print(f"Updating {parents_to_change.count()} parents ")
+    for parent in progressbar.progressbar(parents_to_change):
+        parent.elemental_id = uuid.uuid4()
+        parent.save()
+
+    children_to_change = obj_obj.objects.filter(project=project, meta__in=types, parent__isnull=False)
+    for child in progressbar.progressbar(children_to_change):
+        child.elemental_id = child.parent.elemental_id
+        child.save()
+

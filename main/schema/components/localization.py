@@ -69,6 +69,11 @@ localization_properties = {
         'type': 'number',
         'nullable': True,
     },
+    'elemental_id': {
+        'description': 'The elemental ID of the object.',
+        'type': 'string',
+        'nullable': True,
+    },
 }
 
 post_properties = {
@@ -132,6 +137,10 @@ localization_get_properties = {
     },
     'user': {
         'type': 'integer',
+        'description': 'Unique integer identifying the user who created this localization.'
+    },
+    'variant_deleted': {
+        'type' : 'boolean',
         'description': 'Unique integer identifying the user who created this localization.'
     }
 }
@@ -201,6 +210,28 @@ localization_id_query = {
     }
 }
 
+localization_delete_schema = {
+    'type': 'object',
+    'properties': {
+        'prune': {
+            'type': 'integer',
+            'description': 'If set to 1 will purge the object from the database entirely. This removes any record, change-log, that this metadatum ever existed.',
+            'minimum': 0,
+            'maximum': 1,
+            'default': 0,
+        }
+    },
+}
+localization_bulk_delete_schema = {
+    'type': 'object',
+    'properties': {
+        **localization_delete_schema['properties'],
+        **localization_id_query['properties'],
+    },
+}
+
+
+
 localization_bulk_update = {
     'type': 'object',
     'properties': {
@@ -209,9 +240,9 @@ localization_bulk_update = {
             'type': 'object',
             'additionalProperties': {'$ref': '#/components/schemas/AttributeValue'},
         },
-        'version': {
+        'new_version': {
             'type': 'integer',
-            'description': 'Unique integer identifying a version.',
+            'description': 'Unique integer identifying a new version for these objects',
         },
         **localization_id_query['properties'],
     },
