@@ -180,6 +180,13 @@ export class FilterData {
           };
           entityType.attribute_types.push(dtypeAttribute);
 
+          var archiveStateAttribute = {
+            choices: ["live", "to_archive", "archived", "to_live"],
+            name: "_archive_state",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(archiveStateAttribute);
+
           this._allTypes.push(entityType);
         }
       }

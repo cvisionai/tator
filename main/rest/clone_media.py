@@ -106,7 +106,7 @@ class GetClonedMediaAPI(BaseDetailView):
     def _get(self, params):
         media = Media.objects.get(pk=params["id"])
         clone_info = get_clone_info(media)
-        ids = [clone_info["original"]["media"]] + list(clone_info["clones"])
+        ids = [clone_info["original"]["media"].id] + list(clone_info["clones"])
         return {"message": f"Found {len(ids)} clones", "ids": ids}
 
     def get_queryset(self):

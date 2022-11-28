@@ -802,7 +802,7 @@ def get_clone_info(media: Media) -> dict:
     two keys:
 
     - `clones`: contains the set of all integer media ids of all clones of the original media.
-    - `original`: contains the integer media id and integer project id of the original clone.
+    - `original`: contains the media object and integer project id of the original clone.
 
     :param media: The media to find clones of.
     :type media: Media
@@ -830,14 +830,14 @@ def get_clone_info(media: Media) -> dict:
             return media_dict
         id0 = id1
 
-    media_dict["original"]["project"], media_dict["original"]["media"] = (
-        int(part) for part in paths[0].split("/")[1:3]
-    )
+    project_id, media_id = [int(part) for part in paths[0].split("/")[1:3]]
+    media_dict["original"]["project"] = project_id
+    media_dict["original"]["media"] = Media.objects.get(pk=media_id)
 
     # Shared base queryset
     media_qs = Media.objects.filter(resource_media__path__in=paths)
     media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
-    media_dict["clones"].remove(media_dict["original"]["media"])
+    media_dict["clones"].remove(media_dict["original"]["media"].id)
 
     return media_dict
 
@@ -869,7 +869,20 @@ def update_queryset_archive_state(media_qs, target_state):
                 continue
 
             if media.id in clone_info["clones"]:
-                if clone_info["original"]["media"] not in qs_ids:
+                original_media = clone_info["original"]["media"]
+                om_archive_state = original_media.archive_state
+                om_rr_state = original_media.restoration_requested
+                target_archive_state = target_state["archive_state"]
+                target_rr_state = target_state["restoration_requested"]
+                if om_archive_state == target_archive_state and om_rr_state == target_rr_state:
+                    # Original clone is already in the target archive state, make the derivative
+                    # clone match
+                    media.archive_status_date = datetime.datetime.now(datetime.timezone.utc)
+                    media.archive_state = target_archive_state
+                    media.restoration_requested = target_rr_state
+                    media.save()
+                    continue
+                elif original_media.id not in qs_ids:
                     # Accumulate the lists of cloned media that aren't ready
                     not_ready_entry = {
                         "media_requesting_archive": media.id,

@@ -125,7 +125,7 @@ export class MediaSection extends TatorElement {
   set project(val) {
     this._files.project = val;
     if (!hasPermission(val.permission, "Can Edit")) {
-      this._more.style.display = "none";
+      this._upload.style.display = "none";
       this._more.setAttribute("editPermission", "Editing menu disable due to permissions.")
     }
     if (!(hasPermission(val.permission, "Can Transfer") && val.enable_downloads)) {
