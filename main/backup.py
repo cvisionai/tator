@@ -4,6 +4,7 @@ from enum import auto, Enum
 import logging
 import json
 import os
+import math
 import requests
 from uuid import uuid4
 from typing import Generator, Tuple
@@ -36,9 +37,10 @@ class TatorBackupManager:
 
     @classmethod
     def _multipart_upload(cls, upload_urls, upload_id, source_url):
+        num_chunks = len(upload_urls)
         parts = []
         last_progress = 0
-        gcp_upload = upload_id == urls[0]
+        gcp_upload = upload_id == upload_urls[0]
         with requests.get(source_url, stream=True).raw as f:
             for chunk_count, url in enumerate(upload_urls):
                 file_part = f.read(cls.chunk_size)

@@ -828,24 +828,29 @@ def get_clone_info(media: Media) -> dict:
     # Set media_dict["original"] to the part of the path that is the media id to which this object
     # was originally uploaded
     paths = [path for path in media.path_iterator(keys=ARCHIVE_MEDIA_KEYS)]
-    id0 = paths[0].split("/")[2]
-    for path in paths[1:]:
-        id1 = path.split("/")[2]
-        if id0 != id1:
-            logger.error(
-                f"Got at least two 'original ids' for media '{media.id}': {id0} and {id1}"
-            )
-            return media_dict
-        id0 = id1
+    if paths:
+        id0 = paths[0].split("/")[2]
+        for path in paths[1:]:
+            id1 = path.split("/")[2]
+            if id0 != id1:
+                logger.error(
+                    f"Got at least two 'original ids' for media '{media.id}': {id0} and {id1}"
+                )
+                return media_dict
+            id0 = id1
 
-    project_id, media_id = [int(part) for part in paths[0].split("/")[1:3]]
-    media_dict["original"]["project"] = project_id
-    media_dict["original"]["media"] = Media.objects.get(pk=media_id)
+        project_id, media_id = [int(part) for part in paths[0].split("/")[1:3]]
+        media_dict["original"]["project"] = project_id
+        media_dict["original"]["media"] = Media.objects.get(pk=media_id)
 
-    # Shared base queryset
-    media_qs = Media.objects.filter(resource_media__path__in=paths)
-    media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
-    media_dict["clones"].remove(media_dict["original"]["media"].id)
+        # Shared base queryset
+        media_qs = Media.objects.filter(resource_media__path__in=paths)
+        media_dict["clones"].update(ele for ele in media_qs.values_list("id", flat=True))
+        media_dict["clones"].remove(media_dict["original"]["media"].id)
+    else:
+        media_dict["original"]["media"] = media
+        if media.project:
+            media_dict["original"]["project"] = media.project.id
 
     return media_dict
 
