@@ -23,91 +23,9 @@ class StoreType(Enum):
     LIVE = auto()
 
 
-"""
-The following license applies to the code adapted from the python wrapper example found at
-https://github.com/rclone/rclone/blob/286b152e7b6d5fa94d6f30bebda07be92feea14e/librclone/python/rclone.py
-
--------------------------------------------------------------------------------------------
-
-Copyright (C) 2012 by Nick Craig-Wood http://www.craig-wood.com/nick/
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-"""
-
-
-class RcloneRPCString(c_char_p):
-    """
-    This is a raw string from the C API
-
-    With a plain c_char_p type, ctypes will replace it with a
-    regular Python string object that cannot be used with
-    RcloneFreeString. Subclassing prevents it, while the string
-    can still be retrieved from attribute value.
-    """
-
-    pass
-
-
-class RcloneRPCResult(Structure):
-    """
-    This is returned from the C API when calling RcloneRPC
-    """
-
-    _fields_ = [("Output", RcloneRPCString), ("Status", c_int)]
-
-
-class RcloneException(Exception):
-    """
-    Exception raised from rclone
-
-    This will have the attributes:
-
-    output - a dictionary from the call
-    status - a status number
-    """
-
-    def __init__(self, output, status):
-        self.output = output
-        self.status = status
-        message = self.output.get("error", "Unknown rclone error")
-        super().__init__(message)
-
-
 class TatorBackupManager:
     chunk_size = 10 * 1024 * 1024  # Must be a multiple of 256Kb for GCP support
-    __rclone = None
     __Project = None
-
-    def __init__(self):
-        # Only instantiate one rclone dll
-        if TatorBackupManager.__rclone is None:
-            # Shared object location hard-coded in tator Dockerfile
-            TatorBackupManager.__rclone = CDLL("/usr/local/lib/librclone.so")
-            TatorBackupManager.__rclone.RcloneRPC.restype = RcloneRPCResult
-            TatorBackupManager.__rclone.RcloneRPC.argtypes = (c_char_p, c_char_p)
-            TatorBackupManager.__rclone.RcloneFreeString.restype = None
-            TatorBackupManager.__rclone.RcloneFreeString.argtypes = (c_char_p,)
-            TatorBackupManager.__rclone.RcloneInitialize.restype = None
-            TatorBackupManager.__rclone.RcloneInitialize.argtypes = ()
-            TatorBackupManager.__rclone.RcloneFinalize.restype = None
-            TatorBackupManager.__rclone.RcloneFinalize.argtypes = ()
-            TatorBackupManager.__rclone.RcloneInitialize()
 
     @classmethod
     def project_from_resource(cls, resource):
@@ -116,87 +34,14 @@ class TatorBackupManager:
             cls.__Project = resource.media.model._meta.get_field("project").related_model
         return cls.__Project.objects.get(pk=int(resource.path.split("/")[1]))
 
-    def _rpc(self, rclone_method: str, **kwargs):
-        """
-        A wrapper for Rclone's RcloneRPC method
-        """
-        kwargs["log_file"] = "/dev/null"
-        method = rclone_method.encode("utf-8")
-        params = json.dumps(kwargs).encode("utf-8")
-
-        try:
-            resp = TatorBackupManager.__rclone.RcloneRPC(method, params)
-        except:
-            logger.error("Call to `RcloneRPC` failed")
-            raise
-
-        output = json.loads(resp.Output.value.decode("utf-8"))
-        TatorBackupManager.__rclone.RcloneFreeString(resp.Output)
-
-        status = resp.Status
-        if status != 200:
-            raise RcloneException(output, status)
-        return output
-
-    def _get_bucket_info(self, project) -> dict:
-        """
-        Sets (if necessary) and returns the necessary objects for interacting with the bucket of the
-        given store type for the given project.
-
-        :param project: The project whose bucket objects shall be returned.
-        :type project: main.models.Project
-        :rtype: dict
-        """
-        failed = False
-        project_id = project.id
-
-        project_bucket_info = {}
-
-        # Determine if the default bucket is being used for all StoreTypes or none
-        use_default_bucket = project.get_bucket() is None
-
-        # Get the `TatorStore` object that connects to object storage for the given type
-        for store_type in StoreType:
-            is_backup = store_type == StoreType.BACKUP
-            project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
-            try:
-                store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
-            except:
-                failed = True
-                logger.error(
-                    f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
-                    exc_info=True,
-                )
-                break
-
-            if store:
-                project_bucket_info[store_type] = {
-                    "store": store,
-                    "remote_name": f"{project_id}_{store_type}",
-                    "bucket_name": store.bucket_name,
-                }
-
-        if failed:
-            project_bucket_info = {}
-
-        return project_bucket_info
-
-    def _create_rclone_remote(self, remote_name, bucket_name, remote_type, rclone_params):
-        if remote_type not in ["s3"]:
-            raise ValueError(
-                f"Cannot add backup bucket {bucket_name}, it is an unsupported type: "
-                f"'{remote_type}'"
-            )
-        if remote_name not in self._rpc("config/listremotes").get("remotes", []):
-            self._rpc("config/create", name=remote_name, type=remote_type, parameters=rclone_params)
-
-    def _multipart_upload(self, upload_urls, upload_id, source_url):
+    @classmethod
+    def _multipart_upload(cls, upload_urls, upload_id, source_url):
         parts = []
         last_progress = 0
         gcp_upload = upload_id == urls[0]
         with requests.get(source_url, stream=True).raw as f:
             for chunk_count, url in enumerate(upload_urls):
-                file_part = f.read(self.chunk_size)
+                file_part = f.read(cls.chunk_size)
                 default_etag_val = str(chunk_count) if gcp_upload else None
                 for attempt in range(MAX_RETRIES):
                     try:
@@ -235,7 +80,8 @@ class TatorBackupManager:
 
         return parts
 
-    def _single_upload(self, upload_url, source_url):
+    @staticmethod
+    def _single_upload(upload_url, source_url):
         with requests.get(source_url, stream=True).raw as f:
             data = f.read()
             for attempt in range(MAX_RETRIES):
@@ -254,14 +100,15 @@ class TatorBackupManager:
                 logger.error(f"Upload of {path} failed!")
         return False
 
-    def _upload_from_url(self, store, path, url, size, domain):
-        num_chunks = math.ceil(size / self.chunk_size)
+    @classmethod
+    def _upload_from_url(cls, store, path, url, size, domain):
+        num_chunks = math.ceil(size / cls.chunk_size)
         urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
 
         if num_chunks > 1:
-            parts = self._multipart_upload(urls, upload_id, url)
+            parts = cls._multipart_upload(urls, upload_id, url)
             return store.complete_multipart_upload(path, parts, upload_id)
-        return self._single_upload(urls[0], url)
+        return cls._single_upload(urls[0], url)
 
     @staticmethod
     def get_backup_store(store_info):
@@ -272,15 +119,14 @@ class TatorBackupManager:
 
         return False, None
 
-    def get_store_info(self, project) -> Tuple[bool, dict]:
+    @staticmethod
+    def get_store_info(project) -> Tuple[bool, dict]:
         """
         Adds the given project to the backup manager, if necessary, and returns the information
         about all associated data stores. This requries four steps:
 
         1. Add the `TatorStore` object for the live bucket
         2. Add the `TatorStore` object for the backup bucket
-        3. Add the live bucket to the Rclone configuration
-        4. Add the backup bucket to the Rclone configuration
 
         These steps are idempotent and if a project has already been added to the backup manager it
         will return the existing configuration.
@@ -289,35 +135,42 @@ class TatorBackupManager:
         :type project: main.models.Project
         :rtype: bool
         """
-        try:
-            store_info = self._get_bucket_info(project)
-        except:
-            store_info = {}
+        success = True
+        project_id = project.id
 
-        success = bool(store_info)
+        project_store_info = {}
 
-        if success:
-            for bucket_info in store_info.values():
-                try:
-                    self._create_rclone_remote(
-                        bucket_info["remote_name"],
-                        bucket_info["bucket_name"],
-                        bucket_info["store"].remote_type,
-                        bucket_info["store"].rclone_params,
-                    )
-                except:
-                    logger.error(
-                        f"Failed to create remote config for bucket {bucket_info['bucket_name']} "
-                        f"in project {project.id}",
-                        exc_info=True,
-                    )
-                    success = False
-        else:
-            logger.warning(f"Failed to get store info for project '{project.id}'")
+        # Determine if the default bucket is being used for all StoreTypes or none
+        use_default_bucket = project.get_bucket() is None
 
-        return success, store_info
+        # Get the `TatorStore` object that connects to object storage for the given type
+        for store_type in StoreType:
+            is_backup = store_type == StoreType.BACKUP
+            project_bucket = None if use_default_bucket else project.get_bucket(backup=is_backup)
+            try:
+                store = get_tator_store(project_bucket, backup=is_backup and use_default_bucket)
+            except:
+                success = False
+                logger.error(
+                    f"Could not get TatorStore for project {project_id}'s {store_type} bucket!",
+                    exc_info=True,
+                )
+                break
 
-    def backup_resources(self, resource_qs, domain) -> Generator[tuple, None, None]:
+            if store:
+                project_store_info[store_type] = {
+                    "store": store,
+                    "remote_name": f"{project_id}_{store_type}",
+                    "bucket_name": store.bucket_name,
+                }
+
+        if not success:
+            project_store_info = {}
+
+        return bool(project_store_info), project_store_info
+
+    @classmethod
+    def backup_resources(cls, resource_qs, domain) -> Generator[tuple, None, None]:
         """
         Creates a generator that copies the resources in the given queryset from the live store to
         the backup store for their respective projects. Yields a tuple with the first element being
@@ -340,7 +193,7 @@ class TatorBackupManager:
             success = True
             path = resource.path
             try:
-                project = self.project_from_resource(resource)
+                project = cls.project_from_resource(resource)
             except:
                 logger.warning(
                     f"Could not get project from resource with path '{path}', skipping",
@@ -351,7 +204,7 @@ class TatorBackupManager:
 
             if success:
                 if project.id not in project_store_map:
-                    success, store_info = self.get_store_info(project)
+                    success, store_info = cls.get_store_info(project)
                     if success:
                         project_store_map[project.id] = store_info
                 else:
@@ -369,7 +222,7 @@ class TatorBackupManager:
                 if backup_size < 0 or live_size != backup_size:
                     # Get presigned url from the live bucket, set to expire in 1h
                     download_url = live_store.get_download_url(path, 3600)
-                    success = self._upload_from_url(
+                    success = cls._upload_from_url(
                         backup_store, path, download_url, live_size, domain
                     )
 
@@ -389,7 +242,8 @@ class TatorBackupManager:
             resource_qs = Resource.objects.select_for_update().filter(pk__in=successful_backups)
             resource_qs.update(backed_up=True)
 
-    def request_restore_resource(self, path, project, min_exp_days) -> bool:
+    @classmethod
+    def request_restore_resource(cls, path, project, min_exp_days) -> bool:
         """
         Requests restoration of an object from the backup bucket
 
@@ -401,11 +255,11 @@ class TatorBackupManager:
         :type min_exp_days: int
         :rtype: bool
         """
-        success, store_info = self.get_store_info(project)
+        success, store_info = cls.get_store_info(project)
 
         if success:
             # If no backup store is defined, use the live bucket
-            success, store = self.get_backup_store(store_info)
+            success, store = cls.get_backup_store(store_info)
 
         if success:
             live_storage_class = (
@@ -445,7 +299,8 @@ class TatorBackupManager:
 
         return success
 
-    def finish_restore_resource(self, path, project, domain) -> bool:
+    @classmethod
+    def finish_restore_resource(cls, path, project, domain) -> bool:
         """
         Copies the resource from the backup bucket to the live bucket once it has been temporarily
         restored.
@@ -458,11 +313,11 @@ class TatorBackupManager:
         :type domain: str
         :rtype: bool
         """
-        success, store_info = self.get_store_info(project)
+        success, store_info = cls.get_store_info(project)
 
         if success:
             # If no backup store is defined, use the live bucket
-            success, backup_store = self.get_backup_store(store_info)
+            success, backup_store = cls.get_backup_store(store_info)
             live_store = store_info[StoreType.LIVE]["store"]
 
         if success:
@@ -505,8 +360,17 @@ class TatorBackupManager:
                     )
             else:
                 # Get presigned url from the backup bucket
-                download_url = backup_store.get_download_url(path, 3600)  # set to expire in 1h
-                success = self._upload_from_url(backup_store, path, download_url, size, domain)
+                object_size = response.get("ContentLength", -1)
+                if object_size < 0:
+                    logger.warning(
+                        f"HEAD_OBJECT request on {path} did not return a size, cannot upload without it"
+                    )
+                    success = False
+                else:
+                    download_url = backup_store.get_download_url(path, 3600)  # set to expire in 1h
+                    success = cls._upload_from_url(
+                        backup_store, path, download_url, object_size, domain
+                    )
 
         if success:
             response = live_store.head_object(path)
@@ -523,13 +387,14 @@ class TatorBackupManager:
 
         return success
 
-    def get_size(self, resource):
+    @classmethod
+    def get_size(cls, resource):
         """
         Gets the size of the given resource from object storage.
         """
         size = 0
-        project = self.project_from_resource(resource)
-        success, store_info = self.get_store_info(project)
+        project = cls.project_from_resource(resource)
+        success, store_info = cls.get_store_info(project)
 
         if success:
             if resource.backed_up and StoreType.BACKUP in store_info:

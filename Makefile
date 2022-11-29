@@ -7,7 +7,6 @@ OPERATIONS=reset logs bash
 IMAGES=ui-image graphql-image postgis-image client-image
 
 GIT_VERSION=$(shell git rev-parse HEAD)
-RCLONE_VERSION=v1.59.2
 
 # Get python version and set yaml arguments correctly
 PYTHON3_REVISION=$(shell python3 --version | grep ^Python | sed 's/^.* //g' | awk -F. '{print $$2}')
@@ -170,14 +169,9 @@ else
 	$(MAKE) tator-image
 endif
 
-# Target for building the librclone image, which is a manual step
-librclone-image:
-	docker build --build-arg RCLONE_VERSION=$(RCLONE_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/librclone:$(RCLONE_VERSION) -f containers/librclone/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/librclone:$(RCLONE_VERSION)
-
 .PHONY: tator-image
 tator-image:
-	docker build --build-arg RCLONE_VERSION=$(RCLONE_VERSION) --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
+	docker build --build-arg GIT_VERSION=$(GIT_VERSION) --build-arg DOCKERHUB_USER=$(DOCKERHUB_USER) --network host -t $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION) -f containers/tator/Dockerfile . || exit 255
 	docker push $(DOCKERHUB_USER)/tator_online:$(GIT_VERSION)
 	mkdir -p .token
 	touch .token/tator_online_$(GIT_VERSION)
