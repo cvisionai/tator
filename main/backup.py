@@ -4,6 +4,7 @@ from enum import auto, Enum
 import logging
 import json
 import os
+import requests
 from uuid import uuid4
 from typing import Generator, Tuple
 
@@ -14,6 +15,7 @@ from main.store import get_tator_store
 
 logger = logging.getLogger(__name__)
 LIVE_STORAGE_CLASS = "STANDARD"
+MAX_RETRIES = 10
 
 
 class StoreType(Enum):
@@ -88,6 +90,7 @@ class RcloneException(Exception):
 
 
 class TatorBackupManager:
+    chunk_size = 10 * 1024 * 1024  # Must be a multiple of 256Kb for GCP support
     __rclone = None
     __Project = None
 
@@ -187,6 +190,79 @@ class TatorBackupManager:
         if remote_name not in self._rpc("config/listremotes").get("remotes", []):
             self._rpc("config/create", name=remote_name, type=remote_type, parameters=rclone_params)
 
+    def _multipart_upload(self, upload_urls, upload_id, source_url):
+        parts = []
+        last_progress = 0
+        gcp_upload = upload_id == urls[0]
+        with requests.get(source_url, stream=True).raw as f:
+            for chunk_count, url in enumerate(upload_urls):
+                file_part = f.read(self.chunk_size)
+                default_etag_val = str(chunk_count) if gcp_upload else None
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        kwargs = {"data": file_part}
+                        if gcp_upload:
+                            first_byte = chunk_count * chunk_size
+                            last_byte = min(first_byte + chunk_size, file_size) - 1
+                            kwargs["headers"] = {
+                                "Content-Length": str(last_byte - first_byte),
+                                "Content-Range": f"bytes {first_byte}-{last_byte}/{file_size}",
+                            }
+                        response = requests.put(url, **kwargs)
+                        etag_str = response.headers.get("ETag", default_etag_val)
+                        if etag_str == None:
+                            raise RuntimeError("No ETag in response!")
+                        parts.append(
+                            {
+                                "ETag": etag_str,
+                                "PartNumber": chunk_count + 1,
+                            }
+                        )
+                        break
+                    except Exception as e:
+                        logger.warning(
+                            f"Upload of {path} chunk {chunk_count} failed ({e})! Attempt "
+                            f"{attempt + 1}/{MAX_RETRIES}"
+                        )
+                        if attempt == MAX_RETRIES - 1:
+                            raise RuntimeError(f"Upload of {path} failed!")
+                        else:
+                            time.sleep(10 * attempt)
+                            logger.warning(f"Backing off for {10 * attempt} seconds...")
+                this_progress = round((chunk_count / num_chunks) * 100, 1)
+                if this_progress != last_progress:
+                    last_progress = this_progress
+
+        return parts
+
+    def _single_upload(self, upload_url, source_url):
+        with requests.get(source_url, stream=True).raw as f:
+            data = f.read()
+            for attempt in range(MAX_RETRIES):
+                response = requests.put(upload_url, data=data)
+                if response.status_code == 200:
+                    return True
+                else:
+                    logger.warning(
+                        f"Upload of {path} failed ({response.text}) size={len(data)}! Attempt "
+                        f"{attempt + 1}/{MAX_RETRIES}"
+                    )
+                    if attempt < MAX_RETRIES - 1:
+                        logger.warning("Backing off for 5 seconds...")
+                        time.sleep(5)
+            else:
+                logger.error(f"Upload of {path} failed!")
+        return False
+
+    def _upload_from_url(self, store, path, url, size, domain):
+        num_chunks = math.ceil(size / self.chunk_size)
+        urls, upload_id = store.get_upload_urls(path, 3600, num_chunks, domain)
+
+        if num_chunks > 1:
+            parts = self._multipart_upload(urls, upload_id, url)
+            return store.complete_multipart_upload(path, parts, upload_id)
+        return self._single_upload(urls[0], url)
+
     @staticmethod
     def get_backup_store(store_info):
         if StoreType.BACKUP in store_info:
@@ -241,7 +317,7 @@ class TatorBackupManager:
 
         return success, store_info
 
-    def backup_resources(self, resource_qs) -> Generator[tuple, None, None]:
+    def backup_resources(self, resource_qs, domain) -> Generator[tuple, None, None]:
         """
         Creates a generator that copies the resources in the given queryset from the live store to
         the backup store for their respective projects. Yields a tuple with the first element being
@@ -254,6 +330,8 @@ class TatorBackupManager:
 
         :param resource_qs: The resources to back up
         :type resource_qs: Queryset
+        :param domain: The domain from which the request is originating, needed by GCP
+        :type domain: str
         :rtype: Generator[tuple, None, None]
         """
         successful_backups = set()
@@ -291,29 +369,18 @@ class TatorBackupManager:
                 if backup_size < 0 or live_size != backup_size:
                     # Get presigned url from the live bucket, set to expire in 1h
                     download_url = live_store.get_download_url(path, 3600)
+                    success = self._upload_from_url(
+                        backup_store, path, download_url, live_size, domain
+                    )
 
-                    # Get the destination key
-                    key = backup_store.path_to_key(path)
-
-                    # Perform the actual copy operation directly from the presigned url
-                    try:
-                        self._rpc(
-                            "operations/copyurl",
-                            fs=f"{backup_info['remote_name']}:",
-                            remote=f"{backup_info['bucket_name']}/{key}",
-                            url=download_url,
-                        )
-                    except:
-                        success = False
+                    if success == False:
                         logger.error(
                             f"Backing up resource '{path}' with presigned url {download_url} failed",
                             exc_info=True,
                         )
-                else:
-                    logger.info(f"Resource {path} already backed up, updating its state.")
 
-                if success:
-                    successful_backups.add(resource.id)
+            if success:
+                successful_backups.add(resource.id)
 
             yield success, resource
 
@@ -378,7 +445,7 @@ class TatorBackupManager:
 
         return success
 
-    def finish_restore_resource(self, path, project) -> bool:
+    def finish_restore_resource(self, path, project, domain) -> bool:
         """
         Copies the resource from the backup bucket to the live bucket once it has been temporarily
         restored.
@@ -387,6 +454,8 @@ class TatorBackupManager:
         :type path: str
         :param project: The project that the resource belongs to
         :type project: main.models.Project
+        :param domain: The domain from which the request is originating, needed by GCP
+        :type domain: str
         :rtype: bool
         """
         success, store_info = self.get_store_info(project)
@@ -437,22 +506,7 @@ class TatorBackupManager:
             else:
                 # Get presigned url from the backup bucket
                 download_url = backup_store.get_download_url(path, 3600)  # set to expire in 1h
-
-                # Perform the actual copy operation directly from the presigned url
-                try:
-                    live_info = store_info[StoreType.LIVE]
-                    self._rpc(
-                        "operations/copyurl",
-                        fs=f"{live_info['remote_name']}:",
-                        remote=f"{live_info['bucket_name']}/{path}",
-                        url=download_url,
-                    )
-                except:
-                    success = False
-                    logger.error(
-                        f"Restoring resource '{path}' with presigned url {download_url} failed",
-                        exc_info=True,
-                    )
+                success = self._upload_from_url(backup_store, path, download_url, size, domain)
 
         if success:
             response = live_store.head_object(path)

@@ -393,12 +393,16 @@ class MinIOStorage(TatorStorage):
         return self.client.list_objects_v2(Bucket=self.bucket_name, **kwargs).get("Contents", [])
 
     def complete_multipart_upload(self, path, parts, upload_id):
-        self.client.complete_multipart_upload(
-            Bucket=self.bucket_name,
-            Key=self.path_to_key(path),
-            MultipartUpload={"Parts": parts},
-            UploadId=upload_id,
-        )
+        try:
+            self.client.complete_multipart_upload(
+                Bucket=self.bucket_name,
+                Key=self.path_to_key(path),
+                MultipartUpload={"Parts": parts},
+                UploadId=upload_id,
+            )
+        except Exception:
+            return False
+        return True
 
     def put_object(self, path, body):
         self.client.put_object(Bucket=self.bucket_name, Key=self.path_to_key(path), Body=body)
