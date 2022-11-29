@@ -1048,6 +1048,8 @@ class Media(Model, ModelDiffMixin):
     """ URL where original media was hosted. """
     summaryLevel = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a media to facilitate cross-cluster sync operations """
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.
