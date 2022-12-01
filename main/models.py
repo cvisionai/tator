@@ -1534,6 +1534,12 @@ class Section(Model):
     """
     Object search using a search structure defined as AttributeOperationSpec
     """
+
+    related_object_search = JSONField(null=True, blank=True)
+    """
+    Object search for using a search struction on related metadata and retreiving the media
+    """
+
     tator_user_sections = CharField(max_length=128, null=True, blank=True)
     """ Identifier used to label media that is part of this section via the
         tator_user_sections attribute. If not set, this search is not scoped
