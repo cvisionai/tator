@@ -13,7 +13,9 @@ MAINTAINER CVision AI <info@cvisionai.com>
 COPY --from=rclone_build /go/rclone/librclone/librclone.so /usr/local/lib/
 RUN mkdir -p /root/.config/rclone
 RUN touch /root/.config/rclone/rclone.conf
-
+ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
+ENV APT_REPO_HOST=${APT_REPO_HOST}
+RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3 python3-pip libgraphviz-dev xdot \

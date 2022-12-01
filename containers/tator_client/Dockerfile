@@ -11,6 +11,11 @@ RUN cp Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4info /opt/cvision/bin
 
 FROM ubuntu:20.04 AS cvtranscoder
 MAINTAINER CVision AI <info@cvisionai.com>
+
+ARG APT_REPO_HOST=http://archive.ubuntu.com/ubuntu/
+ENV APT_REPO_HOST=${APT_REPO_HOST}
+RUN sed -i "s;http://archive.ubuntu.com/ubuntu/;${APT_REPO_HOST};" /etc/apt/sources.list
+
 # Install apt packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3 python3-pip \
