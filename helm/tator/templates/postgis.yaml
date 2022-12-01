@@ -17,7 +17,7 @@ spec:
         dbServer: "yes"
       containers:
         - name: postgis
-          image: {{ .Values.dockerRegistry }}/tator_postgis:latest
+          image: {{ .Values.dockerRegistry }}/tator_postgis:{{ .Values.gitRevision }}
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 5432

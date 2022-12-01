@@ -192,7 +192,7 @@ graphql-image: doc/_build/schema.yaml
 .PHONY: postgis-image
 postgis-image:
 	DOCKER_BUILDKIT=1 docker build --network host -t $(DOCKERHUB_USER)/tator_postgis:latest -f containers/postgis/Dockerfile . || exit 255
-	docker push $(DOCKERHUB_USER)/tator_postgis:latest
+	docker push $(DOCKERHUB_USER)/tator_postgis:$(GIT_VERSION)
 
 EXPERIMENTAL_DOCKER=$(shell docker version --format '{{json .Client.Experimental}}')
 ifeq ($(EXPERIMENTAL_DOCKER), true)
