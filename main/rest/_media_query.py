@@ -57,6 +57,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     after = params.get('after')
     start = params.get('start')
     stop = params.get('stop')
+    section_id = params.get('section')
     archive_states = _get_archived_filter(params)
 
     qs = Media.objects.filter(project=project, deleted=False)
@@ -81,7 +82,6 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         qs = qs.filter(name__iexact=name)
 
     if section_uuid is not None:
-        logger.info(f"******Filtering on {section_uuid}")
         qs = qs.filter(attributes__tator_user_sections=section_uuid)
 
     if dtype is not None:
@@ -155,6 +155,14 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
 
     if params.get('object_search'):
         qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
+
+    if section_id and section_uuid == None:
+        section = Section.objects.filter(pk=section_id)
+        if not section.exists():
+            raise Http404
+
+        if section[0].object_search:
+            qs = get_attribute_psql_queryset_from_query_obj(qs, json.loads(section[0].object_search))
 
     related_encoded_search_qs = None
     if params.get('encoded_related_search'):
