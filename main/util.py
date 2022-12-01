@@ -1015,3 +1015,19 @@ def find_legacy_sections():
     sections = Section.objects.filter(lucene_search__isnull=False).filter(object_search__isnull=True)
     for s in sections:
         print(f"{s.pk}\t{s.name}\t{s.lucene_search}")
+
+def convert_legacy_sections(filename):
+    """ PIPE format
+    pk | name | lucene | object search
+    """
+    with open(filename) as fp:
+        lines = fp.readlines()
+        for l in [x for x in lines if x != '\n']:
+            comps = l.split('|')
+            assert len(comps) == 4
+            pk=comps[0]
+            object_search=comps[3]
+            s=Section.objects.get(pk=pk)
+            s.object_search = object_search
+            s.save()
+            print(f"Updated {s.pk}")
