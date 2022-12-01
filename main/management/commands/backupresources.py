@@ -1,5 +1,6 @@
 from collections import defaultdict
 import logging
+import os
 from typing import Iterable
 
 from django.conf import settings
@@ -50,7 +51,8 @@ class Command(BaseCommand):
         tbm = TatorBackupManager()
         failed_backups = defaultdict(set)
         successful_backups = set()
-        for idx, (success, resource) in enumerate(tbm.backup_resources(resource_qs)):
+        domain = os.getenv("MAIN_HOST", "MAIN_HOST")
+        for idx, (success, resource) in enumerate(tbm.backup_resources(resource_qs, domain)):
             if success:
                 successful_backups.add(resource.id)
             else:

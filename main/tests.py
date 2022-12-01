@@ -3288,7 +3288,7 @@ class ResourceTestCase(TatorTransactionTest):
             # Back up the resource
             n_successful_backups = 0
             resource_qs = Resource.objects.filter(path__in=all_keys)
-            for success, resource in TatorBackupManager().backup_resources(resource_qs):
+            for success, resource in TatorBackupManager().backup_resources(resource_qs, "DOMAIN"):
                 if success:
                     n_successful_backups += 1
 
@@ -3343,6 +3343,7 @@ class ResourceTestCase(TatorTransactionTest):
         target_state = {
             "archive_state": "live",
             "restoration_requested": False,
+            "domain": "DOMAIN",
         }
         media_qs = Media.objects.filter(pk=media_id)
         update_queryset_archive_state(media_qs, target_state)
@@ -3374,7 +3375,7 @@ class ResourceTestCase(TatorTransactionTest):
 
         # Back up the resource
         n_successful_backups = 0
-        for success, resource in TatorBackupManager().backup_resources(resource_qs):
+        for success, resource in TatorBackupManager().backup_resources(resource_qs, "DOMAIN"):
             if success:
                 n_successful_backups += 1
 

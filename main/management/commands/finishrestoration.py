@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import logging
+import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -30,6 +31,7 @@ class Command(BaseCommand):
         target_state = {
             "archive_state": "live",
             "restoration_requested": False,
+            "domain": os.getenv("MAIN_HOST", "MAIN_HOST"),
         }
         not_ready = {"cloned": {}, "original": {}}
         if restoration_qs.exists():

@@ -1283,7 +1283,7 @@ class Resource(Model):
         return TatorBackupManager().request_restore_resource(path, project, min_exp_days)
 
     @transaction.atomic
-    def restore_resource(path):
+    def restore_resource(path, domain):
         """
         Performs the final copy operation that makes a restoration request permanent. Returns True
         if the copy operation succeeds or if it has succeeded previously. If True is returned by
@@ -1296,7 +1296,7 @@ class Resource(Model):
         """
         project = Resource.get_project_from_path(path)
         logger.info(f"Restoring object {path}")
-        return TatorBackupManager().finish_restore_resource(path, project)
+        return TatorBackupManager().finish_restore_resource(path, project, domain)
 
 
 @receiver(post_save, sender=Media)
