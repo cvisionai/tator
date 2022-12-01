@@ -52,7 +52,7 @@ export class AffiliationEdit extends OrgTypeFormTemplate {
           user: user.id,
           username: user.username, // ignored by BE, used by FE only
           organization: this.organizationId,
-          permission: this._permission.getValue(),
+          permission: this._permissionSelect.getValue(),
         });
       }
     } else {

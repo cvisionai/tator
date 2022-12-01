@@ -17,6 +17,7 @@ export class TypeFormContainer extends TatorElement {
     this.idDisplay = this._shadow.getElementById("type-form-id");
     this.save = this._shadow.getElementById("type-form-save");
     this.resetLink = this._shadow.getElementById("type-form-reset");
+    this.deleteDiv = this._shadow.getElementById("type-form-delete-div");
     this.delete = this._shadow.getElementById("type-form-delete");
     this.typeFormDiv = this._shadow.getElementById("type-form-div");
     this._attributeContainer = this._shadow.getElementById("type-form-attr-column");
@@ -51,7 +52,7 @@ export class TypeFormContainer extends TatorElement {
     this.save.addEventListener("click", this._form._saveData.bind(this._form));
     this.resetLink.addEventListener("click", this._form._resetForm.bind(this._form));
     this.delete.addEventListener("click", this._form._deleteType.bind(this._form));
-    this.delete.hidden = (this._typeName === "Project" && !canDeleteProject);
+    this.deleteDiv.hidden = (this._typeName === "Project" && !canDeleteProject);
   }
 
   handleButtonsActive(newStatus) {
@@ -88,7 +89,8 @@ export class TypeFormContainer extends TatorElement {
       this.idDisplay.textContent = val;
       if (!this._addLeaves.hidden) {
         this._addLeavesLink.setAttribute("href", `#Leaf-${this._typeId}`)
-      }   
+      }
+      this.deleteDiv.hidden = (val == "New");
     }
   
     /**

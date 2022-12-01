@@ -47,8 +47,10 @@ export class InvitationEdit extends OrgTypeFormTemplate {
       this._statusField.setValue(this._data.status);
       this._statusField.default = this._data.status;
       this._statusField.hidden = false;
+      this._permissionSelect.setAttribute("permission", "Can Edit");
     } else {
       this._statusField.hidden = true;
+      this._permissionSelect.setAttribute("permission", "View Only");
     }
 
     //
@@ -56,7 +58,7 @@ export class InvitationEdit extends OrgTypeFormTemplate {
       const registrationLink = `${window.location.origin}/registration?registration_token=${this._data.registration_token}`;
       this._regLinkDisplay.setAttribute("href", registrationLink);
       this._regLinkDisplay.hidden = false;
-      this._permissionSelect.permission = "View Only";
+      
       this._statusField._input.classList.add("text-yellow");
     } else {
       this._regLinkDisplay.hidden = true;

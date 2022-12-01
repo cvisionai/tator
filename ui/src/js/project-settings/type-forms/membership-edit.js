@@ -32,6 +32,26 @@ export class MembershipEdit extends TypeFormTemplate {
       this._userInput.hidden = true;
     }
 
+    //
+    if (this._data.id === "New") {
+      //get query params
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      let username = urlParams.get('un');
+
+      // if the exist, take value and populate
+      if (username) {
+        username = decodeURI(username);
+        this._userInput._input.value = `${username};`;
+        this._userInput._input.dispatchEvent(new KeyboardEvent("input", {
+          key: "e",
+          keyCode: 9,        // example values.
+          code: "Tab",       // put everything you need in this object.
+          which: 9
+      }));
+      }
+    }
+
     // permission
     const permissionOptions = [
       { "label": "View Only", "value": "View Only" },

@@ -8,103 +8,103 @@ console.log(api);
 
 async function configureImageClassification(project) {
    let response = await api.createMediaType(project.id, {
-     name: "Images",
-     dtype: "image",
-     attribute_types: [{
-       name: "Label",
-       description: "Image classification label.",
-       dtype: "string",
-       order: 0,
-     }],
+      name: "Images",
+      dtype: "image",
+      attribute_types: [{
+         name: "Label",
+         description: "Image classification label.",
+         dtype: "string",
+         order: 0,
+      }],
    });
    console.log(response.message);
- }
- 
- async function configureObjectDetection(project) {
+}
+
+async function configureObjectDetection(project) {
    let response = await api.createMediaType(project.id, {
-     name: "Images",
-     dtype: "image",
-     attribute_types: [],
+      name: "Images",
+      dtype: "image",
+      attribute_types: [],
    });
    console.log(response.message);
    const imageTypeId = response.id;
- 
+
    response = await api.createMediaType(project.id, {
-     name: "Videos",
-     dtype: "video",
-     attribute_types: [],
+      name: "Videos",
+      dtype: "video",
+      attribute_types: [],
    });
    console.log(response.message);
    const videoTypeId = response.id;
- 
+
    response = await api.createLocalizationType(project.id, {
-     name: "Boxes",
-     dtype: "box",
-     media_types: [imageTypeId, videoTypeId],
-     attribute_types: [{
-       name: "Label",
-       description: "Object detection label.",
-       dtype: "string",
-       order: 0,
-     }],
+      name: "Boxes",
+      dtype: "box",
+      media_types: [imageTypeId, videoTypeId],
+      attribute_types: [{
+         name: "Label",
+         description: "Object detection label.",
+         dtype: "string",
+         order: 0,
+      }],
    });
    console.log(response.message);
- }
- 
- async function configureMultiObjectTracking(project) {
+}
+
+async function configureMultiObjectTracking(project) {
    let response = await api.createMediaType(project.id, {
-     name: "Videos",
-     dtype: "video",
-     attribute_types: [],
+      name: "Videos",
+      dtype: "video",
+      attribute_types: [],
    });
    console.log(response.message);
    const videoTypeId = response.id;
- 
+
    response = await api.createStateType(project.id, {
-     name: "Tracks",
-     association: "Localization",
-     interpolation: "none",
-     media_types: [videoTypeId],
-     attribute_types: [{
-       name: "Label",
-       description: "Track label.",
-       dtype: "string",
-       order: 0,
-     }],
+      name: "Tracks",
+      association: "Localization",
+      interpolation: "none",
+      media_types: [videoTypeId],
+      attribute_types: [{
+         name: "Label",
+         description: "Track label.",
+         dtype: "string",
+         order: 0,
+      }],
    });
    console.log(response.message);
- 
+
    response = await api.createLocalizationType(project.id, {
-     name: "Boxes",
-     dtype: "box",
-     media_types: [videoTypeId],
-     attribute_types: [],
+      name: "Boxes",
+      dtype: "box",
+      media_types: [videoTypeId],
+      attribute_types: [],
    });
- }
- 
- async function configureActivityRecognition(project) {
+}
+
+async function configureActivityRecognition(project) {
    let response = await api.createMediaType(project.id, {
-     name: "Videos",
-     dtype: "video",
-     attribute_types: [],
+      name: "Videos",
+      dtype: "video",
+      attribute_types: [],
    });
    console.log(response.message);
    const videoTypeId = response.id;
- 
+
    response = await api.createStateType(project.id, {
-     name: "Activities",
-     association: "Frame",
-     interpolation: "latest",
-     media_types: [videoTypeId],
-     attribute_types: [{
-       name: "Something in view",
-       description: "Whether something is happening in the video.",
-       dtype: "bool",
-       order: 0,
-     }],
+      name: "Activities",
+      association: "Frame",
+      interpolation: "latest",
+      media_types: [videoTypeId],
+      attribute_types: [{
+         name: "Something in view",
+         description: "Whether something is happening in the video.",
+         dtype: "bool",
+         order: 0,
+      }],
    });
    console.log(response.message);
- }
+}
 
 const getMap = new Map();
 getMap.set("Organization", api.getOrganizationWithHttpInfo.bind(api))
@@ -112,6 +112,7 @@ getMap.set("Organization", api.getOrganizationWithHttpInfo.bind(api))
    .set("Bucket", api.getBucketListWithHttpInfo.bind(api))
    .set("Invitation", api.getInvitationListWithHttpInfo.bind(api))
    .set("JobCluster", api.getJobClusterListWithHttpInfo.bind(api))
+   .set("Membership", api.getMembershipListWithHttpInfo.bind(api))
    .set("Project", api.getProjectListWithHttpInfo.bind(api));
 
 const postMap = new Map();
@@ -149,8 +150,9 @@ const store = create(subscribeWithSelector((set, get) => ({
       name: "idle",
       msg: "" // if Error this could trigger "toast" with message
    },
-   other: {
-      //
+   currentUser: {
+      data: {},
+      membershipsByProject: new Map()
    },
    organizationId: null,
    emailEnabled: false,
@@ -165,7 +167,9 @@ const store = create(subscribeWithSelector((set, get) => ({
       name: "Affiliation",
       init: false,
       setList: new Set(),
-      map: new Map()
+      map: new Map(),
+      userMap: new Map(),
+      emailMap: new Map()
    },
    Bucket: {
       name: "Bucket",
@@ -189,53 +193,79 @@ const store = create(subscribeWithSelector((set, get) => ({
       name: "Project",
       init: false,
       setList: new Set(),
+      map: new Map()
+   },
+   Membership: {
+      name: "Membership",
+      init: false,
+      setList: new Set(),
       map: new Map(),
-      userMap: new Map()
+      usernameMebershipsMap: new Map(),
+      projectIdMembersMap: new Map()
    },
    deletePermission: false,
    isStaff: false,
    init: async () => {
-    Promise.all([
-      api.whoami(),
-      api.getAnnouncementList(),
-      api.getOrganization(organizationId),
-    ])
-    .then((values) => {
-      set({
-        user: values[0],
-        announcements: values[1],
-        organizationId: values[2].id,
-      });
-       
-       const data = values[2];
-       const setList = new Set();
-       const mapList = new Map();
-       setList.add(values[2].id);
-       mapList.set(values[2].id, values[2]);
+      Promise.all([
+         api.whoami(),
+         api.getAnnouncementList(),
+         api.getOrganization(organizationId),
+      ])
+         .then((values) => {
+            set({
+               user: values[0],
+               announcements: values[1],
+               organizationId: values[2].id,
+            });
 
-       set({ Organization: { ...get().Organization, init: true, data, setList, map: mapList } }); 
-    });
+            const data = values[2];
+            const setList = new Set();
+            const mapList = new Map();
+            setList.add(values[2].id);
+            mapList.set(values[2].id, values[2]);
+
+            set({ Organization: { ...get().Organization, init: true, data, setList, map: mapList } });
+         });
    },
+   getCurrentUser: async () => {
+      const user = await api.whoami();
+      set({ currentUser: { ...get().currentUser, data: user} });
+      if (!get()["Membership"].init) await get().fetchMemberships();
+   },
+
+
    /**
     * 
     */
-    getData: async (type, id) => {
+   getData: async (type, id) => {
       if (!get()[type].init) await get().fetchTypeByOrg(type);
       const info = get()[type];
       return info.map.get(Number(id));
    },
 
+   getMembershipData: async (username) => {
+      if (!get()["Membership"].init) await get().fetchMemberships();
+      const info = get()["Membership"];
+      return info.usernameMebershipsMap.get(username); // returns membershipIds
+   },
+
+   getProjMembershipData: async (projectId) => {
+      if (!get()["Membership"].init) await get().fetchMemberships();
+      const info = get()["Membership"];
+      return info.projectIdMembersMap.get(projectId);   
+   },
+
    initHeader: async () => {
-    Promise.all([
-      api.whoami(),
-      api.getAnnouncementList(),
-    ])
-    .then((values) => {
-      set({
-        user: values[0],
-        announcements: values[1],
-      });
-    });
+      Promise.all([
+         api.whoami(),
+         api.getAnnouncementList(),
+      ])
+         .then((values) => {
+            set({
+               user: values[0],
+               announcements: values[1],
+            });
+         });
    },
 
    /* */
@@ -266,7 +296,7 @@ const store = create(subscribeWithSelector((set, get) => ({
 
       set({ organizationId: object.data.id });
       set({ Organization: { ...get().Organization, init: true, setList, map, data: object.data } });
-      
+
       set({
          status: {
             name: "idle",
@@ -291,46 +321,52 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    fetchTypeByOrg: async (type) => {
-      console.log("fetchTypeByOrg "+type);
+      console.log("DEBUG: fetchTypeByOrg " + type);
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
       try {
          const fn = getMap.get(type);
-         const orgId = get().organizationId;
+         let orgId = organizationId;
 
-         const object = (type == "Project") ? await fn({organization: orgId}) : await fn(orgId);
-
-         console.log("fetchTypeByOrg response....", object);
+         const object = (type == "Project") ? await fn({ organization: orgId }) : await fn(orgId);
+         // console.log(`DEBUG: fetchTypeByOrg ${type} response....`, object);
 
          if (object.response.ok) {
             const setList = new Set();
             const map = new Map();
             const userMap = new Map();
-   
+            const emailMap = new Map();
+
             /* Add the data via loop to: setList and map */
             for (let item of object.data) {
                setList.add(item.id);
                map.set(item.id, item);
 
-               if (type == "Project") {
-                  if (item.usernames.length > 0) {
-                     for (let u of item.usernames) {
-                        const projectList = userMap.has(u) ? userMap.get(u) : [];
-                        projectList.push(item);
-                        userMap.set(u, projectList);
-                     }
-                  }
+               if (type == "Affiliation") {
+                  // to tie to for project membership info
+                  userMap.set(item.username, item);
+
+                  // to tie to invitations
+                  emailMap.set(item.email, item)
                }
             }
+
+            // Init related types
             if (type == "Project") {
-               set({ [type]: { ...get()[type], setList, map, userMap, init: true } });
+               get().fetchMemberships(map);
+            } else if (type == "Invitation") {
+               get().initType("Affiliation");
+            } else if ("Affiliation") {
+               get().initType("Project");
+            }
+
+            if (type == "Affiliation") {
+               set({ [type]: { ...get()[type], setList, map, userMap, emailMap, init: true } });
             } else {
                set({ [type]: { ...get()[type], setList, map, init: true } });
             }
-            
-   
+
             // Success: Return status to idle (handles page spinner)
             set({ status: { ...get().status, name: "idle", msg: "" } });
-            
          } else {
             console.error("Object response not ok for fetchType", object);
          }
@@ -342,12 +378,83 @@ const store = create(subscribeWithSelector((set, get) => ({
          return err;
       }
    },
+
+   fetchMemberships: async (projectList = null) => {
+      if (projectList == null) {
+         await get().initType("Project");
+         projectList = get().Project.map;
+         console.log(projectList);
+      }
+      if (!projectList) return;
+      set({ status: { ...get().status, name: "bg-fetch", msg: `Adding Memberships...` } });
+      const fn = getMap.get("Membership");
+      const map = new Map();
+      const setList = new Set();
+      for (let [projectId, project] of projectList) {
+         try {
+            // const projectId = project.id;
+            const object = await fn(projectId);
+            const currentUserId = get().currentUser.data.id;
+            const currenUserMap = new Map();
+
+            // Get memberships for each project, and loop the data
+            if (object.response.ok) {
+               const usernameMebershipsMap = new Map();
+               const projectIdMembersMap = new Map();
+
+               console.log(`Membership data projectId ${projectId} `, object.data)
+               
+               // To accomplish: get me memberships for project ID X
+               const memberList = object.data;
+               projectIdMembersMap.set(projectId, memberList);
+
+               /* Add the data via loop to: setList and map */
+               for (let item of memberList) {
+                  const membershipId = item.id;
+                  setList.add(membershipId);
+
+                  // To accomplish: get me membership ID X
+                  map.set(membershipId, item);
+
+                  // To accomplish: Does my affiliate's username appear in my project memberships?
+                  // Accumulate a list to associate a username, and membershipId
+                  // I do not want to store the membership object twice just the references to it
+                  // If I need the project info it is in the memberships object attr "project"
+                  const username = item.username;
+                  const userList = usernameMebershipsMap.has(username) ? usernameMebershipsMap.get(username) : [];
+                  userList.push(membershipId);
+                  usernameMebershipsMap.set(item.username, userList);
+
+                  //
+                  if (item.user === currentUserId) {
+                     currenUserMap.set(projectId, item);
+                  }
+               }
+               set({ Membership : { ...get().Membership, map, setList, usernameMebershipsMap, projectIdMembersMap, init: true } });
+               set({ currentUser: { ...get().currentUser, membershipsByProject: currenUserMap } });
+
+               // Success: Return status to idle (handles page spinner)
+               set({ status: { ...get().status, name: "idle", msg: "" } });
+               return object.data;
+            } else {
+               console.error("Object response not ok for fetchType", object);
+            }
+
+         } catch (err) {
+            // Error: Return status to idle (handles page spinner)
+            console.error("Fetch type hit an issue.", err);
+            set({ status: { ...get().status, name: "idle", msg: "" } });
+            return err;
+         }
+      }
+   },
+
    addType: async ({ type, data }) => {
       set({ status: { ...get().status, name: "pending", msg: `Adding ${type}...` } });
       try {
          const fn = postMap.get(type);
          const organizationId = get().organizationId;
-         const responseInfo = await fn(organizationId, data); 
+         const responseInfo = await fn(organizationId, data);
 
          // Refresh the page data before setting the selection
          await get().fetchTypeByOrg(type);
@@ -356,7 +463,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          //Response should have the newly added ID
          let newID = (responseInfo.data.id) ? responseInfo.data.id : "New";
          window.location = `${window.location.origin}${window.location.pathname}#${type}-${newID}`;
-         
+
 
          set({ status: { ...get().status, name: "idle", msg: "" } });
 
@@ -404,7 +511,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          const type = "Invitation";
          const fn = deleteMap.get(type);
          const object = await fn(inviteSpec.id);
-         console.log("Result deleting"+inviteSpec.id, object)
+         console.log("Result deleting" + inviteSpec.id, object)
 
          const createFn = postMap.get(type);
          const objectCreate = await createFn(get().organizationId, {
@@ -416,7 +523,7 @@ const store = create(subscribeWithSelector((set, get) => ({
          get().setSelection({
             typeName: "Invitation",
             typeId: objectCreate.data.id,
-            inner: false            
+            inner: false
          });
 
          await get().fetchTypeByOrg(type);
@@ -438,28 +545,28 @@ const store = create(subscribeWithSelector((set, get) => ({
       const project = response.object;
       console.log(response.message);
       switch (preset) {
-        case "imageClassification":
-          await configureImageClassification(project);
-          break;
-        case "objectDetection":
-          await configureObjectDetection(project);
-          break;
-        case "multiObjectTracking":
-          await configureMultiObjectTracking(project);
-          break;
-        case "activityRecognition":
-          await configureActivityRecognition(project);
-          break;
-        case "none":
-          break;
-        default:
-          console.error(`Invalid preset: ${preset}`);
+         case "imageClassification":
+            await configureImageClassification(project);
+            break;
+         case "objectDetection":
+            await configureObjectDetection(project);
+            break;
+         case "multiObjectTracking":
+            await configureMultiObjectTracking(project);
+            break;
+         case "activityRecognition":
+            await configureActivityRecognition(project);
+            break;
+         case "none":
+            break;
+         default:
+            console.error(`Invalid preset: ${preset}`);
       }
-      
+
       //refreshes view
       get().fetchTypeByOrg("Project");
       return project;
-    },
+   },
 })));
 
 

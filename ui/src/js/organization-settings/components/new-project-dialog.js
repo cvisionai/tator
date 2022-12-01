@@ -1,4 +1,5 @@
 import { ModalDialog } from "../../components/modal-dialog.js";
+import { store } from "../store.js";
 
 export class OrgNewProjectDialog extends ModalDialog {
   constructor() {
@@ -18,10 +19,6 @@ export class OrgNewProjectDialog extends ModalDialog {
     this._summary.setAttribute("name", "Summary");
     this._summary.setAttribute("type", "string");
     this._main.appendChild(this._summary);
-
-    this._organization = document.createElement("enum-input");
-    this._organization.setAttribute("name", "Organization");
-    this._main.appendChild(this._organization);
 
     this._preset = document.createElement("enum-input");
     this._preset.setAttribute("name", "Preset");
@@ -85,19 +82,14 @@ export class OrgNewProjectDialog extends ModalDialog {
     this._name.addEventListener("input", this._validateName.bind(this));
   }
 
-  set organizations(organizations) {
-    let choices = [];
-    for (const organization of organizations) {
-      choices.push({
-        label: organization.name,
-        value: organization.id,
-      });
-    }
-    this._organization.choices = choices;
+  set organization(val) {
+    this._organization = val;
   }
 
   set projects(projects) {
-    this._existingNames = projects.map(project => project.name.toLowerCase());
+    this._existingNames = [];
+    for(let [id, project] of projects)
+    this._existingNames.push(project.name.toLowerCase());
   }
 
   static get observedAttributes() {
@@ -112,11 +104,15 @@ export class OrgNewProjectDialog extends ModalDialog {
     }
   }
 
-  init() {
+  async init() {
     this._name.setValue("");
     this._summary.setValue("");
     this._summary.setValue("");
     this._confirm = false;
+
+    this.organization = store.getState().organizationId;
+    await store.getState().initType("Project");
+    this.projects = store.getState().Project.map;
   }
 
   removeProject(projectName) {
@@ -131,7 +127,7 @@ export class OrgNewProjectDialog extends ModalDialog {
     return {
       name: this._name.getValue(),
       summary: this._summary.getValue(),
-      organization: Number(this._organization.getValue()),
+      organization: this._organization,
     };
   }
 

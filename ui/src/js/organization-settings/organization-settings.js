@@ -116,7 +116,7 @@ export class OrganizationSettings extends TatorPage {
       this._innerSelection = null;
     }
 
-    console.log("DEBUG: Hash setup.... " + this._selectedHash);
+    // console.log("DEBUG: Hash setup.... " + this._selectedHash);
     store.getState().setSelection({
       typeName: this._selectedType,
       typeId: this._selectedObjectId,
