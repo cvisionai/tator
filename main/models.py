@@ -422,27 +422,6 @@ class Bucket(Model):
     gcs_key_info = TextField(null=True, blank=True)
     # TODO remove field gcs_key_info ###############################################################
 
-    @classmethod
-    def validate_kwargs(cls, **kwargs):
-        """ Checks for the existence of keys that define S3 or GCS access, but not both. """
-        gcs_keys = "gcs_key_info" in kwargs
-        s3_keys = all(
-            key in kwargs for key in ["access_key", "secret_key", "endpoint_url", "region"]
-        )
-
-        if gcs_keys == s3_keys:
-            raise ValueError(
-                f"Must specify S3 or GCS params, not {'both' if gcs_keys else 'neither'}."
-            )
-
-        if gcs_keys:
-            try:
-                json.loads(kwargs["gcs_key_info"])
-            except json.JSONDecodeError:
-                msg = f"Received invalid json while creating bucket: {kwargs['gcs_key_info']}"
-                logger.warning(msg)
-                raise ValueError(msg)
-
     def validate_storage_classes(self, params):
         """
         Checks for the existence of `live_sc` and `archive_sc` and validates them if they exist. If
