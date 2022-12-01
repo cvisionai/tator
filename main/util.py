@@ -1006,3 +1006,7 @@ def add_elemental_id(project, metadata_type):
         child.elemental_id = child.parent.elemental_id
         child.save()
 
+def find_legacy_sections():
+    sections = Section.objects.filter(lucene_search__isnull=False).filter(object_search__isnull=True)
+    for s in sections:
+        print(f"{s.pk}\t{s.name}\t{s.lucene_search}")
