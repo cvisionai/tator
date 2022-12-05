@@ -51,6 +51,7 @@ export class FilterUtilities {
       choices.push({ "value": "==" });
     } else if (dtype == "int" || dtype == "float") {
       choices.push({ "value": "==" });
+      choices.push({ "value": "NOT ==" });
       choices.push({ "value": ">" });
       choices.push({ "value": ">=" });
       choices.push({ "value": "<" });
