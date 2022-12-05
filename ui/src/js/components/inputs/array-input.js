@@ -145,7 +145,6 @@ export class ArrayInput extends TatorElement {
   }
 
   clear() {
-    console.log("START /// Arrayinput clear function start...................");
     if (this._inputs.length > 0) {
       for (let x of this._inputs) {
         x.remove();
