@@ -354,7 +354,8 @@ class MinIOStorage(TatorStorage):
         # Replace host if external host is given.
         if self.external_host:
             parsed = urlsplit(url)
-            parsed = parsed._replace(netloc=self.external_host, scheme=self.proto)
+            external = urlsplit(self.external_host, scheme=self.proto)
+            parsed = parsed._replace(netloc=external.netloc, scheme=external.scheme)
             url = urlunsplit(parsed)
         return url
 
