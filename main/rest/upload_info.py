@@ -85,7 +85,10 @@ class UploadInfoAPI(BaseDetailView):
         if tator_store.external_host and project_obj.bucket is None:
             external = urlsplit(tator_store.external_host, scheme=PROTO)
             urls = [
-                urlunsplit(urlsplit(url)._replace(netloc=external.netloc, scheme=external.scheme))
+                urlunsplit(urlsplit(url)._replace(
+                    netloc=external.netloc + external.path,
+                    scheme=external.scheme
+                ))
                 for url in urls
             ]
 

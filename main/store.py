@@ -355,7 +355,7 @@ class MinIOStorage(TatorStorage):
         if self.external_host:
             parsed = urlsplit(url)
             external = urlsplit(self.external_host, scheme=self.proto)
-            parsed = parsed._replace(netloc=external.netloc, scheme=external.scheme)
+            parsed = parsed._replace(netloc=external.netloc + external.path, scheme=external.scheme)
             url = urlunsplit(parsed)
         return url
 
