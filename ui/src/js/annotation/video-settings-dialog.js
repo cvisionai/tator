@@ -1,21 +1,51 @@
 import { ModalDialog } from "../components/modal-dialog.js";
+import { fetchRetry } from "../util/fetch-retry.js";
 
 export class VideoSettingsDialog extends ModalDialog {
   constructor() {
     super();
 
     this._div.setAttribute("class", "modal-wrap modal-wide d-flex");
-    //this._modal.setAttribute("class", "modal py-6 px-6 rounded-2");
-    //this._header.setAttribute("class", "px-3 py-3");
-    //this._titleDiv.setAttribute("class", "h2");
     this._title.nodeValue = "Advanced Video Settings";
-    //this._main.setAttribute("class", "modal__main px-3 py-4");
-    //this._titleDiv.style.marginBottom = "10px";
-    //this._main.remove();
+
+    this._tabsDiv = document.createElement("div");
+    this._tabsDiv.setAttribute("class", "d-flex flex-grow flex-justify-center mb-3");
+    this._main.appendChild(this._tabsDiv);
+
+    this._controlsButton = document.createElement("button");
+    this._controlsButton.setAttribute("class", "tab-btn");
+    this._controlsButton.textContent = "Controls"
+    this._tabsDiv.appendChild(this._controlsButton);
+
+    this._infoButton = document.createElement("button");
+    this._infoButton.setAttribute("class", "tab-btn");
+    this._infoButton.textContent = "Media Info";
+    this._tabsDiv.appendChild(this._infoButton);
+
+    this._controlsButton.addEventListener("click", () => {
+      this._controlsButton.blur();
+      this._controlsButton.classList.add("active");
+      this._infoButton.classList.remove("active");
+      this._displayPage("controls");
+    })
+    this._infoButton.addEventListener("click", () => {
+      this._infoButton.blur();
+      this._controlsButton.classList.remove("active");
+      this._infoButton.classList.add("active");
+      this._displayPage("info");
+    })
+
+    this._mediaInfoDiv = document.createElement("div");
+    this._mediaInfoDiv.setAttribute("class", "analysis__filter_conditions d-flex py-2 px-2 flex-column");
+    this._main.appendChild(this._mediaInfoDiv);
+
+    this._controlsDiv = document.createElement("div");
+    this._controlsDiv.setAttribute("class", "analysis__filter_conditions d-flex py-2 px-2 flex-column");
+    this._main.appendChild(this._controlsDiv);
 
     this._gridDiv = document.createElement("div");
     this._gridDiv.setAttribute("class", "video__settings py-4 px-4 text-gray");
-    this._main.appendChild(this._gridDiv);
+    this._controlsDiv.appendChild(this._gridDiv);
 
     const gridLabel = document.createElement("div");
     gridLabel.setAttribute("class", "h3 d-flex flex-items-center text-uppercase")
@@ -33,7 +63,7 @@ export class VideoSettingsDialog extends ModalDialog {
 
     const overlayGridDiv = document.createElement("div");
     overlayGridDiv.setAttribute("class", "video__settings py-4 px-4 text-gray");
-    this._main.appendChild(overlayGridDiv);
+    this._controlsDiv.appendChild(overlayGridDiv);
 
     const overlayHeaderDiv = document.createElement("div");
     overlayHeaderDiv.style.gridColumn = 1;
@@ -62,7 +92,7 @@ export class VideoSettingsDialog extends ModalDialog {
 
     const safeModeGridDiv = document.createElement("div");
     safeModeGridDiv.setAttribute("class", "video__settings py-4 px-4 text-gray");
-    this._main.appendChild(safeModeGridDiv);
+    this._controlsDiv.appendChild(safeModeGridDiv);
 
     const safeModeHeaderDiv = document.createElement("div");
     safeModeHeaderDiv.style.gridColumn = 1;
@@ -146,6 +176,169 @@ export class VideoSettingsDialog extends ModalDialog {
     this._createBuffer(2, "scrub", "Scrub Buffer", "Timeline scrubbing, downloaded playback, greater than 4x playback");
     this._createBuffer(3, "seek", "Seek Quality", "Pause quality");
     this._createBuffer(4, "play", "On-Demand 1x-4x Playback", "1x-4x playback for single vidoes and grid videos");
+
+    this._controlsButton.click();
+  }
+
+  /**
+   * @param {string} page "info" | "controls"
+   */
+  _displayPage(page) {
+    if (page == "info") {
+      this._mediaInfoDiv.style.display = "flex";
+      this._controlsDiv.style.display = "none";
+      this._footer.style.display = "none";
+    }
+    else if (page == "controls") {
+      this._mediaInfoDiv.style.display = "none";
+      this._controlsDiv.style.display = "flex";
+      this._footer.style.display = "flex";
+    }
+  }
+
+  /**
+   * Helper function for _setInfoPage
+   * @param {HTMLElement} parentDiv
+   * @param {string} title
+   * @param {Tator.Media} media
+   */
+  _createMediaTable(parentDiv, title, media) {
+
+    var wrapper = document.createElement("div");
+    wrapper.setAttribute("class", "py-3");
+    parentDiv.appendChild(wrapper);
+
+    var table = document.createElement("table");
+    table.setAttribute("class", "video-settings-info-table text-gray f3");
+    wrapper.appendChild(table);
+
+    var thead = document.createElement("thead");
+    thead.setAttribute("class", "text-white");
+    table.appendChild(thead);
+
+    var trHead = document.createElement("tr");
+    thead.appendChild(trHead);
+
+    var th = document.createElement("th");
+    th.setAttribute("class", "py-2");
+    th.textContent = title;
+    th.colSpan = 2;
+    trHead.appendChild(th);
+
+    var tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+
+    var attrs = ["archive_state", "codec", "fps", "height", "id", "num_frames", "width"];
+    for (const attr of attrs) {
+      var trData = document.createElement("tr");
+      tbody.appendChild(trData);
+
+      var td = document.createElement("td");
+      td.setAttribute("class", "py-2 no-vertical-border col-4");
+      td.textContent = attr;
+      trData.appendChild(td);
+
+      var val = media[attr];
+
+      var td = document.createElement("td");
+      td.setAttribute("class", "py-2 no-vertical-border col-8");
+      td.textContent = val;
+      trData.appendChild(td);
+    }
+
+    var table = document.createElement("table");
+    table.setAttribute("class", "video-settings-info-table text-gray f3");
+    wrapper.appendChild(table);
+
+    var media_file_types = ["archival", "audio", "streaming"];
+    for (const media_file_type of media_file_types) {
+      if (media.media_files[media_file_type] == null) {
+        continue;
+      }
+      if (media.media_files[media_file_type].length == 0) {
+        continue;
+      }
+
+      var thead = document.createElement("thead");
+      thead.setAttribute("class", "text-white");
+      table.appendChild(thead);
+
+      var trHead = document.createElement("tr");
+      thead.appendChild(trHead);
+
+      var th = document.createElement("th");
+      th.setAttribute("class", "py-2");
+      th.textContent = `media_files: ${media_file_type}`;
+      th.colSpan = 3;
+      trHead.appendChild(th);
+
+      var tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+
+      for (let idx = 0; idx < media.media_files[media_file_type].length; idx++) {
+        const file = media.media_files[media_file_type][idx];
+        for (const attr of ["bit_rate", "codec", "codec_description", "codec_mime", "mime", "resolution", "size"]) {
+          if (!file.hasOwnProperty(attr)) {
+            continue;
+          }
+          var trData = document.createElement("tr");
+          tbody.appendChild(trData);
+
+          var td = document.createElement("td");
+          td.setAttribute("class", "py-2 no-vertical-border col-1");
+          if (attr == "bit_rate") {
+            td.textContent = `[${idx}]`;
+          }
+          else {
+            td.textContent = "";
+          }
+          trData.appendChild(td);
+
+          var td = document.createElement("td");
+          td.setAttribute("class", "py-2 no-vertical-border col-3");
+          td.textContent = attr;
+          trData.appendChild(td);
+
+          var val = file[attr];
+          if (attr == "bit_rate") {
+            val = `${(file[attr] / 1024).toFixed(6)} kbps`;
+          }
+          else if (attr == "size") {
+            val = `${(file[attr] / 1024 / 1024).toFixed(6)} MB`;
+          }
+
+          var td = document.createElement("td");
+          td.setAttribute("class", "py-2 no-vertical-border col-8");
+          td.textContent = val;
+          trData.appendChild(td);
+        }
+      }
+    }
+
+  }
+
+  /**
+   * Queries media information if needed.
+   * Expected to be called once.
+   *
+   * @precondition this._mode must have been set
+   * @precondition this._parentMedia must have been set
+   */
+  async _setInfoPage() {
+
+    var parentDiv = document.createElement("div");
+    parentDiv.setAttribute("class", "px-3 py-3");
+    this._mediaInfoDiv.appendChild(parentDiv);
+
+    if (this._mode == "single") {
+      this._createMediaTable(parentDiv, "Video Media", this._parentMedia);
+    }
+    else if (this._mode == "multi") {
+      this._createMediaTable(parentDiv, "Multiview Media", this._parentMedia);
+      for (let idx = 0; idx < this._multiMedias.length; idx++) {
+        this._createMediaTable(parentDiv, `Video Media ${idx}`, this._multiMedias[idx]);
+      }
+    }
   }
 
   _createBuffer(gridRow, id, title, description) {
@@ -231,26 +424,54 @@ export class VideoSettingsDialog extends ModalDialog {
     };
   }
 
+
+  /**
+   * @precondition this._parentMedia is set with the multi Tator.Media object
+   * @postcondition this._multiMedias is set as an array of Tator.Media objects
+   */
+  async _queryMultiMedia() {
+
+    this._multiMedias = [];
+
+    for (const singleId of this._parentMedia.media_files.ids) {
+      var response = await fetchRetry(`/rest/Media/${singleId}?presigned=28800`, {
+        method: "GET",
+        credentials: "same-origin",
+        headers: {
+           "X-CSRFToken": getCookie("csrftoken"),
+           "Accept": "application/json",
+           "Content-Type": "application/json"
+        }
+      });
+      var media = await response.json();
+      this._multiMedias.push(media);
+    }
+
+  }
   /**
    * #TODO only the first entry in the given media array is used.
    *       Future versions of this should display the medias
    *
-   * @param {string} mode - single|multiview
-   * @param {array} medias - Array of media objects to set the display
-   * @param {bool} enableSafeMode - True if safe mode is enabled. False otherwise.
-   *                                Overrides the < 20 FPS threshold where safe mode is
-   *                                disabled.
+   * @param {string} mode - single|multi
+   * @param {Tator.Media} media - Parent media
    */
-  mode(mode, medias) {
+  async mode(mode, media) {
     this._mode = mode;
-    this._medias = medias;
+    this._parentMedia = media;
     if (this._mode == "live")
     {
       //TODO implement this
       return;
     }
+    else if (this._mode == "multi") {
+      await this._queryMultiMedia();
+      var mainVideo = this._multiMedias[0];
+    }
+    else {
+      var mainVideo = this._parentMedia;
+    }
+    this._setInfoPage();
 
-    let mainVideo = this._medias[0];
     if (mainVideo['fps'] < 20)
     {
       this._safeModeOption.setValue(false);
@@ -258,7 +479,7 @@ export class VideoSettingsDialog extends ModalDialog {
     let sourceList = [];
     for (let mediaFile of mainVideo.media_files["streaming"])
     {
-      let sourceStr = this.createSourceString(mediaFile.resolution[0], this._medias[0].fps);
+      let sourceStr = this.createSourceString(mediaFile.resolution[0], mainVideo.fps);
       sourceList.push({"value": sourceStr});
     }
 
@@ -315,7 +536,7 @@ export class VideoSettingsDialog extends ModalDialog {
     params.delete("seekQuality");
     params.delete("playQuality");
     params.delete("safeMode");
-    
+
     if (this._mode == "single" || this._mode == "multiview") {
       params.set("scrubQuality", parseInt(this._divOptions["scrub"].choice.getValue().split("p")[0]));
       params.set("seekQuality", parseInt(this._divOptions["seek"].choice.getValue().split("p")[0]));
