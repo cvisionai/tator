@@ -422,13 +422,12 @@ class Bucket(Model):
     gcs_key_info = TextField(null=True, blank=True)
     # TODO remove field gcs_key_info ###############################################################
 
-    def validate_storage_classes(self, params):
+    def validate_storage_classes(store_type, params):
         """
         Checks for the existence of `live_sc` and `archive_sc` and validates them if they exist. If
         they are invalid for the given `endpoint_url`, raises a `ValueError`. If they do not exist,
         they are set in a copy of the `params` dict and this copy is returned.
         """
-        server = get_tator_store(self).server
         new_params = dict(params)
         storage_type = {
             ObjectStore.AWS: "Amazon S3",
@@ -438,15 +437,15 @@ class Bucket(Model):
 
         for sc_type in ["archive_sc", "live_sc"]:
             try:
-                valid_storage_classes = VALID_STORAGE_CLASSES[sc_type][server]
-                default_storage_class = DEFAULT_STORAGE_CLASSES[sc_type][server]
+                valid_storage_classes = VALID_STORAGE_CLASSES[sc_type][store_type]
+                default_storage_class = DEFAULT_STORAGE_CLASSES[sc_type][store_type]
             except KeyError:
-                raise ValueError(f"Found unknown server type {server}")
+                raise ValueError(f"Found unknown server type {store_type}")
 
             storage_class = new_params.setdefault(sc_type, default_storage_class)
             if storage_class not in valid_storage_classes:
                 raise ValueError(
-                    f"{sc_type[:-3].title()} storage class '{storage_class}' invalid for {storage_type[server]} store"
+                    f"{sc_type[:-3].title()} storage class '{storage_class}' invalid for {storage_type[store_type]} store"
                 )
 
         return new_params

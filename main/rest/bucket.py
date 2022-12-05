@@ -1,3 +1,4 @@
+import logging
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import Http404
@@ -9,10 +10,13 @@ from ..models import Bucket
 from ..models import database_qs
 from ..schema import BucketListSchema
 from ..schema import BucketDetailSchema
+from ..store import ObjectStore
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import OrganizationAdminPermission
+
+logger = logging.getLogger(__name__)
 
 class BucketListAPI(BaseListView):
     """ List endpoint for Buckets.
@@ -35,12 +39,10 @@ class BucketListAPI(BaseListView):
     def _post(self, params):
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
+        store_type = params["store_type"]
 
-        # Create a temporary Bucket object for storage class validation
-        temp_bucket = Bucket(**params)
-        params = temp_bucket.validate_storage_classes(params)
-        del temp_bucket
-
+        # Validate live and archive storage classes
+        params = Bucket.validate_storage_classes(ObjectStore(store_type), params)
         bucket = Bucket.objects.create(**params)
         return {'message': f"Bucket {bucket.name} created!", 'id': bucket.id}
 
@@ -70,19 +72,28 @@ class BucketDetailAPI(BaseDetailView):
 
     @transaction.atomic
     def _patch(self, params):
+        mutated = False
         bucket = Bucket.objects.select_for_update().get(pk=params['id'])
-        bucket.validate_storage_classes(params)
-
-        if 'name' in params:
-            bucket.name = params['name']
+        store_type = params.get("store_type") or bucket.store_type
+        Bucket.validate_storage_classes(ObjectStore(store_type), params)
+        if "name" in params:
+            mutated = True
+            bucket.name = params["name"]
         if "archive_sc" in params:
+            mutated = True
             bucket.archive_sc = params["archive_sc"]
         if "live_sc" in params:
+            mutated = True
             bucket.live_sc = params["live_sc"]
+        if "store_type" in params:
+            mutated = True
+            bucket.store_type = params["store_type"]
         if "config" in params:
-            bucket.live_sc = params["config"]
-        bucket.save()
-        return {'message': f"Bucket {params['id']} updated successfully!"}
+            mutated = True
+            bucket.config = params["config"]
+        if mutated:
+            bucket.save()
+        return {"message": f"Bucket {params['id']} updated successfully!"}
 
     def _delete(self, params):
         bucket = Bucket.objects.get(pk=params['id'])

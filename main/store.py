@@ -21,7 +21,6 @@ MEDIA_ID_KEY = "media_id"
 PATH_KEYS = ["streaming", "archival", "audio", "image"]
 
 
-# TODO update string value for GCP to 'GCP' once old method of recognizing the storage type is gone
 class ObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"

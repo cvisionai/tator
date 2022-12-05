@@ -56,10 +56,10 @@ class BucketListSchema(AutoSchema):
                     "name": "my-bucket",
                     "store_type": "AmazonS3",
                     "config": {
-                        "access_key": "ALSDKFOIWEFMLKASDFKJK",
-                        "secret_key": "LSKDJjksldjfwieoJOASDlkalkdk48+JKF7SDLFIh",
+                        "aws_access_key_id": "ALSDKFOIWEFMLKASDFKJK",
+                        "aws_secret_access_key": "LSKDJjksldjfwieoJOASDlkalkdk48+JKF7SDLFIh",
                         "endpoint_url": "https://s3.us-east-2.amazonaws.com",
-                        "region": "us-east-2",
+                        "region_name": "us-east-2",
                     }
                 },
             }}}

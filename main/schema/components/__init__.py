@@ -22,9 +22,14 @@ from .attribute_value import attribute_value
 from .bookmark import bookmark_spec
 from .bookmark import bookmark_update
 from .bookmark import bookmark
-from .bucket import bucket_spec
-from .bucket import bucket_update
-from .bucket import bucket
+from .bucket import (
+    bucket_spec,
+    bucket_update,
+    bucket,
+    gcp_config,
+    oci_config,
+    s3_config,
+)
 from .change_log import change_log
 from .clone_media import clone_media_spec, get_cloned_media_response
 from .applet import applet
