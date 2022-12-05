@@ -1,6 +1,6 @@
 {{- define "tatorEnv.template" }}
 - name: DJANGO_SECRET_KEY
-  valueFrom:
+ valueFrom:
     secretKeyRef:
       name: tator-secrets
       key: djangoSecretKey
@@ -64,6 +64,8 @@
   value: {{ .Values.objectStorageAccessKey }}
 - name: OBJECT_STORAGE_SECRET_KEY
   value: {{ .Values.objectStorageSecretKey }}
+- name: OBJECT_STORAGE_EXTERNAL_HOST
+  value: {{ .Values.objectStorageProxy }}
 {{- end }}
 {{- if hasKey .Values "uploadBucket" }}
 {{- if .Values.uploadBucket.enabled }}
@@ -77,6 +79,8 @@
   value: {{ .Values.uploadBucket.accessKey }}
 - name: UPLOAD_STORAGE_SECRET_KEY
   value: {{ .Values.uploadBucket.secretKey }}
+- name: UPLOAD_STORAGE_EXTERNAL_HOST
+  value: {{ .Values.uploadBucket.proxy }}
 {{- end }}
 {{- end }}
 {{- if hasKey .Values "backupBucket" }}
@@ -91,6 +95,8 @@
   value: {{ .Values.backupBucket.accessKey }}
 - name: BACKUP_STORAGE_SECRET_KEY
   value: {{ .Values.backupBucket.secretKey }}
+- name: BACKUP_STORAGE_EXTERNAL_HOST
+  value: {{ .Values.backupBucket.proxy }}
 {{- end }}
 {{- end }}
 - name: TATOR_DEBUG
