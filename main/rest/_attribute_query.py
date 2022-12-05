@@ -164,6 +164,7 @@ def build_query_recursively(query_object):
     else:
         attr_name = query_object['attribute']
         operation = query_object['operation']
+        invere = query_object.get('inverse',False)
         value = query_object['value']
         if attr_name.startswith('_'):
             db_lookup=attr_name[:1]
@@ -187,9 +188,12 @@ def build_query_recursively(query_object):
             value = (Point(float(lon),float(lat), srid=4326), Distance(km=float(distance)), 'spheroid')
         
         if operation in ['date_eq','eq']:
-            return Q(**{f"{db_lookup}": value})
+            query = Q(**{f"{db_lookup}": value})
         else:
-            return Q(**{f"{db_lookup}__{operation}": value})
+            query = Q(**{f"{db_lookup}__{operation}": value})
+
+        if inverse:
+            query = ~query
 
     return query
         

@@ -25,6 +25,11 @@ attribute_filter_schema = {
                        'date_range',
                        'distance_lte',]
           },
+          'inverse': {
+              'type': 'boolean',
+              'description': 'Whether to apply NOT to result',
+              'default': False
+          },
          'value': {'$ref': '#/components/schemas/AttributeValue'},
     }
 }
