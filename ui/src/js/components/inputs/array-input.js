@@ -5,145 +5,155 @@ import { TatorElement } from "../tator-element.js";
 // Allows for more inputs to be added
 // Empty inputs = removing item (@TODO add an 'x' feature)
 export class ArrayInput extends TatorElement {
-    constructor() {
-      super();
-  
-      this._div = document.createElement("div");
-      this._shadow.appendChild(this._div)
+  constructor() {
+    super();
 
-      this.label = document.createElement("label");
-      this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
-      this._div.appendChild(this.label);
-  
-      this._name = document.createTextNode("");
-      this.label.appendChild(this._name);
+    this._div = document.createElement("div");
+    this._shadow.appendChild(this._div)
 
-      //
-      this._inputs = []
+    this.label = document.createElement("label");
+    this.label.setAttribute("class", "d-flex flex-justify-between flex-items-center py-1");
+    this._div.appendChild(this.label);
 
-      // Add new
-      this.addNewButton = this.addNewRow({
-          "labelText" : "+ New",
-          "callback" : ""
-      });
-      this._div.appendChild(this.addNewButton);
+    this._name = document.createTextNode("");
+    this.label.appendChild(this._name);
 
-      this.addNewButton.addEventListener("click", (e) => {
-        e.preventDefault();
-        this._newInput("");
-        this.dispatchEvent(new CustomEvent("new-input", { detail : { name : this._name }}));
-      });
-  
-    }
-  
-    static get observedAttributes() {
-      return ["name"];
-    }
-  
-    attributeChangedCallback(name, oldValue, newValue) {
-      switch (name) {
-        case "name":
-          this._name.nodeValue = newValue;
-          break;
-      }
-    }
-  
-    set default(val) {
-      this._default = val; // this will be an array
-    }
-  
-    reset() {
-      // Go back to default value
-      if (typeof this._default !== "undefined") {
-        this.setValue(this._default);
-      } else {
-        this.setValue([]);
-      }
-    }
-  
-  setValue(val) {
-    // console.log(val);
-      if( Array.isArray(val) && val.length > 0){
-        for (let key of val) {
-          let textInput = document.createElement("text-input");
-          textInput._input.classList.remove("col-8");
-          textInput.setValue(key);
-          textInput.default = key;
-          
-          this._addInput(textInput);
-        }
-      }
-    }
+    //
+    this._inputs = []
 
-    _newInput(val){
-      let textInput = document.createElement("text-input");
-      
-      if(val){
-        textInput.setValue(val);
-        textInput.default = val;
-      }
+    // Add new
+    this.addNewButton = this.addNewRow({
+      "labelText": "+ New",
+      "callback": ""
+    });
+    this._div.appendChild(this.addNewButton);
 
-      return this._addInput(textInput);
-    }
-  
-    _addInput(input){
-      input._input.classList.remove("col-8");
-      const wrapper = document.createElement("div");
-      //wrapper.setAttribute("class", "offset-lg-4 col-lg-8 pb-2");
-      wrapper.appendChild(input);
+    this.addNewButton.addEventListener("click", (e) => {
+      e.preventDefault();
+      this._newInput("");
+      this.dispatchEvent(new CustomEvent("new-input", { detail: { name: this._name } }));
+    });
 
-      const spaceholder = document.createElement("div");
-      spaceholder.innerHTML = " ";
-      wrapper.appendChild(spaceholder);
+  }
 
-      // keep track of text inputs
-      this._inputs.push(input);
+  static get observedAttributes() {
+    return ["name"];
+  }
 
-      input.addEventListener("change", () => {
-        this.dispatchEvent(new Event("change"));
-      });
-
-      return this.addNewButton.before(wrapper);
-    }
-  
-    addNewRow({
-      labelText = '',
-      callback = null
-    } = {}){
-      const labelWrap = document.createElement("label");
-      labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
-
-      const spanTextNode = document.createElement("span");
-      const spanText = document.createTextNode("");
-      const labelDiv = document.createElement("div"); 
-
-      spanTextNode.setAttribute("class", "col-sm-4 col-md-3 text-gray clickable");
-      spanText.nodeValue = labelText;
-      spanTextNode.appendChild(spanText);
-
-      labelWrap.append(spanTextNode);
-
-      labelDiv.setAttribute("class", "py-2 f1 text-semibold");
-      labelDiv.appendChild(labelWrap);
-
-      return labelDiv;
-    }
-
-    getValue(){
-      const val = [];
-      // Loop through the inputs
-      for(let input of this._inputs){
-        if(input.getValue().trim() != ""){
-          val.push( input.getValue() );
-        }
-      }
-      return val;
-    }
-
-  changed() {
-      return String(this.getValue()) !== String(this._default);
+  attributeChangedCallback(name, oldValue, newValue) {
+    switch (name) {
+      case "name":
+        this._name.nodeValue = newValue;
+        break;
     }
   }
-  
-  customElements.define("array-input", ArrayInput);
-  
+
+  set default(val) {
+    this._default = val; // this will be an array
+  }
+
+  reset() {
+    // Go back to default value
+    if (typeof this._default !== "undefined") {
+      this.setValue(this._default);
+    } else {
+      this.setValue([]);
+    }
+  }
+
+  setValue(val) {
+    // console.log(val);
+    if (Array.isArray(val) && val.length > 0) {
+      for (let key of val) {
+        let textInput = document.createElement("text-input");
+        textInput._input.classList.remove("col-8");
+        textInput.setValue(key);
+        textInput.default = key;
+
+        this._addInput(textInput);
+      }
+    }
+  }
+
+  _newInput(val) {
+    let textInput = document.createElement("text-input");
+
+    if (val) {
+      textInput.setValue(val);
+      textInput.default = val;
+    }
+
+    return this._addInput(textInput);
+  }
+
+  _addInput(input) {
+    input._input.classList.remove("col-8");
+    const wrapper = document.createElement("div");
+    //wrapper.setAttribute("class", "offset-lg-4 col-lg-8 pb-2");
+    wrapper.appendChild(input);
+
+    const spaceholder = document.createElement("div");
+    spaceholder.innerHTML = " ";
+    wrapper.appendChild(spaceholder);
+
+    // keep track of text inputs
+    this._inputs.push(input);
+
+    input.addEventListener("change", () => {
+      this.dispatchEvent(new Event("change"));
+    });
+
+    return this.addNewButton.before(wrapper);
+  }
+
+  addNewRow({
+    labelText = '',
+    callback = null
+  } = {}) {
+    const labelWrap = document.createElement("label");
+    labelWrap.setAttribute("class", "d-flex flex-items-center py-1 position-relative f1");
+
+    const spanTextNode = document.createElement("span");
+    const spanText = document.createTextNode("");
+    const labelDiv = document.createElement("div");
+
+    spanTextNode.setAttribute("class", "col-sm-4 col-md-3 text-gray clickable");
+    spanText.nodeValue = labelText;
+    spanTextNode.appendChild(spanText);
+
+    labelWrap.append(spanTextNode);
+
+    labelDiv.setAttribute("class", "py-2 f1 text-semibold");
+    labelDiv.appendChild(labelWrap);
+
+    return labelDiv;
+  }
+
+  getValue() {
+    const val = [];
+    // Loop through the inputs
+    for (let input of this._inputs) {
+      if (input.getValue().trim() != "") {
+        val.push(input.getValue());
+      }
+    }
+    return val;
+  }
+
+  changed() {
+    return String(this.getValue()) !== String(this._default);
+  }
+
+  clear() {
+    console.log("START /// Arrayinput clear function start...................");
+    if (this._inputs.length > 0) {
+      for (let x of this._inputs) {
+        x.remove();
+      }
+
+      this._inputs = [];
+    }
+  }
+}
+
+customElements.define("array-input", ArrayInput);

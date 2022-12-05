@@ -74,6 +74,7 @@ export class AppletEdit extends TypeFormTemplate {
       };
 
       // Categories
+      this._categoriesList.clear();
       this._categoriesList.setValue(this._data.categories);
       this._categoriesList.default = this._data.categories;
    }

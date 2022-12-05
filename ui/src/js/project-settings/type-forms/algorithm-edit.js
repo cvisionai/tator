@@ -182,11 +182,13 @@ export class AlgorithmEdit extends TypeFormTemplate {
       this._filesPerJob.default = this._data.files_per_job;
 
       // Categories
+      this._categoriesList.clear();
       this._categoriesList.permission = !this.cantSave ? "Can Edit" : "Ready Only";
       this._categoriesList.setValue(this._data.categories);
       this._categoriesList.default = this._data.categories;
 
       // Parameters
+      this._parametersList.clear();
       let paramInputTypes = JSON.stringify({ name: 'text-input', value: 'text-input' });
       let paramInputTemplate = JSON.stringify({ name: '', value: '' });
       this._parametersList.permission = !this.cantSave ? "Can Edit" : "Ready Only";
