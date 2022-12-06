@@ -47,7 +47,9 @@ export class FilterUtilities {
     if (selectedAttributeType.name == "_version" ||
       selectedAttributeType.name == "_section" ||
       selectedAttributeType.name == "_user" ||
-      selectedAttributeType.name == "_dtype") {
+      selectedAttributeType.name == "_dtype" ||
+      selectedAttributeType.name == "_created_by" ||
+      selectedAttributeType.name == "_modified_by") {
       choices.push({ "value": "==" });
     } else if (dtype == "int" || dtype == "float") {
       choices.push({ "value": "==" });

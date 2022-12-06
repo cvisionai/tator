@@ -100,7 +100,7 @@ export class FilterData {
       userNames.push(`${user.username} (ID:${user.user})`);
       userFirstLastNames.push({
         label: `${user.username}(ID: ${user.user})`,
-        value: `${user.first_name} ${user.last_name}`
+        value: user.user
       });
     }
     userNames.sort();
@@ -153,9 +153,16 @@ export class FilterData {
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
+          var createdByAttribute = {
+            choices: userFirstLastNames,
+            name: "_created_by",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(createdByAttribute);
+
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "Modified By",
+            name: "_modified_by",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
