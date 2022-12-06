@@ -137,12 +137,14 @@ export class FilterData {
         if (this.skipTypeIds.indexOf(this.mediaTypes[idx].id) < 0) {
           var nameAttribute = {
             name: "_name",
+            label: "Filename",
             dtype: "string"
           };
           entityType.attribute_types.push(nameAttribute);
 
           var mediaIdAttribute = {
             name: "_id",
+            label: "ID",
             dtype: "int"
           };
           entityType.attribute_types.push(mediaIdAttribute);
@@ -150,12 +152,14 @@ export class FilterData {
           var sectionAttribute = {
             choices: sectionNames,
             name: "tator_user_sections",
+            label: "Section",
             dtype: "enum"
           }
           entityType.attribute_types.push(sectionAttribute);
 
           var createdDatetimeAttribute = {
             name: "_created_datetime",
+            label: "Created Datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
@@ -163,6 +167,7 @@ export class FilterData {
           var createdByAttribute = {
             choices: userFirstLastNames,
             name: "_created_by",
+            label: "Created By",
             dtype: "enum"
           }
           entityType.attribute_types.push(createdByAttribute);
@@ -170,12 +175,14 @@ export class FilterData {
           var modifiedByAttribute = {
             choices: userFirstLastNames,
             name: "_modified_by",
+            label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
             name: "_modified_datetime",
+            label: "Modified Datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(modifiedDatetimeAttribute);
@@ -183,6 +190,7 @@ export class FilterData {
           var dtypeAttribute = {
             choices: mediaTypeOptions,
             name: "_dtype",
+            label: "Data type",
             dtype: "enum"
           };
           entityType.attribute_types.push(dtypeAttribute);
@@ -190,6 +198,7 @@ export class FilterData {
           var archiveStateAttribute = {
             choices: ["live", "to_archive", "archived", "to_live"],
             name: "_archive_state",
+            label: "Archive State",
             dtype: "enum"
           }
           entityType.attribute_types.push(archiveStateAttribute);
@@ -208,6 +217,7 @@ export class FilterData {
           var versionAttribute = {
             choices: versionNames,
             name: "_version",
+            label: "Version",
             dtype: "enum"
           };
           entityType.attribute_types.push(versionAttribute);
@@ -215,6 +225,7 @@ export class FilterData {
           var dtypeAttribute = {
             choices: localizationTypeOptions,
             name: "_dtype",
+            label: "Data type",
             dtype: "enum"
           };
           entityType.attribute_types.push(dtypeAttribute);
@@ -222,25 +233,29 @@ export class FilterData {
           var userAttribute = {
             choices: userNames,
             name: "_user",
+            label: "User",
             dtype: "enum"
           };
           entityType.attribute_types.push(userAttribute);
 
           var createdDatetimeAttribute = {
             name: "_created_datetime",
+            label: "Created datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(createdDatetimeAttribute);
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "Modified By",
+            name: "_modified_by",
+            label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);
 
           var modifiedDatetimeAttribute = {
             name: "_modified_datetime",
+            label: "Modified Datetime",
             dtype: "datetime"
           };
           entityType.attribute_types.push(modifiedDatetimeAttribute);
@@ -259,6 +274,7 @@ export class FilterData {
           var versionAttribute = {
             choices: versionNames,
             name: "_version",
+            label: "Version",
             dtype: "enum"
           };
           entityType.attribute_types.push(versionAttribute);
@@ -266,6 +282,7 @@ export class FilterData {
           var typeAttribute = {
             choices: stateTypeOptions,
             name: "_type",
+            label: "Data type",
             dtype: "enum"
           }
           entityType.attribute_types.push(typeAttribute);
@@ -284,6 +301,7 @@ export class FilterData {
           var versionAttribute = {
             choices: versionNames,
             name: "_version",
+            label: "Version",
             dtype: "enum"
           };
           entityType.attribute_types.push(versionAttribute);
@@ -291,13 +309,15 @@ export class FilterData {
           var typeAttribute = {
             choices: stateTypeOptions,
             name: "_type",
+            label: "Data Type",
             dtype: "enum"
           }
           entityType.attribute_types.push(typeAttribute);
 
           var modifiedByAttribute = {
             choices: userFirstLastNames,
-            name: "Modified By",
+            name: "_modified_by",
+            label: "Modified By",
             dtype: "enum"
           }
           entityType.attribute_types.push(modifiedByAttribute);

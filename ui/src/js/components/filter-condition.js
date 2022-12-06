@@ -112,7 +112,8 @@ export class FilterCondition extends TatorElement {
         for (const attribute of attributeType.attribute_types)
         {
           if (uniqueFieldChoices.indexOf(attribute.name) < 0) {
-            fieldChoices.push({"value": attribute.name});
+            let label = attribute.label ? attribute.label : `User-Attribute '${attribute.name}'`;
+            fieldChoices.push({"value": attribute.name, "label": label});
             uniqueFieldChoices.push(attribute.name);
           }
         }
