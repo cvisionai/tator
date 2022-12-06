@@ -524,18 +524,6 @@ export class TatorData {
   }
 
   /**
-   * @param {integer} sectionId - Section ID to convert into the user attribute form for searching
-   * @returns {string} tator_user_section value associated with given section ID
-   */
-   _getTatorUserSection(sectionId) {
-    for (const section of this._sections) {
-      if (section.id == sectionId) {
-        return section.tator_user_sections;
-      }
-    }
-  }
-
-  /**
    * Converts the given attribute name to a Tator search compliant string
    * @param {*} attrName - Name of attribute to convert
    * @returns {string} - Tator search compliant attribute name
@@ -834,21 +822,17 @@ export class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_dtype") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "_meta";
-            newFilter.value = filter.value.split('(ID:')[1].replace(")","");
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
             mediaIds.push(Number(filter.value))
-          }
-          else if (filter.field == "Modified By") {
-            filter.field = "_modified_by";
-            mediaFilters.push(filter);            
           }
           else {
             mediaFilters.push(filter);
@@ -971,7 +955,7 @@ export class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_id") {
@@ -1101,7 +1085,7 @@ export class TatorData {
           if (filter.field == "_section") {
             var newFilter = Object.assign({}, filter);
             newFilter.field = "tator_user_sections";
-            newFilter.value = this._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
+            newFilter.value = filter.value;
             mediaFilters.push(newFilter);
           }
           else if (filter.field == "_dtype") {

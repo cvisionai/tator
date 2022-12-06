@@ -112,7 +112,7 @@ export class FilterData {
     var versionNames = [];
     for (let idx = 0; idx < this.versions.length; idx++) {
       let version = this.versions[idx];
-      versionNames.push(`${version.name} (ID:${version.id})`);
+      versionNames.push({label: `${version.name} (ID:${version.id})`, value: version.id});
     }
 
     // Media sections aren't typically part of the media type's user attribute list.
@@ -122,7 +122,7 @@ export class FilterData {
     for (let idx = 0; idx < this.sections.length; idx++) {
       let section = this.sections[idx];
       if (section.tator_user_sections != null) {
-        sectionNames.push(`${section.name} (ID:${section.id})`);
+        sectionNames.push({label: `${section.name} (ID:${section.id})`, value: section.tator_user_sections});
       }
     }
 
@@ -146,6 +146,13 @@ export class FilterData {
             dtype: "int"
           };
           entityType.attribute_types.push(mediaIdAttribute);
+
+          var sectionAttribute = {
+            choices: sectionNames,
+            name: "tator_user_sections",
+            dtype: "enum"
+          }
+          entityType.attribute_types.push(sectionAttribute);
 
           var createdDatetimeAttribute = {
             name: "_created_datetime",
