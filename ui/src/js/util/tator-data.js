@@ -616,7 +616,8 @@ export class TatorData {
       '<=': 'lte',
       'After': 'gt',
       'Before': 'lt',
-      'Includes': 'icontains'
+      'Includes': 'icontains',
+      'Distance <=': 'distance_lte'
     }
 
     var modifier = filter.modifier;

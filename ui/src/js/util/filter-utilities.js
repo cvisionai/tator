@@ -59,10 +59,17 @@ export class FilterUtilities {
     } else if (dtype == "datetime") {
       choices.push({ "value": "After" });
       choices.push({ "value": "Before" });
-    } else {
+    } else if (dtype == "string") {
       choices.push({ "value": "Includes" });
       choices.push({ "value": "==" });
       choices.push({ "value": "NOT ==" });
+    } else if (dtype == "geopos")
+    {
+      choices.push({ "value": "Distance <= (dist,lat,lon)" });
+    }
+    else
+    {
+      console.error(`Can't handle filter ops on dtype='{$dtype}'`)
     }
 
     return choices;
