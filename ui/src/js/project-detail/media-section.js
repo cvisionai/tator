@@ -842,10 +842,17 @@ export class MediaSection extends TatorElement {
           finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
       }
 
-      var searchObject = {'method': 'AND', 'operations': [...finalMediaFilters]};
-      console.info(`Search Object = ${JSON.stringify(searchObject)}`);
-      var searchBlob = btoa(JSON.stringify(searchObject));
-      this.searchString = searchBlob;
+      if (finalMediaFilters.length > 0)
+      {
+        var searchObject = {'method': 'AND', 'operations': [...finalMediaFilters]};
+        console.info(`Search Object = ${JSON.stringify(searchObject)}`);
+        var searchBlob = btoa(JSON.stringify(searchObject));
+        this.searchString = searchBlob;
+      }
+      else
+      {
+        this.searchString = "";
+      }
 
       await this.reload();
 
