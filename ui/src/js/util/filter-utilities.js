@@ -44,13 +44,9 @@ export class FilterUtilities {
     var dtype = selectedAttributeType.dtype;
 
     // #TODO Add more options for the different dtypes
-    if (selectedAttributeType.name == "_version" ||
-      selectedAttributeType.name == "_section" ||
-      selectedAttributeType.name == "_user" ||
-      selectedAttributeType.name == "_dtype" ||
-      selectedAttributeType.name == "_created_by" ||
-      selectedAttributeType.name == "_modified_by") {
+    if (dtype == "enum") {
       choices.push({ "value": "==" });
+      choices.push({ "value": "NOT ==" });
     } else if (dtype == "int" || dtype == "float") {
       choices.push({ "value": "==" });
       choices.push({ "value": "NOT ==" });
@@ -63,13 +59,10 @@ export class FilterUtilities {
     } else if (dtype == "datetime") {
       choices.push({ "value": "After" });
       choices.push({ "value": "Before" });
-    } else if (selectedAttributeType.name == "Modified By") { //_modified_by
-      choices.push({ "value": "==" });
-      choices.push({ "value": "NOT ==" });
-      choices.push({ "value": "Includes" });
     } else {
       choices.push({ "value": "Includes" });
       choices.push({ "value": "==" });
+      choices.push({ "value": "NOT ==" });
     }
 
     return choices;
