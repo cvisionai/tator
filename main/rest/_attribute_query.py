@@ -164,10 +164,10 @@ def build_query_recursively(query_object):
     else:
         attr_name = query_object['attribute']
         operation = query_object['operation']
-        invere = query_object.get('inverse',False)
+        inverse = query_object.get('inverse',False)
         value = query_object['value']
         if attr_name.startswith('_'):
-            db_lookup=attr_name[:1]
+            db_lookup=attr_name[1:]
         else:
             db_lookup=f"attributes__{attr_name}"
         if operation.startswith('date_'):
