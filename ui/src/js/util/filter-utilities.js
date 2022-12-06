@@ -45,11 +45,11 @@ export class FilterUtilities {
 
     // #TODO Add more options for the different dtypes
     if (dtype == "enum") {
-      choices.push({ "value": "==" });
-      choices.push({ "value": "NOT ==" });
+      choices.push({ "value": "==", label: "Equals" });
+      choices.push({ "value": "NOT ==", label: "Does Not Equal"});
     } else if (dtype == "int" || dtype == "float") {
-      choices.push({ "value": "==" });
-      choices.push({ "value": "NOT ==" });
+      choices.push({ "value": "==", label: "Equals"});
+      choices.push({ "value": "NOT ==", label: "Does Not Equal"});
       choices.push({ "value": ">" });
       choices.push({ "value": ">=" });
       choices.push({ "value": "<" });
@@ -57,17 +57,17 @@ export class FilterUtilities {
     } else if (dtype == "bool") {
       choices.push({ "value": "==" });
     } else if (dtype == "datetime") {
-      choices.push({ "value": "After" });
+      choices.push({ "value": "After" });q
       choices.push({ "value": "Before" });
     } else if (dtype == "string") {
       choices.push({ "value": "Includes" });
-      choices.push({ "value": "==" });
+      choices.push({ "value": "==" , label: "Equals"});
       choices.push({ "value": "Starts with" });
       choices.push({ "value": "Ends with" });
-      choices.push({ "value": "NOT ==" });
+      choices.push({ "value": "NOT ==", label: "Does Not Equal"});
     } else if (dtype == "geopos")
     {
-      choices.push({ "value": "Distance <= (dist,lat,lon)" });
+      choices.push({ "value": "Distance <=", "label": "Distance Within Sphere (dist,lat,lon)" });
     }
     else
     {
