@@ -915,9 +915,9 @@ export class ProjectDetail extends TatorPage {
                 }
 
                 // Is there a search to apply?
-                if (params.has("search")) {
+                if (params.has("encoded_search")) {
                   // console.log(params.get("search"));
-                  this._mediaSection.searchString = params.get("search");
+                  this._mediaSection.searchString = params.get("encoded_search");
                   this._addSavedSearchButton.style.opacity = 1.0;
                   this._addSavedSearchButton.style.cursor = "pointer";
                 }

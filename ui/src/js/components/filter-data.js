@@ -136,17 +136,10 @@ export class FilterData {
 
         if (this.skipTypeIds.indexOf(this.mediaTypes[idx].id) < 0) {
           var nameAttribute = {
-            name: "filename",
+            name: "_name",
             dtype: "string"
           };
           entityType.attribute_types.push(nameAttribute);
-
-          var sectionAttribute = {
-            choices: sectionNames,
-            name: "_section",
-            dtype: "enum"
-          };
-          entityType.attribute_types.push(sectionAttribute);
 
           var mediaIdAttribute = {
             name: "_id",

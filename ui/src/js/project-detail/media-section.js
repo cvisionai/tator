@@ -147,7 +147,7 @@ export class MediaSection extends TatorElement {
 
   set searchString(val) {
     if (val) {
-      this._searchParams.set("search", val);
+      this._searchParams.set("encoded_search", val);
     } else {
       this._searchParams = new URLSearchParams();
     }
@@ -838,41 +838,14 @@ export class MediaSection extends TatorElement {
     if (conditions !== []) {
       // Media Filters
       var finalMediaFilters = [];
-      var mediaDateFilters = [];
       for (var filter of this._filterConditions) {
-        if (filter.modifier == "Before") {
-          mediaDateFilters = this._modelData._applyDateRange(mediaDateFilters, filter.field, "end", filter.value);
-        } else if (filter.modifier == "After") {
-          mediaDateFilters = this._modelData._applyDateRange(mediaDateFilters, filter.field, "start", filter.value);
-        } else if (filter.field == "_dtype") {
-          filter.field = "_meta";
-          filter.value = Number(filter.value.split('(ID:')[1].replace(")",""));
           finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
-        } else if (filter.field == "_section") {
-          filter.field = "tator_user_sections";
-          filter.value = this._modelData._getTatorUserSection(Number(filter.value.split('(ID:')[1].replace(")","")));
-          finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
-        } else {
-          if (filter.field == "_id") {
-            filter.field = "_postgres_id"
-          }
-          finalMediaFilters.push(this._modelData._convertFilterForTator(filter));
-        }
       }
 
-      for (const dateFilter of mediaDateFilters) {
-        finalMediaFilters.push(this._modelData._convertDateRangeForTator(dateFilter));
-      }
-
-      var mediaSearch = "";
-      for (let idx = 0; idx < finalMediaFilters.length; idx++) {
-        var filter = finalMediaFilters[idx];
-        mediaSearch += filter;
-        if (idx < finalMediaFilters.length - 1) {
-          mediaSearch += " AND ";
-        }
-      }
-      this.searchString = mediaSearch;
+      var searchObject = {'method': 'AND', 'operations': [...finalMediaFilters]};
+      console.info(`Search Object = ${JSON.stringify(searchObject)}`);
+      var searchBlob = btoa(JSON.stringify(searchObject));
+      this.searchString = searchBlob;
 
       await this.reload();
 
@@ -908,12 +881,12 @@ export class MediaSection extends TatorElement {
       params.delete("filterConditions");
     }
 
-    const searchString = this._searchParams.get("search");
+    const searchString = this._searchParams.get("encoded_search");
     if (typeof searchString !== "undefined" && searchString != null && searchString !== "undefined") {
       // let params = this._sectionParams();
-      params.set("search", searchString);
+      params.set("encoded_search", searchString);
     } else {
-      params.delete("search");
+      params.delete("encoded_search");
     }
 
     return params;
