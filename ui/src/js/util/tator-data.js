@@ -657,7 +657,7 @@ export class TatorData {
 
     // Annotation Search
     var annotationSearch = "";
-    var annotationSearchObject = {'method': 'AND', 'operations': [...finalAnnotationFilters]};
+    var annotationSearchObject = {'method': 'and', 'operations': [...finalAnnotationFilters]};
     var annotationSearchBlob = btoa(JSON.stringify(annotationSearchObject));
     if (annotationSearch && annotationType != "Medias") {
       paramString += "&encoded_search=" + annotationSearchBlob;
@@ -671,7 +671,7 @@ export class TatorData {
         finalMediaFilters.push(this._convertFilterForTator(filter));
     }
 
-    var mediaSearchObject = {'method': "AND", 'operations':[...finalMediaFilters]};
+    var mediaSearchObject = {'method': "and", 'operations':[...finalMediaFilters]};
     var mediaSearchBlob = btoa(JSON.stringify(mediaSearchObject)); 
     if (mediaSearch && annotationType != "Medias") {
       paramString += "&related_search=" + mediaSearchBlob;

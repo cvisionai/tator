@@ -366,21 +366,17 @@ export class ProjectDetail extends TatorPage {
           spec.name = newSectionDialog._input.value;
 
           // TODO
-          if (params.has("search")) {
-            if (spec.lucene_search) {
-              spec.lucene_search = `(${spec.lucene_search}) AND (${params.get("search")})`;
+          if (params.has("encoded_search")) {
+            let object_search = JSON.parse(atob(params.get("encoded_search")));
+            if (spec.object_search) {
+              let union_operation = {"method": "and", operations:[spec.object_search, object_search]}
+              spec.object_search = union_operation;
             } else {
-              spec.lucene_search = params.get("search");
+              spec.object_search = object_search;
             }
           }
 
           delete spec.id;
-          if (spec.annotation_bools === null) {
-            delete spec.annotation_bools;
-          }
-          if (spec.media_bools === null) {
-            delete spec.media_bools;
-          }
           if (spec.tator_user_sections === null) {
             delete spec.tator_user_sections;
           }

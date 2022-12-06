@@ -162,7 +162,7 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
             raise Http404
 
         if section[0].object_search:
-            qs = get_attribute_psql_queryset_from_query_obj(qs, json.loads(section[0].object_search))
+            qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
 
     related_encoded_search_qs = None
     if params.get('encoded_related_search'):

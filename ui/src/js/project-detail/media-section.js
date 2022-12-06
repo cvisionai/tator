@@ -844,7 +844,7 @@ export class MediaSection extends TatorElement {
 
       if (finalMediaFilters.length > 0)
       {
-        var searchObject = {'method': 'AND', 'operations': [...finalMediaFilters]};
+        var searchObject = {'method': 'and', 'operations': [...finalMediaFilters]};
         console.info(`Search Object = ${JSON.stringify(searchObject)}`);
         var searchBlob = btoa(JSON.stringify(searchObject));
         this.searchString = searchBlob;
