@@ -62,6 +62,8 @@ export class FilterUtilities {
     } else if (dtype == "string") {
       choices.push({ "value": "Includes" });
       choices.push({ "value": "==" });
+      choices.push({ "value": "Starts with" });
+      choices.push({ "value": "Ends with" });
       choices.push({ "value": "NOT ==" });
     } else if (dtype == "geopos")
     {

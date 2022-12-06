@@ -617,6 +617,8 @@ export class TatorData {
       'After': 'gt',
       'Before': 'lt',
       'Includes': 'icontains',
+      'Starts with': 'istartswith',
+      'Ends with': 'iendswith',
       'Distance <=': 'distance_lte'
     }
 

@@ -14,7 +14,9 @@ attribute_filter_schema = {
                        'gte', 
                        'lt', 
                        'lte', 
-                       'icontains', 
+                       'icontains',
+                       'iendswidth',
+                       'istartswith',
                        'isnull', 
                        # Date specific operations
                        'date_eq',
