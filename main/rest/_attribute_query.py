@@ -148,7 +148,7 @@ def build_query_recursively(query_object):
         method = query_object['method'].lower()
         sub_queries = [build_query_recursively(x) for x in query_object['operations']]
         if len(sub_queries) == 0:
-            raise(Exception("Operation list is 0."))
+            return Q()
         if method == 'not':
             if len(sub_queries) != 1:
                 raise(Exception("NOT operator can only be applied to one suboperation"))
