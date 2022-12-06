@@ -604,48 +604,31 @@ export class TatorData {
 
   /**
    * @param {FilterConditionData} filter - Filter to convert
-   * @returns {string} - Tator REST compliant parameter string
+   * @returns {string} - Tator REST compliant parameter object
    */
   _convertFilterForTator(filter) {
+    const modifier_lookup = {
+      '==': 'eq',
+      'NOT ==': 'eq',
+      '>': 'gt',
+      '<': 'lt',
+      '>=': 'gte',
+      '<=': 'lte',
+      'After': 'gt',
+      'Before': 'lt',
+      'Includes': 'icontains'
+    }
 
-    // Adjust the modifier to be lucene compliant
     var modifier = filter.modifier;
-    var modifierEnd = "";
-    var modifierStart = "";
-    var doNotReplace = false;
     var value = filter.value;
     var field = filter.field;
-
-    if (modifier == "==") {
-      modifier = "";
-    }
-    else if (modifier == "Includes") {
-      modifier = "*";
-      modifierEnd = "*";
-    }
-    else if (modifier == "OR") {
-      modifier = "";
-      doNotReplace = true;
-    } else if (modifier == "NOT ==") {
-      modifier = "";
-      modifierStart = "NOT("
-      modifierEnd = ")";
-    }
-
-    if (!doNotReplace) {
-      // Lucene search string requires spaces to have the backlash preceding it
-      field = filter.field.replace(/ /g, "\\ ")
-      field = field.replace(/\(/g, "\\(")
-      field = field.replace(/\)/g, "\\)")
-    
-      value = String(filter.value).replace(/ /g, "\\ ")
-      value = value.replace(/\(/g, "\\(")
-      value = value.replace(/\)/g, "\\)")
-    }
-
-    // Finally generate the final parameter string compliant with Tator's REST call
-    var paramStr = `${modifierStart}${field}:${modifier}${value}${modifierEnd}`;
-    return paramStr;
+    var filter_object = {};
+    filter_object.attribute = field;
+    filter_object.value = value;
+    filter_object.operation = modifier_lookup[filter.modifier];
+    filter_object.inverse = (filter.modifier.startsWith('NOT') ? true : false);
+ 
+    return filter_object;
   }
 
   /**
@@ -677,70 +660,32 @@ export class TatorData {
     var paramString = "";
 
     var finalAnnotationFilters = [];
-    var annotationDateFilters = [];
     for (const filter of annotationFilterData) {
-      if (filter.modifier == "Before") {
-        annotationDateFilters = this._applyDateRange(annotationDateFilters, filter.field, "end", filter.value);
-      }
-      else if (filter.modifier == "After") {
-        annotationDateFilters = this._applyDateRange(annotationDateFilters, filter.field, "start", filter.value);
-      }
-      else {
         finalAnnotationFilters.push(this._convertFilterForTator(filter));
-      }
-    }
-    
-    for (const dateFilter of annotationDateFilters) {
-      finalAnnotationFilters.push(this._convertDateRangeForTator(dateFilter));
     }
 
     // Annotation Search
     var annotationSearch = "";
-    for (let idx = 0; idx < finalAnnotationFilters.length; idx++) {
-      var filter = finalAnnotationFilters[idx];
-      annotationSearch += encodeURIComponent(filter);
-      if (idx < finalAnnotationFilters.length - 1) {
-        annotationSearch += encodeURIComponent(" AND ");        
-      }
-    }
+    var annotationSearchObject = {'method': 'AND', 'operations': [...finalAnnotationFilters]};
+    var annotationSearchBlob = btoa(JSON.stringify(annotationSearchObject));
     if (annotationSearch && annotationType != "Medias") {
-      paramString += "&search=" + annotationSearch;
+      paramString += "&encoded_search=" + annotationSearchBlob;
     } else if (annotationSearch && annotationType == "Medias") {
-      paramString += "&annotation_search" + annotationSearch;
+      paramString += "&encoded_related_search" + annotationSearchBlob;
     }
 
      // Media Filters
     var finalMediaFilters = [];
-    var mediaDateFilters = [];
     for (const filter of mediaFilterData) {
-      if (filter.modifier == "Before") {
-        mediaDateFilters = this._applyDateRange(mediaDateFilters, filter.field, "end", filter.value);
-      }
-      else if (filter.modifier == "After") {
-        mediaDateFilters = this._applyDateRange(mediaDateFilters, filter.field, "start", filter.value);
-      }
-      else {
         finalMediaFilters.push(this._convertFilterForTator(filter));
-      }
     }
 
-    for (const dateFilter of mediaDateFilters) {
-      finalMediaFilters.push(this._convertDateRangeForTator(dateFilter));
-    }
-
-    var mediaSearch = "";
-    for (let idx = 0; idx < finalMediaFilters.length; idx++) {
-      var filter = finalMediaFilters[idx];
-      mediaSearch += encodeURIComponent(filter);
-      if (idx < finalMediaFilters.length - 1) {
-        mediaSearch += encodeURIComponent(" AND ");
-      }
-    }
-
+    var mediaSearchObject = {'method': "AND", 'operations':[...finalMediaFilters]};
+    var mediaSearchBlob = btoa(JSON.stringify(mediaSearchObject)); 
     if (mediaSearch && annotationType != "Medias") {
-      paramString += "&media_search=" + mediaSearch;
+      paramString += "&related_search=" + mediaSearchBlob;
     } else if (mediaSearch && annotationType == "Medias") {
-      paramString += "&search=" + mediaSearch;
+      paramString += "&encoded_search=" + mediaSearchBlob;
     }
 
     if (versionIds != undefined && versionIds.length > 0) {
