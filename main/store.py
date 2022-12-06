@@ -68,24 +68,22 @@ DEFAULT_STORAGE_CLASSES = {
 }
 
 
-def _client_from_config(
-    config: dict,
-    store_type: ObjectStore,
-    connect_timeout: float,
-    read_timeout: float,
-    max_attempts: int,
-):
+def _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts):
     # TODO Handle OCI separately with native sdk
+    store_type = ObjectStore(bucket.store_type)
+    config = dict(bucket.config)
     if store_type in [ObjectStore.AWS, ObjectStore.MINIO, ObjectStore.OCI]:
         config["config"] = Config(
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
             retries={"max_attempts": max_attempts},
         )
-        config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket_name}.", "")
+        config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket.name}.", "")
         return boto3.client("s3", **config)
     if store_type == ObjectStore.GCP:
         return storage.Client(config["project_id"], Credentials.from_service_account_info(config))
+
+    raise ValueError(f"Received unhandled store type '{store_type}'")
 
 
 class TatorStorage(ABC):
@@ -658,12 +656,8 @@ def get_tator_store(
         client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
         return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
     elif getattr(bucket, "config", None):
-        bucket_config = dict(bucket.config)
-        store_type = bucket.store_type
-        client = _client_from_config(
-            bucket_config, store_type, connect_timeout, read_timeout, max_attempts
-        )
-        return TatorStorage.get_tator_store(store_type, bucket, client, bucket.name)
+        client = _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts)
+        return TatorStorage.get_tator_store(bucket.store_type, bucket, client, bucket.name)
     else:
         endpoint = bucket.endpoint_url
         region = bucket.region
