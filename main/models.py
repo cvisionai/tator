@@ -433,6 +433,7 @@ class Bucket(Model):
             ObjectStore.AWS: "Amazon S3",
             ObjectStore.MINIO: "MinIO",
             ObjectStore.GCP: "Google Cloud Storage",
+            ObjectStore.OCI: "Oracle Cloud Storage",
         }
 
         for sc_type in ["archive_sc", "live_sc"]:
