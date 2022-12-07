@@ -19,6 +19,10 @@ organization_properties = {
             "Full Control",
         ],
     },
+    "thumb": {
+        "type": "string",
+        "description": "S3 key of thumbnail used to represent the organization.",
+    },
 }
 
 organization_spec = {
@@ -31,10 +35,7 @@ organization_update = {
     "type": "object",
     "properties": {
         **organization_properties,
-        "thumb": {
-            "type": "string",
-            "description": "S3 key of thumbnail used to represent the organization.",
-        },
+
     },
 }
 

@@ -190,6 +190,7 @@ export class ThumbInput extends TatorElement {
     }
 
   _preview(img) {
+    console.log("Preview this image string --- " + img);
     if (typeof img !== "string") {
       try {
         this._previewImg.src = URL.createObjectURL( img );

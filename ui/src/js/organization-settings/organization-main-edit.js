@@ -26,13 +26,17 @@ export class OrganizationMainEdit extends OrgTypeFormTemplate {
   }
   
   async _setupFormUnique() {
+    console.log("_setupFormUnique ", this._data);
     // Thumb
-    this._thumbUpload.setValue(this._data.thumb);
-    this._thumbUpload.default = this._data.thumb === null ? "" : this._data.thumb;
+    const thumbVal = (!this._data.thumb || this._data.thumb === null) ? "" : this._data.thumb;
+    this._thumbUpload.default = thumbVal;
+    this._thumbUpload.setValue(thumbVal);
+    
 
     // Input for name
-    this._editName.setValue(this._data.name);
     this._editName.default = this._data.name;
+    this._editName.setValue(this._data.name);
+    
   }
 
   // save and formdata
