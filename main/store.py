@@ -63,11 +63,10 @@ DEFAULT_STORAGE_CLASSES = {
 class TatorStorage(ABC):
     """Interface for object storage."""
 
-    def __init__(self, bucket, client, bucket_name, rclone_params, external_host=None):
+    def __init__(self, bucket, client, bucket_name, external_host=None):
         self.bucket = bucket
         self.bucket_name = bucket.name if bucket else bucket_name
         self.client = client
-        self.rclone_params = rclone_params
         self.external_host = external_host
         self._server = None
         self.remote_type = None
@@ -101,15 +100,15 @@ class TatorStorage(ABC):
         return DEFAULT_STORAGE_CLASSES["live_sc"][self.server]
 
     @staticmethod
-    def get_tator_store(server, bucket, client, bucket_name, rclone_params, external_host=None):
+    def get_tator_store(server, bucket, client, bucket_name, external_host=None):
         if server is ObjectStore.AWS:
-            return S3Storage(bucket, client, bucket_name, rclone_params, external_host)
+            return S3Storage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.GCP:
-            return GCPStorage(bucket, client, bucket_name, rclone_params, external_host)
+            return GCPStorage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.MINIO:
-            return MinIOStorage(bucket, client, bucket_name, rclone_params, external_host)
+            return MinIOStorage(bucket, client, bucket_name, external_host)
         if server is ObjectStore.OCI:
-            return OCIStorage(bucket, client, bucket_name, rclone_params, external_host)
+            return OCIStorage(bucket, client, bucket_name, external_host)
 
         raise ValueError(f"Server type '{server}' is not supported")
 
@@ -294,8 +293,8 @@ class TatorStorage(ABC):
 
 
 class MinIOStorage(TatorStorage):
-    def __init__(self, bucket, client, bucket_name, rclone_params, external_host=None):
-        super().__init__(bucket, client, bucket_name, rclone_params, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.MINIO
         self.remote_type = "s3"
 
@@ -355,7 +354,8 @@ class MinIOStorage(TatorStorage):
         # Replace host if external host is given.
         if self.external_host:
             parsed = urlsplit(url)
-            parsed = parsed._replace(netloc=self.external_host, scheme=self.proto)
+            external = urlsplit(self.external_host, scheme=self.proto)
+            parsed = parsed._replace(netloc=external.netloc + external.path, scheme=external.scheme)
             url = urlunsplit(parsed)
         return url
 
@@ -393,12 +393,16 @@ class MinIOStorage(TatorStorage):
         return self.client.list_objects_v2(Bucket=self.bucket_name, **kwargs).get("Contents", [])
 
     def complete_multipart_upload(self, path, parts, upload_id):
-        self.client.complete_multipart_upload(
-            Bucket=self.bucket_name,
-            Key=self.path_to_key(path),
-            MultipartUpload={"Parts": parts},
-            UploadId=upload_id,
-        )
+        try:
+            self.client.complete_multipart_upload(
+                Bucket=self.bucket_name,
+                Key=self.path_to_key(path),
+                MultipartUpload={"Parts": parts},
+                UploadId=upload_id,
+            )
+        except Exception:
+            return False
+        return True
 
     def put_object(self, path, body):
         self.client.put_object(Bucket=self.bucket_name, Key=self.path_to_key(path), Body=body)
@@ -433,8 +437,8 @@ class MinIOStorage(TatorStorage):
 
 
 class S3Storage(MinIOStorage):
-    def __init__(self, bucket, client, bucket_name, rclone_params, external_host=None):
-        super().__init__(bucket, client, bucket_name, rclone_params, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.AWS
         self.remote_type = "s3"
 
@@ -449,8 +453,8 @@ class S3Storage(MinIOStorage):
         )
 
 class OCIStorage(MinIOStorage):
-    def __init__(self, bucket, client, bucket_name, rclone_params, external_host=None):
-        super().__init__(bucket, client, bucket_name, rclone_params, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.OCI
         self.remote_type = "oci"
 
@@ -464,8 +468,8 @@ class OCIStorage(MinIOStorage):
         pass # OCI does not support object tags.
 
 class GCPStorage(TatorStorage):
-    def __init__(self, bucket, client, bucket_name, rclone_params, external_host=None):
-        super().__init__(bucket, client, bucket_name, rclone_params, external_host)
+    def __init__(self, bucket, client, bucket_name, external_host=None):
+        super().__init__(bucket, client, bucket_name, external_host)
         self._server = ObjectStore.GCP
         self.gcs_bucket = self.client.get_bucket(self.bucket_name)
         self.remote_type = "google cloud storage"
@@ -606,13 +610,7 @@ def get_tator_store(
         gcs_key_info = json.loads(bucket.gcs_key_info)
         gcs_project = gcs_key_info["project_id"]
         client = storage.Client(gcs_project, Credentials.from_service_account_info(gcs_key_info))
-        rclone_config_create_params = {
-            "project_number": gcs_key_info["project_id"],
-            "service_account_credentials": bucket.gcs_key_info,
-        }
-        return TatorStorage.get_tator_store(
-            ObjectStore.GCP, bucket, client, bucket.name, rclone_config_create_params
-        )
+        return TatorStorage.get_tator_store(ObjectStore.GCP, bucket, client, bucket.name)
 
     if bucket is None:
         if upload and os.getenv("UPLOAD_STORAGE_HOST"):
@@ -690,23 +688,7 @@ def get_tator_store(
         else:
             raise ValueError(f"Received unhandled server type '{response_server}'")
 
-    provider = {ObjectStore.AWS: "AWS", ObjectStore.MINIO: "Minio", ObjectStore.OCI: "Minio"}[server]
-
-    # These parameters are used by `TatorBackupManager` to communicate with storage providers using
-    # the Python wrapper to the golang library `librclone`
-    rclone_config_create_params = {
-        "provider": provider,
-        "env_auth": False,
-        "no_check_bucket": True,
-        "access_key_id": access_key,
-        "secret_access_key": secret_key,
-        "region": region,
-        "endpoint": endpoint,
-    }
-
-    return TatorStorage.get_tator_store(
-        server, bucket, client, bucket_name, rclone_config_create_params, external_host
-    )
+    return TatorStorage.get_tator_store(server, bucket, client, bucket_name, external_host)
 
 
 def get_storage_lookup(resources):

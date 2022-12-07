@@ -1,18 +1,5 @@
-# Build librclone shared object
-FROM golang:latest as rclone_build
-WORKDIR /go
-RUN git clone https://github.com/rclone/rclone.git --single-branch --depth 1 --branch v1.59.2
-
-WORKDIR /go/rclone/librclone/
-RUN go build --buildmode=c-shared -o librclone.so github.com/rclone/rclone/librclone
-
 FROM ubuntu:20.04
 MAINTAINER CVision AI <info@cvisionai.com>
-
-# Copy librclone shared object to this container
-COPY --from=rclone_build /go/rclone/librclone/librclone.so /usr/local/lib/
-RUN mkdir -p /root/.config/rclone
-RUN touch /root/.config/rclone/rclone.conf
 
 # Install apt packages
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \

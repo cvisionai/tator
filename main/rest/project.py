@@ -119,6 +119,12 @@ class ProjectListAPI(BaseListView):
             if params['upload_bucket'].organization.pk != params['organization']:
                 raise PermissionDenied
 
+        # Make sure backup bucket can be set by this user.
+        if "backup_bucket" in params:
+            params["backup_bucket"] = get_object_or_404(Bucket, pk=params["backup_bucket"])
+            if params["backup_bucket"].organization.pk != params["organization"]:
+                raise PermissionDenied
+
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
         project = Project.objects.create(
