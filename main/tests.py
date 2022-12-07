@@ -1044,7 +1044,12 @@ class AttributeTestMixin:
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
     def test_geoposition_attr(self):
-        test_vals = [random_latlon() for _ in range(len(self.entities))]
+        test_vals = [(40.712776,-74.005974), # new york
+                     (42.360081, -71.058884), # boston
+                     (51.507351, -0.127758), # london
+                     (55.755825, 37.617298), # moscow
+                     (-33.868820, 151.209290) # sydney
+        ]
         # Test setting invalid geopositions
         response = self.client.patch(
             f'/rest/{self.detail_uri}/{self.entities[0].pk}',
@@ -1102,7 +1107,7 @@ class AttributeTestMixin:
             f'type={self.entity_type.pk}&format=json'
         )
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
-        test_lat, test_lon = random_latlon()
+        test_lat, test_lon = (30.26759, -97.74299) # Austin, TX
         for dist in [1.0, 100.0, 1000.0, 5000.0, 10000.0, 43000.0]:
             response = self.client.get(
                 f'/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Geoposition Test::'
