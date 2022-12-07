@@ -376,7 +376,8 @@ const store = create(subscribeWithSelector((set, get) => ({
             const emailMap = new Map();
 
             /* Add the data via loop to: setList and map */
-            for (let item of object.data) {
+            let loopData = (type === "Organization") ? [object.data] : object.data;
+            for (let item of loopData) {
                setList.add(item.id);
                map.set(item.id, item);
 
@@ -399,7 +400,9 @@ const store = create(subscribeWithSelector((set, get) => ({
                get().initType("Project");
             }
 
-            if (type == "Affiliation") {
+            if (type == "Organization") {
+               set({ [type]: { ...get()[type], setList, map, data: object.data, init: true } });
+            } else if (type == "Affiliation") {
                set({ [type]: { ...get()[type], setList, map, userMap, emailMap, init: true } });
             } else {
                set({ [type]: { ...get()[type], setList, map, init: true } });

@@ -131,13 +131,15 @@ export class OrganizationSettings extends TatorPage {
 
   /* Organization data required for settings page components are updated */
   updateOrganization(newType) {
+    console.log("New type", newType);
     if (!this.organizationId) {
       // Organization id
       this.organizationId = newType.data.id;
-      this._breadcrumbs.setAttribute("organization-name", `${newType.data.name}`);
+      
       // Init
       this._init();
     }
+    this._breadcrumbs.setAttribute("organization-name", `${newType.data.name}`);
   }
 
   userHasPermission() {
