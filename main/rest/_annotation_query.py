@@ -170,16 +170,15 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
         qs = get_attribute_psql_queryset_from_query_obj(qs, search_obj)
 
     if apply_merge:
-        parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery(qs.values('parent')))
-        qs = qs.difference(parent_set)
+        #parent_set = ANNOTATION_LOOKUP[annotation_type].objects.filter(pk__in=Subquery())
+        qs = qs.exclude(pk__in=qs.values('parent'))
 
     show_deleted = params.get('showDeleted')
     if not show_deleted:
-        qs = ANNOTATION_LOOKUP[annotation_type].objects\
-                         .filter(pk__in=qs.values_list('pk', flat=True))\
-                         .filter(variant_deleted=False)
+        qs = qs.filter(variant_deleted=False)
         
-    qs = qs.order_by('id')
+    if params.get('float_array',None) == None:
+        qs = qs.order_by('id')
 
     if (start is not None) and (stop is not None):
         qs = qs[start:stop]

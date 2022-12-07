@@ -258,6 +258,7 @@ def get_attribute_psql_queryset(project, entity_type, qs, params, filter_ops):
         field_type,size = _get_field_for_attribute(project, entity_type, name)
         if field_type:
             found_it = True
+            qs = qs.filter(meta=params['type'])
             qs = qs.annotate(**{f"{name}_char": Cast(f"attributes__{name}", CharField())})
             qs = qs.annotate(**{f"{name}_typed": Cast(f"{name}_char", VectorField(dimensions=size))})
             if metric == 'l2norm':
