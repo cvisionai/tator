@@ -90,14 +90,12 @@ bucket = {
     "type": "object",
     "description": "Bucket object.",
     "properties": {
-        "id": {
-            "type": "integer",
-            "description": "Unique integer identifying a bucket.",
-        },
+        "id": {"type": "integer", "description": "Unique integer identifying a bucket."},
         "organization": {
             "type": "integer",
             "description": "Unique integer identifying organization that owns this bucket.",
         },
+        "endpoint_url": {"description": "Endpoint URL for bucket.", "type": "string"},
         **bucket_properties,
     },
 }

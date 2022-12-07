@@ -7,7 +7,6 @@ from django.shortcuts import get_object_or_404
 from ..models import Organization
 from ..models import Affiliation
 from ..models import Bucket
-from ..models import database_qs
 from ..schema import BucketListSchema
 from ..schema import BucketDetailSchema
 from ..store import ObjectStore
@@ -17,6 +16,30 @@ from ._base_views import BaseDetailView
 from ._permissions import OrganizationAdminPermission
 
 logger = logging.getLogger(__name__)
+
+
+def _get_endpoint_url(bucket):
+    if bucket.config:
+        if bucket.store_type == ObjectStore.GCP:
+            return None
+        if bucket.store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
+            return bucket.config.get("endpoint_url", None)
+        if bucket.store_type == ObjectStore.OCI:
+            return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
+        raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
+    return bucket.endpoint_url
+
+
+def serialize_bucket(bucket):
+    return {
+        "id": bucket.id,
+        "organization": bucket.organization.id,
+        "endpoint_url": _get_endpoint_url(bucket),
+        "archive_sc": bucket.archive_sc,
+        "live_sc": bucket.live_sc,
+        "store_type": bucket.store_type.value,
+    }
+
 
 class BucketListAPI(BaseListView):
     """ List endpoint for Buckets.
@@ -34,7 +57,7 @@ class BucketListAPI(BaseListView):
         if affiliation[0].permission != 'Admin':
             raise PermissionDenied
         buckets = Bucket.objects.filter(organization=params['organization'])
-        return database_qs(buckets)
+        return [serialize_bucket(bucket) for bucket in buckets]
 
     def _post(self, params):
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
@@ -68,7 +91,7 @@ class BucketDetailAPI(BaseDetailView):
         if affiliation[0].permission != 'Admin':
             raise PermissionDenied
 
-        return database_qs(buckets)[0]
+        return serialize_bucket(buckets[0])
 
     @transaction.atomic
     def _patch(self, params):

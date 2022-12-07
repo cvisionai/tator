@@ -54,7 +54,7 @@ class BucketListSchema(AutoSchema):
                 'schema': {'$ref': '#/components/schemas/BucketSpec'},
                 "example": {
                     "name": "my-bucket",
-                    "store_type": "AmazonS3",
+                    "store_type": "AWS",
                     "config": {
                         "aws_access_key_id": "ALSDKFOIWEFMLKASDFKJK",
                         "aws_secret_access_key": "LSKDJjksldjfwieoJOASDlkalkdk48+JKF7SDLFIh",

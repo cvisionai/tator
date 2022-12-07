@@ -58,7 +58,7 @@ def create_test_bucket(organization):
     return Bucket.objects.create(
         name=str(uuid1()),
         organization=organization,
-        store_type="AmazonS3",
+        store_type="AWS",
         archive_sc="STANDARD",
         live_sc="STANDARD",
         config={
@@ -2869,7 +2869,7 @@ class BucketTestCase(
         self.detail_uri = 'Bucket'
         self.create_json = {
             "name": "my-bucket",
-            "store_type": "AmazonS3",
+            "store_type": "AWS",
             "config": {
                 "aws_access_key_id": "asdf",
                 "aws_secret_access_key": "asdf",
@@ -2879,7 +2879,7 @@ class BucketTestCase(
         }
         self.patch_json = {
             "name": "my-bucket1",
-            "store_type": "AmazonS3",
+            "store_type": "AWS",
             "config": {
                 "aws_access_key_id": "asdf1",
                 "aws_secret_access_key": "asdf2",
