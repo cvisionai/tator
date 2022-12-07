@@ -83,10 +83,10 @@ export class BucketEdit extends OrganizationTypeForm {
 
     // access key
     this._editAccessKey = document.createElement("text-input");
-    this._editAccessKey.setAttribute("name", "Access Key");
+    this._editAccessKey.setAttribute("name", "AWS Access Key ID");
     this._editAccessKey.setAttribute("type", "string");
-    this._editAccessKey.setValue(this.data.access_key);
-    this._editAccessKey.default = this.data.access_key;
+    this._editAccessKey.setValue(this.data.aws_access_key_id);
+    this._editAccessKey.default = this.data.aws_access_key_id;
     this._editAccessKey.hidden = true;
     this.bucketInputs.set("access_key", this._editAccessKey);
     this._editAccessKey.addEventListener("change", this._formChanged.bind(this));
@@ -94,10 +94,10 @@ export class BucketEdit extends OrganizationTypeForm {
 
     // secret key
     this._editSecretKey = document.createElement("text-input");
-    this._editSecretKey.setAttribute("name", "Secret Key");
+    this._editSecretKey.setAttribute("name", "AWS Secret Access Key");
     this._editSecretKey.setAttribute("type", "password");
-    this._editSecretKey.setValue(this.data.secret_key);
-    this._editSecretKey.default = this.data.secret_key;
+    this._editSecretKey.setValue(this.data.aws_secret_access_key);
+    this._editSecretKey.default = this.data.aws_secret_access_key;
     this._editSecretKey.hidden = true;
     this.bucketInputs.set("secret_key", this._editSecretKey);
     this._editSecretKey.addEventListener("change", this._formChanged.bind(this));
@@ -116,7 +116,7 @@ export class BucketEdit extends OrganizationTypeForm {
 
     // region
     this._editRegion = document.createElement("text-input");
-    this._editRegion.setAttribute("name", "Region");
+    this._editRegion.setAttribute("name", "Region Name");
     this._editRegion.setAttribute("type", "string");
     this._editRegion.setValue(this.data.region);
     this._editRegion.default = this.data.region;
@@ -169,7 +169,7 @@ export class BucketEdit extends OrganizationTypeForm {
 
   _showBestGuess() {
     let hasGcsInfo = (this.data.gcs_key_info !== null);
-    let hasAwsInfo = (this.data.region !== null || this.data.secret_key !== null || this.data.access_key !== null);
+    let hasAwsInfo = (this.data.region !== null || this.data.aws_secret_access_key !== null || this.data.aws_access_key_id !== null);
 
     if (hasGcsInfo && !hasAwsInfo) {
       this._showBucketFields("gcs");
@@ -208,40 +208,36 @@ export class BucketEdit extends OrganizationTypeForm {
 
   _getFormData(id) {
     let formData = {};
+    formData.config = {};
     let bucketType = this._currentBucketType !== null ? this._currentBucketType : "none";
-    // const isNew = this.data.id == "New" ? true : false;
-    const isNew = true; // schema doesn't accept nulls
+    const isNew = this.data.id == "New" ? true : false;
 
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
-    }
-
-    if (this._editAccessKey.changed() && bucketType !== "gcs") {
-      formData.access_key = this._editAccessKey.getValue();
-    }
-
-    if (this._editSecretKey.changed() && bucketType !== "gcs") {
-      formData.secret_key = this._editSecretKey.getValue();
-    }
-
-    if (this._editEndpointUrl.changed() && bucketType !== "gcs") {
-      formData.endpoint_url = this._editEndpointUrl.getValue();
-    }
-
-    if (this._editRegion.changed() && bucketType !== "gcs") {
-      formData.region = this._editRegion.getValue();
     }
 
     if (this._editArchiveSc.changed() || isNew)  {
       formData.archive_sc = this._editArchiveSc.getValue();
     }
 
-    if (this._editLiveSc.changed()  || isNew) {
+    if (this._editLiveSc.changed() || isNew) {
       formData.live_sc = this._editLiveSc.getValue();
     }
 
-    if (this._editGcsKeyInfo.changed() && bucketType !== "aws") {
-      formData.gcs_key_info = this._editGcsKeyInfo.getValue();
+    if (bucketType === "aws") {
+      formData.store_type = "AWS"
+      const anyChanged = this._editAccessKey.changed() || this._editSecretKey.changed() || this._editEndpointUrl.changed() || this._editRegion.changed()
+      if (anyChanged) {
+        formData.config.aws_access_key_id = this._editAccessKey.getValue();
+        formData.config.aws_secret_access_key = this._editSecretKey.getValue();
+        formData.config.endpoint_url = this._editEndpointUrl.getValue();
+        formData.config.region_name = this._editRegion.getValue();
+      }
+    } else if (bucketType === "gcs") {
+      formData.store_type = "GCP"
+      if (this._editGcsKeyInfo.changed()) {
+        formData.gcs_key_info = this._editGcsKeyInfo.getValue();
+      }
     }
 
     return formData;

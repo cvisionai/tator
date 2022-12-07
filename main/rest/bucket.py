@@ -1,3 +1,4 @@
+import logging
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import Http404
@@ -6,13 +7,39 @@ from django.shortcuts import get_object_or_404
 from ..models import Organization
 from ..models import Affiliation
 from ..models import Bucket
-from ..models import database_qs
 from ..schema import BucketListSchema
 from ..schema import BucketDetailSchema
+from ..store import ObjectStore
 
 from ._base_views import BaseListView
 from ._base_views import BaseDetailView
 from ._permissions import OrganizationAdminPermission
+
+logger = logging.getLogger(__name__)
+
+
+def _get_endpoint_url(bucket):
+    if bucket.config:
+        if bucket.store_type == ObjectStore.GCP:
+            return None
+        if bucket.store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
+            return bucket.config.get("endpoint_url", None)
+        if bucket.store_type == ObjectStore.OCI:
+            return bucket.config.get("boto3_config", {}).get("endpoint_url", None)
+        raise ValueError(f"Received unhandled store type '{bucket.get('store_type')}'")
+    return bucket.endpoint_url
+
+
+def serialize_bucket(bucket):
+    return {
+        "id": bucket.id,
+        "organization": bucket.organization.id,
+        "endpoint_url": _get_endpoint_url(bucket),
+        "archive_sc": bucket.archive_sc,
+        "live_sc": bucket.live_sc,
+        "store_type": bucket.store_type.value,
+    }
+
 
 class BucketListAPI(BaseListView):
     """ List endpoint for Buckets.
@@ -30,20 +57,15 @@ class BucketListAPI(BaseListView):
         if affiliation[0].permission != 'Admin':
             raise PermissionDenied
         buckets = Bucket.objects.filter(organization=params['organization'])
-        return database_qs(buckets)
+        return [serialize_bucket(bucket) for bucket in buckets]
 
     def _post(self, params):
         params['organization'] = get_object_or_404(Organization, pk=params['organization'])
         del params['body']
+        store_type = params["store_type"]
 
-        # Must specify S3 or GCS access keys, not both
-        Bucket.validate_kwargs(**params)
-
-        # Create a temporary Bucket object for storage class validation
-        temp_bucket = Bucket(**params)
-        params = temp_bucket.validate_storage_classes(params)
-        del temp_bucket
-
+        # Validate live and archive storage classes
+        params = Bucket.validate_storage_classes(ObjectStore(store_type), params)
         bucket = Bucket.objects.create(**params)
         return {'message': f"Bucket {bucket.name} created!", 'id': bucket.id}
 
@@ -69,37 +91,32 @@ class BucketDetailAPI(BaseDetailView):
         if affiliation[0].permission != 'Admin':
             raise PermissionDenied
 
-        return database_qs(buckets)[0]
+        return serialize_bucket(buckets[0])
 
     @transaction.atomic
     def _patch(self, params):
-        try:
-            Bucket.validate_kwargs(**params)
-        except ValueError as err:
-            # Allow for partial updates to S3 parameters
-            if "neither" not in str(err):
-                raise
+        mutated = False
         bucket = Bucket.objects.select_for_update().get(pk=params['id'])
-        bucket.validate_storage_classes(params)
-
-        if 'name' in params:
-            bucket.name = params['name']
-        if 'access_key' in params:
-            bucket.access_key = params['access_key']
-        if 'secret_key' in params:
-            bucket.secret_key = params['secret_key']
-        if 'endpoint_url' in params:
-            bucket.endpoint_url = params['endpoint_url']
-        if 'region' in params:
-            bucket.region = params['region']
+        store_type = params.get("store_type") or bucket.store_type
+        Bucket.validate_storage_classes(ObjectStore(store_type), params)
+        if "name" in params:
+            mutated = True
+            bucket.name = params["name"]
         if "archive_sc" in params:
+            mutated = True
             bucket.archive_sc = params["archive_sc"]
         if "live_sc" in params:
+            mutated = True
             bucket.live_sc = params["live_sc"]
-        if "gcs_key_info" in params:
-            bucket.gcs_key_info = params["gcs_key_info"]
-        bucket.save()
-        return {'message': f"Bucket {params['id']} updated successfully!"}
+        if "store_type" in params:
+            mutated = True
+            bucket.store_type = params["store_type"]
+        if "config" in params:
+            mutated = True
+            bucket.config = params["config"]
+        if mutated:
+            bucket.save()
+        return {"message": f"Bucket {params['id']} updated successfully!"}
 
     def _delete(self, params):
         bucket = Bucket.objects.get(pk=params['id'])
