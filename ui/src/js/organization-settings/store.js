@@ -1,6 +1,7 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector, devtools } from 'zustand/middleware';
 import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
+import { response } from 'express';
 
 const api = getApi(window.localStorage.getItem('backend'));
 const organizationId = Number(window.location.pathname.split('/')[1]);
@@ -193,7 +194,8 @@ const store = create(subscribeWithSelector((set, get) => ({
       name: "Project",
       init: false,
       setList: new Set(),
-      map: new Map()
+      map: new Map(),
+      versionMap: new Map()
    },
    Membership: {
       name: "Membership",
@@ -203,6 +205,7 @@ const store = create(subscribeWithSelector((set, get) => ({
       usernameMebershipsMap: new Map(),
       projectIdMembersMap: new Map()
    },
+
    deletePermission: false,
    isStaff: false,
    init: async () => {
@@ -246,12 +249,14 @@ const store = create(subscribeWithSelector((set, get) => ({
    getMembershipData: async (username) => {
       if (!get()["Membership"].init) await get().fetchMemberships();
       const info = get()["Membership"];
+      console.log(info);
       return info.usernameMebershipsMap.get(username); // returns membershipIds
    },
 
    getProjMembershipData: async (projectId) => {
-      if (!get()["Membership"].init) await get().fetchMemberships();
+      await get().fetchMemberships();
       const info = get()["Membership"];
+      console.log(info);
       return info.projectIdMembersMap.get(projectId);   
    },
 
@@ -320,6 +325,41 @@ const store = create(subscribeWithSelector((set, get) => ({
       return data;
    },
 
+   /**
+    * 
+    * @param {*} projectId 
+    * @returns 
+    */
+   getVersions: async (projectId) => {
+      const type = "Version";
+      console.log("DEBUG: fetchTypeByProject " + type);
+      set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
+      try {
+         if (get().Project.versionMap.has(projectId)) {
+            return get().Project.versionMap.get(projectId);
+         } else {
+            console.log("Get with projectId " + projectId);
+            const object = await api.getVersionListWithHttpInfo(projectId);
+
+            if (object.response.ok) {
+               const map = get().Project.versionMap;
+               map.set(projectId, object.data);
+               set({ Project: { ...get().Project, versionMap: map } });
+               return object.data;
+            } else {
+               console.error("Object response not ok for fetchType", object);
+               return [];
+            }
+         }
+         
+      } catch (err) {
+         // Error: Return status to idle (handles page spinner)
+         console.error("Fetch type by org hit an issue.", err);
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
+      }
+   },
+
    fetchTypeByOrg: async (type) => {
       console.log("DEBUG: fetchTypeByOrg " + type);
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding ${type}...` } });
@@ -348,6 +388,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                   // to tie to invitations
                   emailMap.set(item.email, item)
                }
+
             }
 
             // Init related types
@@ -421,8 +462,10 @@ const store = create(subscribeWithSelector((set, get) => ({
                   // I do not want to store the membership object twice just the references to it
                   // If I need the project info it is in the memberships object attr "project"
                   const username = item.username;
-                  const userList = usernameMebershipsMap.has(username) ? usernameMebershipsMap.get(username) : [];
+                  let userList = get().Membership.usernameMebershipsMap.has(username) ? get().Membership.usernameMebershipsMap.get(username) : [];
+                  console.log(`username ${username} ======== membershipId ${membershipId}`);
                   userList.push(membershipId);
+                  userList = [...new Set(userList)];
                   usernameMebershipsMap.set(item.username, userList);
 
                   //
@@ -430,6 +473,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                      currenUserMap.set(projectId, item);
                   }
                }
+
                set({ Membership : { ...get().Membership, map, setList, usernameMebershipsMap, projectIdMembersMap, init: true } });
                set({ currentUser: { ...get().currentUser, membershipsByProject: currenUserMap } });
 
@@ -540,34 +584,144 @@ const store = create(subscribeWithSelector((set, get) => ({
       const userProjects = info.userMap.has(username) ? info.userMap.has(username) : [];
       return userProjects;
    },
-   addProject: async (projectSpec, preset) => {
-      let response = await api.createProject(projectSpec);
-      const project = response.object;
-      console.log(response.message);
-      switch (preset) {
-         case "imageClassification":
-            await configureImageClassification(project);
-            break;
-         case "objectDetection":
-            await configureObjectDetection(project);
-            break;
-         case "multiObjectTracking":
-            await configureMultiObjectTracking(project);
-            break;
-         case "activityRecognition":
-            await configureActivityRecognition(project);
-            break;
-         case "none":
-            break;
-         default:
-            console.error(`Invalid preset: ${preset}`);
-      }
+   updateMembership: async ({ membershipId, permission, baseVersion }) => {
+      console.log("updateMembership "+membershipId);
+      set({ status: { ...get().status, name: "pending", msg: "Updating membership..." } });
+      try {
+         const objectCreate = await api.updateMembershipWithHttpInfo(membershipId, {
+            permission,
+            default_version: baseVersion
+         });
+         
+         await get().fetchTypeByOrg("Project");
+         await get().fetchTypeByOrg("Affiliation");
 
-      //refreshes view
-      get().fetchTypeByOrg("Project");
-      return project;
+         return objectCreate;
+      } catch (err) {
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
+      }
+   },
+   addProject: async (projectSpec, preset) => {
+      let info = await api.createProjectWithHttpInfo(projectSpec);
+
+      if (info.response.ok) {
+         const project = info.data.object;
+      
+         switch (preset) {
+            case "imageClassification":
+               await configureImageClassification(project);
+               break;
+            case "objectDetection":
+               await configureObjectDetection(project);
+               break;
+            case "multiObjectTracking":
+               await configureMultiObjectTracking(project);
+               break;
+            case "activityRecognition":
+               await configureActivityRecognition(project);
+               break;
+            case "none":
+               break;
+            default:
+               console.error(`Invalid preset: ${preset}`);
+         }
+   
+         //refreshes view
+         get().fetchTypeByOrg("Project");
+      }
+         
+      return info;
+
    },
 })));
+
+
+
+
+const loopList = ({ list, skip, check, type}) => {
+   let newList = [{
+      value: -1,
+      label: "Select"
+   }];
+   console.log(list);
+   for (let item of list) {
+      const id = item.id;
+      if (typeof item !== "undefined" && id !== skip) {
+         newList.push({
+            id: id,
+            value: item.id,
+            name: item.name,
+            label: item.name,
+            checked: (check === id || (Array.isArray(check) && check.includes(id))),
+            selected: (check === id || (Array.isArray(check) && check.includes(id)))
+         });
+      }
+   }
+
+   return newList;
+}
+
+const loopMap = ({ map, skip, check, type}) => {
+   let newList = [{
+      value: -1,
+      label: "Select"
+   }];
+   console.log(map);
+   for (let [id, item] of map) {
+      if (typeof item !== "undefined" && id !== skip) {
+         newList.push({
+            id: id,
+            value: item.id,
+            name: item.name,
+            label: item.name,
+            checked: (check === id || (Array.isArray(check) && check.includes(id))),
+            selected: (check === id || (Array.isArray(check) && check.includes(id)))
+         });
+      }
+   }
+
+   return newList;
+}
+
+/**
+ * Returns a list usable for settings page's checkbox set
+ * @param {Object} args 
+ * @returns 
+ */
+ export const getCompiledList = async ({ type, skip = null, check = null }) => {
+   await store.getState().initType(type);
+   const state = await store.getState()[type];
+   let newList = [];
+
+    if (state) {
+      const map = state.map;
+      console.log(map);
+      newList = loopMap({map, skip, check, type});
+   }
+
+   return newList;
+ }
+
+
+
+ /**
+ * Returns a list usable version for settings page's enum
+ * @param {Object} args 
+ * @returns 
+ */
+export const getCompiledVersionList = async ({ projectId, skip = null, check = null }) => {
+   await store.getState().initType("Project");
+   console.log(projectId);
+   const versions = await store.getState().getVersions(projectId);
+   let newList = [];
+
+   if (versions && versions.length) {
+      newList = loopList({list: versions, skip, check, type:"Version"});
+   }
+
+   return newList;
+}
 
 
 export { store };

@@ -29,6 +29,9 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     this._duration.permission = "View Only";
 
     this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
+    this._newProjectDialog._main.hidden = true;
+    this._form.after(this._newProjectDialog._main);
+    this._shadow.appendChild(  this._newProjectDialog._accept);
     this._newProjectDialog.addEventListener("close", evt => {
       if (this._newProjectDialog._confirm) {
         this._createProject();
@@ -40,13 +43,15 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     if (this._data.id == "New") {
       // TODO
       console.log("this is new _setupFormUnique " + this._data.id);
-      this._newProjectDialog.init();
-      this._newProjectDialog.setAttribute("is-open", "true");
+      this._newProjectDialog.hidden = false;
+
       // Show the modal for a new project // reuse from dashboard
       this._form.hidden = true;
+      this._form
       return;
     } else {
       this._newProjectDialog.removeAttribute("is-open");
+      this._newProjectDialog._main.hidden = true;
       this._form.hidden = false;
     }
 
@@ -68,50 +73,37 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     this._size.setValue(this._data.size);
   }
 
-  // save and formdata
-  _getFormData() {
-    let formData = {};
-    const isNew = true; // schema doesn't accept nulls
-
-    if (this._editName.changed() || isNew) {
-      formData.name = this._editName.getValue();
-    }
-
-    if (this._editHost.changed() || isNew) {
-      formData.host = this._editHost.getValue();
-    }
-
-    if (this._editPort.changed() || isNew) {
-      formData.port = this._editPort.getValue();
-    }
-
-    if (this._editToken.changed() || isNew) {
-      formData.token = this._editToken.getValue();
-    }
-
-    if (this._editCert.changed() || isNew) {
-      formData.cert = this._editCert.getValue();
-    }
-
-    return formData;
-  }
+  // Should never get called because we override _saveData
+  // _getFormData() {
+  // }
 
 
-  async _createProject() {
+  async _saveData() {
     const projectSpec = this._newProjectDialog.getProjectSpec();
     const preset = this._newProjectDialog.getProjectPreset();
-    const project = await store.getState().addProject(projectSpec, preset);
 
-    store.setState({
-      selection: {
-        ...store.getState.selection,
-        typeId: project.id,
+    try {
+      const projectInfo = await store.getState().addProject(projectSpec, preset);
+
+      if (projectInfo.response.ok) {
+        store.setState({
+          selection: {
+            ...store.getState.selection,
+            typeId: project.id,
+          }
+        });
+        this.modal._success("Project created successfully!",
+          "Continue to project settings or close this dialog.",
+          "ok",
+          "Continue to settings");        
+      } else {
+        this.modal._error(info.data.message);        
       }
-    });
-    this.modal._success("Project created successfully!",
-      "Continue to project settings or close this dialog.",
-      "ok",
-      "Continue to settings");
+    } catch (err) {
+      console.error("Error adding project.", err);
+      this.modal._error("Error adding project.");
+    }
+
   }
 }
 

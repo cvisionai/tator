@@ -173,7 +173,11 @@ export class OrgTypeFormContainer extends TatorElement {
         this._getAffiliateMembershipSidebar(data.username);
         break;
       case "Project":
-        this._getProjMembershipSidebar(data.id);
+        if (this._data.id !== "New") {
+          // this._customButtonSection.hidden = false;
+        } else {
+          this._getProjMembershipSidebar(data.id);
+        }   
 
       // default and fall-through for Project objectName
       default:

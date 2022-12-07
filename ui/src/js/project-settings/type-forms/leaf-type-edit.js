@@ -16,17 +16,15 @@ export class LeafTypeEdit extends TypeFormTemplate {
     this._editName = this._shadow.getElementById("leaf-type-edit--name");
     this._editDescription = this._shadow.getElementById("leaf-type-edit--description");
     this.dtypeSelect = this._shadow.getElementById("leaf-type-edit--data-type");
+
+    // Set enum choices onces
+    this.dtypeSelect.choices = [
+      { "value": "leaf", "label": "Leaf" }
+    ];
   }
 
   async _setupFormUnique() {
     // dtype
-    if(!this.dtypeSelect._choices){
-      const dTypeOptions = [
-        { "value": "leaf", "label": "Leaf" }
-      ];
-      // Emptyform uses "" for dtype value
-      this.dtypeSelect.choices = dTypeOptions;
-    }
     if (!this._data.dtype) {
       this.dtypeSelect._select.required = true;
       this.dtypeSelect.default = "";

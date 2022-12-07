@@ -1,24 +1,20 @@
-import { ModalDialog } from "../../components/modal-dialog.js";
+import { OrgTypeFormTemplate } from "./org-type-form-template.js";
 import { store } from "../store.js";
 
-export class OrgNewProjectDialog extends ModalDialog {
+export class OrgNewProjectDialog extends OrgTypeFormTemplate {
   constructor() {
     super(); 
     console.log("Test");
 
-    this._title.nodeValue = "Create new project";
-    this._main.style.marginBottom = "0";
-    this._main.style.paddingBottom = "0";
-
     this._name = document.createElement("text-input");
     this._name.setAttribute("name", "Name");
     this._name.setAttribute("type", "string");
-    this._main.appendChild(this._name);
+    this._shadow.appendChild(this._name);
 
     this._summary = document.createElement("text-input");
     this._summary.setAttribute("name", "Summary");
     this._summary.setAttribute("type", "string");
-    this._main.appendChild(this._summary);
+    this._shadow.appendChild(this._summary);
 
     this._preset = document.createElement("enum-input");
     this._preset.setAttribute("name", "Preset");
@@ -38,11 +34,11 @@ export class OrgNewProjectDialog extends ModalDialog {
       value: "none",
       label: "None (no preset)",
     }];
-    this._main.appendChild(this._preset);
+    this._shadow.appendChild(this._preset);
 
     const messages = document.createElement("div");
     messages.setAttribute("class", "main__header d-flex flex-items-center flex-justify-center");
-    this._main.appendChild(messages);
+    this._shadow.appendChild(messages);
 
     this._messageList = document.createElement("ul");
     this._messageList.setAttribute("class", "form-errors");
@@ -58,28 +54,11 @@ export class OrgNewProjectDialog extends ModalDialog {
     this._nameWarning.style.display = "none";
     li.appendChild(this._nameWarning);
 
-    this._accept = document.createElement("button");
-    this._accept.setAttribute("class", "btn btn-clear btn-purple");
-    this._accept.setAttribute("disabled", "");
-    this._accept.textContent = "Create project";
-    this._footer.appendChild(this._accept);
-
-    // Indicates whether project was created.
-    this._confirm = false;
-    
-    const cancel = document.createElement("button");
-    cancel.setAttribute("class", "btn btn-clear btn-charcoal");
-    cancel.textContent = "Cancel";
-    this._footer.appendChild(cancel);
-
-    cancel.addEventListener("click", this._closeCallback);
-
-    this._accept.addEventListener("click", evt => {
-      this._confirm = true;
-      this._closeCallback();
-    });
-
     this._name.addEventListener("input", this._validateName.bind(this));
+  }
+
+  connectedCallback() {
+    this.init();
   }
 
   set organization(val) {
@@ -92,18 +71,6 @@ export class OrgNewProjectDialog extends ModalDialog {
     this._existingNames.push(project.name.toLowerCase());
   }
 
-  static get observedAttributes() {
-    return ModalDialog.observedAttributes;
-  }
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    ModalDialog.prototype.attributeChangedCallback.call(this, name, oldValue, newValue);
-    switch (name) {
-      case "is-open":
-        break;
-    }
-  }
-
   async init() {
     this._name.setValue("");
     this._summary.setValue("");
@@ -113,14 +80,6 @@ export class OrgNewProjectDialog extends ModalDialog {
     this.organization = store.getState().organizationId;
     await store.getState().initType("Project");
     this.projects = store.getState().Project.map;
-  }
-
-  removeProject(projectName) {
-    // Removes project from existing names.
-    const index = this._existingNames.indexOf(projectName.toLowerCase());
-    if (index > -1) {
-      this._existingNames.splice(index, 1);
-    }
   }
 
   getProjectSpec() {

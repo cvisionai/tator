@@ -21,6 +21,15 @@ export class MembershipEdit extends TypeFormTemplate {
     this._versionSelect = this._shadow.getElementById("membership-edit--default-version");
 
     this._userData = document.createElement("user-data");
+
+    // Set enum options once
+    this._permissionSelect.choices = [
+      { "label": "View Only", "value": "View Only" },
+      { "label": "Can Edit", "value": "Can Edit" },
+      { "label": "Can Transfer", "value": "Can Transfer" },
+      { "label": "Can Execute", "value": "Can Execute" },
+      { "label": "Full Control", "value": "Full Control" },
+    ];
   }
 
   async _setupFormUnique() {
@@ -53,14 +62,6 @@ export class MembershipEdit extends TypeFormTemplate {
     }
 
     // permission
-    const permissionOptions = [
-      { "label": "View Only", "value": "View Only" },
-      { "label": "Can Edit", "value": "Can Edit" },
-      { "label": "Can Transfer", "value": "Can Transfer" },
-      { "label": "Can Execute", "value": "Can Execute" },
-      { "label": "Full Control", "value": "Full Control" },
-    ];
-    if(typeof this._permissionSelect._choices == "undefined") this._permissionSelect.choices = permissionOptions;
     this._permissionSelect._select.required = true;
     this._permissionSelect.setValue(this._data.permission);
     this._permissionSelect.default = this._data.permission;
@@ -68,7 +69,6 @@ export class MembershipEdit extends TypeFormTemplate {
     // default version
     this._versionSelect.clear();
     const versionOptions = await getCompiledList({ type: "Version", check: this._data.default_version });
-    this._versionSelect.resetChoices();
     this._versionSelect.choices = versionOptions;
     this._versionSelect._select.required = true;
     this._versionSelect.setValue(this._data.default_version);

@@ -17,7 +17,7 @@ export class AffiliationMembershipSidebar extends TatorElement {
     this._listDiv = this._shadow.getElementById("memberships-sidebar--list");
 
     this._addNew = this._shadow.getElementById("memberships-sidebar--add");
-    this._addNewDialog = new AffiliationMembershipDialog();
+    this._addNewDialog = new AffiliationMembershipDialog(); // try doc create element instead?
     this._shadow.appendChild(this._addNewDialog);
     this._addNew.addEventListener("click", this.openAddNew.bind(this));
   }
@@ -48,11 +48,12 @@ export class AffiliationMembershipSidebar extends TatorElement {
   }
 
   async setupSidebar() {
+    let count = 0;
     this.projectsCount = this._data.length;
     for (let m of this._data) {
       const membership = await store.getState().getData("Membership", m);
-      console.log(`attempting to make sidebar item for membership `, membership);
-      
+      console.log(`${count}. Attempting to make sidebar item for membership `, membership);
+      count++;
       // 
       const sidebarItem = document.getElementById("memberships-sidebar-item-template");
       const cloneSidebarItem = document.importNode(sidebarItem.content, true);
@@ -79,6 +80,10 @@ export class AffiliationMembershipSidebar extends TatorElement {
 
       //
       const projectName = cloneSidebarItem.getElementById("membership-item--project");
+      if (hasControl) {
+        projectName.setAttribute("href", `/${membership.project}/project-setting`);
+      }
+      
       projectName.textContent = project.name;
 
       //
@@ -86,20 +91,19 @@ export class AffiliationMembershipSidebar extends TatorElement {
       permission.textContent = membership.permission
 
       //
-      // const editLink = cloneSidebarItem.getElementById("membership-item--edit");
-      // if (!hasControl) {
-      //   editLink.classList.add("hidden");
-      // } else {
-      //   editLink.setAttribute("href", `/${membership.project}/project-settings#Membership-${membership.id}`);
-      // }
+      const editLink = cloneSidebarItem.getElementById("membership-item--edit");
+      editLink.addEventListener("click", () => {
+        console.log("Open membership dialog (existing)");
+        this._addNewDialog.setUpEditExisting(membership);
+      });
 
       this._listDiv.appendChild(cloneSidebarItem);
     }
   }
 
   openAddNew() {
-    console.log("Open up!");
-    this._addNewDialog.setAttribute("is-open", "true")
+    console.log("Open up (new)!");
+    this._addNewDialog.setUpAddNew();
   }
 }
 
