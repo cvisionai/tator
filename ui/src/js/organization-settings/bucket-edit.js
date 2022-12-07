@@ -225,7 +225,7 @@ export class BucketEdit extends OrganizationTypeForm {
     }
 
     if (bucketType === "aws") {
-      formData.store_type = "AmazonS3"
+      formData.store_type = "AWS"
       const anyChanged = this._editAccessKey.changed() || this._editSecretKey.changed() || this._editEndpointUrl.changed() || this._editRegion.changed()
       if (anyChanged) {
         formData.config.aws_access_key_id = this._editAccessKey.getValue();
@@ -234,7 +234,7 @@ export class BucketEdit extends OrganizationTypeForm {
         formData.config.region_name = this._editRegion.getValue();
       }
     } else if (bucketType === "gcs") {
-      formData.store_type = "UploadServer"
+      formData.store_type = "GCP"
       if (this._editGcsKeyInfo.changed()) {
         formData.gcs_key_info = this._editGcsKeyInfo.getValue();
       }

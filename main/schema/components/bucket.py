@@ -14,7 +14,10 @@ gcp_config_properties = {
     "project_id": {"description": "GCP project id.", "type": "string"},
     "private_key_id": {"description": "Account secret key.", "type": "string"},
     "private_key": {"description": "Account access key.", "type": "string"},
-    "client_email": {"description": "Email address associated with the service account.", "type": "string"},
+    "client_email": {
+        "description": "Email address associated with the service account.",
+        "type": "string",
+    },
     "client_id": {"description": "ID of the client account.", "type": "string"},
     "auth_uri": {"description": "Authorization URI.", "type": "string"},
     "token_uri": {"description": "Token URI.", "type": "string"},
@@ -38,26 +41,25 @@ oci_config_properties = {
     "native_config": {"$ref": "#/components/schemas/BucketOCIConfig"},
 }
 # TODO add "native_config" to required once implemented
-oci_required = ["boto3_config"] # list(oci_config_properties.keys())
+oci_required = ["boto3_config"]  # list(oci_config_properties.keys())
 oci_config = {"type": "object", "required": oci_required, "properties": oci_config_properties}
 
 bucket_properties = {
-    "name": {
-        "description": "Bucket name.",
-        "type": "string",
-    },
+    "name": {"description": "Bucket name.", "type": "string"},
     "archive_sc": {
         "description": "Storage class in which archived objects live.",
         "type": "string",
+        "enum": ["STANDARD", "DEEP_ARCHIVE", "COLDLINE"],
     },
     "live_sc": {
         "description": "Storage class in which live objects live.",
         "type": "string",
+        "enum": ["STANDARD"],
     },
     "store_type": {
         "description": "Type of object store on which the bucket is hosted.",
         "type": "string",
-        "enum": ["AmazonS3", "MinIO", "UploadServer", "OCI"],
+        "enum": ["AWS", "MINIO", "GCP", "OCI"],
     },
 }
 
@@ -73,15 +75,17 @@ all_bucket_properties = {
     **bucket_properties,
 }
 
+# The spec used by POST methods
 bucket_spec = {
-    "type": "object", "required": ["name", "config"], "properties": all_bucket_properties
-}
-
-bucket_update = {
     "type": "object",
+    "required": ["name", "store_type", "config"],
     "properties": all_bucket_properties,
 }
 
+# The spec used by PATCH methods
+bucket_update = {"type": "object", "properties": all_bucket_properties}
+
+# The spec used by GET methods
 bucket = {
     "type": "object",
     "description": "Bucket object.",

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from enum import Enum
+from enum import Enum, unique
 import json
 import logging
 import os
@@ -21,10 +21,19 @@ MEDIA_ID_KEY = "media_id"
 PATH_KEYS = ["streaming", "archival", "audio", "image"]
 
 
-class ObjectStore(Enum):
+# TODO Deprecated: remove once support for old bucket model is removed
+class OldObjectStore(Enum):
     AWS = "AmazonS3"
     MINIO = "MinIO"
     GCP = "UploadServer"
+    OCI = "OCI"
+
+
+@unique
+class ObjectStore(Enum):
+    AWS = "AWS"
+    MINIO = "MINIO"
+    GCP = "GCP"
     OCI = "OCI"
 
 
@@ -706,9 +715,9 @@ def get_tator_store(
     else:
         response_server = response["ResponseMetadata"]["HTTPHeaders"].get("server", "")
         api_id = response["ResponseMetadata"]["HTTPHeaders"].get("x-api-id", "")
-        if ObjectStore.AWS.value in response_server:
+        if OldObjectStore.AWS.value in response_server:
             server = ObjectStore.AWS
-        elif ObjectStore.MINIO.value in response_server:
+        elif OldObjectStore.MINIO.value in response_server:
             server = ObjectStore.MINIO
         elif "s3-compatible" in api_id:
             server = ObjectStore.OCI
