@@ -8,6 +8,7 @@ export class RemovablePill extends TatorElement {
     const div = document.createElement("div");
     div.setAttribute("class", "form-control input-sm d-flex flex-items-center rounded-1");
     this._shadow.appendChild(div);
+    this._div = div;
 
     this._name = document.createTextNode("");
     div.appendChild(this._name);
@@ -15,6 +16,7 @@ export class RemovablePill extends TatorElement {
     const button = document.createElement("button");
     button.setAttribute("class", "btn-clear px-1 d-flex text-gray");
     div.appendChild(button);
+    this._button = button;
 
     const svg = document.createElementNS(svgNamespace, "svg");
     svg.setAttribute("id", "icon-x");
@@ -38,6 +40,18 @@ export class RemovablePill extends TatorElement {
         detail: {id: this._id}
       }));
     });
+  }
+
+  set removable(val)
+  {
+    if (val)
+    {
+      this._button.style.display = null;
+    }
+    else
+    {
+      this._button.style.display = "none";
+    }
   }
 
   init(name, id) {

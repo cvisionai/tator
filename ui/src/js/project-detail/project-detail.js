@@ -1035,6 +1035,9 @@ export class ProjectDetail extends TatorPage {
       }
     }
 
+    // Add section filter information
+    this._filterView.section = section;
+
     return true;
   }
 
