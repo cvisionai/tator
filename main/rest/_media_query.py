@@ -39,6 +39,29 @@ def _get_archived_filter(params):
         f"['archived', 'live', 'all']."
     )
 
+def _related_search(qs, related_state_type_ids, related_localization_type_ids, search_obj):
+    related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
+    related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
+    related_matches = []
+    for entity_type in related_state_types:
+        state_qs = State.objects.filter(project=project, meta=entity_type)
+        state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
+        if state_qs.count():
+            related_matches.append(state_qs)
+    for entity_type in related_localization_types:
+        local_qs = Localization.objects.filter(project=project, meta=entity_type)
+        local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
+        if local_qs.count():
+            related_matches.append(local_qs)
+    if related_matches:
+        related_match = related_matches.pop()
+        query = Q(pk__in=related_match.values('media'))
+        for r in related_matches:
+            query = query | Q(pk__in=r.values('media'))
+        qs = qs.filter(query).distinct()
+    else:
+        qs = qs.filter(pk=-1)
+    return qs
 
 def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     """ Constructs a psql queryset.
@@ -164,30 +187,16 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         if section[0].object_search:
             qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
 
+        if section[0].related_search:
+            qs = self._related_search(qs,
+                                      related_state_type_ids,
+                                      related_localization_type_ids,
+                                      section[0].related_search)
+
     related_encoded_search_qs = None
     if params.get('encoded_related_search'):
         search_obj = json.loads(base64.b64decode(params.get('encoded_related_search')).decode())
-        related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
-        related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
-        related_matches = []
-        for entity_type in related_state_types:
-            state_qs = State.objects.filter(project=project, meta=entity_type)
-            state_qs =  get_attribute_psql_queryset_from_query_obj(state_qs, search_obj)
-            if state_qs.count():
-                related_matches.append(state_qs)
-        for entity_type in related_localization_types:
-            local_qs = Localization.objects.filter(project=project, meta=entity_type)
-            local_qs =  get_attribute_psql_queryset_from_query_obj(local_qs, search_obj)
-            if local_qs.count():
-                related_matches.append(local_qs)
-        if related_matches:
-            related_match = related_matches.pop()
-            query = Q(pk__in=related_match.values('media'))
-            for r in related_matches:
-                query = query | Q(pk__in=r.values('media'))
-            qs = qs.filter(query).distinct()
-        else:
-            qs = qs.filter(pk=-1)
+        qs = self._related_search(qs, related_state_type_ids, related_localization_type_ids, search_obj)
 
     # Used by GET queries
     if params.get('encoded_search'):

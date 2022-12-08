@@ -9,6 +9,8 @@ section_post_properties = {
     },
     'object_search' : {'type': 'object',
                        'description': 'Must be a #/components/schemas/AttributeOperationSpec'},
+    'related_search' : {'type': 'object',
+                       'description': 'Must be a #/components/schemas/AttributeOperationSpec'},
     "visible": {
         "type": "boolean",
         "description": "Determines the visibility in the UI.",

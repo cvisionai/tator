@@ -36,6 +36,7 @@ class SectionListAPI(BaseListView):
         project = params['project']
         name = params['name']
         object_search = params.get('object_search', None)
+        related_search = params.get('related_search', None)
         tator_user_sections = params.get('tator_user_sections', None)
         visible = params.get("visible", True)
 
@@ -48,6 +49,7 @@ class SectionListAPI(BaseListView):
             project=project,
             name=name,
             object_search=object_search,
+            related_search=related_search,
             tator_user_sections=tator_user_sections,
             visible=visible,
         )
