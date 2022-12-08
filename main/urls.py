@@ -93,10 +93,6 @@ urlpatterns += [
         AffiliationDetailAPI.as_view(),
     ),
     path(
-        'rest/AlgorithmLaunch/<int:project>',
-        AlgorithmLaunchAPI.as_view(),
-    ),
-    path(
         'rest/Algorithms/<int:project>',
         AlgorithmListAPI.as_view(),
     ),

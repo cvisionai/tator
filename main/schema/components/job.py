@@ -36,6 +36,45 @@ job_node = {
     }
 }
 
+algorithm_parameter = {
+    'type': 'object',
+    'required': ['name', 'value'],
+    'properties': {
+        'name': {
+            'description': 'Name of algorithm parameter',
+            'type': 'string',
+        },
+        'value': {
+            'description': 'Value of algorithm parameter',
+            'oneOf': [
+                {'type': 'number'},
+                {'type': 'string'},
+            ],
+        },
+    },
+}
+
+job_spec = {
+    'type': 'object',
+    'required': ['algorithm_name', 'media_ids'],
+    'properties': {
+        'algorithm_name': {
+            'description': 'Name of the algorithm to execute.',
+            'type': 'string',
+        },
+        'media_ids': {
+            'description': 'List of media IDs.',
+            'type': 'array',
+            'items': {'type': 'integer'},
+        },
+        'extra_params': {
+            'description': 'Extra parameters to pass into the algorithm',
+            'type': 'array',
+            'items': {'$ref': '#/components/schemas/AlgorithmParameter'},
+        },
+    },
+}
+
 job = {
     'type': 'object',
     'properties': {
