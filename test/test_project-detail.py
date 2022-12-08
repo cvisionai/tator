@@ -140,7 +140,7 @@ def test_basic(request, page_factory, project): #video
    page.click('filter-condition-group button.btn.btn-outline.btn-small')
 
    page.wait_for_selector('enum-input[name="Field"]')
-   page.select_option('enum-input[name="Field"] select', value="filename")
+   page.select_option('enum-input[name="Field"] select', value="Filename")
 
    page.wait_for_selector('text-input[name="Value"] input')
    page.fill('text-input[name="Value"] input', "black-hole")
