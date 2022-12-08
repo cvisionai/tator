@@ -128,6 +128,9 @@ export class FilterCondition extends TatorElement {
       }
     }
 
+    fieldChoices.sort((a,b) => {return a.label.localeCompare(b.label);});
+    attributeChoices.sort((a,b) => {return a.label.localeCompare(b.label);});
+
     this._fieldName.choices = {'Built-in Fields': fieldChoices, 'Attributes': attributeChoices};
     this._fieldName.permission = "Can Edit";
     this._fieldName.selectedIndex = -1;
