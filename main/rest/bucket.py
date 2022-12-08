@@ -33,6 +33,7 @@ def _get_endpoint_url(bucket):
 def serialize_bucket(bucket):
     return {
         "id": bucket.id,
+        "name": bucket.name,
         "organization": bucket.organization.id,
         "endpoint_url": _get_endpoint_url(bucket),
         "archive_sc": bucket.archive_sc,

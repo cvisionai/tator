@@ -21,19 +21,19 @@ MEDIA_ID_KEY = "media_id"
 PATH_KEYS = ["streaming", "archival", "audio", "image"]
 
 
-# TODO Deprecated: remove once support for old bucket model is removed
-class OldObjectStore(Enum):
-    AWS = "AmazonS3"
-    MINIO = "MinIO"
-    GCP = "UploadServer"
-    OCI = "OCI"
-
-
 @unique
 class ObjectStore(Enum):
     AWS = "AWS"
     MINIO = "MINIO"
     GCP = "GCP"
+    OCI = "OCI"
+
+
+# TODO Deprecated: remove once support for old bucket model is removed
+class OldObjectStore(Enum):
+    AWS = "AmazonS3"
+    MINIO = "MinIO"
+    GCP = "UploadServer"
     OCI = "OCI"
 
 
