@@ -44,10 +44,7 @@ export class RadioSet extends TatorElement {
     }
 
   set default(val) {
-    this.defaultData = val; // full data needed to reset FE
-
-    // default is apples to apples with getValue to check for Array of ids
-    this._default = val.filter(data => data.checked).map(checked => checked.id);
+    this._default = val;
   }
 
   reset() {
@@ -55,27 +52,34 @@ export class RadioSet extends TatorElement {
     if (typeof this.defaultData !== "undefined") {
       this.setValue(this.defaultData);
     } else {
-      this.setValue([]);
+      this.setValue("");
     }
   }
 
-  setValue(val) {
+  set choices(val) {
     if( val && val.length ){
       for (let item of val) {
         this._newInput(item);
       }
+    }    
+  }
+
+  setValue(val) {
+    for (let input of this._inputs) {
+      console.log(`${input.value} == ${val} >>> ${input.value == val}`)
+      input.checked = (input.value == val);
     }
   }
 
   _newInput(item) {
     let radioLabelAndInput = document.createElement("label");
     radioLabelAndInput.setAttribute("class", "d-flex flex-items-center py-1");
-    radioLabelAndInput.setAttribute("for", item.id);
+    radioLabelAndInput.setAttribute("for", item.value);
 
     let radioInput = document.createElement("input");
     radioInput.setAttribute("name", this._setName);
-    radioInput.setAttribute("id", item.id);
-    radioInput.setAttribute("value", item.id);
+    radioInput.setAttribute("id", item.value);
+    radioInput.setAttribute("value", item.value);
     radioInput.setAttribute("type", "radio");
     radioInput.checked = item.checked;
     radioLabelAndInput.appendChild(radioInput);
@@ -86,7 +90,6 @@ export class RadioSet extends TatorElement {
 
     this._name = document.createTextNode(item.name);
     this.styleSpan.appendChild(this._name);
-
 
     return this._addInput(radioLabelAndInput, radioInput);
   }

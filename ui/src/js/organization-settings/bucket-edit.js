@@ -30,6 +30,23 @@ export class BucketEdit extends OrgTypeFormTemplate {
     this._editArchiveSc = this._shadow.getElementById("bucket-edit--archive-storage-class");
     this._editLiveSc = this._shadow.getElementById("bucket-edit--live-storage-class");
     this._editGcsKeyInfo = this._shadow.getElementById("bucket-edit--gcs-key-info");
+
+    //
+    this.bucketInputs.set("secret_key", this._editSecretKey);
+    this.bucketInputs.set("region", this._editRegion);
+    this.bucketInputs.set("archive_sc", this._editArchiveSc);
+    this.bucketInputs.set("live_sc", this._editLiveSc);
+    this.bucketInputs.set("gcs_key_info", this._editGcsKeyInfo);
+    this.bucketInputs.set("access_key", this._editAccessKey);
+    this.bucketInputs.set("endpoint_url", this._editEndpointUrl);
+
+
+    this._editBucketType.choices = [
+      { name: "AWS", value: "aws", checked: false },
+      { name: "GCS", value: "gcs", checked: false },
+    ]
+    // this._editBucketType.default = bucketTypes;
+
   }
 
 
@@ -45,61 +62,54 @@ export class BucketEdit extends OrgTypeFormTemplate {
 
     // type
     if (this._data.id == "New") {
-      let bucketTypes = [
-        { name: "AWS", id: "aws", checked: false },
-        { name: "GCS", id: "gcs", checked: false },
-      ];
-      this._editBucketType.setValue(bucketTypes);
-      this._editBucketType.default = bucketTypes;
+      this._editBucketType.setValue("");
+      this._editBucketType.default ="";
       this._editBucketType.addEventListener("change", this._setBucketType.bind(this));
-    } 
+    }
 
 
     // access key
     this._editAccessKey.setValue(this._data.access_key);
     this._editAccessKey.default = this._data.access_key;
     this._editAccessKey.hidden = true;
-    this.bucketInputs.set("access_key", this._editAccessKey);
+   
 
     // secret key
     this._editSecretKey.setValue(this._data.secret_key);
     this._editSecretKey.default = this._data.secret_key;
     this._editSecretKey.hidden = true;
-    this.bucketInputs.set("secret_key", this._editSecretKey);
+    
 
     // endpoint url
     this._editEndpointUrl.setValue(this._data.endpoint_url);
     this._editEndpointUrl.default = this._data.endpoint_url;
     this._editEndpointUrl.hidden = true;
-    this.bucketInputs.set("endpoint_url", this._editEndpointUrl);
+    
 
     // region
     this._editRegion.setValue(this._data.region);
     this._editRegion.default = this._data.region;
     this._editRegion.hidden = true;
-    this.bucketInputs.set("region", this._editRegion);
+    
 
     // archive storage class
     this._editArchiveSc.setValue(this._data.archive_sc);
     this._editArchiveSc.default = this._data.archive_sc;
     this._editArchiveSc.hidden = true;
-    this.bucketInputs.set("archive_sc", this._editArchiveSc);
+    
 
     // live storage class
     this._editLiveSc.setValue(this._data.live_sc);
     this._editLiveSc.default = this._data.live_sc;
     this._editLiveSc.hidden = true;
-    this.bucketInputs.set("live_sc", this._editLiveSc);
+    
 
     // GCS key info
     this._editGcsKeyInfo.setValue(this._data.gcs_key_info);
     this._editGcsKeyInfo.default = this._data.gcs_key_info;
     this._editGcsKeyInfo.hidden = true;
-    this.bucketInputs.set("gcs_key_info", this._editGcsKeyInfo);
 
-    if(data.id !== "New") {
-      this._showBestGuess();
-    }
+    if (this._data.id !== "New") this._showBestGuess();
   }
 
   _showBestGuess() {
@@ -126,15 +136,23 @@ export class BucketEdit extends OrgTypeFormTemplate {
   _showBucketFields(type) {
     this._currentBucketType = type;
     let hideType = type == "aws" ? "gcs" : "aws";
+    console.log("SHOW BUCKET FIELdS FOR "+type.toUpperCase());
+    this._editBucketType.setValue(type);
     
     // hide non-relevent fields
     // #todo expand to loops list of hideTypes if we have > 2 (ie. Wasabi)
-    for (let field of this._bucketFieldsByType.get(hideType)) {
+    const hideThese = this._bucketFieldsByType.get(hideType);
+    console.log("hideThese",hideThese);
+    for (let field of hideThese) {
+      console.log(this.bucketInputs.get(field));
       this.bucketInputs.get(field).hidden = true;
     }
     
     // show relevent fields
-    for (let field of this._bucketFieldsByType.get(type)) {
+    const showThese = this._bucketFieldsByType.get(type);
+    console.log("showThese",showThese);
+    for (let field of showThese) {
+      console.log(this.bucketInputs.get(field));
       this.bucketInputs.get(field).hidden = false;
     }
   }

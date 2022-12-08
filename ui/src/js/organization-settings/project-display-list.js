@@ -29,14 +29,8 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
     this._duration.permission = "View Only";
 
     this._newProjectDialog = this._shadow.getElementById("new-project-dialog");
-    this._newProjectDialog._main.hidden = true;
+    this._newProjectDialog.hidden = true;
     this._form.after(this._newProjectDialog._main);
-    this._shadow.appendChild(  this._newProjectDialog._accept);
-    this._newProjectDialog.addEventListener("close", evt => {
-      if (this._newProjectDialog._confirm) {
-        this._createProject();
-      }
-    });
   }
 
   async _setupFormUnique() {
@@ -51,7 +45,7 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
       return;
     } else {
       this._newProjectDialog.removeAttribute("is-open");
-      this._newProjectDialog._main.hidden = true;
+      this._newProjectDialog.hidden = true;
       this._form.hidden = false;
     }
 
