@@ -1,6 +1,5 @@
 from .affiliation import AffiliationListSchema
 from .affiliation import AffiliationDetailSchema
-from .algorithm_launch import AlgorithmLaunchSchema
 from .algorithm import AlgorithmListSchema
 from .algorithm import AlgorithmDetailSchema
 from .anonymous import AnonymousGatewaySchema

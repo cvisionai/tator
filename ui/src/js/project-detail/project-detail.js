@@ -1085,7 +1085,7 @@ export class ProjectDetail extends TatorPage {
         });
       }
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.projectId, {
+      fetch("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
         credentials: "same-origin",
         headers: {

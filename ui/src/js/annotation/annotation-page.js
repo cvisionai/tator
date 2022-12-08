@@ -1393,7 +1393,7 @@ export class AnnotationPage extends TatorPage {
         body["media_ids"] = [evt.detail.localization.media_id];
       }
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+      fetch("/rest/Jobs/" + evt.detail.project, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -1535,7 +1535,7 @@ export class AnnotationPage extends TatorPage {
           body["media_ids"] = [evt.detail.localization.media_id];
         }
 
-        fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+        fetch("/rest/Jobs/" + evt.detail.project, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -1701,7 +1701,7 @@ export class AnnotationPage extends TatorPage {
 
       body["media_ids"] = [evt.detail.mediaId];
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.projectId, {
+      fetch("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
         credentials: "same-origin",
         headers: {
