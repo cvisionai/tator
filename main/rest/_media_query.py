@@ -39,7 +39,7 @@ def _get_archived_filter(params):
         f"['archived', 'live', 'all']."
     )
 
-def _related_search(qs, related_state_type_ids, related_localization_type_ids, search_obj):
+def _related_search(qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj):
     related_state_types = StateType.objects.filter(pk__in=relevant_state_type_ids)
     related_localization_types = LocalizationType.objects.filter(pk__in=relevant_localization_type_ids)
     related_matches = []
@@ -187,16 +187,17 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
         if section[0].object_search:
             qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
 
-        if section[0].related_search:
-            qs = self._related_search(qs,
-                                      related_state_type_ids,
-                                      related_localization_type_ids,
-                                      section[0].related_search)
+        if section[0].related_object_search:
+            qs = _related_search(qs,
+                                 project,
+                                 relevant_state_type_ids,
+                                 relevant_localization_type_ids,
+                                 section[0].related_object_search)
 
     related_encoded_search_qs = None
     if params.get('encoded_related_search'):
         search_obj = json.loads(base64.b64decode(params.get('encoded_related_search')).decode())
-        qs = self._related_search(qs, related_state_type_ids, related_localization_type_ids, search_obj)
+        qs = _related_search(qs, project, relevant_state_type_ids, relevant_localization_type_ids, search_obj)
 
     # Used by GET queries
     if params.get('encoded_search'):

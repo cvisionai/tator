@@ -49,7 +49,7 @@ class SectionListAPI(BaseListView):
             project=project,
             name=name,
             object_search=object_search,
-            related_search=related_search,
+            related_object_search=related_search,
             tator_user_sections=tator_user_sections,
             visible=visible,
         )

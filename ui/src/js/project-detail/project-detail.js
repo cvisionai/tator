@@ -365,7 +365,6 @@ export class ProjectDetail extends TatorPage {
           }
           spec.name = newSectionDialog._input.value;
 
-          // TODO
           if (params.has("encoded_search")) {
             let object_search = JSON.parse(atob(params.get("encoded_search")));
             if (spec.object_search) {
@@ -373,6 +372,16 @@ export class ProjectDetail extends TatorPage {
               spec.object_search = union_operation;
             } else {
               spec.object_search = object_search;
+            }
+          }
+
+          if (params.has("encoded_related_search")) {
+            let related_search = JSON.parse(atob(params.get("encoded_related_search")));
+            if (spec.related_search) {
+              let union_operation = {"method": "and", operations:[spec.object_search, related_search]}
+              spec.related_search = union_operation;
+            } else {
+              spec.related_search = related_search;
             }
           }
 
@@ -924,7 +933,7 @@ export class ProjectDetail extends TatorPage {
                 this._mediaSection._files.memberships = this._modelData._memberships;
 
                 this._filterDataView = new FilterData(
-                  this._modelData, null, ["MediaStates", "LocalizationStates", "Localizations"], null);
+                  this._modelData, null, [], null);
                 this._filterDataView.init();
                 this._filterView.dataView = this._filterDataView;
 

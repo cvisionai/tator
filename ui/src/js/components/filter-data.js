@@ -211,7 +211,7 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("Localizations") < 0) {
       for (let idx = 0; idx < this.localizationTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.localizationTypes[idx]));
-        entityType.typeGroupName = "Annotation";
+        entityType.typeGroupName = "Localization";
 
         if (this.skipTypeIds.indexOf(this.localizationTypes[idx].id) < 0) {
           var versionAttribute = {
@@ -268,7 +268,7 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("MediaStates") < 0) {
       for (let idx = 0; idx < this.mediaStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.mediaStateTypes[idx]));
-        entityType.typeGroupName = "Collection";
+        entityType.typeGroupName = "State";
 
         if (this.skipTypeIds.indexOf(this.mediaStateTypes[idx].id) < 0) {
           var versionAttribute = {
@@ -295,7 +295,7 @@ export class FilterData {
     if (this.excludeTypesList.indexOf("LocalizationStates") < 0) {
       for (let idx = 0; idx < this.localizationStateTypes.length; idx++) {
         let entityType = JSON.parse(JSON.stringify(this.localizationStateTypes[idx]));
-        entityType.typeGroupName = "Collection";
+        entityType.typeGroupName = "State";
 
         if (this.skipTypeIds.indexOf(this.localizationStateTypes[idx].id) < 0) {
           var versionAttribute = {
