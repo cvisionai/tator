@@ -86,9 +86,16 @@ class JobListAPI(BaseListView):
                 user=self.request.user.pk,
                 extra_params=extra_params
             )
-        return {'message': f"Algorithm {alg_name} started successfully!",
-                'uid': uids,
-                'gid': gid}
+            # Retrieve the jobs so we have a list
+            selector = f"project={project_id},gid={gid}"
+            cache = TatorCache()
+            jobs = get_jobs(selector, cache)
+            jobs = [workflow_to_job(job) for job in jobs]
+        return {
+            'message': f"Algorithm {alg_name} started successfully!",
+            'ids': uids,
+            'objects': jobs,
+        }
 
     def _get(self, params):
         gid = params.get('gid', None)
