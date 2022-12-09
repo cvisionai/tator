@@ -1587,11 +1587,11 @@ class Section(Model):
     object_search = JSONField(null=True, blank=True)
     """
     Object search using a search structure defined as AttributeOperationSpec
-     """
+    """
     related_object_search = JSONField(null=True, blank=True)
     """
     Object search for using a search structure on related metadata and retrieving the media
-     """
+    """
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.
     """
