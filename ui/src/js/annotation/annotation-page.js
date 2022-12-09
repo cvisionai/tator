@@ -1412,7 +1412,7 @@ export class AnnotationPage extends TatorPage {
       .then(data => {
         console.log(data);
         this.showAlgoRunningDialog(
-          data.uid,
+          data.ids,
           `Filling gaps in track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
           (jobSuccessful) => {
             if (jobSuccessful) {
@@ -1554,7 +1554,7 @@ export class AnnotationPage extends TatorPage {
         .then(data => {
           console.log(data);
           this.showAlgoRunningDialog(
-            data.uid,
+            data.ids,
             `Extending track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
             (jobSuccessful) => {
               if (jobSuccessful) {
@@ -1720,7 +1720,7 @@ export class AnnotationPage extends TatorPage {
       .then(data => {
         console.log(data);
         this.showAlgoRunningDialog(
-          data.uid,
+          data.ids,
           `Launched ${algoName}. Status will be provided in the annotator when complete.`,
           (jobSuccessful) => {
             if (jobSuccessful) {
