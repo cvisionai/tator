@@ -985,7 +985,7 @@ class Media(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given MediaType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     gid = CharField(max_length=36, null=True, blank=True)
     """ Group ID for the upload that created this media. Note we intentionally do
@@ -1016,7 +1016,7 @@ class Media(Model, ModelDiffMixin):
     width=IntegerField(null=True)
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
     restoration_requested = BooleanField(default=False)
     archive_status_date = DateTimeField(auto_now_add=True, null=True, blank=True)
     archive_state = CharField(
@@ -1036,6 +1036,8 @@ class Media(Model, ModelDiffMixin):
     """ URL where original media was hosted. """
     summaryLevel = IntegerField(null=True, blank=True)
     """ Level at which this media is best summarized, e.g. every N frames. """
+    elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
+    """ Unique ID for a media to facilitate cross-cluster sync operations """
 
     def get_file_sizes(self):
         """ Returns total size and download size for this media object.
@@ -1175,9 +1177,9 @@ class File(Model, ModelDiffMixin):
     """ Project associated with the file """
     meta = ForeignKey(FileType, on_delete=SET_NULL, null=True, blank=True, db_column='meta')
     """ Type associated with file """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
@@ -1360,7 +1362,7 @@ class Localization(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given LocalizationType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1398,9 +1400,9 @@ class Localization(Model, ModelDiffMixin):
     """ List of points used by poly dtype. """
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
-    variant_deleted = BooleanField(default=False, null=True, blank=True)
+    variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
 
 @receiver(post_save, sender=Localization)
@@ -1428,7 +1430,7 @@ class State(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1456,9 +1458,9 @@ class State(Model, ModelDiffMixin):
                            blank=True,
                            related_name='extracted',
                            db_column='extracted')
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
     elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
-    variant_deleted = BooleanField(default=False, null=True, blank=True)
+    variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
     """ Indicates this is a variant that is deleted """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
@@ -1506,7 +1508,7 @@ class Leaf(Model, ModelDiffMixin):
         a handful of AttributeTypes are associated to a given EntityType
         that is pointed to by this value. That set describes the `attribute`
         field of this structure. """
-    attributes = JSONField(null=True, blank=True)
+    attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
     created_datetime = DateTimeField(auto_now_add=True, null=True, blank=True)
     created_by = ForeignKey(User, on_delete=SET_NULL, null=True, blank=True,
@@ -1517,7 +1519,7 @@ class Leaf(Model, ModelDiffMixin):
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
     path=PathField()
     name = CharField(max_length=255)
-    deleted = BooleanField(default=False)
+    deleted = BooleanField(default=False, db_index=True)
 
     class Meta:
         verbose_name_plural = "Leaves"
@@ -1582,6 +1584,14 @@ class Section(Model):
         tator_user_sections attribute. If not set, this search is not scoped
         to a "folder".
     """
+    object_search = JSONField(null=True, blank=True)
+    """
+    Object search using a search structure defined as AttributeOperationSpec
+     """
+    related_object_search = JSONField(null=True, blank=True)
+    """
+    Object search for using a search structure on related metadata and retrieving the media
+     """
     visible = BooleanField(default=True)
     """ Whether this section should be displayed in the UI.
     """
