@@ -304,7 +304,7 @@ testinit:
 	kubectl exec -it $$(kubectl get pod -l "app=postgis" -o name | head -n 1 | sed 's/pod\///') -- psql -U django -d test_tator_online -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
 	
 .PHONY: test
-test:
+test: testinit
 	kubectl exec -it $$(kubectl get pod -l "app=gunicorn" -o name | head -n 1 | sed 's/pod\///') -- sh -c 'python3 manage.py test --keep'
 
 .PHONY: cache_clear
