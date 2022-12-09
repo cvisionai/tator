@@ -27,7 +27,7 @@ create_list_response = {
             'type': 'string',
             'description': 'Message indicating successful creation.',
         },
-        'ids': {
+        'id': {
             'type': 'array',
             'description': 'List of unique integers identifying created objects.',
             'items': {
@@ -37,7 +37,7 @@ create_list_response = {
                 ],
             },
         },
-        'objects': {
+        'object': {
             'type': 'array',
             'description': 'List of created objects.',
             'items': {

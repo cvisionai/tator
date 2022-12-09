@@ -95,8 +95,8 @@ class JobListAPI(BaseListView):
 
         return {
             'message': f"Algorithm {alg_name} started successfully!",
-            'ids': uids,
-            'objects': jobs,
+            'id': uids,
+            'object': jobs,
         }
 
     def _get(self, params):
