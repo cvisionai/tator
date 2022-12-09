@@ -659,9 +659,9 @@ export class TatorData {
     var annotationSearch = "";
     var annotationSearchObject = {'method': 'and', 'operations': [...finalAnnotationFilters]};
     var annotationSearchBlob = btoa(JSON.stringify(annotationSearchObject));
-    if (annotationSearch && annotationType != "Medias") {
+    if (finalAnnotationFilters.length && annotationType != "Medias") {
       paramString += "&encoded_search=" + annotationSearchBlob;
-    } else if (annotationSearch && annotationType == "Medias") {
+    } else if (finalAnnotationFilters.length && annotationType == "Medias") {
       paramString += "&encoded_related_search" + annotationSearchBlob;
     }
 
@@ -673,9 +673,9 @@ export class TatorData {
 
     var mediaSearchObject = {'method': "and", 'operations':[...finalMediaFilters]};
     var mediaSearchBlob = btoa(JSON.stringify(mediaSearchObject)); 
-    if (mediaSearch && annotationType != "Medias") {
+    if (finalMediaFilters.length && annotationType != "Medias") {
       paramString += "&related_search=" + mediaSearchBlob;
-    } else if (mediaSearch && annotationType == "Medias") {
+    } else if (finalMediaFilters.length && annotationType == "Medias") {
       paramString += "&encoded_search=" + mediaSearchBlob;
     }
 

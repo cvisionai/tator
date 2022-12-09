@@ -137,13 +137,13 @@ def test_basic(request, page_factory, project, image1, video): #image
    page.click('filter-condition-group button.btn.btn-outline.btn-small')
 
    page.wait_for_selector('enum-input[name="Category"]')
-   page.select_option('enum-input[name="Category"] select', value="Annotation")
+   page.select_option('enum-input[name="Category"] select', label="Localization")
 
    page.wait_for_selector('enum-input[name="Field"]')
    page.select_option('enum-input[name="Field"] select', value=attr_name)
 
    page.wait_for_selector('enum-input[name="Modifier"]')
-   page.select_option('enum-input[name="Modifier"] select', value="==")
+   page.select_option('enum-input[name="Modifier"] select', label="Equals")
 
    page.wait_for_selector('text-input[name="Value"] input')
    page.fill('text-input[name="Value"] input', choice_three_text)
