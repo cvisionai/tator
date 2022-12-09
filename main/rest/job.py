@@ -88,7 +88,7 @@ class JobListAPI(BaseListView):
             )
             # Retrieve the jobs so we have a list
             selector = f"project={project_id},gid={gid}"
-            cache = TatorCache()
+            cache = TatorCache().get_jobs_by_gid(gid, first_only=False)
             jobs = get_jobs(selector, cache)
             jobs = [workflow_to_job(job) for job in jobs]
         return {

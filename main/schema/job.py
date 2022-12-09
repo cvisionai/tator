@@ -16,7 +16,7 @@ class JobListSchema(AutoSchema):
     def get_operation(self, path, method):
         operation = super().get_operation(path, method)
         if method == 'POST':
-            operation['operationId'] = 'CreateJob'
+            operation['operationId'] = 'CreateJobList'
         elif method == 'GET':
             operation['operationId'] = 'GetJobList'
         elif method == 'DELETE':
