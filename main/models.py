@@ -1016,7 +1016,7 @@ class Media(Model, ModelDiffMixin):
     width=IntegerField(null=True)
     height=IntegerField(null=True)
     media_files = JSONField(null=True, blank=True)
-    deleted = BooleanField(default=False, db_index=True)
+    deleted = BooleanField(default=False)
     restoration_requested = BooleanField(default=False)
     archive_status_date = DateTimeField(auto_now_add=True, null=True, blank=True)
     archive_state = CharField(
@@ -1179,7 +1179,7 @@ class File(Model, ModelDiffMixin):
     """ Type associated with file """
     attributes = JSONField(null=True, blank=True, default=dict)
     """ Values of user defined attributes. """
-    deleted = BooleanField(default=False, db_index=True)
+    deleted = BooleanField(default=False)
 
 class Resource(Model):
     path = CharField(db_index=True, max_length=256)
@@ -1400,9 +1400,9 @@ class Localization(Model, ModelDiffMixin):
     """ List of points used by poly dtype. """
     parent = ForeignKey("self", on_delete=SET_NULL, null=True, blank=True,db_column='parent')
     """ Pointer to localization in which this one was generated from """
-    deleted = BooleanField(default=False, db_index=True)
+    deleted = BooleanField(default=False)
     elemental_id = UUIDField(primary_key = False, db_index=True, editable = True, null=True, blank=True)
-    variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
+    variant_deleted = BooleanField(default=False, null=True, blank=True)
     """ Indicates this is a variant that is deleted """
 
 @receiver(post_save, sender=Localization)
@@ -1458,9 +1458,9 @@ class State(Model, ModelDiffMixin):
                            blank=True,
                            related_name='extracted',
                            db_column='extracted')
-    deleted = BooleanField(default=False, db_index=True)
+    deleted = BooleanField(default=False)
     elemental_id = UUIDField(primary_key = False, db_index=True, blank=True, null=True, editable = True)
-    variant_deleted = BooleanField(default=False, null=True, blank=True, db_index=True)
+    variant_deleted = BooleanField(default=False, null=True, blank=True)
     """ Indicates this is a variant that is deleted """
     def selectOnMedia(media_id):
         return State.objects.filter(media__in=media_id)
@@ -1519,7 +1519,7 @@ class Leaf(Model, ModelDiffMixin):
     parent=ForeignKey('self', on_delete=SET_NULL, blank=True, null=True, db_column='parent')
     path=PathField()
     name = CharField(max_length=255)
-    deleted = BooleanField(default=False, db_index=True)
+    deleted = BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Leaves"
