@@ -140,7 +140,7 @@ class JobDetailAPI(BaseDetailView):
         has a unique run id.
     """
     schema = JobDetailSchema()
-    permission_classes = [ProjectTransferPermission]
+    permission_classes = [ProjectExecutePermission]
     http_method_names = ['get', 'delete']
 
     def _get(self, params):
