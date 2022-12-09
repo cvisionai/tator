@@ -237,7 +237,7 @@ export class BucketEdit extends OrganizationTypeForm {
   _getFormData(id) {
     let formData = {};
     let bucketType = this._currentBucketType !== null ? this._currentBucketType : "none";
-    const isNew = this.data.id == "New" ? true : false;
+    const isNew = this.data.id == "New";
 
     if (this._editName.changed() || isNew) {
       formData.name = this._editName.getValue();
@@ -251,7 +251,7 @@ export class BucketEdit extends OrganizationTypeForm {
       formData.live_sc = this._editLiveSc.getValue();
     }
 
-    if (bucketType === "aws") {
+    if (["aws", "none"].includes(bucketType)) {
       formData.store_type = "AWS"
       formData.config = {
         "aws_access_key_id": this._editAccessKey.getValue(),
