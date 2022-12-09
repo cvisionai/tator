@@ -1020,6 +1020,7 @@ def convert_legacy_sections(filename):
     """ PIPE format
     pk | name | lucene | object search
     """
+    import json
     with open(filename) as fp:
         lines = fp.readlines()
         for l in [x for x in lines if x != '\n']:
@@ -1028,6 +1029,6 @@ def convert_legacy_sections(filename):
             pk=comps[0]
             object_search=comps[3]
             s=Section.objects.get(pk=pk)
-            s.object_search = object_search
+            s.object_search = json.loads(object_search)
             s.save()
             print(f"Updated {s.pk}")
