@@ -12,4 +12,6 @@ WORKDIR /work/pgvector
 RUN make
 RUN make install
 WORKDIR /
+
+COPY containers/postgis/postgresql.conf /var/lib/postgresql/data/db-files
 CMD ["postgres", "-N", "1000", "-S", "16MB", "-B", "4000MB"]
