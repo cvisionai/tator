@@ -1209,7 +1209,7 @@ export class TatorData {
     }
 
     var launched = false;
-    await fetchRetry("/rest/AlgorithmLaunch/" + this._project, {
+    await fetchRetry("/rest/Jobs/" + this._project, {
       method: "POST",
       credentials: "same-origin",
       headers: {

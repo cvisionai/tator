@@ -1,9 +1,6 @@
 from .affiliation import affiliation_spec
 from .affiliation import affiliation_update
 from .affiliation import affiliation
-from .algorithm_launch import algorithm_parameter
-from .algorithm_launch import algorithm_launch_spec
-from .algorithm_launch import algorithm_launch
 from .algorithm import algorithm
 from .algorithm import algorithm_spec
 from .algorithm import algorithm_manifest
@@ -54,6 +51,8 @@ from .invitation import (
 )
 from .job import job_node
 from .job import job
+from .job import algorithm_parameter
+from .job import job_spec
 from .job_cluster import (
     job_cluster,
     job_cluster_spec,

@@ -1223,7 +1223,8 @@ class AlgorithmLaunchTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.algorithm = create_test_algorithm(self.user, 'algtest', self.project)
-        self.list_uri = 'AlgorithmLaunch'
+        self.list_uri = 'Jobs'
+        self.detail_uri = 'Job'
         self.create_json = {
             'algorithm_name': self.algorithm.name,
             'media_ids': [1,2,3],

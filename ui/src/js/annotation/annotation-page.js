@@ -1393,7 +1393,7 @@ export class AnnotationPage extends TatorPage {
         body["media_ids"] = [evt.detail.localization.media_id];
       }
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+      fetch("/rest/Jobs/" + evt.detail.project, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -1412,7 +1412,7 @@ export class AnnotationPage extends TatorPage {
       .then(data => {
         console.log(data);
         this.showAlgoRunningDialog(
-          data.uid,
+          data.id,
           `Filling gaps in track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
           (jobSuccessful) => {
             if (jobSuccessful) {
@@ -1535,7 +1535,7 @@ export class AnnotationPage extends TatorPage {
           body["media_ids"] = [evt.detail.localization.media_id];
         }
 
-        fetch("/rest/AlgorithmLaunch/" + evt.detail.project, {
+        fetch("/rest/Jobs/" + evt.detail.project, {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -1554,7 +1554,7 @@ export class AnnotationPage extends TatorPage {
         .then(data => {
           console.log(data);
           this.showAlgoRunningDialog(
-            data.uid,
+            data.id,
             `Extending track ${evt.detail.trackId} with visual tracker. Status will be provided in the annotator when complete.`,
             (jobSuccessful) => {
               if (jobSuccessful) {
@@ -1701,7 +1701,7 @@ export class AnnotationPage extends TatorPage {
 
       body["media_ids"] = [evt.detail.mediaId];
 
-      fetch("/rest/AlgorithmLaunch/" + evt.detail.projectId, {
+      fetch("/rest/Jobs/" + evt.detail.projectId, {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -1720,7 +1720,7 @@ export class AnnotationPage extends TatorPage {
       .then(data => {
         console.log(data);
         this.showAlgoRunningDialog(
-          data.uid,
+          data.id,
           `Launched ${algoName}. Status will be provided in the annotator when complete.`,
           (jobSuccessful) => {
             if (jobSuccessful) {

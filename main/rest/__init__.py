@@ -1,6 +1,5 @@
 from .affiliation import AffiliationListAPI
 from .affiliation import AffiliationDetailAPI
-from .algorithm_launch import AlgorithmLaunchAPI
 from .algorithm import AlgorithmListAPI
 from .algorithm import AlgorithmDetailAPI
 from .save_algorithm_manifest import SaveAlgorithmManifestAPI

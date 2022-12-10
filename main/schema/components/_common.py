@@ -6,7 +6,10 @@ create_response = {
             'description': 'Message indicating successful creation.',
         },
         'id': {
-            'type': 'integer',
+            'oneOf': [
+                {'type': 'integer'},
+                {'type': 'string'}, # For supporting UUIDs
+            ],
             'description': 'Unique integer identifying the created object.',
         },
         'object': {
@@ -27,7 +30,21 @@ create_list_response = {
         'id': {
             'type': 'array',
             'description': 'List of unique integers identifying created objects.',
-            'items': {'type': 'integer'},
+            'items': {
+                'oneOf': [
+                    {'type': 'integer'},
+                    {'type': 'string'}, # For supporting UUIDs
+                ],
+            },
+        },
+        'object': {
+            'type': 'array',
+            'description': 'List of created objects.',
+            'items': {
+                'type': 'object',
+                'description': 'The created objects.',
+                'additionalProperties': True,
+            }
         },
     },
 }

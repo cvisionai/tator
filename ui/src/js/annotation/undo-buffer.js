@@ -52,7 +52,7 @@ export class UndoBuffer extends HTMLElement {
         if (edit_triggers)
         {
           edit_triggers.forEach(algo_name=>{
-            fetchRetry("/rest/AlgorithmLaunch/" + this._media['project'], {
+            fetchRetry("/rest/Jobs/" + this._media['project'], {
               method: "POST",
               credentials: "same-origin",
               headers: {
