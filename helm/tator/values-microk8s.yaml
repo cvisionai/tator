@@ -151,7 +151,7 @@ metrics-server:
   enabled: false
 elasticsearch:
   # Enable this to install the elasticsearch helm chart.
-  enabled: true
+  enabled: false
   hostPath: "/media/kubernetes_share/elasticsearch"
   persistence:
     enabled: true
