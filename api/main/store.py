@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from datetime import datetime, timedelta
 from enum import Enum, unique
 import json
 import logging
+from oci.object_storage import ObjectStorageClient
+from oci.object_storage.models import RenameObjectDetails
 import os
 from typing import IO, List, Optional, Tuple, Union
 from urllib.parse import urlsplit, urlunsplit
@@ -80,8 +83,8 @@ DEFAULT_STORAGE_CLASSES = {
 def _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts):
     # TODO Handle OCI separately with native sdk
     store_type = ObjectStore(bucket.store_type)
-    config = dict(bucket.config)
-    if store_type in [ObjectStore.AWS, ObjectStore.MINIO, ObjectStore.OCI]:
+    config = deepcopy(bucket.config)
+    if store_type in [ObjectStore.AWS, ObjectStore.MINIO]:
         config["config"] = Config(
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
@@ -89,6 +92,19 @@ def _client_from_bucket(bucket, connect_timeout, read_timeout, max_attempts):
         )
         config["endpoint_url"] = config["endpoint_url"].replace(f"{bucket.name}.", "")
         return boto3.client("s3", **config)
+    if store_type == ObjectStore.OCI:
+        config["boto3_config"]["config"] = Config(
+            connect_timeout=connect_timeout,
+            read_timeout=read_timeout,
+            retries={"max_attempts": max_attempts},
+        )
+        config["boto3_config"]["endpoint_url"] = config["boto3_config"]["endpoint_url"].replace(
+            f"{bucket.name}.", ""
+        )
+        return {
+            "boto3_client": boto3.client("s3", **config["boto3_config"]),
+            "native_client": ObjectStorageClient(config["native_config"]),
+        }
     if store_type == ObjectStore.GCP:
         return storage.Client(config["project_id"], Credentials.from_service_account_info(config))
 
@@ -159,7 +175,7 @@ class TatorStorage(ABC):
     def check_key(self, path: str) -> bool:
         """Checks that at least one key matches the given path"""
 
-    def head_object(self, path: str, quiet: Optional[bool]=False) -> dict:
+    def head_object(self, path: str, quiet: Optional[bool] = False) -> dict:
         """
         Returns the object metadata for a given path using the concrete class implementation of
         `_head_object`. If the concrete implementation raises, this logs a warning and returns an
@@ -487,20 +503,47 @@ class S3Storage(MinIOStorage):
             RestoreRequest={"Days": min_exp_days},
         )
 
-class OCIStorage(MinIOStorage):
+
+class OCIStorage(S3Storage):
+    ARCHIVE_PREFIX = "_to_archive"
     def __init__(self, bucket, client, bucket_name, external_host=None):
-        super().__init__(bucket, client, bucket_name, external_host)
+        super().__init__(bucket, client["boto3_client"], bucket_name, external_host)
+        self._native_client = client["native_client"]
+        self._namespace = native_client.get_namespace().data
         self._server = ObjectStore.OCI
         self.remote_type = "oci"
 
+    def path_to_key(self, path):
+        return path
+
+    def _get_archived_key(path):
+        return f"{self.ARCHIVE_PREFIX}/{path}"
+
     def object_tagged_for_archive(self, path):
-        return False # OCI does not support object tags.
+        archived_key = self._get_archived_key(path)
+        return self.check_key(archived_key)
 
     def _put_archive_tag(self, path):
-        pass # OCI does not support object tags.
+        key = self.path_to_key(path)
+        archived_key = self._get_archived_key(path)
+        self._native_client.rename_object(
+            namespace_name=self._namespace,
+            bucket_name=self.bucket_name,
+            rename_object_details=RenameObjectDetails(source_name=key, new_name=archived_key),
+        )
 
     def put_media_id_tag(self, path, media_id):
-        pass # OCI does not support object tags.
+        pass  # OCI does not support object tags.
+
+    def _update_storage_class(self, path: str, desired_storage_class: str) -> None:
+        super()._update_storage_class(self._get_archived_key(path), desired_storage_class)
+        self._native_client.rename_object(
+            namespace_name=self._namespace,
+            bucket_name=self.bucket_name,
+            rename_object_details=RenameObjectDetails(source_name=archived_key, new_name=key),
+        )
+
+
 
 class GCPStorage(TatorStorage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
@@ -538,7 +581,7 @@ class GCPStorage(TatorStorage):
 
     def put_media_id_tag(self, path, media_id):
         blob = self._get_blob(path)
-        metadata = {MEDIA_ID_KEY : str(media_id)}
+        metadata = {MEDIA_ID_KEY: str(media_id)}
         blob.metadata = metadata
         blob.patch()
 

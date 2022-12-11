@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from oci.config import validate_config
 
 from ..models import Organization
 from ..models import Affiliation
@@ -65,8 +66,12 @@ class BucketListAPI(BaseListView):
         del params['body']
         store_type = params["store_type"]
 
-        # Validate live and archive storage classes
+        # Validate configuration parameters
         params = Bucket.validate_storage_classes(ObjectStore(store_type), params)
+        if params["store_type"] == ObjectStore.OCI:
+            validate_config(params["config"])
+
+        # Create the bucket
         bucket = Bucket.objects.create(**params)
         return {'message': f"Bucket {bucket.name} created!", 'id': bucket.id}
 
@@ -113,6 +118,8 @@ class BucketDetailAPI(BaseDetailView):
             mutated = True
             bucket.store_type = params["store_type"]
         if "config" in params:
+            if params["store_type"] == ObjectStore.OCI:
+                validate_config(params["config"])
             mutated = True
             bucket.config = params["config"]
         if mutated:
