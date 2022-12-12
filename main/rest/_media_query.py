@@ -63,7 +63,7 @@ def _related_search(qs, project, relevant_state_type_ids, relevant_localization_
         qs = qs.filter(pk=-1)
     return qs
 
-def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
+def _get_media_psql_queryset(project, filter_ops, params):
     """ Constructs a psql queryset.
     """
     # Get query parameters.
@@ -103,9 +103,6 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
 
     if name is not None:
         qs = qs.filter(name__iexact=name)
-
-    if section_uuid is not None:
-        qs = qs.filter(attributes__tator_user_sections=section_uuid)
 
     if dtype is not None:
         qs = qs.filter(meta__dtype=dtype)
@@ -179,10 +176,14 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
     if params.get('object_search'):
         qs = get_attribute_psql_queryset_from_query_obj(qs, params.get('object_search'))
 
-    if section_id and section_uuid == None:
+    if section_id:
         section = Section.objects.filter(pk=section_id)
         if not section.exists():
             raise Http404
+
+        section_uuid = section.tator_user_sections
+        if section_uuid:
+            qs = qs.filter(attribute__tator_user_sections=section_uuid)
 
         if section[0].object_search:
             qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
@@ -220,12 +221,6 @@ def _get_media_psql_queryset(project, section_uuid, filter_ops, params):
 
 def _get_section_and_params(project, params):
     filter_type = params.get('type')
-    section_uuid = None
-    if 'section' in params:
-        section = Section.objects.get(pk=params['section'])
-        section_uuid = section.tator_user_sections
-
-    project_type = params.get('type')
     filter_type = params.get('type')
     filter_ops=[]
     if filter_type:
@@ -235,13 +230,13 @@ def _get_section_and_params(project, params):
     for entity_type in types:
         filter_ops.extend(get_attribute_filter_ops(project, params, entity_type))
 
-    return section_uuid, filter_ops
+    return filter_ops
 
 def get_media_queryset(project, params):
     # Determine whether to use ES or not.
-    section_uuid, filter_ops = _get_section_and_params(project, params)
+    filter_ops = _get_section_and_params(project, params)
     # If using PSQL, construct the queryset.
-    qs = _get_media_psql_queryset(project, section_uuid, filter_ops, params)
+    qs = _get_media_psql_queryset(project, filter_ops, params)
     return qs
 
 def get_media_count(project, params):
