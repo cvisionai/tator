@@ -16,6 +16,7 @@ from ..search import TatorSearch
 from ..schema._attributes import related_keys
 
 from ._media_query import query_string_to_media_ids
+from ._media_query import _related_search
 from ._attribute_query import get_attribute_filter_ops
 from ._attribute_query import get_attribute_psql_queryset
 from ._attribute_query import get_attribute_psql_queryset_from_query_obj
@@ -114,11 +115,21 @@ def _get_annotation_psql_queryset(project, filter_ops, params, annotation_type):
 
     if 'section' in params:
         section = Section.objects.get(pk=params['section'])
-        section_uuid = section.tator_user_sections
-        media_ids=[]
+        media_ids = []
         # This iteration ensures the scoped UUID index is used
         for media_type_id in relevant_media_type_ids:
-            media_qs = Media.objects.filter(project=project, attributes__tator_user_sections=section_uuid)
+            section_uuid = section.tator_user_sections
+            object_search = section.object_search
+            related_object_search = section.related_object_search
+            media_qs = Media.objects.filter(project=project, meta=media_type_id)
+            if section_uuid:
+                media_qs = media_qs.filter(attributes__tator_user_sections=section_uuid)
+            if object_search:
+                media_qs = get_attribute_psql_queryset_from_query_obj(media_qs, object_search)
+            if related_object_search:
+                media_state_types = StateType.objects.filter(project=project)
+                media_localization_types = Localization.objects.filter(project=project)
+                media_qs = _related_search(media_qs, project, media_state_types, media_localization_types, related_object_search)
             media_ids.append(media_qs)
         query = Q(media__in=media_ids.pop())
         for m in media_ids:
