@@ -272,6 +272,11 @@ export class FilterInterface extends TatorElement {
     pill.setAttribute("tooltip", `Defined search in section '${section.name}'`);
   }
 
+  set sections(sections)
+  {
+    this._sections = sections;
+  }
+
   set section(section)
   {
     this._section = section;
@@ -282,6 +287,16 @@ export class FilterInterface extends TatorElement {
     if (section.object_search)
     {
       let ops = [];
+      if (section.tator_user_sections)
+      {
+        for (const s of this._sections)
+        {
+          if (s.tator_user_sections == section.tator_user_sections)
+          {
+            ops.push({"attribute": "Section", "operation": "eq","value": s.name});
+          }
+        }
+      }
       if (Object.hasOwn(section.object_search, 'attribute'))
       {
         ops.push(section.object_search);

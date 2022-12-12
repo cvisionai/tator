@@ -762,6 +762,7 @@ export class ProjectDetail extends TatorPage {
             const hiddenAlgoCategories = ['annotator-view', 'disabled'];
 
             this._cardAttributeLabels.init(projectId);
+            this._sections = sections;
 
             //
             // Set up attributes for bulk edit
@@ -1036,6 +1037,7 @@ export class ProjectDetail extends TatorPage {
     }
 
     // Add section filter information
+    this._filterView.sections = this._sections;
     this._filterView.section = section;
 
     return true;
