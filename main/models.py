@@ -236,7 +236,8 @@ class TwoDPlotType(Enum):
 class Organization(Model):
     name = CharField(max_length=128)
     thumb = CharField(max_length=1024, null=True, blank=True)
-    default_membership_permission = EnumField(Permission, max_length=1, default=Permission.NO_ACCESS)
+    # TODO Reinstate the `default=Permission.NO_ACCESS` after the next release
+    default_membership_permission = EnumField(Permission, max_length=1, blank=True, null=True)
     def user_permission(self, user_id):
         permission = None
         qs = self.affiliation_set.filter(user_id=user_id)
@@ -555,7 +556,9 @@ def add_org_users(project):
     organization = project.organization
     if not organization:
         return
-    permission = organization.default_membership_permission
+
+    # TODO Remove `or ...` when there is a default default_membership_permission
+    permission = organization.default_membership_permission or Permission.NO_ACCESS
 
     # If no access is given by default, don't create memberships
     if permission == Permission.NO_ACCESS:
