@@ -41,10 +41,8 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
 
       // Show the modal for a new project // reuse from dashboard
       this._form.hidden = true;
-      this._form
       return;
     } else {
-      this._newProjectDialog.removeAttribute("is-open");
       this._newProjectDialog.hidden = true;
       this._form.hidden = false;
     }
@@ -83,7 +81,7 @@ export class ProjectDisplayList extends OrgTypeFormTemplate {
         store.setState({
           selection: {
             ...store.getState.selection,
-            typeId: project.id,
+            typeId: projectInfo.data.id,
           }
         });
         this.modal._success("Project created successfully!",

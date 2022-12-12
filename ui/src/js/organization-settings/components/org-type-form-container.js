@@ -26,19 +26,16 @@ export class OrgTypeFormContainer extends TatorElement {
 
     // Buttons below form
     this._saveEditSection = this._shadow.getElementById("type-form--save-reset-section");
+    
     this._customButtonSection = this._shadow.getElementById("type-form--custom-button-section");
     this._customButton = this._shadow.getElementById("type-form--custom-button");
+    
     this._customButtonSectionPrimary = this._shadow.getElementById("type-form--custom-button-section-primary");
     this._customButtonPrimary = this._shadow.getElementById("type-form--custom-button-primary");
 
+
     // Side container (attr container)
     this.sideCol = this._shadow.getElementById("type-form-attr-column");
-    this.membershipSidebar = document.createElement("affiliation-membership-sidebar");
-    this.membershipSidebar.hidden = true;
-    this.sideCol.appendChild(this.membershipSidebar);
-    this.projectMembershipSidebar = document.createElement("project-membership-sidebar");
-    this.projectMembershipSidebar.hidden = true;
-    this.sideCol.appendChild(this.projectMembershipSidebar);
 
     // this is outside the template and references by all parts of page to sync the dimmer
     this.modal = document.createElement("modal-dialog");
@@ -64,7 +61,6 @@ export class OrgTypeFormContainer extends TatorElement {
     this.typeName = typeName;
 
     if (typeName === "Project") {
-      this._saveEditSection.classList.add("hidden");
       this._customButtonPrimary.innerHTML = `View/Edit Project`;
       this._customButtonPrimary.addEventListener("click", this._linkToProject.bind(this));
       this.checkCurrentUser();
@@ -72,6 +68,10 @@ export class OrgTypeFormContainer extends TatorElement {
       this._customButton.hidden = false;
       this._customButton.innerHTML = `Clone Project`;
       this._customButton.addEventListener("click", this._cloneProjectDialog.bind(this));
+
+      this.projectMembershipSidebar = document.createElement("project-membership-sidebar");
+      this.sideCol.appendChild(this.projectMembershipSidebar);
+  
     } else if (typeName == "Invitation") {
       this._customButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="no-fill feather feather-send"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       &nbsp; Reset & Resend Invitation`;
@@ -79,6 +79,11 @@ export class OrgTypeFormContainer extends TatorElement {
 
       this._customButtonPrimary.innerHTML = `View/Edit Affiliation`;
       this._customButtonPrimary.addEventListener("click", this._linkToAffiliation.bind(this));
+    } else if (typeName == "Affiliation") {
+        
+        this.membershipSidebar = document.createElement("affiliation-membership-sidebar");
+        this.membershipSidebar.hidden = true;
+        this.sideCol.appendChild(this.membershipSidebar);
     }
 
     // Event listeners for container actions
@@ -124,14 +129,8 @@ export class OrgTypeFormContainer extends TatorElement {
     this._typeId = val;
     this.idDisplay.textContent = val;
     this.deleteDiv.hidden = (val == "New");
-    this._saveEditSection.hidden = !(val == "New");
-
-    if (val == "New") {
-      this.sideCol.hidden = true;
-      this.projectMembershipSidebar.hidden = true;
-      this.membershipSidebar.hidden = true;      
-    }
-
+    //this._saveEditSection.hidden = !(val == "New");
+    this.sideCol.hidden = (val == "New");
   }
 
   /**
@@ -155,11 +154,7 @@ export class OrgTypeFormContainer extends TatorElement {
     let objectName = "";
 
     // Reset to hidden by default
-    this.sideCol.hidden = true;
-    this.projectMembershipSidebar.hidden = true;
-    this.membershipSidebar.hidden = true;
-    
-
+    this.sideCol.hidden = true;  
     console.log("this._typeName data.id" + this._typeName + data.id);
 
     // Setup object info
@@ -173,9 +168,12 @@ export class OrgTypeFormContainer extends TatorElement {
         this._getAffiliateMembershipSidebar(data.username);
         break;
       case "Project":
-        if (this._data.id !== "New") {
-          // this._customButtonSection.hidden = false;
+        console.log("Project section with ID " + this._data.id);
+        if (this._data.id === "New") {
+          
+          
         } else {
+          this._saveEditSection.classList.add("hidden");
           this._getProjMembershipSidebar(data.id);
         }   
 
@@ -253,6 +251,7 @@ export class OrgTypeFormContainer extends TatorElement {
       const oldType = oldSelection.typeName;
 
       if (oldType === this._typeName && oldType !== newType) {
+        console.log("New selection requires hidden ", newSelection);
         this.hidden = true;
         return; // If container type was the old type, and not the new one hide and end
       } else {
@@ -271,6 +270,11 @@ export class OrgTypeFormContainer extends TatorElement {
           this.setUpData(data);
           this._form.data = data;
           return;
+        }
+      } else {
+        if (this._typeName == "Project") {
+          console.log("REMOVE HIDDEN");
+          this._saveEditSection.classList.remove("hidden");
         }
       }
 
@@ -348,14 +352,14 @@ export class OrgTypeFormContainer extends TatorElement {
 
     // Show the things
     this.sideCol.hidden = false;
-    this.membershipSidebar.hidden = false;
   }
 
   async _getProjMembershipSidebar(projectId) {
     // Setting data, should be a list of memberships projects
     const data = await store.getState().getProjMembershipData(projectId);
     console.log("Got data for projectId " + projectId, data);
-    this.projectMembershipSidebar.data = data;
+    this.projectMembershipSidebar.projectId = projectId;
+    this.projectMembershipSidebar.data = {projectId, data};
 
     // Projects
     this._customButtonSection.hidden = true;
@@ -372,7 +376,6 @@ export class OrgTypeFormContainer extends TatorElement {
     
     // Show the things
     this.sideCol.hidden = false;
-    this.projectMembershipSidebar.hidden = false;
 
     // There are either no affiliations for the project, or there is but user isn't one with control
     this.delete.hidden = !canDeleteProject;

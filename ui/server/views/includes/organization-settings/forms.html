@@ -2,6 +2,8 @@
    <form id="organization-edit--form">
       <thumb-input id="organization-edit--thumb" name="Thumbnail" for="thumb"></thumb-input>
       <text-input id="organization-edit--name" name="Name" type="string"></text-input>
+      <enum-input id="organization-edit--default-permission" name="Default Membership Permission"></enum-input>
+      <p class="f3 offset-lg-4 text-gray">Note: Changes to default membership level are not retroactive.</p>
    </form>
 </template>
 
@@ -83,12 +85,11 @@
 
          <a id="memberships-sidebar--add" class="py-2 my-2 clickable add-new-in-form add-new d-flex flex-items-center px-3 text-gray rounded-2">
             <span class="add-new__icon d-flex flex-items-center flex-justify-center text-white circle">
-               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-corner-up-right no-fill"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
+              +
             </span>
             <span class="px-3"> New Membership</span>
          </a>
       </div>
-
    </div>
 </template>
 

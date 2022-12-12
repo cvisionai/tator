@@ -1,6 +1,6 @@
 import create from 'zustand/vanilla';
 import { subscribeWithSelector, devtools } from 'zustand/middleware';
-import { getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
+import { ApiClient, getApi } from '../../../../scripts/packages/tator-js/pkg/src/index.js';
 
 const api = getApi(window.localStorage.getItem('backend'));
 const organizationId = Number(window.location.pathname.split('/')[1]);
@@ -169,7 +169,8 @@ const store = create(subscribeWithSelector((set, get) => ({
       setList: new Set(),
       map: new Map(),
       userMap: new Map(),
-      emailMap: new Map()
+      emailMap: new Map(),
+      usernameToUserMap: new Map()
    },
    Bucket: {
       name: "Bucket",
@@ -423,11 +424,11 @@ const store = create(subscribeWithSelector((set, get) => ({
    },
 
    fetchMemberships: async (projectList = null) => {
-      if (projectList == null) {
+      // if (projectList == null) {
          await get().initType("Project");
          projectList = get().Project.map;
          console.log(projectList);
-      }
+      // }
       if (!projectList) return;
       set({ status: { ...get().status, name: "bg-fetch", msg: `Adding Memberships...` } });
       const fn = getMap.get("Membership");
@@ -445,7 +446,7 @@ const store = create(subscribeWithSelector((set, get) => ({
                const usernameMebershipsMap = new Map();
                const projectIdMembersMap = new Map();
 
-               console.log(`Membership data projectId ${projectId} `, object.data)
+               //console.log(`Membership data projectId ${projectId} `, object.data)
                
                // To accomplish: get me memberships for project ID X
                const memberList = object.data;
@@ -465,7 +466,6 @@ const store = create(subscribeWithSelector((set, get) => ({
                   // If I need the project info it is in the memberships object attr "project"
                   const username = item.username;
                   let userList = get().Membership.usernameMebershipsMap.has(username) ? get().Membership.usernameMebershipsMap.get(username) : [];
-                  console.log(`username ${username} ======== membershipId ${membershipId}`);
                   userList.push(membershipId);
                   userList = [...new Set(userList)];
                   usernameMebershipsMap.set(item.username, userList);
@@ -493,6 +493,25 @@ const store = create(subscribeWithSelector((set, get) => ({
             return err;
          }
       }
+   },
+
+   getUser: async (username) => {
+      if (get().Affiliation.usernameToUserMap.has(username)) {
+         return get().Affiliation.usernameToUserMap.get(username);
+      } else {
+         try {
+            const usernameToUserMap = new Map();
+            const responseInfo = await api.getUserListWithHttpInfo({username});
+            const userData = responseInfo.data[0];
+            usernameToUserMap.set(username, userData);
+            set({ Affiliation: {...get().Affiliation, usernameToUserMap} });
+            return userData;
+         } catch (err) {
+            console.error(err);
+         }
+
+      } 
+
    },
 
    addType: async ({ type, data }) => {
@@ -586,26 +605,47 @@ const store = create(subscribeWithSelector((set, get) => ({
       const userProjects = info.userMap.has(username) ? info.userMap.has(username) : [];
       return userProjects;
    },
-   updateMembership: async ({ membershipId, permission, baseVersion }) => {
-      console.log("updateMembership "+membershipId);
-      set({ status: { ...get().status, name: "pending", msg: "Updating membership..." } });
+   addMembership: async ({ projectId, formData }) => {
+      console.log("addMembership to projectId "+projectId);
+      set({ status: { ...get().status, name: "pending", msg: "Adding membership..." } });
       try {
-         const objectCreate = await api.updateMembershipWithHttpInfo(membershipId, {
-            permission,
-            default_version: baseVersion
-         });
+         const info = await api.createMembershipWithHttpInfo(projectId, formData);
          
          await get().fetchTypeByOrg("Project");
          await get().fetchTypeByOrg("Affiliation");
-
-         return objectCreate;
+         console.log("Returning ", info);
+         return info;
+      } catch (err) {
+         set({ status: { ...get().status, name: "idle", msg: "" } });
+         return err;
+      }
+   },
+   updateMembership: async ({ membershipId, formData }) => {
+      console.log("updateMembership, membershipId: "+membershipId);
+      set({ status: { ...get().status, name: "pending", msg: "Updating membership..." } });
+      try {
+         const info = await api.updateMembershipWithHttpInfo(membershipId, formData);
+         
+         await get().fetchTypeByOrg("Project");
+         await get().fetchTypeByOrg("Affiliation");
+         console.log("Returning ", info);
+         return info;
       } catch (err) {
          set({ status: { ...get().status, name: "idle", msg: "" } });
          return err;
       }
    },
    addProject: async (projectSpec, preset) => {
-      let info = await api.createProjectWithHttpInfo(projectSpec);
+      console.log({
+         ...projectSpec,
+         organization: get().organizationId,
+         
+      });
+      let info = await api.createProjectWithHttpInfo({
+         ...projectSpec,
+         organization: get().organizationId
+        
+      });
 
       if (info.response.ok) {
          const project = info.data.object;

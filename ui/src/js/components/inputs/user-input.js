@@ -124,9 +124,7 @@ export class UserInput extends TatorElement {
     // Go back to default value
     if(this._data?._users) this._data._users = new Map();
     if (this._pills.length) {
-      for (const pill of this._pills.children) {
-        this._pills.removeChild(pill);
-      }      
+      this.clear();    
     }
   }
 
@@ -148,6 +146,14 @@ export class UserInput extends TatorElement {
     h3.setAttribute("class", "h3 text-red");
     h3.textContent = msg;
     li.appendChild(h3);
+  }
+
+  clear() {
+    if (this._pills.length) {
+      for (const pill of this._pills.children) {
+        this._pills.removeChild(pill);
+      }      
+    }
   }
 
 }

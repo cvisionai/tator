@@ -17,6 +17,16 @@ export class OrganizationMainEdit extends OrgTypeFormTemplate {
     this._form = this._shadow.getElementById("organization-edit--form");
     this._thumbUpload = this._shadow.getElementById("organization-edit--thumb");
     this._editName = this._shadow.getElementById("organization-edit--name");
+    this._defaultPermission = this._shadow.getElementById("organization-edit--default-permission");
+
+    this._defaultPermission.choices = [
+      { label: "No Access", value: "No Access", checked: true },
+      { label: "View Only", value: "View Only" },
+      { label: "Can Edit", value: "Can Edit" },
+      { label: "Can Transfer", value: "Can Transfer" },
+      { label: "Can Execute", value: "Can Execute" },
+      { label: "Full Control", value: "Full Control" },
+    ];
   }
 
   // overrides templates

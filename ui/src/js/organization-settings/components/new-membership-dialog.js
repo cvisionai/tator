@@ -17,6 +17,13 @@ export class AffiliationMembershipDialog extends ModalDialog {
       this._projects.setAttribute("name", "Projects");
       this._main.appendChild(this._projects);
 
+      this._affiliates = document.createElement("enum-input");
+      this._affiliates.hidden = true;
+      this._affiliates.setAttribute("name", "User");
+      this._main.appendChild(this._affiliates);
+
+      this._affiliates.addEventListener("change", this.setUserIdFromEvent.bind(this));
+
       this._versions = document.createElement("enum-input");
       this._versions.setAttribute("name", "Versions");
       this._main.appendChild(this._versions);
@@ -66,41 +73,62 @@ export class AffiliationMembershipDialog extends ModalDialog {
       // TODO get this back in there somehow
       // // this._accept.removeAttribute("disabled");
 
-      this._accept.addEventListener("click", evt => {
-         this._confirm = true;
-         if (this._projects.getValue()) {
-            const value = this._projects.getValue();
-            console.log("Value is " + value)
-            // window.location.replace(`/${value}/project-settings?un=${this._username}#Membership-New`)
-            store.getState().updateMembership({
-               membershipId: this._membershipId.getValue(),
-               permission: this._permissionLevels.getValue(),
-               baseVersion: Number(this._versions.getValue())
-            });
-         }
-
-         this._closeCallback();
-      });
+      this._accept.addEventListener("click", this.saveData.bind(this)); 
 
       //   this._name.addEventListener("input", this._validateName.bind(this));
       this.addEventListener("open", this.setProjects.bind(this));
       this.addEventListener("close", this.clearDialog.bind(this));
+
+   }
+
+   async getUsernames() {
+      await store.getState().initType("Affiliation");
+      const affiliates = await store.getState().Affiliation.userMap
+      console.log(affiliates);
+      const choices = [];
+      for (let [un, val] of affiliates) {
+         console.log("Test " + un);
+         choices.push({
+            label: un,
+            value: await store.getState().getUser(un)
+         });
+      }
+      console.log("choices",choices);
+      this._affiliates.choices = choices;
    }
 
    set username(val) {
       this._username = val;
+      this.setUserId(this._username); 
+   }
+
+   set pageModal(val) {
+      this._pageModal = val;
+   }
+
+   async setUserId(un) {
+      console.log("SET USER ID setUserId this._userId=" + this._userId);
+      this._user = await store.getState().getUser(un);
+      this._userId = this._user.id;
+   }
+
+   setUserIdFromEvent() {
+      this._userId = this._affiliates.getValue();
    }
 
    async setProjects() {
       this._projects.clear();
-      const projectChoices = await getCompiledList({ type: "Project" }); // todo skip if user doesn't have those project permissions
+      // todo skip if user doesn't have those project permissions Or if is already in that project
+      const projectChoices = await getCompiledList({ type: "Project" }); 
       this._projects.choices = projectChoices;
    }
 
    async showOptions() {
       // setup version list
       const projectId = this._projects.getValue();
-      console.log(projectId);
+      console.log("showOptions "+projectId);
+
+      this._versions.clear();
       const versionsList = await getCompiledVersionList({ projectId });
       this._versions.choices = versionsList;
 
@@ -119,15 +147,32 @@ export class AffiliationMembershipDialog extends ModalDialog {
       this._versions.hidden = true;
       
       this._membershipId.setValue("");
+
+      this._messageList.innerHTML = "";
    }
 
-   async setUpAddNew() {
+   async setUpAddNew(projectId = null) {
+      console.log("setUpAddNew(projectId= " + projectId);
       this.clearDialog();
       this._title.nodeValue = "Add Affiliate to Project";
       this._accept.textContent = "Add Member";
+      this._membershipId.setValue(null);
       await this.setProjects();
-      this._projects.setValue(-1);
-      // this._projects.permission = "Can Edit";
+
+      if (projectId == null) {
+         this._projects.hidden = false;
+      } else {
+         
+         
+         this._projects.setValue(String(projectId));
+         // this._projects.hidden = true;
+         await this.getUsernames();
+         this._affiliates.hidden = false;
+
+         await this.showOptions();
+      }
+      
+      console.log(`this._projects.setValue(${projectId}); this._projects.getValue() => ${this._projects.getValue()}`)
       this.setAttribute("is-open", "true");
    }
 
@@ -148,6 +193,63 @@ export class AffiliationMembershipDialog extends ModalDialog {
       
       // this._projects.permission = "View Only";
       this.setAttribute("is-open", "true");
+   }
+
+   async saveData() {
+      this._confirm = true;
+      let info = null;
+      if (this._membershipId.getValue()) {
+         console.log("Editing membership ID ==== this._membershipId.getValue()"+this._membershipId.getValue())
+         const formData = {};
+
+         if (this._permissionLevels.changed()) formData.permission = this._permissionLevels.getValue();
+         if (this._versions.changed()) formData.baseVersion = Number(this._versions.getValue());
+         
+         info = await store.getState().updateMembership({
+            membershipId: this._membershipId.getValue(),
+            formData
+         });
+
+
+      } else if(this._projects.getValue()) {
+         console.log("Adding user to project...." + this._projects.getValue());
+         const formData = {
+            permission: this._permissionLevels.getValue(),
+            default_version: Number(this._versions.getValue()),
+            project: Number(this._projects.getValue()),
+            user: this._userId,
+            username: this._username
+         }
+         
+         info = await store.getState().addMembership({
+            projectId: this._projects.getValue(),
+            formData
+         });
+      } else {
+         return console.error("Some data is missing to complete this edit/add.")
+      }
+
+      console.log(info);
+      if (info.response) {   
+         if (info.response.ok) {
+            this._closeCallback();
+            this._pageModal._success(info.data.message);
+         } else if(info.response.body?.message) {
+            this._messageList.innerHTML = `
+               <li>${info.response.body.message}</li>
+            `;
+         } else if (info.response.text) {
+            this._messageList.innerHTML = `
+            <li>${info.response.text}</li>
+         `;           
+         }
+      } else {
+         this._messageList.innerHTML = `<li>${info}</li>`;
+         this._pageModal._error("Error editing or adding affiliation.");
+      }
+
+
+      
    }
 
 }

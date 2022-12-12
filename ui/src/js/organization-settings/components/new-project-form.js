@@ -54,7 +54,7 @@ export class OrgNewProjectDialog extends OrgTypeFormTemplate {
     this._nameWarning.style.display = "none";
     li.appendChild(this._nameWarning);
 
-    this._name.addEventListener("input", this._validateName.bind(this));
+    // this._name.addEventListener("input", this._validateName.bind(this));
   }
 
   connectedCallback() {
@@ -94,24 +94,24 @@ export class OrgNewProjectDialog extends OrgTypeFormTemplate {
     return this._preset.getValue();
   }
 
-  _validateName() {
-    let valid = true;
-    const name = this._name.getValue();
-    this._nameWarning.style.display = "none";
-    if (name.length == 0) {
-      valid = false;
-    } else {
-      if (this._existingNames.includes(name.toLowerCase())) {
-        valid = false;
-        this._nameWarning.style.display = "block";
-      }
-    }
-    if (valid) {
-      this._accept.removeAttribute("disabled");
-    } else {
-      this._accept.setAttribute("disabled", "");
-    }
-  }
+//   _validateName() {
+//     let valid = true;
+//     const name = this._name.getValue();
+//     this._nameWarning.style.display = "none";
+//     if (name.length == 0) {
+//       valid = false;
+//     } else {
+//       if (this._existingNames.includes(name.toLowerCase())) {
+//         valid = false;
+//         this._nameWarning.style.display = "block";
+//       }
+//     }
+//     if (valid) {
+//       this._accept.removeAttribute("disabled");
+//     } else {
+//       this._accept.setAttribute("disabled", "");
+//     }
+//   }
 }
 
 customElements.define("org-new-project-dialog", OrgNewProjectDialog);

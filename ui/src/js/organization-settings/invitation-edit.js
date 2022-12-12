@@ -27,6 +27,7 @@ export class InvitationEdit extends OrgTypeFormTemplate {
   
   async _setupFormUnique() {
     //
+    this._emailInput.clear();
     this._emailInput.hidden = (this._data.id !== "New");
 
     // permission

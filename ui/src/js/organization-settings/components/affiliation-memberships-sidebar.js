@@ -20,6 +20,10 @@ export class AffiliationMembershipSidebar extends TatorElement {
     this._addNewDialog = new AffiliationMembershipDialog(); // try doc create element instead?
     this._shadow.appendChild(this._addNewDialog);
     this._addNew.addEventListener("click", this.openAddNew.bind(this));
+
+    this.modal = document.createElement("modal-dialog");
+    this._addNewDialog.pageModal = this.modal;
+    this._shadow.appendChild(this.modal);
   }
 
   /**
@@ -71,10 +75,11 @@ export class AffiliationMembershipSidebar extends TatorElement {
 
       //
       const projectThumb = cloneSidebarItem.getElementById("membership-item--thumb");
+      projectThumb.style.backgroundColor = "transparent";
       if (project.thumb) {
         projectThumb.setAttribute("src", project.thumb);
       } else {
-        project.thumb.setAttribute("src", TatorSymbol);
+        projectThumb.setAttribute("src", TatorSymbol);
       }
       
 
@@ -97,6 +102,8 @@ export class AffiliationMembershipSidebar extends TatorElement {
         this._addNewDialog.setUpEditExisting(membership);
       });
 
+      //
+      console.log("Appending...............", cloneSidebarItem);
       this._listDiv.appendChild(cloneSidebarItem);
     }
   }

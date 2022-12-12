@@ -1,5 +1,7 @@
 import { TatorElement } from "../../components/tator-element";
-import { store } from "../store.js"
+import { store } from "../store.js";
+import { AffiliationMembershipDialog } from "./new-membership-dialog";
+
 
 export class ProjectMembershipSidebar extends TatorElement {
   constructor() {
@@ -18,6 +20,13 @@ export class ProjectMembershipSidebar extends TatorElement {
 
     this._addNew = this._shadow.getElementById("memberships-sidebar--add");
     this._addNew.addEventListener("click", this.addNewMembership.bind(this));
+
+    this._addNewDialog = new AffiliationMembershipDialog(); // try doc create element instead?
+    this._shadow.appendChild(this._addNewDialog);
+
+    this.modal = document.createElement("modal-dialog");
+    this._addNewDialog.pageModal = this.modal;
+    this._shadow.appendChild(this.modal);
   }
 
   /**
@@ -31,7 +40,8 @@ export class ProjectMembershipSidebar extends TatorElement {
     this.nonAffListCount = 0;
 
     if (val && val !== null && Array.isArray(val)) {
-      this._data = val;
+      this._data = val.data;
+      this._projectId = val.projectId
       this.setupSidebar();
     } else {
       console.log("There are no affiliations....")
@@ -47,15 +57,17 @@ export class ProjectMembershipSidebar extends TatorElement {
     this._nonAffListCount.textContent = val;
   }
 
+  set projectId(val) {
+    this._projectId = val;
+  }
+
   // save and formdata
   async setupSidebar() {
     let even = false
     let affCount = 0;
     let nonAffCount = 0;
 
-    const projectId = this._data[0].project;
-    this._project = projectId;
-    console.log("Side bar project id is: "+projectId);
+    const projectId = this._projectId ? this._projectId : store.getState().selection.typeId;
 
     const currentMemberItem = store.getState().currentUser.membershipsByProject.has(projectId) ? store.getState().currentUser.membershipsByProject.get(projectId) : null;
     console.log(currentMemberItem);
@@ -128,6 +140,7 @@ export class ProjectMembershipSidebar extends TatorElement {
       if(even) avatar.setAttribute("style", "background-color: #696cff");
       even = true;
     }
+
     this.affListCount = affCount;
     this.nonAffListCount = nonAffCount;
     console.log("::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::");
@@ -136,7 +149,10 @@ export class ProjectMembershipSidebar extends TatorElement {
   addNewMembership() {
     // get /{project-id}/project-settings#Membership-New
     const projectId = store.getState().selection.typeId;
-    window.location.replace(`/${projectId}/project-settings#Membership-New`);
+    console.log(`test ${this._projectId} this._projectId ..... ${projectId} projectId`);
+    
+    // window.location.replace(`/${projectId}/project-settings#Membership-New`);
+    this._addNewDialog.setUpAddNew(this._projectId);
   }
 }
 
