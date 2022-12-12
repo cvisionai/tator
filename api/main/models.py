@@ -423,6 +423,15 @@ class Bucket(Model):
     gcs_key_info = TextField(null=True, blank=True)
     # TODO remove field gcs_key_info ###############################################################
 
+    def __str__(self):
+        return " | ".join(
+            [
+                f"{self.name} ({self.id})",
+                str(self.store_type),
+                f"{self.organization} ({self.organization.id})",
+            ]
+        )
+
     def validate_storage_classes(store_type, params):
         """
         Checks for the existence of `live_sc` and `archive_sc` and validates them if they exist. If

@@ -41,46 +41,34 @@
 - name: SYSTEM_IMAGES_REGISTRY
   value: {{ .Values.systemImageRepo | default "cvisionai" | quote }}
 {{- if .Values.minio.enabled }}
-- name: OBJECT_STORAGE_HOST
-  value: http://tator-minio:9000
-- name: OBJECT_STORAGE_EXTERNAL_HOST
+- name: DEFAULT_LIVE_CONFIG
+  value: {{ .Values.minio.config }}
+- name: DEFAULT_LIVE_BUCKET_NAME
+  value: {{ .Values.minio.name }}
+- name: DEFAULT_LIVE_STORE_TYPE
+  value: {{ .Values.minio.store_type }}
+- name: LIVE_STORAGE_EXTERNAL_HOST
   value: {{ ternary "https://" "http://" .Values.requireHttps }}{{ .Values.domain }}/objects
-- name: OBJECT_STORAGE_REGION_NAME
-  value: {{ .Values.objectStorageRegionName | default "us-east-2" | quote }}
-- name: BUCKET_NAME
-  value: {{ .Values.minio.defaultBucket.name }}
-- name: OBJECT_STORAGE_ACCESS_KEY
-  value: {{ .Values.minio.accessKey }}
-- name: OBJECT_STORAGE_SECRET_KEY
-  value: {{ .Values.minio.secretKey }}
 {{- else }}
-- name: OBJECT_STORAGE_HOST
-  value: {{ .Values.objectStorageHost }}
-- name: OBJECT_STORAGE_REGION_NAME
-  value: {{ .Values.objectStorageRegionName | default "us-east-2" | quote }}
-- name: BUCKET_NAME
-  value: {{ .Values.objectStorageBucketName }}
-- name: OBJECT_STORAGE_ACCESS_KEY
-  value: {{ .Values.objectStorageAccessKey }}
-- name: OBJECT_STORAGE_SECRET_KEY
-  value: {{ .Values.objectStorageSecretKey }}
+- name: DEFAULT_LIVE_CONFIG
+  value: {{ .Values.objectStorageHost.config }}
+- name: DEFAULT_LIVE_BUCKET_NAME
+  value: {{ .Values.objectStorageHost.name }}
+- name: DEFAULT_LIVE_STORE_TYPE
+  value: {{ .Values.objectStorageHost.store_type }}
 {{- if hasKey .Values "objectStorageProxy" }}
-- name: OBJECT_STORAGE_EXTERNAL_HOST
+- name: LIVE_STORAGE_EXTERNAL_HOST
   value: {{ .Values.objectStorageProxy }}
 {{- end }}
 {{- end }}
 {{- if hasKey .Values "uploadBucket" }}
 {{- if .Values.uploadBucket.enabled }}
-- name: UPLOAD_STORAGE_HOST
-  value: {{ .Values.uploadBucket.host }}
-- name: UPLOAD_STORAGE_BUCKET_NAME
+- name: DEFAULT_UPLOAD_CONFIG
+  value: {{ .Values.uploadBucket.config }}
+- name: DEFAULT_UPLOAD_BUCKET_NAME
   value: {{ .Values.uploadBucket.name }}
-- name: UPLOAD_STORAGE_REGION_NAME
-  value: {{ .Values.uploadBucket.region }}
-- name: UPLOAD_STORAGE_ACCESS_KEY
-  value: {{ .Values.uploadBucket.accessKey }}
-- name: UPLOAD_STORAGE_SECRET_KEY
-  value: {{ .Values.uploadBucket.secretKey }}
+- name: DEFAULT_UPLOAD_STORE_TYPE
+  value: {{ .Values.uploadBucket.store_type }}
 {{- if hasKey .Values.uploadBucket "proxy" }}
 - name: UPLOAD_STORAGE_EXTERNAL_HOST
   value: {{ .Values.uploadBucket.proxy }}
@@ -89,16 +77,12 @@
 {{- end }}
 {{- if hasKey .Values "backupBucket" }}
 {{- if .Values.backupBucket.enabled }}
-- name: BACKUP_STORAGE_HOST
-  value: {{ .Values.backupBucket.host }}
-- name: BACKUP_STORAGE_BUCKET_NAME
+- name: DEFAULT_BACKUP_CONFIG
+  value: {{ .Values.backupBucket.config }}
+- name: DEFAULT_BACKUP_BUCKET_NAME
   value: {{ .Values.backupBucket.name }}
-- name: BACKUP_STORAGE_REGION_NAME
-  value: {{ .Values.backupBucket.region }}
-- name: BACKUP_STORAGE_ACCESS_KEY
-  value: {{ .Values.backupBucket.accessKey }}
-- name: BACKUP_STORAGE_SECRET_KEY
-  value: {{ .Values.backupBucket.secretKey }}
+- name: DEFAULT_BACKUP_STORE_TYPE
+  value: {{ .Values.backupBucket.store_type }}
 {{- if hasKey .Values.backupBucket "proxy" }}
 - name: BACKUP_STORAGE_EXTERNAL_HOST
   value: {{ .Values.backupBucket.proxy }}
