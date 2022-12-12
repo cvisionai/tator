@@ -13,5 +13,5 @@ RUN make
 RUN make install
 WORKDIR /
 
-COPY containers/postgis/postgresql.conf /var/lib/postgresql/data/db-files
-CMD ["postgres", "-N", "1000", "-S", "16MB", "-B", "4000MB"]
+COPY containers/postgis/postgresql.conf /etc/postgresql/postgresql.conf
+CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]

@@ -36,7 +36,7 @@ endif
 # faster builds on AWS ec2
 # Set this ENV to http://iad-ad-1.clouds.archive.ubuntu.com/ubuntu/ for
 # faster builds on Oracle OCI 
-APT_REPO_HOST ?= $(shell cat /etc/apt/sources.list | grep "focal main" | head -n1 | awk '{print $$2}')
+APT_REPO_HOST ?= $(shell cat /etc/apt/sources.list | grep "focal main" | grep -v cdrom | head -n1 | awk '{print $$2}')
 
 
 POSTGRES_HOST=$(shell python3 -c 'import yaml; a = yaml.load(open("helm/tator/values.yaml", "r"),$(YAML_ARGS)); print(a["postgresHost"])')
