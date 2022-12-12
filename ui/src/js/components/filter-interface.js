@@ -291,7 +291,9 @@ export class FilterInterface extends TatorElement {
       {
         for (const s of this._sections)
         {
-          if (s.tator_user_sections == section.tator_user_sections)
+          // The UUID is the same for the saved search and original section, so only display
+          // the name of the matching UUID for the original section name.
+          if (s.tator_user_sections == section.tator_user_sections && s.id != section.id)
           {
             ops.push({"attribute": "Section", "operation": "eq","value": s.name});
           }

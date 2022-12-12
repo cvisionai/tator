@@ -181,9 +181,9 @@ def _get_media_psql_queryset(project, filter_ops, params):
         if not section.exists():
             raise Http404
 
-        section_uuid = section.tator_user_sections
+        section_uuid = section[0].tator_user_sections
         if section_uuid:
-            qs = qs.filter(attribute__tator_user_sections=section_uuid)
+            qs = qs.filter(attributes__tator_user_sections=section_uuid)
 
         if section[0].object_search:
             qs = get_attribute_psql_queryset_from_query_obj(qs, section[0].object_search)
