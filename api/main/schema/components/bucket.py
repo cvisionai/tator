@@ -36,12 +36,16 @@ oci_native_config_properties = {
     "region": {"description": "OCI region.", "type": "string"},
 }
 oci_native_required = list(oci_native_config_properties.keys())
+oci_native_config = {
+    "type": "object",
+    "required": oci_native_required,
+    "properties": oci_native_config_properties,
+}
 oci_config_properties = {
     "boto3_config": {"$ref": "#/components/schemas/BucketS3Config"},
-    "native_config": {"$ref": "#/components/schemas/BucketOCIConfig"},
+    "native_config": {"$ref": "#/components/schemas/BucketOCINativeConfig"},
 }
-# TODO add "native_config" to required once implemented
-oci_required = ["boto3_config"]  # list(oci_config_properties.keys())
+oci_required = list(oci_config_properties.keys())
 oci_config = {"type": "object", "required": oci_required, "properties": oci_config_properties}
 
 bucket_properties = {

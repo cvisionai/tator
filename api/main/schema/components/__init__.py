@@ -28,6 +28,7 @@ from .bucket import (
     bucket,
     gcp_config,
     oci_config,
+    oci_native_config,
     s3_config,
 )
 from .change_log import change_log
