@@ -65,6 +65,7 @@ bucket_properties = {
         "type": "string",
         "enum": ["AWS", "MINIO", "GCP", "OCI"],
     },
+    "external_host": {"description": "The proxy host for presigned urls.", "type": "string"},
 }
 
 all_bucket_properties = {

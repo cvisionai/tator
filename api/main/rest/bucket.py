@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_endpoint_url(bucket):
+    # TODO remove conditional once old style bucket access is removed
     if bucket.config:
         if bucket.store_type == ObjectStore.GCP:
             return None
@@ -40,6 +41,7 @@ def serialize_bucket(bucket):
         "archive_sc": bucket.archive_sc,
         "live_sc": bucket.live_sc,
         "store_type": bucket.store_type.value,
+        "external_host": bucket.external_host,
     }
 
 
@@ -69,7 +71,7 @@ class BucketListAPI(BaseListView):
         # Validate configuration parameters
         params = Bucket.validate_storage_classes(ObjectStore(store_type), params)
         if params["store_type"] == ObjectStore.OCI:
-            validate_config(params["config"])
+            validate_config(params["config"]["native_config"])
 
         # Create the bucket
         bucket = Bucket.objects.create(**params)
@@ -122,6 +124,9 @@ class BucketDetailAPI(BaseDetailView):
                 validate_config(params["config"])
             mutated = True
             bucket.config = params["config"]
+        if "external_host" in params:
+            mutated = True
+            bucket.external_host = params["external_host"]
         if mutated:
             bucket.save()
         return {"message": f"Bucket {params['id']} updated successfully!"}

@@ -510,7 +510,7 @@ class OCIStorage(S3Storage):
     def __init__(self, bucket, client, bucket_name, external_host=None):
         super().__init__(bucket, client["boto3_client"], bucket_name, external_host)
         self._native_client = client["native_client"]
-        self._namespace = native_client.get_namespace().data
+        self._namespace = self._native_client.get_namespace().data
         self._server = ObjectStore.OCI
         self.remote_type = "oci"
 
@@ -708,6 +708,7 @@ def get_tator_store(
         bucket_name = bucket.name
         store_type = ObjectStore(bucket.store_type)
         config = bucket.config
+        external_host = bucket.external_host
     else:
         raise RuntimeError(
             f"Received bucket {bucket} as input, which is missing its `config` field."
