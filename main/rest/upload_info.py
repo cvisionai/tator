@@ -38,6 +38,9 @@ class UploadInfoAPI(BaseDetailView):
         else:
             PROTO = 'http'
 
+        if media_id is not None and file_id is not None:
+            raise ValueError(f"Both a file_id and media_id was provided!")
+
         # Get organization.
         project_obj = Project.objects.get(pk=project)
         organization = project_obj.organization.pk
@@ -59,21 +62,22 @@ class UploadInfoAPI(BaseDetailView):
             upload_bucket = project_obj.get_bucket(upload=True)
             use_upload = not upload_bucket
             tator_store = get_tator_store(upload_bucket, upload=use_upload)
-        elif media_id is not None and file_id is not None:
-            raise ValueError(f"Both a file_id and media_id was provided!")
         elif media_id is not None:
             qs = Media.objects.filter(project=project, pk=media_id)
             if qs.exists():
                 key = f"{organization}/{project}/{media_id}/{name}"
             else:
                 raise ValueError(f"Media ID {media_id} does not exist in project {project}!")
+            use_upload = not project_obj.bucket
             tator_store = get_tator_store(project_obj.bucket)
-        elif file_id is not None:
+        else:
+            # By process of elimination, `file_id` must be "not None"
             qs = File.objects.filter(project=project, pk=file_id)
             if qs.exists():
                 key = f"{organization}/{project}/files/{file_id}/{name}"
             else:
                 raise ValueError(f"File ID {file_id} does not exist in project {project}!")
+            use_upload = not project_obj.bucket
             tator_store = get_tator_store(project_obj.bucket)
 
         # Generate presigned urls.
@@ -82,7 +86,7 @@ class UploadInfoAPI(BaseDetailView):
         )
 
         # Replace host if external host is given.
-        if tator_store.external_host and project_obj.bucket is None:
+        if tator_store.external_host and use_upload:
             external = urlsplit(tator_store.external_host, scheme=PROTO)
             urls = [
                 urlunsplit(urlsplit(url)._replace(
